@@ -45,6 +45,7 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
 public class RedisPollingProtocolAdapter implements BatchPollingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(RedisPollingProtocolAdapter.class);
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private final @NotNull RedisAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -108,6 +109,7 @@ public class RedisPollingProtocolAdapter implements BatchPollingProtocolAdapter 
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         log.debug("Handling tags for Redis protocol adapter");
         tags.forEach(tag -> loadRedisData(pollingOutput, (RedisAdapterTag) tag));
+
         protocolAdapterState.setConnectionStatus(STATELESS);
         pollingOutput.finish();
     }
@@ -159,7 +161,6 @@ public class RedisPollingProtocolAdapter implements BatchPollingProtocolAdapter 
                     log.debug("String Key : {}", definition.getKey());
                     try (final Jedis jedis = jedisPool.getResource();){
                         final String result = jedis.get(definition.getKey());
-                        log.debug("String Result : {}",result);
                         node.put("value", result);
                         log.debug(node.toString());
                         log.debug("Adding datapoint");

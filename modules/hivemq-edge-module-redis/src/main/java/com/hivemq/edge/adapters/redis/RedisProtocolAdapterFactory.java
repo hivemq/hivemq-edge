@@ -30,7 +30,8 @@ public class RedisProtocolAdapterFactory implements ProtocolAdapterFactory<Redis
     }
 
     @Override
-    public @NotNull ProtocolAdapter createAdapter(final @NotNull ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<RedisAdapterConfig> input) {
+    public @NotNull ProtocolAdapter createAdapter(final @NotNull ProtocolAdapterInformation adapterInformation,
+                                                  @NotNull final ProtocolAdapterInput<RedisAdapterConfig> input) {
         return new RedisPollingProtocolAdapter(adapterInformation, input);
     }
 }
