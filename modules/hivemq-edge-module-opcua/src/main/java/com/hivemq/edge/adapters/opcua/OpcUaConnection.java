@@ -1,6 +1,7 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
@@ -130,7 +131,7 @@ public class OpcUaConnection {
 
                             try {
                                 Thread.sleep(1_000);
-                            } catch (InterruptedException e) {
+                            } catch (final InterruptedException e) {
                                 throw new RuntimeException(e);
                             }
                         }
@@ -172,13 +173,7 @@ public class OpcUaConnection {
             final @NotNull OpcUaPayload opcUAWritePayload
     ) {
 
-        final JsonToOpcUAConverter converter;
-        try {
-            converter = new JsonToOpcUAConverter(opcUaClientInstance.client());
-        } catch (UaException e) {
-            log.error("Failed creating JsonToOpcUAConverter", e);
-            return CompletableFuture.failedFuture(e);
-        }
+        final JsonToOpcUAConverter converter = new JsonToOpcUAConverter(opcUaClientInstance.client());
 
         log.debug("Write for opcua is invoked with payload '{}' for tag '{}' ", opcUAWritePayload, opcuaTag.getName());
 
@@ -189,14 +184,7 @@ public class OpcUaConnection {
 
         return opcUaClientInstance
                     .client()
-                    .writeValuesAsync(List.of(nodeId), List.of(dataValue))
-                    .thenApply(res -> {
-                        res.forEach(result->{
-                            //TODO handle status isBad!!
-                            System.out.println(result);
-                        });
-                        return  res;
-                    });
+                    .writeValuesAsync(List.of(nodeId), List.of(dataValue));
     }
 
     private @NotNull CompletionStage<Object> createSubscription(final @NotNull OpcUaClient client) {
@@ -273,7 +261,7 @@ public class OpcUaConnection {
                                 new String(convertPayload(value, client.getDynamicEncodingContext()));
                         tagStreamingService.feed(tag.getName(),
                                 List.of(dataPointFactory.createJsonDataPoint(tag.getName(), convertedPayload)));
-                    } catch (UaException e) {
+                    } catch (final UaException e) {
                         throw new RuntimeException(e);
                     }
                 }
@@ -288,7 +276,8 @@ public class OpcUaConnection {
     }
 
     public CompletableFuture<Optional<JsonNode>> createTagScheam(final OpcuaTag tag) {
-        return JsonSchemaGenerator.createMqttPayloadJsonSchema(opcUaClientInstance.client(), tag);
+        //TODO a little expensive
+        return new JsonSchemaGenerator(opcUaClientInstance.client(), new ObjectMapper()).createMqttPayloadJsonSchema(tag);
     }
 
     private static byte @NotNull [] convertPayload(

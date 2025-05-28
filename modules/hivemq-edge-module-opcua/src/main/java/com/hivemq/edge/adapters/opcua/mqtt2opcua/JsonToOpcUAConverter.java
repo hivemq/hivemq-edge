@@ -16,10 +16,10 @@
 package com.hivemq.edge.adapters.opcua.mqtt2opcua;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
-import org.eclipse.milo.opcua.sdk.client.typetree.DataTypeTreeBuilder;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.sdk.core.types.codec.DynamicStructCodec;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
@@ -70,10 +70,16 @@ public class JsonToOpcUAConverter {
 
     private final @NotNull OpcUaClient client;
     private final @NotNull DataTypeTree tree;
+    private final @NotNull JsonSchemaGenerator jsonSchemaGenerator;
 
-    public JsonToOpcUAConverter(final @NotNull OpcUaClient client) throws UaException {
+    public JsonToOpcUAConverter(final @NotNull OpcUaClient client) {
         this.client = client;
-        this.tree = DataTypeTreeBuilder.build(client);
+        try {
+            this.tree = client.getDataTypeTree();
+        } catch (UaException e) {
+            throw new RuntimeException(e);
+        }
+        this.jsonSchemaGenerator = new JsonSchemaGenerator(client, new ObjectMapper());
     }
 
     public @NotNull Object convertToOpcUAValue(
@@ -116,7 +122,7 @@ public class JsonToOpcUAConverter {
                 }
             }
 
-            final var field = JsonSchemaGenerator.processExtensionObject(client, dataType, true, null);
+            final var field = jsonSchemaGenerator.processExtensionObject(dataType, true, null);
 
             final var datatTypesToRegister = new ArrayList<DataType>();
             collectCustomDatatypes(field, datatTypesToRegister);

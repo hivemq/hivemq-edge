@@ -61,37 +61,34 @@ public class JsonSchemaGenerator {
             boolean required,
             List<FieldInformation> nestedFields) {}
 
-    public static CompletableFuture<Optional<JsonNode>> createMqttPayloadJsonSchema(
-            final @NotNull OpcUaClient client, final @NotNull OpcuaTag tag) {
-        final String nodeId = tag.getDefinition().getNode();
-        try {
-            final var jsonSchemaGenerator = new JsonSchemaGenerator(client, new ObjectMapper());
-            var parsed = NodeId.parse(nodeId);
-            return jsonSchemaGenerator
-                    .collectTypeInfo(parsed)
-                    .thenApply(info -> {
-                        //TODO BuiltinJsonSchema should be an instance variable
-                        if(info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
-                            return new BuiltinJsonSchema().createJsonSchemaForArrayType(info.dataType(), info.arrayDimensions);
-                        }
-                        else if(info.nestedFields() == null || info.nestedFields().isEmpty()) {
-                            return new BuiltinJsonSchema().createJsonSchemaForBuiltInType(info.dataType());
-                        } else {
-                            return jsonSchemaGenerator.jsonSchemaFromNodeId(info);
-                        }
-                    })
-                    .thenApply(Optional::of);
-        } catch (UaException e) {
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    public JsonSchemaGenerator(final @NotNull OpcUaClient client, final @NotNull ObjectMapper objectMapper)
-            throws UaException {
+    public JsonSchemaGenerator(final @NotNull OpcUaClient client, final @NotNull ObjectMapper objectMapper) {
         this.client = client;
-        this.tree = client.getDataTypeTree();
+        try {
+            this.tree = client.getDataTypeTree();
+        } catch (final UaException e) {
+            throw new RuntimeException(e);
+        }
         this.objectMapper = objectMapper;
         this.builtinJsonSchema = new BuiltinJsonSchema();
+    }
+
+    public CompletableFuture<Optional<JsonNode>> createMqttPayloadJsonSchema(final @NotNull OpcuaTag tag) {
+        final String nodeId = tag.getDefinition().getNode();
+        final var jsonSchemaGenerator = new JsonSchemaGenerator(client, new ObjectMapper());
+        final var parsed = NodeId.parse(nodeId);
+        return jsonSchemaGenerator
+                .collectTypeInfo(parsed)
+                .thenApply(info -> {
+                    if(info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
+                        return builtinJsonSchema.createJsonSchemaForArrayType(info.dataType(), info.arrayDimensions);
+                    }
+                    else if(info.nestedFields() == null || info.nestedFields().isEmpty()) {
+                        return builtinJsonSchema.createJsonSchemaForBuiltInType(info.dataType());
+                    } else {
+                        return jsonSchemaGenerator.jsonSchemaFromNodeId(info);
+                    }
+                })
+                .thenApply(Optional::of);
     }
 
     private CompletableFuture<FieldInformation> collectTypeInfo(final @NotNull NodeId destinationNodeId) {
@@ -123,14 +120,14 @@ public class JsonSchemaGenerator {
                         if (dataType.getBinaryEncodingId() == null) {
                             throw new RuntimeException("No encoding was present for the complex data type: '" + dataType + "'.");
                         }
-                        return processExtensionObject(client, dataType,true, null);
+                        return processExtensionObject(dataType,true, null);
                     }
                 }).exceptionally(throwable -> {
                     throw new RuntimeException("Problem accessing node", throwable);
                 });
     }
 
-    public static FieldInformation processExtensionObject(final @NotNull OpcUaClient client, final @NotNull DataType dataType, final boolean required, final @Nullable String name) {
+    public FieldInformation processExtensionObject(final @NotNull DataType dataType, final boolean required, final @Nullable String name) {
         try {
 
             final var dataTypeDefiniton = dataType.getDataTypeDefinition();
@@ -162,7 +159,6 @@ public class JsonSchemaGenerator {
                             } else {
                                 try {
                                     return processExtensionObject(
-                                            client,
                                             client.getDataTypeTree().getDataType(field.getDataType()),
                                             isRequired,
                                             fieldName);

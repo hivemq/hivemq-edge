@@ -34,6 +34,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -148,13 +149,23 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 opcUaConnection
                         .write(opcuaTag, (OpcUaPayload)input.getWritingPayload())
                         .whenComplete((statusCode, throwable) -> {
-                            if (throwable != null) {
-                                log.error("Exception while writing tag '{}'", writeContext.getTagName(), throwable);
-                                output.fail(throwable, null);
-                            } else {
-                                log.debug("Wrote tag='{}'", opcuaTag.getName());
-                                output.finish();
-                            }
+                            var badStatus = statusCode.stream().filter(StatusCode::isBad).findFirst();
+                            badStatus
+                                    .ifPresentOrElse(
+                                            bad -> {
+                                                log.error("Failed to write tag '{}': {}", writeContext.getTagName(), bad);
+                                                output.fail("Failed to write tag '" + writeContext.getTagName() + "': " + bad);
+                                            },
+                                            () -> {
+                                                if (throwable != null) {
+                                                    log.error("Exception while writing tag '{}'", writeContext.getTagName(), throwable);
+                                                    output.fail(throwable, null);
+                                                } else {
+                                                    log.debug("Wrote tag='{}'", opcuaTag.getName());
+                                                    output.finish();
+                                                }
+                                            }
+                                    );
                         });
             } else {
                 log.error("Tried executing write with a non existent tag '{}'", writeContext.getTagName());
