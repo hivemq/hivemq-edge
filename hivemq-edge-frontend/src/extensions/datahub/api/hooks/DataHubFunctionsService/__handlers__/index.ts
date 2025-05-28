@@ -157,13 +157,13 @@ export const MOCK_DATAHUB_FUNCTIONS_SERDES_DESERIALIZE: FunctionSpecs = {
     properties: {
       schemaId: {
         type: 'string',
-        title: 'schemaId',
+        title: 'Schema ID',
         description: 'The identifier of the JSON or Protobuf Schema to be used for deserialization.',
         format: 'interpolation',
       },
       schemaVersion: {
         type: 'string',
-        title: 'schemaVersion',
+        title: 'Schema Version',
         description: 'The version of the schema to be used for deserialization.',
         format: 'interpolation',
       },
@@ -194,12 +194,12 @@ export const MOCK_DATAHUB_FUNCTIONS_METRICS_COUNTER_INC: FunctionSpecs = {
     properties: {
       metricName: {
         type: 'string',
-        title: 'metricName',
+        title: 'Metric Name',
         description: 'Specifies the name of the metric to be incremented.',
       },
       incrementBy: {
         type: 'integer',
-        title: 'incrementBy',
+        title: 'Increment By',
         description: 'Specifies the amount by which the counter should be incremented. Negative values are supported.',
         format: 'interpolation',
       },
