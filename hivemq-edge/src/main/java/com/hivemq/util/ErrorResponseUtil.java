@@ -16,6 +16,7 @@
 package com.hivemq.util;
 
 import com.hivemq.api.errors.ApiError;
+import com.hivemq.api.errors.OpenApiError;
 import com.hivemq.http.error.ProblemDetails;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,6 +26,13 @@ import jakarta.ws.rs.core.Response;
  * @author Christoph Schäbel
  */
 public class ErrorResponseUtil {
+    public static @NotNull Response errorResponse(final @NotNull OpenApiError error) {
+        return Response.status(error.getStatus())
+                .entity(error)
+                .header("Content-Type", "application/json;charset=utf-8")
+                .build();
+    }
+
     public static @NotNull Response errorResponse(final @NotNull ProblemDetails errors) {
         return Response.status(errors.getStatus())
                 .entity(errors)
