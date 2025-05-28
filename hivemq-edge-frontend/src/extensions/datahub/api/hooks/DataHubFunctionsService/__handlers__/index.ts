@@ -26,14 +26,14 @@ export const MOCK_DATAHUB_FUNCTIONS_MQTT_USER_PROPERTY: FunctionSpecs = {
     properties: {
       name: {
         type: 'string',
-        title: 'name',
+        title: 'Property Name',
         description:
           'Specifies the name of the user property. Multiple user properties with the same name are allowed.',
         format: 'interpolation',
       },
       value: {
         type: 'string',
-        title: 'value',
+        title: 'Property Value',
         description: 'Specifies the value of the user property.',
         format: 'interpolation',
       },
@@ -57,13 +57,13 @@ export const MOCK_DATAHUB_FUNCTIONS_DELIVERY_REDIRECT: FunctionSpecs = {
     properties: {
       topic: {
         type: 'string',
-        title: 'topic',
+        title: 'Topic',
         description: 'The destination MQTT topic according to the MQTT specification.',
         format: 'interpolation',
       },
       applyPolicies: {
         type: 'boolean',
-        title: 'applyPolicies',
+        title: 'Apply Policies',
         description: 'Defines whether policies are executed after publishing to a different topic.',
         format: 'interpolation',
       },
@@ -96,7 +96,7 @@ export const MOCK_DATAHUB_FUNCTIONS_SYSTEM_LOG: FunctionSpecs = {
         type: 'string',
         title: 'Log Level',
         description: 'Specifies the log level of the function.',
-        format: 'interpolation',
+        enum: ['DEBUG', 'ERROR', 'WARN', 'INFO', 'TRACE'],
       },
       message: {
         type: 'string',
@@ -126,13 +126,13 @@ export const MOCK_DATAHUB_FUNCTIONS_SERDES_SERIALIZE: FunctionSpecs = {
     properties: {
       schemaId: {
         type: 'string',
-        title: 'schemaId',
+        title: 'Schema ID',
         description: 'The identifier of the JSON or Protobuf Schema to be used for serialization',
         format: 'interpolation',
       },
       schemaVersion: {
         type: 'string',
-        title: 'schemaVersion',
+        title: 'Schema Version',
         description: 'The version of the schema to be used for serialization.',
         format: 'interpolation',
       },
@@ -157,13 +157,13 @@ export const MOCK_DATAHUB_FUNCTIONS_SERDES_DESERIALIZE: FunctionSpecs = {
     properties: {
       schemaId: {
         type: 'string',
-        title: 'schemaId',
+        title: 'Schema ID',
         description: 'The identifier of the JSON or Protobuf Schema to be used for deserialization.',
         format: 'interpolation',
       },
       schemaVersion: {
         type: 'string',
-        title: 'schemaVersion',
+        title: 'Schema Version',
         description: 'The version of the schema to be used for deserialization.',
         format: 'interpolation',
       },
@@ -194,12 +194,12 @@ export const MOCK_DATAHUB_FUNCTIONS_METRICS_COUNTER_INC: FunctionSpecs = {
     properties: {
       metricName: {
         type: 'string',
-        title: 'metricName',
+        title: 'Metric Name',
         description: 'Specifies the name of the metric to be incremented.',
       },
       incrementBy: {
         type: 'integer',
-        title: 'incrementBy',
+        title: 'Increment By',
         description: 'Specifies the amount by which the counter should be incremented. Negative values are supported.',
         format: 'interpolation',
       },
@@ -247,7 +247,7 @@ export const MOCK_DATAHUB_FUNCTIONS_MQTT_DROP: FunctionSpecs = {
     properties: {
       reasonString: {
         type: 'string',
-        title: 'reasonString',
+        title: 'Reason String',
         description: 'Specifies the reason string that is returned to MQTT 5 clients.',
         format: 'interpolation',
       },
