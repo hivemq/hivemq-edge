@@ -1,0 +1,9 @@
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The policy id.
+    required:
+      - id
