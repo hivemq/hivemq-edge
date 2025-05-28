@@ -23,7 +23,10 @@ describe('useGetFilteredFunctions', () => {
   }
 
   it.each<TestEachSuite>([
-    { expected: ['Delivery.redirectTo', 'Serdes.serialize', 'Serdes.deserialize'], target: 'no policy type' },
+    {
+      expected: ['Delivery.redirectTo', 'Serdes.serialize', 'Serdes.deserialize', 'DataHub.transform'],
+      target: 'no policy type',
+    },
     {
       target: 'no license restrictions',
       omitLicense: true,
@@ -36,12 +39,20 @@ describe('useGetFilteredFunctions', () => {
         'Metrics.Counter.increment',
         'Mqtt.disconnect',
         'Mqtt.drop',
+        'DataHub.transform',
       ],
     },
     {
       target: 'behaviour policy',
       type: DataHubNodeType.BEHAVIOR_POLICY,
-      expected: ['Mqtt.UserProperties.add', 'System.log', 'Metrics.Counter.increment', 'Mqtt.disconnect', 'Mqtt.drop'],
+      expected: [
+        'Mqtt.UserProperties.add',
+        'System.log',
+        'Metrics.Counter.increment',
+        'Mqtt.disconnect',
+        'Mqtt.drop',
+        'DataHub.transform',
+      ],
     },
     {
       target: 'behaviour policy and no license',
@@ -56,6 +67,7 @@ describe('useGetFilteredFunctions', () => {
         'Metrics.Counter.increment',
         'Mqtt.disconnect',
         'Mqtt.drop',
+        'DataHub.transform',
       ],
     },
   ])('should returns $expected with $target', async ({ type, transition, omitLicense, expected }) => {
