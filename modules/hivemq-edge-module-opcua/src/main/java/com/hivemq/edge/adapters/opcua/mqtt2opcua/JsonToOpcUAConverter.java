@@ -16,30 +16,17 @@
 package com.hivemq.edge.adapters.opcua.mqtt2opcua;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
-import org.eclipse.milo.opcua.sdk.client.dtd.BinaryDataTypeDictionaryReader;
 import org.eclipse.milo.opcua.sdk.client.typetree.DataTypeTreeBuilder;
-import org.eclipse.milo.opcua.sdk.core.dtd.BinaryDataTypeDictionaryInitializer;
-import org.eclipse.milo.opcua.sdk.core.dtd.BsdStructWrapper;
-import org.eclipse.milo.opcua.sdk.core.dtd.generic.Struct;
-import org.eclipse.milo.opcua.sdk.core.dtd.generic.StructCodec;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
-import org.eclipse.milo.opcua.sdk.core.types.codec.DynamicCodecFactory;
 import org.eclipse.milo.opcua.sdk.core.types.codec.DynamicStructCodec;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.UaRuntimeException;
-import org.eclipse.milo.opcua.stack.core.UaSerializationException;
-import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
-import org.eclipse.milo.opcua.stack.core.encoding.GenericDataTypeCodec;
-import org.eclipse.milo.opcua.stack.core.encoding.UaDecoder;
-import org.eclipse.milo.opcua.stack.core.encoding.UaEncoder;
-import org.eclipse.milo.opcua.stack.core.types.UaStructuredType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
@@ -52,17 +39,17 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
-import org.eclipse.milo.opcua.stack.core.types.enumerated.StructureType;
 import org.jetbrains.annotations.NotNull;
-import org.opcfoundation.opcua.binaryschema.StructuredType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Array;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -128,27 +115,47 @@ public class JsonToOpcUAConverter {
                 }
             }
 
-            new BinaryDataTypeDictionaryInitializer()
-                    .initialize(client.getNamespaceTable(),
-                            client.getStaticDataTypeManager());
-
-            final var genericStruct = Struct.builder("CustomStruct");
-
             final var field = JsonSchemaGenerator.processExtensionObject(client, dataType, true, null);
 
-            LinkedHashMap<String, Object> dataTypeMap = new LinkedHashMap<>();
+            final var datatTypesToRegister = new ArrayList<DataType>();
+            collectCustomDatatypes(field, datatTypesToRegister);
+            datatTypesToRegister.forEach(dataTypeToRegister -> {
+                try {
+                    client.getStaticDataTypeManager()
+                        .registerType(
+                                dataTypeToRegister.getNodeId(),
+                                new DynamicStructCodec(dataTypeToRegister, client.getDataTypeTree()),
+                                dataTypeToRegister.getBinaryEncodingId(),
+                                null,
+                                null
+                        );
+                } catch (UaException e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
+            final LinkedHashMap<String, Object> dataTypeMap = new LinkedHashMap<>();
             field.nestedFields()
                     .forEach(nestedField -> {
                         final var key = nestedField.name();
                         final var jsonNode = rootNode.get(key);
-                        genericStruct.addMember(key, parseToOpcUACompatibleObject(jsonNode, nestedField));
-                        dataTypeMap.put(nestedField.name(), nestedField);
+                        dataTypeMap.put(nestedField.name(), parseToOpcUACompatibleObject(jsonNode, nestedField));
                     });
 
             return new DynamicStructType(dataType, dataTypeMap);
         } catch (final UaException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void collectCustomDatatypes(final @NotNull JsonSchemaGenerator.FieldInformation fieldInformation, final @NotNull List<DataType> result) {
+        if(fieldInformation.customDataType() != null) {
+            result.add(fieldInformation.customDataType());
+        }
+        if(fieldInformation.nestedFields() != null) {
+            for (final JsonSchemaGenerator.FieldInformation nestedField : fieldInformation.nestedFields()) {
+                collectCustomDatatypes(nestedField, result);
+            }
         }
     }
 
@@ -258,10 +265,10 @@ public class JsonToOpcUAConverter {
         throw createException(jsonNode, builtinDataType.name());
     }
 
-    private @NotNull Struct extractExtensionObject(
+    private @NotNull DynamicStructType extractExtensionObject(
             final @NotNull JsonNode jsonNode, final @NotNull JsonSchemaGenerator.FieldInformation fieldInformation) {
-        var builder = Struct.builder("CustomStruct");
 
+        var fields = new LinkedHashMap<String, Object>();
         fieldInformation.nestedFields().forEach(field -> {
             final String key = field.name();
             final JsonNode nestedObjectNode = jsonNode.get(key);
@@ -269,9 +276,10 @@ public class JsonToOpcUAConverter {
                 throw new RuntimeException("No nested json was found for key '" + key + "'.");
             }
             final Object parsed = parseToOpcUACompatibleObject(nestedObjectNode, field);
-            builder.addMember(key, parsed);
+            fields.put(key, parsed);
         });
-        return builder.build();
+
+        return new DynamicStructType(fieldInformation.customDataType(), fields);
     }
 
     private static LocalizedText extractLocalizedText(final JsonNode jsonNode) {

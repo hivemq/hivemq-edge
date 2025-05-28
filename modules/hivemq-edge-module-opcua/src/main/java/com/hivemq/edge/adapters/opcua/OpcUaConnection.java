@@ -15,30 +15,22 @@ import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
 import com.hivemq.edge.adapters.opcua.opcua2mqtt.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.util.Bytes;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
-import org.eclipse.milo.opcua.sdk.client.OpcUaSession;
 import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.UaSession;
-import org.eclipse.milo.opcua.sdk.client.dtd.LegacyDataTypeManagerInitializer;
-import org.eclipse.milo.opcua.sdk.client.session.SessionFsm;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemSynchronizationException;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
-import org.eclipse.milo.opcua.sdk.core.dtd.BinaryDataTypeDictionaryInitializer;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
-import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
-import org.eclipse.milo.opcua.stack.core.types.structured.WriteValue;
-import org.eclipse.milo.opcua.stack.core.util.Unit;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -133,14 +125,6 @@ public class OpcUaConnection {
                                     createSessionActivityListener());
                             newOcpUaClient.addSessionActivityListener(clientContext.sessionActivityListener());
                             newOcpUaClient.addFaultListener(clientContext.serviceFaultListener());
-                            newOcpUaClient.addSessionInitializer((client, session) -> {
-
-                                System.out.println("WUARGH!!!!!!!");
-                                    new BinaryDataTypeDictionaryInitializer()
-                                            .initialize(client.getNamespaceTable(),
-                                            client.getStaticDataTypeManager());
-                                return CompletableFuture.completedFuture(null);
-                            });
                             opcUaClientInstance = clientContext;
                             protocolAdapterState.setConnectionStatus(CONNECTED);
 
