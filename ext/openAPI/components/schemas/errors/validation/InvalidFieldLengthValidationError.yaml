@@ -4,12 +4,15 @@ allOf:
     properties:
       actualLength:
         type: integer
+        format: int32
         description: The actual length of the field value.
       expectedMinimumLength:
         type: integer
+        format: int32
         description: The minimum length expected for the field value.
       expectedMaximumLength:
         type: integer
+        format: int32
         description: The maximum length expected for the field value.
       field:
         type: string
