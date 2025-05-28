@@ -64,7 +64,7 @@ public class KeystoreUtil {
                     keyStoreType), e);
         } catch (final NoSuchAlgorithmException | CertificateException e) {
             throw new SslException("Not able to read the certificate from KeyStore '" + keyStorePath + "'", e);
-        } catch (NoSuchElementException e) {
+        } catch (final NoSuchElementException e) {
             throw new SslException("Not able to find key in KeyStore '" + keyStorePath + "'", e);
         }
     }
@@ -73,7 +73,6 @@ public class KeystoreUtil {
     public static @NotNull List<X509Certificate> getCertificatesFromDefaultTruststore() {
         //if no truststore is set use java default
         try {
-            final List<X509Certificate> certificates = new ArrayList<>();
             // Loads default Root CA certificates (generally, from JAVA_HOME/lib/cacerts)
             final TrustManagerFactory trustManagerFactory =
                     TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
@@ -86,7 +85,7 @@ public class KeystoreUtil {
                         }
                         return Stream.empty();
                     }).toList();
-        } catch (NoSuchAlgorithmException | KeyStoreException e) {
+        } catch (final NoSuchAlgorithmException | KeyStoreException e) {
             throw new SslException("Not able to load system default truststore", e);
         }
     }
@@ -124,36 +123,11 @@ public class KeystoreUtil {
                     keyStoreType), e);
         } catch (final NoSuchAlgorithmException | CertificateException e) {
             throw new SslException("Not able to read the certificate from KeyStore '" + keyStorePath + "'", e);
-        } catch (NoSuchElementException e) {
+        } catch (final NoSuchElementException e) {
             throw new SslException("Not able to find key in KeyStore '" + keyStorePath + "'", e);
         }
     }
 
-    public static class KeyPairWithChain {
-
-        private final @NotNull PrivateKey privateKey;
-        private final @NotNull X509Certificate publicKey;
-        private final @NotNull X509Certificate[] certificateChain;
-
-        public KeyPairWithChain(
-                final @NotNull PrivateKey privateKey,
-                final @NotNull X509Certificate publicKey,
-                final @NotNull X509Certificate[] certificateChain) {
-            this.privateKey = privateKey;
-            this.publicKey = publicKey;
-            this.certificateChain = certificateChain;
-        }
-
-        public @NotNull PrivateKey getPrivateKey() {
-            return privateKey;
-        }
-
-        public @NotNull X509Certificate getPublicKey() {
-            return publicKey;
-        }
-
-        public @NotNull X509Certificate[] getCertificateChain() {
-            return certificateChain;
-        }
-    }
+    public record KeyPairWithChain(@NotNull PrivateKey privateKey, @NotNull X509Certificate publicKey,
+                                   @NotNull X509Certificate[] certificateChain) {}
 }

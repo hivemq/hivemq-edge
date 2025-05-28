@@ -174,7 +174,6 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
                 .setCertificateManager(new DefaultCertificateManager(certificateQuarantine, defaultGroup))
                 .build();
 
-        //TODO check whether the transportProfile thingy is correct
         opcUaServer = new OpcUaServer(serverConfig, transportProfile -> {
             assert transportProfile == TransportProfile.TCP_UASC_UABINARY;
 

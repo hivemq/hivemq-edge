@@ -28,8 +28,6 @@ import org.slf4j.LoggerFactory;
 public class OpcUaProtocolAdapterFactory
         implements ProtocolAdapterFactory<OpcUaSpecificAdapterConfig> {
 
-    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapterFactory.class);
-
     final boolean writingEnabled;
 
     public OpcUaProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput input) {

@@ -2,11 +2,15 @@ import nl.javadude.gradle.plugins.license.DownloadLicensesExtension.license
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
+import net.ltgt.gradle.errorprone.errorprone
+
+
 plugins {
     java
     alias(libs.plugins.defaults)
     alias(libs.plugins.shadow)
     alias(libs.plugins.license)
+    alias(libs.plugins.errorprone)
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
     id("com.hivemq.repository-convention")
@@ -35,6 +39,7 @@ dependencies {
     implementation(libs.milo.server)
     implementation(libs.milo.dtd.reader)
     implementation(libs.milo.dtd.manager)
+    errorprone(libs.errorprone)
 }
 
 dependencies {
@@ -62,6 +67,10 @@ configurations {
         exclude(group = "org.glassfish.jaxb")
         exclude(group = "com.sun.activation")
     }
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.errorprone.disableWarningsInGeneratedCode.set(true)
 }
 
 tasks.test {
