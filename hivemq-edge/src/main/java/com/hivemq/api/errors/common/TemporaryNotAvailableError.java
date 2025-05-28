@@ -19,18 +19,22 @@ package com.hivemq.api.errors.common;
 import com.hivemq.api.errors.ApiError;
 import com.hivemq.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class TemporaryNotAvailableError extends ApiError<TemporaryNotAvailableError> {
-    private TemporaryNotAvailableError() {
-        super("errors/common/TemporaryNotAvailableError",
-                "The endpoint is temporarily not available",
-                "The endpoint is temporarily not available, please try again later",
-                HttpStatus.SERVICE_UNAVAILABLE_503,
-                null);
+    private TemporaryNotAvailableError(
+            final @NotNull String title,
+            final @Nullable String detail,
+            final int status,
+            final @Nullable String code) {
+        super(title, detail, status, code);
     }
 
     public static TemporaryNotAvailableError of() {
-        return new TemporaryNotAvailableError();
+        return new TemporaryNotAvailableError("The endpoint is temporarily not available",
+                "The endpoint is temporarily not available, please try again later",
+                HttpStatus.SERVICE_UNAVAILABLE_503,
+                null);
     }
 
     @Override

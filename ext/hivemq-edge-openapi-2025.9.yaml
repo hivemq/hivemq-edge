@@ -1155,20 +1155,24 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/InternalServerError'
                   - $ref: '#/components/schemas/RequestBodyMissingError'
+                  - $ref: '#/components/schemas/DataPolicyCreationFailureError'
+                  - $ref: '#/components/schemas/DataPolicyRejectedError'
                   - $ref: '#/components/schemas/DataPolicyValidationErrors'
           description: DataPolicy creation failed
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                anyOf:
+                  - $ref: '#/components/schemas/DataPolicyAlreadyPresentError'
           description: DataPolicy already present
         '500':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
@@ -1180,7 +1184,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InsufficientStorageError'
           description: Insufficient storage
       summary: Create a new data policy
       tags:
@@ -1426,7 +1430,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                anyOf:
+                  - $ref: '#/components/schemas/RequestBodyMissingError'
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                  - $ref: '#/components/schemas/DataPolicyValidationErrors'
+                  - $ref: '#/components/schemas/PolicyIdMismatchError'
           description: DataPolicy creation failed
         '404':
           content:
@@ -1438,19 +1446,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
         '507':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InsufficientStorageError'
           description: Insufficient storage
       summary: Update an existing data policy
       tags:
@@ -5014,9 +5022,72 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/DataPolicy'
+    InternalServerError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+    DataPolicyCreationFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - reason
+    DataPolicyRejectedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
     DataPolicyValidationErrors:
       allOf:
         - $ref: '#/components/schemas/ValidationErrors'
+    DataPolicyAlreadyPresentError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The policy id.
+          required:
+            - id
+    InsufficientStorageError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+    UrlParameterMissingError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            parameter:
+              type: string
+              description: The name of the missing parameter.
+          required:
+            - parameter
+    PolicyIdMismatchError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            actualId:
+              type: string
+              description: The actual id.
+            expectedId:
+              type: string
+              description: The expected id.
+          required:
+            - actualId
+            - expectedId
     Errors:
       type: object
     BehaviorPolicyTransitionEvent:
