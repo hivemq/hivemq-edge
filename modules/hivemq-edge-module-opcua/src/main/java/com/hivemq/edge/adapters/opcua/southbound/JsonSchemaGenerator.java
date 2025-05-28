@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.mqtt2opcua;
+package com.hivemq.edge.adapters.opcua.southbound;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,8 +34,6 @@ import org.eclipse.milo.opcua.stack.core.types.structured.EnumDefinition;
 import org.eclipse.milo.opcua.stack.core.types.structured.StructureDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -43,8 +41,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class JsonSchemaGenerator {
-
-    private static final Logger log = LoggerFactory.getLogger(JsonSchemaGenerator.class);
 
     private final @NotNull OpcUaClient client;
     private final @NotNull DataTypeTree tree;
@@ -61,37 +57,34 @@ public class JsonSchemaGenerator {
             boolean required,
             List<FieldInformation> nestedFields) {}
 
-    public static CompletableFuture<Optional<JsonNode>> createMqttPayloadJsonSchema(
-            final @NotNull OpcUaClient client, final @NotNull OpcuaTag tag) {
-        final String nodeId = tag.getDefinition().getNode();
-        try {
-            final var jsonSchemaGenerator = new JsonSchemaGenerator(client, new ObjectMapper());
-            var parsed = NodeId.parse(nodeId);
-            return jsonSchemaGenerator
-                    .collectTypeInfo(parsed)
-                    .thenApply(info -> {
-                        //TODO BuiltinJsonSchema should be an instance variable
-                        if(info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
-                            return new BuiltinJsonSchema().createJsonSchemaForArrayType(info.dataType(), info.arrayDimensions);
-                        }
-                        else if(info.nestedFields() == null || info.nestedFields().isEmpty()) {
-                            return new BuiltinJsonSchema().createJsonSchemaForBuiltInType(info.dataType());
-                        } else {
-                            return jsonSchemaGenerator.jsonSchemaFromNodeId(info);
-                        }
-                    })
-                    .thenApply(Optional::of);
-        } catch (UaException e) {
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    public JsonSchemaGenerator(final @NotNull OpcUaClient client, final @NotNull ObjectMapper objectMapper)
-            throws UaException {
+    public JsonSchemaGenerator(final @NotNull OpcUaClient client, final @NotNull ObjectMapper objectMapper) {
         this.client = client;
-        this.tree = client.getDataTypeTree();
+        try {
+            this.tree = client.getDataTypeTree();
+        } catch (final UaException e) {
+            throw new RuntimeException(e);
+        }
         this.objectMapper = objectMapper;
         this.builtinJsonSchema = new BuiltinJsonSchema();
+    }
+
+    public CompletableFuture<Optional<JsonNode>> createMqttPayloadJsonSchema(final @NotNull OpcuaTag tag) {
+        final String nodeId = tag.getDefinition().getNode();
+        final var jsonSchemaGenerator = new JsonSchemaGenerator(client, new ObjectMapper());
+        final var parsed = NodeId.parse(nodeId);
+        return jsonSchemaGenerator
+                .collectTypeInfo(parsed)
+                .thenApply(info -> {
+                    if(info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
+                        return builtinJsonSchema.createJsonSchemaForArrayType(info.dataType(), info.arrayDimensions);
+                    }
+                    else if(info.nestedFields() == null || info.nestedFields().isEmpty()) {
+                        return builtinJsonSchema.createJsonSchemaForBuiltInType(info.dataType());
+                    } else {
+                        return jsonSchemaGenerator.jsonSchemaFromNodeId(info);
+                    }
+                })
+                .thenApply(Optional::of);
     }
 
     private CompletableFuture<FieldInformation> collectTypeInfo(final @NotNull NodeId destinationNodeId) {
@@ -123,71 +116,83 @@ public class JsonSchemaGenerator {
                         if (dataType.getBinaryEncodingId() == null) {
                             throw new RuntimeException("No encoding was present for the complex data type: '" + dataType + "'.");
                         }
-                        return processExtensionObject(client, dataType,true, null);
+                        return processExtensionObject(dataType,true, null);
                     }
                 }).exceptionally(throwable -> {
                     throw new RuntimeException("Problem accessing node", throwable);
                 });
     }
 
-    public static FieldInformation processExtensionObject(final @NotNull OpcUaClient client, final @NotNull DataType dataType, final boolean required, final @Nullable String name) {
+    public FieldInformation processExtensionObject(final @NotNull DataType dataType, final boolean required, final @Nullable String name) {
         try {
 
             final var dataTypeDefiniton = dataType.getDataTypeDefinition();
 
             if(dataTypeDefiniton instanceof final StructureDefinition structureDefiniton) {
-                final var properties = Arrays.stream(structureDefiniton.getFields()).map(field -> {
-                            final String localPart;
-                            try {
-                                localPart = client.getDataTypeTree().getDataType(field.getDataType()).getBrowseName().name();
-                            } catch (UaException e) {
-                                throw new RuntimeException(e);
+                if(structureDefiniton.getFields() != null) {
+                    final var properties = Arrays.stream(structureDefiniton.getFields()).map(field -> {
+                        final String localPart;
+                        final DataType extractedDataType;
+                        try {
+                            extractedDataType= client.getDataTypeTree().getDataType(field.getDataType());
+                            if(extractedDataType == null) {
+                                throw new RuntimeException("Unsupported type definition: " + dataTypeDefiniton);
                             }
-                            final var fieldName = field.getName();
-                            final var isRequired = !field.getIsOptional();
-                            final var namespaceUri = field.getDataType().expanded(client.getNamespaceTable()).getNamespaceUri();
-                            final boolean isStandard = namespaceUri.startsWith("http://opcfoundation.org/");
-                            final var opcUaType = isStandard ? OpcUaDataType.valueOf(localPart) : null;
+                            localPart = extractedDataType.getBrowseName().name();
+                        } catch (final UaException e) {
+                            throw new RuntimeException(e);
+                        }
+                        final var fieldName = field.getName();
+                        final var isRequired = !field.getIsOptional();
+                        final var namespaceUri = field.getDataType().expanded(client.getNamespaceTable()).getNamespaceUri();
+                        final boolean isStandard = namespaceUri != null && namespaceUri.startsWith("http://opcfoundation.org/");
+                        final var opcUaType = isStandard ? OpcUaDataType.valueOf(localPart) : null;
 
-                            if (isStandard) {
-                                return new FieldInformation(
-                                        fieldName,
-                                        namespaceUri,
-                                        opcUaType,
-                                        null,
-                                        false,
-                                        null,
-                                        isRequired,
-                                        List.of());
-                            } else {
-                                try {
-                                    return processExtensionObject(
-                                            client,
-                                            client.getDataTypeTree().getDataType(field.getDataType()),
-                                            isRequired,
-                                            fieldName);
+                        if (isStandard) {
+                            return new FieldInformation(
+                                    fieldName,
+                                    namespaceUri,
+                                    opcUaType,
+                                    null,
+                                    false,
+                                    null,
+                                    isRequired,
+                                    List.of());
+                        } else {
+                            return processExtensionObject(
+                                    extractedDataType,
+                                    isRequired,
+                                    fieldName);
+                        }
+                    }).toList();
 
-                                } catch (final UaException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-                }).toList();
+                    return new FieldInformation(
+                            name,
+                            client.getNamespaceTable().get(dataType.getBrowseName().getNamespaceIndex()),
+                            null,
+                            dataType,
+                            false,
+                            null,
+                            required,
+                            properties);
+                } else {
+                    return new FieldInformation(
+                            name,
+                            client.getNamespaceTable().get(dataType.getBrowseName().getNamespaceIndex()),
+                            null,
+                            dataType,
+                            false,
+                            null,
+                            required,
+                            List.of());
+                }
 
-                return new FieldInformation(
-                        name,
-                        client.getNamespaceTable().get(dataType.getBrowseName().getNamespaceIndex()),
-                        null,
-                        dataType,
-                        false,
-                        null,
-                        required,
-                        properties);
-            } else if (dataTypeDefiniton instanceof final EnumDefinition enumDefinition) {
+            } else if (dataTypeDefiniton instanceof EnumDefinition) {
                 throw new RuntimeException("Enums not implemented yet");
             } else {
-                throw new RuntimeException("Unsupported type definition: " + dataTypeDefiniton.getClass().getName());
+                throw new RuntimeException("Unsupported type definition: " + dataTypeDefiniton);
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -265,8 +270,6 @@ public class JsonSchemaGenerator {
         fieldInformation.nestedFields()
                 .forEach(fieldInfo -> {
                     if(fieldInfo.required()) {
-                        //TODO in the old version we added ALL fields to the list of required ones,
-                        // this is correct but may break compatibility
                         requiredAttributesArray.add(fieldInfo.name());
                     }
                     addNestedStructureInformation(propertiesNode, fieldInfo);

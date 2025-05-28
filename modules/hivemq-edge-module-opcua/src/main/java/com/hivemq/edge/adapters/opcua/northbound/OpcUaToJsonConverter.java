@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.opcua2mqtt;
+package com.hivemq.edge.adapters.opcua.northbound;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -21,8 +21,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import org.eclipse.milo.opcua.sdk.core.dtd.BsdStructWrapper;
-import org.eclipse.milo.opcua.sdk.core.dtd.generic.Struct;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
@@ -55,11 +53,11 @@ import java.util.Base64;
 import java.util.UUID;
 
 //see also https://reference.opcfoundation.org/Core/Part6/v105/docs/5.4
-public class OpcUaJsonPayloadConverter {
+public class OpcUaToJsonConverter {
 
-    private static final Logger log = LoggerFactory.getLogger(OpcUaJsonPayloadConverter.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaToJsonConverter.class);
 
-    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
+    private static final @NotNull Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
 
     public static @NotNull ByteBuffer convertPayload(
             final @NotNull EncodingContext serializationContext,
@@ -67,12 +65,16 @@ public class OpcUaJsonPayloadConverter {
         final var value = dataValue.getValue().getValue();
         final JsonObject jsonObject = new JsonObject();
 
+        if(value == null) {
+            return ByteBuffer.wrap(new byte[0]);
+        }
+
         if  (value instanceof DataValue) {
             addDataValueFields((DataValue) value, jsonObject);
         }
         final var converted = convertValue(value, serializationContext);
 
-        if (converted instanceof JsonObject jo) {
+        if (converted instanceof final JsonObject jo) {
             jsonObject.add("value", jo);
         } else {
             jsonObject.add("value", convertValue(value, serializationContext));
@@ -159,17 +161,13 @@ public class OpcUaJsonPayloadConverter {
                 return convertValue(((ExtensionObject) value).getBody(), serializationContext);
             }
         } else if (value instanceof final Variant variant) {
-            return convertValue(variant.getValue(), serializationContext);
+            if(variant.getValue() == null) {
+                return null;
+            } else {
+                return convertValue(variant.getValue(), serializationContext);
+            }
         } else if (value instanceof final DiagnosticInfo info) {
             return convertDiagnosticInfo(info);
-        } else if (value instanceof final BsdStructWrapper<?> wrapper) {
-            return convertValue(wrapper.object(), serializationContext);
-        } else if (value instanceof final Struct struct) {
-            final JsonObject structRoot = new JsonObject();
-            struct.getMembers()
-                    .values()
-                    .forEach(member -> structRoot.add(member.getName(), convertValue(member.getValue(), serializationContext)));
-            return structRoot;
         } else if (value instanceof final DynamicStructType struct) {
             final JsonObject structRoot = new JsonObject();
             struct.getMembers()
@@ -181,9 +179,7 @@ public class OpcUaJsonPayloadConverter {
             Arrays.asList(values).forEach(in -> ret.add(convertValue(in, serializationContext)));
             return ret;
         } else {
-            log.warn("No explicit converter for OPC UA type " +
-                    value.getClass().getSimpleName() +
-                    " falling back to best effort json");
+            log.warn("No explicit converter for OPC UA type {} falling back to best effort json", value.getClass().getSimpleName());
             return GSON.toJsonTree(value);
         }
     }
@@ -270,9 +266,9 @@ public class OpcUaJsonPayloadConverter {
             jsonObject.add("serverPicoSeconds", new JsonPrimitive(dataValue.getServerPicoseconds().intValue()));
         }
         if (dataValue.getSourcePicoseconds() != null) {
-            jsonObject.add("sourcePicoSeconds", new JsonPrimitive(dataValue.getServerPicoseconds().intValue()));
+            jsonObject.add("sourcePicoSeconds", new JsonPrimitive(dataValue.getSourcePicoseconds().intValue()));
         }
-        if (dataValue.getStatusCode() != null && dataValue.getStatusCode().getValue() > 0) {
+        if (dataValue.getStatusCode().getValue() > 0) {
             jsonObject.add("status", convertStatusCode(dataValue.getStatusCode()));
         }
     }

@@ -27,8 +27,6 @@ public enum SecPolicy {
     AES128_SHA256_RSAOAEP(5, SecurityPolicy.Aes128_Sha256_RsaOaep),
     AES256_SHA256_RSAPSS(6, SecurityPolicy.Aes256_Sha256_RsaPss);
 
-    public static final SecPolicy DEFAULT = NONE;
-
     //higher is better
     private final int priority;
     private final @NotNull SecurityPolicy securityPolicy;

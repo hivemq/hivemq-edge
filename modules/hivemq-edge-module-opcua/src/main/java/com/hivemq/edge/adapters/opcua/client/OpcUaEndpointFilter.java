@@ -37,8 +37,8 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
 
     public OpcUaEndpointFilter(
             final @NotNull String adapterId,
-            @NotNull String configPolicyUri,
-            @NotNull OpcUaSpecificAdapterConfig adapterConfig) {
+            final @NotNull String configPolicyUri,
+            final @NotNull OpcUaSpecificAdapterConfig adapterConfig) {
         this.adapterId = adapterId;
         this.configPolicyUri = configPolicyUri;
         this.adapterConfig = adapterConfig;
@@ -54,7 +54,7 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
             if (policyUri.equals(SecurityPolicy.None.getUri())) {
                 return true;
             }
-            if (isKeystoreAvailable()) {
+            if (isKeystoreConfigured()) {
                 //if security policy is not 'None', then skip the policy if no keystore is available
                 return true;
             }
@@ -64,18 +64,18 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
             return false;
         }).min((o1, o2) -> {
             final SecPolicy policy1 = SecPolicy.forUri(o1.getSecurityPolicyUri());
-            final SecPolicy policy2 = SecPolicy.forUri(o2.getSecurityPolicyUri());
             if (policy1 == null) {
                 return -1;
             }
+            final SecPolicy policy2 = (o2 != null && o2.getSecurityPolicyUri() != null) ? SecPolicy.forUri(o2.getSecurityPolicyUri()) : null ;
             if (policy2 == null) {
                 return 1;
             }
             return -1 * Integer.compare(policy1.getPriority(), policy2.getPriority());
-        }).map(endpointDescription -> endpointUpdater(endpointDescription));
+        }).map(this::endpointUpdater);
     }
 
-    private EndpointDescription endpointUpdater(EndpointDescription endpoint) {
+    private EndpointDescription endpointUpdater(final EndpointDescription endpoint) {
         if (adapterConfig.getOverrideUri()) {
             final EndpointDescription endpointDescription = EndpointUtil.updateUrl(endpoint,
                     EndpointUtil.getHost(adapterConfig.getUri()),
@@ -86,10 +86,8 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
         return endpoint;
     }
 
-    private boolean isKeystoreAvailable() {
-        return adapterConfig.getTls() != null &&
-                adapterConfig.getTls().isEnabled() &&
-                adapterConfig.getTls().getKeystore() != null &&
-                adapterConfig.getTls().getKeystore().getPath() != null;
+    private boolean isKeystoreConfigured() {
+        return adapterConfig.getTls().isEnabled() &&
+                adapterConfig.getTls().getKeystore() != null;
     }
 }

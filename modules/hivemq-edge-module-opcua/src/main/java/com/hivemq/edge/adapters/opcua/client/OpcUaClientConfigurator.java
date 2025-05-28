@@ -15,186 +15,63 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
-import com.hivemq.edge.adapters.opcua.config.Auth;
-import com.hivemq.edge.adapters.opcua.config.BasicAuth;
-import com.hivemq.edge.adapters.opcua.config.Keystore;
-import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.Tls;
-import com.hivemq.edge.adapters.opcua.config.Truststore;
-import com.hivemq.edge.adapters.opcua.config.X509Auth;
-import com.hivemq.edge.adapters.opcua.security.CertificateTrustListManager;
-import com.hivemq.edge.adapters.opcua.util.KeystoreUtil;
+import com.hivemq.edge.adapters.opcua.Constants;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClientConfigBuilder;
-import org.eclipse.milo.opcua.sdk.client.identity.CompositeProvider;
-import org.eclipse.milo.opcua.sdk.client.identity.IdentityProvider;
-import org.eclipse.milo.opcua.sdk.client.identity.UsernameProvider;
-import org.eclipse.milo.opcua.sdk.client.identity.X509IdentityProvider;
-import org.eclipse.milo.opcua.stack.core.security.DefaultClientCertificateValidator;
-import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateQuarantine;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
-import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.security.KeyPair;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import java.util.function.Consumer;
 
 public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilder> {
 
-    private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
+    private static final Logger log = LoggerFactory.getLogger(OpcUaClientConfigurator.class);
+
     private final @NotNull String adapterId;
+    private final @NotNull ParsedConfig parsedConfig;
 
     public OpcUaClientConfigurator(
-            final @NotNull OpcUaSpecificAdapterConfig adapterConfig, final @NotNull String adapterId) {
-        this.adapterConfig = adapterConfig;
+            final @NotNull String adapterId,
+            final @NotNull ParsedConfig parsedConfig) {
         this.adapterId = adapterId;
+        this.parsedConfig = parsedConfig;
     }
 
     @Override
     public void accept(final OpcUaClientConfigBuilder opcUaClientConfigBuilder) {
+        opcUaClientConfigBuilder.setApplicationName(LocalizedText.english(Constants.OPCUA_APPLICATION_NAME));
+        opcUaClientConfigBuilder.setApplicationUri(Constants.OPCUA_APPLICATION_URI);
+        opcUaClientConfigBuilder.setProductUri(Constants.OPCUA_PRODUCT_URI);
+        opcUaClientConfigBuilder.setSessionName(() -> Constants.OPCUA_SESSION_NAME_PREFIX + adapterId);
 
-        opcUaClientConfigBuilder.setApplicationName(LocalizedText.english("HiveMQ Edge"));
-        opcUaClientConfigBuilder.setApplicationUri("urn:hivemq:edge:client");
-        opcUaClientConfigBuilder.setProductUri("https://github.com/hivemq/hivemq-edge");
-        opcUaClientConfigBuilder.setSessionName(() -> "HiveMQ Edge " + adapterId);
-
-
-        final Tls tlsConfig = adapterConfig.getTls();
-        final boolean tlsEnabled = tlsConfig != null && tlsConfig.isEnabled();
-        final boolean keystoreAvailable = checkKeystoreAvailable(tlsConfig, tlsEnabled);
-        final KeystoreUtil.KeyPairWithChain keyPairWithChain =
-                configureTls(opcUaClientConfigBuilder, tlsConfig, tlsEnabled, keystoreAvailable);
-
-        if (checkAuthEnabled()) {
-            configureIdentityProvider(opcUaClientConfigBuilder, tlsEnabled, keyPairWithChain);
-        }
-
-        if (keyPairWithChain != null) {
-            opcUaClientConfigBuilder.setKeyPair(new KeyPair(keyPairWithChain.getPublicKey().getPublicKey(),
-                    keyPairWithChain.getPrivateKey()));
-        }
-    }
-
-
-    private @Nullable KeystoreUtil.KeyPairWithChain configureTls(
-            final @NotNull OpcUaClientConfigBuilder opcUaClientConfigBuilder,
-            final @NotNull Tls tlsConfig,
-            final boolean tlsEnabled,
-            final boolean keystoreAvailable) {
-        KeystoreUtil.KeyPairWithChain keyPairWithChain = null;
-        if (tlsEnabled) {
-
+        log.info("TLS is enabled: {}", parsedConfig.tlsEnabled());
+        if(parsedConfig.tlsEnabled()) {
+            log.debug("Configuring TLS");
             //trusted certs, either from configured truststore or system default
-            final DefaultClientCertificateValidator certificateValidator = createServerCertificateValidator(tlsConfig);
-            opcUaClientConfigBuilder.setCertificateValidator(certificateValidator);
+            opcUaClientConfigBuilder.setCertificateValidator(parsedConfig.clientCertificateValidator());
 
-            if (keystoreAvailable) {
-                final Keystore keystoreConfig = adapterConfig.getTls().getKeystore();
-                //noinspection DataFlowIssue : alreay checked in checkKeystoreAvailable
-                keyPairWithChain = KeystoreUtil.getKeysFromKeystore("JKS",
-                        keystoreConfig.getPath(),
-                        Objects.requireNonNullElse(keystoreConfig.getPassword(), ""),
-                        Objects.requireNonNullElse(keystoreConfig.getPrivateKeyPassword(), ""));
-
-                opcUaClientConfigBuilder.setCertificate(keyPairWithChain.getPublicKey());
-                opcUaClientConfigBuilder.setCertificateChain(keyPairWithChain.getCertificateChain());
-            }
-        }
-        return keyPairWithChain;
-    }
-
-    private boolean checkAuthEnabled() {
-        //check that at least one auth method (Basic or X509) is enabled
-        final Auth auth = adapterConfig.getAuth();
-        return auth != null &&
-                (auth.getBasicAuth() != null || (auth.getX509Auth() != null && auth.getX509Auth().isEnabled()));
-    }
-
-    private void configureIdentityProvider(
-            final @NotNull OpcUaClientConfigBuilder opcUaClientConfigBuilder,
-            final boolean tlsEnabled,
-            final @Nullable KeystoreUtil.KeyPairWithChain keyPairWithChain) {
-
-        final List<IdentityProvider> identityProviderBuilder = new ArrayList<>();
-        final Auth auth = adapterConfig.getAuth();
-
-        if (auth != null) {
-            final X509Auth x509Auth = auth.getX509Auth();
-            final boolean x509AuthEnabled = x509Auth != null && x509Auth.isEnabled();
-            if (x509AuthEnabled && tlsEnabled && keyPairWithChain != null) {
-                identityProviderBuilder.add(new X509IdentityProvider(Arrays.asList(keyPairWithChain.getCertificateChain()),
-                        keyPairWithChain.getPrivateKey()));
-            }
-
-            if (auth.getBasicAuth() != null) {
-                final BasicAuth basicAuth = auth.getBasicAuth();
-                identityProviderBuilder.add(new UsernameProvider(basicAuth.getUsername(), basicAuth.getPassword()));
+            if (parsedConfig.keyPairWithChain() != null) {
+                log.debug("Keystore for TLS is available");
+                opcUaClientConfigBuilder.setCertificate(parsedConfig.keyPairWithChain().publicKey());
+                opcUaClientConfigBuilder.setCertificateChain(parsedConfig.keyPairWithChain().certificateChain());
+            } else {
+                log.debug("Keystore for TLS is not available");
             }
         }
 
-        final List<IdentityProvider> identityProviders = List.copyOf(identityProviderBuilder);
-        if (identityProviders.size() == 1) {
-            opcUaClientConfigBuilder.setIdentityProvider(identityProviders.get(0));
-        } else if (identityProviders.size() > 1) {
-            opcUaClientConfigBuilder.setIdentityProvider(new CompositeProvider(identityProviders));
+        log.debug("Configuring Authentication");
+        opcUaClientConfigBuilder.setIdentityProvider(parsedConfig.identityProvider());
+
+        if (parsedConfig.keyPairWithChain() != null) {
+            log.info("Setting up keypair with chain");
+            opcUaClientConfigBuilder.setKeyPair(
+                    new KeyPair(
+                            parsedConfig.keyPairWithChain().publicKey().getPublicKey(),
+                            parsedConfig.keyPairWithChain().privateKey()));
         }
     }
 
-    @NotNull
-    private DefaultClientCertificateValidator createServerCertificateValidator(@NotNull final Tls tlsConfig) {
-        final List<X509Certificate> trustedCerts;
-        final boolean truststoreAvailable = checkTruststoreAvailable(tlsConfig);
-        if (truststoreAvailable) {
-            //if custom truststore is set
-            //noinspection DataFlowIssue nullability is checked in checkTruststoreAvailable()
-            final String trustStorePath = tlsConfig.getTruststore().getPath();
-            final String trustStorePassword = tlsConfig.getTruststore().getPassword();
-            trustedCerts = KeystoreUtil.getCertificatesFromTruststore("JKS", trustStorePath, trustStorePassword);
-        } else {
-            trustedCerts = KeystoreUtil.getCertificatesFromDefaultTruststore();
-        }
-        final CertificateTrustListManager trustListManager = new CertificateTrustListManager(trustedCerts);
 
-        return new DefaultClientCertificateValidator(
-                trustListManager,
-                Set.of(ValidationCheck.VALIDITY, ValidationCheck.REVOCATION, ValidationCheck.REVOCATION_LISTS),
-                new MemoryCertificateQuarantine());
-    }
-
-    private boolean checkTruststoreAvailable(final @Nullable Tls tlsConfig) {
-        final boolean tlsEnabled = tlsConfig != null && tlsConfig.isEnabled();
-        if (!tlsEnabled) {
-            return false;
-        }
-
-        final Truststore truststore = tlsConfig.getTruststore();
-        if (truststore == null || truststore.getPath() == null || truststore.getPath().isBlank()) {
-            return false;
-        }
-
-        final File truststoreFile = new File(truststore.getPath());
-        return truststoreFile.exists() && truststoreFile.canRead();
-    }
-
-    private static boolean checkKeystoreAvailable(
-            final @Nullable Tls tlsConfig, final boolean tlsEnabled) {
-        if (!tlsEnabled) {
-            return false;
-        }
-
-        final Keystore keystore = tlsConfig.getKeystore();
-        if (keystore == null || keystore.getPath() == null || keystore.getPath().isBlank()) {
-            return false;
-        }
-
-        final File keystoreFile = new File(keystore.getPath());
-        return keystoreFile.exists() && keystoreFile.canRead();
-    }
 }
