@@ -6,4 +6,10 @@ allOf:
     properties:
       parameter:
         type: string
-        description: The the missing request body parameter.
+        description: The query parameter.
+      reason:
+        type: string
+        description: The reason.
+    required:
+      - parameter
+      - reason
