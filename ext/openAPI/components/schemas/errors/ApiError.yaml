@@ -1,4 +1,6 @@
 type: object
+x-implements:
+  - com.hivemq.api.errors.OpenApiError
 properties:
   code:
     type: string

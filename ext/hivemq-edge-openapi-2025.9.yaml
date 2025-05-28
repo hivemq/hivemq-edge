@@ -1050,25 +1050,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                anyOf:
+                  - $ref: '#/components/schemas/InvalidQueryParameterError'
           description: URL parameter missing
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: DataPolicy not found
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Internal server error
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
       summary: Get all data policies
       tags:
@@ -1155,7 +1144,6 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/InternalServerError'
                   - $ref: '#/components/schemas/RequestBodyMissingError'
                   - $ref: '#/components/schemas/DataPolicyCreationFailureError'
                   - $ref: '#/components/schemas/DataPolicyRejectedError'
@@ -1217,25 +1205,27 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                anyOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                  - $ref: '#/components/schemas/PolicyNotFoundError'
           description: URL parameter missing
-        '404':
+        '412':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: DataPolicy not found
+                $ref: '#/components/schemas/PreconditionFailedError'
+          description: Internal server error
         '500':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
       summary: Delete a data policy
       tags:
@@ -1313,7 +1303,9 @@ paths:
                       - title: Required parameter missing
                         detail: Required URL parameter 'parameterName' is missing
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                anyOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                  - $ref: '#/components/schemas/PolicyNotFoundError'
           description: Bad request
         '404':
           content:
@@ -1329,6 +1321,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Resource not found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Get a data policy
       tags:
         - Data Hub - Data Policies
@@ -4660,6 +4664,8 @@ components:
             $ref: '#/components/schemas/BehaviorPolicy'
     ApiError:
       type: object
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
       properties:
         code:
           type: string
@@ -4683,13 +4689,15 @@ components:
         - status
         - type
     RequestBodyMissingError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ApiError'
         - type: object
           properties:
-            parameterName:
+            parameter:
               type: string
-              description: The name of the missing request body parameter.
+              description: The the missing request body parameter.
     ValidationError:
       type: object
       properties:
@@ -4719,12 +4727,15 @@ components:
           properties:
             actualLength:
               type: integer
+              format: int32
               description: The actual length of the field value.
             expectedMinimumLength:
               type: integer
+              format: int32
               description: The minimum length expected for the field value.
             expectedMaximumLength:
               type: integer
+              format: int32
               description: The maximum length expected for the field value.
             field:
               type: string
@@ -4803,7 +4814,8 @@ components:
               type: string
               description: The function.
             occurrences:
-              type: int
+              type: integer
+              format: int32
               description: The occurrences of the function.
             paths:
               type: array
@@ -4873,6 +4885,8 @@ components:
             - field
             - variables
     ValidationErrors:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ApiError'
         - type: object
@@ -4896,9 +4910,13 @@ components:
           required:
             - errors
     BehaviorPolicyValidationErrors:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ValidationErrors'
     TemporaryNotAvailableError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ApiError'
     JsonNode:
@@ -5022,15 +5040,25 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/DataPolicy'
-    InternalServerError:
+    InvalidQueryParameterError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ApiError'
         - type: object
           properties:
+            parameter:
+              type: string
+              description: The query parameter.
             reason:
               type: string
-              description: The actual reason.
+              description: The reason.
+          required:
+            - parameter
+            - reason
     DataPolicyCreationFailureError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ApiError'
         - type: object
@@ -5041,12 +5069,18 @@ components:
           required:
             - reason
     DataPolicyRejectedError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ApiError'
     DataPolicyValidationErrors:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ValidationErrors'
     DataPolicyAlreadyPresentError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ApiError'
         - type: object
@@ -5056,7 +5090,19 @@ components:
               description: The policy id.
           required:
             - id
+    InternalServerError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
     InsufficientStorageError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ApiError'
         - type: object
@@ -5065,6 +5111,8 @@ components:
               type: string
               description: The actual reason.
     UrlParameterMissingError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ApiError'
         - type: object
@@ -5074,7 +5122,21 @@ components:
               description: The name of the missing parameter.
           required:
             - parameter
+    PolicyNotFoundError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The policy id.
+          required:
+            - id
     PolicyIdMismatchError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ApiError'
         - type: object
@@ -5088,6 +5150,18 @@ components:
           required:
             - actualId
             - expectedId
+    PreconditionFailedError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - reason
     Errors:
       type: object
     BehaviorPolicyTransitionEvent:

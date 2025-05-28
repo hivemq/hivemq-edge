@@ -25,25 +25,27 @@ delete:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            anyOf:
+              - $ref: "../components/schemas/errors/common/UrlParameterMissingError.yaml"
+              - $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
       description: URL parameter missing
-    '404':
+    '412':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: DataPolicy not found
+            $ref: "../components/schemas/errors/common/PreconditionFailedError.yaml"
+      description: Internal server error
     '500':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/common/InternalServerError.yaml"
       description: Internal server error
     '503':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/common/TemporaryNotAvailableError.yaml"
       description: Request resource temporary unavailable
   summary: Delete a data policy
   tags:
@@ -128,7 +130,9 @@ get:
                   - title: Required parameter missing
                     detail: Required URL parameter 'parameterName' is missing
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            anyOf:
+              - $ref: "../components/schemas/errors/common/UrlParameterMissingError.yaml"
+              - $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
       description: Bad request
     '404':
       content:
@@ -144,6 +148,18 @@ get:
           schema:
             $ref: ../components/schemas/ProblemDetails.yaml
       description: Resource not found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/errors/common/InternalServerError.yaml"
+      description: Internal server error
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/errors/common/TemporaryNotAvailableError.yaml"
+      description: Request resource temporary unavailable
   summary: Get a data policy
   tags:
     - Data Hub - Data Policies
