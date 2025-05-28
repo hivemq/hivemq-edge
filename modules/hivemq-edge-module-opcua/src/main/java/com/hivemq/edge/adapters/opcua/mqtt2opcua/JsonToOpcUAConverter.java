@@ -30,6 +30,7 @@ import org.eclipse.milo.opcua.stack.core.UaRuntimeException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
@@ -142,7 +143,8 @@ public class JsonToOpcUAConverter {
                         dataTypeMap.put(nestedField.name(), parseToOpcUACompatibleObject(jsonNode, nestedField));
                     });
 
-            return new DynamicStructType(dataType, dataTypeMap);
+            return ExtensionObject.encode(client.getDynamicEncodingContext(), new DynamicStructType(dataType, dataTypeMap));
+
         } catch (final UaException e) {
             throw new RuntimeException(e);
         }
