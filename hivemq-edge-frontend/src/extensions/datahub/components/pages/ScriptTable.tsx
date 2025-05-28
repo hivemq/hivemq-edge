@@ -1,32 +1,33 @@
-import type { FC } from 'react'
-import { useMemo } from 'react'
+import { type FC, useMemo } from 'react'
 import type { CellContext, ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { Skeleton, Text } from '@chakra-ui/react'
+import { HStack, Skeleton, Text } from '@chakra-ui/react'
 
-import type { Script } from '@/api/__generated__'
-
+import type { Script, ScriptList } from '@/api/__generated__'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
+import { downloadJSON } from '@/utils/download.utils.ts'
+
 import { useGetAllScripts } from '@datahub/api/hooks/DataHubScriptsService/useGetAllScripts.ts'
 import { useDeleteScript } from '@datahub/api/hooks/DataHubScriptsService/useDeleteScript.ts'
 import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers__'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
+import { ExpandVersionButton } from '@datahub/components/helpers/ExpandVersionButton.tsx'
 import type { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
+import { groupResourceItems, type ExpandableGroupedResource } from '@datahub/utils/policy.utils.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
-import { downloadJSON } from '@/utils/download.utils.ts'
 
 const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
   const { isLoading, data, isError } = useGetAllScripts({})
   const deleteScript = useDeleteScript()
 
-  const safeData = useMemo<Script[]>(() => {
+  const expandedData = useMemo(() => {
     if (isLoading) return [mockScript]
 
-    return [...(data?.items || [])]
-  }, [isLoading, data?.items])
+    return groupResourceItems<ScriptList, Script>(data)
+  }, [data, isLoading])
 
   const columns = useMemo<ColumnDef<Script>[]>(() => {
     const onHandleDownload = (info: CellContext<Script, unknown>) => () => {
@@ -37,8 +38,16 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
       {
         accessorKey: 'id',
         cell: (info) => (
-          <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">
-            <Text>{info.getValue<string>()}</Text>
+          <Skeleton isLoaded={!isLoading} whiteSpace="nowrap" as={HStack} justifyContent="space-between">
+            <Text as="span" ml={info.row.getParentRow() ? 4 : 0}>
+              {info.getValue<string>()}
+            </Text>
+            {info.row.getCanExpand() && (
+              <ExpandVersionButton
+                onClick={info.row.getToggleExpandedHandler()}
+                isExpanded={info.row.getIsExpanded()}
+              />
+            )}
           </Skeleton>
         ),
         header: t('Listings.script.header.id'),
@@ -57,9 +66,13 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
       {
         accessorKey: 'version',
         cell: (info) => {
+          const value = info.getValue<number>()
+          const formattedValue = info.row.getCanExpand()
+            ? t('Listings.resources.versions', { context: 'COUNT', count: value })
+            : value
           return (
             <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">
-              <Text>{info.getValue<string>()}</Text>
+              <Text>{formattedValue}</Text>
             </Skeleton>
           )
         },
@@ -99,6 +112,8 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
                   onDeleteItem?.(deleteScript.mutateAsync, DataHubNodeType.FUNCTION, info.row.original.id)
                 }
                 onDownload={onHandleDownload(info)}
+                canDownload={!info.row.getCanExpand()}
+                canDelete={!info.row.getParentRow()}
               />
             </Skeleton>
           )
@@ -108,11 +123,12 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   }, [deleteScript.mutateAsync, isLoading, onDeleteItem, t])
 
   return (
-    <PaginatedTable<Script>
+    <PaginatedTable<ExpandableGroupedResource<Script>>
       aria-label={t('Listings.script.label')}
-      data={safeData}
+      data={expandedData}
       columns={columns}
       isError={isError}
+      getSubRows={(data) => data.children}
     />
   )
 }
