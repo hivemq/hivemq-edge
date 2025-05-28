@@ -13,30 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.mqtt2opcua;
+package com.hivemq.edge.adapters.opcua.southbound;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import org.jetbrains.annotations.NotNull;
 
-public class OpcUaPayload implements WritingPayload {
-
-    @JsonProperty("value")
-    private final @NotNull JsonNode value;
-
-    public OpcUaPayload(
-            final @NotNull @JsonProperty("value") JsonNode value) {
-        this.value = value;
-    }
-
-    public @NotNull JsonNode getValue() {
-        return value;
-    }
-
-
-    @Override
-    public @NotNull String toString() {
-        return "OpcUaPayload{" + "value=" + value + '}';
-    }
+public record OpcUaPayload(@JsonProperty("value") @NotNull JsonNode value) implements WritingPayload {
 }

@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
@@ -33,13 +34,14 @@ import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
-import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
+import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -49,7 +51,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
-    private final @Nullable OpcUaConnection opcUaConnection;
+    private final @NotNull OpcUaClientConnection opcUaClientConnection;
     private final @NotNull Map<String, OpcuaTag> tagNameToTag;
 
     public OpcUaProtocolAdapter(
@@ -58,16 +60,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.protocolAdapterState = input.getProtocolAdapterState();
-        final var tagList = input.getTags().stream().map(tag -> (OpcuaTag)tag).toList();
-        tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::getName, tag -> tag));
-
-        this.opcUaConnection = new OpcUaConnection(
-                input.getConfig().getUri(),
+        final List<OpcuaTag> tagList = input.getTags().stream().map(tag -> (OpcuaTag) tag).toList();
+        this.tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::getName, tag -> tag));
+        this.opcUaClientConnection = new OpcUaClientConnection(input.getConfig().getUri(),
                 tagList,
                 input.getConfig(),
                 input.moduleServices().protocolAdapterTagStreamingService(),
                 input.adapterFactories().dataPointFactory(),
                 input.moduleServices().eventService(),
+                input.getProtocolAdapterMetricsHelper(),
                 adapterId,
                 protocolAdapterState);
     }
@@ -79,59 +80,60 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
     @Override
     public void start(
-            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input,
+            final @NotNull ProtocolAdapterStartOutput output) {
         log.info("Starting OpcUa protocol adapter {}", adapterId);
-        opcUaConnection
-            .start()
-            .whenComplete((ignored, throwable) ->{
-                if(throwable != null) {
-                    log.error("Unable to connect and subscribe to the OPC UA server", throwable);
-                    output.failStart(throwable, "Unable to connect and subscribe to the OPC UA server");
-                } else {
-                    log.info("Successfully started OpcUa protocol adapter {}", adapterId);
-                    output.startedSuccessfully();
-                }
-            });
+        opcUaClientConnection.start().whenComplete((ignored, throwable) -> {
+            if (throwable != null) {
+                log.error("Unable to connect and subscribe to the OPC UA server", throwable);
+                output.failStart(throwable, "Unable to connect and subscribe to the OPC UA server");
+            } else {
+                log.info("Successfully started OpcUa protocol adapter {}", adapterId);
+                output.startedSuccessfully();
+            }
+        });
     }
 
     @Override
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         log.info("Stopping OpcUa protocol adapter {}", adapterId);
-        opcUaConnection
-            .stop()
-            .whenComplete((ignored, throwable) ->{
-                if(throwable != null) {
-                    log.error("Unable to stop the connection to the OPC UA server", throwable);
-                    output.failStop(throwable, "Unable to stop the connection to the OPC UA server");
-                } else {
-                    log.info("Successfully stopped OpcUa protocol adapter {}", adapterId);
-                    output.stoppedSuccessfully();
-                }
-            });
+        opcUaClientConnection.stop().whenComplete((ignored, throwable) -> {
+            if (throwable != null) {
+                log.error("Unable to stop the connection to the OPC UA server", throwable);
+                output.failStop(throwable, "Unable to stop the connection to the OPC UA server");
+            } else {
+                log.info("Successfully stopped OpcUa protocol adapter {}", adapterId);
+                output.stoppedSuccessfully();
+            }
+        });
     }
 
     @Override
     public void discoverValues(
-            final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
-        opcUaConnection
-                .discoverValues(input.getRootNode(), input.getDepth())
-                .whenComplete((collectedNodes, throwable) -> {
-                    if (throwable != null) {
-                        throwable.printStackTrace();
-                        output.fail(throwable, "Unable to discover values");
-                    } else {
-                        final var nodeTree = output.getNodeTree();
-                        collectedNodes.forEach(node -> nodeTree.addNode(
-                                node.id(),
-                                node.name(),
-                                node.value(),
-                                node.description(),
-                                node.parentId(),
-                                node.nodeType(),
-                                node.selectable()));
-                        output.finish();
-                    }
-                });
+            final @NotNull ProtocolAdapterDiscoveryInput input,
+            final @NotNull ProtocolAdapterDiscoveryOutput output) {
+        if (input.getRootNode() != null) {
+            opcUaClientConnection.discoverValues(input.getRootNode(), input.getDepth())
+                    .whenComplete((collectedNodes, throwable) -> {
+                        if (throwable != null) {
+                            log.error("Unable to discover the OPC UA server", throwable);
+                            output.fail(throwable, "Unable to discover values");
+                        } else {
+                            final NodeTree nodeTree = output.getNodeTree();
+                            collectedNodes.forEach(node -> nodeTree.addNode(node.id(),
+                                    node.name(),
+                                    node.value(),
+                                    node.description(),
+                                    node.parentId(),
+                                    node.nodeType(),
+                                    node.selectable()));
+                            output.finish();
+                        }
+                    });
+        } else {
+            log.error("Discovery failed: Root node is null");
+            output.fail("Root node is null");
+        }
     }
 
     @Override
@@ -143,18 +145,23 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void write(final @NotNull WritingInput input, final @NotNull WritingOutput output) {
         final WritingContext writeContext = input.getWritingContext();
         final var opcuaTag = tagNameToTag.get(writeContext.getTagName());
-        if(opcUaConnection.isStarted()) {
-            if(opcuaTag != null) {
-                opcUaConnection
-                        .write(opcuaTag, (OpcUaPayload)input.getWritingPayload())
+        if (opcUaClientConnection.isStarted()) {
+            if (opcuaTag != null) {
+                opcUaClientConnection.write(opcuaTag, (OpcUaPayload) input.getWritingPayload())
                         .whenComplete((statusCode, throwable) -> {
-                            if (throwable != null) {
-                                log.error("Exception while writing tag '{}'", writeContext.getTagName(), throwable);
-                                output.fail(throwable, null);
-                            } else {
-                                log.debug("Wrote tag='{}'", opcuaTag.getName());
-                                output.finish();
-                            }
+                            final var badStatus = statusCode.stream().filter(StatusCode::isBad).findFirst();
+                            badStatus.ifPresentOrElse(bad -> {
+                                log.error("Failed to write tag '{}': {}", writeContext.getTagName(), bad);
+                                output.fail("Failed to write tag '" + writeContext.getTagName() + "': " + bad);
+                            }, () -> {
+                                if (throwable != null) {
+                                    log.error("Exception while writing tag '{}'", writeContext.getTagName(), throwable);
+                                    output.fail(throwable, null);
+                                } else {
+                                    log.debug("Wrote tag='{}'", opcuaTag.getName());
+                                    output.finish();
+                                }
+                            });
                         });
             } else {
                 log.error("Tried executing write with a non existent tag '{}'", writeContext.getTagName());
@@ -166,30 +173,25 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
     @Override
     public void createTagSchema(
-            final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
+            final @NotNull TagSchemaCreationInput input,
+            final @NotNull TagSchemaCreationOutput output) {
         final var tag = tagNameToTag.get(input.getTagName());
-        opcUaConnection
-                .createTagScheam(tag)
-                .whenComplete((result, throwable) -> {
-                    if (throwable != null) {
-                        log.error("Exception while creating tag schema '{}'", input.getTagName(), throwable);
-                        output.fail(throwable, null);
-                    } else {
-                        log.debug("Created tag schema='{}'", input.getTagName());
-                        result
-                            .ifPresentOrElse(
-                                schema -> {
-                                    log.debug("Schema inferred for tag='{}'", input.getTagName());
-                                    output.finish(schema);
-                                },
-                                () -> {
-                                    log.error("No schema inferred for tag='{}'", input.getTagName());
-                                    output.fail("No schema inferred for tag='{}'");
-                                }
-                            );
-
-                    }
+        opcUaClientConnection.createTagSchema(tag).whenComplete((result, throwable) -> {
+            if (throwable != null) {
+                log.error("Exception while creating tag schema '{}'", input.getTagName(), throwable);
+                output.fail(throwable, null);
+            } else {
+                log.debug("Created tag schema='{}'", input.getTagName());
+                result.ifPresentOrElse(schema -> {
+                    log.debug("Schema inferred for tag='{}'", input.getTagName());
+                    output.finish(schema);
+                }, () -> {
+                    log.error("No schema inferred for tag='{}'", input.getTagName());
+                    output.fail("No schema inferred for tag='{}'");
                 });
+
+            }
+        });
     }
 
     @Override
@@ -201,6 +203,4 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public @NotNull ProtocolAdapterState getProtocolAdapterState() {
         return protocolAdapterState;
     }
-
-
 }

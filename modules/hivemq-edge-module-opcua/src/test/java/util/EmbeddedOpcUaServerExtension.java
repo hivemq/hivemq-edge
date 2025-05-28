@@ -25,25 +25,14 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.eclipse.milo.opcua.sdk.core.AccessLevel;
-import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.server.EndpointConfig;
-import org.eclipse.milo.opcua.sdk.server.ManagedNamespaceWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig;
 import org.eclipse.milo.opcua.sdk.server.identity.AnonymousIdentityValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.CompositeValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.X509IdentityValidator;
-import org.eclipse.milo.opcua.sdk.server.items.DataItem;
-import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
-import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
-import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
-import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters;
-import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
-import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.security.DefaultApplicationGroup;
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager;
 import org.eclipse.milo.opcua.stack.core.security.DefaultServerCertificateValidator;
@@ -53,13 +42,6 @@ import org.eclipse.milo.opcua.stack.core.security.MemoryTrustListManager;
 import org.eclipse.milo.opcua.stack.core.security.RsaSha256CertificateFactory;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
-import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
-import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
-import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
-import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
-import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransport;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransportConfig;
@@ -73,11 +55,8 @@ import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateCrtKeySpec;
@@ -85,19 +64,55 @@ import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-import java.util.function.Supplier;
 
 public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEachCallback {
-
-    private int bindPort;
-    private @Nullable OpcUaServer opcUaServer;
-    private TestNamespace testNamespace;
 
     static {
         // Required for SecurityPolicy.Aes256_Sha256_RsaPss
         Security.addProvider(new BouncyCastleProvider());
+    }
+
+    private int bindPort;
+    private @Nullable OpcUaServer opcUaServer;
+    private @Nullable TestNamespace testNamespace;
+
+    private static @NotNull X509Certificate generateCert(final KeyPair keyPair) throws Exception {
+        final JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(new X500Name(
+                "CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
+                BigInteger.valueOf(123456789),
+                new Date(System.currentTimeMillis() - 10000),
+                new Date(System.currentTimeMillis() + 10000),
+                new X500Name(
+                        "CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
+                keyPair.getPublic());
+
+        final ContentSigner contentSigner =
+                new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                        .build(keyPair.getPrivate());
+
+        return new JcaX509CertificateConverter().setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .getCertificate(certificateBuilder.build(contentSigner));
+    }
+
+    private static @NotNull KeyPair createKeyPair() throws InvalidKeySpecException, NoSuchAlgorithmException {
+        final RSAKeyPairGenerator gen = new RSAKeyPairGenerator();
+        gen.init(new RSAKeyGenerationParameters(BigInteger.valueOf(3), new SecureRandom(), 1024, 80));
+
+        final AsymmetricCipherKeyPair keypair = gen.generateKeyPair();
+        final RSAKeyParameters publicKey = (RSAKeyParameters) keypair.getPublic();
+        final RSAPrivateCrtKeyParameters privateKey = (RSAPrivateCrtKeyParameters) keypair.getPrivate();
+        final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+
+        return new KeyPair(keyFactory.generatePublic(new RSAPublicKeySpec(publicKey.getModulus(),
+                publicKey.getExponent())),
+                keyFactory.generatePrivate(new RSAPrivateCrtKeySpec(publicKey.getModulus(),
+                        publicKey.getExponent(),
+                        privateKey.getExponent(),
+                        privateKey.getP(),
+                        privateKey.getQ(),
+                        privateKey.getDP(),
+                        privateKey.getDQ(),
+                        privateKey.getQInv())));
     }
 
     @Override
@@ -105,6 +120,7 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
         bindPort = RandomPortGenerator.get();
         final KeyPair keyPair = createKeyPair();
         final X509Certificate certificate = generateCert(keyPair);
+
         final EndpointConfig.Builder epBuilder = EndpointConfig.newBuilder()
                 .setTransportProfile(TransportProfile.TCP_UASC_UABINARY)
                 .setBindAddress("127.0.0.1")
@@ -121,7 +137,7 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
                 List.of(SecurityPolicy.None, SecurityPolicy.Basic256Sha256, SecurityPolicy.Aes256_Sha256_RsaPss);
 
         final LinkedHashSet<EndpointConfig> endpointConfigurations = new LinkedHashSet<>();
-        for (SecurityPolicy securityPolicy : securityPolicies) {
+        for (final SecurityPolicy securityPolicy : securityPolicies) {
             if (securityPolicy == SecurityPolicy.None) {
                 endpointConfigurations.add(epBuilder.copy()
                         .setSecurityPolicy(SecurityPolicy.None)
@@ -139,300 +155,55 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
             }
         }
 
-
-        var trustListManager = new MemoryTrustListManager();
-        var certificateStore = new MemoryCertificateStore();
-        var certificateQuarantine = new MemoryCertificateQuarantine();
-
-        var certificateFactory =
+        final var trustListManager = new MemoryTrustListManager();
+        trustListManager.addTrustedCertificate(certificate);
+        final var certificateQuarantine = new MemoryCertificateQuarantine();
+        final var defaultGroup = DefaultApplicationGroup.createAndInitialize(trustListManager,
+                new MemoryCertificateStore(),
                 new RsaSha256CertificateFactory() {
                     @Override
-                    protected KeyPair createRsaSha256KeyPair() {
+                    protected @NotNull KeyPair createRsaSha256KeyPair() {
                         return keyPair;
                     }
 
                     @Override
-                    protected X509Certificate[] createRsaSha256CertificateChain(KeyPair keyPair) {
+                    protected @NotNull X509Certificate @NotNull [] createRsaSha256CertificateChain(final @NotNull KeyPair keyPair) {
                         // For a self-signed certificate, the chain consists of just the certificate itself
                         return new X509Certificate[]{certificate};
                     }
-                };
-
-        var certificateValidator =
-                new DefaultServerCertificateValidator(trustListManager, certificateQuarantine);
-
-        var defaultGroup =
-                DefaultApplicationGroup.createAndInitialize(
-                        trustListManager, certificateStore, certificateFactory, certificateValidator);
+                },
+                new DefaultServerCertificateValidator(trustListManager, certificateQuarantine));
 
         final OpcUaServerConfig serverConfig = OpcUaServerConfig.builder()
-                .setIdentityValidator(new CompositeValidator(
-                        new AnonymousIdentityValidator(),
-                        new UsernameIdentityValidator(auth -> "testuser".equals(auth.getUsername()) && "testpass".equals(auth.getPassword())),
+                .setIdentityValidator(new CompositeValidator(new AnonymousIdentityValidator(),
+                        new UsernameIdentityValidator(auth -> "testuser".equals(auth.getUsername()) &&
+                                "testpass".equals(auth.getPassword())),
                         new X509IdentityValidator(cert -> true)))
                 .setEndpoints(endpointConfigurations)
                 .setCertificateManager(new DefaultCertificateManager(certificateQuarantine, defaultGroup))
                 .build();
 
-        //TODO check whether the transportProfile thingy is correct
         opcUaServer = new OpcUaServer(serverConfig, transportProfile -> {
             assert transportProfile == TransportProfile.TCP_UASC_UABINARY;
-
-            OpcTcpServerTransportConfig transportConfig =
-                    OpcTcpServerTransportConfig.newBuilder().build();
-
-            return new OpcTcpServerTransport(transportConfig);
+            return new OpcTcpServerTransport(OpcTcpServerTransportConfig.newBuilder().build());
         });
-
         testNamespace = new TestNamespace(opcUaServer);
         testNamespace.startup();
-
         opcUaServer.startup().get();
     }
 
-
     @Override
-    public void afterEach(final ExtensionContext context) throws Exception {
+    public void afterEach(final @NotNull ExtensionContext context) throws Exception {
         if (opcUaServer != null) {
             opcUaServer.shutdown().get();
         }
-    }
-
-
-    public int getBindPort() {
-        return bindPort;
-    }
-
-    public @NotNull OpcUaServer getOpcUaServer() {
-        return opcUaServer;
     }
 
     public @NotNull String getServerUri() {
         return "opc.tcp://127.0.0.1:" + bindPort + "/opcuatest";
     }
 
-    private @NotNull X509Certificate generateCert(final KeyPair keyPair) throws Exception {
-
-        final JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(new X500Name(
-                "CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
-                BigInteger.valueOf(123456789),
-                new Date(System.currentTimeMillis() - 10000),
-                new Date(System.currentTimeMillis() + 10000),
-                new X500Name(
-                        "CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
-                keyPair.getPublic());
-
-        return getCertificate(keyPair, certificateBuilder);
-    }
-
-    private @NotNull X509Certificate getCertificate(
-            final KeyPair keyPair, final JcaX509v3CertificateBuilder certificateBuilder)
-            throws OperatorCreationException, CertificateException {
-
-        Security.addProvider(new BouncyCastleProvider());
-
-        JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256WithRSAEncryption");
-        signerBuilder = signerBuilder.setProvider(BouncyCastleProvider.PROVIDER_NAME);
-
-        final ContentSigner contentSigner = signerBuilder.build(keyPair.getPrivate());
-
-        JcaX509CertificateConverter converter = new JcaX509CertificateConverter();
-        converter = converter.setProvider(BouncyCastleProvider.PROVIDER_NAME);
-        return converter.getCertificate(certificateBuilder.build(contentSigner));
-    }
-
-    private @NotNull KeyPair createKeyPair() throws InvalidKeySpecException, NoSuchAlgorithmException {
-
-        final RSAKeyPairGenerator gen = new RSAKeyPairGenerator();
-
-        gen.init(new RSAKeyGenerationParameters(BigInteger.valueOf(3), new SecureRandom(), 1024, 80));
-        final AsymmetricCipherKeyPair keypair = gen.generateKeyPair();
-
-        final RSAKeyParameters publicKey = (RSAKeyParameters) keypair.getPublic();
-        final RSAPrivateCrtKeyParameters privateKey = (RSAPrivateCrtKeyParameters) keypair.getPrivate();
-
-        final PublicKey pubKey = KeyFactory.getInstance("RSA")
-                .generatePublic(new RSAPublicKeySpec(publicKey.getModulus(), publicKey.getExponent()));
-
-        final PrivateKey privKey = KeyFactory.getInstance("RSA")
-                .generatePrivate(new RSAPrivateCrtKeySpec(publicKey.getModulus(),
-                        publicKey.getExponent(),
-                        privateKey.getExponent(),
-                        privateKey.getP(),
-                        privateKey.getQ(),
-                        privateKey.getDP(),
-                        privateKey.getDQ(),
-                        privateKey.getQInv()));
-
-        return new KeyPair(pubKey, privKey);
-    }
-
-    public @NotNull TestNamespace getTestNamespace() {
+    public @Nullable TestNamespace getTestNamespace() {
         return testNamespace;
-    }
-
-    public static class TestNamespace extends ManagedNamespaceWithLifecycle {
-
-        public static final String NS_URI = "urn:hivemq:test:testns";
-        private final @NotNull SubscriptionModel subscriptionModel;
-        private @Nullable UaFolderNode dynamicFolder;
-        private @Nullable UaFolderNode testFolder;
-
-        public TestNamespace(final @NotNull OpcUaServer server) {
-            super(server, NS_URI);
-            subscriptionModel = new SubscriptionModel(server, this);
-            getLifecycleManager().addLifecycle(subscriptionModel);
-            getLifecycleManager().addStartupTask(() -> {
-                // Create a "HelloWorld" folder and add it to the node manager
-                NodeId folderNodeId = newNodeId("TestFolder");
-
-                dynamicFolder = new UaFolderNode(getNodeContext(),
-                        folderNodeId,
-                        newQualifiedName("DynamicFolder"),
-                        LocalizedText.english("DynamicFolder"));
-
-                getNodeManager().addNode(dynamicFolder);
-
-                // Make sure our new folder shows up under the server's Objects folder.
-                dynamicFolder.addReference(new Reference(dynamicFolder.getNodeId(),
-                        Identifiers.Organizes,
-                        Identifiers.ObjectsFolder.expanded(),
-                        false));
-
-                testFolder = new UaFolderNode(getNodeContext(),
-                        folderNodeId,
-                        newQualifiedName("TestFolder"),
-                        LocalizedText.english("TestFolder"));
-
-                getNodeManager().addNode(testFolder);
-
-                // Make sure our new folder shows up under the server's Objects folder.
-                testFolder.addReference(new Reference(testFolder.getNodeId(),
-                        Identifiers.Organizes,
-                        Identifiers.ObjectsFolder.expanded(),
-                        false));
-
-                addDynamicNodes();
-
-            });
-        }
-
-        @Override
-        public void onDataItemsCreated(final @NotNull List<DataItem> dataItems) {
-            subscriptionModel.onDataItemsCreated(dataItems);
-        }
-
-        @Override
-        public void onDataItemsModified(final @NotNull List<DataItem> dataItems) {
-            subscriptionModel.onDataItemsModified(dataItems);
-        }
-
-        @Override
-        public void onDataItemsDeleted(final @NotNull List<DataItem> dataItems) {
-            subscriptionModel.onDataItemsDeleted(dataItems);
-        }
-
-        @Override
-        public void onMonitoringModeChanged(final @NotNull List<MonitoredItem> monitoredItems) {
-            subscriptionModel.onMonitoringModeChanged(monitoredItems);
-        }
-
-        private void addDynamicNodes() {
-            final Random random = new Random();
-            addDefaultNode("Bool", Identifiers.Boolean, true, random::nextBoolean, newNodeId(10));
-            addDefaultNode("Int32", Identifiers.Int32, 50, random::nextInt, newNodeId(11));
-            addDefaultNode("Int64", Identifiers.Int64, 5000, random::nextLong, newNodeId(12));
-            addDefaultNode("Double", Identifiers.Double, 123.4d, random::nextDouble, newNodeId(13));
-            addDefaultNode("String", Identifiers.String, "abc", () -> DateTime.now().toString(), newNodeId("abc"));
-        }
-
-        private @NotNull void addDefaultNode(
-                final @NotNull String name,
-                final @NotNull NodeId typeId,
-                final @NotNull Object intialValue,
-                final @NotNull Supplier<Object> valueCallback,
-                final @NotNull NodeId nodeId) {
-            UaVariableNode node = new UaVariableNode.UaVariableNodeBuilder(getNodeContext()).setNodeId(nodeId)
-                    .setAccessLevel(AccessLevel.READ_WRITE)
-                    .setBrowseName(newQualifiedName(name))
-                    .setDisplayName(LocalizedText.english(name))
-                    .setDataType(typeId)
-                    .setTypeDefinition(Identifiers.BaseDataVariableType)
-                    .build();
-
-            node.setValue(new DataValue(new Variant(intialValue)));
-
-            node.getFilterChain()
-                    .addLast(AttributeFilters.getValue(ctx -> new DataValue(new Variant(valueCallback.get()))));
-
-            getNodeManager().addNode(node);
-            dynamicFolder.addOrganizes(node);
-        }
-
-
-        private @NotNull String addTestNode(
-                final @NotNull String name,
-                final @NotNull NodeId typeId,
-                final @NotNull Supplier<Object> valueCallback,
-                final @NotNull NodeId nodeId) {
-            UaVariableNode node = new UaVariableNode.UaVariableNodeBuilder(getNodeContext()).setNodeId(nodeId)
-                    .setAccessLevel(AccessLevel.READ_WRITE)
-                    .setBrowseName(newQualifiedName(name))
-                    .setDisplayName(LocalizedText.english(name))
-                    .setDataType(typeId)
-                    .setTypeDefinition(Identifiers.BaseDataVariableType)
-                    .build();
-
-            node.setValue(new DataValue(new Variant(null)));
-
-            node.getFilterChain()
-                    .addLast(AttributeFilters.getValue(ctx -> new DataValue(new Variant(valueCallback.get()))));
-
-            getNodeManager().addNode(node);
-            dynamicFolder.addOrganizes(node);
-
-            return nodeId.toParseableString();
-        }
-
-        public @NotNull String addNode(
-                final @NotNull String name,
-                final @NotNull NodeId typeId,
-                final @NotNull Supplier<Object> valueCallback,
-                final @NotNull String nodeIdPart) {
-            return addTestNode(name, typeId, valueCallback, newNodeId(nodeIdPart));
-        }
-
-        public @NotNull String addNode(
-                final @NotNull String name,
-                final @NotNull NodeId typeId,
-                final @NotNull Supplier<Object> valueCallback,
-                final @NotNull long nodeIdPart) {
-            return addTestNode(name, typeId, valueCallback, newNodeId(nodeIdPart));
-        }
-
-        public @NotNull String addNode(
-                final @NotNull String name,
-                final @NotNull NodeId typeId,
-                final @NotNull Supplier<Object> valueCallback,
-                final @NotNull UUID nodeIdPart) {
-            return addTestNode(name, typeId, valueCallback, newNodeId(nodeIdPart));
-        }
-
-        public @NotNull String addNode(
-                final @NotNull String name,
-                final @NotNull NodeId typeId,
-                final @NotNull Supplier<Object> valueCallback,
-                final @NotNull UInteger nodeIdPart) {
-            return addTestNode(name, typeId, valueCallback, newNodeId(nodeIdPart));
-        }
-
-        public @NotNull String addNode(
-                final @NotNull String name,
-                final @NotNull NodeId typeId,
-                final @NotNull Supplier<Object> valueCallback,
-                final @NotNull ByteString nodeIdPart) {
-            return addTestNode(name, typeId, valueCallback, newNodeId(nodeIdPart));
-        }
-
     }
 }

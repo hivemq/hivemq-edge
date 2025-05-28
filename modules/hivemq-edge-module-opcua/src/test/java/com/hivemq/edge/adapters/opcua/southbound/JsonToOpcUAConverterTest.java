@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.mqtt2opcua;
+package com.hivemq.edge.adapters.opcua.southbound;
 
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
@@ -31,82 +31,87 @@ class JsonToOpcUAConverterTest {
 
     @Test
     void extractUShort() {
-        final UShort value = JsonToOpcUAConverter.extractUShort(IntNode.valueOf(12));
+        final UShort value = JsonToOpcUAConverterUtil.extractUShort(IntNode.valueOf(12));
         assertEquals(12, value.intValue());
     }
 
     @Test
     void extractUShort_overflow() {
-        assertThrows(IllegalArgumentException.class, ()-> JsonToOpcUAConverter.extractUShort(IntNode.valueOf(Integer.MAX_VALUE)));
+        assertThrows(IllegalArgumentException.class,
+                () -> JsonToOpcUAConverterUtil.extractUShort(IntNode.valueOf(Integer.MAX_VALUE)));
     }
 
     @Test
     void extractUShort_underflow() {
-        assertThrows(IllegalArgumentException.class, ()-> JsonToOpcUAConverter.extractUShort(IntNode.valueOf(Integer.MIN_VALUE)));
+        assertThrows(IllegalArgumentException.class,
+                () -> JsonToOpcUAConverterUtil.extractUShort(IntNode.valueOf(Integer.MIN_VALUE)));
     }
 
     @Test
     void extractSignedShort() {
-        final int value = JsonToOpcUAConverter.extractSignedShort(IntNode.valueOf(12));
+        final int value = JsonToOpcUAConverterUtil.extractSignedShort(IntNode.valueOf(12));
         assertEquals(12, value);
     }
 
     @Test
     void extractSignedShort_overflow() {
-        assertThrows(IllegalArgumentException.class, ()-> JsonToOpcUAConverter.extractSignedShort(IntNode.valueOf(Integer.MAX_VALUE)));
+        assertThrows(IllegalArgumentException.class,
+                () -> JsonToOpcUAConverterUtil.extractSignedShort(IntNode.valueOf(Integer.MAX_VALUE)));
     }
 
     @Test
     void extractSignedShort_underflow() {
-        assertThrows(IllegalArgumentException.class, ()-> JsonToOpcUAConverter.extractSignedShort(IntNode.valueOf(Integer.MIN_VALUE)));
+        assertThrows(IllegalArgumentException.class,
+                () -> JsonToOpcUAConverterUtil.extractSignedShort(IntNode.valueOf(Integer.MIN_VALUE)));
     }
 
     @Test
     void extractUInteger() {
-        final UInteger value = JsonToOpcUAConverter.extractUInteger(IntNode.valueOf(12));
+        final UInteger value = JsonToOpcUAConverterUtil.extractUInteger(IntNode.valueOf(12));
         assertEquals(12, value.intValue());
     }
 
     @Test
     void extractUInteger_overflow() {
-        assertThrows(IllegalArgumentException.class, ()-> JsonToOpcUAConverter.extractUInteger(LongNode.valueOf(Long.MAX_VALUE)));
+        assertThrows(IllegalArgumentException.class,
+                () -> JsonToOpcUAConverterUtil.extractUInteger(LongNode.valueOf(Long.MAX_VALUE)));
     }
 
     @Test
     void extractUInteger_underflow() {
-        assertThrows(IllegalArgumentException.class, ()-> JsonToOpcUAConverter.extractUInteger(LongNode.valueOf(Long.MIN_VALUE)));
+        assertThrows(IllegalArgumentException.class,
+                () -> JsonToOpcUAConverterUtil.extractUInteger(LongNode.valueOf(Long.MIN_VALUE)));
     }
 
 
     @Test
     void extractSignedInteger() {
-        final int value = JsonToOpcUAConverter.extractSignedInteger(IntNode.valueOf(12));
+        final int value = JsonToOpcUAConverterUtil.extractSignedInteger(IntNode.valueOf(12));
         assertEquals(12, value);
     }
 
     @Test
     void extractSignedInteger_overflow() {
         assertThrows(IllegalArgumentException.class,
-                () -> JsonToOpcUAConverter.extractSignedInteger(LongNode.valueOf(Integer.MAX_VALUE + 1000L)));
+                () -> JsonToOpcUAConverterUtil.extractSignedInteger(LongNode.valueOf(Integer.MAX_VALUE + 1000L)));
     }
 
 
     @Test
     void extractSByte() {
-        final byte value = JsonToOpcUAConverter.extractSByte(IntNode.valueOf(12));
+        final byte value = JsonToOpcUAConverterUtil.extractSByte(IntNode.valueOf(12));
         assertEquals(12, value);
     }
 
     @Test
     void extractUnsignedByte() {
-        final @NotNull UByte value = JsonToOpcUAConverter.extractUnsignedByte(IntNode.valueOf(12));
+        final @NotNull UByte value = JsonToOpcUAConverterUtil.extractUnsignedByte(IntNode.valueOf(12));
         assertEquals(12, value.intValue());
     }
 
     @Test
     void extractFloat() {
-        final float value = JsonToOpcUAConverter.extractFloat(DoubleNode.valueOf(12.2));
+        final float value = JsonToOpcUAConverterUtil.extractFloat(DoubleNode.valueOf(12.2));
         assertEquals(12.2, value, 0.0001);
     }
-
 }

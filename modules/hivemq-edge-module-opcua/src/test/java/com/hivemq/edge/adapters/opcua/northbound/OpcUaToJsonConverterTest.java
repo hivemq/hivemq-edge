@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.opcua2mqtt;
+package com.hivemq.edge.adapters.opcua.northbound;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class OpcUaJsonPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
+class OpcUaToJsonConverterTest extends AbstractOpcUaPayloadConverterTest {
 
     private static @NotNull Stream<Arguments> provideBaseTypes() {
         return Stream.of(Arguments.of("Boolean", Identifiers.Boolean, true, "true"),
@@ -89,19 +89,17 @@ class OpcUaJsonPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
                 opcUaServerExtension.getTestNamespace().addNode("Test" + name + "Node", typeId, () -> value, 999);
 
         final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId);
-        assertThat(ProtocolAdapterState.ConnectionStatus.CONNECTED)
-                .isEqualTo(protocolAdapter.getProtocolAdapterState().getConnectionStatus());
+        assertThat(ProtocolAdapterState.ConnectionStatus.CONNECTED).isEqualTo(protocolAdapter.getProtocolAdapterState()
+                .getConnectionStatus());
 
         final var received = expectAdapterPublish();
-        protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
+        protocolAdapter.stop(new ProtocolAdapterStopInput() {
+        }, new ProtocolAdapterStopOutputImpl());
 
-        assertThat(received)
-                .extractingByKey(nodeId)
-                .satisfies(dataPoints -> {
-                    assertThat(dataPoints)
-                            .hasSize(1)
-                            .extracting(DataPoint::getTagName, DataPoint::getTagValue)
-                            .containsExactly(Tuple.tuple(nodeId, "{\"value\":" + jsonValue + "}"));
-                });
+        assertThat(received).extractingByKey(nodeId).satisfies(dataPoints -> {
+            assertThat(dataPoints).hasSize(1)
+                    .extracting(DataPoint::getTagName, DataPoint::getTagValue)
+                    .containsExactly(Tuple.tuple(nodeId, "{\"value\":" + jsonValue + "}"));
+        });
     }
 }

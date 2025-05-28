@@ -24,17 +24,9 @@ import java.util.function.BiConsumer;
 import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-public class OpcUaBrowser {
+public class OpcUaNodeDiscovery {
 
-    public record CollectedNode(@NotNull String id,
-                                @NotNull String name,
-                                @NotNull String value,
-                                @NotNull String description,
-                                @Nullable String parentId,
-                                @NotNull NodeType nodeType,
-                                boolean selectable){}
-
-    public static CompletableFuture<List<CollectedNode>> discoverValues(
+    public static @NotNull CompletableFuture<List<CollectedNode>> discoverValues(
             final @NotNull OpcUaClient client,
             final @Nullable String rootNode,
             final int depth) {
@@ -44,28 +36,26 @@ public class OpcUaBrowser {
         } else {
             final Optional<NodeId> parsedNodeId = NodeId.parseSafe(rootNode);
             if (parsedNodeId.isEmpty()) {
-                return CompletableFuture.failedFuture(new IllegalArgumentException("OPC UA NodeId '" + rootNode + "' is not supported"));
+                return CompletableFuture.failedFuture(new IllegalArgumentException("OPC UA NodeId '" +
+                        rootNode +
+                        "' is not supported"));
             }
             browseRoot = parsedNodeId.get();
         }
 
         final var collectedNodes = new ArrayList<CollectedNode>();
         return browse(client, browseRoot, null, (ref, parent) -> {
-                final String name = ref.getBrowseName() != null ? ref.getBrowseName().getName() : "";
-                final String displayName = ref.getDisplayName() != null ? ref.getDisplayName().getText() : "";
-                final NodeType nodeType = getNodeType(ref);
-                collectedNodes.add(
-                        new CollectedNode(
-                            ref.getNodeId().toParseableString(),
-                            requireNonNullElse(name, ""),
-                            ref.getNodeId().toParseableString(),
-                            requireNonNullElse(displayName, ""),
-                            parent != null ? parent.getNodeId().toParseableString() : null,
-                            nodeType != null ? nodeType : NodeType.VALUE,
-                            nodeType == NodeType.VALUE));
-                }
-                , depth)
-                .thenApply(ignored -> collectedNodes);
+            final String name = ref.getBrowseName() != null ? ref.getBrowseName().getName() : "";
+            final String displayName = ref.getDisplayName() != null ? ref.getDisplayName().getText() : "";
+            final NodeType nodeType = getNodeType(ref);
+            collectedNodes.add(new CollectedNode(ref.getNodeId().toParseableString(),
+                    requireNonNullElse(name, ""),
+                    ref.getNodeId().toParseableString(),
+                    requireNonNullElse(displayName, ""),
+                    parent != null ? parent.getNodeId().toParseableString() : null,
+                    nodeType != null ? nodeType : NodeType.VALUE,
+                    nodeType == NodeType.VALUE));
+        }, depth).thenApply(ignored -> collectedNodes);
     }
 
     private static @NotNull CompletableFuture<Void> browse(
@@ -74,17 +64,17 @@ public class OpcUaBrowser {
             final @Nullable ReferenceDescription parent,
             final @NotNull BiConsumer<ReferenceDescription, ReferenceDescription> callback,
             final int depth) {
-        final BrowseDescription browse = new BrowseDescription(
-                browseRoot,
-                BrowseDirection.Forward,
-                null,
-                true,
-                uint(0),
-                uint(BrowseResultMask.All.getValue()));
-
-        return client
-                .browseAsync(browse)
-                .thenCompose(browseResult -> handleBrowseResult(client, parent, callback, depth, new BrowseResult[]{browseResult}));
+        return client.browseAsync(new BrowseDescription(browseRoot,
+                        BrowseDirection.Forward,
+                        null,
+                        true,
+                        uint(0),
+                        uint(BrowseResultMask.All.getValue())))
+                .thenCompose(browseResult -> handleBrowseResult(client,
+                        parent,
+                        callback,
+                        depth,
+                        new BrowseResult[]{browseResult}));
     }
 
     private static @NotNull CompletableFuture<Void> handleBrowseResult(
@@ -92,19 +82,23 @@ public class OpcUaBrowser {
             final @Nullable ReferenceDescription parent,
             final @NotNull BiConsumer<ReferenceDescription, ReferenceDescription> callback,
             final int depth,
-            final BrowseResult[] browseResults) {
-        final List<CompletableFuture<Void>> childFutures = new ArrayList<>();
+            final @Nullable BrowseResult @Nullable [] browseResults) {
+        final var childFutures = new ArrayList<CompletableFuture<Void>>();
         final var references = new ArrayList<ReferenceDescription>();
         final var continuationPoints = new ArrayList<ByteString>();
 
-        for (final BrowseResult result : browseResults) {
-            final var continuationPoint = result.getContinuationPoint();
-            if(continuationPoint != null) {
-                continuationPoints.add(continuationPoint);
-            }
-            final var refs = result.getReferences();
-            if(refs != null) {
-                Collections.addAll(references, result.getReferences());
+        if (browseResults != null) {
+            for (final BrowseResult result : browseResults) {
+                if (result != null) {
+                    final var continuationPoint = result.getContinuationPoint();
+                    if (continuationPoint != null) {
+                        continuationPoints.add(continuationPoint);
+                    }
+                    final var refs = result.getReferences();
+                    if (refs != null) {
+                        Collections.addAll(references, result.getReferences());
+                    }
+                }
             }
         }
 
@@ -118,17 +112,16 @@ public class OpcUaBrowser {
         }
 
         if (!continuationPoints.isEmpty()) {
-            //TODO this looks liek a bug in Milo
+            //TODO this looks like a bug in Milo
             final var cont = continuationPoints.stream().filter(ct -> ct.bytes() != null).toList();
-            if(!cont.isEmpty()) {
+            if (!cont.isEmpty()) {
                 childFutures.add(Objects.requireNonNull(client)
                         .browseNextAsync(false, continuationPoints)
-                        .thenCompose(nextBrowseResult -> handleBrowseResult(
-                                            client,
-                                            parent,
-                                            callback,
-                                            depth,
-                                            nextBrowseResult.getResults())));
+                        .thenCompose(nextBrowseResult -> handleBrowseResult(client,
+                                parent,
+                                callback,
+                                depth,
+                                nextBrowseResult.getResults())));
             }
         }
 
@@ -136,19 +129,16 @@ public class OpcUaBrowser {
     }
 
     private static @Nullable NodeType getNodeType(final @NotNull ReferenceDescription ref) {
-        switch (ref.getNodeClass()) {
-            case Object:
-            case ObjectType:
-            case VariableType:
-            case ReferenceType:
-            case DataType:
-                return NodeType.OBJECT;
-            case Variable:
-                return NodeType.VALUE;
-            case View:
-                return NodeType.FOLDER;
-            default:
-                return null;
-        }
+        return switch (ref.getNodeClass()) {
+            case Object, ObjectType, VariableType, ReferenceType, DataType -> NodeType.OBJECT;
+            case Variable -> NodeType.VALUE;
+            case View -> NodeType.FOLDER;
+            default -> null;
+        };
+    }
+
+    public record CollectedNode(@NotNull String id, @NotNull String name, @NotNull String value,
+                                @NotNull String description, @Nullable String parentId, @NotNull NodeType nodeType,
+                                boolean selectable) {
     }
 }
