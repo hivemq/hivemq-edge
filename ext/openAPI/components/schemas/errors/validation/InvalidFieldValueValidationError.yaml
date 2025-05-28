@@ -4,6 +4,10 @@ allOf:
     properties:
       field:
         type: string
-        description: The missing field.
+        description: The invalid field.
+      value:
+        type: string
+        description: The invalid value.
     required:
       - field
+      - value
