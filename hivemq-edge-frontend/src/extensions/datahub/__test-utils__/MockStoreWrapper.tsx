@@ -8,10 +8,7 @@ import { ReactFlowProvider } from '@xyflow/react'
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>
 interface MockStoreWrapperConfig {
-  initialState?: Optional<
-    WorkspaceState & WorkspaceStatus,
-    'nodes' | 'edges' | 'functions' | 'status' | 'name' | 'type'
-  >
+  initialState?: Optional<WorkspaceState & WorkspaceStatus, 'nodes' | 'edges' | 'status' | 'name' | 'type'>
 }
 
 interface MockStoreWrapperProps {

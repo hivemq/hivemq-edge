@@ -1541,6 +1541,7 @@ paths:
         - Data Hub - FSM
   /api/v1/data-hub/functions:
     get:
+      deprecated: true
       description: This endpoints provides the means to get information on the available Functions for the HiveMQ Data Hub. The information is provided in form of a Json Schema.
       operationId: getFunctions
       responses:
@@ -1698,6 +1699,26 @@ paths:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
       summary: Get all functions as a JSON Schema
+      tags:
+        - Data Hub - Functions
+  /api/v1/data-hub/function-specs:
+    get:
+      description: This endpoints provides the means to get information on the available Functions for the HiveMQ Data Hub.
+      operationId: getFunctionSpecs
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FunctionSpecsList'
+          description: Success
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal server error
+      summary: Get all functions as a list of function specifications
       tags:
         - Data Hub - Functions
   /api/v1/data-hub/schemas:
@@ -4748,6 +4769,67 @@ components:
             $ref: '#/components/schemas/DataPolicy'
     Errors:
       type: object
+    BehaviorPolicyTransitionEvent:
+      type: string
+      description: Accepted event in transition
+      enum:
+        - Event.OnAny
+        - Connection.OnDisconnect
+        - Mqtt.OnInboundConnect
+        - Mqtt.OnInboundDisconnect
+        - Mqtt.OnInboundPublish
+        - Mqtt.OnInboundSubscribe
+    FunctionMetadata:
+      description: Metadata for operation functions
+      type: object
+      properties:
+        isTerminal:
+          type: boolean
+          description: The function is a terminal element of a pipeline
+        isDataOnly:
+          type: boolean
+          description: The function is only available for Data Policies
+        hasArguments:
+          type: boolean
+          description: The function has extra arguments
+        inLicenseAllowed:
+          type: boolean
+          description: The function can be used with the current user's license
+        supportedEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/BehaviorPolicyTransitionEvent'
+    FunctionSpecs:
+      description: The configuration of a DataHub operation function
+      type: object
+      properties:
+        functionId:
+          type: string
+          description: The unique name of the function
+        metadata:
+          $ref: '#/components/schemas/FunctionMetadata'
+          description: The metadata associated with the function
+        schema:
+          $ref: '#/components/schemas/JsonNode'
+          description: the full JSON-Schema describimng the function and its arguments
+        uiSchema:
+          $ref: '#/components/schemas/JsonNode'
+          description: An optional UI Schema to customise the rendering of the configuraton form
+      required:
+        - functionId
+        - metadata
+        - schema
+    FunctionSpecsList:
+      type: object
+      description: List of function configurations
+      properties:
+        items:
+          type: array
+          description: List of function configurations
+          items:
+            $ref: '#/components/schemas/FunctionSpecs'
+      required:
+        - items
     PolicySchema:
       type: object
       properties:

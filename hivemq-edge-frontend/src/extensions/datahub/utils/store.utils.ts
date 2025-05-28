@@ -3,7 +3,6 @@ import type { RJSFSchema } from '@rjsf/utils'
 
 import type { FunctionSpecs, WorkspaceState, WorkspaceStatus } from '@datahub/types.ts'
 import { DesignerStatus } from '@datahub/types.ts'
-import { MOCK_OPERATION_SCHEMA } from '@datahub/designer/operation/OperationData.ts'
 
 export const getFunctions = (schema: RJSFSchema) => {
   if (!schema) return []
@@ -35,7 +34,5 @@ export const initialStore = (): WorkspaceState & WorkspaceStatus => {
   const nodes: Node[] = []
   const edges: Edge[] = []
 
-  const functions = getFunctions(MOCK_OPERATION_SCHEMA.schema)
-
-  return { nodes, edges, functions: functions, name: '', status: DesignerStatus.DRAFT, type: undefined }
+  return { nodes, edges, name: '', status: DesignerStatus.DRAFT, type: undefined }
 }

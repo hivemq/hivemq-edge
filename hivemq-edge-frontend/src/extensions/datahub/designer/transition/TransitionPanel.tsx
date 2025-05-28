@@ -5,6 +5,7 @@ import { getIncomers } from '@xyflow/react'
 import { Card, CardBody } from '@chakra-ui/react'
 import type { IChangeEvent } from '@rjsf/core'
 
+import type { BehaviorPolicyTransitionEvent } from '@/api/__generated__'
 import type {
   BehaviorPolicyData,
   FiniteStateMachineSchema,
@@ -12,7 +13,6 @@ import type {
   PanelProps,
   StateType,
   TransitionData,
-  TransitionType,
 } from '@datahub/types.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
@@ -97,7 +97,7 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
         const { event: originalEvent } = formData
         if (originalEvent) {
           const [event, from, to, type] = originalEvent.split('-') as [
-            TransitionType,
+            BehaviorPolicyTransitionEvent,
             StateType,
             StateType,
             FsmState.Type | undefined,

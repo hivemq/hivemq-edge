@@ -4,9 +4,11 @@ import type { Edge, Node } from '@xyflow/react'
 import { Button } from '@chakra-ui/react'
 
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
+import { MOCK_DATAHUB_FUNCTIONS } from '@datahub/api/hooks/DataHubFunctionsService/__handlers__'
 import { SUGGESTION_TRIGGER_CHAR } from '@datahub/components/interpolation/Suggestion.ts'
 import type { FunctionData } from '@datahub/types.ts'
 import { DataHubNodeType, OperationData } from '@datahub/types.ts'
+
 import { OperationPanel } from './OperationPanel.tsx'
 
 const getWrapperWith = (initNodes: Node[], initEdges?: Edge[]) => {
@@ -34,6 +36,12 @@ const getWrapperWith = (initNodes: Node[], initEdges?: Edge[]) => {
 describe('OperationPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+    cy.intercept('/api/v1/data-hub/function-specs', {
+      items: MOCK_DATAHUB_FUNCTIONS.items.map((specs) => {
+        specs.metadata.inLicenseAllowed = true
+        return specs
+      }),
+    }).as('getFunctionSpecs')
   })
 
   it('should render a validating form', () => {
@@ -50,7 +58,7 @@ describe('OperationPanel', () => {
     cy.get('label#root_functionId-label + div').click()
     cy.get('label#root_functionId-label + div').find("[role='listbox']").find("[role='option']").as('functionSelect')
 
-    cy.get('@functionSelect').eq(0).should('contain.text', 'System.log')
+    cy.get('@functionSelect').eq(0).should('contain.text', 'Mqtt.UserProperties.add')
     cy.get('@functionSelect').eq(7).should('contain.text', 'Mqtt.drop')
     cy.get('@functionSelect').eq(7).click()
 
@@ -108,8 +116,7 @@ describe('OperationPanel', () => {
       },
     }
 
-    // TODO[NVL] There is a bug
-    it.skip('should render the form', () => {
+    it('should render the form', () => {
       cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
         wrapper: getWrapperWith([node]),
       })
@@ -117,14 +124,17 @@ describe('OperationPanel', () => {
       cy.get('h2').should('contain.text', 'System.log')
       cy.get('label#root_formData_level-label').should('contain.text', 'Log Level')
       cy.get('label#root_formData_level-label + div').should('contain.text', 'DEBUG')
+
       cy.get('label#root_formData_level-label + div').click()
       cy.get('label#root_formData_level-label + div')
         .find("[role='listbox']")
         .find("[role='option']")
         .as('logLevelSelect')
-      cy.get('@logLevelSelect').should('have.length', 5)
-      cy.get('@logLevelSelect').eq(4).should('contain.text', 'TRACE')
-      cy.get('@logLevelSelect').eq(4).click()
+
+      // TODO[30464] There is a bug in the selector options that add an extra empty option
+      cy.get('@logLevelSelect').should('have.length', 6)
+      cy.get('@logLevelSelect').eq(5).should('contain.text', 'TRACE')
+      cy.get('@logLevelSelect').eq(5).click()
       cy.get('label#root_formData_level-label + div').should('contain.text', 'TRACE')
 
       // Need a better (and shorter) way of testing it display the right widget
@@ -316,7 +326,7 @@ describe('OperationPanel', () => {
         'com.hivemq.com.data-hub.custom.counters.'
       )
       cy.get('label#root_formData_metricName-label + div > input').should('contain.value', 'metric-name')
-      cy.get('label[for="root_formData_incrementBy"]').should('contain.text', 'IncrementBy')
+      cy.get('label[for="root_formData_incrementBy"]').should('contain.text', 'Increment By')
       cy.get('label[for="root_formData_incrementBy"] + div >  input').should('contain.value', 12)
     })
 
@@ -377,7 +387,7 @@ describe('OperationPanel', () => {
         wrapper: getWrapperWith([node]),
       })
       cy.get('h2').should('contain.text', 'Mqtt.drop')
-      cy.get('[role="group"]:has(#root_formData__title) ').last().find('label').should('not.exist')
+      cy.get('label#root_formData_reasonString-label').should('contain.text', 'Reason String')
     })
 
     it('should be accessible', () => {
