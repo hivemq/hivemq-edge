@@ -400,20 +400,24 @@ post:
         application/json:
           schema:
             anyOf:
+              - $ref: "../components/schemas/errors/common/InternalServerError.yaml"
               - $ref: "../components/schemas/errors/common/RequestBodyMissingError.yaml"
+              - $ref: "../components/schemas/errors/datahub/DataPolicyCreationFailureError.yaml"
+              - $ref: "../components/schemas/errors/datahub/DataPolicyRejectedError.yaml"
               - $ref: "../components/schemas/errors/datahub/DataPolicyValidationErrors.yaml"
       description: DataPolicy creation failed
     '409':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            anyOf:
+              - $ref: "../components/schemas/errors/datahub/DataPolicyAlreadyPresentError.yaml"
       description: DataPolicy already present
     '500':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/common/InternalServerError.yaml"
       description: Internal server error
     '503':
       content:
@@ -425,7 +429,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/common/InsufficientStorageError.yaml"
       description: Insufficient storage
   summary: Create a new data policy
   tags:
