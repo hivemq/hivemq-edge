@@ -6,7 +6,8 @@ allOf:
         type: string
         description: The function.
       occurrences:
-        type: int
+        type: integer
+        format: int32
         description: The occurrences of the function.
       paths:
         type: array
