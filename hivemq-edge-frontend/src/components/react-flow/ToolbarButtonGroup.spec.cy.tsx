@@ -17,7 +17,7 @@ describe('ToolbarButtonGroup', () => {
         <IconButton icon={<Icon as={LuBaby} />} aria-label="second button" onClick={cy.stub().as('button2')} />
       </ToolbarButtonGroup>,
       {
-        wrapper: ({ children }) => <ReactFlowProvider>{children}</ReactFlowProvider>,
+        wrapper: ({ children }: { children: JSX.Element }) => <ReactFlowProvider>{children}</ReactFlowProvider>,
       }
     )
 
@@ -33,7 +33,7 @@ describe('ToolbarButtonGroup', () => {
         <IconButton icon={<Icon as={LuBaby} />} aria-label="second button" onClick={cy.stub().as('button2')} />
       </ToolbarButtonGroup>,
       {
-        wrapper: ({ children }) => <ReactFlowProvider>{children}</ReactFlowProvider>,
+        wrapper: ({ children }: { children: JSX.Element }) => <ReactFlowProvider>{children}</ReactFlowProvider>,
       }
     )
 
@@ -50,7 +50,7 @@ describe('ToolbarButtonGroup', () => {
         <IconButton icon={<Icon as={LuBaby} />} aria-label="second button" />
       </ToolbarButtonGroup>,
       {
-        wrapper: ({ children }) => <ReactFlowProvider>{children}</ReactFlowProvider>,
+        wrapper: ({ children }: { children: React.ReactNode }) => <ReactFlowProvider>{children}</ReactFlowProvider>,
       }
     )
     cy.checkAccessibility()
