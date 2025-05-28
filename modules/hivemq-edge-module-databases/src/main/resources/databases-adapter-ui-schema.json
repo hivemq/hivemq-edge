@@ -1,0 +1,38 @@
+{
+  "ui:tabs": [
+    {
+      "id": "coreFields",
+      "title": "Settings",
+      "properties": [
+        "id",
+        "type",
+        "server",
+        "port",
+        "database",
+        "username",
+        "password"
+      ]
+    },
+    {
+      "id": "publishing",
+      "title": "Publishing",
+      "properties": [
+        "maxPollingErrorsBeforeRemoval",
+        "pollingIntervalMillis"
+      ]
+    }
+  ],
+  "port": {
+  "type": "integer"
+  },
+  "password": {
+    "ui:widget": "password"
+  },
+  "ui:order": [
+    "id",
+    "type",
+    "server",
+    "port",
+    "*"
+  ]
+}

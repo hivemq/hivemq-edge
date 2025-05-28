@@ -201,6 +201,7 @@ dependencies {
     compileOnly("com.hivemq:hivemq-edge-module-http")
     compileOnly("com.hivemq:hivemq-edge-module-modbus")
     compileOnly("com.hivemq:hivemq-edge-module-mtconnect")
+    compileOnly("com.hivemq:hivemq-edge-module-databases")
     compileOnly("com.hivemq:hivemq-edge-module-opcua")
     compileOnly("com.hivemq:hivemq-edge-module-file")
 }
