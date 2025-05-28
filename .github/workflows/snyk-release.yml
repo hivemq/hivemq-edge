@@ -1,0 +1,46 @@
+name: Run Snyk monitor on releases
+
+on:
+  release:
+    types: [ published ]
+
+jobs:
+  run-snyk-monitor:
+    runs-on: ubuntu-latest
+    environment: snyk-monitor-releases
+
+    steps:
+      - name: Setup Java
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4
+        with:
+          distribution: 'temurin'
+          java-version: |
+            17
+
+      - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
+        with:
+          path: hivemq-edge
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+
+      - name: Setup Snyk
+        uses: snyk/actions/setup@master
+
+      - name: Run Snyk monitor
+        shell: bash
+        run: snyk monitor --configuration-matching=^runtimeClasspath$ --target-reference=${{ github.ref_name }} --org=hivemq-releases --project-name=hivemq-edge --remote-repo-url=hivemq-edge --project-lifecycle=production -d hivemq-edge/hivemq-edge
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20.13.1'
+
+      - name: Run Snyk Frontend monitor
+        shell: bash
+        run: snyk monitor --file=pnpm-lock.yaml --target-reference=${{ github.ref_name }} --org=hivemq-releases --project-name=hivemq-edge-frontend --remote-repo-url=hivemq-edge-frontend --project-lifecycle=production -d hivemq-edge/hivemq-edge-frontend
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+          GH_NPM_TOKEN: ${{ secrets.JENKINS_GITHUB_TOKEN }}
