@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "../validation/ValidationError.yaml"
+  - type: object
+    properties:
+      field:
+        type: string
+        description: The field.
+      function:
+        type: string
+        description: The function.
+      previousFunction:
+        type: string
+        description: The previous function.
+    required:
+      - field
+      - function
+      - previousFunction

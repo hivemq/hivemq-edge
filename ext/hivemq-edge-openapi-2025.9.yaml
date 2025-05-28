@@ -4673,6 +4673,70 @@ components:
       required:
         - detail
         - type
+    EmptyFieldValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            field:
+              type: string
+              description: The missing field.
+          required:
+            - field
+    InvalidFieldLengthValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            actualLength:
+              type: integer
+              description: The actual length of the field value.
+            expectedMinimumLength:
+              type: integer
+              description: The minimum length expected for the field value.
+            expectedMaximumLength:
+              type: integer
+              description: The maximum length expected for the field value.
+            field:
+              type: string
+              description: The invalid field.
+            value:
+              type: string
+              description: The invalid value.
+          required:
+            - actualLength
+            - expectedMinimumLength
+            - expectedMaximumLength
+            - field
+            - value
+    InvalidFieldValueValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            field:
+              type: string
+              description: The invalid field.
+            value:
+              type: string
+              description: The invalid value.
+          required:
+            - field
+            - value
+    InvalidIdentifierValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            field:
+              type: string
+              description: The invalid identifier field.
+            value:
+              type: string
+              description: The invalid identifier value.
+          required:
+            - field
+            - value
     MissingFieldValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
@@ -4683,7 +4747,102 @@ components:
               description: The missing field.
           required:
             - field
-            - type
+    UnsupportedFieldValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            actualValue:
+              type: string
+              description: The actual value.
+            expectedValue:
+              type: string
+              description: The expected value.
+            field:
+              type: string
+              description: The field.
+          required:
+            - actualValue
+            - expectedValue
+            - field
+    AtMostOneFunctionValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            function:
+              type: string
+              description: The function.
+            occurrences:
+              type: int
+              description: The occurrences of the function.
+            paths:
+              type: array
+              items:
+                type: string
+              description: The paths where the function occurs.
+          required:
+            - function
+            - occurrences
+            - paths
+    FunctionMustBePairedValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            existingFunction:
+              type: string
+              description: The existing function.
+            missingFunction:
+              type: string
+              description: The missing function.
+          required:
+            - existingFunction
+            - missingFunction
+    GeneralPolicyValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            title:
+              type: string
+              description: The title.
+          required:
+            - title
+    InvalidFunctionOrderValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            field:
+              type: string
+              description: The field.
+            function:
+              type: string
+              description: The function.
+            previousFunction:
+              type: string
+              description: The previous function.
+          required:
+            - field
+            - function
+            - previousFunction
+    UnknownVariableValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            field:
+              type: string
+              description: The field.
+            variables:
+              type: array
+              items:
+                type: string
+              description: The unknown variables.
+          required:
+            - field
+            - variables
     ValidationErrors:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -4694,7 +4853,17 @@ components:
               description: List of validation errors.
               items:
                 anyOf:
+                  - $ref: '#/components/schemas/EmptyFieldValidationError'
+                  - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
+                  - $ref: '#/components/schemas/InvalidFieldValueValidationError'
+                  - $ref: '#/components/schemas/InvalidIdentifierValidationError'
                   - $ref: '#/components/schemas/MissingFieldValidationError'
+                  - $ref: '#/components/schemas/UnsupportedFieldValidationError'
+                  - $ref: '#/components/schemas/AtMostOneFunctionValidationError'
+                  - $ref: '#/components/schemas/FunctionMustBePairedValidationError'
+                  - $ref: '#/components/schemas/GeneralPolicyValidationError'
+                  - $ref: '#/components/schemas/InvalidFunctionOrderValidationError'
+                  - $ref: '#/components/schemas/UnknownVariableValidationError'
           required:
             - errors
     BehaviorPolicyValidationErrors:
