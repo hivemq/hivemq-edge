@@ -1,0 +1,11 @@
+type: object
+properties:
+  sampleTime:
+    type: string
+    format: date-time
+    description: Time the data-point was generated
+    nullable: true
+  value:
+    type: integer
+    format: int64
+    description: The value of the data point
