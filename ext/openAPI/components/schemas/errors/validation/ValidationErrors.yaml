@@ -7,6 +7,16 @@ allOf:
         description: List of validation errors.
         items:
           anyOf:
+            - $ref: "./EmptyFieldValidationError.yaml"
+            - $ref: "./InvalidFieldLengthValidationError.yaml"
+            - $ref: "./InvalidFieldValueValidationError.yaml"
+            - $ref: "./InvalidIdentifierValidationError.yaml"
             - $ref: "./MissingFieldValidationError.yaml"
+            - $ref: "./UnsupportedFieldValidationError.yaml"
+            - $ref: "../datahub/AtMostOneFunctionValidationError.yaml"
+            - $ref: "../datahub/FunctionMustBePairedValidationError.yaml"
+            - $ref: "../datahub/GeneralPolicyValidationError.yaml"
+            - $ref: "../datahub/InvalidFunctionOrderValidationError.yaml"
+            - $ref: "../datahub/UnknownVariableValidationError.yaml"
     required:
       - errors
