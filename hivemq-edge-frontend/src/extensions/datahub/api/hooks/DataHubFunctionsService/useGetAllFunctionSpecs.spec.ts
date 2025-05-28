@@ -28,7 +28,7 @@ describe('useGetAllFunctionSpecs', () => {
           metadata: {
             hasArguments: true,
             inLicenseAllowed: false,
-            isDataOnly: true,
+            isDataOnly: false,
             isTerminal: false,
             supportedEvents: [
               'Mqtt.OnInboundConnect',
@@ -59,7 +59,7 @@ describe('useGetAllFunctionSpecs', () => {
           metadata: {
             inLicenseAllowed: false,
             isTerminal: false,
-            isDataOnly: true,
+            isDataOnly: false,
             hasArguments: true,
             supportedEvents: [
               BehaviorPolicyTransitionEvent.EVENT_ON_ANY,
@@ -105,7 +105,7 @@ describe('useGetAllFunctionSpecs', () => {
           metadata: {
             hasArguments: true,
             inLicenseAllowed: false,
-            isDataOnly: true,
+            isDataOnly: false,
             isTerminal: false,
             supportedEvents: [
               'Event.OnAny',
@@ -125,7 +125,7 @@ describe('useGetAllFunctionSpecs', () => {
           metadata: {
             hasArguments: false,
             inLicenseAllowed: false,
-            isDataOnly: true,
+            isDataOnly: false,
             isTerminal: true,
             supportedEvents: ['Mqtt.OnInboundConnect', 'Mqtt.OnInboundPublish', 'Mqtt.OnInboundSubscribe'],
           },
@@ -138,7 +138,7 @@ describe('useGetAllFunctionSpecs', () => {
           metadata: {
             hasArguments: true,
             inLicenseAllowed: false,
-            isDataOnly: true,
+            isDataOnly: false,
             isTerminal: true,
             supportedEvents: ['Mqtt.OnInboundPublish', 'Mqtt.OnInboundSubscribe'],
           },
