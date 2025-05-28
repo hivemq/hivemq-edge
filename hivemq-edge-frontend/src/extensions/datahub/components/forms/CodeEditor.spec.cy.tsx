@@ -38,9 +38,12 @@ describe('CodeEditor', () => {
   })
 
   it.only('should render the fallback editor', () => {
-    Cypress.on('uncaught:exception', () => {
-      // returning false here prevents Cypress from failing the test
-      return false
+    Cypress.on('uncaught:exception', (err) => {
+      // we expect Monaco's Uncaught NetworkError and don't want to fail the test so we return false
+      if (err.message.includes("Failed to execute 'importScripts' on 'WorkerGlobalScope'")) {
+        return false
+      }
+      // we still want to ensure there are no other unexpected errors, so we let them fail the test
     })
 
     cy.intercept('https://cdn.jsdelivr.net/**', { statusCode: 404 }).as('getMonaco')
