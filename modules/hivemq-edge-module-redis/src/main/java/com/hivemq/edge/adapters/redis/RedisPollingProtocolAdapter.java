@@ -109,9 +109,10 @@ public class RedisPollingProtocolAdapter implements BatchPollingProtocolAdapter 
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         log.debug("Handling tags for Redis protocol adapter");
         tags.forEach(tag -> loadRedisData(pollingOutput, (RedisAdapterTag) tag));
-
+        log.debug("Finished getting tags");
         protocolAdapterState.setConnectionStatus(STATELESS);
         pollingOutput.finish();
+        log.debug("Finished polling");
     }
 
     private void loadRedisData(final @NotNull BatchPollingOutput output, final @NotNull RedisAdapterTag tag) {
@@ -164,6 +165,7 @@ public class RedisPollingProtocolAdapter implements BatchPollingProtocolAdapter 
                         node.put("value", result);
                         log.debug(node.toString());
                         log.debug("Adding datapoint");
+                        log.debug(tag.getName());
                         output.addDataPoint(dataPointFactory.create(tag.getName(), node));
                     }
                     break;
