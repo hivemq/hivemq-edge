@@ -1,0 +1,15 @@
+{
+  "name": "@atlaskit/pragmatic-drag-and-drop/prevent-unhandled",
+  "main": "../dist/cjs/entry-point/prevent-unhandled.js",
+  "module": "../dist/esm/entry-point/prevent-unhandled.js",
+  "module:es2019": "../dist/es2019/entry-point/prevent-unhandled.js",
+  "sideEffects": true,
+  "types": "../dist/types/entry-point/prevent-unhandled.d.ts",
+  "typesVersions": {
+    ">=4.5 <5.4": {
+      "*": [
+        "../dist/types-ts4.5/entry-point/prevent-unhandled.d.ts"
+      ]
+    }
+  }
+}

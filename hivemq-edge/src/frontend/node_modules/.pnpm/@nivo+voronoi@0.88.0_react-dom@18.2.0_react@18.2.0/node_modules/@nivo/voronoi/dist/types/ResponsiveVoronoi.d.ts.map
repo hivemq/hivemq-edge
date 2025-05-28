@@ -1,0 +1,1 @@
+{"version":3,"file":"ResponsiveVoronoi.d.ts","sourceRoot":"","sources":["../../src/ResponsiveVoronoi.tsx"],"names":[],"mappings":";AACA,OAAO,EAAE,eAAe,EAAE,MAAM,SAAS,CAAA;AAGzC,KAAK,sBAAsB,GAAG,OAAO,CAAC,IAAI,CAAC,eAAe,EAAE,MAAM,GAAG,OAAO,GAAG,QAAQ,CAAC,CAAC,GACrF,IAAI,CAAC,eAAe,EAAE,MAAM,CAAC,CAAA;AAEjC,eAAO,MAAM,iBAAiB,UAAW,sBAAsB,gBAM9D,CAAA"}

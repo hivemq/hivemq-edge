@@ -1,0 +1,15 @@
+{
+  "name": "@atlaskit/pragmatic-drag-and-drop/element/format-urls-for-external",
+  "main": "../../dist/cjs/entry-point/element/format-urls-for-external.js",
+  "module": "../../dist/esm/entry-point/element/format-urls-for-external.js",
+  "module:es2019": "../../dist/es2019/entry-point/element/format-urls-for-external.js",
+  "sideEffects": true,
+  "types": "../../dist/types/entry-point/element/format-urls-for-external.d.ts",
+  "typesVersions": {
+    ">=4.5 <5.4": {
+      "*": [
+        "../../dist/types-ts4.5/entry-point/element/format-urls-for-external.d.ts"
+      ]
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@atlaskit/pragmatic-drag-and-drop/private/get-element-from-point-without-honey-pot",
+  "main": "../../dist/cjs/entry-point/private/get-element-from-point-without-honey-pot.js",
+  "module": "../../dist/esm/entry-point/private/get-element-from-point-without-honey-pot.js",
+  "module:es2019": "../../dist/es2019/entry-point/private/get-element-from-point-without-honey-pot.js",
+  "sideEffects": true,
+  "types": "../../dist/types/entry-point/private/get-element-from-point-without-honey-pot.d.ts",
+  "typesVersions": {
+    ">=4.5 <5.4": {
+      "*": [
+        "../../dist/types-ts4.5/entry-point/private/get-element-from-point-without-honey-pot.d.ts"
+      ]
+    }
+  }
+}

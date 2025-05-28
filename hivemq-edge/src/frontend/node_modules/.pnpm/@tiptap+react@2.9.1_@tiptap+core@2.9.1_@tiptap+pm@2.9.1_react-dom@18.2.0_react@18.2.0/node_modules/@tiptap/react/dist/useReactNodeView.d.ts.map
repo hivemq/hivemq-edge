@@ -1,0 +1,1 @@
+{"version":3,"file":"useReactNodeView.d.ts","sourceRoot":"","sources":["../src/useReactNodeView.ts"],"names":[],"mappings":"AAEA,MAAM,WAAW,yBAAyB;IACxC,WAAW,EAAE,CAAC,KAAK,EAAE,SAAS,KAAK,IAAI,CAAC;IACxC,kBAAkB,EAAE,CAAC,OAAO,EAAE,WAAW,GAAG,IAAI,KAAK,IAAI,CAAC;CAC3D;AAED,eAAO,MAAM,oBAAoB,6DAE/B,CAAA;AAEF,eAAO,MAAM,gBAAgB,0CAAyC,CAAA"}
