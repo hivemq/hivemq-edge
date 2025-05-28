@@ -1,0 +1,13 @@
+allOf:
+  - $ref: "./ValidationError.yaml"
+  - type: object
+    properties:
+      field:
+        type: string
+        description: The invalid identifier field.
+      value:
+        type: string
+        description: The invalid identifier value.
+    required:
+      - field
+      - value
