@@ -1,0 +1,25 @@
+allOf:
+  - $ref: "./ValidationError.yaml"
+  - type: object
+    properties:
+      actualLength:
+        type: integer
+        description: The actual length of the field value.
+      expectedMinimumLength:
+        type: integer
+        description: The minimum length expected for the field value.
+      expectedMaximumLength:
+        type: integer
+        description: The maximum length expected for the field value.
+      field:
+        type: string
+        description: The invalid field.
+      value:
+        type: string
+        description: The invalid value.
+    required:
+      - actualLength
+      - expectedMinimumLength
+      - expectedMaximumLength
+      - field
+      - value
