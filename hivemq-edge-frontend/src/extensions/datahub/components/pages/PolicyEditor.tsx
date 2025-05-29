@@ -83,6 +83,8 @@ const PolicyEditor: FC = () => {
         onAddNodes([{ item: newNode, type: 'add' }])
         if (type === DataHubNodeType.DATA_POLICY || type === DataHubNodeType.BEHAVIOR_POLICY)
           setStatus(status, { type })
+
+        event.dataTransfer.clearData(DND_DESIGNER_NODE_TYPE)
       }
     },
     [onAddNodes, reactFlowInstance, setStatus, status]
