@@ -30,7 +30,7 @@ const DesignerToolbox: FC = () => {
     <Panel position="top-left">
       <HStack role="group" aria-label={t('workspace.toolbars.draft.aria-label')} p={1}>
         <Popover>
-          {({ isOpen }) => (
+          {({ isOpen, onClose }) => (
             <>
               <PopoverTrigger>
                 <IconButton
@@ -53,7 +53,7 @@ const DesignerToolbox: FC = () => {
                 <PopoverHeader>{t('workspace.toolbox.panel.aria-label')}</PopoverHeader>
                 <PopoverBody as={VStack} alignItems="flex-start" maxWidth="12rem">
                   <Text fontSize="sm">{t('workspace.toolbox.panel.helper')}</Text>
-                  <ToolboxNodes direction="vertical" />
+                  <ToolboxNodes direction="vertical" callback={onClose} />
                 </PopoverBody>
               </PopoverContent>
             </>
