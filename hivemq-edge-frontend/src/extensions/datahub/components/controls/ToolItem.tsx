@@ -17,6 +17,10 @@ interface ToolProps extends ButtonProps {
 const ToolItem: FC<ToolProps> = ({ nodeType, isDisabled, callback }) => {
   const { t } = useTranslation('datahub')
 
+  const onButtonDragEnd = useCallback((event: React.DragEvent<HTMLButtonElement>) => {
+    event.dataTransfer.clearData(DND_DESIGNER_NODE_TYPE)
+  }, [])
+
   const onButtonDragStart = useCallback(
     (event: React.DragEvent<HTMLButtonElement>) => {
       if (isDisabled) {
@@ -34,6 +38,7 @@ const ToolItem: FC<ToolProps> = ({ nodeType, isDisabled, callback }) => {
     <IconButton
       size="lg"
       onDragStart={onButtonDragStart}
+      onDragEnd={onButtonDragEnd}
       draggable
       isDisabled={isDisabled}
       icon={<NodeIcon type={nodeType} />}
