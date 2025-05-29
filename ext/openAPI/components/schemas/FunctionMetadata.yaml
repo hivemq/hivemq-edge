@@ -1,0 +1,21 @@
+description: Metadata for operation functions
+type: object
+properties:
+  isTerminal:
+    type: boolean
+    description: The function is a terminal element of a pipeline
+  isDataOnly:
+    type: boolean
+    description: The function is only available for Data Policies
+  hasArguments:
+    type: boolean
+    description: The function has extra arguments
+  inLicenseAllowed:
+    type: boolean
+    description: The function can be used with the current user's license
+  supportedEvents:
+    type: array
+    items:
+      $ref: ./BehaviorPolicyTransitionEvent.yaml
+    
+
