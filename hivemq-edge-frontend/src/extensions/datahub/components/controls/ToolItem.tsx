@@ -10,6 +10,7 @@ import { NodeIcon } from '@datahub/components/helpers'
 
 interface ToolProps extends ButtonProps {
   nodeType: DataHubNodeType
+  callback?: () => void
 }
 
 const ToolItem: FC<ToolProps> = ({ nodeType, isDisabled }) => {
@@ -22,9 +23,10 @@ const ToolItem: FC<ToolProps> = ({ nodeType, isDisabled }) => {
       } else if (event && !isDisabled) {
         event.dataTransfer.setData('application/reactflow', nodeType.toString())
         event.dataTransfer.effectAllowed = 'move'
+        callback?.()
       }
     },
-    [nodeType, isDisabled]
+    [isDisabled, nodeType, callback]
   )
 
   return (
