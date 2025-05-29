@@ -12,12 +12,12 @@ import type {
 } from '@rjsf/utils'
 import { getTemplate, getUiOptions, TranslatableString } from '@rjsf/utils'
 import type { GenericObjectType } from '@rjsf/utils'
-import validator from '@rjsf/validator-ajv8'
 import { Alert, AlertTitle, Box, Divider, FormControl, Heading, List, ListIcon, ListItem, Text } from '@chakra-ui/react'
 import { WarningIcon } from '@chakra-ui/icons'
 
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
+import { customFormatsValidator } from '@/components/rjsf/Form/validation.utils.ts'
 
 // overriding the heading definition
 function TitleFieldTemplate<T = unknown, S extends StrictRJSFSchema = RJSFSchema>({
@@ -171,7 +171,7 @@ export const ReactFlowSchemaForm: FC<ReactFlowSchemaFormProps> = (props) => {
         ErrorListTemplate,
         TitleFieldTemplate,
       }}
-      validator={validator}
+      validator={customFormatsValidator}
       // TODO[NVL] Not sure we want to hide the validation when readonly
       noValidate={!isNodeEditable}
       uiSchema={{
