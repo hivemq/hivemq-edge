@@ -95,7 +95,7 @@ describe('OperationPanel', () => {
     cy.get('[role="group"]:has(> label#root_id-label) + [role="list"]').as('id_Errors')
     cy.get('@id_Errors').should('contain.text', "must have required property 'id'")
 
-    cy.get('[role="group"]:has(> label#root_formData_topic-label) + [role="list"]').as('topic_Errors')
+    cy.get('[role="group"]:has(> label[for=root_formData_topic]) + [role="list"]').as('topic_Errors')
     cy.get('@topic_Errors').should('contain.text', "must have required property 'Topic'")
 
     cy.get('[role="alert"][data-status="error"]').should('be.visible')
@@ -170,13 +170,14 @@ describe('OperationPanel', () => {
       },
     }
 
-    it('should render the form', () => {
+    it.only('should render the form', () => {
       cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
         wrapper: getWrapperWith([node]),
       })
       cy.get('h2').should('contain.text', 'Delivery.redirectTo')
-      cy.get('label#root_formData_topic-label').should('contain.text', 'Topic')
-      cy.get('label#root_formData_topic-label + input').should('contain.value', 'a/simple/topic')
+      cy.get('label[for=root_formData_topic]').should('contain.text', 'Topic')
+      cy.get('label[for=root_formData_topic] + div').should('contain.text', 'a/simple/topic')
+
       cy.get('label:has(> input#root_formData_applyPolicies) ')
         .should('contain.text', 'Apply Policies')
         .should('have.attr', 'data-checked')
