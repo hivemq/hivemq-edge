@@ -1,0 +1,14 @@
+x-implements:
+  - com.hivemq.api.errors.OpenApiError
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The ID of the policy that failed to update.
+      reason:
+        type: string
+        description: The actual reason.
+    required:
+      - id
