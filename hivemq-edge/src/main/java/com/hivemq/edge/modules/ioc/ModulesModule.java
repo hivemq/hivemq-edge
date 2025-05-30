@@ -32,7 +32,7 @@ import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.ElementsIntoSet;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.Set;
 
 @SuppressWarnings("unused")

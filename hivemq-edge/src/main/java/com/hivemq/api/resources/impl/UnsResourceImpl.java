@@ -29,8 +29,8 @@ import com.hivemq.uns.config.ISA95;
 import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 
-import javax.inject.Inject;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author Simon L Johnson

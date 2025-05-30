@@ -19,8 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.persistence.local.IncomingMessageFlowLocalPersistence;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * @author Dominik Obermaier

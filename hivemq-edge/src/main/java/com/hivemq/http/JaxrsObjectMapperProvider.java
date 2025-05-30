@@ -25,14 +25,14 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
 import com.hivemq.edge.api.model.DataPolicyValidator;
 import com.hivemq.http.custom.CustomaPolicyValidatorTypeEnumSerializer;
 import org.jetbrains.annotations.NotNull;
 
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.ext.Provider;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.ext.Provider;
 
 /**
  * Sensible defaults for the JAXRS Object Mapper
@@ -41,7 +41,7 @@ import javax.ws.rs.ext.Provider;
  */
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
-public class JaxrsObjectMapperProvider extends JacksonJaxbJsonProvider {
+public class JaxrsObjectMapperProvider extends JacksonJsonProvider {
 
     private final @NotNull ObjectMapper mapper;
 

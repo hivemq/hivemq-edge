@@ -18,7 +18,7 @@ package com.hivemq.api.auth;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
 
 /**

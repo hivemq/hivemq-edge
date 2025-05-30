@@ -22,7 +22,7 @@ import com.hivemq.extension.sdk.api.services.session.ClientService;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.services.auth.Authenticators;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class Extensions {
 

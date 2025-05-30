@@ -32,8 +32,8 @@ import com.hivemq.util.ReasonStrings;
 import com.hivemq.util.Strings;
 import io.netty.buffer.ByteBuf;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * @author Dominik Obermaier

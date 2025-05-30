@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC128RSA15;
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.NONE;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
@@ -261,7 +262,7 @@ class OpcUaProtocolAdapterConfigTest {
 
         final OpcUaProtocolAdapterFactory protocolAdapterFactory = new OpcUaProtocolAdapterFactory(mockInput);
         final ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
-        when(manager.get("opcua")).thenReturn(Optional.of(protocolAdapterFactory));
+        when(manager.get(PROTOCOL_ID_OPCUA)).thenReturn(Optional.of(protocolAdapterFactory));
         final ProtocolAdapterConfigConverter converter = new ProtocolAdapterConfigConverter(manager, mapper);
         return converter;
     }

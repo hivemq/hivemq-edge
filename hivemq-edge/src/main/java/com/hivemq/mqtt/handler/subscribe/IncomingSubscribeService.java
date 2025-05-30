@@ -58,7 +58,7 @@ import org.slj.mqtt.sn.MqttsnConstants;
 import org.slj.mqtt.sn.codec.MqttsnCodecs;
 import org.slj.mqtt.sn.spi.IMqttsnMessage;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.*;
 
 import static com.hivemq.mqtt.message.ProtocolVersion.MQTTSNv1_2;

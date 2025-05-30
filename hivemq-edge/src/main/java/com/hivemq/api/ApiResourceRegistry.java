@@ -46,8 +46,8 @@ import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
