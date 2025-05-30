@@ -287,8 +287,10 @@ get:
       content:
         application/json:
           schema:
-            anyOf:
+            oneOf:
               - $ref: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
+            discriminator:
+              propertyName: type
       description: URL parameter missing
     '503':
       content:
@@ -388,18 +390,19 @@ post:
       content:
         application/json:
           schema:
-            anyOf:
+            oneOf:
               - $ref: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
               - $ref: "../components/schemas/errors/datahub/DataPolicyCreationFailureError.yaml"
               - $ref: "../components/schemas/errors/datahub/DataPolicyInvalidErrors.yaml"
               - $ref: "../components/schemas/errors/datahub/DataPolicyRejectedError.yaml"
+            discriminator:
+              propertyName: type
       description: DataPolicy creation failed
     '409':
       content:
         application/json:
           schema:
-            anyOf:
-              - $ref: "../components/schemas/errors/datahub/DataPolicyAlreadyPresentError.yaml"
+            $ref: "../components/schemas/errors/datahub/DataPolicyAlreadyPresentError.yaml"
       description: DataPolicy already present
     '500':
       content:
