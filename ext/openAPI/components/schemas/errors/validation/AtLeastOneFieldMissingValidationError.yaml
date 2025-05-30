@@ -1,0 +1,13 @@
+x-implements:
+  - com.hivemq.api.errors.OpenApiValidationError
+allOf:
+  - $ref: "./ValidationError.yaml"
+  - type: object
+    properties:
+      fields:
+        type: array
+        description: The missing fields.
+        items:
+          type: string
+    required:
+      - fields
