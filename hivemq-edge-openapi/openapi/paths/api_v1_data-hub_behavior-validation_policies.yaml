@@ -178,12 +178,19 @@ get:
           schema:
             $ref: ../components/schemas/BehaviorPolicyList.yaml
       description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            anyOf:
+              - $ref: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
+      description: URL parameter missing
     '503':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Temporarily not available
+            $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
+      description: Request resource temporary unavailable
   summary: Get all policies
   tags:
     - Data Hub - Behavior Policies
