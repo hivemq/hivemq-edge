@@ -1147,7 +1147,7 @@ paths:
                   - $ref: '#/components/schemas/RequestBodyMissingError'
                   - $ref: '#/components/schemas/DataPolicyCreationFailureError'
                   - $ref: '#/components/schemas/DataPolicyRejectedError'
-                  - $ref: '#/components/schemas/DataPolicyValidationErrors'
+                  - $ref: '#/components/schemas/DataPolicyInvalidErrors'
           description: DataPolicy creation failed
         '409':
           content:
@@ -1438,7 +1438,8 @@ paths:
                   - $ref: '#/components/schemas/RequestBodyMissingError'
                   - $ref: '#/components/schemas/UrlParameterMissingError'
                   - $ref: '#/components/schemas/DataPolicyCreationFailureError'
-                  - $ref: '#/components/schemas/DataPolicyValidationErrors'
+                  - $ref: '#/components/schemas/DataPolicyUserError'
+                  - $ref: '#/components/schemas/DataPolicyInvalidErrors'
                   - $ref: '#/components/schemas/PolicyIdMismatchError'
                   - $ref: '#/components/schemas/TopicFilterMismatchError'
           description: DataPolicy creation failed
@@ -5116,7 +5117,7 @@ components:
         - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ApiError'
-    DataPolicyValidationErrors:
+    DataPolicyInvalidErrors:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
@@ -5187,8 +5188,17 @@ components:
             id:
               type: string
               description: The policy id.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
           required:
             - id
+    DataPolicyUserError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
     PolicyIdMismatchError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
