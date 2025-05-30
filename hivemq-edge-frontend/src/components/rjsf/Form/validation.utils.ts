@@ -129,6 +129,8 @@ export const customFormatsValidator = customizeValidator(
     customFormats: {
       // TODO[26559] This is a hack to remove the error; fix at source
       ['boolean']: () => true,
+      // TODO[33325] This is a hack to remove the error; fix at source
+      interpolation: () => true,
       'mqtt-topic': (topic) => validationTopic(topic) === undefined,
       'mqtt-tag': (tag) => validationTag(tag) === undefined,
       'mqtt-topic-filter': (topicFilter) => validationTopicFilter(topicFilter) === undefined,
