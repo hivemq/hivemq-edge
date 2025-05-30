@@ -1,0 +1,15 @@
+x-implements:
+  - com.hivemq.api.errors.OpenApiError
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      actualId:
+        type: string
+        description: The actual id.
+      expectedId:
+        type: string
+        description: The expected id.
+    required:
+      - actualId
+      - expectedId

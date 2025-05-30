@@ -1,0 +1,27 @@
+x-implements:
+  - com.hivemq.api.errors.OpenApiValidationError
+allOf:
+  - $ref: "../validation/ValidationError.yaml"
+  - type: object
+    properties:
+      event:
+        type: string
+        description: The event name.
+      fromState:
+        type: string
+        description: The from state.
+      id:
+        type: string
+        description: The id.
+      path:
+        type: string
+        description: The path.
+      toState:
+        type: string
+        description: The to state.
+    required:
+      - event
+      - fromState
+      - id
+      - path
+      - toState

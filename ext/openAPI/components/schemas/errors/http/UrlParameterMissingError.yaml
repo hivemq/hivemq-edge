@@ -1,0 +1,11 @@
+x-implements:
+  - com.hivemq.api.errors.OpenApiError
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      parameter:
+        type: string
+        description: The name of the missing parameter.
+    required:
+      - parameter

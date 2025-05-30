@@ -1,0 +1,13 @@
+x-implements:
+  - com.hivemq.api.errors.OpenApiError
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      errors:
+        type: array
+        description: List of validation errors.
+        items:
+          $ref: "./ValidationError.yaml"
+    required:
+      - errors

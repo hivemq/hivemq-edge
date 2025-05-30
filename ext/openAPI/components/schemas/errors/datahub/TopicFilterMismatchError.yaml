@@ -1,0 +1,14 @@
+x-implements:
+  - com.hivemq.api.errors.OpenApiError
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      message:
+        type: string
+        description: The error message.
+      parameter:
+        type: string
+        description: The parameter.
+    required:
+      - parameter
