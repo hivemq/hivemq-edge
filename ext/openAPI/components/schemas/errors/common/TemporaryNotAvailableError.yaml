@@ -2,3 +2,9 @@ x-implements:
   - com.hivemq.api.errors.OpenApiError
 allOf:
   - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      status:
+        type: integer
+        default: 503
+        description: The HTTP status code.
