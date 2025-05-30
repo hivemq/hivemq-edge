@@ -123,8 +123,10 @@ get:
       content:
         application/json:
           schema:
-            anyOf:
+            oneOf:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
+            discriminator:
+              propertyName: type
       description: Bad request
     '404':
       content:
