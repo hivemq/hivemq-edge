@@ -25,9 +25,11 @@ delete:
       content:
         application/json:
           schema:
-            anyOf:
+            oneOf:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
               - $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
+            discriminator:
+              propertyName: type
       description: URL parameter missing
     '412':
       content:
@@ -122,8 +124,10 @@ get:
       content:
         application/json:
           schema:
-            anyOf:
+            oneOf:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
+            discriminator:
+              propertyName: type
       description: Bad request
     '404':
       content:
@@ -254,7 +258,7 @@ put:
       content:
         application/json:
           schema:
-            anyOf:
+            oneOf:
               - $ref: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
               - $ref: "../components/schemas/errors/datahub/DataPolicyCreationFailureError.yaml"
@@ -262,6 +266,8 @@ put:
               - $ref: "../components/schemas/errors/datahub/DataPolicyUserError.yaml"
               - $ref: "../components/schemas/errors/datahub/PolicyIdMismatchError.yaml"
               - $ref: "../components/schemas/errors/datahub/TopicFilterMismatchError.yaml"
+            discriminator:
+              propertyName: type
       description: DataPolicy creation failed
     '404':
       content:

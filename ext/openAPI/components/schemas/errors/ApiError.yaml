@@ -19,6 +19,8 @@ properties:
     type: integer
     default: 400
     format: int32
+    minimum: 100
+    maximum: 599
     description: The HTTP status code associated with the error.
 required:
   - title
