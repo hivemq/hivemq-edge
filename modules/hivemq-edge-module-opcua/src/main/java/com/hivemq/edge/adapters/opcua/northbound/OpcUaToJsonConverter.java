@@ -21,8 +21,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import org.eclipse.milo.opcua.sdk.core.dtd.BsdStructWrapper;
-import org.eclipse.milo.opcua.sdk.core.dtd.generic.Struct;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
@@ -162,14 +160,6 @@ public class OpcUaToJsonConverter {
             return convertValue(variant.getValue(), serializationContext);
         } else if (value instanceof final DiagnosticInfo info) {
             return convertDiagnosticInfo(info);
-        } else if (value instanceof final BsdStructWrapper<?> wrapper) {
-            return convertValue(wrapper.object(), serializationContext);
-        } else if (value instanceof final Struct struct) {
-            final JsonObject structRoot = new JsonObject();
-            struct.getMembers()
-                    .values()
-                    .forEach(member -> structRoot.add(member.getName(), convertValue(member.getValue(), serializationContext)));
-            return structRoot;
         } else if (value instanceof final DynamicStructType struct) {
             final JsonObject structRoot = new JsonObject();
             struct.getMembers()
