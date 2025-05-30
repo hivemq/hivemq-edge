@@ -4,12 +4,12 @@ allOf:
   - $ref: "../ApiError.yaml"
   - type: object
     properties:
-      id:
+      message:
         type: string
-        description: The policy id.
+        description: The error message.
       status:
         type: integer
-        default: 409
+        default: 404
         description: The HTTP status code.
     required:
-      - id
+      - message
