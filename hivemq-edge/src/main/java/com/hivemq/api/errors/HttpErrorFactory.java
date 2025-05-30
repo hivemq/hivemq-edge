@@ -23,21 +23,12 @@ import com.hivemq.edge.api.model.PreconditionFailedError;
 import com.hivemq.edge.api.model.RequestBodyMissingError;
 import com.hivemq.edge.api.model.TemporaryNotAvailableError;
 import com.hivemq.edge.api.model.UrlParameterMissingError;
-import com.hivemq.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.net.URI;
-
-public final class CommonErrorFactory {
-    private static final String CLASS_PREFIX = "com.hivemq";
-    private static final String TYPE_PREFIX = "https://hivemq.com";
-
-    private CommonErrorFactory() {
-    }
-
-    public static @NotNull URI type(final @NotNull Class<?> clazz) {
-        return URI.create(TYPE_PREFIX + clazz.getName().substring(CLASS_PREFIX.length()).replace(".", "/"));
+public final class HttpErrorFactory extends ErrorFactory {
+    private HttpErrorFactory() {
+        super();
     }
 
     public static @NotNull InsufficientStorageError insufficientStorageError() {
@@ -50,7 +41,6 @@ public final class CommonErrorFactory {
                 .title("Insufficient Storage")
                 .detail(reason == null ? "Insufficient Storage." : "Insufficient Storage: " + reason)
                 .reason(reason)
-                .status(HttpStatus.INSUFFICIENT_STORAGE_507)
                 .build();
     }
 
@@ -60,7 +50,6 @@ public final class CommonErrorFactory {
                 .title("Internal Error")
                 .detail(reason == null ? "An unexpected error occurred, check the logs." : reason)
                 .reason(reason)
-                .status(HttpStatus.INTERNAL_SERVER_ERROR_500)
                 .build();
     }
 
@@ -73,7 +62,6 @@ public final class CommonErrorFactory {
                 .detail("Query parameter '" + parameter + "' is invalid: " + reason)
                 .parameter(parameter)
                 .reason(reason)
-                .status(HttpStatus.BAD_REQUEST_400)
                 .build();
     }
 
@@ -84,7 +72,6 @@ public final class CommonErrorFactory {
                 .title("Precondition Failed")
                 .detail("A precondition required for fulfilling the request was not fulfilled: " + reason)
                 .reason(reason)
-                .status(HttpStatus.PRECONDITION_FAILED_412)
                 .build();
     }
 
@@ -92,8 +79,7 @@ public final class CommonErrorFactory {
         return RequestBodyMissingError.builder()
                 .type(type(RequestBodyMissingError.class))
                 .title("Required request body missing")
-                .detail("Required request body missing")
-                .status(HttpStatus.BAD_REQUEST_400)
+                .detail("Required request body missing.")
                 .build();
     }
 
@@ -103,7 +89,6 @@ public final class CommonErrorFactory {
                 .title("Required request body parameter " + parameter + " missing")
                 .detail("Required request body parameter " + parameter + " missing")
                 .parameter(parameter)
-                .status(HttpStatus.BAD_REQUEST_400)
                 .build();
     }
 
@@ -112,7 +97,6 @@ public final class CommonErrorFactory {
                 .type(type(TemporaryNotAvailableError.class))
                 .title("The endpoint is temporarily not available")
                 .detail("The endpoint is temporarily not available, please try again later")
-                .status(HttpStatus.SERVICE_UNAVAILABLE_503)
                 .build();
     }
 
@@ -122,7 +106,6 @@ public final class CommonErrorFactory {
                 .title("Required url parameter missing")
                 .detail("Required url parameter '" + parameter + "' missing")
                 .parameter(parameter)
-                .status(HttpStatus.BAD_REQUEST_400)
                 .build();
     }
 }
