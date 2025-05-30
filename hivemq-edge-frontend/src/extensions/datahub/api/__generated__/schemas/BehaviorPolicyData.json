@@ -78,7 +78,7 @@
       "properties": {
         "arguments": {
           "title": "Publish.quota options",
-          "description": "When you configure a publish-quota model, at least one of the available arguments must be present. Data Hub uses the default value for the missing parameter.\\nThe default value for minimum is 0. The default value for maxPublishes is -1 (UNLIMITED).",
+          "description": "When you configure a publish-quota model, at least one of the available arguments must be present. Data Hub uses the default value for the missing parameter.",
           "type": "object",
           "required": ["minPublishes", "maxPublishes"],
           "properties": {
@@ -86,15 +86,25 @@
               "title": "minPublishes",
               "description": "Defines the minimal number of published messages that must be reached",
               "type": "integer",
-              "minimum": 0.0,
-              "default": 0.0
+              "minimum": 0,
+              "default": 0
             },
             "maxPublishes": {
               "title": "maxPublishes",
               "description": "Defines the maximum number of published messages that must be reached",
-              "type": "integer",
-              "minimum": -1.0,
-              "default": -1.0
+              "oneOf": [
+                {
+                  "title": "No limit",
+                  "enum": ["UNLIMITED"],
+                  "default": "UNLIMITED"
+                },
+                {
+                  "title": "Limit the maximum number of published messages",
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 10
+                }
+              ]
             }
           }
         }
