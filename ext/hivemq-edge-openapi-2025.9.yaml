@@ -1214,7 +1214,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PreconditionFailedError'
-          description: Internal server error
+          description: Precondition failed
         '500':
           content:
             application/json:
@@ -1437,15 +1437,23 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/RequestBodyMissingError'
                   - $ref: '#/components/schemas/UrlParameterMissingError'
+                  - $ref: '#/components/schemas/DataPolicyCreationFailureError'
                   - $ref: '#/components/schemas/DataPolicyValidationErrors'
                   - $ref: '#/components/schemas/PolicyIdMismatchError'
+                  - $ref: '#/components/schemas/TopicFilterMismatchError'
           description: DataPolicy creation failed
         '404':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/DataPolicyNotFoundError'
           description: DataPolicy not found
+        '412':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreconditionFailedError'
+          description: Precondition failed
         '500':
           content:
             application/json:
@@ -5123,6 +5131,10 @@ components:
             id:
               type: string
               description: The policy id.
+            status:
+              type: integer
+              default: 409
+              description: The HTTP status code.
           required:
             - id
     InternalServerError:
@@ -5193,6 +5205,37 @@ components:
           required:
             - actualId
             - expectedId
+    TopicFilterMismatchError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            message:
+              type: string
+              description: The error message.
+            parameter:
+              type: string
+              description: The parameter.
+          required:
+            - parameter
+    DataPolicyNotFoundError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            message:
+              type: string
+              description: The error message.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
+          required:
+            - message
     PreconditionFailedError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
