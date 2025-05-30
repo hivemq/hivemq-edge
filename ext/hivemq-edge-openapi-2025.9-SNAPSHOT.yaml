@@ -1146,8 +1146,8 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/RequestBodyMissingError'
                   - $ref: '#/components/schemas/DataPolicyCreationFailureError'
-                  - $ref: '#/components/schemas/DataPolicyRejectedError'
                   - $ref: '#/components/schemas/DataPolicyInvalidErrors'
+                  - $ref: '#/components/schemas/DataPolicyRejectedError'
           description: DataPolicy creation failed
         '409':
           content:
@@ -1438,8 +1438,8 @@ paths:
                   - $ref: '#/components/schemas/RequestBodyMissingError'
                   - $ref: '#/components/schemas/UrlParameterMissingError'
                   - $ref: '#/components/schemas/DataPolicyCreationFailureError'
-                  - $ref: '#/components/schemas/DataPolicyUserError'
                   - $ref: '#/components/schemas/DataPolicyInvalidErrors'
+                  - $ref: '#/components/schemas/DataPolicyUserError'
                   - $ref: '#/components/schemas/PolicyIdMismatchError'
                   - $ref: '#/components/schemas/TopicFilterMismatchError'
           description: DataPolicy creation failed
@@ -5112,16 +5112,16 @@ components:
               description: The actual reason.
           required:
             - reason
-    DataPolicyRejectedError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
     DataPolicyInvalidErrors:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ValidationErrors'
+    DataPolicyRejectedError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
     DataPolicyAlreadyPresentError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
