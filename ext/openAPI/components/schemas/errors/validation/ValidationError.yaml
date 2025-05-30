@@ -15,7 +15,10 @@ required:
 discriminator:
   propertyName: type
   mapping:
+    AtLeastOneFieldMissingValidationError: "./AtLeastOneFieldMissingValidationError.yaml"
     EmptyFieldValidationError: "./EmptyFieldValidationError.yaml"
+    IllegalFunctionValidationError: "../datahub/IllegalFunctionValidationError.yaml"
+    IllegalTransitionValidationError: "../datahub/IllegalTransitionValidationError.yaml"
     InvalidFieldLengthValidationError: "./InvalidFieldLengthValidationError.yaml"
     InvalidFieldValueValidationError: "./InvalidFieldValueValidationError.yaml"
     InvalidIdentifierValidationError: "./InvalidIdentifierValidationError.yaml"

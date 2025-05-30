@@ -455,7 +455,9 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/RequestBodyMissingError'
-                  - $ref: '#/components/schemas/BehaviorPolicyValidationErrors'
+                  - $ref: '#/components/schemas/BehaviorPolicyCreationFailureError'
+                  - $ref: '#/components/schemas/BehaviorPolicyInvalidErrors'
+                  - $ref: '#/components/schemas/BehaviorPolicyRejectedError'
                 discriminator:
                   propertyName: type
           description: Policy creation failed
@@ -463,26 +465,26 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Already exists
+                $ref: '#/components/schemas/BehaviorPolicyAlreadyPresentError'
+          description: Behavior policy already present
         '500':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Internal error
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
         '503':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
-          description: Temporarily unavailable
+          description: Request resource temporary unavailable
         '507':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Insufficient storage error
+                $ref: '#/components/schemas/InsufficientStorageError'
+          description: Insufficient storage
       summary: Create a new policy
       tags:
         - Data Hub - Behavior Policies
@@ -1184,7 +1186,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DataPolicyAlreadyPresentError'
-          description: DataPolicy already present
+          description: Data policy already present
         '500':
           content:
             application/json:
@@ -4755,6 +4757,18 @@ components:
             parameter:
               type: string
               description: The the missing request body parameter.
+    BehaviorPolicyCreationFailureError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - reason
     ValidationError:
       x-implements:
         - com.hivemq.api.errors.OpenApiValidationError
@@ -4773,7 +4787,10 @@ components:
       discriminator:
         propertyName: type
         mapping:
+          AtLeastOneFieldMissingValidationError: '#/components/schemas/AtLeastOneFieldMissingValidationError'
           EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          IllegalFunctionValidationError: '#/components/schemas/IllegalFunctionValidationError'
+          IllegalTransitionValidationError: '#/components/schemas/IllegalTransitionValidationError'
           InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
           InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
           InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
@@ -4784,6 +4801,20 @@ components:
           GeneralPolicyValidationError: '#/components/schemas/GeneralPolicyValidationError'
           InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
           UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
+    AtLeastOneFieldMissingValidationError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiValidationError
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            fields:
+              type: array
+              description: The missing fields.
+              items:
+                type: string
+          required:
+            - fields
     EmptyFieldValidationError:
       x-implements:
         - com.hivemq.api.errors.OpenApiValidationError
@@ -4796,6 +4827,58 @@ components:
               description: The missing field.
           required:
             - field
+    IllegalFunctionValidationError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiValidationError
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            event:
+              type: string
+              description: The event name.
+            id:
+              type: string
+              description: The function id.
+            message:
+              type: string
+              description: The error message.
+            path:
+              type: string
+              description: The path.
+          required:
+            - event
+            - id
+            - message
+            - path
+    IllegalTransitionValidationError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiValidationError
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            event:
+              type: string
+              description: The event name.
+            fromState:
+              type: string
+              description: The from state.
+            id:
+              type: string
+              description: The id.
+            path:
+              type: string
+              description: The path.
+            toState:
+              type: string
+              description: The to state.
+          required:
+            - event
+            - fromState
+            - id
+            - path
+            - toState
     InvalidFieldLengthValidationError:
       x-implements:
         - com.hivemq.api.errors.OpenApiValidationError
@@ -4994,11 +5077,63 @@ components:
                 $ref: '#/components/schemas/ValidationError'
           required:
             - errors
-    BehaviorPolicyValidationErrors:
+    BehaviorPolicyInvalidErrors:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ValidationErrors'
+    BehaviorPolicyRejectedError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+    BehaviorPolicyAlreadyPresentError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The policy id.
+            message:
+              type: string
+              description: The error message.
+            status:
+              type: integer
+              default: 409
+              description: The HTTP status code.
+          required:
+            - id
+    InternalServerError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+            status:
+              type: integer
+              default: 500
+              description: The HTTP status code.
+    InsufficientStorageError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+            status:
+              type: integer
+              default: 507
+              description: The HTTP status code.
     UrlParameterMissingError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
@@ -5027,20 +5162,6 @@ components:
               description: The HTTP status code.
           required:
             - id
-    InternalServerError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-            status:
-              type: integer
-              default: 500
-              description: The HTTP status code.
     JsonNode:
       type: object
       description: The arguments of the fsm derived from the behavior policy.
@@ -5194,26 +5315,15 @@ components:
             id:
               type: string
               description: The policy id.
+            message:
+              type: string
+              description: The error message.
             status:
               type: integer
               default: 409
               description: The HTTP status code.
           required:
             - id
-    InsufficientStorageError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-            status:
-              type: integer
-              default: 507
-              description: The HTTP status code.
     DataPolicyUserError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
