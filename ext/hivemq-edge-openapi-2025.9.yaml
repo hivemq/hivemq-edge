@@ -736,8 +736,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Policy creation failed
+                oneOf:
+                  - $ref: '#/components/schemas/RequestBodyMissingError'
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                  - $ref: '#/components/schemas/BehaviorPolicyCreationFailureError'
+                  - $ref: '#/components/schemas/BehaviorPolicyInvalidErrors'
+                  - $ref: '#/components/schemas/BehaviorPolicyUpdateFailureError'
+                  - $ref: '#/components/schemas/PolicyIdMismatchError'
+          description: Behavior policy creation failed
         '404':
           content:
             application/json:
@@ -748,27 +754,27 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/PreconditionFailedError'
           description: Precondition failed
         '500':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Internal error
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Temporarily unavailable
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
         '507':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Insufficient storage error
-      summary: Update an existing policy
+                $ref: '#/components/schemas/InsufficientStorageError'
+          description: Insufficient storage
+      summary: Update an existing behavior policy
       tags:
         - Data Hub - Behavior Policies
   /api/v1/data-hub/behavior-validation/states/{clientId}:
@@ -1457,18 +1463,18 @@ paths:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
                   - $ref: '#/components/schemas/DataPolicyCreationFailureError'
                   - $ref: '#/components/schemas/DataPolicyInvalidErrors'
-                  - $ref: '#/components/schemas/DataPolicyUserError'
+                  - $ref: '#/components/schemas/DataPolicyUpdateFailureError'
                   - $ref: '#/components/schemas/PolicyIdMismatchError'
                   - $ref: '#/components/schemas/TopicFilterMismatchError'
                 discriminator:
                   propertyName: type
-          description: DataPolicy creation failed
+          description: Data policy creation failed
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DataPolicyNotFoundError'
-          description: DataPolicy not found
+          description: Data policy not found
         '412':
           content:
             application/json:
@@ -5162,6 +5168,53 @@ components:
               description: The HTTP status code.
           required:
             - id
+    BehaviorPolicyUpdateFailureError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The ID of the policy that failed to update.
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - id
+    PolicyIdMismatchError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            actualId:
+              type: string
+              description: The actual id.
+            expectedId:
+              type: string
+              description: The expected id.
+          required:
+            - actualId
+            - expectedId
+    PreconditionFailedError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+            status:
+              type: integer
+              default: 412
+              description: The HTTP status code.
+          required:
+            - reason
     JsonNode:
       type: object
       description: The arguments of the fsm derived from the behavior policy.
@@ -5324,27 +5377,21 @@ components:
               description: The HTTP status code.
           required:
             - id
-    DataPolicyUserError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-    PolicyIdMismatchError:
+    DataPolicyUpdateFailureError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ApiError'
         - type: object
           properties:
-            actualId:
+            id:
               type: string
-              description: The actual id.
-            expectedId:
+              description: The ID of the policy that failed to update.
+            reason:
               type: string
-              description: The expected id.
+              description: The actual reason.
           required:
-            - actualId
-            - expectedId
+            - id
     TopicFilterMismatchError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
@@ -5376,22 +5423,6 @@ components:
               description: The HTTP status code.
           required:
             - message
-    PreconditionFailedError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-            status:
-              type: integer
-              default: 412
-              description: The HTTP status code.
-          required:
-            - reason
     Errors:
       type: object
     BehaviorPolicyTransitionEvent:
