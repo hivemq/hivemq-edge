@@ -1,3 +1,5 @@
+x-implements:
+  - com.hivemq.api.errors.OpenApiValidationError
 type: object
 properties:
   detail:
@@ -5,7 +7,22 @@ properties:
     description: Detailed contextual description of the validation error.
   type:
     type: string
+    format: uri
     description: Type of the validation error.
 required:
   - detail
   - type
+discriminator:
+  propertyName: type
+  mapping:
+    EmptyFieldValidationError: "./EmptyFieldValidationError.yaml"
+    InvalidFieldLengthValidationError: "./InvalidFieldLengthValidationError.yaml"
+    InvalidFieldValueValidationError: "./InvalidFieldValueValidationError.yaml"
+    InvalidIdentifierValidationError: "./InvalidIdentifierValidationError.yaml"
+    MissingFieldValidationError: "./MissingFieldValidationError.yaml"
+    UnsupportedFieldValidationError: "./UnsupportedFieldValidationError.yaml"
+    AtMostOneFunctionValidationError: "../datahub/AtMostOneFunctionValidationError.yaml"
+    FunctionMustBePairedValidationError: "../datahub/FunctionMustBePairedValidationError.yaml"
+    GeneralPolicyValidationError: "../datahub/GeneralPolicyValidationError.yaml"
+    InvalidFunctionOrderValidationError: "../datahub/InvalidFunctionOrderValidationError.yaml"
+    UnknownVariableValidationError: "../datahub/UnknownVariableValidationError.yaml"
