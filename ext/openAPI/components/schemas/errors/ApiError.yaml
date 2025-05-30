@@ -17,6 +17,7 @@ properties:
     description: A URI reference that identifies the error type.
   status:
     type: integer
+    default: 400
     format: int32
     description: The HTTP status code associated with the error.
 required:
