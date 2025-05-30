@@ -403,7 +403,7 @@ post:
         application/json:
           schema:
             $ref: "../components/schemas/errors/datahub/DataPolicyAlreadyPresentError.yaml"
-      description: DataPolicy already present
+      description: Data policy already present
     '500':
       content:
         application/json:
