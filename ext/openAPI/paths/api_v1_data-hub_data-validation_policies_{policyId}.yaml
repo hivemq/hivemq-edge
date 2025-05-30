@@ -121,32 +121,15 @@ get:
     '400':
       content:
         application/json:
-          examples:
-            param-missing:
-              description: Example response when a required parameter is missing.
-              summary: Required URL parameter missing
-              value:
-                errors:
-                  - title: Required parameter missing
-                    detail: Required URL parameter 'parameterName' is missing
           schema:
             anyOf:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
-              - $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
       description: Bad request
     '404':
       content:
         application/json:
-          examples:
-            not-found:
-              description: Policy not found
-              summary: Not found
-              value:
-                errors:
-                  - title: Resource not found
-                    detail: Resource with id 'my-resource-id' not found
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
       description: Resource not found
     '500':
       content:
