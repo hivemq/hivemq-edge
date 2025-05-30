@@ -275,7 +275,9 @@ put:
               - $ref: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
               - $ref: "../components/schemas/errors/datahub/DataPolicyCreationFailureError.yaml"
-              - $ref: "../components/schemas/errors/datahub/DataPolicyValidationErrors.yaml"
+              - $ref: "../components/schemas/errors/datahub/DataPolicyUserError.yaml"
+              - $ref: "../components/schemas/errors/datahub/DataPolicyInvalidErrors.\
+                      yaml"
               - $ref: "../components/schemas/errors/datahub/PolicyIdMismatchError.yaml"
               - $ref: "../components/schemas/errors/datahub/TopicFilterMismatchError.yaml"
       description: DataPolicy creation failed
