@@ -356,8 +356,10 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
+                oneOf:
                   - $ref: '#/components/schemas/InvalidQueryParameterError'
+                discriminator:
+                  propertyName: type
           description: URL parameter missing
         '503':
           content:
@@ -451,9 +453,11 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
+                oneOf:
                   - $ref: '#/components/schemas/RequestBodyMissingError'
                   - $ref: '#/components/schemas/BehaviorPolicyValidationErrors'
+                discriminator:
+                  propertyName: type
           description: Policy creation failed
         '409':
           content:
@@ -605,8 +609,10 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
+                oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
+                discriminator:
+                  propertyName: type
           description: Bad request
         '404':
           content:
@@ -1070,8 +1076,10 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
+                oneOf:
                   - $ref: '#/components/schemas/InvalidQueryParameterError'
+                discriminator:
+                  propertyName: type
           description: URL parameter missing
         '503':
           content:
@@ -1163,18 +1171,19 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
+                oneOf:
                   - $ref: '#/components/schemas/RequestBodyMissingError'
                   - $ref: '#/components/schemas/DataPolicyCreationFailureError'
                   - $ref: '#/components/schemas/DataPolicyInvalidErrors'
                   - $ref: '#/components/schemas/DataPolicyRejectedError'
+                discriminator:
+                  propertyName: type
           description: DataPolicy creation failed
         '409':
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/DataPolicyAlreadyPresentError'
+                $ref: '#/components/schemas/DataPolicyAlreadyPresentError'
           description: DataPolicy already present
         '500':
           content:
@@ -1225,9 +1234,11 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
+                oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
                   - $ref: '#/components/schemas/PolicyNotFoundError'
+                discriminator:
+                  propertyName: type
           description: URL parameter missing
         '412':
           content:
@@ -1315,8 +1326,10 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
+                oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
+                discriminator:
+                  propertyName: type
           description: Bad request
         '404':
           content:
@@ -1437,7 +1450,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
+                oneOf:
                   - $ref: '#/components/schemas/RequestBodyMissingError'
                   - $ref: '#/components/schemas/UrlParameterMissingError'
                   - $ref: '#/components/schemas/DataPolicyCreationFailureError'
@@ -1445,6 +1458,8 @@ paths:
                   - $ref: '#/components/schemas/DataPolicyUserError'
                   - $ref: '#/components/schemas/PolicyIdMismatchError'
                   - $ref: '#/components/schemas/TopicFilterMismatchError'
+                discriminator:
+                  propertyName: type
           description: DataPolicy creation failed
         '404':
           content:
@@ -4696,6 +4711,8 @@ components:
           type: integer
           default: 400
           format: int32
+          minimum: 100
+          maximum: 599
           description: The HTTP status code associated with the error.
       required:
         - title
