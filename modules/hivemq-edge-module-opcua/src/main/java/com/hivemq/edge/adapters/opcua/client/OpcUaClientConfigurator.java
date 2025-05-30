@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
+import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
@@ -60,10 +61,10 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
     @Override
     public void accept(final OpcUaClientConfigBuilder opcUaClientConfigBuilder) {
 
-        opcUaClientConfigBuilder.setApplicationName(LocalizedText.english("HiveMQ Edge"));
-        opcUaClientConfigBuilder.setApplicationUri("urn:hivemq:edge:client");
-        opcUaClientConfigBuilder.setProductUri("https://github.com/hivemq/hivemq-edge");
-        opcUaClientConfigBuilder.setSessionName(() -> "HiveMQ Edge " + adapterId);
+        opcUaClientConfigBuilder.setApplicationName(LocalizedText.english(Constants.OPCUA_APPLICATION_NAME));
+        opcUaClientConfigBuilder.setApplicationUri(Constants.OPCUA_APPLICATION_URI);
+        opcUaClientConfigBuilder.setProductUri(Constants.OPCUA_PRODUCT_URI);
+        opcUaClientConfigBuilder.setSessionName(() -> Constants.OPCUA_SESSION_NAME_PREFIX + adapterId);
 
 
         final Tls tlsConfig = adapterConfig.getTls();

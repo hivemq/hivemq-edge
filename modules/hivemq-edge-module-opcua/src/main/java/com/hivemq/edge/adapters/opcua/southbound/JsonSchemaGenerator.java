@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.mqtt2opcua;
+package com.hivemq.edge.adapters.opcua.southbound;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,7 +44,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class JsonSchemaGenerator {
 
-    private static final Logger log = LoggerFactory.getLogger(JsonSchemaGenerator.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(JsonSchemaGenerator.class);
 
     private final @NotNull OpcUaClient client;
     private final @NotNull DataTypeTree tree;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.opcua2mqtt;
+package com.hivemq.edge.adapters.opcua.northbound;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -55,11 +55,11 @@ import java.util.Base64;
 import java.util.UUID;
 
 //see also https://reference.opcfoundation.org/Core/Part6/v105/docs/5.4
-public class OpcUaJsonPayloadConverter {
+public class OpcUaToJsonConverter {
 
-    private static final Logger log = LoggerFactory.getLogger(OpcUaJsonPayloadConverter.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaToJsonConverter.class);
 
-    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
+    private static final @NotNull Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
 
     public static @NotNull ByteBuffer convertPayload(
             final @NotNull EncodingContext serializationContext,

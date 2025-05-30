@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
+import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,14 +31,12 @@ import static java.util.Objects.requireNonNullElse;
 
 public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
-    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
-
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
     @ModuleConfigField(title = "Identifier",
                        description = "Unique identifier for this protocol adapter",
                        format = ModuleConfigField.FieldType.IDENTIFIER,
                        required = true,
-                       stringPattern = ID_REGEX,
+                       stringPattern = Constants.ID_REGEX,
                        stringMinLength = 1,
                        stringMaxLength = 1024)
     private @Nullable String id;
@@ -85,7 +84,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         this.tls = requireNonNullElse(tls, new Tls(false, null, null));
         this.opcuaToMqttConfig =
                 Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(null, null));
-        this.security = requireNonNullElse(security, new Security(SecPolicy.DEFAULT));
+        this.security = requireNonNullElse(security, new Security(Constants.DEFAULT_SECURITY_POLICY));
     }
 
 

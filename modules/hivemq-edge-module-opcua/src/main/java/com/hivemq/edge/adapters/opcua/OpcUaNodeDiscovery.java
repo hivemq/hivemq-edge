@@ -24,7 +24,7 @@ import java.util.function.BiConsumer;
 import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-public class OpcUaBrowser {
+public class OpcUaNodeDiscovery {
 
     public record CollectedNode(@NotNull String id,
                                 @NotNull String name,

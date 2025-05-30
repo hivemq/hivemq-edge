@@ -33,7 +33,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
-import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
+import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,7 +50,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
-    private final @Nullable OpcUaConnection opcUaConnection;
+    private final @Nullable OpcUaClientConnection opcUaClientConnection;
     private final @NotNull Map<String, OpcuaTag> tagNameToTag;
 
     public OpcUaProtocolAdapter(
@@ -62,7 +62,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         final var tagList = input.getTags().stream().map(tag -> (OpcuaTag)tag).toList();
         tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::getName, tag -> tag));
 
-        this.opcUaConnection = new OpcUaConnection(
+        this.opcUaClientConnection = new OpcUaClientConnection(
                 input.getConfig().getUri(),
                 tagList,
                 input.getConfig(),
@@ -82,7 +82,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         log.info("Starting OpcUa protocol adapter {}", adapterId);
-        opcUaConnection
+        opcUaClientConnection
             .start()
             .whenComplete((ignored, throwable) ->{
                 if(throwable != null) {
@@ -98,7 +98,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     @Override
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         log.info("Stopping OpcUa protocol adapter {}", adapterId);
-        opcUaConnection
+        opcUaClientConnection
             .stop()
             .whenComplete((ignored, throwable) ->{
                 if(throwable != null) {
@@ -114,7 +114,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     @Override
     public void discoverValues(
             final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
-        opcUaConnection
+        opcUaClientConnection
                 .discoverValues(input.getRootNode(), input.getDepth())
                 .whenComplete((collectedNodes, throwable) -> {
                     if (throwable != null) {
@@ -144,9 +144,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void write(final @NotNull WritingInput input, final @NotNull WritingOutput output) {
         final WritingContext writeContext = input.getWritingContext();
         final var opcuaTag = tagNameToTag.get(writeContext.getTagName());
-        if(opcUaConnection.isStarted()) {
+        if(opcUaClientConnection.isStarted()) {
             if(opcuaTag != null) {
-                opcUaConnection
+                opcUaClientConnection
                         .write(opcuaTag, (OpcUaPayload)input.getWritingPayload())
                         .whenComplete((statusCode, throwable) -> {
                             var badStatus = statusCode.stream().filter(StatusCode::isBad).findFirst();
@@ -179,7 +179,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void createTagSchema(
             final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         final var tag = tagNameToTag.get(input.getTagName());
-        opcUaConnection
+        opcUaClientConnection
                 .createTagScheam(tag)
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {

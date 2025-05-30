@@ -10,10 +10,10 @@ import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
-import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonSchemaGenerator;
-import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonToOpcUAConverter;
-import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
-import com.hivemq.edge.adapters.opcua.opcua2mqtt.OpcUaJsonPayloadConverter;
+import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
+import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
+import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
+import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
 import com.hivemq.edge.adapters.opcua.util.Bytes;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
@@ -44,13 +44,11 @@ import java.util.stream.Collectors;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
-import static com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation.PROTOCOL_ID;
+import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-public class OpcUaConnection {
-    private static final Logger log = LoggerFactory.getLogger(OpcUaConnection.class);
-
-    public static final byte[] EMTPY_BYTES = new byte[]{};
+public class OpcUaClientConnection {
+    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
 
     public record OpcUaClientContext(OpcUaClient client, ServiceFaultListener serviceFaultListener, SessionActivityListener sessionActivityListener) {}
 
@@ -67,7 +65,7 @@ public class OpcUaConnection {
     private volatile OpcUaClientContext opcUaClientInstance;
 
 
-    public OpcUaConnection(
+    public OpcUaClientConnection(
             final @NotNull String uri,
             final @NotNull List<OpcuaTag> tags,
             final @NotNull OpcUaSpecificAdapterConfig config,
@@ -248,7 +246,7 @@ public class OpcUaConnection {
                 for (int i = 0; i < items.size(); i++) {
                     final var tag = nodeIdToTag.get(items.get(i).getReadValueId().getNodeId());
                     if (null == tagToFirstSeen.putIfAbsent(tag, true)) {
-                        eventService.createAdapterEvent(adapterId, PROTOCOL_ID)
+                        eventService.createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                                 .withSeverity(Event.SEVERITY.INFO)
                                 .withMessage(String.format("Adapter '%s' took first sample for tag '%s'",
                                         adapterId,
@@ -269,10 +267,10 @@ public class OpcUaConnection {
         };
     }
 
-    public CompletableFuture<List<OpcUaBrowser.CollectedNode>> discoverValues(
+    public CompletableFuture<List<OpcUaNodeDiscovery.CollectedNode>> discoverValues(
             final @NotNull String rootNode,
             final int depth) {
-        return OpcUaBrowser.discoverValues(opcUaClientInstance.client(), rootNode, depth);
+        return OpcUaNodeDiscovery.discoverValues(opcUaClientInstance.client(), rootNode, depth);
     }
 
     public CompletableFuture<Optional<JsonNode>> createTagScheam(final OpcuaTag tag) {
@@ -285,16 +283,16 @@ public class OpcUaConnection {
             final @NotNull EncodingContext serializationContext) {
         //null value, emtpy buffer
         if (dataValue.getValue().getValue() == null) {
-            return EMTPY_BYTES;
+            return Constants.EMTPY_BYTES;
         }
-        return Bytes.fromReadOnlyBuffer(OpcUaJsonPayloadConverter.convertPayload(serializationContext, dataValue));
+        return Bytes.fromReadOnlyBuffer(OpcUaToJsonConverter.convertPayload(serializationContext, dataValue));
     }
 
     private @NotNull ServiceFaultListener createServiceFaultListener() {
         return serviceFault -> {
             //Fault listeners previously also triggered on dosconnects!
             log.info("OPC UA client of protocol adapter '{}' detected a service fault: {}", adapterId, serviceFault);
-            eventService.createAdapterEvent(adapterId, PROTOCOL_ID)
+            eventService.createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                     .withSeverity(Event.SEVERITY.ERROR)
                     .withPayload(serviceFault.getResponseHeader().getServiceResult())
                     .withMessage("A Service Fault was Detected.")
@@ -307,7 +305,7 @@ public class OpcUaConnection {
             @Override
             public void onSessionInactive(final @NotNull UaSession session) {
                 log.info("OPC UA client of protocol adapter '{}' disconnected: {}", adapterId, session);
-                eventService.createAdapterEvent(adapterId, PROTOCOL_ID)
+                eventService.createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                         .withSeverity(Event.SEVERITY.WARN)
                         .withPayload(session.getSessionName() + "/" + session.getSessionId())
                         .withMessage("Adapter '" + adapterId + "' session has been disconnected.")

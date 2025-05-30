@@ -35,7 +35,7 @@ import static com.hivemq.edge.adapters.opcua.config.SecPolicy.AES256_SHA256_RSAP
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC128RSA15;
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC256;
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC256SHA256;
-import static com.hivemq.edge.adapters.opcua.config.SecPolicy.DEFAULT;
+import static com.hivemq.edge.adapters.opcua.Constants.DEFAULT_SECURITY_POLICY;
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.NONE;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -96,7 +96,8 @@ class OpcUaEndpointFilterTest {
     public void whenDefaultEndpointConfigSet_thenPickMatchingEndpoint() {
         final OpcUaSpecificAdapterConfig config =
                 new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null);
-        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", convertToUri(DEFAULT), config);
+        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", convertToUri(
+                DEFAULT_SECURITY_POLICY), config);
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris));
 
