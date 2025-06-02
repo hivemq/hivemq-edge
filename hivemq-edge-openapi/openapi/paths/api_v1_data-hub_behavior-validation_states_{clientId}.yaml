@@ -40,20 +40,23 @@ get:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            oneOf:
+              - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
       description: URL parameter missing
     '404':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Client is disconnected
+            oneOf:
+              - $ref: "../components/schemas/errors/datahub/ClientDisconnectedError.yaml"
+              - $ref: "../components/schemas/errors/datahub/ClientNotFoundError.yaml"
+      description: Client error
     '500':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Internal Server error
+            $ref: "../components/schemas/errors/http/InternalServerError.yaml"
+      description: Internal server error
   summary: Get the state of a client
   tags:
     - Data Hub - State
