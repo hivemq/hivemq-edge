@@ -2106,13 +2106,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: A url parameter is missing
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                discriminator:
+                  propertyName: type
+          description: URL parameter missing
         '404':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/SchemaNotFoundError'
           description: Schema not found
         '500':
           content:
@@ -2120,6 +2123,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal server error
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Get a schema
       tags:
         - Data Hub - Schemas
@@ -5683,7 +5692,25 @@ components:
               description: The Precondition Failed HTTP Status Code.
           required:
             - id
-            - eTag
+    SchemaNotFoundError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema ID.
+            message:
+              type: string
+              description: The error message.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
+          required:
+            - id
     Script:
       type: object
       properties:
