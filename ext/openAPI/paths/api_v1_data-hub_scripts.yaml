@@ -199,6 +199,8 @@ post:
               - $ref: "../components/schemas/errors/datahub/ScriptInvalidErrors.yaml"
               - $ref: "../components/schemas/errors/datahub/ScriptParsingFailureError.yaml"
               - $ref: "../components/schemas/errors/datahub/ScriptSanitationFailureError.yaml"
+            discriminator:
+              propertyName: type
       description: Script creation failed
     '409':
       content:
