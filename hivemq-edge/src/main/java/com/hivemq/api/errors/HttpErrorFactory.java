@@ -76,18 +76,16 @@ public final class HttpErrorFactory extends ErrorFactory {
     }
 
     public static @NotNull RequestBodyMissingError requestBodyMissingError() {
+        return requestBodyMissingError(null);
+    }
+
+    public static @NotNull RequestBodyMissingError requestBodyMissingError(final @Nullable String parameter) {
         return RequestBodyMissingError.builder()
                 .type(type(RequestBodyMissingError.class))
                 .title("Required request body missing")
-                .detail("Required request body missing.")
-                .build();
-    }
-
-    public static @NotNull RequestBodyMissingError requestBodyMissingError(final @NotNull String parameter) {
-        return RequestBodyMissingError.builder()
-                .type(type(RequestBodyMissingError.class))
-                .title("Required request body parameter " + parameter + " missing")
-                .detail("Required request body parameter " + parameter + " missing")
+                .detail(parameter == null ?
+                        "Required request body missing." :
+                        "Required request body parameter " + parameter + " missing.")
                 .parameter(parameter)
                 .build();
     }
