@@ -27,10 +27,15 @@ delete:
           schema:
             oneOf:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
-              - $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
             discriminator:
               propertyName: type
       description: URL parameter missing
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
+      description: Behavior policy not found
     '412':
       content:
         application/json:
@@ -130,7 +135,7 @@ get:
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
+            $ref: "../components/schemas/errors/datahub/BehaviorPolicyNotFoundError.yaml"
       description: Policy not found
     '500':
       content:
@@ -260,8 +265,8 @@ put:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Policy not found
+            $ref: "../components/schemas/errors/datahub/BehaviorPolicyNotFoundError.yaml"
+      description: Data policy not found
     '412':
       content:
         application/json:
