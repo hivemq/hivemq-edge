@@ -93,26 +93,29 @@ get:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            oneOf:
+              - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
+            discriminator:
+              propertyName: type
       description: URL parameter missing
     '404':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/datahub/ScriptNotFoundError.yaml"
       description: Script not found
     '500':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/http/InternalServerError.yaml"
       description: Internal Server error
     '503':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Temporary not available
+            $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
+      description: Request resource temporary unavailable
   summary: Get a script
   tags:
     - Data Hub - Scripts
