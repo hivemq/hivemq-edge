@@ -818,20 +818,23 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
           description: URL parameter missing
         '404':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Client is disconnected
+                oneOf:
+                  - $ref: '#/components/schemas/ClientDisconnectedError'
+                  - $ref: '#/components/schemas/ClientNotFoundError'
+          description: Client error
         '500':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Internal Server error
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
       summary: Get the state of a client
       tags:
         - Data Hub - State
@@ -5253,6 +5256,38 @@ components:
             $ref: '#/components/schemas/FsmStateInformationItem'
       required:
         - items
+    ClientDisconnectedError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The client id.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
+          required:
+            - id
+    ClientNotFoundError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The client id.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
+          required:
+            - id
     DataPolicyMatching:
       type: object
       description: The matching rules the policy applies.
