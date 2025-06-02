@@ -2043,31 +2043,35 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Schema referenced
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                  - $ref: '#/components/schemas/SchemaReferencedError'
+                discriminator:
+                  propertyName: type
+          description: URL parameter missing
         '404':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/SchemaNotFoundError'
           description: Schema not found
         '412':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Mismatch between schema and etag
+                $ref: '#/components/schemas/SchemaEtagMismatchError'
+          description: Schema doesn't match etag
         '500':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Internal server error
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server error
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
       summary: Delete all versions of the schema
       tags:
@@ -5718,6 +5722,21 @@ components:
               type: integer
               default: 404
               description: The HTTP status code.
+          required:
+            - id
+    SchemaReferencedError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema ID.
+            message:
+              type: string
+              description: The error message.
           required:
             - id
     Script:
