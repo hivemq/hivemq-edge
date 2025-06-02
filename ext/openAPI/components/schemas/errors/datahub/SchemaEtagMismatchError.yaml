@@ -1,0 +1,18 @@
+x-implements:
+  - com.hivemq.api.errors.OpenApiError
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The schema id.
+      eTag:
+        type: string
+        description: The eTag.
+      status:
+        type: integer
+        default: 412
+        description: The Precondition Failed HTTP Status Code.
+    required:
+      - id
