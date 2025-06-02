@@ -42,6 +42,8 @@ get:
           schema:
             oneOf:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
+            discriminator:
+              propertyName: type
       description: URL parameter missing
     '404':
       content:
@@ -50,6 +52,8 @@ get:
             oneOf:
               - $ref: "../components/schemas/errors/datahub/ClientDisconnectedError.yaml"
               - $ref: "../components/schemas/errors/datahub/ClientNotFoundError.yaml"
+            discriminator:
+              propertyName: type
       description: Client error
     '500':
       content:
