@@ -1,0 +1,15 @@
+x-implements:
+  - com.hivemq.api.errors.OpenApiError
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      alias:
+        type: string
+        description: The schema alias.
+      message:
+        type: string
+        description: The error message.
+    required:
+      - alias
+      - message
