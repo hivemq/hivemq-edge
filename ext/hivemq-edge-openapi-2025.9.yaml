@@ -1967,31 +1967,41 @@ paths:
             application/json:
               schema:
                 oneOf:
+                  - $ref: '#/components/schemas/RequestBodyMissingError'
                   - $ref: '#/components/schemas/SchemaInvalidErrors'
+                  - $ref: '#/components/schemas/SchemaParsingFailureError'
+                discriminator:
+                  propertyName: type
           description: Schema creation failed
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Schema already exists
+                $ref: '#/components/schemas/SchemaAlreadyPresentError'
+          description: Schema is already present
         '412':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Mismatch between schema and etag
+                $ref: '#/components/schemas/SchemaEtagMismatchError'
+          description: Schema doesn't match etag
         '500':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
         '507':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InsufficientStorageError'
           description: Insufficient storage
       summary: Create a new schema
       tags:
@@ -5622,6 +5632,58 @@ components:
         - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ValidationErrors'
+    SchemaParsingFailureError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            alias:
+              type: string
+              description: The schema alias.
+            message:
+              type: string
+              description: The error message.
+          required:
+            - alias
+            - message
+    SchemaAlreadyPresentError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema id.
+            status:
+              type: integer
+              default: 409
+              description: The Request Conflict HTTP Status Code.
+          required:
+            - id
+    SchemaEtagMismatchError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema id.
+            eTag:
+              type: string
+              description: The eTag.
+            status:
+              type: integer
+              default: 412
+              description: The Precondition Failed HTTP Status Code.
+          required:
+            - id
+            - eTag
     Script:
       type: object
       properties:
