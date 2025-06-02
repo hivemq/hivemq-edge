@@ -2279,6 +2279,8 @@ paths:
                   - $ref: '#/components/schemas/ScriptInvalidErrors'
                   - $ref: '#/components/schemas/ScriptParsingFailureError'
                   - $ref: '#/components/schemas/ScriptSanitationFailureError'
+                discriminator:
+                  propertyName: type
           description: Script creation failed
         '409':
           content:
@@ -2406,13 +2408,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                discriminator:
+                  propertyName: type
           description: URL parameter missing
         '404':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/ScriptNotFoundError'
           description: Script not found
         '500':
           content:
@@ -2424,8 +2429,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Temporary not available
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Get a script
       tags:
         - Data Hub - Scripts
@@ -5689,6 +5694,22 @@ components:
               description: The Precondition Failed HTTP Status Code.
           required:
             - id
+    ScriptNotFoundError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script ID.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
+          required:
+            - message
     Capability:
       type: object
       description: List of result items that are returned by this endpoint
