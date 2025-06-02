@@ -6,7 +6,7 @@ allOf:
     properties:
       id:
         type: string
-        description: The policy id.
+        description: The behavior policy id.
       message:
         type: string
         description: The error message.

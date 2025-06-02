@@ -6,10 +6,7 @@ allOf:
     properties:
       id:
         type: string
-        description: The data policy id.
-      message:
-        type: string
-        description: The error message.
+        description: The script id.
       status:
         type: integer
         default: 409
