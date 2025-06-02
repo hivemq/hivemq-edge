@@ -1,0 +1,11 @@
+x-implements:
+  - com.hivemq.api.errors.OpenApiError
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      reason:
+        type: string
+        description: The actual reason.
+    required:
+      - reason

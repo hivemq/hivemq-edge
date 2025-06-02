@@ -1187,7 +1187,7 @@ paths:
                   - $ref: '#/components/schemas/DataPolicyRejectedError'
                 discriminator:
                   propertyName: type
-          description: DataPolicy creation failed
+          description: Data policy creation failed
         '409':
           content:
             application/json:
@@ -1956,8 +1956,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Schema could not be validatetd
+                oneOf:
+                  - $ref: '#/components/schemas/SchemaInvalidErrors'
+          description: Schema creation failed
         '409':
           content:
             application/json:
@@ -2272,37 +2273,42 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Script is invalid
+                oneOf:
+                  - $ref: '#/components/schemas/RequestBodyMissingError'
+                  - $ref: '#/components/schemas/ScriptCreationFailureError'
+                  - $ref: '#/components/schemas/ScriptInvalidErrors'
+                  - $ref: '#/components/schemas/ScriptParsingFailureError'
+                  - $ref: '#/components/schemas/ScriptSanitationFailureError'
+          description: Script creation failed
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/ScriptAlreadyPresentError'
           description: Script is already present
         '412':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/ScriptEtagMismatchError'
           description: Script doesn't match etag
         '500':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Temporary not available
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
         '507':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InsufficientStorageError'
           description: Insufficient storage
       summary: Create a new script
       tags:
@@ -4795,19 +4801,19 @@ components:
         propertyName: type
         mapping:
           AtLeastOneFieldMissingValidationError: '#/components/schemas/AtLeastOneFieldMissingValidationError'
+          AtMostOneFunctionValidationError: '#/components/schemas/AtMostOneFunctionValidationError'
           EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
+          GeneralPolicyValidationError: '#/components/schemas/GeneralPolicyValidationError'
           IllegalFunctionValidationError: '#/components/schemas/IllegalFunctionValidationError'
           IllegalTransitionValidationError: '#/components/schemas/IllegalTransitionValidationError'
           InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
           InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
           InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
           MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
-          UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
-          AtMostOneFunctionValidationError: '#/components/schemas/AtMostOneFunctionValidationError'
-          FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
-          GeneralPolicyValidationError: '#/components/schemas/GeneralPolicyValidationError'
-          InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
           UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
+          UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
     AtLeastOneFieldMissingValidationError:
       x-implements:
         - com.hivemq.api.errors.OpenApiValidationError
@@ -4822,6 +4828,29 @@ components:
                 type: string
           required:
             - fields
+    AtMostOneFunctionValidationError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiValidationError
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            function:
+              type: string
+              description: The function.
+            occurrences:
+              type: integer
+              format: int32
+              description: The occurrences of the function.
+            paths:
+              type: array
+              items:
+                type: string
+              description: The paths where the function occurs.
+          required:
+            - function
+            - occurrences
+            - paths
     EmptyFieldValidationError:
       x-implements:
         - com.hivemq.api.errors.OpenApiValidationError
@@ -4834,6 +4863,34 @@ components:
               description: The missing field.
           required:
             - field
+    FunctionMustBePairedValidationError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiValidationError
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            existingFunction:
+              type: string
+              description: The existing function.
+            missingFunction:
+              type: string
+              description: The missing function.
+          required:
+            - existingFunction
+            - missingFunction
+    GeneralPolicyValidationError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiValidationError
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            title:
+              type: string
+              description: The title.
+          required:
+            - title
     IllegalFunctionValidationError:
       x-implements:
         - com.hivemq.api.errors.OpenApiValidationError
@@ -4933,6 +4990,26 @@ components:
           required:
             - field
             - value
+    InvalidFunctionOrderValidationError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiValidationError
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            field:
+              type: string
+              description: The field.
+            function:
+              type: string
+              description: The function.
+            previousFunction:
+              type: string
+              description: The previous function.
+          required:
+            - field
+            - function
+            - previousFunction
     InvalidIdentifierValidationError:
       x-implements:
         - com.hivemq.api.errors.OpenApiValidationError
@@ -4961,6 +5038,24 @@ components:
               description: The missing field.
           required:
             - field
+    UnknownVariableValidationError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiValidationError
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            field:
+              type: string
+              description: The field.
+            variables:
+              type: array
+              items:
+                type: string
+              description: The unknown variables.
+          required:
+            - field
+            - variables
     UnsupportedFieldValidationError:
       x-implements:
         - com.hivemq.api.errors.OpenApiValidationError
@@ -4981,95 +5076,6 @@ components:
             - actualValue
             - expectedValue
             - field
-    AtMostOneFunctionValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
-      allOf:
-        - $ref: '#/components/schemas/ValidationError'
-        - type: object
-          properties:
-            function:
-              type: string
-              description: The function.
-            occurrences:
-              type: integer
-              format: int32
-              description: The occurrences of the function.
-            paths:
-              type: array
-              items:
-                type: string
-              description: The paths where the function occurs.
-          required:
-            - function
-            - occurrences
-            - paths
-    FunctionMustBePairedValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
-      allOf:
-        - $ref: '#/components/schemas/ValidationError'
-        - type: object
-          properties:
-            existingFunction:
-              type: string
-              description: The existing function.
-            missingFunction:
-              type: string
-              description: The missing function.
-          required:
-            - existingFunction
-            - missingFunction
-    GeneralPolicyValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
-      allOf:
-        - $ref: '#/components/schemas/ValidationError'
-        - type: object
-          properties:
-            title:
-              type: string
-              description: The title.
-          required:
-            - title
-    InvalidFunctionOrderValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
-      allOf:
-        - $ref: '#/components/schemas/ValidationError'
-        - type: object
-          properties:
-            field:
-              type: string
-              description: The field.
-            function:
-              type: string
-              description: The function.
-            previousFunction:
-              type: string
-              description: The previous function.
-          required:
-            - field
-            - function
-            - previousFunction
-    UnknownVariableValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
-      allOf:
-        - $ref: '#/components/schemas/ValidationError'
-        - type: object
-          properties:
-            field:
-              type: string
-              description: The field.
-            variables:
-              type: array
-              items:
-                type: string
-              description: The unknown variables.
-          required:
-            - field
-            - variables
     ValidationErrors:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
@@ -5103,7 +5109,7 @@ components:
           properties:
             id:
               type: string
-              description: The policy id.
+              description: The behavior policy id.
             message:
               type: string
               description: The error message.
@@ -5400,14 +5406,14 @@ components:
           properties:
             id:
               type: string
-              description: The policy id.
+              description: The data policy id.
             message:
               type: string
               description: The error message.
             status:
               type: integer
               default: 409
-              description: The HTTP status code.
+              description: The Request Conflict HTTP Status Code.
           required:
             - id
     DataPolicyUpdateFailureError:
@@ -5561,6 +5567,11 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/PolicySchema'
+    SchemaInvalidErrors:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ValidationErrors'
     Script:
       type: object
       properties:
@@ -5602,6 +5613,82 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Script'
+    ScriptCreationFailureError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - reason
+    ScriptInvalidErrors:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ValidationErrors'
+    ScriptParsingFailureError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - reason
+    ScriptSanitationFailureError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - reason
+    ScriptAlreadyPresentError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script id.
+            status:
+              type: integer
+              default: 409
+              description: The Request Conflict HTTP Status Code.
+          required:
+            - id
+    ScriptEtagMismatchError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script id.
+            eTag:
+              type: string
+              description: The eTag.
+            status:
+              type: integer
+              default: 412
+              description: The Precondition Failed HTTP Status Code.
+          required:
+            - id
     Capability:
       type: object
       description: List of result items that are returned by this endpoint
