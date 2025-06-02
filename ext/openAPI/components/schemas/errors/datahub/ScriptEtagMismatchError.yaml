@@ -6,13 +6,13 @@ allOf:
     properties:
       id:
         type: string
-        description: The data policy id.
-      message:
+        description: The script id.
+      eTag:
         type: string
-        description: The error message.
+        description: The eTag.
       status:
         type: integer
-        default: 409
-        description: The Request Conflict HTTP Status Code.
+        default: 412
+        description: The Precondition Failed HTTP Status Code.
     required:
       - id
