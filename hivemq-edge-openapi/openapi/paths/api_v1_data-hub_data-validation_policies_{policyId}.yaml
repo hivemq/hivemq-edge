@@ -27,10 +27,15 @@ delete:
           schema:
             oneOf:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
-              - $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
             discriminator:
               propertyName: type
       description: URL parameter missing
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
+      description: Data policy not found
     '412':
       content:
         application/json:
