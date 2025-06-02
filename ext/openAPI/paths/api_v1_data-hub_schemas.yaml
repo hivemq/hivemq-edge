@@ -151,11 +151,20 @@ get:
           schema:
             $ref: ../components/schemas/SchemaList.yaml
       description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
+            discriminator:
+              propertyName: type
+      description: URL parameter missing
     '503':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
       description: Request resource temporary unavailable
   summary: Get all schemas
   tags:
