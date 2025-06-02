@@ -2220,12 +2220,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/ScriptList'
           description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InvalidQueryParameterError'
+                discriminator:
+                  propertyName: type
+          description: URL parameter missing
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Temporary not available
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Get all scripts
       tags:
         - Data Hub - Scripts
@@ -2423,7 +2432,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal Server error
         '503':
           content:
