@@ -193,37 +193,42 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Script is invalid
+            oneOf:
+              - $ref: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
+              - $ref: "../components/schemas/errors/datahub/ScriptCreationFailureError.yaml"
+              - $ref: "../components/schemas/errors/datahub/ScriptInvalidErrors.yaml"
+              - $ref: "../components/schemas/errors/datahub/ScriptParsingFailureError.yaml"
+              - $ref: "../components/schemas/errors/datahub/ScriptSanitationFailureError.yaml"
+      description: Script creation failed
     '409':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/datahub/ScriptAlreadyPresentError.yaml"
       description: Script is already present
     '412':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/datahub/ScriptEtagMismatchError.yaml"
       description: Script doesn't match etag
     '500':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/http/InternalServerError.yaml"
       description: Internal server error
     '503':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Temporary not available
+            $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
+      description: Request resource temporary unavailable
     '507':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/http/InsufficientStorageError.yaml"
       description: Insufficient storage
   summary: Create a new script
   tags:
