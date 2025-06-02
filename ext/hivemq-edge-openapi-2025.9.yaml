@@ -518,10 +518,15 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
-                  - $ref: '#/components/schemas/PolicyNotFoundError'
                 discriminator:
                   propertyName: type
           description: URL parameter missing
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyNotFoundError'
+          description: Behavior policy not found
         '412':
           content:
             application/json:
@@ -618,7 +623,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PolicyNotFoundError'
+                $ref: '#/components/schemas/BehaviorPolicyNotFoundError'
           description: Policy not found
         '500':
           content:
@@ -746,8 +751,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Policy not found
+                $ref: '#/components/schemas/BehaviorPolicyNotFoundError'
+          description: Data policy not found
         '412':
           content:
             application/json:
@@ -1245,10 +1250,15 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
-                  - $ref: '#/components/schemas/PolicyNotFoundError'
                 discriminator:
                   propertyName: type
           description: URL parameter missing
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyNotFoundError'
+          description: Data policy not found
         '412':
           content:
             application/json:
@@ -2349,32 +2359,36 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Script is referenced
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                  - $ref: '#/components/schemas/ScriptReferencedError'
+                discriminator:
+                  propertyName: type
+          description: URL parameter missing
         '404':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/ScriptNotFoundError'
           description: Script not found
         '412':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/ScriptEtagMismatchError'
           description: Script doesn't match etag
         '500':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal Server error
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Temporary not available
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Delete a script
       tags:
         - Data Hub - Scripts
@@ -5173,7 +5187,7 @@ components:
               description: The name of the missing parameter.
           required:
             - parameter
-    PolicyNotFoundError:
+    BehaviorPolicyNotFoundError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
@@ -5182,7 +5196,10 @@ components:
           properties:
             id:
               type: string
-              description: The policy id.
+              description: The data policy id.
+            message:
+              type: string
+              description: The error message.
             status:
               type: integer
               default: 404
@@ -5236,6 +5253,22 @@ components:
               description: The HTTP status code.
           required:
             - reason
+    PolicyNotFoundError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The policy id.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
+          required:
+            - id
     JsonNode:
       type: object
       description: The arguments of the fsm derived from the behavior policy.
@@ -5467,6 +5500,9 @@ components:
         - $ref: '#/components/schemas/ApiError'
         - type: object
           properties:
+            id:
+              type: string
+              description: The data policy id.
             message:
               type: string
               description: The error message.
@@ -5475,7 +5511,7 @@ components:
               default: 404
               description: The HTTP status code.
           required:
-            - message
+            - id
     Errors:
       type: object
     BehaviorPolicyTransitionEvent:
@@ -5713,12 +5749,30 @@ components:
             id:
               type: string
               description: The script ID.
+            message:
+              type: string
+              description: The error message.
             status:
               type: integer
               default: 404
               description: The HTTP status code.
           required:
-            - message
+            - id
+    ScriptReferencedError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script ID.
+            message:
+              type: string
+              description: The error message.
+          required:
+            - id
     Capability:
       type: object
       description: List of result items that are returned by this endpoint
