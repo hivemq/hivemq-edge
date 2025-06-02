@@ -206,8 +206,9 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Schema could not be validatetd
+            oneOf:
+              - $ref: "../components/schemas/errors/datahub/SchemaInvalidErrors.yaml"
+      description: Schema creation failed
     '409':
       content:
         application/json:

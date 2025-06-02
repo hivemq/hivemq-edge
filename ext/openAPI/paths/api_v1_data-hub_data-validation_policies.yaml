@@ -397,7 +397,7 @@ post:
               - $ref: "../components/schemas/errors/datahub/DataPolicyRejectedError.yaml"
             discriminator:
               propertyName: type
-      description: DataPolicy creation failed
+      description: Data policy creation failed
     '409':
       content:
         application/json:
