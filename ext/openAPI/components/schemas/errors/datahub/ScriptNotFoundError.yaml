@@ -1,0 +1,15 @@
+x-implements:
+  - com.hivemq.api.errors.OpenApiError
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The script ID.
+      status:
+        type: integer
+        default: 404
+        description: The HTTP status code.
+    required:
+      - message
