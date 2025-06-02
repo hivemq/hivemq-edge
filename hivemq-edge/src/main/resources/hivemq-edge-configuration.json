@@ -206,6 +206,25 @@
         "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/modules/hivemq-edge-module-mtconnect/src/main/resources/httpd/images/mtconnect-icon.png",
         "external" : true
       }
+    },
+    {
+      "id" : "redis",
+      "version" : "2025.8",
+      "name" : "Redis Protocol Adapter",
+      "description" : "Connects HiveMQ Edge to existing Redis.",
+      "author" : "HiveMQ",
+      "documentationLink" : {
+        "url" : "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#redis-protocol-adapter",
+        "external" : true
+      },
+      "provisioningLink" : {
+        "url" : "https://github.com/hivemq/hivemq-edge/releases",
+        "external" : true
+      },
+      "logoUrl" : {
+        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/modules/hivemq-edge-module-redis/src/main/resources/httpd/images/redis.png",
+        "external" : true
+      }
     }
   ],
   "properties" : {  }

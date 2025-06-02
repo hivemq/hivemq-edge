@@ -118,6 +118,7 @@ dependencies {
     edgeModule("com.hivemq:hivemq-edge-module-opcua")
     edgeModule("com.hivemq:hivemq-edge-module-modbus")
     edgeModule("com.hivemq:hivemq-edge-module-mtconnect")
+    edgeModule("com.hivemq:hivemq-edge-module-redis")
 }
 
 val hivemqEdgeZip by tasks.registering(Zip::class) {
@@ -143,6 +144,7 @@ val edgeProjectsToUpdate = setOf(
     "hivemq-edge-module-http",
     "hivemq-edge-module-modbus",
     "hivemq-edge-module-mtconnect",
+    "hivemq-edge-module-redis",
     "hivemq-edge-module-opcua",
     "hivemq-edge-module-plc4x"
 )

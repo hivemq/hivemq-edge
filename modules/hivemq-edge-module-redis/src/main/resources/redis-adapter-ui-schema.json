@@ -1,0 +1,49 @@
+{
+  "ui:tabs": [
+    {
+      "id": "coreFields",
+      "title": "Settings",
+      "properties": [
+        "id",
+        "server",
+        "port",
+        "username",
+        "password"
+      ]
+    },
+    {
+      "id": "publishing",
+      "title": "Publishing",
+      "properties": [
+        "maxPollingErrorsBeforeRemoval",
+        "pollingIntervalMillis"
+      ]
+    },
+    {
+      "id": "subFields",
+      "title": "Tag definition",
+      "properties": [
+        "key",
+        "type",
+        "field",
+        "getall",
+        "*"
+      ]
+    }
+  ],
+  "password": {
+    "ui:widget": "password"
+  },
+  "type":  {
+    "ui:widget": "select"
+  },
+  "ui:order": [
+    "id",
+    "server",
+    "port",
+    "*"
+  ],
+  "definition" : {
+    "ui:batchMode" : true
+  }
+}
