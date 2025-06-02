@@ -1,0 +1,18 @@
+x-implements:
+  - com.hivemq.api.errors.OpenApiError
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The schema ID.
+      message:
+        type: string
+        description: The error message.
+      status:
+        type: integer
+        default: 404
+        description: The HTTP status code.
+    required:
+      - id
