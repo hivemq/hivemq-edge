@@ -92,7 +92,7 @@ get:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/Errors.yaml
+            $ref: "../components/schemas/errors/http/InternalServerError.yaml"
       description: Internal server error
   summary: Get all FSMs as a JSON Schema
   tags:
