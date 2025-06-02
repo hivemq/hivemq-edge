@@ -825,6 +825,8 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
+                discriminator:
+                  propertyName: type
           description: URL parameter missing
         '404':
           content:
@@ -833,6 +835,8 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ClientDisconnectedError'
                   - $ref: '#/components/schemas/ClientNotFoundError'
+                discriminator:
+                  propertyName: type
           description: Client error
         '500':
           content:
@@ -1596,7 +1600,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
       summary: Get all FSMs as a JSON Schema
       tags:
@@ -5544,8 +5548,6 @@ components:
               description: The HTTP status code.
           required:
             - id
-    Errors:
-      type: object
     BehaviorPolicyTransitionEvent:
       type: string
       description: Accepted event in transition
