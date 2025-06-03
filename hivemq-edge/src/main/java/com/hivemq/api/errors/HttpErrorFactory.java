@@ -21,6 +21,7 @@ import com.hivemq.edge.api.model.InternalServerError;
 import com.hivemq.edge.api.model.InvalidQueryParameterError;
 import com.hivemq.edge.api.model.PreconditionFailedError;
 import com.hivemq.edge.api.model.RequestBodyMissingError;
+import com.hivemq.edge.api.model.RequestBodyParameterMissingError;
 import com.hivemq.edge.api.model.TemporaryNotAvailableError;
 import com.hivemq.edge.api.model.UrlParameterMissingError;
 import org.jetbrains.annotations.NotNull;
@@ -76,16 +77,18 @@ public final class HttpErrorFactory extends ErrorFactory {
     }
 
     public static @NotNull RequestBodyMissingError requestBodyMissingError() {
-        return requestBodyMissingError(null);
-    }
-
-    public static @NotNull RequestBodyMissingError requestBodyMissingError(final @Nullable String parameter) {
         return RequestBodyMissingError.builder()
                 .type(type(RequestBodyMissingError.class))
                 .title("Required request body missing")
-                .detail(parameter == null ?
-                        "Required request body missing." :
-                        "Required request body parameter " + parameter + " missing.")
+                .detail("Required request body missing.")
+                .build();
+    }
+
+    public static @NotNull RequestBodyParameterMissingError requestBodyParameterMissingError(final @NotNull String parameter) {
+        return RequestBodyParameterMissingError.builder()
+                .type(type(RequestBodyParameterMissingError.class))
+                .title("Required request body parameter missing")
+                .detail("Required request body parameter '" + parameter + "' missing.")
                 .parameter(parameter)
                 .build();
     }
