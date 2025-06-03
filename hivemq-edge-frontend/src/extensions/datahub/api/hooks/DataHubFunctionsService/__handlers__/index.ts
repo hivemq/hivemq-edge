@@ -59,7 +59,7 @@ export const MOCK_DATAHUB_FUNCTIONS_DELIVERY_REDIRECT: FunctionSpecs = {
         type: 'string',
         title: 'Topic',
         description: 'The destination MQTT topic according to the MQTT specification.',
-        format: 'interpolation',
+        format: 'mqtt-topic',
       },
       applyPolicies: {
         type: 'boolean',
