@@ -216,7 +216,7 @@ post:
         application/json:
           schema:
             oneOf:
-              - $ref: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
+              - $ref: "../components/schemas/errors/http/RequestBodyParameterMissingError.yaml"
               - $ref: "../components/schemas/errors/datahub/SchemaInvalidErrors.yaml"
               - $ref: "../components/schemas/errors/datahub/SchemaParsingFailureError.yaml"
             discriminator:
