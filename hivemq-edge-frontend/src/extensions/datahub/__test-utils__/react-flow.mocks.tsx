@@ -3,7 +3,7 @@ import type { Edge, Node } from '@xyflow/react'
 import { useLocation } from 'react-router-dom'
 import { Card, CardBody, CardHeader } from '@chakra-ui/react'
 
-import { DataPolicyValidator } from '@/api/__generated__'
+import { BehaviorPolicyTransitionEvent, DataPolicyValidator } from '@/api/__generated__'
 import type {
   ClientFilterData,
   DesignerStatus,
@@ -21,7 +21,6 @@ import {
   OperationData,
   SchemaType,
   StrategyType,
-  TransitionType,
 } from '@/extensions/datahub/types.ts'
 import { styleDefaultEdge } from '@/extensions/datahub/utils/edge.utils.ts'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
@@ -95,7 +94,7 @@ export const MOCK_INITIAL_POLICY = () => {
 
   const transitionNode: Node<TransitionData> = {
     id: '8',
-    data: { event: TransitionType.ON_ANY },
+    data: { event: BehaviorPolicyTransitionEvent.EVENT_ON_ANY },
     type: DataHubNodeType.TRANSITION,
     position: { x: 645, y: 210 },
   }

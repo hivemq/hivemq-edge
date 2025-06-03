@@ -5,7 +5,7 @@ describe('ConfirmationDialog', () => {
     cy.viewport(800, 600)
   })
 
-  it.only('should render properly', () => {
+  it('should render properly', () => {
     const onClose = cy.stub().as('onClose')
     const onSubmit = cy.stub().as('onSubmit')
     cy.mountWithProviders(
@@ -34,7 +34,7 @@ describe('ConfirmationDialog', () => {
     cy.get('@onSubmit').should('have.been.called')
   })
 
-  it.only('should render alternative submit', () => {
+  it('should render alternative submit', () => {
     cy.mountWithProviders(
       <ConfirmationDialog
         isOpen={true}
