@@ -203,7 +203,7 @@ post:
         application/json:
           schema:
             oneOf:
-              - $ref: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
+              - $ref: "../components/schemas/errors/http/RequestBodyParameterMissingError.yaml"
               - $ref: "../components/schemas/errors/datahub/ScriptCreationFailureError.yaml"
               - $ref: "../components/schemas/errors/datahub/ScriptInvalidErrors.yaml"
               - $ref: "../components/schemas/errors/datahub/ScriptParsingFailureError.yaml"
