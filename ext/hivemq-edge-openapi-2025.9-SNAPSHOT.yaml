@@ -5601,58 +5601,6 @@ components:
         - schema
     FunctionSpecsList:
       type: object
-    BehaviorPolicyTransitionEvent:
-      type: string
-      description: Accepted event in transition
-      enum:
-        - Event.OnAny
-        - Connection.OnDisconnect
-        - Mqtt.OnInboundConnect
-        - Mqtt.OnInboundDisconnect
-        - Mqtt.OnInboundPublish
-        - Mqtt.OnInboundSubscribe
-    FunctionMetadata:
-      description: Metadata for operation functions
-      type: object
-      properties:
-        isTerminal:
-          type: boolean
-          description: The function is a terminal element of a pipeline
-        isDataOnly:
-          type: boolean
-          description: The function is only available for Data Policies
-        hasArguments:
-          type: boolean
-          description: The function has extra arguments
-        inLicenseAllowed:
-          type: boolean
-          description: The function can be used with the current user's license
-        supportedEvents:
-          type: array
-          items:
-            $ref: '#/components/schemas/BehaviorPolicyTransitionEvent'
-    FunctionSpecs:
-      description: The configuration of a DataHub operation function
-      type: object
-      properties:
-        functionId:
-          type: string
-          description: The unique name of the function
-        metadata:
-          $ref: '#/components/schemas/FunctionMetadata'
-          description: The metadata associated with the function
-        schema:
-          $ref: '#/components/schemas/JsonNode'
-          description: the full JSON-Schema describimng the function and its arguments
-        uiSchema:
-          $ref: '#/components/schemas/JsonNode'
-          description: An optional UI Schema to customise the rendering of the configuraton form
-      required:
-        - functionId
-        - metadata
-        - schema
-    FunctionSpecsList:
-      type: object
       description: List of function configurations
       properties:
         items:
