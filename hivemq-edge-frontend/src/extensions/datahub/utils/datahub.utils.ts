@@ -3,6 +3,8 @@ import { OperationData } from '@datahub/types.ts'
 
 export const DND_DESIGNER_NODE_TYPE = 'application/reactflow;type=designer-node'
 
+export const DND_DESIGNER_NODE_TYPE = 'application/reactflow;type=designer-node'
+
 export const SCRIPT_FUNCTION_SEPARATOR = ':'
 export const SCRIPT_FUNCTION_PREFIX = 'fn'
 export const SCRIPT_FUNCTION_LATEST = 'latest'
