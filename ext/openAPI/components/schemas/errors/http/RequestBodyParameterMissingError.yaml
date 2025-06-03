@@ -4,7 +4,10 @@ allOf:
   - $ref: "../../ProblemDetails.yaml"
   - type: object
     properties:
+      parameter:
+        type: string
+        description: The the missing request body parameter.
       status:
         type: integer
-        default: 503
+        default: 400
         description: The HTTP status code.
