@@ -1762,7 +1762,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
       summary: Get all functions as a JSON Schema
       tags:
