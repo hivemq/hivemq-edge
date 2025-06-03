@@ -16,7 +16,7 @@ import type { EdgeStyle } from './status-utils.ts'
 import { getEdgeStatus, getThemeForStatus, updateEdgesStatus, updateNodeStatus } from './status-utils.ts'
 import { type EdgeStatus, NodeTypes } from '../types.ts'
 
-const disconnectedBridge: NodeProps<Bridge> = {
+const disconnectedBridge: NodeProps<Node<Bridge>> = {
   ...MOCK_NODE_BRIDGE,
   data: {
     ...MOCK_NODE_BRIDGE.data,
@@ -25,7 +25,7 @@ const disconnectedBridge: NodeProps<Bridge> = {
     },
   },
 }
-const disconnectedAdapter: NodeProps<Adapter> = {
+const disconnectedAdapter: NodeProps<Node<Adapter>> = {
   ...MOCK_NODE_ADAPTER,
   data: {
     ...MOCK_NODE_ADAPTER.data,

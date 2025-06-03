@@ -43,9 +43,9 @@ import type { CombinerContext } from '../types'
 import SchemaMerger from './SchemaMerger'
 
 interface DestinationSchemaLoaderProps {
-  title: string | undefined
-  description: string | undefined
-  isInvalid: boolean
+  title?: string
+  description?: string
+  isInvalid?: boolean
   formData?: DataCombining
   formContext?: CombinerContext
   onChange: (schema: string, v?: Instruction[]) => void
@@ -64,7 +64,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
   onChangeInstructions,
   title,
   description,
-  isInvalid,
+  isInvalid = false,
 }) => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()

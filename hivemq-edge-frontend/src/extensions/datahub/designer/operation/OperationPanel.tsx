@@ -1,27 +1,50 @@
-import type { FC } from 'react'
-import { useCallback, useMemo } from 'react'
-import type { Node } from '@xyflow/react'
-import { getIncomers } from '@xyflow/react'
+import { type FC, useCallback, useMemo } from 'react'
+import { type Node, getIncomers } from '@xyflow/react'
 import type { IChangeEvent } from '@rjsf/core'
 import type { CustomValidator } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
-
 import { Card, CardBody } from '@chakra-ui/react'
+
+import type { BehaviorPolicyTransitionEvent } from '@/api/__generated__'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
-import { MOCK_OPERATION_SCHEMA } from '@datahub/designer/operation/OperationData.ts'
-import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
-import { getAllParents, isFunctionNodeType, reduceIdsFrom } from '@datahub/utils/node.utils.ts'
-import type { DataPolicyData, PanelProps } from '@datahub/types.ts'
-import { DataHubNodeType, OperationData } from '@datahub/types.ts'
+import { getOperationSchema } from '@datahub/designer/operation/OperationPanel.utils.ts'
+import { useGetFilteredFunction } from '@datahub/hooks/useGetFilteredFunctions.tsx'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
-import ErrorMessage from '@/components/ErrorMessage.tsx'
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import type { DataPolicyData, PanelProps, TransitionData } from '@datahub/types.ts'
+import { DataHubNodeType, OperationData } from '@datahub/types.ts'
+import { getAllParents, isFunctionNodeType, reduceIdsFrom } from '@datahub/utils/node.utils.ts'
+
+interface OperationPanelContext {
+  type: DataHubNodeType | undefined
+  transition: BehaviorPolicyTransitionEvent | undefined
+}
 
 export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
-  const { nodes, edges, functions } = useDataHubDraftStore()
+  const { nodes, edges } = useDataHubDraftStore()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
+
+  const context = useMemo<OperationPanelContext>(() => {
+    const operationNode = nodes.find((e) => e.id === selectedNode) as Node<OperationData> | undefined
+    if (!operationNode?.data) return { type: undefined, transition: undefined }
+
+    const set = getAllParents(operationNode, nodes, edges)
+    const type =
+      (Array.from(set).find((e) => e.type === DataHubNodeType.DATA_POLICY || e.type === DataHubNodeType.BEHAVIOR_POLICY)
+        ?.type as DataHubNodeType) ?? DataHubNodeType.DATA_POLICY
+
+    const transition = (
+      Array.from(set).find((e) => e.type === DataHubNodeType.TRANSITION)?.data as TransitionData | undefined
+    )?.event
+
+    return { type, transition }
+  }, [edges, nodes, selectedNode])
+
+  const { data: functions } = useGetFilteredFunction(context.type, context.transition)
 
   const formData = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<OperationData> | undefined
@@ -65,6 +88,10 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
     [functions, onFormSubmit]
   )
 
+  const { schema, uiSchema } = useMemo(() => {
+    return getOperationSchema(functions)
+  }, [functions])
+
   const customValidate: CustomValidator<DataPolicyData> = (formData, errors) => {
     const isIdNotUnique = Boolean(pipelineIds?.find((id) => id === formData?.id))
     if (isIdNotUnique) errors['id']?.addError(t('error.validation.operation.notUnique'))
@@ -77,9 +104,10 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
       <CardBody>
         <ReactFlowSchemaForm
           isNodeEditable={isNodeEditable}
-          schema={MOCK_OPERATION_SCHEMA.schema}
-          uiSchema={MOCK_OPERATION_SCHEMA.uiSchema}
+          schema={schema}
+          uiSchema={uiSchema}
           formData={formData}
+          formContext={{ functions }}
           widgets={datahubRJSFWidgets}
           noHtml5Validate={true}
           onSubmit={onFixFormSubmit}
