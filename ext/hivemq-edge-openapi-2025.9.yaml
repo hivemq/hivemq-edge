@@ -4604,6 +4604,7 @@ components:
         detail:
           type: string
         errors:
+          deprecated: true
           type: array
           items:
             $ref: '#/components/schemas/Error'
