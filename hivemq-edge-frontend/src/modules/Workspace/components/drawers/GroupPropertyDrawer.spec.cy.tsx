@@ -1,14 +1,16 @@
 /// <reference types="cypress" />
 
 import type { Node } from '@xyflow/react'
-import type { Group } from '../../types.ts'
-import { NodeTypes } from '../../types.ts'
+
 import GroupPropertyDrawer from './GroupPropertyDrawer.tsx'
-import { MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
-import type { MetricList } from '@/api/__generated__'
 import { MOCK_NODE_ADAPTER } from '@/__test-utils__/react-flow/nodes.ts'
+import type { MetricList } from '@/api/__generated__'
 import { MOCK_ADAPTER_ID, MOCK_ADAPTER_ID2 } from '@/__test-utils__/mocks.ts'
 import { mockEdgeEvent } from '@/api/hooks/useEvents/__handlers__'
+import { MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
+
+import type { Group, NodeAdapterType } from '../../types.ts'
+import { NodeTypes } from '../../types.ts'
 
 const mockNode: Node<Group> = {
   position: { x: 0, y: 0 },
@@ -17,7 +19,7 @@ const mockNode: Node<Group> = {
   data: { childrenNodeIds: [MOCK_ADAPTER_ID, MOCK_ADAPTER_ID2], title: 'the group', isOpen: true },
 }
 
-const mockNodes: Node<NodeTypes.ADAPTER_NODE>[] = [
+const mockNodes: NodeAdapterType[] = [
   {
     ...MOCK_NODE_ADAPTER,
     id: MOCK_ADAPTER_ID,

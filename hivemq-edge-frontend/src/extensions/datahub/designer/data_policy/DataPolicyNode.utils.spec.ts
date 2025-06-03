@@ -20,7 +20,6 @@ describe('checkValidityFilter', () => {
     const MOCK_STORE: WorkspaceState = {
       nodes: [],
       edges: [],
-      functions: [],
     }
 
     const { node, data, error, resources } = checkValidityFilter(MOCK_NODE_DATA_POLICY, MOCK_STORE)
@@ -82,7 +81,6 @@ describe('checkValidityFilter', () => {
           id: '2',
         },
       ],
-      functions: [],
     }
 
     const { node, data, error, resources } = checkValidityFilter(MOCK_NODE_DATA_POLICY, MOCK_STORE)
@@ -128,7 +126,6 @@ describe('checkValidityFilter', () => {
           id: '1',
         },
       ],
-      functions: [],
     }
 
     const { node, data, error, resources } = checkValidityFilter(MOCK_NODE_DATA_POLICY, MOCK_STORE)
