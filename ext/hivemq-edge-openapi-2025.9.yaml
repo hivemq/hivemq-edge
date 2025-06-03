@@ -1980,7 +1980,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/RequestBodyMissingError'
+                  - $ref: '#/components/schemas/RequestBodyParameterMissingError'
                   - $ref: '#/components/schemas/SchemaInvalidErrors'
                   - $ref: '#/components/schemas/SchemaParsingFailureError'
                 discriminator:
@@ -2329,7 +2329,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/RequestBodyMissingError'
+                  - $ref: '#/components/schemas/RequestBodyParameterMissingError'
                   - $ref: '#/components/schemas/ScriptCreationFailureError'
                   - $ref: '#/components/schemas/ScriptInvalidErrors'
                   - $ref: '#/components/schemas/ScriptParsingFailureError'
@@ -4769,40 +4769,11 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/BehaviorPolicy'
-    ApiError:
-      type: object
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      properties:
-        code:
-          type: string
-          description: Correlation id.
-        detail:
-          type: string
-          description: A detailed description of the error.
-        title:
-          type: string
-          description: A short, human-readable summary of the error.
-        type:
-          type: string
-          format: uri
-          description: A URI reference that identifies the error type.
-        status:
-          type: integer
-          default: 400
-          format: int32
-          minimum: 100
-          maximum: 599
-          description: The HTTP status code associated with the error.
-      required:
-        - title
-        - status
-        - type
     InvalidQueryParameterError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             parameter:
@@ -4811,6 +4782,10 @@ components:
             reason:
               type: string
               description: The reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - parameter
             - reason
@@ -4818,7 +4793,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             status:
@@ -4829,22 +4804,27 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
-            parameter:
-              type: string
-              description: The the missing request body parameter.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
     BehaviorPolicyCreationFailureError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             reason:
               type: string
               description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - reason
     ValidationError:
@@ -5145,7 +5125,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             errors:
@@ -5153,6 +5133,10 @@ components:
               description: List of validation errors.
               items:
                 $ref: '#/components/schemas/ValidationError'
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - errors
     BehaviorPolicyInvalidErrors:
@@ -5164,12 +5148,18 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
+        - type: object
+          properties:
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
     BehaviorPolicyAlreadyPresentError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5188,7 +5178,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             reason:
@@ -5202,7 +5192,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             reason:
@@ -5216,19 +5206,23 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             parameter:
               type: string
               description: The name of the missing parameter.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - parameter
     BehaviorPolicyNotFoundError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5247,7 +5241,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5256,13 +5250,17 @@ components:
             reason:
               type: string
               description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - id
     PolicyIdMismatchError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             actualId:
@@ -5271,6 +5269,10 @@ components:
             expectedId:
               type: string
               description: The expected id.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - actualId
             - expectedId
@@ -5278,7 +5280,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             reason:
@@ -5294,7 +5296,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5350,7 +5352,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5366,7 +5368,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5463,12 +5465,16 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             reason:
               type: string
               description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - reason
     DataPolicyInvalidErrors:
@@ -5476,16 +5482,28 @@ components:
         - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ValidationErrors'
+        - type: object
+          properties:
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
     DataPolicyRejectedError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
+        - type: object
+          properties:
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
     DataPolicyAlreadyPresentError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5504,7 +5522,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5513,13 +5531,17 @@ components:
             reason:
               type: string
               description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - id
     TopicFilterMismatchError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             message:
@@ -5528,13 +5550,17 @@ components:
             parameter:
               type: string
               description: The parameter.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - parameter
     DataPolicyNotFoundError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5652,16 +5678,36 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/PolicySchema'
+    RequestBodyParameterMissingError:
+      x-implements:
+        - com.hivemq.api.errors.OpenApiError
+      allOf:
+        - $ref: '#/components/schemas/ProblemDetails'
+        - type: object
+          properties:
+            parameter:
+              type: string
+              description: The the missing request body parameter.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
     SchemaInvalidErrors:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ValidationErrors'
+        - type: object
+          properties:
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
     SchemaParsingFailureError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             alias:
@@ -5670,6 +5716,10 @@ components:
             message:
               type: string
               description: The error message.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - alias
             - message
@@ -5677,7 +5727,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5693,7 +5743,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5712,7 +5762,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5731,7 +5781,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5740,6 +5790,10 @@ components:
             message:
               type: string
               description: The error message.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - id
     Script:
@@ -5787,12 +5841,16 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             reason:
               type: string
               description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - reason
     ScriptInvalidErrors:
@@ -5800,35 +5858,49 @@ components:
         - com.hivemq.api.errors.OpenApiError
       allOf:
         - $ref: '#/components/schemas/ValidationErrors'
+        - type: object
+          properties:
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
     ScriptParsingFailureError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             reason:
               type: string
               description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - reason
     ScriptSanitationFailureError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             reason:
               type: string
               description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - reason
     ScriptAlreadyPresentError:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5844,7 +5916,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5863,7 +5935,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5882,7 +5954,7 @@ components:
       x-implements:
         - com.hivemq.api.errors.OpenApiError
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ProblemDetails'
         - type: object
           properties:
             id:
@@ -5891,6 +5963,10 @@ components:
             message:
               type: string
               description: The error message.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
           required:
             - id
     Capability:
