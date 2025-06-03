@@ -1,7 +1,7 @@
 x-implements:
   - com.hivemq.api.errors.OpenApiError
 allOf:
-  - $ref: "../ApiError.yaml"
+  - $ref: "../../ProblemDetails.yaml"
   - type: object
     properties:
       id:
@@ -10,5 +10,9 @@ allOf:
       message:
         type: string
         description: The error message.
+      status:
+        type: integer
+        default: 400
+        description: The HTTP status code.
     required:
       - id
