@@ -5,13 +5,15 @@ import { useTranslation } from 'react-i18next'
 import { Card, CardBody } from '@chakra-ui/react'
 import type { CustomValidator } from '@rjsf/utils'
 
-import type { BehaviorPolicyData, PanelProps } from '@datahub/types.ts'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
+
 import { useGetAllBehaviorPolicies } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetAllBehaviorPolicies.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/designer/behavior_policy/BehaviorPolicySchema.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
-import ErrorMessage from '@/components/ErrorMessage.tsx'
+import type { BehaviorPolicyData, PanelProps, PublishQuotaArguments } from '@datahub/types.ts'
+import { BehaviorPolicyType } from '@datahub/types.ts'
 
 export const BehaviorPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
@@ -29,6 +31,17 @@ export const BehaviorPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit
     else {
       const isIdNotUnique = Boolean(allPolicies.items?.find((e) => e.id === formData?.id))
       if (isIdNotUnique) errors['id']?.addError(t('error.validation.behaviourPolicy.notUnique'))
+    }
+    if (formData?.model === BehaviorPolicyType.PUBLISH_QUOTA) {
+      const { maxPublishes, minPublishes } = formData.arguments as PublishQuotaArguments
+      if (maxPublishes !== -1 && maxPublishes < minPublishes) {
+        errors?.['arguments']?.['maxPublishes']?.addError(
+          t('error.validation.behaviourPolicy.publishQuota.maxLessThanMin')
+        )
+        errors?.['arguments']?.['minPublishes']?.addError(
+          t('error.validation.behaviourPolicy.publishQuota.minMoreThanMax')
+        )
+      }
     }
     return errors
   }
