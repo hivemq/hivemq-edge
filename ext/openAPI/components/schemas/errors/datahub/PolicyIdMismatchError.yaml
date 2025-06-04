@@ -1,7 +1,5 @@
-x-implements:
-  - com.hivemq.api.errors.OpenApiError
 allOf:
-  - $ref: "../../ProblemDetails.yaml"
+  - $ref: "../ApiError.yaml"
   - type: object
     properties:
       actualId:
