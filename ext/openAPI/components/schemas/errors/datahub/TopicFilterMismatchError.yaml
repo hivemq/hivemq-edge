@@ -8,9 +8,5 @@ allOf:
       parameter:
         type: string
         description: The parameter.
-      status:
-        type: integer
-        default: 400
-        description: The HTTP status code.
     required:
       - parameter
