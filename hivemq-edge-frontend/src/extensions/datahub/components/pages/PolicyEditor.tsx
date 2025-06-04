@@ -23,6 +23,7 @@ import { CANVAS_GRID } from '@datahub/utils/theme.utils.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 import { CANVAS_DROP_DELTA } from '@datahub/designer/checks.utils.ts'
+import { DND_DESIGNER_NODE_TYPE } from '@datahub/utils/datahub.utils.ts'
 
 export type OnConnectStartParams = {
   nodeId: string | null
@@ -63,7 +64,7 @@ const PolicyEditor: FC = () => {
         event.preventDefault()
 
         // check if the dropped element is valid
-        const type = event.dataTransfer.getData('application/reactflow')
+        const type = event.dataTransfer.getData(DND_DESIGNER_NODE_TYPE)
         if (typeof type === 'undefined' || !type) {
           return
         }
@@ -82,6 +83,8 @@ const PolicyEditor: FC = () => {
         onAddNodes([{ item: newNode, type: 'add' }])
         if (type === DataHubNodeType.DATA_POLICY || type === DataHubNodeType.BEHAVIOR_POLICY)
           setStatus(status, { type })
+
+        event.dataTransfer.clearData(DND_DESIGNER_NODE_TYPE)
       }
     },
     [onAddNodes, reactFlowInstance, setStatus, status]

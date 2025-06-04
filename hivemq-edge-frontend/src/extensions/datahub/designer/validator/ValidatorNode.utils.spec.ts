@@ -30,7 +30,6 @@ describe('checkValidityPolicyValidator', () => {
     const MOCK_STORE: WorkspaceState = {
       nodes: [],
       edges: [],
-      functions: [],
     }
 
     const { node, data, error, resources } = checkValidityPolicyValidator(MOCK_NODE_VALIDATOR, MOCK_STORE)
@@ -65,7 +64,6 @@ describe('checkValidityPolicyValidator', () => {
     const MOCK_STORE: WorkspaceState = {
       nodes: [MOCK_NODE_SCHEMA, MOCK_NODE_VALIDATOR],
       edges: [{ id: '1', source: MOCK_NODE_SCHEMA.id, target: MOCK_NODE_VALIDATOR.id }],
-      functions: [],
     }
 
     const { node, data, error, resources } = checkValidityPolicyValidator(MOCK_NODE_VALIDATOR, MOCK_STORE)
@@ -128,7 +126,6 @@ describe('checkValidityPolicyValidators', () => {
         { id: '1', source: MOCK_NODE_SCHEMA.id, target: MOCK_NODE_VALIDATOR.id },
         { id: '2', source: MOCK_NODE_VALIDATOR.id, target: MOCK_NODE_DATA_POLICY.id },
       ],
-      functions: [],
     }
 
     const results = checkValidityPolicyValidators(MOCK_NODE_DATA_POLICY, MOCK_STORE)

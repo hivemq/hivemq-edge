@@ -74,7 +74,7 @@ describe('DeleteListener', () => {
           {
             id: '1',
             position: { x: 0, y: 0 },
-            data: undefined,
+            data: {},
             selected: true,
           },
         ],
@@ -98,19 +98,19 @@ describe('DeleteListener', () => {
           {
             id: '1',
             position: { x: 0, y: 0 },
-            data: undefined,
+            data: {},
             selected: true,
           },
           {
             id: '2',
             position: { x: 0, y: 0 },
-            data: undefined,
+            data: {},
             selected: false,
           },
           {
             id: '3',
             position: { x: 0, y: 0 },
-            data: undefined,
+            data: {},
             selected: true,
           },
         ],
@@ -152,7 +152,7 @@ describe('DeleteListener', () => {
           {
             id: '1',
             position: { x: 0, y: 0 },
-            data: undefined,
+            data: {},
             selected: true,
           },
         ],

@@ -9,9 +9,8 @@ import { handlers as DataHubDataPoliciesService } from '@/extensions/datahub/api
 import { handlers as DataHubBehaviorPoliciesService } from '@/extensions/datahub/api/hooks/DataHubBehaviorPoliciesService/__handlers__'
 import { handlers as DataHubSchemasService } from '@/extensions/datahub/api/hooks/DataHubSchemasService/__handlers__'
 import { handlers as DataHubScriptsService } from '@/extensions/datahub/api/hooks/DataHubScriptsService/__handlers__'
-import { handlers as combinerHandlers } from '@/api/hooks/useCombiners/__handlers__'
+import { handlersWithoutLicense as DataHubFunctionsService } from '@/extensions/datahub/api/hooks/DataHubFunctionsService/__handlers__'
 
-import { safeTopicSchemaHandlers } from '@/api/hooks/useDomainModel/__handlers__'
 import type { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
 
 export const handlers = [
@@ -33,12 +32,13 @@ export const createHandlersWithMQTTClient = (
   _onSampling?: (topicFilter: string) => Promise<MQTTSample[]> | undefined
 ) => {
   return [
-    ...combinerHandlers,
+    ...DataHubFunctionsService,
+    // ...combinerHandlers,
     // ...DeviceHandlers,
     // ...TopicFilterHandlers,
     // Domain & Schemas
     // ...schemaHandlers(onSampling),
-    ...safeTopicSchemaHandlers,
+    // ...safeTopicSchemaHandlers,
     // ...safeWritingSchemaHandlers,
   ]
 }
