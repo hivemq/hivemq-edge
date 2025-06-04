@@ -15,6 +15,8 @@ import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 import type { BehaviorPolicyData, PanelProps, PublishQuotaArguments } from '@datahub/types.ts'
 import { BehaviorPolicyType } from '@datahub/types.ts'
 
+const UNLIMITED_PUBLISH = -1
+
 export const BehaviorPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
   const { nodes } = useDataHubDraftStore()
@@ -34,7 +36,7 @@ export const BehaviorPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit
     }
     if (formData?.model === BehaviorPolicyType.PUBLISH_QUOTA) {
       const { maxPublishes, minPublishes } = formData.arguments as PublishQuotaArguments
-      if (maxPublishes !== -1 && maxPublishes < minPublishes) {
+      if (maxPublishes !== UNLIMITED_PUBLISH && maxPublishes < minPublishes) {
         errors?.['arguments']?.['maxPublishes']?.addError(
           t('error.validation.behaviourPolicy.publishQuota.maxLessThanMin')
         )
