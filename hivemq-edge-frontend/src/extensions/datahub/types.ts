@@ -277,17 +277,23 @@ export namespace OperationData {
   }
 }
 
-// TODO[18757] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18757/details/
+// TODO[33539] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18757/details/
 export enum BehaviorPolicyType {
   MQTT_EVENT = 'Mqtt.events',
   PUBLISH_DUPLICATE = 'Publish.duplicate',
   PUBLISH_QUOTA = 'Publish.quota',
 }
 
+// TODO[33539] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18757/details/
+export interface PublishQuotaArguments {
+  minPublishes: number
+  maxPublishes: number
+}
+
 export interface BehaviorPolicyData extends DataHubNodeData {
   id: string
   model: BehaviorPolicyType
-  arguments?: Record<string, string | number>
+  arguments?: PublishQuotaArguments | Record<string, string | number>
   core?: BehaviorPolicy
 }
 
