@@ -5,7 +5,3 @@ allOf:
       reason:
         type: string
         description: The actual reason.
-      status:
-        type: integer
-        default: 500
-        description: The HTTP status code.

@@ -1,8 +1,2 @@
 allOf:
   - $ref: "../validation/ValidationErrors.yaml"
-  - type: object
-    properties:
-      status:
-        type: integer
-        default: 400
-        description: The HTTP status code.
