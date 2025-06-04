@@ -170,7 +170,7 @@ describe('OperationPanel', () => {
       },
     }
 
-    it.only('should render the form', () => {
+    it('should render the form', () => {
       cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
         wrapper: getWrapperWith([node]),
       })
