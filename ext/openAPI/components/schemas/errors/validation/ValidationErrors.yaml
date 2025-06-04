@@ -2,7 +2,7 @@ allOf:
   - $ref: "../ApiError.yaml"
   - type: object
     properties:
-      childErrors:
+      errors:
         type: array
         description: List of child validation errors.
         items:
@@ -12,7 +12,7 @@ allOf:
         default: 400
         description: The HTTP status code.
     required:
-      - childErrors
+      - errors
 discriminator:
   propertyName: type
   mapping:
