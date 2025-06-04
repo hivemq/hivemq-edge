@@ -1,5 +1,3 @@
-x-implements:
-  - com.hivemq.api.errors.OpenApiError
 allOf:
   - $ref: "../validation/ValidationErrors.yaml"
   - type: object
