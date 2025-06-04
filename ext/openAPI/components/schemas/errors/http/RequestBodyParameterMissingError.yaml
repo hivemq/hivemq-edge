@@ -5,7 +5,3 @@ allOf:
       parameter:
         type: string
         description: The the missing request body parameter.
-      status:
-        type: integer
-        default: 400
-        description: The HTTP status code.
