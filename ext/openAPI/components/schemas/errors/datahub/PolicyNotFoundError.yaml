@@ -5,9 +5,5 @@ allOf:
       id:
         type: string
         description: The policy id.
-      status:
-        type: integer
-        default: 404
-        description: The HTTP status code.
     required:
       - id

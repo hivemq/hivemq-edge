@@ -24,6 +24,7 @@ import com.hivemq.edge.api.model.RequestBodyMissingError;
 import com.hivemq.edge.api.model.RequestBodyParameterMissingError;
 import com.hivemq.edge.api.model.TemporaryNotAvailableError;
 import com.hivemq.edge.api.model.UrlParameterMissingError;
+import com.hivemq.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,6 +43,7 @@ public final class HttpErrorFactory extends ErrorFactory {
                 .title("Insufficient Storage")
                 .detail(reason == null ? "Insufficient Storage." : "Insufficient Storage: " + reason)
                 .reason(reason)
+                .status(HttpStatus.INSUFFICIENT_STORAGE_507)
                 .build();
     }
 
@@ -51,6 +53,7 @@ public final class HttpErrorFactory extends ErrorFactory {
                 .title("Internal Error")
                 .detail(reason == null ? "An unexpected error occurred, check the logs." : reason)
                 .reason(reason)
+                .status(HttpStatus.INTERNAL_SERVER_ERROR_500)
                 .build();
     }
 
@@ -63,6 +66,7 @@ public final class HttpErrorFactory extends ErrorFactory {
                 .detail("Query parameter '" + parameter + "' is invalid: " + reason)
                 .parameter(parameter)
                 .reason(reason)
+                .status(HttpStatus.BAD_REQUEST_400)
                 .build();
     }
 
@@ -73,6 +77,7 @@ public final class HttpErrorFactory extends ErrorFactory {
                 .title("Precondition Failed")
                 .detail("A precondition required for fulfilling the request was not fulfilled: " + reason)
                 .reason(reason)
+                .status(HttpStatus.PRECONDITION_FAILED_412)
                 .build();
     }
 
@@ -81,6 +86,7 @@ public final class HttpErrorFactory extends ErrorFactory {
                 .type(type(RequestBodyMissingError.class))
                 .title("Required request body missing")
                 .detail("Required request body missing.")
+                .status(HttpStatus.BAD_REQUEST_400)
                 .build();
     }
 
@@ -90,6 +96,7 @@ public final class HttpErrorFactory extends ErrorFactory {
                 .title("Required request body parameter missing")
                 .detail("Required request body parameter '" + parameter + "' missing.")
                 .parameter(parameter)
+                .status(HttpStatus.BAD_REQUEST_400)
                 .build();
     }
 
@@ -98,6 +105,7 @@ public final class HttpErrorFactory extends ErrorFactory {
                 .type(type(TemporaryNotAvailableError.class))
                 .title("The endpoint is temporarily not available")
                 .detail("The endpoint is temporarily not available, please try again later")
+                .status(HttpStatus.SERVICE_UNAVAILABLE_503)
                 .build();
     }
 
@@ -107,6 +115,7 @@ public final class HttpErrorFactory extends ErrorFactory {
                 .title("Required url parameter missing")
                 .detail("Required url parameter '" + parameter + "' missing")
                 .parameter(parameter)
+                .status(HttpStatus.BAD_REQUEST_400)
                 .build();
     }
 }
