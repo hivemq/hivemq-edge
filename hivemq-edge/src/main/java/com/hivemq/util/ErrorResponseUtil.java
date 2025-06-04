@@ -15,7 +15,7 @@
  */
 package com.hivemq.util;
 
-import com.hivemq.api.errors.OpenApiError;
+import com.hivemq.edge.api.model.ApiError;
 import com.hivemq.http.error.ProblemDetails;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,7 +25,7 @@ import jakarta.ws.rs.core.Response;
  * @author Christoph Schäbel
  */
 public class ErrorResponseUtil {
-    public static @NotNull Response errorResponse(final @NotNull OpenApiError error) {
+    public static @NotNull Response errorResponse(final @NotNull ApiError error) {
         return Response.status(error.getStatus())
                 .entity(error)
                 .header("Content-Type", "application/json;charset=utf-8")
