@@ -8,9 +8,5 @@ allOf:
       message:
         type: string
         description: The error message.
-      status:
-        type: integer
-        default: 404
-        description: The HTTP status code.
     required:
       - id
