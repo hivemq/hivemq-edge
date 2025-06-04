@@ -14,7 +14,7 @@ get:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/http/InternalServerError.yaml"
       description: Internal server error
   summary: Get all functions as a list of function specifications
   tags:
