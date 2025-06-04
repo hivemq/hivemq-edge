@@ -8,10 +8,6 @@ allOf:
       reason:
         type: string
         description: The reason.
-      status:
-        type: integer
-        default: 400
-        description: The HTTP status code.
     required:
       - parameter
       - reason
