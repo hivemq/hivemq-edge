@@ -4769,11 +4769,490 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/BehaviorPolicy'
-    InvalidQueryParameterError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
+    ApiError:
       allOf:
         - $ref: '#/components/schemas/ProblemDetails'
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/BehaviorPolicyAlreadyPresentError: '#/components/schemas/BehaviorPolicyAlreadyPresentError'
+          https://hivemq.com/edge/api/model/BehaviorPolicyCreationFailureError: '#/components/schemas/BehaviorPolicyCreationFailureError'
+          https://hivemq.com/edge/api/model/BehaviorPolicyNotFoundError: '#/components/schemas/BehaviorPolicyNotFoundError'
+          https://hivemq.com/edge/api/model/BehaviorPolicyRejectedError: '#/components/schemas/BehaviorPolicyRejectedError'
+          https://hivemq.com/edge/api/model/BehaviorPolicyUpdateFailureError: '#/components/schemas/BehaviorPolicyUpdateFailureError'
+          https://hivemq.com/edge/api/model/ClientDisconnectedError: '#/components/schemas/ClientDisconnectedError'
+          https://hivemq.com/edge/api/model/ClientNotFoundError: '#/components/schemas/ClientNotFoundError'
+          https://hivemq.com/edge/api/model/DataPolicyAlreadyPresentError: '#/components/schemas/DataPolicyAlreadyPresentError'
+          https://hivemq.com/edge/api/model/DataPolicyCreationFailureError: '#/components/schemas/DataPolicyCreationFailureError'
+          https://hivemq.com/edge/api/model/DataPolicyNotFoundError: '#/components/schemas/DataPolicyNotFoundError'
+          https://hivemq.com/edge/api/model/DataPolicyRejectedError: '#/components/schemas/DataPolicyRejectedError'
+          https://hivemq.com/edge/api/model/DataPolicyUpdateFailureError: '#/components/schemas/DataPolicyUpdateFailureError'
+          https://hivemq.com/edge/api/model/PolicyIdMismatchError: '#/components/schemas/PolicyIdMismatchError'
+          https://hivemq.com/edge/api/model/PolicyNotFoundError: '#/components/schemas/PolicyNotFoundError'
+          https://hivemq.com/edge/api/model/SchemaAlreadyPresentError: '#/components/schemas/SchemaAlreadyPresentError'
+          https://hivemq.com/edge/api/model/SchemaEtagMismatchError: '#/components/schemas/SchemaEtagMismatchError'
+          https://hivemq.com/edge/api/model/SchemaNotFoundError: '#/components/schemas/SchemaNotFoundError'
+          https://hivemq.com/edge/api/model/SchemaParsingFailureError: '#/components/schemas/SchemaParsingFailureError'
+          https://hivemq.com/edge/api/model/SchemaReferencedError: '#/components/schemas/SchemaReferencedError'
+          https://hivemq.com/edge/api/model/ScriptAlreadyPresentError: '#/components/schemas/ScriptAlreadyPresentError'
+          https://hivemq.com/edge/api/model/ScriptCreationFailureError: '#/components/schemas/ScriptCreationFailureError'
+          https://hivemq.com/edge/api/model/ScriptEtagMismatchError: '#/components/schemas/ScriptEtagMismatchError'
+          https://hivemq.com/edge/api/model/ScriptNotFoundError: '#/components/schemas/ScriptNotFoundError'
+          https://hivemq.com/edge/api/model/ScriptParsingFailureError: '#/components/schemas/ScriptParsingFailureError'
+          https://hivemq.com/edge/api/model/ScriptReferencedError: '#/components/schemas/ScriptReferencedError'
+          https://hivemq.com/edge/api/model/ScriptSanitationFailureError: '#/components/schemas/ScriptSanitationFailureError'
+          https://hivemq.com/edge/api/model/TopicFilterMismatchError: '#/components/schemas/TopicFilterMismatchError'
+          https://hivemq.com/edge/api/model/InsufficientStorageError: '#/components/schemas/InsufficientStorageError'
+          https://hivemq.com/edge/api/model/InternalServerError: '#/components/schemas/InternalServerError'
+          https://hivemq.com/edge/api/model/InvalidQueryParameterError: '#/components/schemas/InvalidQueryParameterError'
+          https://hivemq.com/edge/api/model/PreconditionFailedError: '#/components/schemas/PreconditionFailedError'
+          https://hivemq.com/edge/api/model/RequestBodyMissingError: '#/components/schemas/RequestBodyMissingError'
+          https://hivemq.com/edge/api/model/RequestBodyParameterMissingError: '#/components/schemas/RequestBodyParameterMissingError'
+          https://hivemq.com/edge/api/model/TemporaryNotAvailableError: '#/components/schemas/TemporaryNotAvailableError'
+          https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
+          https://hivemq.com/edge/api/model/ValidationErrors: '#/components/schemas/ValidationErrors'
+    BehaviorPolicyAlreadyPresentError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The behavior policy id.
+            message:
+              type: string
+              description: The error message.
+            status:
+              type: integer
+              default: 409
+              description: The HTTP status code.
+          required:
+            - id
+    BehaviorPolicyCreationFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - reason
+    BehaviorPolicyNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The data policy id.
+            message:
+              type: string
+              description: The error message.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
+          required:
+            - id
+    BehaviorPolicyRejectedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+    BehaviorPolicyUpdateFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The ID of the policy that failed to update.
+            reason:
+              type: string
+              description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - id
+    ClientDisconnectedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The client id.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
+          required:
+            - id
+    ClientNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The client id.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
+          required:
+            - id
+    DataPolicyAlreadyPresentError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The data policy id.
+            message:
+              type: string
+              description: The error message.
+            status:
+              type: integer
+              default: 409
+              description: The Request Conflict HTTP Status Code.
+          required:
+            - id
+    DataPolicyCreationFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - reason
+    DataPolicyNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The data policy id.
+            message:
+              type: string
+              description: The error message.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
+          required:
+            - id
+    DataPolicyRejectedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+    DataPolicyUpdateFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The ID of the policy that failed to update.
+            reason:
+              type: string
+              description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - id
+    PolicyIdMismatchError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            actualId:
+              type: string
+              description: The actual id.
+            expectedId:
+              type: string
+              description: The expected id.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - actualId
+            - expectedId
+    PolicyNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The policy id.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
+          required:
+            - id
+    SchemaAlreadyPresentError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema id.
+            status:
+              type: integer
+              default: 409
+              description: The Request Conflict HTTP Status Code.
+          required:
+            - id
+    SchemaEtagMismatchError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema id.
+            eTag:
+              type: string
+              description: The eTag.
+            status:
+              type: integer
+              default: 412
+              description: The Precondition Failed HTTP Status Code.
+          required:
+            - id
+    SchemaNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema ID.
+            message:
+              type: string
+              description: The error message.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
+          required:
+            - id
+    SchemaParsingFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            alias:
+              type: string
+              description: The schema alias.
+            message:
+              type: string
+              description: The error message.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - alias
+            - message
+    SchemaReferencedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema ID.
+            message:
+              type: string
+              description: The error message.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - id
+    ScriptAlreadyPresentError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script id.
+            status:
+              type: integer
+              default: 409
+              description: The Request Conflict HTTP Status Code.
+          required:
+            - id
+    ScriptCreationFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - reason
+    ScriptEtagMismatchError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script id.
+            eTag:
+              type: string
+              description: The eTag.
+            status:
+              type: integer
+              default: 412
+              description: The Precondition Failed HTTP Status Code.
+          required:
+            - id
+    ScriptNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script ID.
+            message:
+              type: string
+              description: The error message.
+            status:
+              type: integer
+              default: 404
+              description: The HTTP status code.
+          required:
+            - id
+    ScriptParsingFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - reason
+    ScriptReferencedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script ID.
+            message:
+              type: string
+              description: The error message.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - id
+    ScriptSanitationFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - reason
+    TopicFilterMismatchError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            message:
+              type: string
+              description: The error message.
+            parameter:
+              type: string
+              description: The parameter.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - parameter
+    InsufficientStorageError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+            status:
+              type: integer
+              default: 507
+              description: The HTTP status code.
+    InternalServerError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+            status:
+              type: integer
+              default: 500
+              description: The HTTP status code.
+    InvalidQueryParameterError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
         - type: object
           properties:
             parameter:
@@ -4789,33 +5268,9 @@ components:
           required:
             - parameter
             - reason
-    TemporaryNotAvailableError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
+    PreconditionFailedError:
       allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 503
-              description: The HTTP status code.
-    RequestBodyMissingError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-    BehaviorPolicyCreationFailureError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
+        - $ref: '#/components/schemas/ApiError'
         - type: object
           properties:
             reason:
@@ -4823,10 +5278,107 @@ components:
               description: The actual reason.
             status:
               type: integer
-              default: 400
+              default: 412
               description: The HTTP status code.
           required:
             - reason
+    RequestBodyMissingError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+    RequestBodyParameterMissingError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            parameter:
+              type: string
+              description: The the missing request body parameter.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+    TemporaryNotAvailableError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            status:
+              type: integer
+              default: 503
+              description: The HTTP status code.
+    UrlParameterMissingError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            parameter:
+              type: string
+              description: The name of the missing parameter.
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - parameter
+    ValidationErrors:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            childErrors:
+              type: array
+              description: List of child validation errors.
+              items:
+                $ref: '#/components/schemas/ValidationError'
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+          required:
+            - childErrors
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: '#/components/schemas/BehaviorPolicyInvalidErrors'
+          https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: '#/components/schemas/DataPolicyInvalidErrors'
+          https://hivemq.com/edge/api/model/SchemaInvalidErrors: '#/components/schemas/SchemaInvalidErrors'
+          https://hivemq.com/edge/api/model/ScriptInvalidErrors: '#/components/schemas/ScriptInvalidErrors'
+    BehaviorPolicyInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ValidationErrors'
+    DataPolicyInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ValidationErrors'
+        - type: object
+          properties:
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+    SchemaInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ValidationErrors'
+        - type: object
+          properties:
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
+    ScriptInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ValidationErrors'
+        - type: object
+          properties:
+            status:
+              type: integer
+              default: 400
+              description: The HTTP status code.
     ValidationError:
       type: object
       properties:
@@ -4843,20 +5395,20 @@ components:
       discriminator:
         propertyName: type
         mapping:
-          AtLeastOneFieldMissingValidationError: '#/components/schemas/AtLeastOneFieldMissingValidationError'
-          AtMostOneFunctionValidationError: '#/components/schemas/AtMostOneFunctionValidationError'
-          EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
-          FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
-          GeneralPolicyValidationError: '#/components/schemas/GeneralPolicyValidationError'
-          IllegalFunctionValidationError: '#/components/schemas/IllegalFunctionValidationError'
-          IllegalTransitionValidationError: '#/components/schemas/IllegalTransitionValidationError'
-          InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
-          InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
-          InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
-          InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
-          MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
-          UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
-          UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
+          https://hivemq.com/edge/api/model/AtLeastOneFieldMissingValidationError: '#/components/schemas/AtLeastOneFieldMissingValidationError'
+          https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError: '#/components/schemas/AtMostOneFunctionValidationError'
+          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
+          https://hivemq.com/edge/api/model/GeneralPolicyValidationError: '#/components/schemas/GeneralPolicyValidationError'
+          https://hivemq.com/edge/api/model/IllegalFunctionValidationError: '#/components/schemas/IllegalFunctionValidationError'
+          https://hivemq.com/edge/api/model/IllegalTransitionValidationError: '#/components/schemas/IllegalTransitionValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
+          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
+          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
     AtLeastOneFieldMissingValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
@@ -5091,193 +5643,6 @@ components:
             - actualValue
             - expectedValue
             - field
-    ValidationErrors:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            errors:
-              type: array
-              description: List of validation errors.
-              items:
-                $ref: '#/components/schemas/ValidationError'
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-          required:
-            - errors
-    BehaviorPolicyInvalidErrors:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ValidationErrors'
-    BehaviorPolicyRejectedError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-    BehaviorPolicyAlreadyPresentError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The behavior policy id.
-            message:
-              type: string
-              description: The error message.
-            status:
-              type: integer
-              default: 409
-              description: The HTTP status code.
-          required:
-            - id
-    InternalServerError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-            status:
-              type: integer
-              default: 500
-              description: The HTTP status code.
-    InsufficientStorageError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-            status:
-              type: integer
-              default: 507
-              description: The HTTP status code.
-    UrlParameterMissingError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            parameter:
-              type: string
-              description: The name of the missing parameter.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-          required:
-            - parameter
-    BehaviorPolicyNotFoundError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The data policy id.
-            message:
-              type: string
-              description: The error message.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
-          required:
-            - id
-    BehaviorPolicyUpdateFailureError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The ID of the policy that failed to update.
-            reason:
-              type: string
-              description: The actual reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-          required:
-            - id
-    PolicyIdMismatchError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            actualId:
-              type: string
-              description: The actual id.
-            expectedId:
-              type: string
-              description: The expected id.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-          required:
-            - actualId
-            - expectedId
-    PreconditionFailedError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-            status:
-              type: integer
-              default: 412
-              description: The HTTP status code.
-          required:
-            - reason
-    PolicyNotFoundError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The policy id.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
-          required:
-            - id
     JsonNode:
       type: object
       description: The arguments of the fsm derived from the behavior policy.
@@ -5318,38 +5683,6 @@ components:
             $ref: '#/components/schemas/FsmStateInformationItem'
       required:
         - items
-    ClientDisconnectedError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The client id.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
-          required:
-            - id
-    ClientNotFoundError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The client id.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
-          required:
-            - id
     DataPolicyMatching:
       type: object
       description: The matching rules the policy applies.
@@ -5431,120 +5764,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/DataPolicy'
-    DataPolicyCreationFailureError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-          required:
-            - reason
-    DataPolicyInvalidErrors:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ValidationErrors'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-    DataPolicyRejectedError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-    DataPolicyAlreadyPresentError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The data policy id.
-            message:
-              type: string
-              description: The error message.
-            status:
-              type: integer
-              default: 409
-              description: The Request Conflict HTTP Status Code.
-          required:
-            - id
-    DataPolicyUpdateFailureError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The ID of the policy that failed to update.
-            reason:
-              type: string
-              description: The actual reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-          required:
-            - id
-    TopicFilterMismatchError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            message:
-              type: string
-              description: The error message.
-            parameter:
-              type: string
-              description: The parameter.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-          required:
-            - parameter
-    DataPolicyNotFoundError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The data policy id.
-            message:
-              type: string
-              description: The error message.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
-          required:
-            - id
     BehaviorPolicyTransitionEvent:
       type: string
       description: Accepted event in transition
@@ -5648,124 +5867,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/PolicySchema'
-    RequestBodyParameterMissingError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            parameter:
-              type: string
-              description: The the missing request body parameter.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-    SchemaInvalidErrors:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ValidationErrors'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-    SchemaParsingFailureError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            alias:
-              type: string
-              description: The schema alias.
-            message:
-              type: string
-              description: The error message.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-          required:
-            - alias
-            - message
-    SchemaAlreadyPresentError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The schema id.
-            status:
-              type: integer
-              default: 409
-              description: The Request Conflict HTTP Status Code.
-          required:
-            - id
-    SchemaEtagMismatchError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The schema id.
-            eTag:
-              type: string
-              description: The eTag.
-            status:
-              type: integer
-              default: 412
-              description: The Precondition Failed HTTP Status Code.
-          required:
-            - id
-    SchemaNotFoundError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The schema ID.
-            message:
-              type: string
-              description: The error message.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
-          required:
-            - id
-    SchemaReferencedError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The schema ID.
-            message:
-              type: string
-              description: The error message.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-          required:
-            - id
     Script:
       type: object
       properties:
@@ -5807,138 +5908,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Script'
-    ScriptCreationFailureError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-          required:
-            - reason
-    ScriptInvalidErrors:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ValidationErrors'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-    ScriptParsingFailureError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-          required:
-            - reason
-    ScriptSanitationFailureError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-          required:
-            - reason
-    ScriptAlreadyPresentError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The script id.
-            status:
-              type: integer
-              default: 409
-              description: The Request Conflict HTTP Status Code.
-          required:
-            - id
-    ScriptEtagMismatchError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The script id.
-            eTag:
-              type: string
-              description: The eTag.
-            status:
-              type: integer
-              default: 412
-              description: The Precondition Failed HTTP Status Code.
-          required:
-            - id
-    ScriptNotFoundError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The script ID.
-            message:
-              type: string
-              description: The error message.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
-          required:
-            - id
-    ScriptReferencedError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiError
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The script ID.
-            message:
-              type: string
-              description: The error message.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
-          required:
-            - id
     Capability:
       type: object
       description: List of result items that are returned by this endpoint
