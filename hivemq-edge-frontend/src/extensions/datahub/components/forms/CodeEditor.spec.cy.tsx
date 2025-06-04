@@ -37,7 +37,7 @@ describe('CodeEditor', () => {
     cy.mountWithProviders(<JSONSchemaEditor {...MOCK_WIDGET_PROPS} value={MOCK_JSONSCHEMA_SCHEMA} />)
   })
 
-  it.only('should render the fallback editor', () => {
+  it('should render the fallback editor', () => {
     Cypress.on('uncaught:exception', () => {
       // returning false here prevents Cypress from failing the test
       return false
