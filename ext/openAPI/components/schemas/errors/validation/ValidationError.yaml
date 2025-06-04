@@ -1,5 +1,3 @@
-x-implements:
-  - com.hivemq.api.errors.OpenApiValidationError
 type: object
 properties:
   detail:
