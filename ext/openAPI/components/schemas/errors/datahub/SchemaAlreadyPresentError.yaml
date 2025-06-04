@@ -5,9 +5,5 @@ allOf:
       id:
         type: string
         description: The schema id.
-      status:
-        type: integer
-        default: 409
-        description: The Request Conflict HTTP Status Code.
     required:
       - id
