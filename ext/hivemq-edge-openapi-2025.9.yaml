@@ -4829,10 +4829,6 @@ components:
             message:
               type: string
               description: The error message.
-            status:
-              type: integer
-              default: 409
-              description: The HTTP status code.
           required:
             - id
     BehaviorPolicyCreationFailureError:
@@ -4843,10 +4839,6 @@ components:
             reason:
               type: string
               description: The actual reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - reason
     BehaviorPolicyNotFoundError:
@@ -4860,21 +4852,11 @@ components:
             message:
               type: string
               description: The error message.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
           required:
             - id
     BehaviorPolicyRejectedError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
     BehaviorPolicyUpdateFailureError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -4886,10 +4868,6 @@ components:
             reason:
               type: string
               description: The actual reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - id
     ClientDisconnectedError:
@@ -4900,10 +4878,6 @@ components:
             id:
               type: string
               description: The client id.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
           required:
             - id
     ClientNotFoundError:
@@ -4914,10 +4888,6 @@ components:
             id:
               type: string
               description: The client id.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
           required:
             - id
     DataPolicyAlreadyPresentError:
@@ -4931,10 +4901,6 @@ components:
             message:
               type: string
               description: The error message.
-            status:
-              type: integer
-              default: 409
-              description: The Request Conflict HTTP Status Code.
           required:
             - id
     DataPolicyCreationFailureError:
@@ -4945,10 +4911,6 @@ components:
             reason:
               type: string
               description: The actual reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - reason
     DataPolicyNotFoundError:
@@ -4962,21 +4924,11 @@ components:
             message:
               type: string
               description: The error message.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
           required:
             - id
     DataPolicyRejectedError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
     DataPolicyUpdateFailureError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -4988,10 +4940,6 @@ components:
             reason:
               type: string
               description: The actual reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - id
     PolicyIdMismatchError:
@@ -5005,10 +4953,6 @@ components:
             expectedId:
               type: string
               description: The expected id.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - actualId
             - expectedId
@@ -5020,10 +4964,6 @@ components:
             id:
               type: string
               description: The policy id.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
           required:
             - id
     SchemaAlreadyPresentError:
@@ -5034,10 +4974,6 @@ components:
             id:
               type: string
               description: The schema id.
-            status:
-              type: integer
-              default: 409
-              description: The Request Conflict HTTP Status Code.
           required:
             - id
     SchemaEtagMismatchError:
@@ -5051,10 +4987,6 @@ components:
             eTag:
               type: string
               description: The eTag.
-            status:
-              type: integer
-              default: 412
-              description: The Precondition Failed HTTP Status Code.
           required:
             - id
     SchemaNotFoundError:
@@ -5068,10 +5000,6 @@ components:
             message:
               type: string
               description: The error message.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
           required:
             - id
     SchemaParsingFailureError:
@@ -5085,10 +5013,6 @@ components:
             message:
               type: string
               description: The error message.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - alias
             - message
@@ -5103,10 +5027,6 @@ components:
             message:
               type: string
               description: The error message.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - id
     ScriptAlreadyPresentError:
@@ -5117,10 +5037,6 @@ components:
             id:
               type: string
               description: The script id.
-            status:
-              type: integer
-              default: 409
-              description: The Request Conflict HTTP Status Code.
           required:
             - id
     ScriptCreationFailureError:
@@ -5131,10 +5047,6 @@ components:
             reason:
               type: string
               description: The actual reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - reason
     ScriptEtagMismatchError:
@@ -5148,10 +5060,6 @@ components:
             eTag:
               type: string
               description: The eTag.
-            status:
-              type: integer
-              default: 412
-              description: The Precondition Failed HTTP Status Code.
           required:
             - id
     ScriptNotFoundError:
@@ -5165,10 +5073,6 @@ components:
             message:
               type: string
               description: The error message.
-            status:
-              type: integer
-              default: 404
-              description: The HTTP status code.
           required:
             - id
     ScriptParsingFailureError:
@@ -5179,10 +5083,6 @@ components:
             reason:
               type: string
               description: The actual reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - reason
     ScriptReferencedError:
@@ -5196,10 +5096,6 @@ components:
             message:
               type: string
               description: The error message.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - id
     ScriptSanitationFailureError:
@@ -5210,10 +5106,6 @@ components:
             reason:
               type: string
               description: The actual reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - reason
     TopicFilterMismatchError:
@@ -5227,10 +5119,6 @@ components:
             parameter:
               type: string
               description: The parameter.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - parameter
     InsufficientStorageError:
@@ -5241,10 +5129,6 @@ components:
             reason:
               type: string
               description: The actual reason.
-            status:
-              type: integer
-              default: 507
-              description: The HTTP status code.
     InternalServerError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -5253,10 +5137,6 @@ components:
             reason:
               type: string
               description: The actual reason.
-            status:
-              type: integer
-              default: 500
-              description: The HTTP status code.
     InvalidQueryParameterError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -5268,10 +5148,6 @@ components:
             reason:
               type: string
               description: The reason.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - parameter
             - reason
@@ -5283,21 +5159,11 @@ components:
             reason:
               type: string
               description: The actual reason.
-            status:
-              type: integer
-              default: 412
-              description: The HTTP status code.
           required:
             - reason
     RequestBodyMissingError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
     RequestBodyParameterMissingError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -5306,19 +5172,9 @@ components:
             parameter:
               type: string
               description: The the missing request body parameter.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
     TemporaryNotAvailableError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 503
-              description: The HTTP status code.
     UrlParameterMissingError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -5327,10 +5183,6 @@ components:
             parameter:
               type: string
               description: The name of the missing parameter.
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
           required:
             - parameter
     ValidationErrors:
@@ -5362,30 +5214,12 @@ components:
     DataPolicyInvalidErrors:
       allOf:
         - $ref: '#/components/schemas/ValidationErrors'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
     SchemaInvalidErrors:
       allOf:
         - $ref: '#/components/schemas/ValidationErrors'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
     ScriptInvalidErrors:
       allOf:
         - $ref: '#/components/schemas/ValidationErrors'
-        - type: object
-          properties:
-            status:
-              type: integer
-              default: 400
-              description: The HTTP status code.
     ValidationError:
       type: object
       properties:

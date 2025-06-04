@@ -8,10 +8,6 @@ allOf:
       expectedId:
         type: string
         description: The expected id.
-      status:
-        type: integer
-        default: 400
-        description: The HTTP status code.
     required:
       - actualId
       - expectedId

@@ -8,9 +8,5 @@ allOf:
       eTag:
         type: string
         description: The eTag.
-      status:
-        type: integer
-        default: 412
-        description: The Precondition Failed HTTP Status Code.
     required:
       - id

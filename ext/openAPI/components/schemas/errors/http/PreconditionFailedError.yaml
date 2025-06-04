@@ -5,9 +5,5 @@ allOf:
       reason:
         type: string
         description: The actual reason.
-      status:
-        type: integer
-        default: 412
-        description: The HTTP status code.
     required:
       - reason
