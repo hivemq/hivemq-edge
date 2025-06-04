@@ -4828,8 +4828,6 @@ components:
           required:
             - reason
     ValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       type: object
       properties:
         detail:
@@ -4860,8 +4858,6 @@ components:
           UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
           UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
     AtLeastOneFieldMissingValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
@@ -4874,8 +4870,6 @@ components:
           required:
             - fields
     AtMostOneFunctionValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
@@ -4897,8 +4891,6 @@ components:
             - occurrences
             - paths
     EmptyFieldValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
@@ -4909,8 +4901,6 @@ components:
           required:
             - field
     FunctionMustBePairedValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
@@ -4925,8 +4915,6 @@ components:
             - existingFunction
             - missingFunction
     GeneralPolicyValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
@@ -4937,8 +4925,6 @@ components:
           required:
             - title
     IllegalFunctionValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
@@ -4961,8 +4947,6 @@ components:
             - message
             - path
     IllegalTransitionValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
@@ -4989,8 +4973,6 @@ components:
             - path
             - toState
     InvalidFieldLengthValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
@@ -5020,8 +5002,6 @@ components:
             - field
             - value
     InvalidFieldValueValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
@@ -5036,8 +5016,6 @@ components:
             - field
             - value
     InvalidFunctionOrderValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
@@ -5056,8 +5034,6 @@ components:
             - function
             - previousFunction
     InvalidIdentifierValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
@@ -5072,8 +5048,6 @@ components:
             - field
             - value
     MissingFieldValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
@@ -5084,8 +5058,6 @@ components:
           required:
             - field
     UnknownVariableValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
@@ -5102,8 +5074,6 @@ components:
             - field
             - variables
     UnsupportedFieldValidationError:
-      x-implements:
-        - com.hivemq.api.errors.OpenApiValidationError
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
