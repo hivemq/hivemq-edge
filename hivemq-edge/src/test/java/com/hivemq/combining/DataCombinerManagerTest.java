@@ -15,98 +15,145 @@
  */
 package com.hivemq.combining;
 
+import com.codahale.metrics.NoopMetricRegistry;
+import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.combining.model.DataCombiner;
-import com.hivemq.combining.model.DataCombining;
-import com.hivemq.combining.model.DataCombiningDestination;
-import com.hivemq.combining.model.DataCombiningSources;
-import com.hivemq.combining.model.DataIdentifierReference;
-import com.hivemq.combining.model.EntityReference;
-import com.hivemq.combining.model.EntityType;
-import com.hivemq.configuration.reader.ConfigFileReaderWriter;
+import com.hivemq.combining.runtime.DataCombinerManager;
+import com.hivemq.combining.runtime.DataCombiningRuntimeFactory;
+import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
+import com.hivemq.edge.impl.events.EventServiceDelegateImpl;
+import com.hivemq.edge.impl.events.InMemoryEventImpl;
+import com.hivemq.edge.model.TypeIdentifierImpl;
+import com.hivemq.edge.modules.api.events.EventStore;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 
-class DataCombinerManagerTest {
-
-    private final @NotNull UUID generatedUuid = UUID.randomUUID();
-
-    private final @NotNull ConfigFileReaderWriter configFileReaderWriter = mock();
-    private final @NotNull DataCombiningExtractor dataCombiningExtractor = new DataCombiningExtractor(configFileReaderWriter);
-
-    private final @NotNull DataCombiner defaultCombinerInstance = new DataCombiner(generatedUuid,
-            "name",
-            null,
-            List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
-            List.of(new DataCombining(UUID.randomUUID(),
-                    new DataCombiningSources(new DataIdentifierReference("#",
-                            DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
-                    new DataCombiningDestination("dest", "{}"),
-                    List.of())));
+public class DataCombinerManagerTest {
 
     @Test
-    void test_addDataCombiner_whenNotPresent_thenAdd() {
-        dataCombiningExtractor.addDataCombiner(defaultCombinerInstance);
+    public void test_add() {
+        var now = System.currentTimeMillis();
+        var eventService = new EventServiceDelegateImpl(createEventStore());
 
-        final List<DataCombiner> allCombiners = dataCombiningExtractor.getAllCombiners();
-        assertThat(allCombiners)
-                .hasSize(1)
-                .containsExactly(allCombiners.get(0));
-    }
+        var dataCombiningRuntimeFactory = mock(DataCombiningRuntimeFactory.class);
+        var dataCombiningExtractor = mock(DataCombiningExtractor.class);
+        var shutdownHooks = mock(ShutdownHooks.class);
+        var dataCombinerManager = new DataCombinerManager(eventService, new NoopMetricRegistry(), dataCombiningRuntimeFactory, shutdownHooks, dataCombiningExtractor);
+        dataCombinerManager.start();
+        var combiner = new DataCombiner(UUID.randomUUID(), "namey", "description", List.of(), List.of());
+        dataCombinerManager.refresh(List.of(combiner));
 
+        await().until(() -> getFitleredEvents(eventService, now).size() == 1);
 
-    @Test
-    void test_update_whenPresent_thenUpdated() {
-        final DataCombiner updatedDataCombiner = new DataCombiner(generatedUuid,
-                "update",
-                null,
-                List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
-                List.of(new DataCombining(UUID.randomUUID(),
-                        new DataCombiningSources(new DataIdentifierReference("#",
-                                DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
-                        new DataCombiningDestination("dest", "{}"),
-                        List.of())));
-
-        dataCombiningExtractor.addDataCombiner(defaultCombinerInstance);
-
-        final List<DataCombiner> allCombiners = dataCombiningExtractor.getAllCombiners();
-        assertThat(allCombiners)
-                .hasSize(1)
-                .containsExactly(allCombiners.get(0));
+        assertThat(getFitleredEvents(eventService, now))
+                .extracting(Event::getSource, Event::getMessage)
+                .containsExactlyInAnyOrder(
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was successfully created.")
+                );
     }
 
     @Test
-    void test_update_whenNotPresent_thenReturnFalse() {
-        final DataCombiner updatedDataCombiner = new DataCombiner(generatedUuid,
-                "update",
-                null,
-                List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
-                List.of(new DataCombining(UUID.randomUUID(),
-                        new DataCombiningSources(new DataIdentifierReference("#",
-                                DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
-                        new DataCombiningDestination("dest", "{}"),
-                        List.of())));
+    public void test_addThenDelete() {
+        var now = System.currentTimeMillis();
+        var eventService = new EventServiceDelegateImpl(createEventStore());
 
-        assertThat(dataCombiningExtractor.updateDataCombiner(updatedDataCombiner))
-                .isFalse();
+        var dataCombiningRuntimeFactory = mock(DataCombiningRuntimeFactory.class);
+        var dataCombiningExtractor = mock(DataCombiningExtractor.class);
+        var shutdownHooks = mock(ShutdownHooks.class);
+        var dataCombinerManager = new DataCombinerManager(eventService, new NoopMetricRegistry(), dataCombiningRuntimeFactory, shutdownHooks, dataCombiningExtractor);
+        dataCombinerManager.start();
+        var combiner = new DataCombiner(UUID.randomUUID(), "namey", "description", List.of(), List.of());
+        dataCombinerManager.refresh(List.of(combiner));
+        dataCombinerManager.refresh(List.of());
+
+        await().until(() -> getFitleredEvents(eventService, now).size() == 2);
+
+        assertThat(getFitleredEvents(eventService, now))
+                .extracting(Event::getSource, Event::getMessage)
+                .containsExactlyInAnyOrder(
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was permanently deleted."),
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was successfully created.")
+                );
     }
 
     @Test
-    void test_delete_whenPresent_thenStopAndDeleteIT() {
-        dataCombiningExtractor.addDataCombiner(defaultCombinerInstance);
-        assertThat(dataCombiningExtractor.getAllCombiners())
-                .hasSize(1);
+    public void test_addAndDeleteInOneGo() {
+        var now = System.currentTimeMillis();
+        var eventService = new EventServiceDelegateImpl(createEventStore());
 
-        dataCombiningExtractor.deleteDataCombiner(defaultCombinerInstance.id());
-        assertThat(dataCombiningExtractor.getAllCombiners())
-                .hasSize(0);
+        var dataCombiningRuntimeFactory = mock(DataCombiningRuntimeFactory.class);
+        var dataCombiningExtractor = mock(DataCombiningExtractor.class);
+        var shutdownHooks = mock(ShutdownHooks.class);
+        var dataCombinerManager = new DataCombinerManager(eventService, new NoopMetricRegistry(), dataCombiningRuntimeFactory, shutdownHooks, dataCombiningExtractor);
+        dataCombinerManager.start();
+        var combiner = new DataCombiner(UUID.randomUUID(), "namey", "description", List.of(), List.of());
+        var combiner2 = new DataCombiner(UUID.randomUUID(), "namey2", "description", List.of(), List.of());
+        dataCombinerManager.refresh(List.of(combiner));
+        dataCombinerManager.refresh(List.of(combiner2));
 
+        await().until(() -> getFitleredEvents(eventService, now).size() == 3);
+
+        assertThat(getFitleredEvents(eventService, now))
+                .extracting(Event::getSource, Event::getMessage)
+                .containsExactlyInAnyOrder(
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was successfully created."),
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was permanently deleted."),
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner2.id().toString()), "Combiner 'namey2' was successfully created.")
+                );
+    }
+
+    @Test
+    public void test_addThenUpdate() {
+        var now = System.currentTimeMillis();
+        var eventService = new EventServiceDelegateImpl(createEventStore());
+
+        var dataCombiningRuntimeFactory = mock(DataCombiningRuntimeFactory.class);
+        var dataCombiningExtractor = mock(DataCombiningExtractor.class);
+        var shutdownHooks = mock(ShutdownHooks.class);
+        var dataCombinerManager = new DataCombinerManager(eventService, new NoopMetricRegistry(), dataCombiningRuntimeFactory, shutdownHooks, dataCombiningExtractor);
+        dataCombinerManager.start();
+        var combiner = new DataCombiner(UUID.randomUUID(), "namey", "description", List.of(), List.of());
+        var updatedCombiner = new DataCombiner(combiner.id(), "namey2", "description", List.of(), List.of());
+        dataCombinerManager.refresh(List.of(combiner));
+        dataCombinerManager.refresh(List.of(updatedCombiner));
+
+        assertThat(getFitleredEvents(eventService, now))
+                .extracting(Event::getSource, Event::getMessage)
+                .containsExactlyInAnyOrder(
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey2' was successfully updated."),
+                        tuple(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, combiner.id().toString()), "Combiner 'namey' was successfully created.")
+                );
+    }
+
+    private static @NotNull List<Event> getFitleredEvents(EventServiceDelegateImpl eventService, long now) {
+        return eventService.readEvents(now, 100).stream().filter(event -> !event.getMessage().equals("Configuration has been successfully updated")).toList();
+    }
+
+    private static @NotNull EventStore createEventStore() {
+        return new EventStore() {
+
+            private final @NotNull List<Event> events = new ArrayList<>();
+
+            @Override
+            public void storeEvent(@NotNull Event event) {
+                events.add(event);
+            }
+
+            @Override
+            public @NotNull List<Event> readEvents(@NotNull Long since, @NotNull Integer limit) {
+                return events;
+            }
+        };
     }
 }

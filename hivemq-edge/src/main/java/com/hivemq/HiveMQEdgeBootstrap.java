@@ -31,14 +31,11 @@ import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.ConfigurationBootstrap;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
-import com.hivemq.configuration.migration.ConfigurationMigrator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.impl.capability.CapabilityServiceImpl;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
@@ -49,6 +46,8 @@ import com.hivemq.persistence.PersistenceStartup;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,8 +125,6 @@ public class HiveMQEdgeBootstrap {
         // it is not null in case of integration tests
         // it is null when edge is started "usually"
         if (configService == null) {
-            final ConfigurationMigrator migrator = new ConfigurationMigrator(systemInformation, moduleLoader);
-            migrator.migrate();
             log.trace("Initializing configuration");
             configService = ConfigurationBootstrap.bootstrapConfig(systemInformation);
         }

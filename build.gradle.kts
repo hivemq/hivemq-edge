@@ -1,6 +1,7 @@
 group = "com.hivemq"
 
 plugins {
+    idea
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.repository-convention")
     id("io.github.sgtsilvio.gradle.oci") version "0.22.0"
@@ -29,32 +30,38 @@ tasks.register("build") {
 tasks.register("license") {
     group = "license"
 
-    dependsOn(gradle.includedBuilds.filter { it.name != "edge-plugins" }.map { it.task(":$name") })
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.filter { it.name != "edge-plugins" }.map { it.task(":$name") })
 }
 
 tasks.register("check") {
     group = "verification"
 
-    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.map { it.task(":$name") })
 }
 
 tasks.register("test") {
     group = "verification"
 
-    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.map { it.task(":$name") })
+}
+
+tasks.register("jacocoTestReport") {
+    group = "verification"
+
+    dependsOn(gradle.includedBuilds.filter { it.name == "hivemq-edge" }.map { it.task(":$name") })
 }
 
 tasks.register("classes") {
-    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.map { it.task(":$name") })
 }
 
 tasks.register("testClasses") {
-    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.map { it.task(":$name") })
 }
 
 
 tasks.register<JacocoReport>("jacocoMergedReport") {
-    dependsOn(gradle.includedBuilds.map { it.task(":test") }) // Run tests in included builds
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.map { it.task(":test") }) // Run tests in included builds
 
     val executionDataFiles: FileCollection = files(gradle.includedBuilds.map { file(it.projectDir.absolutePath  + "/build/jacoco/test.exec") })
     val classFiles = files(gradle.includedBuilds.map { fileTree(it.projectDir.absolutePath  + "/build/classes/java/main") {

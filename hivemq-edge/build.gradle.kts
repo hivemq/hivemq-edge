@@ -21,6 +21,7 @@ buildscript {
 
 plugins {
     java
+    idea
     `java-library`
     `maven-publish`
     signing
@@ -100,11 +101,7 @@ java {
     withSourcesJar()
 }
 
-
 /* ******************** dependencies ******************** */
-
-// Repository settings are now applied by the repository-convention plugin
-
 
 // Runtime stuffs
 dependencies {
@@ -139,8 +136,9 @@ dependencies {
 
 
     // config
-    implementation(libs.jakarta.xml.bind.api)
-    runtimeOnly(libs.jaxb.impl)
+    implementation(libs.jaxb2.impl)
+    implementation(libs.jaxb4.impl)
+    implementation(libs.jaxb4.bind)
 
     // metrics
     implementation(libs.dropwizard.metrics)
@@ -332,7 +330,6 @@ tasks.shadowJar {
         into("httpd")
     }
 }
-
 
 val hivemqZip by tasks.registering(Zip::class) {
     group = "distribution"

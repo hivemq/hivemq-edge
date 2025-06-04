@@ -1,0 +1,54 @@
+name: Run Snyk scan on PRs
+
+on:
+  pull_request:
+    branches:
+      - master**
+
+jobs:
+  monitor-baseline-project:
+    uses: ./.github/workflows/snyk-push.yml
+    with:
+      github_ref: ${{ github.base_ref }}
+    secrets: inherit
+
+  scan-for-new-issues:
+    runs-on: ubuntu-latest
+    needs: monitor-baseline-project
+
+    steps:
+      - name: Setup Java
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4
+        with:
+          distribution: 'temurin'
+          java-version: |
+            17
+
+      - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
+        with:
+          path: hivemq-edge
+          ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
+          token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+
+      - name: Check for new issues
+        uses: hivemq/hivemq-snyk-composite-action@dbe0008ff5a165ad9caf42e7cb2c52d378bd4667 # v2.3.0
+        with:
+          snyk-args: --org=hivemq-edge --configuration-matching=^runtimeClasspath$ -d hivemq-edge/hivemq-edge
+          artifact-name: snyk-report-hivemq-edge
+          snyk-token: ${{ secrets.SNYK_TOKEN }}
+          github-username: ${{ secrets.JENKINS_GITHUB_USERNAME }}
+          github-token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20.13.1'
+
+      - name: Check for new issues (hivemq-edge-frontend)
+        uses: hivemq/hivemq-snyk-composite-action@dbe0008ff5a165ad9caf42e7cb2c52d378bd4667 # v2.3.0
+        with:
+          snyk-args: --org=hivemq-edge --configuration-matching=^runtimeClasspath$ -d hivemq-edge/hivemq-edge-frontend
+          artifact-name: snyk-report-hivemq-edge-frontend
+          snyk-token: ${{ secrets.SNYK_TOKEN }}
+          github-username: ${{ secrets.JENKINS_GITHUB_USERNAME }}
+          github-token: ${{ secrets.JENKINS_GITHUB_TOKEN }}

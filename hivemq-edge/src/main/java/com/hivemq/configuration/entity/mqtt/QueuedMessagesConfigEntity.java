@@ -17,7 +17,7 @@ package com.hivemq.configuration.entity.mqtt;
 
 import org.jetbrains.annotations.NotNull;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 import java.util.Objects;
 
 @XmlRootElement(name = "queued-messages")

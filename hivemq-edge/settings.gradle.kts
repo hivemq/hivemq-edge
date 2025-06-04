@@ -21,7 +21,7 @@ pluginManagement {
     includeBuild("../edge-plugins")
 }
 
-includeBuild("./src/frontend") {
+includeBuild("../hivemq-edge-frontend") {
     name = "hivemq-edge-frontend"
 }
 
@@ -71,23 +71,6 @@ if (file("../../hivemq-edge-adapter-sdk").exists()) {
         git clone https://github.com/hivemq/hivemq-edge-adapter-sdk.git ../hivemq-edge-adapter-sdk
         You can also clone your fork:
         git clone https://github.com/<replace-with-your-fork>/hivemq-edge-adapter-sdk.git ../hivemq-edge-adapter-sdk
-        ######################################################################################################
-        """.trimIndent()
-    )
-}
-
-if (file("../../hivemq-mtconnect-protocol").exists()) {
-    includeBuild("../../hivemq-mtconnect-protocol")
-} else {
-    logger.warn(
-        """
-        ######################################################################################################
-        You can not use the latest changes of or modify the hivemq-mtconnect-protocol.
-        Please checkout the hivemq-mtconnect-protocol repository next to the hivemq-edge repository.
-        Execute the following command from your project directory:
-        git clone https://github.com/hivemq/hivemq-mtconnect-protocol.git ../hivemq-mtconnect-protocol
-        You can also clone your fork:
-        git clone https://github.com/<replace-with-your-fork>/hivemq-mtconnect-protocol.git ../hivemq-mtconnect-protocol
         ######################################################################################################
         """.trimIndent()
     )

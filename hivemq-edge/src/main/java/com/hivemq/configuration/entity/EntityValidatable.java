@@ -18,8 +18,8 @@ package com.hivemq.configuration.entity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.ValidationEvent;
-import javax.xml.bind.helpers.ValidationEventImpl;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.helpers.ValidationEventImpl;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;

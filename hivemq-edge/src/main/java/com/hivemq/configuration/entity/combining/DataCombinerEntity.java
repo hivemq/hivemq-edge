@@ -19,41 +19,40 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.ValidationEvent;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 
 public class DataCombinerEntity {
-    @JsonProperty("id")
-    @XmlElement(name = "id")
+    @JsonProperty(value = "id", required = true)
+    @XmlElement(name = "id", required = true)
     private @NotNull UUID id;
 
-    @JsonProperty("name")
-    @XmlElement(name = "name")
+    @JsonProperty(value = "name", required = true)
+    @XmlElement(name = "name", required = true)
     private @NotNull String name;
 
-    @JsonProperty("description")
-    @XmlElement(name = "description")
+    @JsonProperty(value = "description", required = true)
+    @XmlElement(name = "description", required = true)
     private @NotNull String description;
 
-    @JsonProperty("entityReferences")
-    @XmlElementWrapper(name = "entity-references")
+    @JsonProperty(value = "entityReferences", required = true)
+    @XmlElementWrapper(name = "entity-references", required = true)
     @XmlElement(name = "entity-reference")
-    private @NotNull List<EntityReferenceEntity> entityReferenceEntities;
+    private @NotNull List<EntityReferenceEntity> entityReferenceEntities = new ArrayList<>();;
 
-    @JsonProperty("dataCombinings")
-    @XmlElementWrapper(name = "data-combinings")
+    @JsonProperty(value = "dataCombinings", required = true)
+    @XmlElementWrapper(name = "data-combinings", required = true)
     @XmlElement(name = "data-combining")
-    private @NotNull List<DataCombiningEntity> dataCombiningEntities;
+    private @NotNull List<DataCombiningEntity> dataCombiningEntities = new ArrayList<>();;
 
     // no-arg for jaxb
     public DataCombinerEntity() {
-        this.entityReferenceEntities = new ArrayList<>();
-        this.dataCombiningEntities = new ArrayList<>();
     }
 
     public DataCombinerEntity(

@@ -27,10 +27,9 @@ dependencies {
     compileOnly(libs.slf4j.api)
     compileOnly(libs.jackson.databind)
     compileOnly(libs.jackson.dataformat.xml)
-    // V4 supports XSD 1.1
-    compileOnly(libs.jakarta.xml.bind.api.v4)
-    compileOnly(libs.jaxb.impl.v4)
-    implementation("com.hivemq:hivemq-mtconnect-protocol")
+    implementation(libs.jaxb4.impl)
+    implementation(libs.jaxb4.bind)
+    implementation(libs.mtconnect.protocol)
 }
 
 dependencies {
@@ -44,9 +43,6 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.hivemq.edge.adapterSdk)
     testImplementation(libs.mockito.junitJupiter)
-    // V4 supports XSD 1.1
-    testImplementation(libs.jakarta.xml.bind.api.v4)
-    testImplementation(libs.jaxb.impl.v4)
 }
 
 tasks.test {
@@ -60,7 +56,7 @@ tasks.test {
 tasks.register<Copy>("copyAllDependencies") {
     shouldRunAfter("assemble")
     from(configurations.runtimeClasspath)
-    into("${buildDir}/deps/libs")
+    into("${layout.buildDirectory}/deps/libs")
 }
 
 tasks.named("assemble") { finalizedBy("copyAllDependencies") }

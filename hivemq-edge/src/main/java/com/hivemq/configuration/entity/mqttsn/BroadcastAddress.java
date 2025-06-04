@@ -17,9 +17,9 @@ package com.hivemq.configuration.entity.mqttsn;
 
 import com.hivemq.configuration.entity.listener.ListenerEntity;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * @author Simon L Johnson

@@ -301,8 +301,8 @@ public class ProtocolAdapterManager {
 
         if (failedAdapters.isEmpty()) {
             eventService.configurationEvent()
-                    .withSeverity(Event.SEVERITY.WARN)
-                    .withMessage("Configuration has been succesfully reloaded")
+                    .withSeverity(Event.SEVERITY.INFO)
+                    .withMessage("Configuration has been successfully updated")
                     .fire();
         } else {
             eventService.configurationEvent()

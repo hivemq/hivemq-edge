@@ -15,26 +15,16 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.legacy.ConfigTagsTuple;
-import com.hivemq.adapter.sdk.api.config.legacy.LegacyConfigConversion;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
-import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttConfig;
-import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
-import com.hivemq.edge.modules.adapters.simulation.config.legacy.LegacySimulationAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 public class SimulationProtocolAdapterFactory
-        implements ProtocolAdapterFactory<SimulationSpecificAdapterConfig>, LegacyConfigConversion {
+        implements ProtocolAdapterFactory<SimulationSpecificAdapterConfig> {
 
     final boolean writingEnabled;
 
@@ -53,41 +43,6 @@ public class SimulationProtocolAdapterFactory
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<SimulationSpecificAdapterConfig> input) {
         return new SimulationProtocolAdapter(adapterInformation, input, TimeWaiter.INSTANCE);
-    }
-
-    @Override
-    public @NotNull ConfigTagsTuple tryConvertLegacyConfig(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        final LegacySimulationAdapterConfig legacySimulationAdapterConfig =
-                objectMapper.convertValue(config, LegacySimulationAdapterConfig.class);
-
-        final List<SimulationToMqttMapping> simulationToMqttMappings =
-                legacySimulationAdapterConfig.getPollingContexts()
-                        .stream()
-                        .map(context -> new SimulationToMqttMapping(context.getMqttTopic(),
-                                context.getMqttQos(),
-                                context.getMessageHandlingOptions(),
-                                context.getIncludeTimestamp(),
-                                context.getIncludeTagNames(),
-                                context.getUserProperties()))
-                        .collect(Collectors.toList());
-
-        final SimulationToMqttConfig simulationToMqttConfig = new SimulationToMqttConfig(simulationToMqttMappings,
-                legacySimulationAdapterConfig.getPollingIntervalMillis(),
-                legacySimulationAdapterConfig.getMaxPollingErrorsBeforeRemoval());
-
-        final SimulationSpecificAdapterConfig simulationSpecificAdapterConfig = new SimulationSpecificAdapterConfig(
-                simulationToMqttConfig,
-                legacySimulationAdapterConfig.getMinValue(),
-                legacySimulationAdapterConfig.getMaxValue(),
-                legacySimulationAdapterConfig.getMinDelay(),
-                legacySimulationAdapterConfig.getMaxDelay());
-
-        return new ConfigTagsTuple(
-                legacySimulationAdapterConfig.getId(),
-                simulationSpecificAdapterConfig,
-                List.of(),
-                simulationToMqttMappings);
     }
 
 }

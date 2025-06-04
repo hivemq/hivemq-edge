@@ -1,4 +1,4 @@
 {
     "configEndpoint" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/hivemq-edge-configuration.json",
-    "usageEndpoint" : "https://mqtt-sn.cloud/edge/"
+    "usageEndpoint" : " https://metrics.edge.hivemq.com/api/v1/usage"
 }

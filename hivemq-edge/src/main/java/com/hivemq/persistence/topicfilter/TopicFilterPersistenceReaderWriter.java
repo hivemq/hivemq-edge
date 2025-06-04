@@ -25,6 +25,9 @@ import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.exceptions.UnrecoverableException;
+import com.hivemq.persistence.util.JaxbUtils;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.topicfilter.xml.TopicFilterPersistenceEntity;
 import com.hivemq.persistence.topicfilter.xml.TopicFilterXmlEntity;
@@ -72,14 +75,18 @@ public class TopicFilterPersistenceReaderWriter {
 
         try {
             final TopicFilterPersistenceEntity persistenceEntity = convertToEntity(topicFilters);
-            final String xml = xmlMapper.writeValueAsString(persistenceEntity);
-            Files.writeString(persistenceFile.toPath(), xml);
-        } catch (final JsonProcessingException e) {
+            JaxbUtils.marshal(persistenceEntity, persistenceFile, marshaller -> {
+                marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+                marshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, TopicFilterPersistenceEntity.SCHEMA_LOCATION);
+                marshaller.setProperty(Marshaller.JAXB_NO_NAMESPACE_SCHEMA_LOCATION,
+                        TopicFilterPersistenceEntity.NO_NAMESPACE_SCHEMA_LOCATION);
+            });
+        } catch (final JAXBException e) {
             log.error(
                     "Error while trying to persist the topic filters on disc. Exception happened during serialization of topic filters:",
                     e);
             throw new RuntimeException(e);
-        } catch (final IOException e) {
+        } catch (final Exception e) {
             log.error("Error while trying to persist the topic filters on disc. Exception happened during writing of " +
                     PERSISTENCE_FILE_NAME +
                     ":", e);
@@ -99,8 +106,8 @@ public class TopicFilterPersistenceReaderWriter {
 
         try {
             final String xml = Files.readString(persistenceFile.toPath());
-            return xmlMapper.readValue(xml, TopicFilterPersistenceEntity.class);
-        } catch (final IOException e) {
+            return JaxbUtils.unmarshal(xml, TopicFilterPersistenceEntity.class);
+        } catch (final IOException | JAXBException e) {
             log.error(
                     "Critical Exception happened during reading of topic filter persistence. In case this happens during the startup HiveMQ Edge will shutdown. Original Exception: ",
                     e);

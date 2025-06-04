@@ -19,39 +19,41 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 
 public class DataCombiningSourcesEntity {
 
     @JsonProperty("primaryReference")
     @XmlElement(name = "primary-reference")
-    private final @NotNull DataIdentifierReferenceEntity primaryIdentifier;
+    private @NotNull DataIdentifierReferenceEntity primaryIdentifier;
 
     @JsonProperty("tags")
     @XmlElementWrapper(name = "tags")
     @XmlElement(name = "tag")
-    private final @NotNull List<String> tags;
+    private @NotNull List<String> tags = new ArrayList<>();
 
     @JsonProperty("topicFilters")
     @XmlElementWrapper(name = "topic-filters")
     @XmlElement(name = "topic-filter")
-    private final @NotNull List<String> topicFilters;
+    private @NotNull List<String> topicFilters = new ArrayList<>();
 
     // no-arg for jaxb
     public DataCombiningSourcesEntity() {
-        tags = new ArrayList<>();
-        topicFilters = new ArrayList<>();
-        primaryIdentifier = null;
     }
 
     public DataCombiningSourcesEntity(
             final @NotNull DataIdentifierReferenceEntity primaryIdentifier,
             final @NotNull List<String> tags,
             final @NotNull List<String> topicFilters) {
+        Objects.requireNonNull(primaryIdentifier, "primaryIdentifier must not be null");
+        Objects.requireNonNull(tags, "tags must not be null");
+        Objects.requireNonNull(topicFilters, "topicFilters must not be null");
         this.primaryIdentifier = primaryIdentifier;
         this.tags = tags;
         this.topicFilters = topicFilters;
