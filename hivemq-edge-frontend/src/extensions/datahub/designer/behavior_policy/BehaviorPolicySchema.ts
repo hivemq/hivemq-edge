@@ -12,16 +12,7 @@ export const MOCK_BEHAVIOR_POLICY_SCHEMA: PanelSpecs = {
         'ui:widget': 'updown',
       },
       maxPublishes: {
-        'ui:widget': 'radio', // Hide the enum field since it's fixed
-        // This is to reflect the use of oneOf on the definition of maxPublish
-        oneOf: [
-          {
-            'ui:widget': 'hidden', // Hide the enum field since it's fixed
-          },
-          {
-            // must be there for the second element,
-          },
-        ],
+        'ui:widget': 'updown',
       },
     },
   },
