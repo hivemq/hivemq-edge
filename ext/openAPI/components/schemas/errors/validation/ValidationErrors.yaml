@@ -1,12 +1,10 @@
-x-implements:
-  - com.hivemq.api.errors.OpenApiError
 allOf:
-  - $ref: "../../ProblemDetails.yaml"
+  - $ref: "../ApiError.yaml"
   - type: object
     properties:
-      errors:
+      childErrors:
         type: array
-        description: List of validation errors.
+        description: List of child validation errors.
         items:
           $ref: "./ValidationError.yaml"
       status:
@@ -14,4 +12,11 @@ allOf:
         default: 400
         description: The HTTP status code.
     required:
-      - errors
+      - childErrors
+discriminator:
+  propertyName: type
+  mapping:
+    https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: "../datahub/BehaviorPolicyInvalidErrors.yaml"
+    https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: "../datahub/DataPolicyInvalidErrors.yaml"
+    https://hivemq.com/edge/api/model/SchemaInvalidErrors: "../datahub/SchemaInvalidErrors.yaml"
+    https://hivemq.com/edge/api/model/ScriptInvalidErrors: "../datahub/ScriptInvalidErrors.yaml"
