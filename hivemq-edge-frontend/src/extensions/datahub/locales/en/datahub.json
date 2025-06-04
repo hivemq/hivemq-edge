@@ -371,8 +371,8 @@
         "notLoading": "Cannot load the existing policies for checking ids",
         "notUnique": "The id is already in use by another behavior policy",
         "publishQuota": {
-          "maxLessThanMin": "The maximum publish quota must be greater than the minimum publish quota",
-          "minMoreThanMax": "The minimum publish quota must be lesser than the maximum publish quota"
+          "maxLessThanMin": "The maximum publish quota must be greater than or equal to the minimum publish quota",
+          "minMoreThanMax": "The minimum publish quota must be less than or equal to the maximum publish quota"
         }
       },
       "operation": {
