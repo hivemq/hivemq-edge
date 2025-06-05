@@ -7,16 +7,16 @@ allOf:
         description: The event name.
       fromState:
         type: string
-        description: The from state.
+        description: The event from state.
       id:
         type: string
-        description: The id.
+        description: The event id.
       path:
         type: string
         description: The path.
       toState:
         type: string
-        description: The to state.
+        description: The event to state.
     required:
       - event
       - fromState
