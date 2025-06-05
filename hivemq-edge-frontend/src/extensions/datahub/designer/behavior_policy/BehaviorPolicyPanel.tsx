@@ -34,7 +34,7 @@ export const BehaviorPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit
       const isIdNotUnique = Boolean(allPolicies.items?.find((e) => e.id === formData?.id))
       if (isIdNotUnique) errors['id']?.addError(t('error.validation.behaviourPolicy.notUnique'))
     }
-    if (formData?.model === BehaviorPolicyType.PUBLISH_QUOTA) {
+    if (formData?.model === BehaviorPolicyType.PUBLISH_QUOTA && formData.arguments) {
       const { maxPublishes, minPublishes } = formData.arguments as PublishQuotaArguments
       if (maxPublishes !== UNLIMITED_PUBLISH && maxPublishes < minPublishes) {
         errors?.['arguments']?.['maxPublishes']?.addError(
