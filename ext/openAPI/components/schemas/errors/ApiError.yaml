@@ -40,5 +40,3 @@ discriminator:
     https://hivemq.com/edge/api/model/RequestBodyParameterMissingError: "./http/RequestBodyParameterMissingError.yaml"
     https://hivemq.com/edge/api/model/TemporaryNotAvailableError: "./http/TemporaryNotAvailableError.yaml"
     https://hivemq.com/edge/api/model/UrlParameterMissingError: "./http/UrlParameterMissingError.yaml"
-    # Validation
-    https://hivemq.com/edge/api/model/ValidationErrors: "./validation/ValidationErrors.yaml"

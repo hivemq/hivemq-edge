@@ -1,9 +1,0 @@
-allOf:
-  - $ref: "../ApiError.yaml"
-discriminator:
-  propertyName: type
-  mapping:
-    https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: "../datahub/BehaviorPolicyInvalidErrors.yaml"
-    https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: "../datahub/DataPolicyInvalidErrors.yaml"
-    https://hivemq.com/edge/api/model/SchemaInvalidErrors: "../datahub/SchemaInvalidErrors.yaml"
-    https://hivemq.com/edge/api/model/ScriptInvalidErrors: "../datahub/ScriptInvalidErrors.yaml"
