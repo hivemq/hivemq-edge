@@ -1,0 +1,26 @@
+allOf:
+  - $ref: "../validation/ValidationError.yaml"
+  - oneOf:
+    - $ref: "./GeneralPolicyValidationError.yaml"
+    - $ref: "./IllegalFunctionValidationError.yaml"
+    - $ref: "./IllegalTransitionValidationError.yaml"
+    - $ref: "../validation/AtLeastOneFieldMissingValidationError.yaml"
+    - $ref: "../validation/EmptyFieldValidationError.yaml"
+    - $ref: "../validation/InvalidFieldLengthValidationError.yaml"
+    - $ref: "../validation/InvalidFieldValueValidationError.yaml"
+    - $ref: "../validation/InvalidIdentifierValidationError.yaml"
+    - $ref: "../validation/MissingFieldValidationError.yaml"
+    - $ref: "../validation/UnsupportedFieldValidationError.yaml"
+discriminator:
+  propertyName: type
+  mapping:
+    https://hivemq.com/edge/api/model/GeneralPolicyValidationError: "./GeneralPolicyValidationError.yaml"
+    https://hivemq.com/edge/api/model/IllegalFunctionValidationError: "./IllegalFunctionValidationError.yaml"
+    https://hivemq.com/edge/api/model/IllegalTransitionValidationError: "./IllegalTransitionValidationError.yaml"
+    https://hivemq.com/edge/api/model/AtLeastOneFieldMissingValidationError: "../validation/AtLeastOneFieldMissingValidationError.yaml"
+    https://hivemq.com/edge/api/model/EmptyFieldValidationError: "../validation/EmptyFieldValidationError.yaml"
+    https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: "../validation/InvalidFieldLengthValidationError.yaml"
+    https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: "../validation/InvalidFieldValueValidationError.yaml"
+    https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: "../validation/InvalidIdentifierValidationError.yaml"
+    https://hivemq.com/edge/api/model/MissingFieldValidationError: "../validation/MissingFieldValidationError.yaml"
+    https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: "../validation/UnsupportedFieldValidationError.yaml"

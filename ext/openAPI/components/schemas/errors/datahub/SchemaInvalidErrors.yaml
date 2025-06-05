@@ -1,2 +1,11 @@
 allOf:
   - $ref: "../validation/ValidationErrors.yaml"
+  - type: object
+    properties:
+      childErrors:
+        type: array
+        description: List of child validation errors.
+        items:
+          $ref: "./SchemaValidationError.yaml"
+    required:
+      - childErrors
