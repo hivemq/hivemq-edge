@@ -30,23 +30,23 @@ public final class ValidationErrorFactory extends ErrorFactory {
     }
 
     public static @NotNull EmptyFieldValidationError emptyFieldValidationError(
-            final @NotNull String field) {
-        return emptyFieldValidationError("Required field '" + field + "' is empty", field);
+            final @NotNull String path) {
+        return emptyFieldValidationError("Required field '" + path + "' is empty", path);
     }
 
     public static @NotNull EmptyFieldValidationError emptyFieldValidationError(
             final @NotNull String detail,
-            final @NotNull String field) {
+            final @NotNull String path) {
         return EmptyFieldValidationError.builder()
                 .type(type(EmptyFieldValidationError.class))
                 .detail(detail)
-                .field(field)
+                .path(path)
                 .build();
     }
 
     public static @NotNull InvalidFieldLengthValidationError invalidFieldLengthValidationError(
             final @NotNull String detail,
-            final @NotNull String field,
+            final @NotNull String path,
             final @NotNull String value,
             final int actualLength,
             final int expectedMinimumLength,
@@ -54,7 +54,7 @@ public final class ValidationErrorFactory extends ErrorFactory {
         return InvalidFieldLengthValidationError.builder()
                 .type(type(InvalidFieldLengthValidationError.class))
                 .detail(detail)
-                .field(field)
+                .path(path)
                 .value(value)
                 .actualLength(actualLength)
                 .expectedMinimumLength(expectedMinimumLength)
@@ -64,89 +64,89 @@ public final class ValidationErrorFactory extends ErrorFactory {
 
     public static @NotNull InvalidFieldValueValidationError invalidFieldValueValidationError(
             final @NotNull String detail,
-            final @NotNull String field,
+            final @NotNull String path,
             final @NotNull String value) {
         return InvalidFieldValueValidationError.builder()
                 .type(type(InvalidFieldValueValidationError.class))
                 .detail(detail)
-                .field(field)
+                .path(path)
                 .value(value)
                 .build();
     }
 
     public static @NotNull InvalidIdentifierValidationError invalidIdentifierValidationError(
-            final @NotNull String field,
+            final @NotNull String path,
             final @NotNull String value) {
         return invalidIdentifierValidationError("Identifier " +
-                field +
+                path +
                 " must begin with a letter and may only consist of lowercase letters," +
-                " uppercase letters, numbers, periods, hyphens, and underscores", field, value);
+                " uppercase letters, numbers, periods, hyphens, and underscores", path, value);
     }
 
     public static @NotNull InvalidIdentifierValidationError invalidIdentifierValidationError(
             final @NotNull String detail,
-            final @NotNull String field,
+            final @NotNull String path,
             final @NotNull String value) {
         return InvalidIdentifierValidationError.builder()
                 .type(type(InvalidIdentifierValidationError.class))
                 .detail(detail)
-                .field(field)
+                .path(path)
                 .value(value)
                 .build();
     }
 
     public static @NotNull MissingFieldValidationError missingFieldValidationError(
-            final @NotNull String field) {
-        return missingFieldValidationError("Required field '" + field + "' is missing.", field);
+            final @NotNull String path) {
+        return missingFieldValidationError("Required field '" + path + "' is missing.", path);
     }
 
     public static @NotNull MissingFieldValidationError missingFieldValidationError(
             final @NotNull String detail,
-            final @NotNull String field) {
+            final @NotNull String path) {
         return MissingFieldValidationError.builder()
                 .type(type(MissingFieldValidationError.class))
                 .detail(detail)
-                .field(field)
+                .path(path)
                 .build();
     }
 
     public static @NotNull UnsupportedFieldValidationError unsupportedFieldValidationError(
             final @NotNull String detail,
-            final @NotNull String field,
+            final @NotNull String path,
             final @NotNull String actualValue,
             final @NotNull String expectedValue) {
         return UnsupportedFieldValidationError.builder()
                 .type(type(UnsupportedFieldValidationError.class))
                 .detail(detail)
-                .field(field)
+                .path(path)
                 .actualValue(actualValue)
                 .expectedValue(expectedValue)
                 .build();
     }
 
     public static @NotNull UnsupportedFieldValidationError unsupportedFieldValidationErrorByType(
-            final @NotNull String field,
+            final @NotNull String path,
             final @NotNull String actualType,
             final @NotNull String expectedType) {
         return unsupportedFieldValidationError("Unsupported type '" +
                 actualType +
                 " for field '" +
-                field +
+                path +
                 "'. Expected type is '" +
                 expectedType +
-                "'.", field, actualType, expectedType);
+                "'.", path, actualType, expectedType);
     }
 
     public static @NotNull UnsupportedFieldValidationError unsupportedFieldValidationErrorByValue(
-            final @NotNull String field,
+            final @NotNull String path,
             final @NotNull String actualValue,
             final @NotNull String expectedValue) {
         return unsupportedFieldValidationError("Unsupported value '" +
                 actualValue +
                 " for field '" +
-                field +
+                path +
                 "'. Expected value is '" +
                 expectedValue +
-                "'.", field, actualValue, expectedValue);
+                "'.", path, actualValue, expectedValue);
     }
 }
