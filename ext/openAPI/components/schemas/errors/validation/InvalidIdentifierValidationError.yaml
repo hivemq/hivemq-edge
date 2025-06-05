@@ -2,12 +2,13 @@ allOf:
   - $ref: "./ValidationError.yaml"
   - type: object
     properties:
-      field:
+      path:
         type: string
-        description: The invalid identifier field.
+        format: json-path
+        description: The invalid identifier path.
       value:
         type: string
         description: The invalid identifier value.
     required:
-      - field
+      - path
       - value
