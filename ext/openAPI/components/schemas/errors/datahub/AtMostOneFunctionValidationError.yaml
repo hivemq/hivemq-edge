@@ -13,7 +13,8 @@ allOf:
         type: array
         items:
           type: string
-        description: The paths where the function occurs.
+          format: json-path
+        description: The json paths where the function occurs.
     required:
       - function
       - occurrences

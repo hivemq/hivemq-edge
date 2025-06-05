@@ -13,7 +13,8 @@ allOf:
         description: The error message.
       path:
         type: string
-        description: The path.
+        format: json-path
+        description: The json path.
     required:
       - event
       - id
