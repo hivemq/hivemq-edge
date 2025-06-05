@@ -5,8 +5,8 @@ allOf:
       message:
         type: string
         description: The error message.
-      parameter:
+      path:
         type: string
-        description: The parameter.
+        description: The json path of the topic filter.
     required:
-      - parameter
+      - path

@@ -38,7 +38,7 @@ get:
       description: Success
     '400':
       content:
-        application/json:
+        application/problem+json:
           schema:
             oneOf:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
@@ -47,7 +47,7 @@ get:
       description: URL parameter missing
     '404':
       content:
-        application/json:
+        application/problem+json:
           schema:
             oneOf:
               - $ref: "../components/schemas/errors/datahub/ClientDisconnectedError.yaml"
@@ -57,7 +57,7 @@ get:
       description: Client error
     '500':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/InternalServerError.yaml"
       description: Internal server error

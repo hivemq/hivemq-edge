@@ -2,16 +2,17 @@ allOf:
   - $ref: "../validation/ValidationError.yaml"
   - type: object
     properties:
-      field:
-        type: string
-        description: The field.
       function:
         type: string
         description: The function.
+      path:
+        type: string
+        format: json-path
+        description: The json path.
       previousFunction:
         type: string
         description: The previous function.
     required:
-      - field
       - function
+      - path
       - previousFunction

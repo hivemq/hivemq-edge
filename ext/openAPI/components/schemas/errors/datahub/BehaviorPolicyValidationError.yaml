@@ -3,7 +3,7 @@ allOf:
   - oneOf:
     - $ref: "./GeneralPolicyValidationError.yaml"
     - $ref: "./IllegalFunctionValidationError.yaml"
-    - $ref: "./IllegalTransitionValidationError.yaml"
+    - $ref: "./IllegalEventTransitionValidationError.yaml"
     - $ref: "../validation/AtLeastOneFieldMissingValidationError.yaml"
     - $ref: "../validation/EmptyFieldValidationError.yaml"
     - $ref: "../validation/InvalidFieldLengthValidationError.yaml"
@@ -15,8 +15,8 @@ discriminator:
   propertyName: type
   mapping:
     https://hivemq.com/edge/api/model/GeneralPolicyValidationError: "./GeneralPolicyValidationError.yaml"
+    https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError: "./IllegalEventTransitionValidationError.yaml"
     https://hivemq.com/edge/api/model/IllegalFunctionValidationError: "./IllegalFunctionValidationError.yaml"
-    https://hivemq.com/edge/api/model/IllegalTransitionValidationError: "./IllegalTransitionValidationError.yaml"
     https://hivemq.com/edge/api/model/AtLeastOneFieldMissingValidationError: "../validation/AtLeastOneFieldMissingValidationError.yaml"
     https://hivemq.com/edge/api/model/EmptyFieldValidationError: "../validation/EmptyFieldValidationError.yaml"
     https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: "../validation/InvalidFieldLengthValidationError.yaml"

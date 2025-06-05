@@ -8,10 +8,11 @@ allOf:
       expectedValue:
         type: string
         description: The expected value.
-      field:
+      path:
         type: string
-        description: The field.
+        format: json-path
+        description: The json path.
     required:
       - actualValue
       - expectedValue
-      - field
+      - path
