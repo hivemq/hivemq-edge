@@ -1,14 +1,5 @@
 allOf:
   - $ref: "../ProblemDetails.yaml"
-  - type: object
-    properties:
-      # Overwrite the errors from ProblemDetails.
-      # To be removed in the future.
-      errors:
-        type: array
-        description: List of child validation errors.
-        items:
-          $ref: "./validation/ValidationError.yaml"
 discriminator:
   propertyName: type
   mapping:
@@ -51,4 +42,3 @@ discriminator:
     https://hivemq.com/edge/api/model/UrlParameterMissingError: "./http/UrlParameterMissingError.yaml"
     # Validation
     https://hivemq.com/edge/api/model/ValidationErrors: "./validation/ValidationErrors.yaml"
-

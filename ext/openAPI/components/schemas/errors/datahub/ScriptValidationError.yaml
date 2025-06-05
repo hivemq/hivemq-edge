@@ -1,0 +1,16 @@
+allOf:
+  - $ref: "../validation/ValidationError.yaml"
+  - oneOf:
+    - $ref: "../validation/InvalidFieldLengthValidationError.yaml"
+    - $ref: "../validation/InvalidFieldValueValidationError.yaml"
+    - $ref: "../validation/InvalidIdentifierValidationError.yaml"
+    - $ref: "../validation/MissingFieldValidationError.yaml"
+    - $ref: "../validation/UnsupportedFieldValidationError.yaml"
+discriminator:
+  propertyName: type
+  mapping:
+    https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: "../validation/InvalidFieldLengthValidationError.yaml"
+    https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: "../validation/InvalidFieldValueValidationError.yaml"
+    https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: "../validation/InvalidIdentifierValidationError.yaml"
+    https://hivemq.com/edge/api/model/MissingFieldValidationError: "../validation/MissingFieldValidationError.yaml"
+    https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: "../validation/UnsupportedFieldValidationError.yaml"
