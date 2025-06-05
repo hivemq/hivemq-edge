@@ -1,5 +1,5 @@
 allOf:
-  - $ref: "../validation/ValidationErrors.yaml"
+  - $ref: "../ApiError.yaml"
   - type: object
     properties:
       childErrors:
