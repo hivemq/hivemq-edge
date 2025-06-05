@@ -1,18 +1,5 @@
 allOf:
   - $ref: "../ApiError.yaml"
-  - type: object
-    properties:
-      errors:
-        type: array
-        description: List of child validation errors.
-        items:
-          $ref: "./ValidationError.yaml"
-      status:
-        type: integer
-        default: 400
-        description: The HTTP status code.
-    required:
-      - errors
 discriminator:
   propertyName: type
   mapping:
