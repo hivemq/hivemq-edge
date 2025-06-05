@@ -14,9 +14,10 @@ allOf:
         type: integer
         format: int32
         description: The maximum length expected for the field value.
-      field:
+      path:
         type: string
-        description: The invalid field.
+        format: json-path
+        description: The invalid json path.
       value:
         type: string
         description: The invalid value.
@@ -24,5 +25,5 @@ allOf:
       - actualLength
       - expectedMinimumLength
       - expectedMaximumLength
-      - field
+      - path
       - value
