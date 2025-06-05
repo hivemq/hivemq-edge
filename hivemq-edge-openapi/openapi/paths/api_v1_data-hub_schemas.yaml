@@ -153,7 +153,7 @@ get:
       description: Success
     '400':
       content:
-        application/json:
+        application/problem+json:
           schema:
             oneOf:
               - $ref: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
@@ -162,7 +162,7 @@ get:
       description: URL parameter missing
     '503':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
       description: Request resource temporary unavailable
@@ -213,7 +213,7 @@ post:
       description: Success
     '400':
       content:
-        application/json:
+        application/problem+json:
           schema:
             oneOf:
               - $ref: "../components/schemas/errors/http/RequestBodyParameterMissingError.yaml"
@@ -224,31 +224,31 @@ post:
       description: Schema creation failed
     '409':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/datahub/SchemaAlreadyPresentError.yaml"
       description: Schema is already present
     '412':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/datahub/SchemaEtagMismatchError.yaml"
       description: Schema doesn't match etag
     '500':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/InternalServerError.yaml"
       description: Internal server error
     '503':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
       description: Request resource temporary unavailable
     '507':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/InsufficientStorageError.yaml"
       description: Insufficient storage
