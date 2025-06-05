@@ -4810,7 +4810,6 @@ components:
           https://hivemq.com/edge/api/model/RequestBodyParameterMissingError: '#/components/schemas/RequestBodyParameterMissingError'
           https://hivemq.com/edge/api/model/TemporaryNotAvailableError: '#/components/schemas/TemporaryNotAvailableError'
           https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
-          https://hivemq.com/edge/api/model/ValidationErrors: '#/components/schemas/ValidationErrors'
     BehaviorPolicyAlreadyPresentError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -5178,16 +5177,6 @@ components:
               description: The name of the missing parameter.
           required:
             - parameter
-    ValidationErrors:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-      discriminator:
-        propertyName: type
-        mapping:
-          https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: '#/components/schemas/BehaviorPolicyInvalidErrors'
-          https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: '#/components/schemas/DataPolicyInvalidErrors'
-          https://hivemq.com/edge/api/model/SchemaInvalidErrors: '#/components/schemas/SchemaInvalidErrors'
-          https://hivemq.com/edge/api/model/ScriptInvalidErrors: '#/components/schemas/ScriptInvalidErrors'
     ValidationError:
       type: object
       properties:
@@ -5481,7 +5470,7 @@ components:
           https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
     BehaviorPolicyInvalidErrors:
       allOf:
-        - $ref: '#/components/schemas/ValidationErrors'
+        - $ref: '#/components/schemas/ApiError'
         - type: object
           properties:
             childErrors:
@@ -5489,105 +5478,6 @@ components:
               description: List of child validation errors.
               items:
                 $ref: '#/components/schemas/BehaviorPolicyValidationError'
-          required:
-            - childErrors
-    DataPolicyValidationError:
-      allOf:
-        - $ref: '#/components/schemas/ValidationError'
-        - oneOf:
-            - $ref: '#/components/schemas/AtMostOneFunctionValidationError'
-            - $ref: '#/components/schemas/FunctionMustBePairedValidationError'
-            - $ref: '#/components/schemas/InvalidFunctionOrderValidationError'
-            - $ref: '#/components/schemas/UnknownVariableValidationError'
-            - $ref: '#/components/schemas/EmptyFieldValidationError'
-            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
-            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
-            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
-            - $ref: '#/components/schemas/MissingFieldValidationError'
-            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
-      discriminator:
-        propertyName: type
-        mapping:
-          https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError: '#/components/schemas/AtMostOneFunctionValidationError'
-          https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
-          https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
-          https://hivemq.com/edge/api/model/UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
-          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
-          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
-          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
-          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
-          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
-          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
-    DataPolicyInvalidErrors:
-      allOf:
-        - $ref: '#/components/schemas/ValidationErrors'
-        - type: object
-          properties:
-            childErrors:
-              type: array
-              description: List of child validation errors.
-              items:
-                $ref: '#/components/schemas/DataPolicyValidationError'
-          required:
-            - childErrors
-    SchemaValidationError:
-      allOf:
-        - $ref: '#/components/schemas/ValidationError'
-        - oneOf:
-            - $ref: '#/components/schemas/EmptyFieldValidationError'
-            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
-            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
-            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
-            - $ref: '#/components/schemas/MissingFieldValidationError'
-            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
-      discriminator:
-        propertyName: type
-        mapping:
-          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
-          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
-          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
-          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
-          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
-          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
-    SchemaInvalidErrors:
-      allOf:
-        - $ref: '#/components/schemas/ValidationErrors'
-        - type: object
-          properties:
-            childErrors:
-              type: array
-              description: List of child validation errors.
-              items:
-                $ref: '#/components/schemas/SchemaValidationError'
-          required:
-            - childErrors
-    ScriptValidationError:
-      allOf:
-        - $ref: '#/components/schemas/ValidationError'
-        - oneOf:
-            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
-            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
-            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
-            - $ref: '#/components/schemas/MissingFieldValidationError'
-            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
-      discriminator:
-        propertyName: type
-        mapping:
-          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
-          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
-          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
-          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
-          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
-    ScriptInvalidErrors:
-      allOf:
-        - $ref: '#/components/schemas/ValidationErrors'
-        - type: object
-          properties:
-            childErrors:
-              type: array
-              description: List of child validation errors.
-              items:
-                $ref: '#/components/schemas/ScriptValidationError'
           required:
             - childErrors
     JsonNode:
@@ -5711,6 +5601,45 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/DataPolicy'
+    DataPolicyValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - oneOf:
+            - $ref: '#/components/schemas/AtMostOneFunctionValidationError'
+            - $ref: '#/components/schemas/FunctionMustBePairedValidationError'
+            - $ref: '#/components/schemas/InvalidFunctionOrderValidationError'
+            - $ref: '#/components/schemas/UnknownVariableValidationError'
+            - $ref: '#/components/schemas/EmptyFieldValidationError'
+            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
+            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
+            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
+            - $ref: '#/components/schemas/MissingFieldValidationError'
+            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError: '#/components/schemas/AtMostOneFunctionValidationError'
+          https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
+          https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
+          https://hivemq.com/edge/api/model/UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
+          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
+    DataPolicyInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            childErrors:
+              type: array
+              description: List of child validation errors.
+              items:
+                $ref: '#/components/schemas/DataPolicyValidationError'
+          required:
+            - childErrors
     BehaviorPolicyTransitionEvent:
       type: string
       description: Accepted event in transition
@@ -5814,6 +5743,37 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/PolicySchema'
+    SchemaValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - oneOf:
+            - $ref: '#/components/schemas/EmptyFieldValidationError'
+            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
+            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
+            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
+            - $ref: '#/components/schemas/MissingFieldValidationError'
+            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
+    SchemaInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            childErrors:
+              type: array
+              description: List of child validation errors.
+              items:
+                $ref: '#/components/schemas/SchemaValidationError'
+          required:
+            - childErrors
     Script:
       type: object
       properties:
@@ -5855,6 +5815,35 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Script'
+    ScriptValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - oneOf:
+            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
+            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
+            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
+            - $ref: '#/components/schemas/MissingFieldValidationError'
+            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
+    ScriptInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            childErrors:
+              type: array
+              description: List of child validation errors.
+              items:
+                $ref: '#/components/schemas/ScriptValidationError'
+          required:
+            - childErrors
     Capability:
       type: object
       description: List of result items that are returned by this endpoint
