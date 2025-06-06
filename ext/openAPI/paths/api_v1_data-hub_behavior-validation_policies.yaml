@@ -178,12 +178,21 @@ get:
           schema:
             $ref: ../components/schemas/BehaviorPolicyList.yaml
       description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
+            discriminator:
+              propertyName: type
+      description: URL parameter missing
     '503':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Temporarily not available
+            $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
+      description: Request resource temporary unavailable
   summary: Get all policies
   tags:
     - Data Hub - Behavior Policies
@@ -270,32 +279,38 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            oneOf:
+              - $ref: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
+              - $ref: "../components/schemas/errors/datahub/BehaviorPolicyCreationFailureError.yaml"
+              - $ref: "../components/schemas/errors/datahub/BehaviorPolicyInvalidErrors.yaml"
+              - $ref: "../components/schemas/errors/datahub/BehaviorPolicyRejectedError.yaml"
+            discriminator:
+              propertyName: type
       description: Policy creation failed
     '409':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Already exists
+            $ref: "../components/schemas/errors/datahub/BehaviorPolicyAlreadyPresentError.yaml"
+      description: Behavior policy already present
     '500':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Internal error
+            $ref: "../components/schemas/errors/http/InternalServerError.yaml"
+      description: Internal server error
     '503':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Temporarily unavailable
+            $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
+      description: Request resource temporary unavailable
     '507':
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Insufficient storage error
+            $ref: "../components/schemas/errors/http/InsufficientStorageError.yaml"
+      description: Insufficient storage
   summary: Create a new policy
   tags:
     - Data Hub - Behavior Policies

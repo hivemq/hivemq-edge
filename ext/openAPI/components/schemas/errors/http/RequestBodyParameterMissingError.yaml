@@ -1,0 +1,7 @@
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      parameter:
+        type: string
+        description: The the missing request body parameter.

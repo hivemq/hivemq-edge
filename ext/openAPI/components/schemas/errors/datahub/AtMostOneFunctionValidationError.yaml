@@ -1,0 +1,21 @@
+allOf:
+  - $ref: "../validation/ValidationError.yaml"
+  - type: object
+    properties:
+      function:
+        type: string
+        description: The function.
+      occurrences:
+        type: integer
+        format: int32
+        description: The occurrences of the function.
+      paths:
+        type: array
+        items:
+          type: string
+          format: json-path
+        description: The json paths where the function occurs.
+    required:
+      - function
+      - occurrences
+      - paths

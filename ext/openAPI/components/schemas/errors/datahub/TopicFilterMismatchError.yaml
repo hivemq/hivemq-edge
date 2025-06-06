@@ -1,0 +1,12 @@
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      message:
+        type: string
+        description: The error message.
+      path:
+        type: string
+        description: The json path of the topic filter.
+    required:
+      - path

@@ -1,0 +1,9 @@
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The script id.
+    required:
+      - id

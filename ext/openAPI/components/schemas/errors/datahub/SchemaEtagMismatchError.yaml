@@ -1,0 +1,12 @@
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The schema id.
+      eTag:
+        type: string
+        description: The eTag.
+    required:
+      - id

@@ -1,0 +1,22 @@
+allOf:
+  - $ref: "../validation/ValidationError.yaml"
+  - type: object
+    properties:
+      event:
+        type: string
+        description: The event name.
+      id:
+        type: string
+        description: The function id.
+      message:
+        type: string
+        description: The error message.
+      path:
+        type: string
+        format: json-path
+        description: The json path.
+    required:
+      - event
+      - id
+      - message
+      - path
