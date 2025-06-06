@@ -354,7 +354,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/InvalidQueryParameterError'
@@ -363,7 +363,7 @@ paths:
           description: URL parameter missing
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
@@ -451,7 +451,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/RequestBodyMissingError'
@@ -463,25 +463,25 @@ paths:
           description: Policy creation failed
         '409':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/BehaviorPolicyAlreadyPresentError'
           description: Behavior policy already present
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
         '507':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InsufficientStorageError'
           description: Insufficient storage
@@ -514,7 +514,7 @@ paths:
           description: Success, no response body
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
@@ -523,25 +523,25 @@ paths:
           description: URL parameter missing
         '404':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/PolicyNotFoundError'
           description: Behavior policy not found
         '412':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/PreconditionFailedError'
           description: Precondition failed
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
@@ -612,7 +612,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
@@ -621,19 +621,19 @@ paths:
           description: Bad request
         '404':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/BehaviorPolicyNotFoundError'
           description: Policy not found
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
@@ -737,7 +737,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/RequestBodyMissingError'
@@ -749,31 +749,31 @@ paths:
           description: Behavior policy creation failed
         '404':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/BehaviorPolicyNotFoundError'
           description: Data policy not found
         '412':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/PreconditionFailedError'
           description: Precondition failed
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
         '507':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InsufficientStorageError'
           description: Insufficient storage
@@ -821,7 +821,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
@@ -830,7 +830,7 @@ paths:
           description: URL parameter missing
         '404':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ClientDisconnectedError'
@@ -840,7 +840,7 @@ paths:
           description: Client error
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
@@ -1092,7 +1092,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/InvalidQueryParameterError'
@@ -1101,7 +1101,7 @@ paths:
           description: URL parameter missing
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
@@ -1187,7 +1187,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/RequestBodyMissingError'
@@ -1199,25 +1199,25 @@ paths:
           description: Data policy creation failed
         '409':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/DataPolicyAlreadyPresentError'
           description: Data policy already present
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
         '507':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InsufficientStorageError'
           description: Insufficient storage
@@ -1250,7 +1250,7 @@ paths:
           description: Success, no response body
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
@@ -1259,25 +1259,25 @@ paths:
           description: URL parameter missing
         '404':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/PolicyNotFoundError'
           description: Data policy not found
         '412':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/PreconditionFailedError'
           description: Precondition failed
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
@@ -1347,7 +1347,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
@@ -1356,19 +1356,19 @@ paths:
           description: Bad request
         '404':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/PolicyNotFoundError'
           description: Resource not found
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
@@ -1471,7 +1471,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/RequestBodyMissingError'
@@ -1486,31 +1486,31 @@ paths:
           description: Data policy creation failed
         '404':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/DataPolicyNotFoundError'
           description: Data policy not found
         '412':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/PreconditionFailedError'
           description: Precondition failed
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
         '507':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InsufficientStorageError'
           description: Insufficient storage
@@ -1598,7 +1598,7 @@ paths:
           description: Success
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
@@ -1760,7 +1760,7 @@ paths:
           description: Success
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
@@ -1780,7 +1780,7 @@ paths:
           description: Success
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
@@ -1919,7 +1919,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/InvalidQueryParameterError'
@@ -1928,7 +1928,7 @@ paths:
           description: URL parameter missing
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
@@ -1977,7 +1977,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/RequestBodyParameterMissingError'
@@ -1988,31 +1988,31 @@ paths:
           description: Schema creation failed
         '409':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/SchemaAlreadyPresentError'
           description: Schema is already present
         '412':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/SchemaEtagMismatchError'
           description: Schema doesn't match etag
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
         '507':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InsufficientStorageError'
           description: Insufficient storage
@@ -2045,7 +2045,7 @@ paths:
           description: Success, no response body
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
@@ -2055,25 +2055,25 @@ paths:
           description: URL parameter missing
         '404':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/SchemaNotFoundError'
           description: Schema not found
         '412':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/SchemaEtagMismatchError'
           description: Schema doesn't match etag
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal Server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
@@ -2121,7 +2121,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
@@ -2130,19 +2130,19 @@ paths:
           description: URL parameter missing
         '404':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/SchemaNotFoundError'
           description: Schema not found
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
@@ -2268,7 +2268,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/InvalidQueryParameterError'
@@ -2277,7 +2277,7 @@ paths:
           description: URL parameter missing
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
@@ -2326,7 +2326,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/RequestBodyParameterMissingError'
@@ -2339,31 +2339,31 @@ paths:
           description: Script creation failed
         '409':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/ScriptAlreadyPresentError'
           description: Script is already present
         '412':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/ScriptEtagMismatchError'
           description: Script doesn't match etag
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
         '507':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InsufficientStorageError'
           description: Insufficient storage
@@ -2393,7 +2393,7 @@ paths:
           description: Success, no response body
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
@@ -2403,25 +2403,25 @@ paths:
           description: URL parameter missing
         '404':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/ScriptNotFoundError'
           description: Script not found
         '412':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/ScriptEtagMismatchError'
           description: Script doesn't match etag
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal Server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
@@ -2465,7 +2465,7 @@ paths:
           description: Success
         '400':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
@@ -2474,19 +2474,19 @@ paths:
           description: URL parameter missing
         '404':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/ScriptNotFoundError'
           description: Script not found
         '500':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
           description: Internal Server error
         '503':
           content:
-            application/problem+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
