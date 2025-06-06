@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.opcua2mqtt;
+package com.hivemq.edge.adapters.opcua.northbound;
 
-import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
-import org.eclipse.milo.opcua.binaryschema.Struct;
+import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
-import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext;
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -51,119 +49,129 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.UUID;
 
 //see also https://reference.opcfoundation.org/Core/Part6/v105/docs/5.4
-public class OpcUaJsonPayloadConverter {
+public class OpcUaToJsonConverter {
 
-    private static final Logger log = LoggerFactory.getLogger(OpcUaJsonPayloadConverter.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaToJsonConverter.class);
 
-    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
-
-    private static @NotNull OpcuaTag tag;
+    private static final @NotNull Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
 
     public static @NotNull ByteBuffer convertPayload(
-            final @NotNull SerializationContext serializationContext,
+            final @NotNull EncodingContext serializationContext,
             final @NotNull DataValue dataValue) {
-        final Object value = dataValue.getValue().getValue();
+        final var value = dataValue.getValue().getValue();
         final JsonObject jsonObject = new JsonObject();
+
+        if(value == null) {
+            return ByteBuffer.wrap(new byte[0]);
+        }
 
         if  (value instanceof DataValue) {
             addDataValueFields((DataValue) value, jsonObject);
         }
-        jsonObject.add("value", convertValue(value, serializationContext));
+        final var converted = convertValue(value, serializationContext);
 
+        if (converted instanceof final JsonObject jo) {
+            jsonObject.add("value", jo);
+        } else {
+            jsonObject.add("value", convertValue(value, serializationContext));
+        }
         return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
     }
     
     private static JsonElement convertValue(
             final @NotNull Object value,
-            final @NotNull SerializationContext serializationContext) {
-        if (value instanceof DataValue) {
-            return convertValue(((DataValue) value).getValue(), serializationContext);
-        } else if (value instanceof Boolean) {
-            return new JsonPrimitive((Boolean) value);
-        } else if (value instanceof Byte) {
-            return new JsonPrimitive((Byte) value);
-        } else if (value instanceof UByte) {
-            return new JsonPrimitive(((UByte) value).intValue());
-        } else if (value instanceof Short) {
-            return new JsonPrimitive((Short) value);
-        } else if (value instanceof UShort) {
-            return new JsonPrimitive(((UShort) value).intValue());
-        } else if (value instanceof Integer) {
-            return new JsonPrimitive(((Integer) value));
-        } else if (value instanceof UInteger) {
-            return new JsonPrimitive((((UInteger) value).longValue()));
-        } else if (value instanceof Long) {
-            return new JsonPrimitive(((Long) value));
-        } else if (value instanceof ULong) {
-            return new JsonPrimitive((((ULong) value).toBigInteger()));
-        } else if (value instanceof Float) {
-            return new JsonPrimitive(((Float) value));
-        } else if (value instanceof Double) {
-            return new JsonPrimitive(((Double) value));
-        } else if (value instanceof String) {
-            return new JsonPrimitive(((String) value));
-        } else if (value instanceof DateTime) {
-            return new JsonPrimitive((DateTimeFormatter.ISO_INSTANT.format(((DateTime) value).getJavaInstant())));
-        } else if (value instanceof UUID) {
-            return new JsonPrimitive(value.toString());
-        } else if (value instanceof ByteString) {
-            return convertByteString((ByteString) value);
-        } else if (value instanceof XmlElement) {
-            final String fragment = ((XmlElement) value).getFragment();
+            final @NotNull EncodingContext serializationContext) {
+        if (value instanceof final DataValue dv) {
+            return convertValue(dv.getValue(), serializationContext);
+        } else if (value instanceof final Boolean b) {
+            return new JsonPrimitive(b);
+        } else if (value instanceof final Byte b) {
+            return new JsonPrimitive(b);
+        } else if (value instanceof final UByte ubyte) {
+            return new JsonPrimitive(ubyte.intValue());
+        } else if (value instanceof final Short s) {
+            return new JsonPrimitive(s);
+        } else if (value instanceof final UShort ushort) {
+            return new JsonPrimitive(ushort.intValue());
+        } else if (value instanceof final Integer i) {
+            return new JsonPrimitive(i);
+        } else if (value instanceof final UInteger uint) {
+            return new JsonPrimitive(uint.longValue());
+        } else if (value instanceof final Long l) {
+            return new JsonPrimitive(l);
+        } else if (value instanceof final ULong ulong) {
+            return new JsonPrimitive(ulong.toBigInteger());
+        } else if (value instanceof final Float f) {
+            return new JsonPrimitive(f);
+        } else if (value instanceof final Double d) {
+            return new JsonPrimitive(d);
+        } else if (value instanceof final String str) {
+            return new JsonPrimitive(str);
+        } else if (value instanceof final DateTime dt) {
+            return new JsonPrimitive((DateTimeFormatter.ISO_INSTANT.format(dt.getJavaInstant())));
+        } else if (value instanceof final UUID uuid) {
+            return new JsonPrimitive(uuid.toString());
+        } else if (value instanceof final ByteString bs) {
+            return convertByteString(bs);
+        } else if (value instanceof final XmlElement xe) {
+            final String fragment = xe.getFragment();
             if (fragment != null) {
                 return new JsonPrimitive(fragment);
             }
             return null;
-        } else if (value instanceof NodeId) {
-            return convertNodeId((NodeId) value);
-        } else if (value instanceof ExpandedNodeId) {
-            return new JsonPrimitive(((ExpandedNodeId) value).toParseableString());
-        } else if (value instanceof StatusCode) {
-            return convertStatusCode((StatusCode) value);
-        } else if (value instanceof QualifiedName) {
+        } else if (value instanceof final NodeId nid) {
+            return convertNodeId(nid);
+        } else if (value instanceof final ExpandedNodeId enid) {
+            return new JsonPrimitive(enid.toParseableString());
+        } else if (value instanceof final StatusCode sc) {
+            return convertStatusCode(sc);
+        } else if (value instanceof final QualifiedName qn) {
             final JsonObject qualifiedName = new JsonObject();
-            final String name = ((QualifiedName) value).getName();
+            final String name = qn.getName();
             if (name != null) {
                 qualifiedName.add("name", new JsonPrimitive(name));
             }
-            final int nsIdx = ((QualifiedName) value).getNamespaceIndex().intValue();
+            final int nsIdx = qn.getNamespaceIndex().intValue();
             if (nsIdx > 0) {
                 qualifiedName.add("uri", new JsonPrimitive(nsIdx));
             }
             return qualifiedName;
-        } else if (value instanceof LocalizedText) {
+        } else if (value instanceof final LocalizedText lt) {
             final JsonObject localizedText = new JsonObject();
-            final String locale = ((LocalizedText) value).getLocale();
+            final String locale = lt.getLocale();
             if (locale != null) {
                 localizedText.add("locale", new JsonPrimitive(locale));
             }
-            final String text = ((LocalizedText) value).getText();
+            final String text = lt.getText();
             if (text != null) {
                 localizedText.add("text", new JsonPrimitive(text));
             }
             return localizedText;
-        } else if (value instanceof ExtensionObject) {
+        } else if (value instanceof final ExtensionObject eo) {
             try {
-                final Object decodedValue = ((ExtensionObject) value).decode(serializationContext);
+                final Object decodedValue = eo.decode(serializationContext);
                 return convertValue(decodedValue, serializationContext);
             } catch (final Throwable t) {
                 log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead",
                         t);
                 return convertValue(((ExtensionObject) value).getBody(), serializationContext);
             }
-        } else if (value instanceof Variant) {
-            return convertValue(((Variant) value).getValue(), serializationContext);
-        } else if (value instanceof DiagnosticInfo) {
-            return convertDiagnosticInfo((DiagnosticInfo) value);
-        } else if (value instanceof Struct) {
-            final Struct struct = (Struct) value;
+        } else if (value instanceof final Variant variant) {
+            if(variant.getValue() == null) {
+                return null;
+            } else {
+                return convertValue(variant.getValue(), serializationContext);
+            }
+        } else if (value instanceof final DiagnosticInfo info) {
+            return convertDiagnosticInfo(info);
+        } else if (value instanceof final DynamicStructType struct) {
             final JsonObject structRoot = new JsonObject();
             struct.getMembers()
-                    .values()
-                    .forEach(member -> structRoot.add(member.getName(), convertValue(member.getValue(), serializationContext)));
+                    .forEach((key, value1) -> structRoot.add(key, convertValue(value1, serializationContext)));
             return structRoot;
         } else if(value.getClass().isArray()) {
             final Object[] values = (Object[])value;
@@ -171,9 +179,7 @@ public class OpcUaJsonPayloadConverter {
             Arrays.asList(values).forEach(in -> ret.add(convertValue(in, serializationContext)));
             return ret;
         } else {
-            log.warn("No explicit converter for OPC UA type " +
-                    value.getClass().getSimpleName() +
-                    " falling back to best effort json");
+            log.warn("No explicit converter for OPC UA type {} falling back to best effort json", value.getClass().getSimpleName());
             return GSON.toJsonTree(value);
         }
     }
@@ -192,7 +198,7 @@ public class OpcUaJsonPayloadConverter {
     @NotNull
     private static JsonPrimitive convertByteString(final @NotNull ByteString value) {
         final byte[] bytes = value.bytesOrEmpty();
-        return new JsonPrimitive(BaseEncoding.base64().encode(bytes));
+        return new JsonPrimitive(Base64.getEncoder().encodeToString(bytes));
     }
 
     @NotNull
@@ -229,19 +235,19 @@ public class OpcUaJsonPayloadConverter {
 
     private static @NotNull JsonObject convertDiagnosticInfo(final DiagnosticInfo value) {
         final JsonObject diagnosticInfo = new JsonObject();
-        diagnosticInfo.add("symbolicId", new JsonPrimitive(value.getSymbolicId()));
-        diagnosticInfo.add("namespaceUri", new JsonPrimitive(value.getNamespaceUri()));
-        diagnosticInfo.add("locale", new JsonPrimitive(value.getLocale()));
-        diagnosticInfo.add("localizedText", new JsonPrimitive(value.getLocalizedText()));
-        if (value.getAdditionalInfo() != null) {
-            diagnosticInfo.add("additionalInfo", new JsonPrimitive(value.getAdditionalInfo()));
+        diagnosticInfo.add("symbolicId", new JsonPrimitive(value.symbolicId()));
+        diagnosticInfo.add("namespaceUri", new JsonPrimitive(value.namespaceUri()));
+        diagnosticInfo.add("locale", new JsonPrimitive(value.locale()));
+        diagnosticInfo.add("localizedText", new JsonPrimitive(value.localizedText()));
+        if (value.additionalInfo() != null) {
+            diagnosticInfo.add("additionalInfo", new JsonPrimitive(value.additionalInfo()));
         }
-        if (value.getInnerStatusCode() != null) {
-            diagnosticInfo.add("innerStatusCode", convertStatusCode(value.getInnerStatusCode()));
+        if (value.innerStatusCode() != null) {
+            diagnosticInfo.add("innerStatusCode", convertStatusCode(value.innerStatusCode()));
         }
-        if (value.getInnerDiagnosticInfo() != null) {
+        if (value.innerDiagnosticInfo() != null) {
             diagnosticInfo.add("innerDiagnosticInfo",
-                    convertDiagnosticInfo(value.getInnerDiagnosticInfo()));
+                    convertDiagnosticInfo(value.innerDiagnosticInfo()));
         }
         return diagnosticInfo;
     }
@@ -260,9 +266,9 @@ public class OpcUaJsonPayloadConverter {
             jsonObject.add("serverPicoSeconds", new JsonPrimitive(dataValue.getServerPicoseconds().intValue()));
         }
         if (dataValue.getSourcePicoseconds() != null) {
-            jsonObject.add("sourcePicoSeconds", new JsonPrimitive(dataValue.getServerPicoseconds().intValue()));
+            jsonObject.add("sourcePicoSeconds", new JsonPrimitive(dataValue.getSourcePicoseconds().intValue()));
         }
-        if (dataValue.getStatusCode() != null && dataValue.getStatusCode().getValue() > 0) {
+        if (dataValue.getStatusCode().getValue() > 0) {
             jsonObject.add("status", convertStatusCode(dataValue.getStatusCode()));
         }
     }

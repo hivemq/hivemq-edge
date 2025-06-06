@@ -32,7 +32,7 @@ import com.hivemq.util.ReasonStrings;
 import com.hivemq.util.Strings;
 import io.netty.buffer.ByteBuf;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import static com.hivemq.util.Bytes.isBitSet;
 

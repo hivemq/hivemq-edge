@@ -25,7 +25,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * @author Dominik Obermaier

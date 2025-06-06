@@ -20,18 +20,11 @@ package com.hivemq.edge.adapters.opcua.util;
  */
 public class SslException extends RuntimeException {
 
-    public SslException() {
-    }
-
     public SslException(final String message) {
         super(message);
     }
 
     public SslException(final String message, final Throwable cause) {
         super(message, cause);
-    }
-
-    public SslException(final Throwable cause) {
-        super(cause);
     }
 }

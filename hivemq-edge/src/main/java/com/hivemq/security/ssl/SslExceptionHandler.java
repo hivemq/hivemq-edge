@@ -25,7 +25,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 

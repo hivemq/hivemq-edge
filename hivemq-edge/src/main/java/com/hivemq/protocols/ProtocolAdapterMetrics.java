@@ -18,8 +18,8 @@ package com.hivemq.protocols;
 import com.codahale.metrics.MetricRegistry;
 import org.jetbrains.annotations.NotNull;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hivemq.metrics.HiveMQMetrics.ADAPTERS_CURRENT;

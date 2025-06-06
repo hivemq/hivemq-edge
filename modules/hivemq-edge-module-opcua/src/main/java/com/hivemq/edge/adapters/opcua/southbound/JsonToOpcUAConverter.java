@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.mqtt2opcua;
+package com.hivemq.edge.adapters.opcua.southbound;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.google.common.io.BaseEncoding;
 import org.apache.commons.lang3.NotImplementedException;
-import org.eclipse.milo.opcua.binaryschema.AbstractCodec;
-import org.eclipse.milo.opcua.binaryschema.Struct;
-import org.eclipse.milo.opcua.sdk.client.DataTypeTreeBuilder;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
-import org.eclipse.milo.opcua.sdk.core.DataTypeTree;
-import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
+import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
+import org.eclipse.milo.opcua.sdk.core.types.codec.DynamicStructCodec;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
+import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.UaRuntimeException;
-import org.eclipse.milo.opcua.stack.core.serialization.codecs.DataTypeCodec;
-import org.eclipse.milo.opcua.stack.core.types.OpcUaDefaultBinaryEncoding;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
@@ -43,42 +41,44 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.jetbrains.annotations.NotNull;
-import org.opcfoundation.opcua.binaryschema.FieldType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.hivemq.edge.adapters.opcua.mqtt2opcua.BuiltInDataTypeConverter.convertFieldTypeToBuiltInDataType;
-import static org.eclipse.milo.opcua.stack.core.BuiltinDataType.Guid;
-import static org.eclipse.milo.opcua.stack.core.BuiltinDataType.Int16;
-import static org.eclipse.milo.opcua.stack.core.BuiltinDataType.Int32;
-import static org.eclipse.milo.opcua.stack.core.BuiltinDataType.Int64;
-import static org.eclipse.milo.opcua.stack.core.BuiltinDataType.SByte;
-import static org.eclipse.milo.opcua.stack.core.BuiltinDataType.UInt16;
-import static org.eclipse.milo.opcua.stack.core.BuiltinDataType.UInt32;
-import static org.eclipse.milo.opcua.stack.core.BuiltinDataType.UInt64;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Guid;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Int16;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Int32;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Int64;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.SByte;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.UInt16;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.UInt32;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.UInt64;
 
-@SuppressWarnings({"rawtypes", "unchecked"})
 public class JsonToOpcUAConverter {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger("com.hivemq.edge.write.JsonToOpcUAConverter");
 
     private final @NotNull OpcUaClient client;
     private final @NotNull DataTypeTree tree;
+    private final @NotNull JsonSchemaGenerator jsonSchemaGenerator;
 
-    public JsonToOpcUAConverter(final @NotNull OpcUaClient client) throws UaException {
+    public JsonToOpcUAConverter(final @NotNull OpcUaClient client) {
         this.client = client;
-        this.tree = DataTypeTreeBuilder.build(client);
+        try {
+            this.tree = client.getDataTypeTree();
+        } catch (final UaException e) {
+            throw new RuntimeException(e);
+        }
+        this.jsonSchemaGenerator = new JsonSchemaGenerator(client, new ObjectMapper());
     }
 
     public @NotNull Object convertToOpcUAValue(
@@ -96,16 +96,16 @@ public class JsonToOpcUAConverter {
             }
             log.debug("Destination NodeId '{}' has DataType NodeId '{}'.", destinationNodeId, dataTypeNodeId);
 
-            final DataTypeTree.DataType dataType = tree.getDataType(dataTypeNodeId);
+            final var dataType = tree.getDataType(dataTypeNodeId);
             if (dataType == null) {
                 log.warn("No data type was found in the DataTypeTree for dataType with nodeId '{}'.", dataTypeNodeId);
                 throw new RuntimeException("No data type was found in the DataTypeTree for node id '" +
                         dataTypeNodeId +
                         "'");
             }
-            log.debug("DataType NodeId '{}' represents data type '{}'.", dataTypeNodeId, dataType);
+            log.debug("DataType NodeId '{}' represents data type '{}'.", dataTypeNodeId, dataType.getBrowseName().getName());
 
-            final BuiltinDataType builtinType = tree.getBuiltinType(dataType.getNodeId());
+            final var builtinType = tree.getBuiltinType(dataType.getNodeId());
             log.debug(
                     "Destination Node '{}' has DataType NodeId '{}' representing DataType '{}' with builtin type '{}'. The Json '{}' is parsed to this.",
                     destinationNodeId,
@@ -113,8 +113,7 @@ public class JsonToOpcUAConverter {
                     dataType,
                     builtinType,
                     rootNode);
-
-            if (builtinType != BuiltinDataType.ExtensionObject) {
+            if (builtinType != OpcUaDataType.ExtensionObject) {
                 if(rootNode.isArray()) {
                     return generateArrayFromArrayNode((ArrayNode) rootNode, builtinType);
                 } else {
@@ -122,53 +121,59 @@ public class JsonToOpcUAConverter {
                 }
             }
 
-            final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
-            if (binaryEncodingId == null) {
-                log.warn("No encoding was present for data type: '{}'.", dataType);
-                throw new RuntimeException("No encoding was present for data type: '" + dataType + "'");
-            }
-            log.debug("DataType '{}' has binary encoding id '{}'.", dataType, binaryEncodingId);
+            final var field = jsonSchemaGenerator.processExtensionObject(dataType, true, null);
 
-            final Map<String, FieldType> fields = getStructureInformation(binaryEncodingId);
-            log.debug("Found fields '{}' for binary encoding id '{}'.", fields, binaryEncodingId);
-            final Struct.Builder builder = Struct.builder("CustomStruct"); // apparently the name is not important
-
-            for (final Map.Entry<String, FieldType> entry : fields.entrySet()) {
-                final String key = entry.getKey();
-                final FieldType fieldType = entry.getValue();
-                final JsonNode jsonNode = rootNode.get(key);
-                if (jsonNode == null) {
-                    log.warn("Expected field '{}' to be present in the json '{}', but field was not present.",
-                            key,
-                            rootNode);
-                    throw new RuntimeException("Expected field '" +
-                            key +
-                            "' to be present in the json, but field was not present.");
+            final var datatTypesToRegister = new ArrayList<DataType>();
+            collectCustomDatatypes(field, datatTypesToRegister);
+            datatTypesToRegister.forEach(dataTypeToRegister -> {
+                try {
+                    client.getStaticDataTypeManager()
+                        .registerType(
+                                dataTypeToRegister.getNodeId(),
+                                new DynamicStructCodec(dataTypeToRegister, client.getDataTypeTree()),
+                                dataTypeToRegister.getBinaryEncodingId(),
+                                null,
+                                null
+                        );
+                } catch (final UaException e) {
+                    throw new RuntimeException(e);
                 }
-                log.debug("Parsing '{}' for field type '{}'", jsonNode, fieldType);
-                final Object parsed = parseToOpcUACompatibleObject(jsonNode, fieldType);
-                builder.addMember(key, parsed);
-            }
-            return ExtensionObject.encode(client.getDynamicSerializationContext(),
-                    builder.build(),
-                    binaryEncodingId,
-                    OpcUaDefaultBinaryEncoding.getInstance());
+            });
+
+            final LinkedHashMap<String, Object> dataTypeMap = new LinkedHashMap<>();
+            field.nestedFields()
+                    .forEach(nestedField -> {
+                        final var key = nestedField.name();
+                        final var jsonNode = rootNode.get(key);
+                        dataTypeMap.put(nestedField.name(), parseToOpcUACompatibleObject(jsonNode, nestedField));
+                    });
+
+            return ExtensionObject.encode(client.getDynamicEncodingContext(), new DynamicStructType(dataType, dataTypeMap));
+
         } catch (final UaException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private void collectCustomDatatypes(final @NotNull JsonSchemaGenerator.FieldInformation fieldInformation, final @NotNull List<DataType> result) {
+        if(fieldInformation.customDataType() != null) {
+            result.add(fieldInformation.customDataType());
+        }
+        if(fieldInformation.nestedFields() != null) {
+            for (final JsonSchemaGenerator.FieldInformation nestedField : fieldInformation.nestedFields()) {
+                collectCustomDatatypes(nestedField, result);
+            }
+        }
+    }
+
+
     private @NotNull Object parseToOpcUACompatibleObject(
-            final @NotNull JsonNode jsonNode, final @NotNull FieldType fieldType) {
-        final BuiltinDataType builtinDataType = convertFieldTypeToBuiltInDataType(fieldType, client);
+            final @NotNull JsonNode jsonNode, final @NotNull JsonSchemaGenerator.FieldInformation fieldType) {
+        final OpcUaDataType builtinDataType = fieldType.dataType();
 
-        client.getStaticDataTypeManager().getDataTypeDictionary(fieldType.getTypeName().getNamespaceURI());
-
-        if (builtinDataType == BuiltinDataType.ExtensionObject) {
-            final String namespaceURI = fieldType.getTypeName().getNamespaceURI();
-            final ExpandedNodeId expandedNodeId = new ExpandedNodeId.Builder().setNamespaceUri(namespaceURI)
-                    .setIdentifier(fieldType.getTypeName().getLocalPart())
-                    .build();
+        if (builtinDataType == OpcUaDataType.ExtensionObject || fieldType.customDataType() != null) {
+            final String namespaceURI = fieldType.namespaceUri();
+            final ExpandedNodeId expandedNodeId = ExpandedNodeId.of(namespaceURI, fieldType.customDataType().getBrowseName().getName());
 
             final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
             if (optionalDataTypeId.isEmpty()) {
@@ -177,7 +182,7 @@ public class JsonToOpcUAConverter {
             }
 
             final NodeId dataTypeId = optionalDataTypeId.get();
-            final DataTypeTree.DataType dataType = tree.getDataType(dataTypeId);
+            final DataType dataType = tree.getDataType(dataTypeId);
 
             if (dataType == null) {
                 log.warn("No data type was found in the DataTypeTree for dataType with nodeId '{}'.", dataTypeId);
@@ -200,90 +205,62 @@ public class JsonToOpcUAConverter {
             if (binaryEncodingId == null) {
                 throw new IllegalStateException("Binary encoding id was null for nested struct.");
             }
-            return extractExtensionObject(jsonNode, binaryEncodingId);
+            return extractExtensionObject(jsonNode, fieldType);
         }
+
         return parsetoOpcUAObject(builtinDataType, jsonNode);
     }
 
     private @NotNull Object parsetoOpcUAObject(
-            final @NotNull BuiltinDataType builtinDataType, final @NotNull JsonNode jsonNode) {
-        switch (builtinDataType) {
-            case Boolean:
-                return extractBoolean(jsonNode);
-            case Byte:
-                return extractUnsignedByte(jsonNode);
-            case SByte:
-                return extractSByte(jsonNode);
-            case UInt16:
-                return extractUShort(jsonNode);
-            case UInt32:
-                return extractUInteger(jsonNode);
-            case Int16:
-                return extractSignedShort(jsonNode);
-            case Int32:
-                return extractSignedInteger(jsonNode);
-            case Int64:
-                return extractLong(jsonNode);
-            case UInt64:
-                return extractUnsignedLong(jsonNode);
-            case Float:
-                return extractFloat(jsonNode);
-            case Double:
-                return extractDouble(jsonNode);
-            case String:
-                return extractString(jsonNode);
-            case DateTime:
-                return extractDateTime(jsonNode);
-            case Guid:
-                return extractGuid(jsonNode);
-            case ByteString:
-                return extractByteString(jsonNode);
-            case XmlElement:
-                return extractXmlElement(jsonNode);
-            case NodeId:
-                return extractNodeId(jsonNode);
-            case ExpandedNodeId:
-                return extractExpandedNodeId(jsonNode);
-            case StatusCode:
-                return extractStatusCode(jsonNode);
-            case QualifiedName:
-                return extractQualifiedName(jsonNode);
-            case LocalizedText:
-                return extractLocalizedText(jsonNode);
-            case DataValue:
-                // DataValue is too complex for now
-                // TODO implement
+            final @NotNull OpcUaDataType builtinDataType, final @NotNull JsonNode jsonNode) {
+
+        return switch (builtinDataType) {
+            case Boolean -> extractBoolean(jsonNode);
+            case Byte -> extractUnsignedByte(jsonNode);
+            case SByte -> extractSByte(jsonNode);
+            case UInt16 -> extractUShort(jsonNode);
+            case UInt32 -> extractUInteger(jsonNode);
+            case Int16 -> extractSignedShort(jsonNode);
+            case Int32 -> extractSignedInteger(jsonNode);
+            case Int64 -> extractLong(jsonNode);
+            case UInt64 -> extractUnsignedLong(jsonNode);
+            case Float -> extractFloat(jsonNode);
+            case Double -> extractDouble(jsonNode);
+            case String -> extractString(jsonNode);
+            case DateTime -> extractDateTime(jsonNode);
+            case Guid -> extractGuid(jsonNode);
+            case ByteString -> extractByteString(jsonNode);
+            case XmlElement -> extractXmlElement(jsonNode);
+            case NodeId -> extractNodeId(jsonNode);
+            case ExpandedNodeId -> extractExpandedNodeId(jsonNode);
+            case StatusCode -> extractStatusCode(jsonNode);
+            case QualifiedName -> extractQualifiedName(jsonNode);
+            case LocalizedText -> extractLocalizedText(jsonNode);
+            case DataValue -> throw new NotImplementedException(); // TODO DataValue is too complex for now
+            case Variant -> throw new NotImplementedException(); // TODO Variant is too complex for now
+            case DiagnosticInfo -> {
+                log.error("DiagnosticInfo is not supported for writing to OPCUA. This is a readonly type.");
                 throw new NotImplementedException();
-            case Variant:
-                // TODO implement
-                // Variant is too complex for now
-                throw new NotImplementedException();
-            case DiagnosticInfo:
-                // TODO implement
-                // DiagnosticInfo is too complex for now
-                throw new NotImplementedException();
-        }
-        throw createException(jsonNode, builtinDataType.name());
+            }
+            default -> throw createException(jsonNode, builtinDataType.name());
+        };
     }
 
-    private @NotNull Struct extractExtensionObject(
-            final @NotNull JsonNode jsonNode, final @NotNull NodeId binaryEncodingId) {
+    private @NotNull DynamicStructType extractExtensionObject(
+            final @NotNull JsonNode jsonNode, final @NotNull JsonSchemaGenerator.FieldInformation fieldInformation) {
 
-
-        final Map<String, FieldType> fields = getStructureInformation(binaryEncodingId);
-        final Struct.Builder builder = Struct.builder("CustomStruct"); // apparently the name is not important
-
-        for (final Map.Entry<String, FieldType> entry : fields.entrySet()) {
-            final String key = entry.getKey();
-            final FieldType fieldType = entry.getValue();
+        final var fields = new LinkedHashMap<String, Object>();
+        fieldInformation.nestedFields().forEach(field -> {
+            final String key = field.name();
             final JsonNode nestedObjectNode = jsonNode.get(key);
             if (nestedObjectNode == null) {
                 throw new RuntimeException("No nested json was found for key '" + key + "'.");
             }
-            final Object parsed = parseToOpcUACompatibleObject(nestedObjectNode, fieldType);
-            builder.addMember(key, parsed);
-        }
-        return builder.build();
+            final Object parsed = parseToOpcUACompatibleObject(nestedObjectNode, field);
+            fields.put(key, parsed);
+        });
+
+        return new DynamicStructType(fieldInformation.customDataType(), fields);
     }
 
     private static LocalizedText extractLocalizedText(final JsonNode jsonNode) {
@@ -317,7 +294,7 @@ public class JsonToOpcUAConverter {
         if (jsonNode.isInt()) {
             return new StatusCode(jsonNode.asInt());
         }
-        throw createException(jsonNode, BuiltinDataType.StatusCode.name());
+        throw createException(jsonNode, OpcUaDataType.StatusCode.name());
     }
 
     static ExpandedNodeId extractExpandedNodeId(final JsonNode jsonNode) {
@@ -331,7 +308,7 @@ public class JsonToOpcUAConverter {
                         e.getMessage());
             }
         }
-        throw createException(jsonNode, BuiltinDataType.ExpandedNodeId.name());
+        throw createException(jsonNode, OpcUaDataType.ExpandedNodeId.name());
     }
 
     static NodeId extractNodeId(final JsonNode jsonNode) {
@@ -345,21 +322,21 @@ public class JsonToOpcUAConverter {
                         e.getMessage());
             }
         }
-        throw createException(jsonNode, BuiltinDataType.NodeId.name());
+        throw createException(jsonNode, OpcUaDataType.NodeId.name());
     }
 
     static XmlElement extractXmlElement(final JsonNode jsonNode) {
         if (jsonNode.isTextual()) {
             return XmlElement.of(jsonNode.asText());
         }
-        throw createException(jsonNode, BuiltinDataType.XmlElement.name());
+        throw createException(jsonNode, OpcUaDataType.XmlElement.name());
     }
 
     static ByteString extractByteString(final JsonNode jsonNode) {
         if (jsonNode.isTextual()) {
-            return ByteString.of(BaseEncoding.base64().decode(jsonNode.asText()));
+            return ByteString.of(Base64.getDecoder().decode(jsonNode.asText()));
         }
-        throw createException(jsonNode, BuiltinDataType.ByteString.name());
+        throw createException(jsonNode, OpcUaDataType.ByteString.name());
     }
 
     private static UUID extractGuid(final JsonNode jsonNode) {
@@ -373,14 +350,14 @@ public class JsonToOpcUAConverter {
         if (jsonNode.isTextual()) {
             return new DateTime(Date.from(Instant.parse(jsonNode.asText())));
         }
-        throw createException(jsonNode, BuiltinDataType.DateTime.name());
+        throw createException(jsonNode, OpcUaDataType.DateTime.name());
     }
 
     static @NotNull String extractString(final JsonNode jsonNode) {
         if (jsonNode.isTextual()) {
             return jsonNode.asText();
         }
-        throw createException(jsonNode, BuiltinDataType.String.name());
+        throw createException(jsonNode, OpcUaDataType.String.name());
     }
 
 
@@ -401,7 +378,7 @@ public class JsonToOpcUAConverter {
             return parsedDouble;
         }
 
-        throw createException(jsonNode, BuiltinDataType.Double.name());
+        throw createException(jsonNode, OpcUaDataType.Double.name());
     }
 
     static float extractFloat(final JsonNode jsonNode) {
@@ -425,7 +402,7 @@ public class JsonToOpcUAConverter {
             return parsedFloat;
         }
 
-        throw createException(jsonNode, BuiltinDataType.Float.name());
+        throw createException(jsonNode, OpcUaDataType.Float.name());
     }
 
     static ULong extractUnsignedLong(final JsonNode jsonNode) {
@@ -483,13 +460,13 @@ public class JsonToOpcUAConverter {
         if (jsonNode.isInt()) {
             final int value = jsonNode.intValue();
             if (value > UByte.MAX_VALUE) {
-                throw createOverflowException(value, BuiltinDataType.Byte.name());
+                throw createOverflowException(value, OpcUaDataType.Byte.name());
             } else if (value < UByte.MIN_VALUE) {
-                throw createUnderflowException(value, BuiltinDataType.Byte.name());
+                throw createUnderflowException(value, OpcUaDataType.Byte.name());
             }
             return UByte.valueOf((byte) value);
         }
-        throw createException(jsonNode, BuiltinDataType.Byte.name());
+        throw createException(jsonNode, OpcUaDataType.Byte.name());
     }
 
     @NotNull
@@ -497,9 +474,9 @@ public class JsonToOpcUAConverter {
         if (jsonNode.isInt() || jsonNode.isLong()) {
             final long value = jsonNode.longValue();
             if (value > UInteger.MAX_VALUE) {
-                throw createOverflowException(value, BuiltinDataType.UInt32.name());
+                throw createOverflowException(value, OpcUaDataType.UInt32.name());
             } else if (value < UInteger.MIN_VALUE) {
-                throw createUnderflowException(value, BuiltinDataType.UInt32.name());
+                throw createUnderflowException(value, OpcUaDataType.UInt32.name());
             }
             return UInteger.valueOf(jsonNode.intValue());
         }
@@ -523,20 +500,7 @@ public class JsonToOpcUAConverter {
         if (jsonNode.isBoolean()) {
             return jsonNode.asBoolean();
         } else {
-            throw createException(jsonNode, BuiltinDataType.Boolean.name());
-        }
-    }
-
-
-    private @NotNull Map<String, FieldType> getStructureInformation(final @NotNull NodeId binaryEncodingId) {
-        try {
-            final DataTypeCodec dataTypeCodec =
-                    client.getDynamicSerializationContext().getDataTypeManager().getCodec(binaryEncodingId);
-            final Field f = AbstractCodec.class.getDeclaredField("fields"); //NoSuchFieldException
-            f.setAccessible(true);
-            return (Map<String, FieldType>) f.get(dataTypeCodec);
-        } catch (final NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException("Unable to find information on fields in the codec", e);
+            throw createException(jsonNode, OpcUaDataType.Boolean.name());
         }
     }
 
@@ -585,11 +549,11 @@ public class JsonToOpcUAConverter {
                 "due to underflow.");
     }
 
-    private Object[] generateArrayFromArrayNode(final @NotNull ArrayNode arrayNode, final @NotNull BuiltinDataType type) {
-        Object[] ret = (Object[])Array.newInstance(type.getBackingClass(), arrayNode.size());
+    private Object[] generateArrayFromArrayNode(final @NotNull ArrayNode arrayNode, final @NotNull OpcUaDataType type) {
+        final Object[] ret = (Object[])Array.newInstance(type.getBackingClass(), arrayNode.size());
 
         for (int i = 0; i < arrayNode.size(); i++) {
-            JsonNode arrayEntry = arrayNode.get(i);
+            final JsonNode arrayEntry = arrayNode.get(i);
             if (arrayEntry.isArray()) {
                 ret[i] = generateArrayFromArrayNode((ArrayNode) arrayEntry, type);
             } else {

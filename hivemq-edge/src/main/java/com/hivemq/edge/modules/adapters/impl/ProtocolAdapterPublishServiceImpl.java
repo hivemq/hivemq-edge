@@ -24,8 +24,8 @@ import com.hivemq.configuration.HivemqId;
 import org.jetbrains.annotations.NotNull;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ProtocolAdapterPublishServiceImpl implements ProtocolAdapterPublishService {

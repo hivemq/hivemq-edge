@@ -37,7 +37,7 @@ import com.hivemq.util.Topics;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 

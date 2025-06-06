@@ -27,24 +27,30 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
+import org.eclipse.milo.opcua.sdk.server.EndpointConfig;
+import org.eclipse.milo.opcua.sdk.server.ManagedNamespaceWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
-import org.eclipse.milo.opcua.sdk.server.api.DataItem;
-import org.eclipse.milo.opcua.sdk.server.api.ManagedNamespaceWithLifecycle;
-import org.eclipse.milo.opcua.sdk.server.api.MonitoredItem;
-import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig;
+import org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig;
+import org.eclipse.milo.opcua.sdk.server.identity.AnonymousIdentityValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.CompositeValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.X509IdentityValidator;
+import org.eclipse.milo.opcua.sdk.server.items.DataItem;
+import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters;
 import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
-import org.eclipse.milo.opcua.stack.core.UaException;
+import org.eclipse.milo.opcua.stack.core.security.DefaultApplicationGroup;
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager;
+import org.eclipse.milo.opcua.stack.core.security.DefaultServerCertificateValidator;
+import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateQuarantine;
+import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateStore;
+import org.eclipse.milo.opcua.stack.core.security.MemoryTrustListManager;
+import org.eclipse.milo.opcua.stack.core.security.RsaSha256CertificateFactory;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
@@ -55,7 +61,8 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
-import org.eclipse.milo.opcua.stack.server.EndpointConfiguration;
+import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransport;
+import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransportConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -98,13 +105,14 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
         bindPort = RandomPortGenerator.get();
         final KeyPair keyPair = createKeyPair();
         final X509Certificate certificate = generateCert(keyPair);
-        final EndpointConfiguration.Builder epBuilder = EndpointConfiguration.newBuilder()
+        final EndpointConfig.Builder epBuilder = EndpointConfig.newBuilder()
                 .setTransportProfile(TransportProfile.TCP_UASC_UABINARY)
                 .setBindAddress("127.0.0.1")
                 .setBindPort(bindPort)
                 .setHostname("127.0.0.1")
                 .setPath("opcuatest")
                 .setCertificate(certificate)
+                .addTokenPolicies()
                 .addTokenPolicies(OpcUaServerConfig.USER_TOKEN_POLICY_ANONYMOUS,
                         OpcUaServerConfig.USER_TOKEN_POLICY_USERNAME,
                         OpcUaServerConfig.USER_TOKEN_POLICY_X509);
@@ -112,7 +120,7 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
         final List<SecurityPolicy> securityPolicies =
                 List.of(SecurityPolicy.None, SecurityPolicy.Basic256Sha256, SecurityPolicy.Aes256_Sha256_RsaPss);
 
-        final LinkedHashSet<EndpointConfiguration> endpointConfigurations = new LinkedHashSet<>();
+        final LinkedHashSet<EndpointConfig> endpointConfigurations = new LinkedHashSet<>();
         for (SecurityPolicy securityPolicy : securityPolicies) {
             if (securityPolicy == SecurityPolicy.None) {
                 endpointConfigurations.add(epBuilder.copy()
@@ -131,15 +139,49 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
             }
         }
 
+
+        var trustListManager = new MemoryTrustListManager();
+        var certificateStore = new MemoryCertificateStore();
+        var certificateQuarantine = new MemoryCertificateQuarantine();
+
+        var certificateFactory =
+                new RsaSha256CertificateFactory() {
+                    @Override
+                    protected KeyPair createRsaSha256KeyPair() {
+                        return keyPair;
+                    }
+
+                    @Override
+                    protected X509Certificate[] createRsaSha256CertificateChain(KeyPair keyPair) {
+                        // For a self-signed certificate, the chain consists of just the certificate itself
+                        return new X509Certificate[]{certificate};
+                    }
+                };
+
+        var certificateValidator =
+                new DefaultServerCertificateValidator(trustListManager, certificateQuarantine);
+
+        var defaultGroup =
+                DefaultApplicationGroup.createAndInitialize(
+                        trustListManager, certificateStore, certificateFactory, certificateValidator);
+
         final OpcUaServerConfig serverConfig = OpcUaServerConfig.builder()
-                .setIdentityValidator(new CompositeValidator(new UsernameIdentityValidator(true,
-                        auth -> "testuser".equals(auth.getUsername()) && "testpass".equals(auth.getPassword())),
+                .setIdentityValidator(new CompositeValidator(
+                        new AnonymousIdentityValidator(),
+                        new UsernameIdentityValidator(auth -> "testuser".equals(auth.getUsername()) && "testpass".equals(auth.getPassword())),
                         new X509IdentityValidator(cert -> true)))
                 .setEndpoints(endpointConfigurations)
-                .setCertificateManager(new DefaultCertificateManager(keyPair, certificate))
+                .setCertificateManager(new DefaultCertificateManager(certificateQuarantine, defaultGroup))
                 .build();
 
-        opcUaServer = new OpcUaServer(serverConfig);
+        opcUaServer = new OpcUaServer(serverConfig, transportProfile -> {
+            assert transportProfile == TransportProfile.TCP_UASC_UABINARY;
+
+            OpcTcpServerTransportConfig transportConfig =
+                    OpcTcpServerTransportConfig.newBuilder().build();
+
+            return new OpcTcpServerTransport(transportConfig);
+        });
 
         testNamespace = new TestNamespace(opcUaServer);
         testNamespace.startup();
@@ -162,21 +204,6 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
 
     public @NotNull OpcUaServer getOpcUaServer() {
         return opcUaServer;
-    }
-
-
-    public @NotNull OpcUaClient createClient() throws UaException {
-
-        return OpcUaClient.create(getServerUri(),
-                endpointDescriptions -> endpointDescriptions.stream()
-                        .filter(endpointDescription -> endpointDescription.getSecurityPolicyUri()
-                                .equals(SecurityPolicy.None.getUri()))
-                        .findFirst(),
-                opcUaClientConfigBuilder -> {
-                    opcUaClientConfigBuilder.setApplicationName(LocalizedText.english("Test-Client"));
-                    opcUaClientConfigBuilder.setSessionName(() -> "test-" + UUID.randomUUID());
-                    return opcUaClientConfigBuilder.build();
-                });
     }
 
     public @NotNull String getServerUri() {
@@ -210,7 +237,6 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
 
         JcaX509CertificateConverter converter = new JcaX509CertificateConverter();
         converter = converter.setProvider(BouncyCastleProvider.PROVIDER_NAME);
-
         return converter.getCertificate(certificateBuilder.build(contentSigner));
     }
 

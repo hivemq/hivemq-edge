@@ -22,7 +22,7 @@ import com.hivemq.uns.impl.UnifiedNamespaceServiceImpl;
 import dagger.Binds;
 import dagger.Module;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * Services related to the functioning of the UNS aspects of the system

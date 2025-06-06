@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.edge.adapters.opcua.Constants;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,7 +32,7 @@ public class Security {
     private final @NotNull SecPolicy policy;
 
     public Security(@JsonProperty("policy") final @Nullable SecPolicy policy) {
-        this.policy = Objects.requireNonNullElse(policy, SecPolicy.DEFAULT);
+        this.policy = Objects.requireNonNullElse(policy, Constants.DEFAULT_SECURITY_POLICY);
     }
 
     public @NotNull SecPolicy getPolicy() {
