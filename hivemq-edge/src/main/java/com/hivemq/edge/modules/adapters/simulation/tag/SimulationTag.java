@@ -54,17 +54,17 @@ public class SimulationTag implements Tag {
     }
 
     @Override
-    public @NotNull SimulationTagDefinition getDefinition() {
+    public @NotNull SimulationTagDefinition definition() {
         return definition;
     }
 
     @Override
-    public @NotNull String getName() {
+    public @NotNull String name() {
         return name;
     }
 
     @Override
-    public @NotNull String getDescription() {
+    public @NotNull String description() {
         return description;
     }
 

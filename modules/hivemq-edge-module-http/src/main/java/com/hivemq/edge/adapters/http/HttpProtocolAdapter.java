@@ -25,9 +25,6 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingInput;
-import com.hivemq.adapter.sdk.api.polling.PollingOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
@@ -190,11 +187,11 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
             final @NotNull HttpTag httpTag) {
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
-        final String url = httpTag.getDefinition().getUrl();
-        final HttpTagDefinition tagDef = httpTag.getDefinition();
+        final String url = httpTag.definition().getUrl();
+        final HttpTagDefinition tagDef = httpTag.definition();
         builder.uri(URI.create(url));
 
-        builder.timeout(Duration.ofSeconds(httpTag.getDefinition().getHttpRequestTimeoutSeconds()));
+        builder.timeout(Duration.ofSeconds(httpTag.definition().getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
 
         tagDef.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
@@ -227,7 +224,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
 
         return httpClient
                     .sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
-                    .thenApply(httpResponse -> getHttpData(httpResponse, url, httpTag.getName()));
+                    .thenApply(httpResponse -> getHttpData(httpResponse, url, httpTag.name()));
     }
 
     private @NotNull HttpData getHttpData(final HttpResponse<String> httpResponse, final String url,

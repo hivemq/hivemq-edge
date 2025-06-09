@@ -27,51 +27,53 @@ import java.util.function.Consumer;
 
 public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilder> {
 
-    private static final Logger log = LoggerFactory.getLogger(OpcUaClientConfigurator.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConfigurator.class);
 
     private final @NotNull String adapterId;
     private final @NotNull ParsedConfig parsedConfig;
 
-    public OpcUaClientConfigurator(
-            final @NotNull String adapterId,
-            final @NotNull ParsedConfig parsedConfig) {
+    public OpcUaClientConfigurator(final @NotNull String adapterId, final @NotNull ParsedConfig parsedConfig) {
         this.adapterId = adapterId;
         this.parsedConfig = parsedConfig;
     }
 
     @Override
-    public void accept(final OpcUaClientConfigBuilder opcUaClientConfigBuilder) {
-        opcUaClientConfigBuilder.setApplicationName(LocalizedText.english(Constants.OPCUA_APPLICATION_NAME));
-        opcUaClientConfigBuilder.setApplicationUri(Constants.OPCUA_APPLICATION_URI);
-        opcUaClientConfigBuilder.setProductUri(Constants.OPCUA_PRODUCT_URI);
-        opcUaClientConfigBuilder.setSessionName(() -> Constants.OPCUA_SESSION_NAME_PREFIX + adapterId);
+    public void accept(final @NotNull OpcUaClientConfigBuilder configBuilder) {
+        configBuilder.setApplicationName(LocalizedText.english(Constants.OPCUA_APPLICATION_NAME));
+        configBuilder.setApplicationUri(Constants.OPCUA_APPLICATION_URI);
+        configBuilder.setProductUri(Constants.OPCUA_PRODUCT_URI);
+        configBuilder.setSessionName(() -> Constants.OPCUA_SESSION_NAME_PREFIX + adapterId);
 
         log.info("TLS is enabled: {}", parsedConfig.tlsEnabled());
-        if(parsedConfig.tlsEnabled()) {
-            log.debug("Configuring TLS");
+        if (parsedConfig.tlsEnabled()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Configuring TLS");
+            }
             //trusted certs, either from configured truststore or system default
-            opcUaClientConfigBuilder.setCertificateValidator(parsedConfig.clientCertificateValidator());
+            configBuilder.setCertificateValidator(parsedConfig.clientCertificateValidator());
 
             if (parsedConfig.keyPairWithChain() != null) {
-                log.debug("Keystore for TLS is available");
-                opcUaClientConfigBuilder.setCertificate(parsedConfig.keyPairWithChain().publicKey());
-                opcUaClientConfigBuilder.setCertificateChain(parsedConfig.keyPairWithChain().certificateChain());
+                if (log.isDebugEnabled()) {
+                    log.debug("Keystore for TLS is available");
+                }
+                configBuilder.setCertificate(parsedConfig.keyPairWithChain().publicKey());
+                configBuilder.setCertificateChain(parsedConfig.keyPairWithChain().certificateChain());
             } else {
-                log.debug("Keystore for TLS is not available");
+                if (log.isDebugEnabled()) {
+                    log.debug("Keystore for TLS is not available");
+                }
             }
         }
 
-        log.debug("Configuring Authentication");
-        opcUaClientConfigBuilder.setIdentityProvider(parsedConfig.identityProvider());
+        if (log.isDebugEnabled()) {
+            log.debug("Configuring Authentication");
+        }
+        configBuilder.setIdentityProvider(parsedConfig.identityProvider());
 
         if (parsedConfig.keyPairWithChain() != null) {
             log.info("Setting up keypair with chain");
-            opcUaClientConfigBuilder.setKeyPair(
-                    new KeyPair(
-                            parsedConfig.keyPairWithChain().publicKey().getPublicKey(),
-                            parsedConfig.keyPairWithChain().privateKey()));
+            configBuilder.setKeyPair(new KeyPair(parsedConfig.keyPairWithChain().publicKey().getPublicKey(),
+                    parsedConfig.keyPairWithChain().privateKey()));
         }
     }
-
-
 }

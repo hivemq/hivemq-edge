@@ -35,69 +35,69 @@ public class CertificateTrustListManager implements TrustListManager {
     }
 
     @Override
-    public List<X509CRL> getIssuerCrls() {
+    public @NotNull List<X509CRL> getIssuerCrls() {
         return List.of();
     }
 
     @Override
-    public List<X509CRL> getTrustedCrls() {
+    public void setIssuerCrls(final @NotNull List<X509CRL> issuerCrls) {
+        //no-op
+    }
+
+    @Override
+    public @NotNull List<X509CRL> getTrustedCrls() {
         return List.of();
     }
 
     @Override
-    public List<X509Certificate> getIssuerCertificates() {
+    public void setTrustedCrls(final @NotNull List<X509CRL> trustedCrls) {
+        //no-op
+    }
+
+    @Override
+    public @NotNull List<X509Certificate> getIssuerCertificates() {
         //allowed for chain building, but not "trusted"
         return List.of();
     }
 
     @Override
-    public List<X509Certificate> getTrustedCertificates() {
+    public void setIssuerCertificates(final @NotNull List<X509Certificate> issuerCertificates) {
+        //no-op
+    }
+
+    @Override
+    public @NotNull List<X509Certificate> getTrustedCertificates() {
         //"trusted" certs
         return List.copyOf(trustedCerts);
     }
 
     @Override
-    public void setIssuerCrls(final List<X509CRL> issuerCrls) {
+    public void setTrustedCertificates(final @NotNull List<X509Certificate> trustedCertificates) {
         //no-op
     }
 
     @Override
-    public void setTrustedCrls(final List<X509CRL> trustedCrls) {
+    public void addIssuerCertificate(final @NotNull X509Certificate certificate) {
         //no-op
     }
 
     @Override
-    public void setIssuerCertificates(final List<X509Certificate> issuerCertificates) {
+    public void addTrustedCertificate(final @NotNull X509Certificate certificate) {
         //no-op
     }
 
     @Override
-    public void setTrustedCertificates(final List<X509Certificate> trustedCertificates) {
-        //no-op
-    }
-
-    @Override
-    public void addIssuerCertificate(final X509Certificate certificate) {
-        //no-op
-    }
-
-    @Override
-    public void addTrustedCertificate(final X509Certificate certificate) {
-        //no-op
-    }
-
-    @Override
-    public boolean removeIssuerCertificate(final ByteString thumbprint) {
+    public boolean removeIssuerCertificate(final @NotNull ByteString thumbprint) {
         return false;
     }
 
     @Override
-    public boolean removeTrustedCertificate(final ByteString thumbprint) {
+    public boolean removeTrustedCertificate(final @NotNull ByteString thumbprint) {
         return false;
     }
 
     @Override
-    public DateTime getLastUpdateTime() {
+    public @NotNull DateTime getLastUpdateTime() {
         return dateTime;
     }
 }

@@ -51,17 +51,17 @@ public class EipTag implements Tag {
 
 
     @Override
-    public @NotNull EipTagDefinition getDefinition() {
+    public @NotNull EipTagDefinition definition() {
         return definition;
     }
 
     @Override
-    public @NotNull String getName() {
+    public @NotNull String name() {
         return name;
     }
 
     @Override
-    public @NotNull String getDescription() {
+    public @NotNull String description() {
         return description;
     }
 

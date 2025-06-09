@@ -53,17 +53,17 @@ public class Plc4xTag implements Tag {
     }
 
     @Override
-    public @NotNull Plc4xTagDefinition getDefinition() {
+    public @NotNull Plc4xTagDefinition definition() {
         return definition;
     }
 
     @Override
-    public @NotNull String getName() {
+    public @NotNull String name() {
         return name;
     }
 
     @Override
-    public @NotNull String getDescription() {
+    public @NotNull String description() {
         return description;
     }
 
