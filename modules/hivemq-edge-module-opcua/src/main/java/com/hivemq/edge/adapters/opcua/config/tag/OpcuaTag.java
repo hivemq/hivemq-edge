@@ -23,37 +23,44 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public record OpcuaTag(@JsonProperty(value = "name", required = true) @ModuleConfigField(title = "name",
-                                                                                         description = "name of the tag to be used in mappings",
-                                                                                         format = ModuleConfigField.FieldType.MQTT_TAG,
-                                                                                         required = true) @NotNull String name,
-                       @JsonProperty(value = "description") @ModuleConfigField(title = "description",
-                                                                               description = "A human readable description of the tag") @NotNull String description,
-                       @JsonProperty(value = "definition", required = true) @ModuleConfigField(title = "definition",
-                                                                                               description = "The actual definition of the tag on the device") @NotNull OpcuaTagDefinition definition)
-        implements Tag {
+public class OpcuaTag implements Tag {
+
+    @JsonProperty(value = "name", required = true)
+    @ModuleConfigField(title = "name",
+                       description = "name of the tag to be used in mappings",
+                       format = ModuleConfigField.FieldType.MQTT_TAG,
+                       required = true)
+    private final @NotNull String name;
+
+    @JsonProperty(value = "description")
+    @ModuleConfigField(title = "description", description = "A human readable description of the tag")
+    private final @NotNull String description;
+
+    @JsonProperty(value = "definition", required = true)
+    @ModuleConfigField(title = "definition", description = "The actual definition of the tag on the device")
+    private final @NotNull OpcuaTagDefinition definition;
 
     public OpcuaTag(
             @JsonProperty(value = "name", required = true) final @NotNull String name,
             @JsonProperty(value = "description") final @Nullable String description,
-            @JsonProperty(value = "definition", required = true) final @NotNull OpcuaTagDefinition definition) {
+            @JsonProperty(value = "definition", required = true) final @NotNull OpcuaTagDefinition definiton) {
         this.name = name;
         this.description = Objects.requireNonNullElse(description, "no description present.");
-        this.definition = definition;
+        this.definition = definiton;
     }
 
     @Override
-    public @NotNull OpcuaTagDefinition definition() {
+    public @NotNull OpcuaTagDefinition getDefinition() {
         return definition;
     }
 
     @Override
-    public @NotNull String name() {
+    public @NotNull String getName() {
         return name;
     }
 
     @Override
-    public @NotNull String description() {
+    public @NotNull String getDescription() {
         return description;
     }
 
@@ -69,5 +76,24 @@ public record OpcuaTag(@JsonProperty(value = "name", required = true) @ModuleCon
                 ", definition=" +
                 definition +
                 '}';
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final OpcuaTag opcuaTag = (OpcuaTag) o;
+        return Objects.equals(name, opcuaTag.name) &&
+                Objects.equals(description, opcuaTag.description) &&
+                Objects.equals(definition, opcuaTag.definition);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, description, definition);
     }
 }

@@ -63,7 +63,7 @@ public class ProtocolAdapterConfig {
         southboundMappings.forEach(mapping -> names.add(mapping.getTagName()));
         northboundMappings.forEach(mapping -> names.add(mapping.getTagName()));
 
-        this.tags.forEach(tag -> names.remove(tag.name()));
+        this.tags.forEach(tag -> names.remove(tag.getName()));
         if (names.isEmpty()) {
             return Optional.empty();
         } else {

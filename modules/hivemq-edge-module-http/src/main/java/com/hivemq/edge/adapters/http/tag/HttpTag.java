@@ -51,17 +51,17 @@ public class HttpTag implements Tag {
 
 
     @Override
-    public @NotNull HttpTagDefinition definition() {
+    public @NotNull HttpTagDefinition getDefinition() {
         return definition;
     }
 
     @Override
-    public @NotNull String name() {
+    public @NotNull String getName() {
         return name;
     }
 
     @Override
-    public @NotNull String description() {
+    public @NotNull String getDescription() {
         return description;
     }
 

@@ -52,6 +52,8 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.UUID;
 
+import static com.hivemq.edge.adapters.opcua.Constants.EMPTY_BYTES;
+
 //see also https://reference.opcfoundation.org/Core/Part6/v105/docs/5.4
 public class OpcUaToJsonConverter {
 
@@ -63,17 +65,16 @@ public class OpcUaToJsonConverter {
             final @NotNull EncodingContext serializationContext,
             final @NotNull DataValue dataValue) {
         final var value = dataValue.getValue().getValue();
-        final JsonObject jsonObject = new JsonObject();
-
-        if(value == null) {
-            return ByteBuffer.wrap(new byte[0]);
+        if (value == null) {
+            return ByteBuffer.wrap(EMPTY_BYTES);
         }
 
-        if  (value instanceof DataValue) {
+        final JsonObject jsonObject = new JsonObject();
+        if (value instanceof DataValue) {
             addDataValueFields((DataValue) value, jsonObject);
         }
-        final var converted = convertValue(value, serializationContext);
 
+        final var converted = convertValue(value, serializationContext);
         if (converted instanceof final JsonObject jo) {
             jsonObject.add("value", jo);
         } else {
@@ -81,7 +82,7 @@ public class OpcUaToJsonConverter {
         }
         return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
     }
-    
+
     private static JsonElement convertValue(
             final @NotNull Object value,
             final @NotNull EncodingContext serializationContext) {
@@ -156,12 +157,11 @@ public class OpcUaToJsonConverter {
                 final Object decodedValue = eo.decode(serializationContext);
                 return convertValue(decodedValue, serializationContext);
             } catch (final Throwable t) {
-                log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead",
-                        t);
-                return convertValue(((ExtensionObject) value).getBody(), serializationContext);
+                log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead", t);
+                return convertValue(eo.getBody(), serializationContext);
             }
         } else if (value instanceof final Variant variant) {
-            if(variant.getValue() == null) {
+            if (variant.getValue() == null) {
                 return null;
             } else {
                 return convertValue(variant.getValue(), serializationContext);
@@ -173,13 +173,14 @@ public class OpcUaToJsonConverter {
             struct.getMembers()
                     .forEach((key, value1) -> structRoot.add(key, convertValue(value1, serializationContext)));
             return structRoot;
-        } else if(value.getClass().isArray()) {
-            final Object[] values = (Object[])value;
+        } else if (value.getClass().isArray()) {
+            final Object[] values = (Object[]) value;
             final JsonArray ret = new JsonArray();
             Arrays.asList(values).forEach(in -> ret.add(convertValue(in, serializationContext)));
             return ret;
         } else {
-            log.warn("No explicit converter for OPC UA type {} falling back to best effort json", value.getClass().getSimpleName());
+            log.warn("No explicit converter for OPC UA type {} falling back to best effort json",
+                    value.getClass().getSimpleName());
             return GSON.toJsonTree(value);
         }
     }
@@ -189,16 +190,13 @@ public class OpcUaToJsonConverter {
         final JsonObject statusCode = new JsonObject();
         final long statusCodeNr = value.getValue();
         statusCode.add("code", new JsonPrimitive(statusCodeNr));
-        StatusCodes
-                .lookup(statusCodeNr)
-                .ifPresent(code -> statusCode.add("symbol", new JsonPrimitive(code[0])));
+        StatusCodes.lookup(statusCodeNr).ifPresent(code -> statusCode.add("symbol", new JsonPrimitive(code[0])));
         return statusCode;
     }
 
     @NotNull
     private static JsonPrimitive convertByteString(final @NotNull ByteString value) {
-        final byte[] bytes = value.bytesOrEmpty();
-        return new JsonPrimitive(Base64.getEncoder().encodeToString(bytes));
+        return new JsonPrimitive(Base64.getEncoder().encodeToString(value.bytesOrEmpty()));
     }
 
     @NotNull
@@ -233,7 +231,7 @@ public class OpcUaToJsonConverter {
         return nodeIdObj;
     }
 
-    private static @NotNull JsonObject convertDiagnosticInfo(final DiagnosticInfo value) {
+    private static @NotNull JsonObject convertDiagnosticInfo(final @NotNull DiagnosticInfo value) {
         final JsonObject diagnosticInfo = new JsonObject();
         diagnosticInfo.add("symbolicId", new JsonPrimitive(value.symbolicId()));
         diagnosticInfo.add("namespaceUri", new JsonPrimitive(value.namespaceUri()));
@@ -246,14 +244,12 @@ public class OpcUaToJsonConverter {
             diagnosticInfo.add("innerStatusCode", convertStatusCode(value.innerStatusCode()));
         }
         if (value.innerDiagnosticInfo() != null) {
-            diagnosticInfo.add("innerDiagnosticInfo",
-                    convertDiagnosticInfo(value.innerDiagnosticInfo()));
+            diagnosticInfo.add("innerDiagnosticInfo", convertDiagnosticInfo(value.innerDiagnosticInfo()));
         }
         return diagnosticInfo;
     }
 
-    private static void addDataValueFields(
-            final @NotNull DataValue dataValue, final @NotNull JsonObject jsonObject) {
+    private static void addDataValueFields(final @NotNull DataValue dataValue, final @NotNull JsonObject jsonObject) {
         if (dataValue.getServerTime() != null) {
             final Instant javaInstant = dataValue.getServerTime().getJavaInstant();
             jsonObject.add("serverTimestamp", new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(javaInstant)));
