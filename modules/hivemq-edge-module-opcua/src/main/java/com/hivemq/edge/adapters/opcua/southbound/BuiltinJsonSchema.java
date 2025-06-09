@@ -39,9 +39,19 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import static com.hivemq.edge.adapters.opcua.Constants.ARRAY_ITEMS;
+import static com.hivemq.edge.adapters.opcua.Constants.ARRAY_MAX_TIMES;
+import static com.hivemq.edge.adapters.opcua.Constants.ARRAY_MIN_TIMES;
+import static com.hivemq.edge.adapters.opcua.Constants.BOOLEAN_DATA_TYPE;
+import static com.hivemq.edge.adapters.opcua.Constants.DATETIME_DATA_TYPE;
+import static com.hivemq.edge.adapters.opcua.Constants.NUMBER_DATA_TYPE;
+import static com.hivemq.edge.adapters.opcua.Constants.OBJECT_DATA_TYPE;
+import static com.hivemq.edge.adapters.opcua.Constants.STRING_DATA_TYPE;
+import static com.hivemq.edge.adapters.opcua.Constants.TYPE;
+
 public class BuiltinJsonSchema {
 
-    private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final @NotNull ObjectMapper MAPPER = new ObjectMapper();
     private static final @NotNull Logger log = LoggerFactory.getLogger("com.hivemq.edge.write.BuiltinJsonSchema");
 
     private final @NotNull HashMap<OpcUaDataType, JsonNode> builtInTypes = new HashMap<>();
@@ -53,8 +63,7 @@ public class BuiltinJsonSchema {
 
             builtInTypes.put(OpcUaDataType.SByte,
                     createJsonSchemaForBuiltinType("SByte JsonSchema", OpcUaDataType.SByte));
-            builtInTypes.put(OpcUaDataType.Byte,
-                    createJsonSchemaForBuiltinType("Byte JsonSchema", OpcUaDataType.Byte));
+            builtInTypes.put(OpcUaDataType.Byte, createJsonSchemaForBuiltinType("Byte JsonSchema", OpcUaDataType.Byte));
 
             builtInTypes.put(OpcUaDataType.UInt64,
                     createJsonSchemaForBuiltinType("UInt64 JsonSchema", OpcUaDataType.UInt64));
@@ -106,55 +115,36 @@ public class BuiltinJsonSchema {
         }
     }
 
-    public @NotNull JsonNode createJsonSchemaForBuiltInType(final @NotNull OpcUaDataType builtinDataType) {
-        return builtInTypes.get(builtinDataType);
-    }
+    public static void populatePropertiesForArray(
+            final @NotNull ObjectNode propertiesNode,
+            final @NotNull OpcUaDataType builtinDataType,
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull UInteger[] dimensions) {
+        if (dimensions.length == 0) {
+            throw new IllegalArgumentException("Array of " + builtinDataType.name() + " dimensions must not be empty");
+        }
+        final long maxSize = dimensions[0].longValue();
 
-    public @NotNull JsonNode createJsonSchemaForArrayType(final @NotNull OpcUaDataType builtinDataType,
-                                           final @NotNull UInteger[] dimensions) {
+        propertiesNode.set(TYPE, new TextNode(Constants.ARRAY_DATA_TYPE));
 
-        final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
-        final ObjectNode propertiesNode = OBJECT_MAPPER.createObjectNode();
-        final ObjectNode valueNode = OBJECT_MAPPER.createObjectNode();
-        rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2019-09/schema"));
-        rootNode.set("title", new TextNode("Array of " + builtinDataType.name() + " JsonSchema"));
-        rootNode.set("type", new TextNode("object"));
-        rootNode.set("properties", propertiesNode);
-        propertiesNode.set("value", valueNode);
-        populatePropertiesForArray(valueNode, builtinDataType, OBJECT_MAPPER, dimensions);
+        //0 for a dimension means unlimited
+        if (maxSize > 0) {
+            propertiesNode.set(ARRAY_MAX_TIMES, new LongNode(maxSize));
+            propertiesNode.set(ARRAY_MIN_TIMES, new LongNode(maxSize));
+        }
+        final ObjectNode itemsNode = objectMapper.createObjectNode();
+        propertiesNode.set(ARRAY_ITEMS, itemsNode);
 
-        final ArrayNode requiredAttributes = OBJECT_MAPPER.createArrayNode();
-        requiredAttributes.add("value");
-        rootNode.set("required", requiredAttributes);
-        return rootNode;
-    }
-
-    public static void populatePropertiesForArray(final @NotNull ObjectNode propertiesNode,
-                                                  final @NotNull OpcUaDataType builtinDataType,
-                                                  final @NotNull ObjectMapper objectMapper,
-                                                  final @NotNull UInteger[] dimensions) {
-            if(dimensions.length == 0) {
-                throw new IllegalArgumentException("Array of " + builtinDataType.name() + " dimensions must not be empty");
-            }
-            final long maxSize = dimensions[0].longValue();
-
-            propertiesNode.set("type", new TextNode(Constants.ARRAY_DATA_TYPE));
-
-            //0 for a dimension means unlimited
-            if(maxSize > 0) {
-                propertiesNode.set("maxItems", new LongNode(maxSize));
-                propertiesNode.set("minItems", new LongNode(maxSize));
-            }
-            final ObjectNode itemsNode = objectMapper.createObjectNode();
-            propertiesNode.set("items", itemsNode);
-
-            if (dimensions.length == 1) {
-                //last element, we can now set the array type
-                populatePropertiesForBuiltinType(itemsNode, builtinDataType, objectMapper);
-            } else {
-                //nesting deeper
-                populatePropertiesForArray(itemsNode, builtinDataType, objectMapper, Arrays.copyOfRange(dimensions, 1, dimensions.length));
-            }
+        if (dimensions.length == 1) {
+            //last element, we can now set the array type
+            populatePropertiesForBuiltinType(itemsNode, builtinDataType, objectMapper);
+        } else {
+            //nesting deeper
+            populatePropertiesForArray(itemsNode,
+                    builtinDataType,
+                    objectMapper,
+                    Arrays.copyOfRange(dimensions, 1, dimensions.length));
+        }
     }
 
     public static void populatePropertiesForBuiltinType(
@@ -163,15 +153,15 @@ public class BuiltinJsonSchema {
             final @NotNull ObjectMapper objectMapper) {
         switch (builtinDataType) {
             case Boolean:
-                nestedPropertiesNode.set("type", new TextNode("boolean"));
+                nestedPropertiesNode.set(TYPE, new TextNode(BOOLEAN_DATA_TYPE));
                 return;
             case SByte:
-                nestedPropertiesNode.set("type", new TextNode(Constants.INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(TYPE, new TextNode(Constants.INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(Constants.MINIMUM_KEY_WORD, new ShortNode(Byte.MIN_VALUE));
                 nestedPropertiesNode.set(Constants.MAXIMUM_KEY_WORD, new ShortNode(Byte.MAX_VALUE));
                 return;
             case Byte:
-                nestedPropertiesNode.set("type", new TextNode(Constants.INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(TYPE, new TextNode(Constants.INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(Constants.MINIMUM_KEY_WORD, new ShortNode(UByte.MIN_VALUE));
                 nestedPropertiesNode.set(Constants.MAXIMUM_KEY_WORD, new ShortNode(UByte.MAX_VALUE));
                 return;
@@ -182,68 +172,68 @@ public class BuiltinJsonSchema {
             case NodeId:
             case ExpandedNodeId:
             case LocalizedText:
-                nestedPropertiesNode.set("type", new TextNode("string"));
+                nestedPropertiesNode.set(TYPE, new TextNode(STRING_DATA_TYPE));
                 return;
             case DateTime:
-                nestedPropertiesNode.set("type", new TextNode("string"));
-                nestedPropertiesNode.set("format", new TextNode("date-time"));
+                nestedPropertiesNode.set(TYPE, new TextNode(STRING_DATA_TYPE));
+                nestedPropertiesNode.set("format", new TextNode(DATETIME_DATA_TYPE));
                 return;
             case Int16:
-                nestedPropertiesNode.set("type", new TextNode(Constants.INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(TYPE, new TextNode(Constants.INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(Constants.MINIMUM_KEY_WORD, new ShortNode(Short.MIN_VALUE));
                 nestedPropertiesNode.set(Constants.MAXIMUM_KEY_WORD, new ShortNode(Short.MAX_VALUE));
                 return;
             case UInt16:
-                nestedPropertiesNode.set("type", new TextNode(Constants.INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(TYPE, new TextNode(Constants.INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(Constants.MINIMUM_KEY_WORD, new IntNode(UShort.MIN.intValue()));
                 nestedPropertiesNode.set(Constants.MAXIMUM_KEY_WORD, new LongNode(UShort.MAX.intValue()));
                 return;
             case StatusCode:
             case Int32:
-                nestedPropertiesNode.set("type", new TextNode(Constants.INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(TYPE, new TextNode(Constants.INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(Constants.MINIMUM_KEY_WORD, new LongNode(Integer.MIN_VALUE));
                 nestedPropertiesNode.set(Constants.MAXIMUM_KEY_WORD, new LongNode(Integer.MAX_VALUE));
                 return;
             case UInt32:
-                nestedPropertiesNode.set("type", new TextNode(Constants.INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(TYPE, new TextNode(Constants.INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(Constants.MINIMUM_KEY_WORD, new LongNode(UInteger.MIN_VALUE));
                 nestedPropertiesNode.set(Constants.MAXIMUM_KEY_WORD, new LongNode(UInteger.MAX_VALUE));
                 return;
             case Int64:
-                nestedPropertiesNode.set("type", new TextNode(Constants.INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(TYPE, new TextNode(Constants.INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(Constants.MINIMUM_KEY_WORD, new LongNode(Long.MIN_VALUE));
                 nestedPropertiesNode.set(Constants.MAXIMUM_KEY_WORD, new LongNode(Long.MAX_VALUE));
                 return;
             case UInt64:
-                nestedPropertiesNode.set("type", new TextNode(Constants.INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(TYPE, new TextNode(Constants.INTEGER_DATA_TYPE));
                 nestedPropertiesNode.set(Constants.MINIMUM_KEY_WORD, new BigIntegerNode(ULong.MIN_VALUE));
                 nestedPropertiesNode.set(Constants.MAXIMUM_KEY_WORD, new BigIntegerNode(ULong.MAX_VALUE));
                 return;
             case Float:
-                nestedPropertiesNode.set("type", new TextNode("number"));
+                nestedPropertiesNode.set(TYPE, new TextNode(NUMBER_DATA_TYPE));
                 nestedPropertiesNode.set(Constants.MINIMUM_KEY_WORD, new FloatNode(-Float.MAX_VALUE));
                 nestedPropertiesNode.set(Constants.MAXIMUM_KEY_WORD, new FloatNode(Float.MAX_VALUE));
                 return;
             case Double:
-                nestedPropertiesNode.set("type", new TextNode("number"));
+                nestedPropertiesNode.set(TYPE, new TextNode(NUMBER_DATA_TYPE));
                 nestedPropertiesNode.set(Constants.MINIMUM_KEY_WORD, new DoubleNode(-Double.MAX_VALUE));
                 nestedPropertiesNode.set(Constants.MAXIMUM_KEY_WORD, new DoubleNode(Double.MAX_VALUE));
                 return;
             case QualifiedName:
-                nestedPropertiesNode.set("type", new TextNode("object"));
+                nestedPropertiesNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
 
                 final ObjectNode innerProperties = objectMapper.createObjectNode();
 
                 final ObjectNode namespaceIndexNode = objectMapper.createObjectNode();
-                namespaceIndexNode.set("type", new TextNode(Constants.INTEGER_DATA_TYPE));
+                namespaceIndexNode.set(TYPE, new TextNode(Constants.INTEGER_DATA_TYPE));
                 innerProperties.set("namespaceIndex", namespaceIndexNode);
 
                 final ObjectNode nameNode = objectMapper.createObjectNode();
-                nameNode.set("type", new TextNode("string"));
+                nameNode.set(TYPE, new TextNode(STRING_DATA_TYPE));
                 innerProperties.set("name", nameNode);
 
                 nestedPropertiesNode.set("properties", innerProperties);
-                final ArrayNode requiredAttributes = OBJECT_MAPPER.createArrayNode();
+                final ArrayNode requiredAttributes = MAPPER.createArrayNode();
                 requiredAttributes.add("name");
                 requiredAttributes.add("namespaceIndex");
                 nestedPropertiesNode.set("required", requiredAttributes);
@@ -256,18 +246,44 @@ public class BuiltinJsonSchema {
         }
     }
 
-    private static @NotNull JsonNode createJsonSchemaForBuiltinType(final @NotNull String title, final @NotNull OpcUaDataType builtinDataType) {
-        final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
-        final ObjectNode propertiesNode = OBJECT_MAPPER.createObjectNode();
-        final ObjectNode valueNode = OBJECT_MAPPER.createObjectNode();
+    private static @NotNull JsonNode createJsonSchemaForBuiltinType(
+            final @NotNull String title,
+            final @NotNull OpcUaDataType builtinDataType) {
+        final ObjectNode rootNode = MAPPER.createObjectNode();
+        final ObjectNode propertiesNode = MAPPER.createObjectNode();
+        final ObjectNode valueNode = MAPPER.createObjectNode();
         rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2019-09/schema"));
         rootNode.set("title", new TextNode(title));
-        rootNode.set("type", new TextNode("object"));
+        rootNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
         rootNode.set("properties", propertiesNode);
         propertiesNode.set("value", valueNode);
-        populatePropertiesForBuiltinType(valueNode, builtinDataType, OBJECT_MAPPER);
+        populatePropertiesForBuiltinType(valueNode, builtinDataType, MAPPER);
 
-        final ArrayNode requiredAttributes = OBJECT_MAPPER.createArrayNode();
+        final ArrayNode requiredAttributes = MAPPER.createArrayNode();
+        requiredAttributes.add("value");
+        rootNode.set("required", requiredAttributes);
+        return rootNode;
+    }
+
+    public @NotNull JsonNode createJsonSchemaForBuiltInType(final @NotNull OpcUaDataType builtinDataType) {
+        return builtInTypes.get(builtinDataType);
+    }
+
+    public @NotNull JsonNode createJsonSchemaForArrayType(
+            final @NotNull OpcUaDataType builtinDataType,
+            final @NotNull UInteger[] dimensions) {
+
+        final ObjectNode rootNode = MAPPER.createObjectNode();
+        final ObjectNode propertiesNode = MAPPER.createObjectNode();
+        final ObjectNode valueNode = MAPPER.createObjectNode();
+        rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2019-09/schema"));
+        rootNode.set("title", new TextNode("Array of " + builtinDataType.name() + " JsonSchema"));
+        rootNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
+        rootNode.set("properties", propertiesNode);
+        propertiesNode.set("value", valueNode);
+        populatePropertiesForArray(valueNode, builtinDataType, MAPPER, dimensions);
+
+        final ArrayNode requiredAttributes = MAPPER.createArrayNode();
         requiredAttributes.add("value");
         rootNode.set("required", requiredAttributes);
         return rootNode;

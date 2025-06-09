@@ -69,7 +69,7 @@ public class JsonSchemaGenerator {
     }
 
     public CompletableFuture<Optional<JsonNode>> createMqttPayloadJsonSchema(final @NotNull OpcuaTag tag) {
-        final String nodeId = tag.definition().node();
+        final String nodeId = tag.getDefinition().getNode();
         final var jsonSchemaGenerator = new JsonSchemaGenerator(client, new ObjectMapper());
         final var parsed = NodeId.parse(nodeId);
         return jsonSchemaGenerator

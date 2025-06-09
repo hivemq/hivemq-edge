@@ -95,7 +95,7 @@ public class OpcUaClientConnection {
             final @NotNull EncodingContext serializationContext) {
         //null value, empty buffer
         if (dataValue.getValue().getValue() == null) {
-            return Constants.EMTPY_BYTES;
+            return Constants.EMPTY_BYTES;
         }
 
         final ByteBuffer byteBuffer = OpcUaToJsonConverter.convertPayload(serializationContext, dataValue);
@@ -203,10 +203,10 @@ public class OpcUaClientConnection {
             if (log.isDebugEnabled()) {
                 log.debug("Write for opcua is invoked with payload '{}' for tag '{}' ",
                         opcUAWritePayload,
-                        opcuaTag.name());
+                        opcuaTag.getName());
             }
 
-            final NodeId nodeId = NodeId.parse(opcuaTag.definition().node());
+            final NodeId nodeId = NodeId.parse(opcuaTag.getDefinition().getNode());
             final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
 
             return instance.client()
@@ -221,7 +221,7 @@ public class OpcUaClientConnection {
 
     private @NotNull CompletionStage<Object> createSubscription(final @NotNull OpcUaClient client) {
         final var nodeIdToTag =
-                tags.stream().collect(Collectors.toMap(tag -> NodeId.parse(tag.definition().node()), tag -> tag));
+                tags.stream().collect(Collectors.toMap(tag -> NodeId.parse(tag.getDefinition().getNode()), tag -> tag));
 
         final Map<OpcuaTag, Boolean> tagToFirstSeen = new ConcurrentHashMap<>();
 
@@ -235,7 +235,7 @@ public class OpcUaClientConnection {
 
     private @NotNull CompletableFuture<Object> createMonitoredItems(final @NotNull OpcUaSubscription subscription) {
         tags.forEach(opcuaTag -> {
-            final String nodeId = opcuaTag.definition().node();
+            final String nodeId = opcuaTag.getDefinition().getNode();
             final var monitoredItem = OpcUaMonitoredItem.newDataItem(NodeId.parse(nodeId));
             monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().getServerQueueSize()));
             monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().getPublishingInterval());
@@ -281,7 +281,7 @@ public class OpcUaClientConnection {
                                 .withSeverity(Event.SEVERITY.INFO)
                                 .withMessage(String.format("Adapter '%s' took first sample for tag '%s'",
                                         adapterId,
-                                        tag.name()))
+                                        tag.getName()))
                                 .fire();
                     }
                     final var value = values.get(i);
@@ -289,8 +289,8 @@ public class OpcUaClientConnection {
                         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
                         final var convertedPayload =
                                 new String(convertPayload(value, client.getDynamicEncodingContext()));
-                        tagStreamingService.feed(tag.name(),
-                                List.of(dataPointFactory.createJsonDataPoint(tag.name(), convertedPayload)));
+                        tagStreamingService.feed(tag.getName(),
+                                List.of(dataPointFactory.createJsonDataPoint(tag.getName(), convertedPayload)));
                     } catch (final UaException e) {
                         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
                         throw new RuntimeException(e);

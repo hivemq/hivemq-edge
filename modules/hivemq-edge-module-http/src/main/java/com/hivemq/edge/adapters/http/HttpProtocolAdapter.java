@@ -187,11 +187,11 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
             final @NotNull HttpTag httpTag) {
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
-        final String url = httpTag.definition().getUrl();
-        final HttpTagDefinition tagDef = httpTag.definition();
+        final String url = httpTag.getDefinition().getUrl();
+        final HttpTagDefinition tagDef = httpTag.getDefinition();
         builder.uri(URI.create(url));
 
-        builder.timeout(Duration.ofSeconds(httpTag.definition().getHttpRequestTimeoutSeconds()));
+        builder.timeout(Duration.ofSeconds(httpTag.getDefinition().getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
 
         tagDef.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
@@ -224,7 +224,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
 
         return httpClient
                     .sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
-                    .thenApply(httpResponse -> getHttpData(httpResponse, url, httpTag.name()));
+                    .thenApply(httpResponse -> getHttpData(httpResponse, url, httpTag.getName()));
     }
 
     private @NotNull HttpData getHttpData(final HttpResponse<String> httpResponse, final String url,

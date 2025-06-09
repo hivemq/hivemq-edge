@@ -105,7 +105,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
 
         final var readRegisterFutures = tags.stream()
                 .map(tag -> readRegisters(modbusClient, tag)
-                        .thenApply(result -> new ResulTuple(tag.name(), result)))
+                        .thenApply(result -> new ResulTuple(tag.getName(), result)))
                 .toList();
 
         CompletableFuture
@@ -184,7 +184,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     protected @NotNull CompletableFuture<Object> readRegisters(
             final @NotNull ModbusClient modbusClient,
             final @NotNull ModbusTag modbusTag) {
-        final ModbusTagDefinition modbusTagDefinition = modbusTag.definition();
+        final ModbusTagDefinition modbusTagDefinition = modbusTag.getDefinition();
 
         final var startIdx = modbusTagDefinition.startIdx;
         final var unitId = modbusTagDefinition.unitId;

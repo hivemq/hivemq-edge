@@ -96,7 +96,7 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
         String absolutePathToFle = "";
         try {
             for (final FileTag fileTag : tags) {
-                absolutePathToFle = fileTag.definition().getFilePath();
+                absolutePathToFle = fileTag.getDefinition().getFilePath();
                 final var path = Path.of(absolutePathToFle);
                 final var length = path.toFile().length();
                 final var limit = 64_000; // not a constant to have a more compact code example
@@ -108,7 +108,7 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
                     return;
                 }
                 final var fileContentArray = Files.readAllBytes(path);
-                final var value = fileTag.definition().getContentType().map(fileContentArray);
+                final var value = fileTag.getDefinition().getContentType().map(fileContentArray);
                 pollingOutput.addDataPoint(new FileDataPoint(fileTag, value));
             }
         } catch (final IOException e) {

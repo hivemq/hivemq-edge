@@ -113,7 +113,7 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
                         return;
                     }
                 }
-                pollingOutput.addDataPoint(tag.name(),
+                pollingOutput.addDataPoint(tag.getName(),
                         ThreadLocalRandom.current()
                                 .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
                                         Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));

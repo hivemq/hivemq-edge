@@ -51,18 +51,18 @@ public class FileTag implements Tag {
     }
 
     @Override
-    public @NotNull FileTagDefinition definition() {
+    public @NotNull FileTagDefinition getDefinition() {
         return definition;
     }
 
     @Override
-    public @NotNull String name() {
+    public @NotNull String getName() {
         return name;
     }
 
 
     @Override
-    public @NotNull String description() {
+    public @NotNull String getDescription() {
         return description;
     }
 

@@ -225,7 +225,7 @@ public class ProtocolAdapterWrapper {
                                 this,
                             new PollingContextWrapper(
                                     "unused",
-                                    tag.name(),
+                                    tag.getName(),
                                     MessageHandlingOptions.MQTTMessagePerTag,
                                     false,
                                     false,
