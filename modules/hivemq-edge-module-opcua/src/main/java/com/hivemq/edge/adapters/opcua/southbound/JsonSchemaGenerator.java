@@ -177,7 +177,6 @@ public class JsonSchemaGenerator {
                             required,
                             List.of());
                 }
-
             } else if (dataTypeDefinition instanceof EnumDefinition) {
                 throw new RuntimeException("Enums not implemented yet");
             } else {
