@@ -26,15 +26,7 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 
 public class OpcUaNodeDiscovery {
 
-    public record CollectedNode(@NotNull String id,
-                                @NotNull String name,
-                                @NotNull String value,
-                                @NotNull String description,
-                                @Nullable String parentId,
-                                @NotNull NodeType nodeType,
-                                boolean selectable){}
-
-    public static CompletableFuture<List<CollectedNode>> discoverValues(
+    public static @NotNull CompletableFuture<List<CollectedNode>> discoverValues(
             final @NotNull OpcUaClient client,
             final @Nullable String rootNode,
             final int depth) {
@@ -44,28 +36,26 @@ public class OpcUaNodeDiscovery {
         } else {
             final Optional<NodeId> parsedNodeId = NodeId.parseSafe(rootNode);
             if (parsedNodeId.isEmpty()) {
-                return CompletableFuture.failedFuture(new IllegalArgumentException("OPC UA NodeId '" + rootNode + "' is not supported"));
+                return CompletableFuture.failedFuture(new IllegalArgumentException("OPC UA NodeId '" +
+                        rootNode +
+                        "' is not supported"));
             }
             browseRoot = parsedNodeId.get();
         }
 
         final var collectedNodes = new ArrayList<CollectedNode>();
         return browse(client, browseRoot, null, (ref, parent) -> {
-                final String name = ref.getBrowseName() != null ? ref.getBrowseName().getName() : "";
-                final String displayName = ref.getDisplayName() != null ? ref.getDisplayName().getText() : "";
-                final NodeType nodeType = getNodeType(ref);
-                collectedNodes.add(
-                        new CollectedNode(
-                            ref.getNodeId().toParseableString(),
-                            requireNonNullElse(name, ""),
-                            ref.getNodeId().toParseableString(),
-                            requireNonNullElse(displayName, ""),
-                            parent != null ? parent.getNodeId().toParseableString() : null,
-                            nodeType != null ? nodeType : NodeType.VALUE,
-                            nodeType == NodeType.VALUE));
-                }
-                , depth)
-                .thenApply(ignored -> collectedNodes);
+            final String name = ref.getBrowseName() != null ? ref.getBrowseName().getName() : "";
+            final String displayName = ref.getDisplayName() != null ? ref.getDisplayName().getText() : "";
+            final NodeType nodeType = getNodeType(ref);
+            collectedNodes.add(new CollectedNode(ref.getNodeId().toParseableString(),
+                    requireNonNullElse(name, ""),
+                    ref.getNodeId().toParseableString(),
+                    requireNonNullElse(displayName, ""),
+                    parent != null ? parent.getNodeId().toParseableString() : null,
+                    nodeType != null ? nodeType : NodeType.VALUE,
+                    nodeType == NodeType.VALUE));
+        }, depth).thenApply(ignored -> collectedNodes);
     }
 
     private static @NotNull CompletableFuture<Void> browse(
@@ -74,17 +64,17 @@ public class OpcUaNodeDiscovery {
             final @Nullable ReferenceDescription parent,
             final @NotNull BiConsumer<ReferenceDescription, ReferenceDescription> callback,
             final int depth) {
-        final BrowseDescription browse = new BrowseDescription(
-                browseRoot,
-                BrowseDirection.Forward,
-                null,
-                true,
-                uint(0),
-                uint(BrowseResultMask.All.getValue()));
-
-        return client
-                .browseAsync(browse)
-                .thenCompose(browseResult -> handleBrowseResult(client, parent, callback, depth, new BrowseResult[]{browseResult}));
+        return client.browseAsync(new BrowseDescription(browseRoot,
+                        BrowseDirection.Forward,
+                        null,
+                        true,
+                        uint(0),
+                        uint(BrowseResultMask.All.getValue())))
+                .thenCompose(browseResult -> handleBrowseResult(client,
+                        parent,
+                        callback,
+                        depth,
+                        new BrowseResult[]{browseResult}));
     }
 
     private static @NotNull CompletableFuture<Void> handleBrowseResult(
@@ -92,23 +82,22 @@ public class OpcUaNodeDiscovery {
             final @Nullable ReferenceDescription parent,
             final @NotNull BiConsumer<ReferenceDescription, ReferenceDescription> callback,
             final int depth,
-            final @Nullable BrowseResult[] browseResults) {
-        final List<CompletableFuture<Void>> childFutures = new ArrayList<>();
+            final @Nullable BrowseResult @Nullable [] browseResults) {
+        final var childFutures = new ArrayList<CompletableFuture<Void>>();
         final var references = new ArrayList<ReferenceDescription>();
         final var continuationPoints = new ArrayList<ByteString>();
 
-        if(browseResults != null) {
+        if (browseResults != null) {
             for (final BrowseResult result : browseResults) {
-                if(result == null) {
-                    continue;
-                }
-                final var continuationPoint = result.getContinuationPoint();
-                if(continuationPoint != null) {
-                    continuationPoints.add(continuationPoint);
-                }
-                final var refs = result.getReferences();
-                if(refs != null) {
-                    Collections.addAll(references, result.getReferences());
+                if (result != null) {
+                    final var continuationPoint = result.getContinuationPoint();
+                    if (continuationPoint != null) {
+                        continuationPoints.add(continuationPoint);
+                    }
+                    final var refs = result.getReferences();
+                    if (refs != null) {
+                        Collections.addAll(references, result.getReferences());
+                    }
                 }
             }
         }
@@ -125,15 +114,14 @@ public class OpcUaNodeDiscovery {
         if (!continuationPoints.isEmpty()) {
             //TODO this looks like a bug in Milo
             final var cont = continuationPoints.stream().filter(ct -> ct.bytes() != null).toList();
-            if(!cont.isEmpty()) {
+            if (!cont.isEmpty()) {
                 childFutures.add(Objects.requireNonNull(client)
                         .browseNextAsync(false, continuationPoints)
-                        .thenCompose(nextBrowseResult -> handleBrowseResult(
-                                            client,
-                                            parent,
-                                            callback,
-                                            depth,
-                                            nextBrowseResult.getResults())));
+                        .thenCompose(nextBrowseResult -> handleBrowseResult(client,
+                                parent,
+                                callback,
+                                depth,
+                                nextBrowseResult.getResults())));
             }
         }
 
@@ -147,5 +135,10 @@ public class OpcUaNodeDiscovery {
             case View -> NodeType.FOLDER;
             default -> null;
         };
+    }
+
+    public record CollectedNode(@NotNull String id, @NotNull String name, @NotNull String value,
+                                @NotNull String description, @Nullable String parentId, @NotNull NodeType nodeType,
+                                boolean selectable) {
     }
 }

@@ -21,9 +21,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
@@ -98,7 +96,7 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
         String absolutePathToFle = "";
         try {
             for (final FileTag fileTag : tags) {
-                absolutePathToFle = fileTag.getDefinition().getFilePath();
+                absolutePathToFle = fileTag.definition().getFilePath();
                 final var path = Path.of(absolutePathToFle);
                 final var length = path.toFile().length();
                 final var limit = 64_000; // not a constant to have a more compact code example
@@ -110,7 +108,7 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
                     return;
                 }
                 final var fileContentArray = Files.readAllBytes(path);
-                final var value = fileTag.getDefinition().getContentType().map(fileContentArray);
+                final var value = fileTag.definition().getContentType().map(fileContentArray);
                 pollingOutput.addDataPoint(new FileDataPoint(fileTag, value));
             }
         } catch (final IOException e) {

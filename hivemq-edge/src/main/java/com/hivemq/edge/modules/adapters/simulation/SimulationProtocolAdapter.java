@@ -17,15 +17,11 @@ package com.hivemq.edge.modules.adapters.simulation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingInput;
-import com.hivemq.adapter.sdk.api.polling.PollingOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
@@ -117,7 +113,7 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
                         return;
                     }
                 }
-                pollingOutput.addDataPoint(tag.getName(),
+                pollingOutput.addDataPoint(tag.name(),
                         ThreadLocalRandom.current()
                                 .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
                                         Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));

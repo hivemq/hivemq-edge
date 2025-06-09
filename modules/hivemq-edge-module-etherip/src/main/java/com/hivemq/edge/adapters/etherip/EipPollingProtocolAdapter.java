@@ -66,7 +66,7 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
         this.dataPointFactory = input.adapterFactories().dataPointFactory();
         this.tags = input.getTags().stream()
                 .map(tag -> (EipTag)tag)
-                .collect(Collectors.toMap(tag -> tag.getDefinition().getAddress(), tag -> tag));
+                .collect(Collectors.toMap(tag -> tag.definition().getAddress(), tag -> tag));
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
     }
@@ -130,14 +130,14 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
             return;
         }
 
-        final var tagAddresses = tags.values().stream().map(v -> v.getDefinition().getAddress()).toArray(String[]::new);
+        final var tagAddresses = tags.values().stream().map(v -> v.definition().getAddress()).toArray(String[]::new);
         try {
             final var readCipData = client.readTags(tagAddresses);
             for (int i = 0; i < readCipData.length; i++) {
                 final var cipData = readCipData[i];
                 final var tagAddress = tagAddresses[i];
                 EtherIpValueFactory.fromTagAddressAndCipData(tagAddress, cipData)
-                    .map(it -> dataPointFactory.create(tags.get(tagAddress).getName(), it.getValue()))
+                    .map(it -> dataPointFactory.create(tags.get(tagAddress).name(), it.getValue()))
                     .ifPresent(dataPoint -> {
                         if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
                             if (lastSamples.replaceIfValueIsNew(dataPoint.getTagName(), List.of(dataPoint))) {

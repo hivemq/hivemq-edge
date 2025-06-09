@@ -44,7 +44,7 @@ public class FileJsonPayloadCreator implements JsonPayloadCreator {
                 final FileDataPoint fileDataPoint = (FileDataPoint) dataPoint;
                 final FilePayload value = new FilePayload(pollingContext.getUserProperties(),
                         dataPoint.getTagValue(),
-                        fileDataPoint.getTag().getDefinition().getContentType(),
+                        fileDataPoint.getTag().definition().getContentType(),
                         pollingContext.getIncludeTagNames() ? dataPoint.getTagName() : null,
                         pollingContext.getIncludeTimestamp() ? System.currentTimeMillis() : null);
                 payloads.add(objectMapper.writeValueAsBytes(value));

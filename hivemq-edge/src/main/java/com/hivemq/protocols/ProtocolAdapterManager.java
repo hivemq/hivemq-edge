@@ -476,7 +476,7 @@ public class ProtocolAdapterManager {
             final @NotNull String adapterId, final @NotNull DomainTag domainTag) {
         return getProtocolAdapterWrapperByAdapterId(adapterId).map(adapter -> {
             final List<? extends Tag> tags = new ArrayList<>(adapter.getTags());
-            final boolean alreadyExists = tags.stream().anyMatch(t -> t.getName().equals(domainTag.getTagName()));
+            final boolean alreadyExists = tags.stream().anyMatch(t -> t.name().equals(domainTag.getTagName()));
             if (!alreadyExists) {
                 tags.add(configConverter.domaintTagToTag(adapter.getProtocolAdapterInformation().getProtocolId(),
                         domainTag));
@@ -494,10 +494,10 @@ public class ProtocolAdapterManager {
                 .stream()
                 .flatMap(adapter -> adapter.getTags()
                         .stream()
-                        .map(tag -> new DomainTag(tag.getName(),
+                        .map(tag -> new DomainTag(tag.name(),
                                 adapter.getId(),
-                                tag.getDescription(),
-                                configConverter.convertTagDefinitionToJsonNode(tag.getDefinition()))))
+                                tag.description(),
+                                configConverter.convertTagDefinitionToJsonNode(tag.definition()))))
                 .collect(Collectors.toList());
     }
 
@@ -506,21 +506,21 @@ public class ProtocolAdapterManager {
                 .stream()
                 .flatMap(adapter -> adapter.getTags()
                         .stream()
-                        .filter(t -> t.getName().equals(tagName))
-                        .map(tag -> new DomainTag(tag.getName(),
+                        .filter(t -> t.name().equals(tagName))
+                        .map(tag -> new DomainTag(tag.name(),
                                 adapter.getId(),
-                                tag.getDescription(),
-                                configConverter.convertTagDefinitionToJsonNode(tag.getDefinition()))))
+                                tag.description(),
+                                configConverter.convertTagDefinitionToJsonNode(tag.definition()))))
                 .findFirst();
     }
 
     public @NotNull Optional<List<DomainTag>> getTagsForAdapter(final @NotNull String adapterId) {
         return getProtocolAdapterWrapperByAdapterId(adapterId).map(adapter -> adapter.getTags()
                 .stream()
-                .map(tag -> new DomainTag(tag.getName(),
+                .map(tag -> new DomainTag(tag.name(),
                         adapter.getId(),
-                        tag.getDescription(),
-                        configConverter.convertTagDefinitionToJsonNode(tag.getDefinition())))
+                        tag.description(),
+                        configConverter.convertTagDefinitionToJsonNode(tag.definition())))
                 .collect(Collectors.toList()));
     }
 

@@ -65,29 +65,29 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
         assertThat(config.getOverrideUri()).isTrue();
         assertThat(config.getSecurity()).satisfies(security -> {
-            assertThat(security.getPolicy()).isEqualTo(BASIC128RSA15);
+            assertThat(security.policy()).isEqualTo(BASIC128RSA15);
         });
 
         assertThat(config.getAuth()).satisfies(auth -> {
-            assertThat(auth.getBasicAuth()).isNotNull();
-            assertThat(auth.getBasicAuth().getUsername()).isEqualTo("edge");
-            assertThat(auth.getBasicAuth().getPassword()).isEqualTo("password");
+            assertThat(auth.basicAuth()).isNotNull();
+            assertThat(auth.basicAuth().username()).isEqualTo("edge");
+            assertThat(auth.basicAuth().password()).isEqualTo("password");
 
-            assertThat(auth.getX509Auth()).isNotNull();
-            assertThat(auth.getX509Auth().isEnabled()).isTrue();
+            assertThat(auth.x509Auth()).isNotNull();
+            assertThat(auth.x509Auth().enabled()).isTrue();
         });
 
         assertThat(config.getTls()).satisfies(tls -> {
             assertThat(tls.isEnabled()).isTrue();
 
             assertThat(tls.getKeystore()).isNotNull();
-            assertThat(tls.getKeystore().getPath()).isEqualTo("path/to/keystore");
-            assertThat(tls.getKeystore().getPassword()).isEqualTo("keystore-password");
-            assertThat(tls.getKeystore().getPrivateKeyPassword()).isEqualTo("private-key-password");
+            assertThat(tls.getKeystore().path()).isEqualTo("path/to/keystore");
+            assertThat(tls.getKeystore().password()).isEqualTo("keystore-password");
+            assertThat(tls.getKeystore().privateKeyPassword()).isEqualTo("private-key-password");
 
             assertThat(tls.getTruststore()).isNotNull();
-            assertThat(tls.getTruststore().getPath()).isEqualTo("path/to/truststore");
-            assertThat(tls.getTruststore().getPassword()).isEqualTo("truststore-password");
+            assertThat(tls.getTruststore().path()).isEqualTo("path/to/truststore");
+            assertThat(tls.getTruststore().password()).isEqualTo("truststore-password");
         });
 
 
@@ -130,7 +130,7 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
         assertThat(config.getOverrideUri()).isFalse();
-        assertThat(config.getSecurity().getPolicy()).isEqualTo(NONE);
+        assertThat(config.getSecurity().policy()).isEqualTo(NONE);
 
         assertThat(config.getAuth()).isNull();
 

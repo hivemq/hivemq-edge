@@ -44,60 +44,60 @@ public class BuiltinJsonSchema {
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final @NotNull Logger log = LoggerFactory.getLogger("com.hivemq.edge.write.BuiltinJsonSchema");
 
-    private final @NotNull HashMap<OpcUaDataType, JsonNode> classToJsonSchema = new HashMap<>();
+    private final @NotNull HashMap<OpcUaDataType, JsonNode> builtInTypes = new HashMap<>();
 
     public BuiltinJsonSchema() {
         try {
-            classToJsonSchema.put(OpcUaDataType.Boolean,
+            builtInTypes.put(OpcUaDataType.Boolean,
                     createJsonSchemaForBuiltinType("Boolean JsonSchema", OpcUaDataType.Boolean));
 
-            classToJsonSchema.put(OpcUaDataType.SByte,
+            builtInTypes.put(OpcUaDataType.SByte,
                     createJsonSchemaForBuiltinType("SByte JsonSchema", OpcUaDataType.SByte));
-            classToJsonSchema.put(OpcUaDataType.Byte,
+            builtInTypes.put(OpcUaDataType.Byte,
                     createJsonSchemaForBuiltinType("Byte JsonSchema", OpcUaDataType.Byte));
 
-            classToJsonSchema.put(OpcUaDataType.UInt64,
+            builtInTypes.put(OpcUaDataType.UInt64,
                     createJsonSchemaForBuiltinType("UInt64 JsonSchema", OpcUaDataType.UInt64));
-            classToJsonSchema.put(OpcUaDataType.UInt32,
+            builtInTypes.put(OpcUaDataType.UInt32,
                     createJsonSchemaForBuiltinType("UInt32 JsonSchema", OpcUaDataType.UInt32));
-            classToJsonSchema.put(OpcUaDataType.UInt16,
+            builtInTypes.put(OpcUaDataType.UInt16,
                     createJsonSchemaForBuiltinType("UInt16 JsonSchema", OpcUaDataType.UInt16));
 
-            classToJsonSchema.put(OpcUaDataType.Int64,
+            builtInTypes.put(OpcUaDataType.Int64,
                     createJsonSchemaForBuiltinType("Int64 JsonSchema", OpcUaDataType.Int64));
-            classToJsonSchema.put(OpcUaDataType.Int32,
+            builtInTypes.put(OpcUaDataType.Int32,
                     createJsonSchemaForBuiltinType("Int32 JsonSchema", OpcUaDataType.Int32));
-            classToJsonSchema.put(OpcUaDataType.Int16,
+            builtInTypes.put(OpcUaDataType.Int16,
                     createJsonSchemaForBuiltinType("Int16 JsonSchema", OpcUaDataType.Int16));
 
-            classToJsonSchema.put(OpcUaDataType.Float,
+            builtInTypes.put(OpcUaDataType.Float,
                     createJsonSchemaForBuiltinType("Float JsonSchema", OpcUaDataType.Float));
-            classToJsonSchema.put(OpcUaDataType.Double,
+            builtInTypes.put(OpcUaDataType.Double,
                     createJsonSchemaForBuiltinType("Double JsonSchema", OpcUaDataType.Double));
-            classToJsonSchema.put(OpcUaDataType.String,
+            builtInTypes.put(OpcUaDataType.String,
                     createJsonSchemaForBuiltinType("String JsonSchema", OpcUaDataType.String));
 
-            classToJsonSchema.put(OpcUaDataType.DateTime,
+            builtInTypes.put(OpcUaDataType.DateTime,
                     createJsonSchemaForBuiltinType("DateTime JsonSchema", OpcUaDataType.DateTime));
 
-            classToJsonSchema.put(OpcUaDataType.Guid,
+            builtInTypes.put(OpcUaDataType.Guid,
                     createJsonSchemaForBuiltinType("Guid JsonSchema", OpcUaDataType.String));
-            classToJsonSchema.put(OpcUaDataType.ByteString,
+            builtInTypes.put(OpcUaDataType.ByteString,
                     createJsonSchemaForBuiltinType("ByteString JsonSchema", OpcUaDataType.String));
-            classToJsonSchema.put(OpcUaDataType.XmlElement,
+            builtInTypes.put(OpcUaDataType.XmlElement,
                     createJsonSchemaForBuiltinType("XmlElement JsonSchema", OpcUaDataType.String));
 
-            classToJsonSchema.put(OpcUaDataType.QualifiedName,
+            builtInTypes.put(OpcUaDataType.QualifiedName,
                     createJsonSchemaForBuiltinType("QualifiedName JsonSchema", OpcUaDataType.QualifiedName));
 
-            classToJsonSchema.put(OpcUaDataType.NodeId,
+            builtInTypes.put(OpcUaDataType.NodeId,
                     createJsonSchemaForBuiltinType("XmlElement NodeId", OpcUaDataType.String));
-            classToJsonSchema.put(OpcUaDataType.ExpandedNodeId,
+            builtInTypes.put(OpcUaDataType.ExpandedNodeId,
                     createJsonSchemaForBuiltinType("ExpandedNodeId JsonSchema", OpcUaDataType.String));
 
-            classToJsonSchema.put(OpcUaDataType.StatusCode,
+            builtInTypes.put(OpcUaDataType.StatusCode,
                     createJsonSchemaForBuiltinType("StatusCode JsonSchema", OpcUaDataType.StatusCode));
-            classToJsonSchema.put(OpcUaDataType.LocalizedText,
+            builtInTypes.put(OpcUaDataType.LocalizedText,
                     createJsonSchemaForBuiltinType("LocalizedText JsonSchema", OpcUaDataType.String));
         } catch (final Exception jsonSchemaGenerationException) {
             log.error("Exception while initializing the JsonSchema for the builtin types:",
@@ -107,7 +107,7 @@ public class BuiltinJsonSchema {
     }
 
     public @NotNull JsonNode createJsonSchemaForBuiltInType(final @NotNull OpcUaDataType builtinDataType) {
-        return classToJsonSchema.get(builtinDataType);
+        return builtInTypes.get(builtinDataType);
     }
 
     public @NotNull JsonNode createJsonSchemaForArrayType(final @NotNull OpcUaDataType builtinDataType,

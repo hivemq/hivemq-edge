@@ -101,17 +101,17 @@ public class TagSchemaNodeGeneratorTest {
         }
 
         @Override
-        public @NotNull TestTagDefinition getDefinition() {
+        public @NotNull TestTagDefinition definition() {
             return definition;
         }
 
         @Override
-        public @NotNull String getName() {
+        public @NotNull String name() {
             return name;
         }
 
         @Override
-        public @NotNull String getDescription() {
+        public @NotNull String description() {
             return description;
         }
     }

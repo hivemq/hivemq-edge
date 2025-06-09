@@ -50,17 +50,17 @@ public class MtConnectAdapterTag implements Tag {
     }
 
     @Override
-    public @NotNull MtConnectAdapterTagDefinition getDefinition() {
+    public @NotNull MtConnectAdapterTagDefinition definition() {
         return definition;
     }
 
     @Override
-    public @NotNull String getName() {
+    public @NotNull String name() {
         return name;
     }
 
     @Override
-    public @NotNull String getDescription() {
+    public @NotNull String description() {
         return description;
     }
 

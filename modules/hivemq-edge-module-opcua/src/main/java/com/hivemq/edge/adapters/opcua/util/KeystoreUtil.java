@@ -40,7 +40,6 @@ import java.util.stream.Stream;
 
 public class KeystoreUtil {
 
-
     public static @NotNull List<X509Certificate> getCertificatesFromTruststore(
             final @NotNull String keyStoreType,
             final @NotNull String keyStorePath,
@@ -69,7 +68,6 @@ public class KeystoreUtil {
         }
     }
 
-
     public static @NotNull List<X509Certificate> getCertificatesFromDefaultTruststore() {
         //if no truststore is set use java default
         try {
@@ -77,14 +75,12 @@ public class KeystoreUtil {
             final TrustManagerFactory trustManagerFactory =
                     TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             trustManagerFactory.init((KeyStore) null);
-            return Arrays.stream(trustManagerFactory
-                    .getTrustManagers())
-                    .flatMap(trustManager -> {
-                        if (trustManager instanceof X509TrustManager) {
-                            return Arrays.stream(((X509TrustManager) trustManager).getAcceptedIssuers());
-                        }
-                        return Stream.empty();
-                    }).toList();
+            return Arrays.stream(trustManagerFactory.getTrustManagers()).flatMap(trustManager -> {
+                if (trustManager instanceof X509TrustManager) {
+                    return Arrays.stream(((X509TrustManager) trustManager).getAcceptedIssuers());
+                }
+                return Stream.empty();
+            }).toList();
         } catch (final NoSuchAlgorithmException | KeyStoreException e) {
             throw new SslException("Not able to load system default truststore", e);
         }
@@ -129,5 +125,6 @@ public class KeystoreUtil {
     }
 
     public record KeyPairWithChain(@NotNull PrivateKey privateKey, @NotNull X509Certificate publicKey,
-                                   @NotNull X509Certificate[] certificateChain) {}
+                                   @NotNull X509Certificate[] certificateChain) {
+    }
 }

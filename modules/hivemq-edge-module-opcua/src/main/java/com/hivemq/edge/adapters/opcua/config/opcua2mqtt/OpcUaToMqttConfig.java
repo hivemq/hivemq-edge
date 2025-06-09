@@ -58,8 +58,10 @@ public class OpcUaToMqttConfig {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(final @Nullable Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final OpcUaToMqttConfig that = (OpcUaToMqttConfig) o;
         return getServerQueueSize() == that.getServerQueueSize() &&
                 getPublishingInterval() == that.getPublishingInterval();

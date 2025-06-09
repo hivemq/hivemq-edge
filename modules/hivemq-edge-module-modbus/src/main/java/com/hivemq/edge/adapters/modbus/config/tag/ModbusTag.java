@@ -53,17 +53,17 @@ public class ModbusTag implements Tag {
 
 
     @Override
-    public @NotNull ModbusTagDefinition getDefinition() {
+    public @NotNull ModbusTagDefinition definition() {
         return definition;
     }
 
     @Override
-    public @NotNull String getName() {
+    public @NotNull String name() {
         return name;
     }
 
     @Override
-    public @NotNull String getDescription() {
+    public @NotNull String description() {
         return description;
     }
 
