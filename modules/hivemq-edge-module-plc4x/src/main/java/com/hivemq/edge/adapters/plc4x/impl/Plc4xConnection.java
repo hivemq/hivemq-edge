@@ -147,7 +147,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
             log.trace("Sending direct-read request to connection for {}.", tags);
         }
         final PlcReadRequest.Builder builder = plcConnection.readRequestBuilder();
-        tags.forEach(tag -> builder.addTagAddress(tag.name(), getTagAddressForSubscription(tag)));
+        tags.forEach(tag -> builder.addTagAddress(tag.getName(), getTagAddressForSubscription(tag)));
         final PlcReadRequest readRequest = builder.build();
         //Ok - seems the reads are not thread safe
         synchronized (lock) {
@@ -164,12 +164,12 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
             return CompletableFuture.failedFuture(new Plc4xException("connection type cannot subscribe"));
         }
         if (log.isTraceEnabled()) {
-            log.trace("Sending subscribe request to connection for {}.", tag.name());
+            log.trace("Sending subscribe request to connection for {}.", tag.getName());
         }
         final PlcSubscriptionRequest.Builder builder = plcConnection.subscriptionRequestBuilder();
 
         //TODO we're only registering for state change, could also register events
-        builder.addChangeOfStateTagAddress(tag.name(), getTagAddressForSubscription(tag));
+        builder.addChangeOfStateTagAddress(tag.getName(), getTagAddressForSubscription(tag));
         PlcSubscriptionRequest subscriptionRequest = builder.build();
         CompletableFuture<PlcSubscriptionResponse> future =
                 (CompletableFuture<PlcSubscriptionResponse>) subscriptionRequest.execute();

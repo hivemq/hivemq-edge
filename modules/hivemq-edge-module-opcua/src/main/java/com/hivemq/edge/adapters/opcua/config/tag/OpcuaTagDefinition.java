@@ -22,18 +22,20 @@ import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record OpcuaTagDefinition(
-        @JsonProperty(value = "node", required = true) @ModuleConfigField(title = "Destination Node ID",
-                                                                          description = "identifier of the node on the OPC UA server. Example: \"ns=3;s=85/0:Temperature\"",
-                                                                          required = true) @NotNull String node)
-        implements TagDefinition {
+public class OpcuaTagDefinition implements TagDefinition {
+
+    @JsonProperty(value = "node", required = true)
+    @ModuleConfigField(title = "Destination Node ID",
+                       description = "identifier of the node on the OPC UA server. Example: \"ns=3;s=85/0:Temperature\"",
+                       required = true)
+    private final @NotNull String node;
 
     @JsonCreator
-    public OpcuaTagDefinition {
+    public OpcuaTagDefinition(@JsonProperty(value = "node", required = true) final @NotNull String node) {
+        this.node = node;
     }
 
-    @Override
-    public @NotNull String node() {
+    public @NotNull String getNode() {
         return node;
     }
 
@@ -48,6 +50,11 @@ public record OpcuaTagDefinition(
 
         final OpcuaTagDefinition that = (OpcuaTagDefinition) o;
         return node.equals(that.node);
+    }
+
+    @Override
+    public int hashCode() {
+        return node.hashCode();
     }
 
     @Override

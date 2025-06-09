@@ -203,7 +203,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
     }
 
     protected @NotNull CompletableFuture<MtConnectData> pollXml(final @NotNull MtConnectAdapterTag tag) {
-        final MtConnectAdapterTagDefinition definition = tag.definition();
+        final MtConnectAdapterTagDefinition definition = tag.getDefinition();
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         final String url = definition.getUrl();
         builder.uri(URI.create(url));
@@ -222,10 +222,10 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
     protected @NotNull MtConnectData processHttpResponse(
             final @NotNull HttpResponse<String> httpResponse,
             final @NotNull Tag tag) {
-        final MtConnectAdapterTagDefinition definition = (MtConnectAdapterTagDefinition) tag.definition();
+        final MtConnectAdapterTagDefinition definition = (MtConnectAdapterTagDefinition) tag.getDefinition();
         final MtConnectData mtConnectData = new MtConnectData(definition.getUrl(),
                 isStatusCodeSuccessful(httpResponse.statusCode()),
-                tag.name());
+                tag.getName());
         if (mtConnectData.isSuccessful()) {
             // Let's make sure the response body is XML.
             final Optional<String> optionalContentType = httpResponse.headers().firstValue(HEADER_CONTENT_TYPE);

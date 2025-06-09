@@ -125,11 +125,11 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7SpecificAdapterCon
 
     @Override
     protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xTag tag) {
-        final String tagAddress = tag.definition().getTagAddress();
+        final String tagAddress = tag.getDefinition().getTagAddress();
 
-        final String formattedAddress = String.format("%s%s%s", tagAddress, ":", tag.definition().getDataType());
+        final String formattedAddress = String.format("%s%s%s", tagAddress, ":", tag.getDefinition().getDataType());
 
-        if (SPECIAL_ADDRESS_SCHEME_TYPES.contains(tag.definition().getDataType())) {
+        if (SPECIAL_ADDRESS_SCHEME_TYPES.contains(tag.getDefinition().getDataType())) {
             //correct Siemens` addressing scheme into a valid Plc4x addressing scheme (example replacement: %IW20 -> %IX20)
             if (SHORT_BLOCK_ADDRESS_PATTERN.matcher(formattedAddress).matches()) {
                 return formattedAddress;

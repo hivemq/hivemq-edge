@@ -38,7 +38,7 @@ public class FileDataPoint implements DataPoint {
 
     @Override
     public @NotNull String getTagName() {
-        return tag.name();
+        return tag.getName();
     }
 
     public @NotNull FileTag getTag() {

@@ -61,7 +61,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.adapterInformation = adapterInformation;
         this.protocolAdapterState = input.getProtocolAdapterState();
         final List<OpcuaTag> tagList = input.getTags().stream().map(tag -> (OpcuaTag) tag).toList();
-        this.tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::name, tag -> tag));
+        this.tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::getName, tag -> tag));
         this.opcUaClientConnection = new OpcUaClientConnection(input.getConfig().getUri(),
                 tagList,
                 input.getConfig(),
@@ -158,7 +158,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                                     log.error("Exception while writing tag '{}'", writeContext.getTagName(), throwable);
                                     output.fail(throwable, null);
                                 } else {
-                                    log.debug("Wrote tag='{}'", opcuaTag.name());
+                                    log.debug("Wrote tag='{}'", opcuaTag.getName());
                                     output.finish();
                                 }
                             });

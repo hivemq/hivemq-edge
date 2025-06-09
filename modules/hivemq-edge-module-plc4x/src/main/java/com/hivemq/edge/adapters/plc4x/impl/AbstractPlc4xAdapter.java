@@ -232,8 +232,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
     protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xTag tag) {
-        final String tagAddress = tag.definition().getTagAddress();
-        return String.format("%s%s%s", tagAddress, TAG_ADDRESS_TYPE_SEP, tag.definition().getDataType());
+        final String tagAddress = tag.getDefinition().getTagAddress();
+        return String.format("%s%s%s", tagAddress, TAG_ADDRESS_TYPE_SEP, tag.getDefinition().getDataType());
     }
 
 
@@ -263,7 +263,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             final @NotNull List<Plc4xTag> tags, final @NotNull PlcReadResponse readEvent) {
         //it is possible that the read response does not contain any values at all, leading to unexpected error states
         if (readEvent instanceof DefaultPlcReadResponse event) {
-            if (tags.stream().allMatch(tag -> event.getResponseCode(tag.name()) == PlcResponseCode.OK)) {
+            if (tags.stream().allMatch(tag -> event.getResponseCode(tag.getName()) == PlcResponseCode.OK)) {
                 if (protocolAdapterState.getConnectionStatus() == ProtocolAdapterState.ConnectionStatus.ERROR) {
                     //Error was transient
                     protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
