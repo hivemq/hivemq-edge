@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.opcua.southbound;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -78,189 +77,7 @@ public class JsonToOpcUAConverter {
         } catch (final UaException e) {
             throw new RuntimeException(e);
         }
-        this.jsonSchemaGenerator = new JsonSchemaGenerator(client, new ObjectMapper());
-    }
-
-    public @NotNull Object convertToOpcUAValue(
-            final @NotNull JsonNode rootNode, final @NotNull NodeId destinationNodeId) {
-        log.debug("Convert json '{}' to opcua compatible object for destination nodeId '{}'.",
-                rootNode,
-                destinationNodeId);
-        try {
-            final NodeId dataTypeNodeId = client.getAddressSpace().getVariableNode(destinationNodeId).getDataType();
-            if (dataTypeNodeId == null) {
-                log.warn("No dataType-nodeId was found for the destination nodeId '{}'.", destinationNodeId);
-                throw new RuntimeException("No dataType-nodeId was found for the destination nodeId " +
-                        destinationNodeId +
-                        "'");
-            }
-            log.debug("Destination NodeId '{}' has DataType NodeId '{}'.", destinationNodeId, dataTypeNodeId);
-
-            final var dataType = tree.getDataType(dataTypeNodeId);
-            if (dataType == null) {
-                log.warn("No data type was found in the DataTypeTree for dataType with nodeId '{}'.", dataTypeNodeId);
-                throw new RuntimeException("No data type was found in the DataTypeTree for node id '" +
-                        dataTypeNodeId +
-                        "'");
-            }
-            log.debug("DataType NodeId '{}' represents data type '{}'.", dataTypeNodeId, dataType.getBrowseName().getName());
-
-            final var builtinType = tree.getBuiltinType(dataType.getNodeId());
-            log.debug(
-                    "Destination Node '{}' has DataType NodeId '{}' representing DataType '{}' with builtin type '{}'. The Json '{}' is parsed to this.",
-                    destinationNodeId,
-                    dataTypeNodeId,
-                    dataType,
-                    builtinType,
-                    rootNode);
-            if (builtinType != OpcUaDataType.ExtensionObject) {
-                if(rootNode.isArray()) {
-                    return generateArrayFromArrayNode((ArrayNode) rootNode, builtinType);
-                } else {
-                    return parsetoOpcUAObject(builtinType, rootNode);
-                }
-            }
-
-            final var field = jsonSchemaGenerator.processExtensionObject(dataType, true, null);
-
-            final var datatTypesToRegister = new ArrayList<DataType>();
-            collectCustomDatatypes(field, datatTypesToRegister);
-            datatTypesToRegister.forEach(dataTypeToRegister -> {
-                try {
-                    client.getStaticDataTypeManager()
-                        .registerType(
-                                dataTypeToRegister.getNodeId(),
-                                new DynamicStructCodec(dataTypeToRegister, client.getDataTypeTree()),
-                                dataTypeToRegister.getBinaryEncodingId(),
-                                null,
-                                null
-                        );
-                } catch (final UaException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-
-            final LinkedHashMap<String, Object> dataTypeMap = new LinkedHashMap<>();
-            field.nestedFields()
-                    .forEach(nestedField -> {
-                        final var key = nestedField.name();
-                        final var jsonNode = rootNode.get(key);
-                        dataTypeMap.put(nestedField.name(), parseToOpcUACompatibleObject(jsonNode, nestedField));
-                    });
-
-            return ExtensionObject.encode(client.getDynamicEncodingContext(), new DynamicStructType(dataType, dataTypeMap));
-
-        } catch (final UaException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void collectCustomDatatypes(final @NotNull JsonSchemaGenerator.FieldInformation fieldInformation, final @NotNull List<DataType> result) {
-        if(fieldInformation.customDataType() != null) {
-            result.add(fieldInformation.customDataType());
-        }
-        if(fieldInformation.nestedFields() != null) {
-            for (final JsonSchemaGenerator.FieldInformation nestedField : fieldInformation.nestedFields()) {
-                collectCustomDatatypes(nestedField, result);
-            }
-        }
-    }
-
-
-    private @NotNull Object parseToOpcUACompatibleObject(
-            final @NotNull JsonNode jsonNode, final @NotNull JsonSchemaGenerator.FieldInformation fieldType) {
-        final OpcUaDataType builtinDataType = fieldType.dataType();
-
-        if (builtinDataType == OpcUaDataType.ExtensionObject || fieldType.customDataType() != null) {
-            final String namespaceURI = fieldType.namespaceUri();
-            final ExpandedNodeId expandedNodeId = ExpandedNodeId.of(namespaceURI, fieldType.customDataType().getBrowseName().getName());
-
-            final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
-            if (optionalDataTypeId.isEmpty()) {
-                log.warn("Expanded node id '{}}' could not be parsed to node id.", expandedNodeId);
-                throw new RuntimeException("Expanded node id '" + expandedNodeId + "' could not be parsed to node id.");
-            }
-
-            final NodeId dataTypeId = optionalDataTypeId.get();
-            final DataType dataType = tree.getDataType(dataTypeId);
-
-            if (dataType == null) {
-                log.warn("No data type was found in the DataTypeTree for dataType with nodeId '{}'.", dataTypeId);
-                throw new RuntimeException("No data type was found in the DataTypeTree for node id '" +
-                        dataTypeId +
-                        "'");
-            }
-
-            final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
-            log.debug(
-                    "FieldType '{}' with ExpandedNodeId '{}' resolved to DataType NodeId '{}' representing DataType '{}', which has BinaryEncodingId '{}' and represents the builtin type '{}'. The Json '{}' is parsed to this.",
-                    fieldType,
-                    expandedNodeId,
-                    dataTypeId,
-                    dataType,
-                    binaryEncodingId,
-                    builtinDataType,
-                    jsonNode);
-
-            if (binaryEncodingId == null) {
-                throw new IllegalStateException("Binary encoding id was null for nested struct.");
-            }
-            return extractExtensionObject(jsonNode, fieldType);
-        }
-
-        return parsetoOpcUAObject(builtinDataType, jsonNode);
-    }
-
-    private @NotNull Object parsetoOpcUAObject(
-            final @NotNull OpcUaDataType builtinDataType, final @NotNull JsonNode jsonNode) {
-
-        return switch (builtinDataType) {
-            case Boolean -> extractBoolean(jsonNode);
-            case Byte -> extractUnsignedByte(jsonNode);
-            case SByte -> extractSByte(jsonNode);
-            case UInt16 -> extractUShort(jsonNode);
-            case UInt32 -> extractUInteger(jsonNode);
-            case Int16 -> extractSignedShort(jsonNode);
-            case Int32 -> extractSignedInteger(jsonNode);
-            case Int64 -> extractLong(jsonNode);
-            case UInt64 -> extractUnsignedLong(jsonNode);
-            case Float -> extractFloat(jsonNode);
-            case Double -> extractDouble(jsonNode);
-            case String -> extractString(jsonNode);
-            case DateTime -> extractDateTime(jsonNode);
-            case Guid -> extractGuid(jsonNode);
-            case ByteString -> extractByteString(jsonNode);
-            case XmlElement -> extractXmlElement(jsonNode);
-            case NodeId -> extractNodeId(jsonNode);
-            case ExpandedNodeId -> extractExpandedNodeId(jsonNode);
-            case StatusCode -> extractStatusCode(jsonNode);
-            case QualifiedName -> extractQualifiedName(jsonNode);
-            case LocalizedText -> extractLocalizedText(jsonNode);
-            case DataValue -> throw new NotImplementedException(); // TODO DataValue is too complex for now
-            case Variant -> throw new NotImplementedException(); // TODO Variant is too complex for now
-            case DiagnosticInfo -> {
-                log.error("DiagnosticInfo is not supported for writing to OPCUA. This is a readonly type.");
-                throw new NotImplementedException();
-            }
-            default -> throw createException(jsonNode, builtinDataType.name());
-        };
-    }
-
-    private @NotNull DynamicStructType extractExtensionObject(
-            final @NotNull JsonNode jsonNode, final @NotNull JsonSchemaGenerator.FieldInformation fieldInformation) {
-
-        final var fields = new LinkedHashMap<String, Object>();
-        fieldInformation.nestedFields().forEach(field -> {
-            final String key = field.name();
-            final JsonNode nestedObjectNode = jsonNode.get(key);
-            if (nestedObjectNode == null) {
-                throw new RuntimeException("No nested json was found for key '" + key + "'.");
-            }
-            final Object parsed = parseToOpcUACompatibleObject(nestedObjectNode, field);
-            fields.put(key, parsed);
-        });
-
-        return new DynamicStructType(fieldInformation.customDataType(), fields);
+        this.jsonSchemaGenerator = new JsonSchemaGenerator(client);
     }
 
     private static LocalizedText extractLocalizedText(final JsonNode jsonNode) {
@@ -359,7 +176,6 @@ public class JsonToOpcUAConverter {
         }
         throw createException(jsonNode, OpcUaDataType.String.name());
     }
-
 
     static double extractDouble(final JsonNode jsonNode) {
         if (jsonNode.isDouble()) {
@@ -505,7 +321,8 @@ public class JsonToOpcUAConverter {
     }
 
     static @NotNull IllegalArgumentException createException(
-            final @NotNull Object value, final @NotNull String intendedClass) {
+            final @NotNull Object value,
+            final @NotNull String intendedClass) {
         log.warn("Can not convert '{}' of class '{}' to '{}'..",
                 value,
                 value.getClass().getSimpleName(),
@@ -520,7 +337,8 @@ public class JsonToOpcUAConverter {
     }
 
     static @NotNull IllegalArgumentException createOverflowException(
-            final @NotNull Object value, final @NotNull String intendedClass) {
+            final @NotNull Object value,
+            final @NotNull String intendedClass) {
         log.warn("Conversion error: The value  '{}' of type '{}' cannot be converted to '{}' due to overflow.",
                 value,
                 value.getClass().getSimpleName(),
@@ -535,7 +353,8 @@ public class JsonToOpcUAConverter {
     }
 
     static @NotNull IllegalArgumentException createUnderflowException(
-            final @NotNull Object value, final @NotNull String intendedClass) {
+            final @NotNull Object value,
+            final @NotNull String intendedClass) {
         log.warn("Conversion error: The value  '{}' of type '{}' cannot be converted to '{}' due to underflow.",
                 value,
                 value.getClass().getSimpleName(),
@@ -549,8 +368,198 @@ public class JsonToOpcUAConverter {
                 "due to underflow.");
     }
 
-    private Object[] generateArrayFromArrayNode(final @NotNull ArrayNode arrayNode, final @NotNull OpcUaDataType type) {
-        final Object[] ret = (Object[])Array.newInstance(type.getBackingClass(), arrayNode.size());
+    public @NotNull Object convertToOpcUAValue(
+            final @NotNull JsonNode rootNode,
+            final @NotNull NodeId destinationNodeId) {
+        log.debug("Convert json '{}' to opcua compatible object for destination nodeId '{}'.",
+                rootNode,
+                destinationNodeId);
+        try {
+            final NodeId dataTypeNodeId = client.getAddressSpace().getVariableNode(destinationNodeId).getDataType();
+            if (dataTypeNodeId == null) {
+                log.warn("No dataType-nodeId was found for the destination nodeId '{}'.", destinationNodeId);
+                throw new RuntimeException("No dataType-nodeId was found for the destination nodeId " +
+                        destinationNodeId +
+                        "'");
+            }
+            log.debug("Destination NodeId '{}' has DataType NodeId '{}'.", destinationNodeId, dataTypeNodeId);
+
+            final var dataType = tree.getDataType(dataTypeNodeId);
+            if (dataType == null) {
+                log.warn("No data type was found in the DataTypeTree for dataType with nodeId '{}'.", dataTypeNodeId);
+                throw new RuntimeException("No data type was found in the DataTypeTree for node id '" +
+                        dataTypeNodeId +
+                        "'");
+            }
+            log.debug("DataType NodeId '{}' represents data type '{}'.",
+                    dataTypeNodeId,
+                    dataType.getBrowseName().getName());
+
+            final var builtinType = tree.getBuiltinType(dataType.getNodeId());
+            log.debug(
+                    "Destination Node '{}' has DataType NodeId '{}' representing DataType '{}' with builtin type '{}'. The Json '{}' is parsed to this.",
+                    destinationNodeId,
+                    dataTypeNodeId,
+                    dataType,
+                    builtinType,
+                    rootNode);
+            if (builtinType != OpcUaDataType.ExtensionObject) {
+                if (rootNode.isArray()) {
+                    return generateArrayFromArrayNode((ArrayNode) rootNode, builtinType);
+                } else {
+                    return parsetoOpcUAObject(builtinType, rootNode);
+                }
+            }
+
+            final var field = jsonSchemaGenerator.processExtensionObject(dataType, true, null);
+
+            final var datatTypesToRegister = new ArrayList<DataType>();
+            collectCustomDatatypes(field, datatTypesToRegister);
+            datatTypesToRegister.forEach(dataTypeToRegister -> {
+                try {
+                    client.getStaticDataTypeManager()
+                            .registerType(dataTypeToRegister.getNodeId(),
+                                    new DynamicStructCodec(dataTypeToRegister, client.getDataTypeTree()),
+                                    dataTypeToRegister.getBinaryEncodingId(),
+                                    null,
+                                    null);
+                } catch (final UaException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            final LinkedHashMap<String, Object> dataTypeMap = new LinkedHashMap<>();
+            field.nestedFields().forEach(nestedField -> {
+                final var key = nestedField.name();
+                final var jsonNode = rootNode.get(key);
+                dataTypeMap.put(nestedField.name(), parseToOpcUACompatibleObject(jsonNode, nestedField));
+            });
+
+            return ExtensionObject.encode(client.getDynamicEncodingContext(),
+                    new DynamicStructType(dataType, dataTypeMap));
+
+        } catch (final UaException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void collectCustomDatatypes(
+            final @NotNull JsonSchemaGenerator.FieldInformation fieldInformation,
+            final @NotNull List<DataType> result) {
+        if (fieldInformation.customDataType() != null) {
+            result.add(fieldInformation.customDataType());
+        }
+        if (fieldInformation.nestedFields() != null) {
+            for (final JsonSchemaGenerator.FieldInformation nestedField : fieldInformation.nestedFields()) {
+                collectCustomDatatypes(nestedField, result);
+            }
+        }
+    }
+
+    private @NotNull Object parseToOpcUACompatibleObject(
+            final @NotNull JsonNode jsonNode,
+            final @NotNull JsonSchemaGenerator.FieldInformation fieldType) {
+        final OpcUaDataType builtinDataType = fieldType.dataType();
+
+        if (builtinDataType == OpcUaDataType.ExtensionObject || fieldType.customDataType() != null) {
+            final String namespaceURI = fieldType.namespaceUri();
+            final ExpandedNodeId expandedNodeId =
+                    ExpandedNodeId.of(namespaceURI, fieldType.customDataType().getBrowseName().getName());
+
+            final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
+            if (optionalDataTypeId.isEmpty()) {
+                log.warn("Expanded node id '{}}' could not be parsed to node id.", expandedNodeId);
+                throw new RuntimeException("Expanded node id '" + expandedNodeId + "' could not be parsed to node id.");
+            }
+
+            final NodeId dataTypeId = optionalDataTypeId.get();
+            final DataType dataType = tree.getDataType(dataTypeId);
+
+            if (dataType == null) {
+                log.warn("No data type was found in the DataTypeTree for dataType with nodeId '{}'.", dataTypeId);
+                throw new RuntimeException("No data type was found in the DataTypeTree for node id '" +
+                        dataTypeId +
+                        "'");
+            }
+
+            final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
+            log.debug(
+                    "FieldType '{}' with ExpandedNodeId '{}' resolved to DataType NodeId '{}' representing DataType '{}', which has BinaryEncodingId '{}' and represents the builtin type '{}'. The Json '{}' is parsed to this.",
+                    fieldType,
+                    expandedNodeId,
+                    dataTypeId,
+                    dataType,
+                    binaryEncodingId,
+                    builtinDataType,
+                    jsonNode);
+
+            if (binaryEncodingId == null) {
+                throw new IllegalStateException("Binary encoding id was null for nested struct.");
+            }
+            return extractExtensionObject(jsonNode, fieldType);
+        }
+
+        return parsetoOpcUAObject(builtinDataType, jsonNode);
+    }
+
+    private @NotNull Object parsetoOpcUAObject(
+            final @NotNull OpcUaDataType builtinDataType,
+            final @NotNull JsonNode jsonNode) {
+
+        return switch (builtinDataType) {
+            case Boolean -> extractBoolean(jsonNode);
+            case Byte -> extractUnsignedByte(jsonNode);
+            case SByte -> extractSByte(jsonNode);
+            case UInt16 -> extractUShort(jsonNode);
+            case UInt32 -> extractUInteger(jsonNode);
+            case Int16 -> extractSignedShort(jsonNode);
+            case Int32 -> extractSignedInteger(jsonNode);
+            case Int64 -> extractLong(jsonNode);
+            case UInt64 -> extractUnsignedLong(jsonNode);
+            case Float -> extractFloat(jsonNode);
+            case Double -> extractDouble(jsonNode);
+            case String -> extractString(jsonNode);
+            case DateTime -> extractDateTime(jsonNode);
+            case Guid -> extractGuid(jsonNode);
+            case ByteString -> extractByteString(jsonNode);
+            case XmlElement -> extractXmlElement(jsonNode);
+            case NodeId -> extractNodeId(jsonNode);
+            case ExpandedNodeId -> extractExpandedNodeId(jsonNode);
+            case StatusCode -> extractStatusCode(jsonNode);
+            case QualifiedName -> extractQualifiedName(jsonNode);
+            case LocalizedText -> extractLocalizedText(jsonNode);
+            case DataValue -> throw new NotImplementedException(); // TODO DataValue is too complex for now
+            case Variant -> throw new NotImplementedException(); // TODO Variant is too complex for now
+            case DiagnosticInfo -> {
+                log.error("DiagnosticInfo is not supported for writing to OPCUA. This is a readonly type.");
+                throw new NotImplementedException();
+            }
+            default -> throw createException(jsonNode, builtinDataType.name());
+        };
+    }
+
+    private @NotNull DynamicStructType extractExtensionObject(
+            final @NotNull JsonNode jsonNode,
+            final @NotNull JsonSchemaGenerator.FieldInformation fieldInformation) {
+
+        final var fields = new LinkedHashMap<String, Object>();
+        fieldInformation.nestedFields().forEach(field -> {
+            final String key = field.name();
+            final JsonNode nestedObjectNode = jsonNode.get(key);
+            if (nestedObjectNode == null) {
+                throw new RuntimeException("No nested json was found for key '" + key + "'.");
+            }
+            final Object parsed = parseToOpcUACompatibleObject(nestedObjectNode, field);
+            fields.put(key, parsed);
+        });
+
+        return new DynamicStructType(fieldInformation.customDataType(), fields);
+    }
+
+    private @NotNull Object @NotNull [] generateArrayFromArrayNode(
+            final @NotNull ArrayNode arrayNode,
+            final @NotNull OpcUaDataType type) {
+        final Object[] ret = (Object[]) Array.newInstance(type.getBackingClass(), arrayNode.size());
 
         for (int i = 0; i < arrayNode.size(); i++) {
             final JsonNode arrayEntry = arrayNode.get(i);
