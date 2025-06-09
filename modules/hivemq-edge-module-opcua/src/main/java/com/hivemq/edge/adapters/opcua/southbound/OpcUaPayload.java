@@ -20,4 +20,5 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import org.jetbrains.annotations.NotNull;
 
-public record OpcUaPayload(@JsonProperty("value") @NotNull JsonNode value) implements WritingPayload {}
+public record OpcUaPayload(@JsonProperty("value") @NotNull JsonNode value) implements WritingPayload {
+}

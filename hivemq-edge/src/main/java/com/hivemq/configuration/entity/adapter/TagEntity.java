@@ -74,9 +74,9 @@ public class TagEntity implements EntityValidatable {
 
     public static TagEntity fromAdapterTag(final @NotNull Tag tag, final @NotNull ObjectMapper objectMapper) {
         final Map<String, Object> definitionAsMap =
-                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {
+                objectMapper.convertValue(tag.definition(), new TypeReference<>() {
                 });
-        return new TagEntity(tag.getName(), tag.getDescription(), definitionAsMap);
+        return new TagEntity(tag.name(), tag.description(), definitionAsMap);
     }
 
 

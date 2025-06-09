@@ -161,7 +161,7 @@ public class MtConnectProtocolAdapterTest {
         adapter.httpClient = httpClient;
         assertThat(adapter).as("Adapter shouldn't be null").isNotNull();
         assertThat(adapter.tags).as("Tags should not be empty").isNotEmpty();
-        assertThat(adapter.tags.stream().anyMatch(tag -> "tagName".equals(tag.getName()))).isTrue();
+        assertThat(adapter.tags.stream().anyMatch(tag -> "tagName".equals(tag.name()))).isTrue();
         assertThat(adapter.getId()).as("ID should be 'test'").isEqualTo("streams");
         adapter.start(startInput, startOutput);
         adapter.poll(pollingInput, pollingOutput);
@@ -219,7 +219,7 @@ public class MtConnectProtocolAdapterTest {
         adapter.httpClient = httpClient;
         assertThat(adapter).as("Adapter shouldn't be null").isNotNull();
         assertThat(adapter.tags).as("Tags should not be empty").isNotEmpty();
-        assertThat(adapter.tags.stream().anyMatch(tag -> "tagName".equals(tag.getName()))).isTrue();
+        assertThat(adapter.tags.stream().anyMatch(tag -> "tagName".equals(tag.name()))).isTrue();
         assertThat(adapter.getId()).as("ID should be 'test'").isEqualTo("streams");
         adapter.start(startInput, startOutput);
         adapter.poll(pollingInput, pollingOutput);

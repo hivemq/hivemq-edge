@@ -37,7 +37,7 @@ import java.util.List;
 
 public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformation {
 
-    public static final ProtocolAdapterInformation INSTANCE = new OpcUaProtocolAdapterInformation();
+    public static final @NotNull ProtocolAdapterInformation INSTANCE = new OpcUaProtocolAdapterInformation();
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapterInformation.class);
 
@@ -100,7 +100,7 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
         return EnumSet.of(ProtocolAdapterCapability.READ,
                 ProtocolAdapterCapability.WRITE,
                 ProtocolAdapterCapability.DISCOVER,
-                ProtocolAdapterCapability.COMBINE);
+                ProtocolAdapterCapability.COMBINE); // all of them
     }
 
     @Override

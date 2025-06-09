@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, Optional<EndpointDescription>> {
-    private static final Logger log = LoggerFactory.getLogger(OpcUaEndpointFilter.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaEndpointFilter.class);
 
     private final @NotNull String adapterId;
     private final @NotNull String configPolicyUri;
@@ -54,7 +54,8 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
             if (policyUri.equals(SecurityPolicy.None.getUri())) {
                 return true;
             }
-            if (isKeystoreConfigured()) {
+            if (adapterConfig.getTls().isEnabled() &&
+                    adapterConfig.getTls().getKeystore() != null) {
                 //if security policy is not 'None', then skip the policy if no keystore is available
                 return true;
             }
@@ -75,7 +76,7 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
         }).map(this::endpointUpdater);
     }
 
-    private EndpointDescription endpointUpdater(final EndpointDescription endpoint) {
+    private @NotNull EndpointDescription endpointUpdater(final @NotNull EndpointDescription endpoint) {
         if (adapterConfig.getOverrideUri()) {
             final EndpointDescription endpointDescription = EndpointUtil.updateUrl(endpoint,
                     EndpointUtil.getHost(adapterConfig.getUri()),
@@ -84,10 +85,5 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
             return endpointDescription;
         }
         return endpoint;
-    }
-
-    private boolean isKeystoreConfigured() {
-        return adapterConfig.getTls().isEnabled() &&
-                adapterConfig.getTls().getKeystore() != null;
     }
 }
