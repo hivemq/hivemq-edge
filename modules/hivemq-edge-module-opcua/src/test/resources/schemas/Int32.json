@@ -1,0 +1,13 @@
+{
+  "$schema" : "https://json-schema.org/draft/2019-09/schema",
+  "title" : "Int32 JsonSchema",
+  "type" : "object",
+  "properties" : {
+    "value" : {
+      "type" : "integer",
+      "minimum" : -2147483648,
+      "maximum" : 2147483647
+    }
+  },
+  "required" : [ "value" ]
+}

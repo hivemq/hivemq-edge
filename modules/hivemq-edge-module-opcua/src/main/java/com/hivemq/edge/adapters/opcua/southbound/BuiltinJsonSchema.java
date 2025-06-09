@@ -33,6 +33,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,12 +54,14 @@ import static com.hivemq.edge.adapters.opcua.Constants.TYPE;
 public class BuiltinJsonSchema {
     static final @NotNull String SCHEMA_URI = "https://json-schema.org/draft/2019-09/schema";
     static final @NotNull ObjectMapper MAPPER = new ObjectMapper();
-    private static final @NotNull Logger log = LoggerFactory.getLogger("com.hivemq.edge.write.BuiltinJsonSchema");
+    private static final @NotNull Logger log = LoggerFactory.getLogger(BuiltinJsonSchema.class);
     private static final @NotNull Map<OpcUaDataType, JsonNode> BUILT_IN_TYPES;
 
     static {
         try {
             final Map<OpcUaDataType, JsonNode> types = new HashMap<>();
+
+            // unsupported types: ExtensionObject, DataValue, Variant, DiagnosticInfo
 
             types.put(OpcUaDataType.Boolean,
                     createJsonSchemaForBuiltinType("Boolean JsonSchema", OpcUaDataType.Boolean));
@@ -277,7 +280,7 @@ public class BuiltinJsonSchema {
         return rootNode;
     }
 
-    static @NotNull JsonNode createJsonSchemaForBuiltInType(final @NotNull OpcUaDataType builtinDataType) {
+    static @Nullable JsonNode createJsonSchemaForBuiltInType(final @NotNull OpcUaDataType builtinDataType) {
         return BUILT_IN_TYPES.get(builtinDataType);
     }
 }
