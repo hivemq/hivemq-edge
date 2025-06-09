@@ -1,7 +1,6 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
@@ -307,8 +306,7 @@ public class OpcUaClientConnection {
     }
 
     public @NotNull CompletableFuture<Optional<JsonNode>> createTagSchema(final @NotNull OpcuaTag tag) {
-        return new JsonSchemaGenerator(requireNonNull(opcUaClientInstance).client(),
-                new ObjectMapper()).createMqttPayloadJsonSchema(tag);
+        return new JsonSchemaGenerator(requireNonNull(opcUaClientInstance).client()).createMqttPayloadJsonSchema(tag);
     }
 
     private @NotNull ServiceFaultListener createServiceFaultListener() {

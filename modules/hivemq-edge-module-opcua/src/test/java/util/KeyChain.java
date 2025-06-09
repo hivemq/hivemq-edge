@@ -11,7 +11,6 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -133,24 +132,6 @@ public class KeyChain {
         return new GeneratedCert(cert, certKeyPair);
     }
 
-//    public @NotNull File wrapInTrustStore(final @NotNull String trustStore) throws Exception {
-//        final KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
-//        keyStore.load(null, null);
-//        keyStore.setCertificateEntry(CN_ROOT, root.certificate());
-//        keyStore.setCertificateEntry(CN_ISSUER, issuer.certificate());
-//        for (final Map.Entry<String, GeneratedCert> entry : leafCerts.entrySet()) {
-//            keyStore.setCertificateEntry(entry.getKey(), entry.getValue().certificate());
-//        }
-//
-//        final File keyStoreFile = File.createTempFile(trustStore + KEYSTORE_FILE_EXT, null);
-//        keyStoreFile.deleteOnExit();
-//        try (final FileOutputStream fos = new FileOutputStream(keyStoreFile)) {
-//            keyStore.store(fos, "password".toCharArray());
-//        }
-//        return keyStoreFile;
-//    }
-
-    @TestOnly
     public @NotNull File wrapInKeyStoreWithPrivateKey(
             final @NotNull String filename,
             final @NotNull String cnName,

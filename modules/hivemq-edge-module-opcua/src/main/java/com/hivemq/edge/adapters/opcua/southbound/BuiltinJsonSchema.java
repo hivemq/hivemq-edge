@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 import static com.hivemq.edge.adapters.opcua.Constants.ARRAY_ITEMS;
 import static com.hivemq.edge.adapters.opcua.Constants.ARRAY_MAX_TIMES;
@@ -50,76 +51,66 @@ import static com.hivemq.edge.adapters.opcua.Constants.STRING_DATA_TYPE;
 import static com.hivemq.edge.adapters.opcua.Constants.TYPE;
 
 public class BuiltinJsonSchema {
-
-    private static final @NotNull ObjectMapper MAPPER = new ObjectMapper();
+    static final @NotNull String SCHEMA_URI = "https://json-schema.org/draft/2019-09/schema";
+    static final @NotNull ObjectMapper MAPPER = new ObjectMapper();
     private static final @NotNull Logger log = LoggerFactory.getLogger("com.hivemq.edge.write.BuiltinJsonSchema");
+    private static final @NotNull Map<OpcUaDataType, JsonNode> BUILT_IN_TYPES;
 
-    private final @NotNull HashMap<OpcUaDataType, JsonNode> builtInTypes = new HashMap<>();
-
-    public BuiltinJsonSchema() {
+    static {
         try {
-            builtInTypes.put(OpcUaDataType.Boolean,
+            final Map<OpcUaDataType, JsonNode> types = new HashMap<>();
+
+            types.put(OpcUaDataType.Boolean,
                     createJsonSchemaForBuiltinType("Boolean JsonSchema", OpcUaDataType.Boolean));
 
-            builtInTypes.put(OpcUaDataType.SByte,
-                    createJsonSchemaForBuiltinType("SByte JsonSchema", OpcUaDataType.SByte));
-            builtInTypes.put(OpcUaDataType.Byte, createJsonSchemaForBuiltinType("Byte JsonSchema", OpcUaDataType.Byte));
+            types.put(OpcUaDataType.SByte, createJsonSchemaForBuiltinType("SByte JsonSchema", OpcUaDataType.SByte));
+            types.put(OpcUaDataType.Byte, createJsonSchemaForBuiltinType("Byte JsonSchema", OpcUaDataType.Byte));
 
-            builtInTypes.put(OpcUaDataType.UInt64,
-                    createJsonSchemaForBuiltinType("UInt64 JsonSchema", OpcUaDataType.UInt64));
-            builtInTypes.put(OpcUaDataType.UInt32,
-                    createJsonSchemaForBuiltinType("UInt32 JsonSchema", OpcUaDataType.UInt32));
-            builtInTypes.put(OpcUaDataType.UInt16,
-                    createJsonSchemaForBuiltinType("UInt16 JsonSchema", OpcUaDataType.UInt16));
+            types.put(OpcUaDataType.UInt64, createJsonSchemaForBuiltinType("UInt64 JsonSchema", OpcUaDataType.UInt64));
+            types.put(OpcUaDataType.UInt32, createJsonSchemaForBuiltinType("UInt32 JsonSchema", OpcUaDataType.UInt32));
+            types.put(OpcUaDataType.UInt16, createJsonSchemaForBuiltinType("UInt16 JsonSchema", OpcUaDataType.UInt16));
 
-            builtInTypes.put(OpcUaDataType.Int64,
-                    createJsonSchemaForBuiltinType("Int64 JsonSchema", OpcUaDataType.Int64));
-            builtInTypes.put(OpcUaDataType.Int32,
-                    createJsonSchemaForBuiltinType("Int32 JsonSchema", OpcUaDataType.Int32));
-            builtInTypes.put(OpcUaDataType.Int16,
-                    createJsonSchemaForBuiltinType("Int16 JsonSchema", OpcUaDataType.Int16));
+            types.put(OpcUaDataType.Int64, createJsonSchemaForBuiltinType("Int64 JsonSchema", OpcUaDataType.Int64));
+            types.put(OpcUaDataType.Int32, createJsonSchemaForBuiltinType("Int32 JsonSchema", OpcUaDataType.Int32));
+            types.put(OpcUaDataType.Int16, createJsonSchemaForBuiltinType("Int16 JsonSchema", OpcUaDataType.Int16));
 
-            builtInTypes.put(OpcUaDataType.Float,
-                    createJsonSchemaForBuiltinType("Float JsonSchema", OpcUaDataType.Float));
-            builtInTypes.put(OpcUaDataType.Double,
-                    createJsonSchemaForBuiltinType("Double JsonSchema", OpcUaDataType.Double));
-            builtInTypes.put(OpcUaDataType.String,
-                    createJsonSchemaForBuiltinType("String JsonSchema", OpcUaDataType.String));
+            types.put(OpcUaDataType.Float, createJsonSchemaForBuiltinType("Float JsonSchema", OpcUaDataType.Float));
+            types.put(OpcUaDataType.Double, createJsonSchemaForBuiltinType("Double JsonSchema", OpcUaDataType.Double));
+            types.put(OpcUaDataType.String, createJsonSchemaForBuiltinType("String JsonSchema", OpcUaDataType.String));
 
-            builtInTypes.put(OpcUaDataType.DateTime,
+            types.put(OpcUaDataType.DateTime,
                     createJsonSchemaForBuiltinType("DateTime JsonSchema", OpcUaDataType.DateTime));
 
-            builtInTypes.put(OpcUaDataType.Guid,
-                    createJsonSchemaForBuiltinType("Guid JsonSchema", OpcUaDataType.String));
-            builtInTypes.put(OpcUaDataType.ByteString,
+            types.put(OpcUaDataType.Guid, createJsonSchemaForBuiltinType("Guid JsonSchema", OpcUaDataType.String));
+            types.put(OpcUaDataType.ByteString,
                     createJsonSchemaForBuiltinType("ByteString JsonSchema", OpcUaDataType.String));
-            builtInTypes.put(OpcUaDataType.XmlElement,
+            types.put(OpcUaDataType.XmlElement,
                     createJsonSchemaForBuiltinType("XmlElement JsonSchema", OpcUaDataType.String));
 
-            builtInTypes.put(OpcUaDataType.QualifiedName,
+            types.put(OpcUaDataType.QualifiedName,
                     createJsonSchemaForBuiltinType("QualifiedName JsonSchema", OpcUaDataType.QualifiedName));
 
-            builtInTypes.put(OpcUaDataType.NodeId,
-                    createJsonSchemaForBuiltinType("XmlElement NodeId", OpcUaDataType.String));
-            builtInTypes.put(OpcUaDataType.ExpandedNodeId,
+            types.put(OpcUaDataType.NodeId, createJsonSchemaForBuiltinType("XmlElement NodeId", OpcUaDataType.String));
+            types.put(OpcUaDataType.ExpandedNodeId,
                     createJsonSchemaForBuiltinType("ExpandedNodeId JsonSchema", OpcUaDataType.String));
 
-            builtInTypes.put(OpcUaDataType.StatusCode,
+            types.put(OpcUaDataType.StatusCode,
                     createJsonSchemaForBuiltinType("StatusCode JsonSchema", OpcUaDataType.StatusCode));
-            builtInTypes.put(OpcUaDataType.LocalizedText,
+            types.put(OpcUaDataType.LocalizedText,
                     createJsonSchemaForBuiltinType("LocalizedText JsonSchema", OpcUaDataType.String));
-        } catch (final Exception jsonSchemaGenerationException) {
-            log.error("Exception while initializing the JsonSchema for the builtin types:",
-                    jsonSchemaGenerationException);
-            throw new RuntimeException(jsonSchemaGenerationException);
+
+            BUILT_IN_TYPES = Map.copyOf(types);
+        } catch (final Exception e) {
+            log.error("Exception while initializing the JsonSchema for the builtin types:", e);
+            throw new RuntimeException(e);
         }
     }
 
-    public static void populatePropertiesForArray(
+    static void populatePropertiesForArray(
             final @NotNull ObjectNode propertiesNode,
             final @NotNull OpcUaDataType builtinDataType,
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull UInteger[] dimensions) {
+            final @NotNull UInteger @NotNull [] dimensions) {
         if (dimensions.length == 0) {
             throw new IllegalArgumentException("Array of " + builtinDataType.name() + " dimensions must not be empty");
         }
@@ -147,7 +138,7 @@ public class BuiltinJsonSchema {
         }
     }
 
-    public static void populatePropertiesForBuiltinType(
+    static void populatePropertiesForBuiltinType(
             final @NotNull ObjectNode nestedPropertiesNode,
             final @NotNull OpcUaDataType builtinDataType,
             final @NotNull ObjectMapper objectMapper) {
@@ -252,11 +243,12 @@ public class BuiltinJsonSchema {
         final ObjectNode rootNode = MAPPER.createObjectNode();
         final ObjectNode propertiesNode = MAPPER.createObjectNode();
         final ObjectNode valueNode = MAPPER.createObjectNode();
-        rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2019-09/schema"));
+        rootNode.set("$schema", new TextNode(SCHEMA_URI));
         rootNode.set("title", new TextNode(title));
         rootNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
         rootNode.set("properties", propertiesNode);
         propertiesNode.set("value", valueNode);
+
         populatePropertiesForBuiltinType(valueNode, builtinDataType, MAPPER);
 
         final ArrayNode requiredAttributes = MAPPER.createArrayNode();
@@ -265,27 +257,27 @@ public class BuiltinJsonSchema {
         return rootNode;
     }
 
-    public @NotNull JsonNode createJsonSchemaForBuiltInType(final @NotNull OpcUaDataType builtinDataType) {
-        return builtInTypes.get(builtinDataType);
-    }
-
-    public @NotNull JsonNode createJsonSchemaForArrayType(
+    static @NotNull JsonNode createJsonSchemaForArrayType(
             final @NotNull OpcUaDataType builtinDataType,
-            final @NotNull UInteger[] dimensions) {
-
+            final @NotNull UInteger @NotNull [] dimensions) {
         final ObjectNode rootNode = MAPPER.createObjectNode();
         final ObjectNode propertiesNode = MAPPER.createObjectNode();
         final ObjectNode valueNode = MAPPER.createObjectNode();
-        rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2019-09/schema"));
+        rootNode.set("$schema", new TextNode(SCHEMA_URI));
         rootNode.set("title", new TextNode("Array of " + builtinDataType.name() + " JsonSchema"));
         rootNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
         rootNode.set("properties", propertiesNode);
         propertiesNode.set("value", valueNode);
+
         populatePropertiesForArray(valueNode, builtinDataType, MAPPER, dimensions);
 
         final ArrayNode requiredAttributes = MAPPER.createArrayNode();
         requiredAttributes.add("value");
         rootNode.set("required", requiredAttributes);
         return rootNode;
+    }
+
+    static @NotNull JsonNode createJsonSchemaForBuiltInType(final @NotNull OpcUaDataType builtinDataType) {
+        return BUILT_IN_TYPES.get(builtinDataType);
     }
 }
