@@ -329,7 +329,7 @@ public class OpcUaClientConnection {
                 log.info("OPC UA client of protocol adapter '{}' disconnected: {}", adapterId, session);
                 eventService.createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                         .withSeverity(Event.SEVERITY.WARN)
-                        .withPayload(session.getSessionName() + "/" + session.getSessionId())
+                        .withPayload(session.getSessionName() + '/' + session.getSessionId())
                         .withMessage("Adapter '" + adapterId + "' session has been disconnected.")
                         .fire();
                 protocolAdapterState.setConnectionStatus(DISCONNECTED);

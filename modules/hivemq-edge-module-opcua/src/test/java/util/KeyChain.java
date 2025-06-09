@@ -29,8 +29,7 @@ import java.util.Map;
 
 public class KeyChain {
 
-    public static final @NotNull String DOMAIN_PREFIX = "urn:hivemq:edge:";
-
+    private static final @NotNull String DOMAIN_PREFIX = "urn:hivemq:edge:";
     private static final @NotNull String CN_ROOT = "root";
     private static final @NotNull String CN_ISSUER = "issuer";
     private static final @NotNull String KEYPAIR_GEN_ALGO = "RSA";
@@ -158,10 +157,6 @@ public class KeyChain {
             keyStore.store(fos, keyStorePassword.toCharArray());
         }
         return keyStoreFile;
-    }
-
-    public @NotNull GeneratedCert getRoot() {
-        return root;
     }
 
     // To create a certificate chain we need the issuers' certificate and private key. Keep these together to pass around
