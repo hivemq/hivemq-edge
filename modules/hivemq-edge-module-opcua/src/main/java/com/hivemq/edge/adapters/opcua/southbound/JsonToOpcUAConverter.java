@@ -64,7 +64,7 @@ import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.UInt64;
 
 public class JsonToOpcUAConverter {
 
-    private static final @NotNull Logger log = LoggerFactory.getLogger("com.hivemq.edge.write.JsonToOpcUAConverter");
+    private static final @NotNull Logger log = LoggerFactory.getLogger(JsonToOpcUAConverter.class);
 
     private final @NotNull OpcUaClient client;
     private final @NotNull DataTypeTree tree;
