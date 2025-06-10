@@ -369,7 +369,11 @@
       },
       "behaviourPolicy": {
         "notLoading": "Cannot load the existing policies for checking ids",
-        "notUnique": "The id is already in use by another behavior policy"
+        "notUnique": "The id is already in use by another behavior policy",
+        "publishQuota": {
+          "maxLessThanMin": "The maximum publish quota must be greater than or equal to the minimum publish quota",
+          "minMoreThanMax": "The minimum publish quota must be less than or equal to the maximum publish quota"
+        }
       },
       "operation": {
         "notLoading": "Cannot load the existing operations for checking ids",
