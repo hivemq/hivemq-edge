@@ -101,6 +101,7 @@ describe('useGetFilteredFunctionsFetcher', () => {
     type?: DataHubNodeType
     transition?: BehaviorPolicyTransitionEvent
     omitLicense?: boolean
+    isTransformIncluded?: boolean
     expectedMinLength: number
     target: string
   }
@@ -109,6 +110,7 @@ describe('useGetFilteredFunctionsFetcher', () => {
     {
       target: 'default parameters',
       expectedMinLength: 4,
+      isTransformIncluded: true,
     },
     {
       target: 'behavior policy type',
@@ -119,6 +121,7 @@ describe('useGetFilteredFunctionsFetcher', () => {
       target: 'data policy type',
       type: DataHubNodeType.DATA_POLICY,
       expectedMinLength: 4,
+      isTransformIncluded: true,
     },
     {
       target: 'with specific transition event',
@@ -130,22 +133,27 @@ describe('useGetFilteredFunctionsFetcher', () => {
       target: 'without license restrictions',
       omitLicense: true,
       expectedMinLength: 8,
+      isTransformIncluded: true,
     },
-  ])('should return expected functions with $target', async ({ type, transition, omitLicense, expectedMinLength }) => {
-    server.use(...(omitLicense ? handlersWithoutLicense : handlers))
+  ])(
+    'should return expected functions with $target',
+    async ({ type, transition, omitLicense, expectedMinLength, isTransformIncluded }) => {
+      server.use(...(omitLicense ? handlersWithoutLicense : handlers))
 
-    const { result } = renderHook(() => useFilteredFunctionsFetcher(), { wrapper })
+      const { result } = renderHook(() => useFilteredFunctionsFetcher(), { wrapper })
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBeFalsy()
-      expect(result.current.isSuccess).toBeTruthy()
-    })
+      await waitFor(() => {
+        expect(result.current.isLoading).toBeFalsy()
+        expect(result.current.isSuccess).toBeTruthy()
+      })
 
-    const filteredFunctions = result.current.getFilteredFunctions(type, transition)
-    expect(filteredFunctions.length).toBeGreaterThanOrEqual(expectedMinLength)
+      const filteredFunctions = result.current.getFilteredFunctions(type, transition)
+      expect(filteredFunctions.length).toBeGreaterThanOrEqual(expectedMinLength)
 
-    // Verify DataHub.transform is always included
-    const transformFunction = filteredFunctions.find((f) => f.functionId === 'DataHub.transform')
-    expect(transformFunction).toBeDefined()
-  })
+      // Verify DataHub.transform is included
+      const transformFunction = filteredFunctions.find((f) => f.functionId === 'DataHub.transform')
+      if (isTransformIncluded) expect(transformFunction).toBeDefined()
+      else expect(transformFunction).toBeUndefined()
+    }
+  )
 })
