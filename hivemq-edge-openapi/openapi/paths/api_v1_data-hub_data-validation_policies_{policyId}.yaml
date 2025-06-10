@@ -29,6 +29,8 @@ delete:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/UrlParameterMissingError: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
       description: URL parameter missing
     '404':
       content:
@@ -133,6 +135,8 @@ get:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/UrlParameterMissingError: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
       description: Bad request
     '404':
       content:
@@ -273,6 +277,14 @@ put:
               - $ref: "../components/schemas/errors/datahub/TopicFilterMismatchError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/RequestBodyMissingError: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
+                https://hivemq.com/edge/api/model/UrlParameterMissingError: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
+                https://hivemq.com/edge/api/model/DataPolicyCreationFailureError: "../components/schemas/errors/datahub/DataPolicyCreationFailureError.yaml"
+                https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: "../components/schemas/errors/datahub/DataPolicyInvalidErrors.yaml"
+                https://hivemq.com/edge/api/model/DataPolicyUpdateFailureError: "../components/schemas/errors/datahub/DataPolicyUpdateFailureError.yaml"
+                https://hivemq.com/edge/api/model/PolicyIdMismatchError: "../components/schemas/errors/datahub/PolicyIdMismatchError.yaml"
+                https://hivemq.com/edge/api/model/TopicFilterMismatchError: "../components/schemas/errors/datahub/TopicFilterMismatchError.yaml"
       description: Data policy creation failed
     '404':
       content:

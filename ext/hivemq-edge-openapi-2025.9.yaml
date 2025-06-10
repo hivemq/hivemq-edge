@@ -360,6 +360,8 @@ paths:
                   - $ref: '#/components/schemas/InvalidQueryParameterError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/InvalidQueryParameterError: '#/components/schemas/InvalidQueryParameterError'
           description: URL parameter missing
         '503':
           content:
@@ -454,12 +456,17 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/RequestBodyMissingError'
                   - $ref: '#/components/schemas/BehaviorPolicyCreationFailureError'
                   - $ref: '#/components/schemas/BehaviorPolicyInvalidErrors'
                   - $ref: '#/components/schemas/BehaviorPolicyRejectedError'
+                  - $ref: '#/components/schemas/RequestBodyMissingError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/BehaviorPolicyCreationFailureError: '#/components/schemas/BehaviorPolicyCreationFailureError'
+                    https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: '#/components/schemas/BehaviorPolicyInvalidErrors'
+                    https://hivemq.com/edge/api/model/BehaviorPolicyRejectedError: '#/components/schemas/BehaviorPolicyRejectedError'
+                    https://hivemq.com/edge/api/model/RequestBodyMissingError: '#/components/schemas/RequestBodyMissingError'
           description: Policy creation failed
         '409':
           content:
@@ -520,6 +527,8 @@ paths:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
           description: URL parameter missing
         '404':
           content:
@@ -618,6 +627,8 @@ paths:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
           description: Bad request
         '404':
           content:
@@ -746,6 +757,15 @@ paths:
                   - $ref: '#/components/schemas/BehaviorPolicyInvalidErrors'
                   - $ref: '#/components/schemas/BehaviorPolicyUpdateFailureError'
                   - $ref: '#/components/schemas/PolicyIdMismatchError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/RequestBodyMissingError: '#/components/schemas/RequestBodyMissingError'
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
+                    https://hivemq.com/edge/api/model/BehaviorPolicyCreationFailureError: '#/components/schemas/BehaviorPolicyCreationFailureError'
+                    https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: '#/components/schemas/BehaviorPolicyInvalidErrors'
+                    https://hivemq.com/edge/api/model/BehaviorPolicyUpdateFailureError: '#/components/schemas/BehaviorPolicyUpdateFailureError'
+                    https://hivemq.com/edge/api/model/PolicyIdMismatchError: '#/components/schemas/PolicyIdMismatchError'
           description: Behavior policy creation failed
         '404':
           content:
@@ -827,6 +847,8 @@ paths:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
           description: URL parameter missing
         '404':
           content:
@@ -837,6 +859,9 @@ paths:
                   - $ref: '#/components/schemas/ClientNotFoundError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/ClientDisconnectedError: '#/components/schemas/ClientDisconnectedError'
+                    https://hivemq.com/edge/api/model/ClientNotFoundError: '#/components/schemas/ClientNotFoundError'
           description: Client error
         '500':
           content:
@@ -1098,6 +1123,8 @@ paths:
                   - $ref: '#/components/schemas/InvalidQueryParameterError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/InvalidQueryParameterError: '#/components/schemas/InvalidQueryParameterError'
           description: URL parameter missing
         '503':
           content:
@@ -1196,6 +1223,11 @@ paths:
                   - $ref: '#/components/schemas/DataPolicyRejectedError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/RequestBodyMissingError: '#/components/schemas/RequestBodyMissingError'
+                    https://hivemq.com/edge/api/model/DataPolicyCreationFailureError: '#/components/schemas/DataPolicyCreationFailureError'
+                    https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: '#/components/schemas/DataPolicyInvalidErrors'
+                    https://hivemq.com/edge/api/model/DataPolicyRejectedError: '#/components/schemas/DataPolicyRejectedError'
           description: Data policy creation failed
         '409':
           content:
@@ -1256,6 +1288,8 @@ paths:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
           description: URL parameter missing
         '404':
           content:
@@ -1353,6 +1387,8 @@ paths:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
           description: Bad request
         '404':
           content:
@@ -1483,6 +1519,14 @@ paths:
                   - $ref: '#/components/schemas/TopicFilterMismatchError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/RequestBodyMissingError: '#/components/schemas/RequestBodyMissingError'
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
+                    https://hivemq.com/edge/api/model/DataPolicyCreationFailureError: '#/components/schemas/DataPolicyCreationFailureError'
+                    https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: '#/components/schemas/DataPolicyInvalidErrors'
+                    https://hivemq.com/edge/api/model/DataPolicyUpdateFailureError: '#/components/schemas/DataPolicyUpdateFailureError'
+                    https://hivemq.com/edge/api/model/PolicyIdMismatchError: '#/components/schemas/PolicyIdMismatchError'
+                    https://hivemq.com/edge/api/model/TopicFilterMismatchError: '#/components/schemas/TopicFilterMismatchError'
           description: Data policy creation failed
         '404':
           content:
@@ -1925,6 +1969,8 @@ paths:
                   - $ref: '#/components/schemas/InvalidQueryParameterError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/InvalidQueryParameterError: '#/components/schemas/InvalidQueryParameterError'
           description: URL parameter missing
         '503':
           content:
@@ -1985,6 +2031,10 @@ paths:
                   - $ref: '#/components/schemas/SchemaParsingFailureError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/RequestBodyParameterMissingError: '#/components/schemas/RequestBodyParameterMissingError'
+                    https://hivemq.com/edge/api/model/SchemaInvalidErrors: '#/components/schemas/SchemaInvalidErrors'
+                    https://hivemq.com/edge/api/model/SchemaParsingFailureError: '#/components/schemas/SchemaParsingFailureError'
           description: Schema creation failed
         '409':
           content:
@@ -2052,6 +2102,9 @@ paths:
                   - $ref: '#/components/schemas/SchemaReferencedError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
+                    https://hivemq.com/edge/api/model/SchemaReferencedError: '#/components/schemas/SchemaReferencedError'
           description: URL parameter missing
         '404':
           content:
@@ -2127,6 +2180,8 @@ paths:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
           description: URL parameter missing
         '404':
           content:
@@ -2274,6 +2329,8 @@ paths:
                   - $ref: '#/components/schemas/InvalidQueryParameterError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/InvalidQueryParameterError: '#/components/schemas/InvalidQueryParameterError'
           description: URL parameter missing
         '503':
           content:
@@ -2336,6 +2393,12 @@ paths:
                   - $ref: '#/components/schemas/ScriptSanitationFailureError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/RequestBodyParameterMissingError: '#/components/schemas/RequestBodyParameterMissingError'
+                    https://hivemq.com/edge/api/model/ScriptCreationFailureError: '#/components/schemas/ScriptCreationFailureError'
+                    https://hivemq.com/edge/api/model/ScriptInvalidErrors: '#/components/schemas/ScriptInvalidErrors'
+                    https://hivemq.com/edge/api/model/ScriptParsingFailureError: '#/components/schemas/ScriptParsingFailureError'
+                    https://hivemq.com/edge/api/model/ScriptSanitationFailureError: '#/components/schemas/ScriptSanitationFailureError'
           description: Script creation failed
         '409':
           content:
@@ -2400,6 +2463,9 @@ paths:
                   - $ref: '#/components/schemas/ScriptReferencedError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
+                    https://hivemq.com/edge/api/model/ScriptReferencedError: '#/components/schemas/ScriptReferencedError'
           description: URL parameter missing
         '404':
           content:
@@ -2471,6 +2537,8 @@ paths:
                   - $ref: '#/components/schemas/UrlParameterMissingError'
                 discriminator:
                   propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
           description: URL parameter missing
         '404':
           content:
@@ -4777,6 +4845,7 @@ components:
         mapping:
           https://hivemq.com/edge/api/model/BehaviorPolicyAlreadyPresentError: '#/components/schemas/BehaviorPolicyAlreadyPresentError'
           https://hivemq.com/edge/api/model/BehaviorPolicyCreationFailureError: '#/components/schemas/BehaviorPolicyCreationFailureError'
+          https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: '#/components/schemas/BehaviorPolicyInvalidErrors'
           https://hivemq.com/edge/api/model/BehaviorPolicyNotFoundError: '#/components/schemas/BehaviorPolicyNotFoundError'
           https://hivemq.com/edge/api/model/BehaviorPolicyRejectedError: '#/components/schemas/BehaviorPolicyRejectedError'
           https://hivemq.com/edge/api/model/BehaviorPolicyUpdateFailureError: '#/components/schemas/BehaviorPolicyUpdateFailureError'
@@ -4784,6 +4853,7 @@ components:
           https://hivemq.com/edge/api/model/ClientNotFoundError: '#/components/schemas/ClientNotFoundError'
           https://hivemq.com/edge/api/model/DataPolicyAlreadyPresentError: '#/components/schemas/DataPolicyAlreadyPresentError'
           https://hivemq.com/edge/api/model/DataPolicyCreationFailureError: '#/components/schemas/DataPolicyCreationFailureError'
+          https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: '#/components/schemas/DataPolicyInvalidErrors'
           https://hivemq.com/edge/api/model/DataPolicyNotFoundError: '#/components/schemas/DataPolicyNotFoundError'
           https://hivemq.com/edge/api/model/DataPolicyRejectedError: '#/components/schemas/DataPolicyRejectedError'
           https://hivemq.com/edge/api/model/DataPolicyUpdateFailureError: '#/components/schemas/DataPolicyUpdateFailureError'
@@ -4791,12 +4861,14 @@ components:
           https://hivemq.com/edge/api/model/PolicyNotFoundError: '#/components/schemas/PolicyNotFoundError'
           https://hivemq.com/edge/api/model/SchemaAlreadyPresentError: '#/components/schemas/SchemaAlreadyPresentError'
           https://hivemq.com/edge/api/model/SchemaEtagMismatchError: '#/components/schemas/SchemaEtagMismatchError'
+          https://hivemq.com/edge/api/model/SchemaInvalidErrors: '#/components/schemas/SchemaInvalidErrors'
           https://hivemq.com/edge/api/model/SchemaNotFoundError: '#/components/schemas/SchemaNotFoundError'
           https://hivemq.com/edge/api/model/SchemaParsingFailureError: '#/components/schemas/SchemaParsingFailureError'
           https://hivemq.com/edge/api/model/SchemaReferencedError: '#/components/schemas/SchemaReferencedError'
           https://hivemq.com/edge/api/model/ScriptAlreadyPresentError: '#/components/schemas/ScriptAlreadyPresentError'
           https://hivemq.com/edge/api/model/ScriptCreationFailureError: '#/components/schemas/ScriptCreationFailureError'
           https://hivemq.com/edge/api/model/ScriptEtagMismatchError: '#/components/schemas/ScriptEtagMismatchError'
+          https://hivemq.com/edge/api/model/ScriptInvalidErrors: '#/components/schemas/ScriptInvalidErrors'
           https://hivemq.com/edge/api/model/ScriptNotFoundError: '#/components/schemas/ScriptNotFoundError'
           https://hivemq.com/edge/api/model/ScriptParsingFailureError: '#/components/schemas/ScriptParsingFailureError'
           https://hivemq.com/edge/api/model/ScriptReferencedError: '#/components/schemas/ScriptReferencedError'
@@ -4833,350 +4905,6 @@ components:
               description: The actual reason.
           required:
             - reason
-    BehaviorPolicyNotFoundError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The data policy id.
-            message:
-              type: string
-              description: The error message.
-          required:
-            - id
-    BehaviorPolicyRejectedError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-    BehaviorPolicyUpdateFailureError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The ID of the policy that failed to update.
-            reason:
-              type: string
-              description: The actual reason.
-          required:
-            - id
-    ClientDisconnectedError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The client id.
-          required:
-            - id
-    ClientNotFoundError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The client id.
-          required:
-            - id
-    DataPolicyAlreadyPresentError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The data policy id.
-            message:
-              type: string
-              description: The error message.
-          required:
-            - id
-    DataPolicyCreationFailureError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-          required:
-            - reason
-    DataPolicyNotFoundError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The data policy id.
-            message:
-              type: string
-              description: The error message.
-          required:
-            - id
-    DataPolicyRejectedError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-    DataPolicyUpdateFailureError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The ID of the policy that failed to update.
-            reason:
-              type: string
-              description: The actual reason.
-          required:
-            - id
-    PolicyIdMismatchError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            actualId:
-              type: string
-              description: The actual id.
-            expectedId:
-              type: string
-              description: The expected id.
-          required:
-            - actualId
-            - expectedId
-    PolicyNotFoundError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The policy id.
-          required:
-            - id
-    SchemaAlreadyPresentError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The schema id.
-          required:
-            - id
-    SchemaEtagMismatchError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The schema id.
-            eTag:
-              type: string
-              description: The eTag.
-          required:
-            - id
-    SchemaNotFoundError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The schema ID.
-            message:
-              type: string
-              description: The error message.
-          required:
-            - id
-    SchemaParsingFailureError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            alias:
-              type: string
-              description: The schema alias.
-            message:
-              type: string
-              description: The error message.
-          required:
-            - alias
-            - message
-    SchemaReferencedError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The schema ID.
-            message:
-              type: string
-              description: The error message.
-          required:
-            - id
-    ScriptAlreadyPresentError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The script id.
-          required:
-            - id
-    ScriptCreationFailureError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-          required:
-            - reason
-    ScriptEtagMismatchError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The script id.
-            eTag:
-              type: string
-              description: The eTag.
-          required:
-            - id
-    ScriptNotFoundError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The script ID.
-            message:
-              type: string
-              description: The error message.
-          required:
-            - id
-    ScriptParsingFailureError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-          required:
-            - reason
-    ScriptReferencedError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            id:
-              type: string
-              description: The script ID.
-            message:
-              type: string
-              description: The error message.
-          required:
-            - id
-    ScriptSanitationFailureError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-          required:
-            - reason
-    TopicFilterMismatchError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            message:
-              type: string
-              description: The error message.
-            path:
-              type: string
-              description: The json path of the topic filter.
-          required:
-            - path
-    InsufficientStorageError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-    InternalServerError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-    InvalidQueryParameterError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            parameter:
-              type: string
-              description: The query parameter.
-            reason:
-              type: string
-              description: The reason.
-          required:
-            - parameter
-            - reason
-    PreconditionFailedError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-          required:
-            - reason
-    RequestBodyMissingError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-    RequestBodyParameterMissingError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            parameter:
-              type: string
-              description: The the missing request body parameter.
-    TemporaryNotAvailableError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-    UrlParameterMissingError:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            parameter:
-              type: string
-              description: The name of the missing parameter.
-          required:
-            - parameter
     ValidationError:
       type: object
       properties:
@@ -5491,6 +5219,449 @@ components:
                 $ref: '#/components/schemas/BehaviorPolicyValidationError'
           required:
             - childErrors
+    BehaviorPolicyNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The data policy id.
+            message:
+              type: string
+              description: The error message.
+          required:
+            - id
+    BehaviorPolicyRejectedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+    BehaviorPolicyUpdateFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The ID of the policy that failed to update.
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - id
+    ClientDisconnectedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The client id.
+          required:
+            - id
+    ClientNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The client id.
+          required:
+            - id
+    DataPolicyAlreadyPresentError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The data policy id.
+            message:
+              type: string
+              description: The error message.
+          required:
+            - id
+    DataPolicyCreationFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - reason
+    DataPolicyValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - oneOf:
+            - $ref: '#/components/schemas/AtMostOneFunctionValidationError'
+            - $ref: '#/components/schemas/FunctionMustBePairedValidationError'
+            - $ref: '#/components/schemas/InvalidFunctionOrderValidationError'
+            - $ref: '#/components/schemas/UnknownVariableValidationError'
+            - $ref: '#/components/schemas/EmptyFieldValidationError'
+            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
+            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
+            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
+            - $ref: '#/components/schemas/MissingFieldValidationError'
+            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError: '#/components/schemas/AtMostOneFunctionValidationError'
+          https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
+          https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
+          https://hivemq.com/edge/api/model/UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
+          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
+    DataPolicyInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            childErrors:
+              type: array
+              description: List of child validation errors.
+              items:
+                $ref: '#/components/schemas/DataPolicyValidationError'
+          required:
+            - childErrors
+    DataPolicyNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The data policy id.
+            message:
+              type: string
+              description: The error message.
+          required:
+            - id
+    DataPolicyRejectedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+    DataPolicyUpdateFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The ID of the policy that failed to update.
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - id
+    PolicyIdMismatchError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            actualId:
+              type: string
+              description: The actual id.
+            expectedId:
+              type: string
+              description: The expected id.
+          required:
+            - actualId
+            - expectedId
+    PolicyNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The policy id.
+          required:
+            - id
+    SchemaAlreadyPresentError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema id.
+          required:
+            - id
+    SchemaEtagMismatchError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema id.
+            eTag:
+              type: string
+              description: The eTag.
+          required:
+            - id
+    SchemaValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - oneOf:
+            - $ref: '#/components/schemas/EmptyFieldValidationError'
+            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
+            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
+            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
+            - $ref: '#/components/schemas/MissingFieldValidationError'
+            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
+    SchemaInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            childErrors:
+              type: array
+              description: List of child validation errors.
+              items:
+                $ref: '#/components/schemas/SchemaValidationError'
+          required:
+            - childErrors
+    SchemaNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema ID.
+            message:
+              type: string
+              description: The error message.
+          required:
+            - id
+    SchemaParsingFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            alias:
+              type: string
+              description: The schema alias.
+            message:
+              type: string
+              description: The error message.
+          required:
+            - alias
+            - message
+    SchemaReferencedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema ID.
+            message:
+              type: string
+              description: The error message.
+          required:
+            - id
+    ScriptAlreadyPresentError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script id.
+          required:
+            - id
+    ScriptCreationFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - reason
+    ScriptEtagMismatchError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script id.
+            eTag:
+              type: string
+              description: The eTag.
+          required:
+            - id
+    ScriptValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - oneOf:
+            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
+            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
+            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
+            - $ref: '#/components/schemas/MissingFieldValidationError'
+            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
+    ScriptInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            childErrors:
+              type: array
+              description: List of child validation errors.
+              items:
+                $ref: '#/components/schemas/ScriptValidationError'
+          required:
+            - childErrors
+    ScriptNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script ID.
+            message:
+              type: string
+              description: The error message.
+          required:
+            - id
+    ScriptParsingFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - reason
+    ScriptReferencedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script ID.
+            message:
+              type: string
+              description: The error message.
+          required:
+            - id
+    ScriptSanitationFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - reason
+    TopicFilterMismatchError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            message:
+              type: string
+              description: The error message.
+            path:
+              type: string
+              description: The json path of the topic filter.
+          required:
+            - path
+    InsufficientStorageError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+    InternalServerError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+    InvalidQueryParameterError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            parameter:
+              type: string
+              description: The query parameter.
+            reason:
+              type: string
+              description: The reason.
+          required:
+            - parameter
+            - reason
+    PreconditionFailedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            reason:
+              type: string
+              description: The actual reason.
+          required:
+            - reason
+    RequestBodyMissingError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+    RequestBodyParameterMissingError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            parameter:
+              type: string
+              description: The the missing request body parameter.
+    TemporaryNotAvailableError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+    UrlParameterMissingError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            parameter:
+              type: string
+              description: The name of the missing parameter.
+          required:
+            - parameter
     JsonNode:
       type: object
       description: The arguments of the fsm derived from the behavior policy.
@@ -5612,45 +5783,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/DataPolicy'
-    DataPolicyValidationError:
-      allOf:
-        - $ref: '#/components/schemas/ValidationError'
-        - oneOf:
-            - $ref: '#/components/schemas/AtMostOneFunctionValidationError'
-            - $ref: '#/components/schemas/FunctionMustBePairedValidationError'
-            - $ref: '#/components/schemas/InvalidFunctionOrderValidationError'
-            - $ref: '#/components/schemas/UnknownVariableValidationError'
-            - $ref: '#/components/schemas/EmptyFieldValidationError'
-            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
-            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
-            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
-            - $ref: '#/components/schemas/MissingFieldValidationError'
-            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
-      discriminator:
-        propertyName: type
-        mapping:
-          https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError: '#/components/schemas/AtMostOneFunctionValidationError'
-          https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
-          https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
-          https://hivemq.com/edge/api/model/UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
-          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
-          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
-          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
-          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
-          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
-          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
-    DataPolicyInvalidErrors:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            childErrors:
-              type: array
-              description: List of child validation errors.
-              items:
-                $ref: '#/components/schemas/DataPolicyValidationError'
-          required:
-            - childErrors
     BehaviorPolicyTransitionEvent:
       type: string
       description: Accepted event in transition
@@ -5754,37 +5886,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/PolicySchema'
-    SchemaValidationError:
-      allOf:
-        - $ref: '#/components/schemas/ValidationError'
-        - oneOf:
-            - $ref: '#/components/schemas/EmptyFieldValidationError'
-            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
-            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
-            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
-            - $ref: '#/components/schemas/MissingFieldValidationError'
-            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
-      discriminator:
-        propertyName: type
-        mapping:
-          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
-          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
-          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
-          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
-          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
-          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
-    SchemaInvalidErrors:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            childErrors:
-              type: array
-              description: List of child validation errors.
-              items:
-                $ref: '#/components/schemas/SchemaValidationError'
-          required:
-            - childErrors
     Script:
       type: object
       properties:
@@ -5826,35 +5927,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Script'
-    ScriptValidationError:
-      allOf:
-        - $ref: '#/components/schemas/ValidationError'
-        - oneOf:
-            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
-            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
-            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
-            - $ref: '#/components/schemas/MissingFieldValidationError'
-            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
-      discriminator:
-        propertyName: type
-        mapping:
-          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
-          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
-          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
-          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
-          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
-    ScriptInvalidErrors:
-      allOf:
-        - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            childErrors:
-              type: array
-              description: List of child validation errors.
-              items:
-                $ref: '#/components/schemas/ScriptValidationError'
-          required:
-            - childErrors
     Capability:
       type: object
       description: List of result items that are returned by this endpoint

@@ -29,6 +29,8 @@ delete:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/UrlParameterMissingError: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
       description: URL parameter missing
     '404':
       content:
@@ -130,6 +132,8 @@ get:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/UrlParameterMissingError: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
       description: Bad request
     '404':
       content:
@@ -260,6 +264,15 @@ put:
               - $ref: "../components/schemas/errors/datahub/BehaviorPolicyInvalidErrors.yaml"
               - $ref: "../components/schemas/errors/datahub/BehaviorPolicyUpdateFailureError.yaml"
               - $ref: "../components/schemas/errors/datahub/PolicyIdMismatchError.yaml"
+            discriminator:
+              propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/RequestBodyMissingError: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
+                https://hivemq.com/edge/api/model/UrlParameterMissingError: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
+                https://hivemq.com/edge/api/model/BehaviorPolicyCreationFailureError: "../components/schemas/errors/datahub/BehaviorPolicyCreationFailureError.yaml"
+                https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: "../components/schemas/errors/datahub/BehaviorPolicyInvalidErrors.yaml"
+                https://hivemq.com/edge/api/model/BehaviorPolicyUpdateFailureError: "../components/schemas/errors/datahub/BehaviorPolicyUpdateFailureError.yaml"
+                https://hivemq.com/edge/api/model/PolicyIdMismatchError: "../components/schemas/errors/datahub/PolicyIdMismatchError.yaml"
       description: Behavior policy creation failed
     '404':
       content:
