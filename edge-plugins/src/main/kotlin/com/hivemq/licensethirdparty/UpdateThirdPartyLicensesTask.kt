@@ -143,7 +143,7 @@ abstract class UpdateThirdPartyLicensesTask : DefaultTask() {
             (name == "The BSD License") && (coordinates.group == "org.antlr") && (coordinates.name == "ST4") -> KnownLicense.BSD_3_CLAUSE
             (name == "The BSD License") && (coordinates.group == "org.codehaus.woodstox") && (coordinates.name == "stax2-api") -> KnownLicense.BSD_2_CLAUSE
             (name == "Unicode/ICU License") && (coordinates.group == "com.ibm.icu") && (coordinates.name == "icu4j") && (coordinates.version == "72.1") -> KnownLicense.UNICODE_DFS_2016
-            name.matches("LGPL-2\\.1-?[\\w\\-]*".toRegex()) && (coordinates.group == "org.mariadb.jdbc") && (coordinates.name == "mariadb-java-client") -> KnownLicense.LGPL_2_1_OR_LATER
+            name.matches("LGPL-2\\.1(-[\\w\\-]+)*".toRegex()) && (coordinates.group == "org.mariadb.jdbc") && (coordinates.name == "mariadb-java-client") -> KnownLicense.LGPL_2_1_OR_LATER
             name == "CC-BY-4.0" -> KnownLicense.CC_BY_4_0
             name == "BlueOak-1.0.0" -> KnownLicense.BLUE_OAK_1_0_0
             name == "0BSD" -> KnownLicense.ZERO_BSD
