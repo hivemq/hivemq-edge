@@ -4999,13 +4999,6 @@ components:
     GeneralPolicyValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
-        - type: object
-          properties:
-            title:
-              type: string
-              description: The title.
-          required:
-            - title
     IllegalEventTransitionValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
