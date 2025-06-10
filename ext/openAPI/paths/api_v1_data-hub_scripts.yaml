@@ -146,6 +146,8 @@ get:
               - $ref: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/InvalidQueryParameterError: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
       description: URL parameter missing
     '503':
       content:
@@ -210,6 +212,12 @@ post:
               - $ref: "../components/schemas/errors/datahub/ScriptSanitationFailureError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/RequestBodyParameterMissingError: "../components/schemas/errors/http/RequestBodyParameterMissingError.yaml"
+                https://hivemq.com/edge/api/model/ScriptCreationFailureError: "../components/schemas/errors/datahub/ScriptCreationFailureError.yaml"
+                https://hivemq.com/edge/api/model/ScriptInvalidErrors: "../components/schemas/errors/datahub/ScriptInvalidErrors.yaml"
+                https://hivemq.com/edge/api/model/ScriptParsingFailureError: "../components/schemas/errors/datahub/ScriptParsingFailureError.yaml"
+                https://hivemq.com/edge/api/model/ScriptSanitationFailureError: "../components/schemas/errors/datahub/ScriptSanitationFailureError.yaml"
       description: Script creation failed
     '409':
       content:

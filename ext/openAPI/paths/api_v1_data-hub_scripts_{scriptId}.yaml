@@ -27,6 +27,9 @@ delete:
               - $ref: "../components/schemas/errors/datahub/ScriptReferencedError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/UrlParameterMissingError: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
+                https://hivemq.com/edge/api/model/ScriptReferencedError: "../components/schemas/errors/datahub/ScriptReferencedError.yaml"
       description: URL parameter missing
     '404':
       content:
@@ -101,6 +104,8 @@ get:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/UrlParameterMissingError: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
       description: URL parameter missing
     '404':
       content:

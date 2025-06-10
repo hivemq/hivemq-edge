@@ -186,6 +186,8 @@ get:
               - $ref: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/InvalidQueryParameterError: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
       description: URL parameter missing
     '503':
       content:
@@ -280,12 +282,17 @@ post:
         application/json:
           schema:
             oneOf:
-              - $ref: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
               - $ref: "../components/schemas/errors/datahub/BehaviorPolicyCreationFailureError.yaml"
               - $ref: "../components/schemas/errors/datahub/BehaviorPolicyInvalidErrors.yaml"
               - $ref: "../components/schemas/errors/datahub/BehaviorPolicyRejectedError.yaml"
+              - $ref: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/BehaviorPolicyCreationFailureError: "../components/schemas/errors/datahub/BehaviorPolicyCreationFailureError.yaml"
+                https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: "../components/schemas/errors/datahub/BehaviorPolicyInvalidErrors.yaml"
+                https://hivemq.com/edge/api/model/BehaviorPolicyRejectedError: "../components/schemas/errors/datahub/BehaviorPolicyRejectedError.yaml"
+                https://hivemq.com/edge/api/model/RequestBodyMissingError: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
       description: Policy creation failed
     '409':
       content:
