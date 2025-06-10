@@ -8,18 +8,20 @@ import { DataHubNodeType, SchemaType } from '@datahub/types.ts'
 import { checkValiditySchema, getSchemaFamilies, getScriptFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers__'
 
+const NODE_ID = 'the other id'
+
 describe('getSchemaFamilies', () => {
   it('should deal with an empty list of schemas', () => {
     expect(getSchemaFamilies([])).toEqual({})
   })
 
   it('should isolate families of schemas', () => {
-    const results = getSchemaFamilies([mockSchemaTempHumidity, { ...mockSchemaTempHumidity, id: 'the other id' }])
+    const results = getSchemaFamilies([mockSchemaTempHumidity, { ...mockSchemaTempHumidity, id: NODE_ID }])
 
     expect(results).toEqual(
       expect.objectContaining({
         'my-schema-id': expect.objectContaining({}),
-        'the other id': expect.objectContaining({}),
+        [NODE_ID]: expect.objectContaining({}),
       })
     )
   })
@@ -27,14 +29,14 @@ describe('getSchemaFamilies', () => {
   it('should identify list of versions', () => {
     const results = getSchemaFamilies([
       mockSchemaTempHumidity,
-      { ...mockSchemaTempHumidity, id: 'the other id' },
+      { ...mockSchemaTempHumidity, id: NODE_ID },
       { ...mockSchemaTempHumidity, version: 2 },
     ])
 
     expect(results).toEqual(
       expect.objectContaining({
         'my-schema-id': expect.objectContaining({ name: 'my-schema-id', versions: [1, 2] }),
-        'the other id': expect.objectContaining({ name: 'the other id', versions: [1] }),
+        [NODE_ID]: expect.objectContaining({ name: NODE_ID, versions: [1] }),
       })
     )
   })
@@ -46,27 +48,23 @@ describe('getScriptFamilies', () => {
   })
 
   it('should isolate families of schemas', () => {
-    const results = getScriptFamilies([mockScript, { ...mockScript, id: 'the other id' }])
+    const results = getScriptFamilies([mockScript, { ...mockScript, id: NODE_ID }])
 
     expect(results).toEqual(
       expect.objectContaining({
         'my-script-id': expect.objectContaining({}),
-        'the other id': expect.objectContaining({}),
+        [NODE_ID]: expect.objectContaining({}),
       })
     )
   })
 
   it('should identify list of versions', () => {
-    const results = getScriptFamilies([
-      mockScript,
-      { ...mockScript, id: 'the other id' },
-      { ...mockScript, version: 2 },
-    ])
+    const results = getScriptFamilies([mockScript, { ...mockScript, id: NODE_ID }, { ...mockScript, version: 2 }])
 
     expect(results).toEqual(
       expect.objectContaining({
         'my-script-id': expect.objectContaining({ name: 'my-script-id', versions: [1, 2] }),
-        'the other id': expect.objectContaining({ name: 'the other id', versions: [1] }),
+        [NODE_ID]: expect.objectContaining({ name: NODE_ID, versions: [1] }),
       })
     )
   })

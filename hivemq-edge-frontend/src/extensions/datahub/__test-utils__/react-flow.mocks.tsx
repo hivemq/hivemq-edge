@@ -26,6 +26,8 @@ import { styleDefaultEdge } from '@/extensions/datahub/utils/edge.utils.ts'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 import { MockChecksStoreWrapper, MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
 
+const MOCK_POLICY_ID = 'my-policy-id'
+
 export const MOCK_INITIAL_POLICY = () => {
   const baseNode: Node<{ label: string }> = {
     id: '0',
@@ -49,7 +51,7 @@ export const MOCK_INITIAL_POLICY = () => {
 
   const dataPolicyNode: Node<DataPolicyData> = {
     id: '3',
-    data: { id: 'my-policy-id' },
+    data: { id: MOCK_POLICY_ID },
     type: DataHubNodeType.DATA_POLICY,
     position: { x: 345, y: 105 },
   }
@@ -87,7 +89,7 @@ export const MOCK_INITIAL_POLICY = () => {
 
   const behaviorPolicyNode: Node<BehaviorPolicyData> = {
     id: '7',
-    data: { id: 'my-policy-id', model: BehaviorPolicyType.MQTT_EVENT },
+    data: { id: MOCK_POLICY_ID, model: BehaviorPolicyType.MQTT_EVENT },
     type: DataHubNodeType.BEHAVIOR_POLICY,
     position: { x: 345, y: 195 },
   }
@@ -176,7 +178,7 @@ export const MOCK_INITIAL_POLICY = () => {
 export const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
   id: 'node-id',
   type: DataHubNodeType.DATA_POLICY,
-  data: { id: 'my-policy-id' },
+  data: { id: MOCK_POLICY_ID },
   ...MOCK_DEFAULT_NODE,
   position: { x: 0, y: 0 },
 }

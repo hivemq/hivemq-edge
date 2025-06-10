@@ -13,6 +13,8 @@ import {
   loadValidators,
 } from '@datahub/designer/validator/ValidatorNode.utils.ts'
 
+const NODE_SCHEMA_ID = 'node-schema'
+
 const MOCK_NODE_VALIDATOR: Node<ValidatorData> = {
   id: 'node-id',
   type: DataHubNodeType.VALIDATOR,
@@ -49,10 +51,10 @@ describe('checkValidityPolicyValidator', () => {
 
   it('should return a payload otherwise', async () => {
     const MOCK_NODE_SCHEMA: Node<SchemaData> = {
-      id: 'node-schema',
+      id: NODE_SCHEMA_ID,
       type: DataHubNodeType.SCHEMA,
       data: {
-        name: 'node-schema',
+        name: NODE_SCHEMA_ID,
         type: SchemaType.JSON,
         version: 1,
         schemaSource: '{}',
@@ -73,7 +75,7 @@ describe('checkValidityPolicyValidator', () => {
         arguments: {
           schemas: [
             {
-              schemaId: 'node-schema',
+              schemaId: NODE_SCHEMA_ID,
               version: '1',
             },
           ],
@@ -87,7 +89,7 @@ describe('checkValidityPolicyValidator', () => {
     expect(resources?.[0]).toStrictEqual(
       expect.objectContaining({
         data: {
-          id: 'node-schema',
+          id: NODE_SCHEMA_ID,
           schemaDefinition: 'e30=',
           type: 'JSON',
         },
@@ -108,10 +110,10 @@ describe('checkValidityPolicyValidators', () => {
 
   it('should return a payload otherwise', async () => {
     const MOCK_NODE_SCHEMA: Node<SchemaData> = {
-      id: 'node-schema',
+      id: NODE_SCHEMA_ID,
       type: DataHubNodeType.SCHEMA,
       data: {
-        name: 'node-schema',
+        name: NODE_SCHEMA_ID,
         type: SchemaType.JSON,
         version: 1,
         schemaSource: '{}',

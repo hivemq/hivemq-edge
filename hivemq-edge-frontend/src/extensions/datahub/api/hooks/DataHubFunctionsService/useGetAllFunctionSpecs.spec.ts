@@ -31,10 +31,10 @@ describe('useGetAllFunctionSpecs', () => {
             isDataOnly: false,
             isTerminal: false,
             supportedEvents: [
-              'Mqtt.OnInboundConnect',
-              'Mqtt.OnInboundPublish',
-              'Mqtt.OnInboundSubscribe',
-              'Mqtt.OnInboundDisconnect',
+              BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_CONNECT,
+              BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_PUBLISH,
+              BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_SUBSCRIBE,
+              BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_DISCONNECT,
             ],
           },
           schema: expect.objectContaining({
@@ -108,12 +108,12 @@ describe('useGetAllFunctionSpecs', () => {
             isDataOnly: false,
             isTerminal: false,
             supportedEvents: [
-              'Event.OnAny',
-              'Mqtt.OnInboundConnect',
-              'Mqtt.OnInboundPublish',
-              'Mqtt.OnInboundSubscribe',
-              'Mqtt.OnInboundDisconnect',
-              'Connection.OnDisconnect',
+              BehaviorPolicyTransitionEvent.EVENT_ON_ANY,
+              BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_CONNECT,
+              BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_PUBLISH,
+              BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_SUBSCRIBE,
+              BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_DISCONNECT,
+              BehaviorPolicyTransitionEvent.CONNECTION_ON_DISCONNECT,
             ],
           },
           schema: expect.objectContaining({
