@@ -40,13 +40,13 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.IdType;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Base64;
@@ -60,26 +60,36 @@ public class OpcUaToJsonConverter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaToJsonConverter.class);
 
     private static final @NotNull Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
+    private static final @NotNull Base64.Encoder BASE_64 = Base64.getEncoder();
 
     public static @NotNull ByteBuffer convertPayload(
             final @NotNull EncodingContext serializationContext,
             final @NotNull DataValue dataValue) {
-        final var value = dataValue.getValue().getValue();
+        final Object value = dataValue.getValue().getValue();
         if (value == null) {
             return ByteBuffer.wrap(EMPTY_BYTES);
         }
-
         final JsonObject jsonObject = new JsonObject();
-        if (value instanceof DataValue) {
-            addDataValueFields((DataValue) value, jsonObject);
+        if (value instanceof final DataValue v) {
+            if (v.getStatusCode().getValue() > 0) {
+                jsonObject.add("statusCode", convertStatusCode(v.getStatusCode()));
+            }
+            if (v.getSourceTime() != null) {
+                jsonObject.add("sourceTimestamp",
+                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(v.getSourceTime().getJavaInstant())));
+            }
+            if (v.getSourcePicoseconds() != null) {
+                jsonObject.add("sourcePicoseconds", new JsonPrimitive(v.getSourcePicoseconds().intValue()));
+            }
+            if (v.getServerTime() != null) {
+                jsonObject.add("serverTimestamp",
+                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(v.getServerTime().getJavaInstant())));
+            }
+            if (v.getServerPicoseconds() != null) {
+                jsonObject.add("serverPicoseconds", new JsonPrimitive(v.getServerPicoseconds().intValue()));
+            }
         }
-
-        final var converted = convertValue(value, serializationContext);
-        if (converted instanceof final JsonObject jo) {
-            jsonObject.add("value", jo);
-        } else {
-            jsonObject.add("value", convertValue(value, serializationContext));
-        }
+        jsonObject.add("value", convertValue(value, serializationContext));
         return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
     }
 
@@ -117,13 +127,10 @@ public class OpcUaToJsonConverter {
         } else if (value instanceof final UUID uuid) {
             return new JsonPrimitive(uuid.toString());
         } else if (value instanceof final ByteString bs) {
-            return convertByteString(bs);
+            return new JsonPrimitive(BASE_64.encodeToString(bs.bytesOrEmpty()));
         } else if (value instanceof final XmlElement xe) {
             final String fragment = xe.getFragment();
-            if (fragment != null) {
-                return new JsonPrimitive(fragment);
-            }
-            return null;
+            return fragment != null ? new JsonPrimitive(fragment) : null;
         } else if (value instanceof final NodeId nid) {
             return convertNodeId(nid);
         } else if (value instanceof final ExpandedNodeId enid) {
@@ -138,7 +145,7 @@ public class OpcUaToJsonConverter {
             }
             final int nsIdx = qn.getNamespaceIndex().intValue();
             if (nsIdx > 0) {
-                qualifiedName.add("uri", new JsonPrimitive(nsIdx));
+                qualifiedName.add("namespaceIndex", new JsonPrimitive(nsIdx));
             }
             return qualifiedName;
         } else if (value instanceof final LocalizedText lt) {
@@ -161,11 +168,8 @@ public class OpcUaToJsonConverter {
                 return convertValue(eo.getBody(), serializationContext);
             }
         } else if (value instanceof final Variant variant) {
-            if (variant.getValue() == null) {
-                return null;
-            } else {
-                return convertValue(variant.getValue(), serializationContext);
-            }
+            final Object variantValue = variant.getValue();
+            return variantValue != null ? convertValue(variantValue, serializationContext) : null;
         } else if (value instanceof final DiagnosticInfo info) {
             return convertDiagnosticInfo(info);
         } else if (value instanceof final DynamicStructType struct) {
@@ -178,94 +182,67 @@ public class OpcUaToJsonConverter {
             final JsonArray ret = new JsonArray();
             Arrays.asList(values).forEach(in -> ret.add(convertValue(in, serializationContext)));
             return ret;
-        } else {
-            log.warn("No explicit converter for OPC UA type {} falling back to best effort json",
-                    value.getClass().getSimpleName());
-            return GSON.toJsonTree(value);
         }
+
+        log.warn("No explicit converter for OPC UA type {} falling back to best effort json",
+                value.getClass().getSimpleName());
+        return GSON.toJsonTree(value);
     }
 
-    @NotNull
-    private static JsonElement convertStatusCode(final @NotNull StatusCode value) {
-        final JsonObject statusCode = new JsonObject();
-        final long statusCodeNr = value.getValue();
-        statusCode.add("code", new JsonPrimitive(statusCodeNr));
-        StatusCodes.lookup(statusCodeNr).ifPresent(code -> statusCode.add("symbol", new JsonPrimitive(code[0])));
-        return statusCode;
-    }
-
-    @NotNull
-    private static JsonPrimitive convertByteString(final @NotNull ByteString value) {
-        return new JsonPrimitive(Base64.getEncoder().encodeToString(value.bytesOrEmpty()));
-    }
-
-    @NotNull
-    private static JsonObject convertNodeId(
-            final @NotNull NodeId nodeId) {
+    private static @NotNull JsonObject convertNodeId(final @NotNull NodeId nodeId) {
         final JsonObject nodeIdObj = new JsonObject();
-
         switch (nodeId.getType()) {
             case Numeric:
+                nodeIdObj.add("idType", new JsonPrimitive(IdType.Numeric.getValue()));
                 nodeIdObj.add("id", new JsonPrimitive((Number) nodeId.getIdentifier()));
                 break;
             case String:
-                nodeIdObj.add("idType", new JsonPrimitive(1));
-                nodeIdObj.add("id", new JsonPrimitive((String) nodeId.getIdentifier()));
+                nodeIdObj.add("idType", new JsonPrimitive(IdType.String.getValue()));
+                nodeIdObj.add("id", new JsonPrimitive(nodeId.getIdentifier().toString()));
                 break;
             case Guid:
-                nodeIdObj.add("idType", new JsonPrimitive(2));
-                nodeIdObj.add("id", new JsonPrimitive(nodeId.getIdentifier().toString())); //UUID.toString()
+                nodeIdObj.add("idType", new JsonPrimitive(IdType.Guid.getValue()));
+                nodeIdObj.add("id", new JsonPrimitive(nodeId.getIdentifier().toString()));
                 break;
             case Opaque: //ByteString
-                nodeIdObj.add("idType", new JsonPrimitive(3));
-                nodeIdObj.add("id", convertByteString((ByteString) nodeId.getIdentifier())); //UUID.toString()
+                nodeIdObj.add("idType", new JsonPrimitive(IdType.Opaque.getValue()));
+                nodeIdObj.add("id",
+                        new JsonPrimitive(BASE_64.encodeToString(((ByteString) nodeId.getIdentifier()).bytesOrEmpty())));
                 break;
         }
 
         final int namespaceIndex = nodeId.getNamespaceIndex().intValue();
         if (namespaceIndex == 1) { // 1 is always encoded as a number
-            nodeIdObj.add("namespace", new JsonPrimitive(namespaceIndex));
+            nodeIdObj.add("namespaceIndex", new JsonPrimitive(namespaceIndex));
         } else {
-            nodeIdObj.add("namespace", new JsonPrimitive(nodeId.toParseableString()));
+            nodeIdObj.add("namespaceIndex", new JsonPrimitive(nodeId.toParseableString()));
         }
         return nodeIdObj;
     }
 
-    private static @NotNull JsonObject convertDiagnosticInfo(final @NotNull DiagnosticInfo value) {
+    private static @NotNull JsonObject convertDiagnosticInfo(final @NotNull DiagnosticInfo info) {
         final JsonObject diagnosticInfo = new JsonObject();
-        diagnosticInfo.add("symbolicId", new JsonPrimitive(value.symbolicId()));
-        diagnosticInfo.add("namespaceUri", new JsonPrimitive(value.namespaceUri()));
-        diagnosticInfo.add("locale", new JsonPrimitive(value.locale()));
-        diagnosticInfo.add("localizedText", new JsonPrimitive(value.localizedText()));
-        if (value.additionalInfo() != null) {
-            diagnosticInfo.add("additionalInfo", new JsonPrimitive(value.additionalInfo()));
+        diagnosticInfo.add("namespaceUri", new JsonPrimitive(info.namespaceUri()));
+        diagnosticInfo.add("symbolicId", new JsonPrimitive(info.symbolicId()));
+        diagnosticInfo.add("locale", new JsonPrimitive(info.locale()));
+        diagnosticInfo.add("localizedText", new JsonPrimitive(info.localizedText()));
+        if (info.additionalInfo() != null) {
+            diagnosticInfo.add("additionalInfo", new JsonPrimitive(info.additionalInfo()));
         }
-        if (value.innerStatusCode() != null) {
-            diagnosticInfo.add("innerStatusCode", convertStatusCode(value.innerStatusCode()));
+        if (info.innerStatusCode() != null) {
+            diagnosticInfo.add("innerStatusCode", convertStatusCode(info.innerStatusCode()));
         }
-        if (value.innerDiagnosticInfo() != null) {
-            diagnosticInfo.add("innerDiagnosticInfo", convertDiagnosticInfo(value.innerDiagnosticInfo()));
+        if (info.innerDiagnosticInfo() != null) {
+            diagnosticInfo.add("innerDiagnosticInfo", convertDiagnosticInfo(info.innerDiagnosticInfo()));
         }
         return diagnosticInfo;
     }
 
-    private static void addDataValueFields(final @NotNull DataValue dataValue, final @NotNull JsonObject jsonObject) {
-        if (dataValue.getServerTime() != null) {
-            final Instant javaInstant = dataValue.getServerTime().getJavaInstant();
-            jsonObject.add("serverTimestamp", new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(javaInstant)));
-        }
-        if (dataValue.getSourceTime() != null) {
-            final Instant javaInstant = dataValue.getSourceTime().getJavaInstant();
-            jsonObject.add("sourceTimestamp", new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(javaInstant)));
-        }
-        if (dataValue.getServerPicoseconds() != null) {
-            jsonObject.add("serverPicoSeconds", new JsonPrimitive(dataValue.getServerPicoseconds().intValue()));
-        }
-        if (dataValue.getSourcePicoseconds() != null) {
-            jsonObject.add("sourcePicoSeconds", new JsonPrimitive(dataValue.getSourcePicoseconds().intValue()));
-        }
-        if (dataValue.getStatusCode().getValue() > 0) {
-            jsonObject.add("status", convertStatusCode(dataValue.getStatusCode()));
-        }
+    private static @NotNull JsonElement convertStatusCode(final @NotNull StatusCode value) {
+        final JsonObject statusCode = new JsonObject();
+        final long statusCodeNr = value.getValue();
+        statusCode.add("code", new JsonPrimitive(statusCodeNr));
+        StatusCodes.lookup(statusCodeNr).ifPresent(code -> statusCode.add("symbol", new JsonPrimitive(code[0])));
+        return statusCode;
     }
 }
