@@ -107,9 +107,9 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
             return;
         }
 
-        log.debug("Loading MySQL Driver");
+        log.debug("Loading MariaDB Driver (for MySQL)");
         try {
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("org.mariadb.jdbc.Driver");
         } catch (final ClassNotFoundException e) {
             output.failStart(e, null);
             return;

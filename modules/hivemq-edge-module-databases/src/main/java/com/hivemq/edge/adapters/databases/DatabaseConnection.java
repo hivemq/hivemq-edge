@@ -38,7 +38,7 @@ public class DatabaseConnection {
                 config.setConnectionTimeout(connectionTimeout * 2000L);
             }
             case MYSQL -> {
-                config.setJdbcUrl(String.format("jdbc:mysql://%s:%s/%s?allowPublicKeyRetrieval=true&useSSL=%s",
+                config.setJdbcUrl(String.format("jdbc:mariadb://%s:%s/%s?allowPublicKeyRetrieval=true&useSSL=%s",
                         server,
                         port,
                         database,
@@ -58,7 +58,7 @@ public class DatabaseConnection {
                 config.addDataSourceProperty("user", username);
                 config.addDataSourceProperty("password", password);
                 config.setConnectionTimeout(connectionTimeout * 2000L);
-                Properties properties = new Properties();
+                final Properties properties = new Properties();
                 if (encrypt) {
                     properties.setProperty("encrypt", "true");
                     properties.setProperty("trustServerCertificate", "true"); // Trust the server certificate implicitly

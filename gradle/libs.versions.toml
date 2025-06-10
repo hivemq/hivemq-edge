@@ -40,7 +40,7 @@ modbus = "1.2.2"
 mqtt-sn-codec = "838f51d691"
 mssql="12.8.1.jre11"
 mtconnect-protocol = "1.0.0"
-mysql= "8.0.33"
+mariadb= "3.5.3"
 netty = "4.2.0.Final"
 org_json = "20250107"
 pmd = "6.55.0"
@@ -114,7 +114,7 @@ mockito-junitJupiter = { module = "org.mockito:mockito-junit-jupiter", version.r
 mqtt-sn-codec = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn-codec" }
 mssql= { module = "com.microsoft.sqlserver:mssql-jdbc", version.ref = "mssql" }
 mtconnect-protocol = { module = "com.hivemq:hivemq-mtconnect-protocol", version.ref = "mtconnect-protocol"}
-mysql= { module = "mysql:mysql-connector-java", version.ref = "mysql" }
+mariadb= { module = "org.mariadb.jdbc:mariadb-java-client", version.ref = "mariadb" }
 netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
 netty-codec = { module = "io.netty:netty-codec", version.ref = "netty" }
 netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty" }

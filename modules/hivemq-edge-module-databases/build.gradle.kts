@@ -44,7 +44,7 @@ dependencies {
     compileOnly(libs.jackson.databind)
     compileOnly(libs.slf4j.api)
     implementation(libs.postgresql)
-    implementation(libs.mysql)
+    implementation(libs.mariadb)
     implementation(libs.mssql)
 }
 
