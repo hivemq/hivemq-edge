@@ -11,7 +11,7 @@ import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import { getOperationSchema } from '@datahub/designer/operation/OperationPanel.utils.ts'
-import { useGetFilteredFunction } from '@datahub/hooks/useGetFilteredFunctions.tsx'
+import { useFilteredFunctionsFetcher } from '@datahub/hooks/useFilteredFunctionsFetcher.tsx'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import type { DataPolicyData, PanelProps, TransitionData } from '@datahub/types.ts'
@@ -44,7 +44,8 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
     return { type, transition }
   }, [edges, nodes, selectedNode])
 
-  const { data: functions } = useGetFilteredFunction(context.type, context.transition)
+  const { getFilteredFunctions } = useFilteredFunctionsFetcher()
+  const functions = getFilteredFunctions(context.type, context.transition)
 
   const formData = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<OperationData> | undefined
