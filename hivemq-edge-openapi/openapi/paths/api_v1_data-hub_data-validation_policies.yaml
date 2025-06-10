@@ -291,6 +291,8 @@ get:
               - $ref: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/InvalidQueryParameterError: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
       description: URL parameter missing
     '503':
       content:
@@ -397,6 +399,11 @@ post:
               - $ref: "../components/schemas/errors/datahub/DataPolicyRejectedError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/RequestBodyMissingError: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
+                https://hivemq.com/edge/api/model/DataPolicyCreationFailureError: "../components/schemas/errors/datahub/DataPolicyCreationFailureError.yaml"
+                https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: "../components/schemas/errors/datahub/DataPolicyInvalidErrors.yaml"
+                https://hivemq.com/edge/api/model/DataPolicyRejectedError: "../components/schemas/errors/datahub/DataPolicyRejectedError.yaml"
       description: Data policy creation failed
     '409':
       content:
