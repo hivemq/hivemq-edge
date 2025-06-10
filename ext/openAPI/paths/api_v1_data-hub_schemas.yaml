@@ -159,6 +159,8 @@ get:
               - $ref: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/InvalidQueryParameterError: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
       description: URL parameter missing
     '503':
       content:
@@ -221,6 +223,10 @@ post:
               - $ref: "../components/schemas/errors/datahub/SchemaParsingFailureError.yaml"
             discriminator:
               propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/RequestBodyParameterMissingError: "../components/schemas/errors/http/RequestBodyParameterMissingError.yaml"
+                https://hivemq.com/edge/api/model/SchemaInvalidErrors: "../components/schemas/errors/datahub/SchemaInvalidErrors.yaml"
+                https://hivemq.com/edge/api/model/SchemaParsingFailureError: "../components/schemas/errors/datahub/SchemaParsingFailureError.yaml"
       description: Schema creation failed
     '409':
       content:
