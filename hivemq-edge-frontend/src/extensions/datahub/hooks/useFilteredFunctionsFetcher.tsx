@@ -1,24 +1,21 @@
 import { useCallback } from 'react'
 
-import { BehaviorPolicyTransitionEvent, type FunctionSpecs } from '@/api/__generated__'
+import type { BehaviorPolicyTransitionEvent, FunctionSpecs } from '@/api/__generated__'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { useGetAllFunctionSpecs } from '@datahub/api/hooks/DataHubFunctionsService/useGetAllFunctionSpecs.ts'
 
+/**
+ * This is a composite function that implements a combined serialiser, deserialiser and user-defined scripts
+ * in a single Operation node
+ * As such, it is only supporting data policies
+ */
 export const MqttTransformFunction: FunctionSpecs = {
   functionId: 'DataHub.transform',
   metadata: {
     inLicenseAllowed: true,
     isTerminal: false,
-    isDataOnly: false,
+    isDataOnly: true,
     hasArguments: true,
-    supportedEvents: [
-      BehaviorPolicyTransitionEvent.EVENT_ON_ANY,
-      BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_CONNECT,
-      BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_PUBLISH,
-      BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_SUBSCRIBE,
-      BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_DISCONNECT,
-      BehaviorPolicyTransitionEvent.CONNECTION_ON_DISCONNECT,
-    ],
   },
   schema: {
     title: 'Transformation',
