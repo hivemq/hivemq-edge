@@ -44,7 +44,7 @@ export const useFilteredFunctionsFetcher = () => {
     (type: DataHubNodeType = DataHubNodeType.DATA_POLICY, transition?: BehaviorPolicyTransitionEvent) => {
       if (!data || !data.items?.length || isLoading) return []
 
-      const filteredFunctions = data.items.filter((functionSpec) => {
+      const filteredFunctions = [...data.items, MqttTransformFunction].filter((functionSpec) => {
         // Check license allowance
         if (!functionSpec.metadata.inLicenseAllowed) return false
 
@@ -65,7 +65,7 @@ export const useFilteredFunctionsFetcher = () => {
         // Function passes all filters
         return true
       })
-      return [...filteredFunctions, MqttTransformFunction]
+      return filteredFunctions
     },
     [data, isLoading]
   )
