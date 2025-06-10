@@ -104,6 +104,7 @@ artifacts {
 license {
     header = file("HEADER")
     mapping("java", "SLASHSTAR_STYLE")
+    excludes(listOf("**/*.json"))
 }
 
 downloadLicenses {

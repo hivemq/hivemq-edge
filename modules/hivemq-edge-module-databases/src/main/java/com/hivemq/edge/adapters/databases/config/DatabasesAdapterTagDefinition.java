@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-present HiveMQ GmbH
+ * Copyright 2023-present HiveMQ GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
