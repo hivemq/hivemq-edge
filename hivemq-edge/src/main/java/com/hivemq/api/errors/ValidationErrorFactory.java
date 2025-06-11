@@ -46,7 +46,7 @@ public final class ValidationErrorFactory extends ErrorFactory {
 
     public static @NotNull EmptyFieldValidationError emptyFieldValidationError(
             final @NotNull String path) {
-        return emptyFieldValidationError("Required field '" + path + "' is empty", path);
+        return emptyFieldValidationError("Required field '" + path + "' is empty.", path);
     }
 
     public static @NotNull EmptyFieldValidationError emptyFieldValidationError(
