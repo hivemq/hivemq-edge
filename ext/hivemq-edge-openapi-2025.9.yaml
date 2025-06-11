@@ -5306,7 +5306,7 @@ components:
         general:
           status: 404
           title: Behavior Policy Not Found
-          detail: Behavior policy with ID 'abc' not found.
+          detail: Behavior policy with ID 'abc' is not found.
           id: abc
           type: https://hivemq.com/edge/api/model/BehaviorPolicyNotFoundError
     BehaviorPolicyRejectedError:
@@ -5461,14 +5461,25 @@ components:
             id:
               type: string
               description: The data policy id.
-            message:
-              type: string
-              description: The error message.
+              example: abc
           required:
             - id
+      example:
+        general:
+          status: 404
+          title: Data Policy Not Found
+          detail: Data policy with ID 'abc' is not found.
+          id: abc
+          type: https://hivemq.com/edge/api/model/DataPolicyNotFoundError
     DataPolicyRejectedError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
+      example:
+        general:
+          status: 400
+          title: Data Policy Rejected
+          detail: Data policy is rejected.
+          type: https://hivemq.com/edge/api/model/DataPolicyRejectedError
     DataPolicyUpdateFailureError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -5477,11 +5488,16 @@ components:
             id:
               type: string
               description: The ID of the policy that failed to update.
-            reason:
-              type: string
-              description: The actual reason.
+              example: abc
           required:
             - id
+      example:
+        general:
+          status: 400
+          title: Data Policy Update Failed
+          detail: Data policy with ID 'abc' update failed.
+          id: abc
+          type: https://hivemq.com/edge/api/model/DataPolicyUpdateFailureError
     PolicyIdMismatchError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
