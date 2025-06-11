@@ -5299,6 +5299,7 @@ components:
             id:
               type: string
               description: The data policy id.
+              example: abc
           required:
             - id
       example:
@@ -5316,7 +5317,6 @@ components:
           status: 400
           title: Behavior Policy Rejected
           detail: Behavior policy is rejected.
-          id: abc
           type: https://hivemq.com/edge/api/model/BehaviorPolicyRejectedError
     BehaviorPolicyUpdateFailureError:
       allOf:
@@ -5326,6 +5326,7 @@ components:
             id:
               type: string
               description: The ID of the policy that failed to update.
+              example: abc
           required:
             - id
       example:
@@ -5343,8 +5344,16 @@ components:
             id:
               type: string
               description: The client id.
+              example: abc
           required:
             - id
+      example:
+        general:
+          status: 404
+          title: Client Disconnected
+          detail: Client with ID 'abc' is disconnected.
+          id: abc
+          type: https://hivemq.com/edge/api/model/ClientDisconnectedError
     ClientNotFoundError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -5353,8 +5362,16 @@ components:
             id:
               type: string
               description: The client id.
+              example: abc
           required:
             - id
+      example:
+        general:
+          status: 404
+          title: Client Not Found
+          detail: Client with ID 'abc' is not found.
+          id: abc
+          type: https://hivemq.com/edge/api/model/ClientNotFoundError
     DataPolicyAlreadyPresentError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
