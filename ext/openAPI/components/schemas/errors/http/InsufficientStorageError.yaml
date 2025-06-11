@@ -2,8 +2,12 @@ allOf:
   - $ref: "../ApiError.yaml"
 example:
   general:
-    code: 507
-    detail: Insufficient Storage.
+    status: 507
+    title: "Insufficient Storage"
+    detail: "Insufficient Storage."
+    type: "https://hivemq.com/edge/api/model/InsufficientStorageError"
   policy:
-    code: 507
+    status: 507
+    title: "Insufficient Storage"
     detail: "Insufficient Storage: The policy with id '123' could not be added because of insufficient server storage."
+    type: "https://hivemq.com/edge/api/model/InsufficientStorageError"
