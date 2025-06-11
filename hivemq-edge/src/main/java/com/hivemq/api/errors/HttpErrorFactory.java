@@ -66,10 +66,9 @@ public final class HttpErrorFactory extends ErrorFactory {
             final @NotNull String reason) {
         return InvalidQueryParameterError.builder()
                 .type(type(InvalidQueryParameterError.class))
-                .title("Query parameter is invalid")
+                .title("Query Parameter is Invalid")
                 .detail("Query parameter '" + parameter + "' is invalid: " + reason)
                 .parameter(parameter)
-                .reason(reason)
                 .status(HttpStatus.BAD_REQUEST_400)
                 .build();
     }
