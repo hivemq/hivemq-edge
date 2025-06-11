@@ -9,3 +9,18 @@ allOf:
           $ref: "./DataPolicyValidationError.yaml"
     required:
       - childErrors
+example:
+  general:
+    status: 400
+    title: "Data Policy Invalid"
+    detail: "Data policy is invalid due to validation errors."
+    type: "https://hivemq.com/edge/api/model/DataPolicyInvalidErrors"
+    childErrors:
+      - detail: "The pipeline must contain at most one 'function1' function, but 3 were found at ['$.path1', '$.path2', '$.path3']."
+        function: "function1"
+        occurrences: 3
+        paths:
+          - "$.path1"
+          - "$.path2"
+          - "$.path3"
+        type: "https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError"
