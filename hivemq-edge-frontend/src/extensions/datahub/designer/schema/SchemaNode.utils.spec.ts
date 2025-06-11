@@ -1,3 +1,4 @@
+import { MOCK_PROTOBUF_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
 import { expect } from 'vitest'
 import type { Node } from '@xyflow/react'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
@@ -71,55 +72,145 @@ describe('getScriptFamilies', () => {
 })
 
 describe('checkValiditySchema', () => {
-  it('should return an error if not configured', async () => {
-    const MOCK_NODE_SCHEMA: Node<SchemaData> = {
-      id: 'node-id',
-      type: DataHubNodeType.FUNCTION,
-      data: {
-        name: 'node-id',
-        type: SchemaType.JSON,
-        version: 1,
-      },
-      ...MOCK_DEFAULT_NODE,
-      position: { x: 0, y: 0 },
-    }
+  describe('JSON', () => {
+    it('should return an error if not configured', async () => {
+      const MOCK_NODE_SCHEMA: Node<SchemaData> = {
+        id: 'node-id',
+        type: DataHubNodeType.FUNCTION,
+        data: {
+          name: 'node-id',
+          type: SchemaType.JSON,
+          version: 1,
+        },
+        ...MOCK_DEFAULT_NODE,
+        position: { x: 0, y: 0 },
+      }
 
-    const { node, error, data, resources } = checkValiditySchema(MOCK_NODE_SCHEMA)
-    expect(error).toStrictEqual({
-      detail:
-        'The JS Function is not properly defined. The following properties are missing: type, version, schemaSource',
-      id: 'node-id',
-      status: 404,
-      title: 'FUNCTION',
-      type: 'datahub.notConfigured',
+      const { node, error, data, resources } = checkValiditySchema(MOCK_NODE_SCHEMA)
+      expect(error).toStrictEqual({
+        detail:
+          'The JS Function is not properly defined. The following properties are missing: type, version, schemaSource',
+        id: 'node-id',
+        status: 404,
+        title: 'FUNCTION',
+        type: 'datahub.notConfigured',
+      })
+      expect(node).toStrictEqual(MOCK_NODE_SCHEMA)
+      expect(resources).toBeUndefined()
+      expect(data).toBeUndefined()
     })
-    expect(node).toStrictEqual(MOCK_NODE_SCHEMA)
-    expect(resources).toBeUndefined()
-    expect(data).toBeUndefined()
+
+    it('should return the payload otherwise', async () => {
+      const MOCK_NODE_SCHEMA: Node<SchemaData> = {
+        id: 'node-id',
+        type: DataHubNodeType.FUNCTION,
+        data: {
+          name: 'node-id',
+          type: SchemaType.JSON,
+          version: 1,
+          schemaSource: '{ tg: 1}',
+        },
+        ...MOCK_DEFAULT_NODE,
+        position: { x: 0, y: 0 },
+      }
+
+      const { node, error, data, resources } = checkValiditySchema(MOCK_NODE_SCHEMA)
+      expect(node).toStrictEqual(MOCK_NODE_SCHEMA)
+      expect(data).toStrictEqual({
+        id: 'node-id',
+        schemaDefinition: 'eyB0ZzogMX0=',
+        type: 'JSON',
+      })
+      expect(resources).toBeUndefined()
+      expect(error).toBeUndefined()
+    })
   })
 
-  it('should return the paylaod otherwise', async () => {
-    const MOCK_NODE_SCHEMA: Node<SchemaData> = {
-      id: 'node-id',
-      type: DataHubNodeType.FUNCTION,
-      data: {
-        name: 'node-id',
-        type: SchemaType.JSON,
-        version: 1,
-        schemaSource: '{ tg: 1}',
-      },
-      ...MOCK_DEFAULT_NODE,
-      position: { x: 0, y: 0 },
-    }
+  describe('PROTOBUF', () => {
+    it('should return an error if not configured', async () => {
+      const MOCK_NODE_SCHEMA: Node<SchemaData> = {
+        id: 'node-id',
+        type: DataHubNodeType.FUNCTION,
+        data: {
+          name: 'node-id',
+          type: SchemaType.PROTOBUF,
+          version: 1,
+          schemaSource: 'SOME FAKE PROTOBUF',
+        },
+        ...MOCK_DEFAULT_NODE,
+        position: { x: 0, y: 0 },
+      }
 
-    const { node, error, data, resources } = checkValiditySchema(MOCK_NODE_SCHEMA)
-    expect(node).toStrictEqual(MOCK_NODE_SCHEMA)
-    expect(data).toStrictEqual({
-      id: 'node-id',
-      schemaDefinition: 'eyB0ZzogMX0=',
-      type: 'JSON',
+      const { node, error, data, resources } = checkValiditySchema(MOCK_NODE_SCHEMA)
+      expect(error).toStrictEqual(
+        expect.objectContaining({
+          detail: 'The JS Function is not properly defined. The following properties are missing: messageType',
+          status: 404,
+          type: 'datahub.notConfigured',
+        })
+      )
+      expect(node).toStrictEqual(MOCK_NODE_SCHEMA)
+      expect(resources).toBeUndefined()
+      expect(data).toBeUndefined()
     })
-    expect(resources).toBeUndefined()
-    expect(error).toBeUndefined()
+    it('should return an error if illegal content', async () => {
+      const MOCK_NODE_SCHEMA: Node<SchemaData> = {
+        id: 'node-id',
+        type: DataHubNodeType.FUNCTION,
+        data: {
+          name: 'node-id',
+          type: SchemaType.PROTOBUF,
+          version: 1,
+          schemaSource: 'SOME FAKE PROTOBUF',
+          messageType: 'messageType',
+        },
+        ...MOCK_DEFAULT_NODE,
+        position: { x: 0, y: 0 },
+      }
+
+      const { node, error, data, resources } = checkValiditySchema(MOCK_NODE_SCHEMA)
+      expect(error).toStrictEqual(
+        expect.objectContaining({
+          detail: "Encountered an error while processing JS Function: illegal token 'SOME' (line 1)",
+          id: 'node-id',
+          status: 404,
+          title: 'FUNCTION',
+          type: 'datahub.notConfigured',
+        })
+      )
+      expect(node).toStrictEqual(MOCK_NODE_SCHEMA)
+      expect(resources).toBeUndefined()
+      expect(data).toBeUndefined()
+    })
+
+    it('should return the payload otherwise', async () => {
+      const MOCK_NODE_SCHEMA: Node<SchemaData> = {
+        id: 'node-id',
+        type: DataHubNodeType.FUNCTION,
+        data: {
+          name: 'node-id',
+          type: SchemaType.PROTOBUF,
+          version: 1,
+          schemaSource: MOCK_PROTOBUF_SCHEMA,
+          messageType: 'GpsCoordinates',
+        },
+        ...MOCK_DEFAULT_NODE,
+        position: { x: 0, y: 0 },
+      }
+
+      const { node, error, data, resources } = checkValiditySchema(MOCK_NODE_SCHEMA)
+      expect(node).toStrictEqual(MOCK_NODE_SCHEMA)
+      expect(data).toStrictEqual({
+        arguments: {
+          messageType: 'GpsCoordinates',
+        },
+        id: 'node-id',
+        schemaDefinition:
+          'CksKCnJvb3QucHJvdG8iNQoOR3BzQ29vcmRpbmF0ZXMSEQoJbG9uZ2l0dWRlGAEgASgFEhAKCGxhdGl0dWRlGAIgASgFYgZwcm90bzM=',
+        type: SchemaType.PROTOBUF,
+      })
+      expect(resources).toBeUndefined()
+      expect(error).toBeUndefined()
+    })
   })
 })

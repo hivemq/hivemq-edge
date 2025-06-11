@@ -97,7 +97,6 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
       }
       return { data: schema, node: schemaNode }
     } catch (e) {
-      console.log(e)
       return {
         node: schemaNode,
         error: PolicyCheckErrors.internal(schemaNode, e),
