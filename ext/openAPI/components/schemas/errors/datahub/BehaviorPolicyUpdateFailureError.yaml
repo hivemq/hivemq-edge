@@ -5,6 +5,7 @@ allOf:
       id:
         type: string
         description: The ID of the policy that failed to update.
+        example: "abc"
     required:
       - id
 example:
