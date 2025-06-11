@@ -5299,11 +5299,15 @@ components:
             id:
               type: string
               description: The data policy id.
-            message:
-              type: string
-              description: The error message.
           required:
             - id
+      example:
+        general:
+          status: 404
+          title: Behavior Policy Not Found
+          detail: Behavior policy with ID 'abc' not found.
+          id: abc
+          type: https://hivemq.com/edge/api/model/BehaviorPolicyNotFoundError
     BehaviorPolicyRejectedError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
