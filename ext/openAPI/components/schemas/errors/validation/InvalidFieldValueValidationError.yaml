@@ -10,7 +10,7 @@ allOf:
       value:
         type: string
         description: The invalid value.
-        example: "Practice makes perfect."
+        example: "functionDoesNotExist"
     required:
       - path
       - value
@@ -18,5 +18,5 @@ example:
   general:
     detail: "Referenced function does not exist."
     path: "$.action.pipeline[1].field"
-    value: "Practice makes perfect."
+    value: "functionDoesNotExist"
     type: "https://hivemq.com/edge/api/model/InvalidFieldValueValidationError"
