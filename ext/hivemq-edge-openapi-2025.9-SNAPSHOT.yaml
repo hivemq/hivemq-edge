@@ -5634,6 +5634,7 @@ components:
           status: 400
           title: Query Parameter is Invalid
           detail: 'Query parameter ''a'' is invalid: ''a'' could not be parsed.'
+          parameter: a
           type: https://hivemq.com/edge/api/model/InvalidQueryParameterError
     PreconditionFailedError:
       allOf:
@@ -5661,6 +5662,15 @@ components:
             parameter:
               type: string
               description: The the missing request body parameter.
+          required:
+            - parameter
+      example:
+        general:
+          status: 400
+          title: Required Request Body Parameter Missing
+          detail: Required request body parameter 'a' is missing.
+          parameter: a
+          type: https://hivemq.com/edge/api/model/RequestBodyParameterMissingError
     TemporaryNotAvailableError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
