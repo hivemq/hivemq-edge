@@ -5594,11 +5594,13 @@ components:
     InsufficientStorageError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
+      example:
+        general:
+          code: 507
+          detail: Insufficient Storage.
+        policy:
+          code: 507
+          detail: 'Insufficient Storage: The policy with id ''123'' could not be added because of insufficient server storage.'
     InternalServerError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
