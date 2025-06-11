@@ -5611,6 +5611,20 @@ components:
                 $ref: '#/components/schemas/SchemaValidationError'
           required:
             - childErrors
+      example:
+        general:
+          status: 400
+          title: Schema Invalid
+          detail: Schema is invalid due to validation errors.
+          type: https://hivemq.com/edge/api/model/SchemaInvalidErrors
+          childErrors:
+            - detail: The length of script field '$.id' 1025 must be between 0 and 1024.
+              paths: $.id
+              value: aaa...aaa
+              actualLength: 1025
+              expectedMinimumLength: 0
+              expectedMaximumLength: 1024
+              type: https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError
     SchemaNotFoundError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
