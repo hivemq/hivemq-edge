@@ -1,2 +1,8 @@
 allOf:
   - $ref: "../ApiError.yaml"
+example:
+  general:
+    status: 400
+    title: "Required Request Body Missing"
+    detail: "Required request body is missing."
+    type: "https://hivemq.com/edge/api/model/RequestBodyMissingError"
