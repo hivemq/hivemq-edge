@@ -5393,13 +5393,12 @@ components:
     DataPolicyCreationFailureError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-          required:
-            - reason
+      example:
+        general:
+          status: 400
+          title: Data Policy Creation Failed
+          detail: 'Data policy creation failed: The policy was rejected.'
+          type: https://hivemq.com/edge/api/model/DataPolicyCreationFailureError
     DataPolicyValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
