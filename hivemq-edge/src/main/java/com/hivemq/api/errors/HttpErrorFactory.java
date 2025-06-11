@@ -42,7 +42,6 @@ public final class HttpErrorFactory extends ErrorFactory {
                 .type(type(InsufficientStorageError.class))
                 .title("Insufficient Storage")
                 .detail(reason == null ? "Insufficient Storage." : "Insufficient Storage: " + reason)
-                .reason(reason)
                 .status(HttpStatus.INSUFFICIENT_STORAGE_507)
                 .build();
     }
