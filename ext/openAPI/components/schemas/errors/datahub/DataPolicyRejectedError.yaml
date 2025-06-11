@@ -1,2 +1,8 @@
 allOf:
   - $ref: "../ApiError.yaml"
+example:
+  general:
+    status: 400
+    title: "Data Policy Rejected"
+    detail: "Data policy is rejected."
+    type: "https://hivemq.com/edge/api/model/DataPolicyRejectedError"
