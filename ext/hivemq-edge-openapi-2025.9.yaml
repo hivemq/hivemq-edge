@@ -5547,8 +5547,16 @@ components:
             id:
               type: string
               description: The schema id.
+              example: abc
           required:
             - id
+      example:
+        general:
+          status: 409
+          title: Schema Already Present
+          detail: The given schema is already present as the latest version for the schema id 'abc'.
+          id: abc
+          type: https://hivemq.com/edge/api/model/SchemaAlreadyPresentError
     SchemaEtagMismatchError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -5557,11 +5565,21 @@ components:
             id:
               type: string
               description: The schema id.
+              example: abc
             eTag:
               type: string
               description: The eTag.
+              example: 33a64df551425fcc55e4d42a148795d9f25f89d4
           required:
             - id
+      example:
+        general:
+          status: 412
+          title: Schema eTag Mismatch
+          detail: Schema with id 'abc' does not match the given etag '33a64df551425fcc55e4d42a148795d9f25f89d4'.
+          id: abc
+          eTag: 33a64df551425fcc55e4d42a148795d9f25f89d4
+          type: https://hivemq.com/edge/api/model/SchemaEtagMismatchError
     SchemaValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
