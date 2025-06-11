@@ -27,7 +27,7 @@ allOf:
       value:
         type: string
         description: The invalid value.
-        example: "value"
+        example: "The early bird catches the worm."
     required:
       - actualLength
       - expectedMinimumLength
@@ -42,4 +42,4 @@ example:
     maximumLength: 20
     path: "$.field"
     value: "The early bird catches the worm."
-    type: "https://hivemq.com/edge/api/model/EmptyFieldValidationError"
+    type: "https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError"
