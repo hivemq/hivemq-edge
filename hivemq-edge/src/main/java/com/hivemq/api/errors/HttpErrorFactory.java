@@ -114,8 +114,8 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull UrlParameterMissingError urlParameterMissingError(final @NotNull String parameter) {
         return UrlParameterMissingError.builder()
                 .type(type(UrlParameterMissingError.class))
-                .title("Required url parameter missing")
-                .detail("Required url parameter '" + parameter + "' missing")
+                .title("Required URL Parameter Missing")
+                .detail("Required URL parameter '" + parameter + "' is missing.")
                 .parameter(parameter)
                 .status(HttpStatus.BAD_REQUEST_400)
                 .build();
