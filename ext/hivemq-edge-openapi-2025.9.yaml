@@ -5596,19 +5596,29 @@ components:
         - $ref: '#/components/schemas/ApiError'
       example:
         general:
-          code: 507
+          status: 507
+          title: Insufficient Storage
           detail: Insufficient Storage.
+          type: https://hivemq.com/edge/api/model/InsufficientStorageError
         policy:
-          code: 507
+          status: 507
+          title: Insufficient Storage
           detail: 'Insufficient Storage: The policy with id ''123'' could not be added because of insufficient server storage.'
+          type: https://hivemq.com/edge/api/model/InsufficientStorageError
     InternalServerError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
+      example:
+        general:
+          status: 500
+          title: Internal Server Error
+          detail: An unexpected error occurred, check the logs.
+          type: https://hivemq.com/edge/api/model/InternalServerError
+        creation:
+          status: 500
+          title: Internal Server Error
+          detail: 'An unexpected error occurred: Exception during creation of the Json Schema for functions.'
+          type: https://hivemq.com/edge/api/model/InternalServerError
     InvalidQueryParameterError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
