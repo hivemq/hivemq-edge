@@ -5,8 +5,13 @@ allOf:
       id:
         type: string
         description: The data policy id.
-      message:
-        type: string
-        description: The error message.
+        example: "abc"
     required:
       - id
+example:
+  general:
+    status: 409
+    title: "Data Policy Already Present"
+    detail: "The given data policy 'abc' is already present."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/DataPolicyAlreadyPresentError"
