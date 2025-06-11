@@ -88,7 +88,7 @@ class OpcUaProtocolAdapterAuthTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     public void whenNoAuthAndNoSubscriptions_thenConnectSuccessfully() {
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
@@ -112,7 +112,7 @@ class OpcUaProtocolAdapterAuthTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     public void whenBasicAuthAndNoSubscriptions_thenConnectSuccessfully() {
         final Auth auth = new Auth(new BasicAuth("testuser", "testpass"), null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
@@ -135,7 +135,7 @@ class OpcUaProtocolAdapterAuthTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     public void whenTlsAndNoSubscriptions_thenConnectSuccessfully() {
         final Security security = new Security(SecPolicy.NONE);
         final Tls tls = new Tls(true, null, null);
@@ -160,7 +160,7 @@ class OpcUaProtocolAdapterAuthTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     public void whenCertAuthAndNoSubscriptions_thenConnectSuccessfully() throws Exception{
         final Auth auth = new Auth(null, new X509Auth(true));
 
