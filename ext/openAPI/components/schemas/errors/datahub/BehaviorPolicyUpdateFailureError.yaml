@@ -5,8 +5,12 @@ allOf:
       id:
         type: string
         description: The ID of the policy that failed to update.
-      reason:
-        type: string
-        description: The actual reason.
     required:
       - id
+example:
+  general:
+    status: 400
+    title: "Behavior Policy Update Failed"
+    detail: "Behavior policy with ID 'abc' update failed."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/BehaviorPolicyUpdateFailureError"
