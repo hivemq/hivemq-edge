@@ -105,8 +105,8 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull TemporaryNotAvailableError temporaryNotAvailableError() {
         return TemporaryNotAvailableError.builder()
                 .type(type(TemporaryNotAvailableError.class))
-                .title("The endpoint is temporarily not available")
-                .detail("The endpoint is temporarily not available, please try again later")
+                .title("Endpoint Temporarily not Available")
+                .detail("The endpoint is temporarily not available, please try again later.")
                 .status(HttpStatus.SERVICE_UNAVAILABLE_503)
                 .build();
     }
