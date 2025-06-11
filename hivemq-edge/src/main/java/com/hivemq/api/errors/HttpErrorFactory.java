@@ -46,12 +46,17 @@ public final class HttpErrorFactory extends ErrorFactory {
                 .build();
     }
 
+    public static @NotNull InternalServerError internalServerError() {
+        return internalServerError(null);
+    }
+
     public static @NotNull InternalServerError internalServerError(final @Nullable String reason) {
         return InternalServerError.builder()
                 .type(type(InternalServerError.class))
-                .title("Internal Error")
-                .detail(reason == null ? "An unexpected error occurred, check the logs." : reason)
-                .reason(reason)
+                .title("Internal Server Error")
+                .detail(reason == null ?
+                        "An unexpected error occurred, check the logs." :
+                        "An unexpected error occurred: " + reason)
                 .status(HttpStatus.INTERNAL_SERVER_ERROR_500)
                 .build();
     }

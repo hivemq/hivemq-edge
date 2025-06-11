@@ -1,7 +1,13 @@
 allOf:
   - $ref: "../ApiError.yaml"
-  - type: object
-    properties:
-      reason:
-        type: string
-        description: The actual reason.
+example:
+  general:
+    status: 500
+    title: "Internal Server Error"
+    detail: "An unexpected error occurred, check the logs."
+    type: "https://hivemq.com/edge/api/model/InternalServerError"
+  creation:
+    status: 500
+    title: "Internal Server Error"
+    detail: "An unexpected error occurred: Exception during creation of the Json Schema for functions."
+    type: "https://hivemq.com/edge/api/model/InternalServerError"
