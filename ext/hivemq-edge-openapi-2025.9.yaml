@@ -5627,12 +5627,14 @@ components:
             parameter:
               type: string
               description: The query parameter.
-            reason:
-              type: string
-              description: The reason.
           required:
             - parameter
-            - reason
+      example:
+        general:
+          status: 400
+          title: Query Parameter is Invalid
+          detail: 'Query parameter ''a'' is invalid: ''a'' could not be parsed.'
+          type: https://hivemq.com/edge/api/model/InvalidQueryParameterError
     PreconditionFailedError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
