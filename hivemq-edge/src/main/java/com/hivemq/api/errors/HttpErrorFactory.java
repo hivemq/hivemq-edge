@@ -79,7 +79,6 @@ public final class HttpErrorFactory extends ErrorFactory {
                 .type(type(PreconditionFailedError.class))
                 .title("Precondition Failed")
                 .detail("A precondition required for fulfilling the request was not fulfilled: " + reason)
-                .reason(reason)
                 .status(HttpStatus.PRECONDITION_FAILED_412)
                 .build();
     }

@@ -1,9 +1,8 @@
 allOf:
   - $ref: "../ApiError.yaml"
-  - type: object
-    properties:
-      reason:
-        type: string
-        description: The actual reason.
-    required:
-      - reason
+example:
+  general:
+    status: 412
+    title: "Precondition Failed"
+    detail: "A precondition required for fulfilling the request was not fulfilled: Policy does not match the given etag 'abc'."
+    type: "https://hivemq.com/edge/api/model/PreconditionFailedError"
