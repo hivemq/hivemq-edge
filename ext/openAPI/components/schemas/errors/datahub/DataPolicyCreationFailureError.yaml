@@ -1,9 +1,8 @@
 allOf:
   - $ref: "../ApiError.yaml"
-  - type: object
-    properties:
-      reason:
-        type: string
-        description: The actual reason.
-    required:
-      - reason
+example:
+  general:
+    status: 400
+    title: "Data Policy Creation Failed"
+    detail: "Data policy creation failed: The policy was rejected."
+    type: "https://hivemq.com/edge/api/model/DataPolicyCreationFailureError"
