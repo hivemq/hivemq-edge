@@ -5647,6 +5647,12 @@ components:
     RequestBodyMissingError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
+      example:
+        general:
+          status: 400
+          title: Required Request Body Missing
+          detail: Required request body is missing.
+          type: https://hivemq.com/edge/api/model/RequestBodyMissingError
     RequestBodyParameterMissingError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
