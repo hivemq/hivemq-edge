@@ -6,5 +6,11 @@ allOf:
         type: string
         format: json-path
         description: The missing path.
+        example: "$.id"
     required:
       - path
+example:
+  general:
+    detail: "Required field '$.id' is missing."
+    path: "$.id"
+    type: "https://hivemq.com/edge/api/model/MissingFieldValidationError"
