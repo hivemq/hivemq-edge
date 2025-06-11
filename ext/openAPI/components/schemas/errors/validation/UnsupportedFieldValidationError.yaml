@@ -12,7 +12,15 @@ allOf:
         type: string
         format: json-path
         description: The json path.
+        example: "$.id"
     required:
       - actualValue
       - expectedValue
       - path
+example:
+  general:
+    detail: "Unsupported type 'String' for field '$.id'. Expected type is 'Object'."
+    actualValue: "String"
+    expectedValue: "Object"
+    path: "$.id"
+    type: "https://hivemq.com/edge/api/model/UnsupportedFieldValidationError"
