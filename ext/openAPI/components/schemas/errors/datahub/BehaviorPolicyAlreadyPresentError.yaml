@@ -10,6 +10,7 @@ allOf:
       - id
 example:
   general:
+    status: 409
     title: "Behavior Policy Already Present"
     detail: "The given behavior policy 'abc' is already present."
     id: "abc"
