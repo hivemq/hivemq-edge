@@ -4947,8 +4947,18 @@ components:
                 type: string
                 format: json-path
                 description: The json path.
+              example:
+                - $.field1
+                - $.field2
           required:
             - paths
+      example:
+        general:
+          detail: 'At least one of the fields must be present: ''$.field1'', ''$.field2''.'
+          paths:
+            - $.field1
+            - $.field2
+          type: https://hivemq.com/edge/api/model/AtLeastOneFieldMissingValidationError
     AtMostOneFunctionValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
