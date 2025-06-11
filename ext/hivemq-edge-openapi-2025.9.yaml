@@ -5690,6 +5690,13 @@ components:
               description: The name of the missing parameter.
           required:
             - parameter
+      example:
+        general:
+          status: 400
+          title: Required URL Parameter Missing
+          detail: Required URL parameter 'a' is missing.
+          parameter: a
+          type: https://hivemq.com/edge/api/model/UrlParameterMissingError
     JsonNode:
       type: object
       description: The arguments of the fsm derived from the behavior policy.
