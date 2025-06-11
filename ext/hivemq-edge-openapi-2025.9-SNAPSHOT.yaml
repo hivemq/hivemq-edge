@@ -5506,12 +5506,21 @@ components:
             actualId:
               type: string
               description: The actual id.
+              example: id1
             expectedId:
               type: string
               description: The expected id.
+              example: id2
           required:
             - actualId
             - expectedId
+      example:
+        general:
+          status: 400
+          title: Policy ID Mismatch
+          detail: The policy ID 'id1' in the request parameter does not match the policy ID 'id2' in the policy request body.
+          id: abc
+          type: https://hivemq.com/edge/api/model/PolicyIdMismatchError
     PolicyNotFoundError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -5520,8 +5529,16 @@ components:
             id:
               type: string
               description: The policy id.
+              example: abc
           required:
             - id
+      example:
+        general:
+          status: 404
+          title: Policy Not Found
+          detail: Policy with ID 'abc' is not found.
+          id: abc
+          type: https://hivemq.com/edge/api/model/PolicyNotFoundError
     SchemaAlreadyPresentError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
