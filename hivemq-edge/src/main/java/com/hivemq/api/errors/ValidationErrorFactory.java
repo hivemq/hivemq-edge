@@ -16,6 +16,7 @@
 
 package com.hivemq.api.errors;
 
+import com.hivemq.edge.api.model.AtLeastOneFieldMissingValidationError;
 import com.hivemq.edge.api.model.EmptyFieldValidationError;
 import com.hivemq.edge.api.model.InvalidFieldLengthValidationError;
 import com.hivemq.edge.api.model.InvalidFieldValueValidationError;
@@ -24,9 +25,23 @@ import com.hivemq.edge.api.model.MissingFieldValidationError;
 import com.hivemq.edge.api.model.UnsupportedFieldValidationError;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 public final class ValidationErrorFactory extends ErrorFactory {
     private ValidationErrorFactory() {
         super();
+    }
+
+    public static @NotNull AtLeastOneFieldMissingValidationError atLeastOneFieldMissingValidationError(final @NotNull String... paths) {
+        return AtLeastOneFieldMissingValidationError.builder()
+                .type(type(AtLeastOneFieldMissingValidationError.class))
+                .detail("At least one of the fields must be present: " +
+                        Stream.of(paths).map(path -> "'" + path + "'").collect(Collectors.joining(", ")) +
+                        ".")
+                .paths(List.of(paths))
+                .build();
     }
 
     public static @NotNull EmptyFieldValidationError emptyFieldValidationError(
