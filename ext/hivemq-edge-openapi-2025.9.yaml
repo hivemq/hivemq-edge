@@ -5094,7 +5094,7 @@ components:
             value:
               type: string
               description: The invalid value.
-              example: The early bird catches the worm.
+              example: function transform() { return 'Hello, World!'; }
           required:
             - actualLength
             - expectedMinimumLength
@@ -5103,12 +5103,12 @@ components:
             - value
       example:
         general:
-          detail: The length of script field '$.id' 32 must be between 0 and 20.
-          actualLength: 32
+          detail: The length of script field '$.transform' 48 must be between 0 and 20.
+          actualLength: 48
           minimumLength: 0
           maximumLength: 20
-          path: $.field
-          value: The early bird catches the worm.
+          path: $.transform
+          value: function transform() { return 'Hello, World!'; }
           type: https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError
     InvalidFieldValueValidationError:
       allOf:
@@ -5123,7 +5123,7 @@ components:
             value:
               type: string
               description: The invalid value.
-              example: Practice makes perfect.
+              example: functionDoesNotExist
           required:
             - path
             - value
@@ -5131,7 +5131,7 @@ components:
         general:
           detail: Referenced function does not exist.
           path: $.action.pipeline[1].field
-          value: Practice makes perfect.
+          value: functionDoesNotExist
           type: https://hivemq.com/edge/api/model/InvalidFieldValueValidationError
     InvalidFunctionOrderValidationError:
       allOf:
@@ -5161,12 +5161,20 @@ components:
               type: string
               format: json-path
               description: The invalid identifier path.
+              example: $.id
             value:
               type: string
               description: The invalid identifier value.
+              example: invalidId
           required:
             - path
             - value
+      example:
+        general:
+          detail: Identifier script 'id' must begin with a letter and may only consist of lowercase letters, uppercase letters, numbers, periods, hyphens, and underscores.
+          path: $.id
+          value: invalidId
+          type: https://hivemq.com/edge/api/model/InvalidIdentifierValidationError
     MissingFieldValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
