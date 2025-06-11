@@ -5,5 +5,13 @@ allOf:
       id:
         type: string
         description: The client id.
+        example: "abc"
     required:
       - id
+example:
+  general:
+    status: 404
+    title: "Client Disconnected"
+    detail: "Client with ID 'abc' is disconnected."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/ClientDisconnectedError"
