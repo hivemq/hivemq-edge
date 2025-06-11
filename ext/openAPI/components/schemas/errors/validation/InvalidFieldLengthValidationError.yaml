@@ -27,7 +27,7 @@ allOf:
       value:
         type: string
         description: The invalid value.
-        example: "The early bird catches the worm."
+        example: "function transform() { return 'Hello, World!'; }"
     required:
       - actualLength
       - expectedMinimumLength
@@ -36,10 +36,10 @@ allOf:
       - value
 example:
   general:
-    detail: "The length of script field '$.id' 32 must be between 0 and 20."
-    actualLength: 32
+    detail: "The length of script field '$.transform' 48 must be between 0 and 20."
+    actualLength: 48
     minimumLength: 0
     maximumLength: 20
-    path: "$.field"
-    value: "The early bird catches the worm."
+    path: "$.transform"
+    value: "function transform() { return 'Hello, World!'; }"
     type: "https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError"
