@@ -132,7 +132,7 @@ public class OpcUaClientConnection {
             return newOcpUaClient.connectAsync().thenCompose(same_as_newOcpUaClient -> {
                 log.info("Client created and connected successfully");
                 return createSubscription(newOcpUaClient);
-            }).thenApply(ignored -> (Void) null).whenComplete((ignored, throwable) -> {
+            }).whenComplete((ignored, throwable) -> {
                 if (throwable != null) {
                     log.error("Failed to create subscription", throwable);
                     protocolAdapterState.setConnectionStatus(ERROR);
@@ -152,7 +152,7 @@ public class OpcUaClientConnection {
                     opcUaClientInstance = new OpcUaClientContext(newOcpUaClient, faultListener, activityListener);
                     protocolAdapterState.setConnectionStatus(CONNECTED);
                 }
-            });
+            }).thenApply(ignored -> null);
         } else {
             log.warn("Start operation is already in progress or has been completed.");
             return CompletableFuture.completedFuture(null);
