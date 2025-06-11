@@ -86,8 +86,8 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull RequestBodyMissingError requestBodyMissingError() {
         return RequestBodyMissingError.builder()
                 .type(type(RequestBodyMissingError.class))
-                .title("Required request body missing")
-                .detail("Required request body missing.")
+                .title("Required Request Body Missing")
+                .detail("Required request body is missing.")
                 .status(HttpStatus.BAD_REQUEST_400)
                 .build();
     }
