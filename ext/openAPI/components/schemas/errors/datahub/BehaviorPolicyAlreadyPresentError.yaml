@@ -5,8 +5,12 @@ allOf:
       id:
         type: string
         description: The behavior policy id.
-      message:
-        type: string
-        description: The error message.
+        example: "abc"
     required:
       - id
+example:
+  general:
+    title: "Behavior Policy Already Present"
+    detail: "The given behavior policy 'abc' is already present."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/BehaviorPolicyAlreadyPresentError"
