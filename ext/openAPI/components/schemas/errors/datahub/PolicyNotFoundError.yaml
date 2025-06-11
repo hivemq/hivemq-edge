@@ -5,5 +5,13 @@ allOf:
       id:
         type: string
         description: The policy id.
+        example: "abc"
     required:
       - id
+example:
+  general:
+    status: 404
+    title: "Policy Not Found"
+    detail: "Policy with ID 'abc' is not found."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/PolicyNotFoundError"
