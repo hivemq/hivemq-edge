@@ -5,9 +5,18 @@ allOf:
       actualId:
         type: string
         description: The actual id.
+        example: "id1"
       expectedId:
         type: string
         description: The expected id.
+        example: "id2"
     required:
       - actualId
       - expectedId
+example:
+  general:
+    status: 400
+    title: "Policy ID Mismatch"
+    detail: "The policy ID 'id1' in the request parameter does not match the policy ID 'id2' in the policy request body."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/PolicyIdMismatchError"
