@@ -5,6 +5,7 @@ allOf:
       id:
         type: string
         description: The data policy id.
+        example: "abc"
     required:
       - id
 example:
