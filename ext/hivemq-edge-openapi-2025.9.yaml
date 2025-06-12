@@ -5651,12 +5651,16 @@ components:
             alias:
               type: string
               description: The schema alias.
-            message:
-              type: string
-              description: The error message.
+              example: abc
           required:
             - alias
-            - message
+      example:
+        general:
+          status: 400
+          title: Schema Parsing Failure
+          detail: The given schema 'abc' could not be parsed.
+          alias: abc
+          type: https://hivemq.com/edge/api/model/SchemaParsingFailureError
     SchemaReferencedError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -5665,11 +5669,16 @@ components:
             id:
               type: string
               description: The schema ID.
-            message:
-              type: string
-              description: The error message.
+              example: abc
           required:
             - id
+      example:
+        general:
+          status: 400
+          title: Schema Referenced
+          detail: Schema with ID 'abc' is referenced.
+          id: abc
+          type: https://hivemq.com/edge/api/model/SchemaReferencedError
     ScriptAlreadyPresentError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
