@@ -1,9 +1,8 @@
 allOf:
   - $ref: "../ApiError.yaml"
-  - type: object
-    properties:
-      reason:
-        type: string
-        description: The actual reason.
-    required:
-      - reason
+example:
+  general:
+    status: 400
+    title: "Script Creation Failure"
+    detail: "The given script could not be created."
+    type: "https://hivemq.com/edge/api/model/ScriptCreationFailureError"
