@@ -2,11 +2,15 @@ allOf:
   - $ref: "../ApiError.yaml"
   - type: object
     properties:
-      message:
-        type: string
-        description: The error message.
       path:
         type: string
         description: The json path of the topic filter.
+        example: "$.filter"
     required:
       - path
+example:
+  general:
+    status: 400
+    title: "Topic Filter Mismatch"
+    detail: "The topic filter '$.filter' mismatches."
+    type: "https://hivemq.com/edge/api/model/TopicFilterMismatchError"
