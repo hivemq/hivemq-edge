@@ -5,8 +5,13 @@ allOf:
       id:
         type: string
         description: The schema ID.
-      message:
-        type: string
-        description: The error message.
+        example: "abc"
     required:
       - id
+example:
+  general:
+    status: 400
+    title: "Schema Referenced"
+    detail: "Schema with ID 'abc' is referenced."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/SchemaReferencedError"
