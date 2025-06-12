@@ -61,7 +61,9 @@ export function checkValidityTransformFunction(
   const serialisers = getIncomers(operationNode, nodes, edges).filter(isSchemaNodeType)
   const connectedEdges = getConnectedEdges([...serialisers], edges).filter(
     (edge) =>
-      edge.targetHandle === OperationData.Handle.SERIALISER || edge.targetHandle === OperationData.Handle.DESERIALISER
+      (edge.targetHandle === OperationData.Handle.SERIALISER ||
+        edge.targetHandle === OperationData.Handle.DESERIALISER) &&
+      edge.target === operationNode.id
   )
   const [serial, ...restSerial] = connectedEdges.filter((edge) => edge.targetHandle === OperationData.Handle.SERIALISER)
   const [deserial, ...restDeserial] = connectedEdges.filter(
