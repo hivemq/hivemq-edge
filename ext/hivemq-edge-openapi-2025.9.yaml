@@ -5807,21 +5807,25 @@ components:
             id:
               type: string
               description: The script ID.
-            message:
-              type: string
-              description: The error message.
+              example: abc
           required:
             - id
+      example:
+        general:
+          status: 400
+          title: Script Referenced
+          detail: Script with ID 'abc' is referenced.
+          id: abc
+          type: https://hivemq.com/edge/api/model/ScriptReferencedError
     ScriptSanitationFailureError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-          required:
-            - reason
+      example:
+        general:
+          status: 400
+          title: Script Sanitation Failure
+          detail: The given script could not be sanitized.
+          type: https://hivemq.com/edge/api/model/ScriptSanitationFailureError
     TopicFilterMismatchError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
