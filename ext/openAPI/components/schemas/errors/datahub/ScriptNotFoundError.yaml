@@ -5,8 +5,13 @@ allOf:
       id:
         type: string
         description: The script ID.
-      message:
-        type: string
-        description: The error message.
+        example: "abc"
     required:
       - id
+example:
+  general:
+    status: 404
+    title: "Script Not Found"
+    detail: "Script with ID 'abc' is not found."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/ScriptNotFoundError"
