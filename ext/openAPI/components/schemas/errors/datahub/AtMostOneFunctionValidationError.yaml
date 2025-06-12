@@ -5,17 +5,34 @@ allOf:
       function:
         type: string
         description: The function.
+        example: "function1"
       occurrences:
         type: integer
         format: int32
         description: The occurrences of the function.
+        minimum: 0
+        example: 3
       paths:
         type: array
         items:
           type: string
           format: json-path
         description: The json paths where the function occurs.
+        example:
+          - "$.path1"
+          - "$.path2"
+          - "$.path3"
     required:
       - function
       - occurrences
       - paths
+example:
+  general:
+    detail: "The pipeline must contain at most one 'function1' function, but 3 were found at ['$.path1', '$.path2', '$.path3']."
+    function: "function1"
+    occurrences: 3
+    paths:
+      - "$.path1"
+      - "$.path2"
+      - "$.path3"
+    type: "https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError"
