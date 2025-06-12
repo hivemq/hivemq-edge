@@ -5633,11 +5633,16 @@ components:
             id:
               type: string
               description: The schema ID.
-            message:
-              type: string
-              description: The error message.
+              example: abc
           required:
             - id
+      example:
+        general:
+          status: 404
+          title: Schema Not Found
+          detail: Schema with ID 'abc' is not found.
+          id: abc
+          type: https://hivemq.com/edge/api/model/SchemaNotFoundError
     SchemaParsingFailureError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
