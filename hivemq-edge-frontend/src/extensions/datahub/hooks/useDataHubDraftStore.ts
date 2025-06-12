@@ -77,10 +77,11 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceStatus & Workspace
       onUpdateNodes: <T>(item: string, data: T) => {
         set({
           nodes: get().nodes.map((node) => {
+            const newNode = { ...node }
             if (node.id === item) {
-              node.data = data
+              newNode.data = data
             }
-            return node
+            return newNode
           }),
         })
       },
