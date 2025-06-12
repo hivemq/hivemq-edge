@@ -5,21 +5,35 @@ allOf:
       event:
         type: string
         description: The event name.
+        example: "event1"
       fromState:
         type: string
         description: The event from state.
+        example: "state1"
       id:
         type: string
         description: The event id.
+        example: "abc"
       path:
         type: string
         description: The path.
+        example: "$.event"
       toState:
         type: string
         description: The event to state.
+        example: "state2"
     required:
       - event
       - fromState
       - id
       - path
       - toState
+example:
+  general:
+    detail: "The transition from state 'state1' to state 'state2' on event 'event1' in '$.event' is not defined for behavior 'abc'."
+    event: "event1"
+    fromState: "state1"
+    toState: "state2"
+    id: "abc"
+    path: "$.event"
+    type: "https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError"
