@@ -5687,18 +5687,25 @@ components:
             id:
               type: string
               description: The script id.
+              example: abc
           required:
             - id
+      example:
+        general:
+          status: 409
+          title: Script Already Present
+          detail: The given script 'abc' is already present.
+          id: abc
+          type: https://hivemq.com/edge/api/model/ScriptAlreadyPresentError
     ScriptCreationFailureError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-          required:
-            - reason
+      example:
+        general:
+          status: 400
+          title: Script Creation Failure
+          detail: The given script could not be created.
+          type: https://hivemq.com/edge/api/model/ScriptCreationFailureError
     ScriptEtagMismatchError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
