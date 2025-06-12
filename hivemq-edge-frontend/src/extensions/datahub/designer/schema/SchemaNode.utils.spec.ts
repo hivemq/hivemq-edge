@@ -1,12 +1,18 @@
+import type { SchemaReference } from '@/api/__generated__'
 import { MOCK_PROTOBUF_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
 import { expect } from 'vitest'
 import type { Node } from '@xyflow/react'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
-import type { SchemaData } from '@datahub/types.ts'
+import type { PolicyOperationArguments, SchemaData } from '@datahub/types.ts'
 import { DataHubNodeType, SchemaType } from '@datahub/types.ts'
-import { checkValiditySchema, getSchemaFamilies, getScriptFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
+import {
+  checkValiditySchema,
+  getSchemaFamilies,
+  getScriptFamilies,
+  getSchemaRefVersion,
+} from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers__'
 
 const NODE_ID = 'the other id'
@@ -68,6 +74,19 @@ describe('getScriptFamilies', () => {
         [NODE_ID]: expect.objectContaining({ name: NODE_ID, versions: [1] }),
       })
     )
+  })
+})
+
+describe('getSchemaRefVersion', () => {
+  const MOCK_SCHEMA_REF: SchemaReference = { schemaId: 'test', version: '1' }
+  const MOCK_SCHEMA_POLICY_REF: PolicyOperationArguments = { schemaId: 'test', schemaVersion: '1' }
+
+  it('should deal with an empty list of schemas', () => {
+    expect(getSchemaRefVersion(MOCK_SCHEMA_REF)).toStrictEqual('1')
+  })
+
+  it('should deal with an empty list of schemas', () => {
+    expect(getSchemaRefVersion(MOCK_SCHEMA_POLICY_REF)).toEqual('1')
   })
 })
 
