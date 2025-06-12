@@ -5190,17 +5190,27 @@ components:
             function:
               type: string
               description: The function.
+              example: transform
             path:
               type: string
               format: json-path
               description: The json path.
+              example: $.path
             previousFunction:
               type: string
               description: The previous function.
+              example: init
           required:
             - function
             - path
             - previousFunction
+      example:
+        general:
+          detail: The operation at '$.path' with the functionId 'transform' must be after a 'init' operation.
+          function: transform
+          path: $.path
+          previousFunction: init
+          type: https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError
     InvalidIdentifierValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
@@ -5246,17 +5256,31 @@ components:
         - $ref: '#/components/schemas/ValidationError'
         - type: object
           properties:
-            field:
+            path:
               type: string
-              description: The field.
+              description: The json path of the field.
+              example: $.path
             variables:
               type: array
               items:
                 type: string
               description: The unknown variables.
+              example:
+                - a
+                - b
+                - c
           required:
-            - field
+            - path
             - variables
+      example:
+        general:
+          detail: 'Field ''$.path'' contains unknown variables: [a, b, c].'
+          path: $.path
+          variables:
+            - a
+            - b
+            - c
+          type: https://hivemq.com/edge/api/model/UnknownVariableValidationError
     UnsupportedFieldValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
