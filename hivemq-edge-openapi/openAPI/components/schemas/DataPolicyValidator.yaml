@@ -1,0 +1,14 @@
+type: object
+description: A policy validator which executes the defined validation.
+properties:
+  arguments:
+    type: object
+    description: The required arguments of the referenced validator type.
+  type:
+    type: string
+    description: The type of the validator.
+    enum:
+      - SCHEMA
+required:
+  - arguments
+  - type
