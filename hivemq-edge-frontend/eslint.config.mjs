@@ -7,6 +7,7 @@ import tsEslint from 'typescript-eslint'
 import eslintConfigPrettier from 'eslint-config-prettier'
 import pluginCypress from 'eslint-plugin-cypress/flat'
 import pluginQuery from '@tanstack/eslint-plugin-query'
+import sonarjs from 'eslint-plugin-sonarjs'
 
 export default tsEslint.config(
   { ignores: ['dist', '**/__generated__/*'] },
@@ -29,6 +30,7 @@ export default tsEslint.config(
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
       cypress: pluginCypress,
+      sonarjs,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -51,6 +53,24 @@ export default tsEslint.config(
       'cypress/no-unnecessary-waiting': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
       'react/jsx-curly-brace-presence': ['error', { props: 'never', children: 'never' }],
+      // temporary sonarQube rules
+      'sonarjs/todo-tag': 'off',
+      'sonarjs/no-all-duplicated-branches': 'off',
+      'sonarjs/no-duplicate-in-composite': 'off',
+      'sonarjs/no-duplicate-string': 'off',
+      'sonarjs/no-duplicated-branches': 'off',
+      // 'sonarjs/no-ignored-exceptions': 'off',
+      // 'sonarjs/no-commented-code': 'off',
+      // 'sonarjs/no-nested-functions': 'off',
+      // 'sonarjs/cognitive-complexity': 'warn',
+      // 'sonarjs/no-small-switch': 'warn',
+      // 'sonarjs/no-nested-conditional': 'warn',
+    },
+  },
+  {
+    files: ['**/*.spec.cy.tsx'],
+    rules: {
+      'sonarjs/no-duplicate-string': 'off',
     },
   }
 )

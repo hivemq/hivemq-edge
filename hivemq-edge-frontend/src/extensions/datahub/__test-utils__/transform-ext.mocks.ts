@@ -1,3 +1,11 @@
+const NODE1_ID = 'node_a94a5dc9-c092-4131-81d4-eae9ff0e0207'
+const NODE2_ID = 'node_d2dc73c3-4bce-4126-b6c7-8494b01fed83'
+const NODE3_ID = 'node_cf866b22-340a-41da-a669-4589a30969f9'
+const NODE4_ID = 'node_704a4cdc-e4c3-46d8-822c-0922f0b2de98'
+const NODE5_ID = 'node_8532d17d-7cec-43ad-8864-9fba85b94113'
+
+const STROKE_DEFAULT = 'var(--chakra-colors-green-500)'
+
 export const MOCK_TRANSFORM_EXT = {
   nodes: [
     {
@@ -64,7 +72,7 @@ export const MOCK_TRANSFORM_EXT = {
       },
     },
     {
-      id: 'node_a94a5dc9-c092-4131-81d4-eae9ff0e0207',
+      id: NODE1_ID,
       type: 'SCHEMA',
       position: {
         x: 60,
@@ -86,7 +94,7 @@ export const MOCK_TRANSFORM_EXT = {
       dragging: false,
     },
     {
-      id: 'node_d2dc73c3-4bce-4126-b6c7-8494b01fed83',
+      id: NODE2_ID,
       type: 'VALIDATOR',
       position: {
         x: 0,
@@ -112,7 +120,7 @@ export const MOCK_TRANSFORM_EXT = {
       dragging: false,
     },
     {
-      id: 'node_8532d17d-7cec-43ad-8864-9fba85b94113',
+      id: NODE5_ID,
       type: 'DATA_POLICY',
       position: {
         x: 0,
@@ -131,7 +139,7 @@ export const MOCK_TRANSFORM_EXT = {
       dragging: false,
     },
     {
-      id: 'node_704a4cdc-e4c3-46d8-822c-0922f0b2de98',
+      id: NODE4_ID,
       type: 'FUNCTION',
       position: {
         x: 315,
@@ -154,7 +162,7 @@ export const MOCK_TRANSFORM_EXT = {
       },
     },
     {
-      id: 'node_cf866b22-340a-41da-a669-4589a30969f9',
+      id: NODE3_ID,
       type: 'OPERATION',
       position: {
         x: 345,
@@ -180,9 +188,9 @@ export const MOCK_TRANSFORM_EXT = {
   ],
   edges: [
     {
-      source: 'node_d2dc73c3-4bce-4126-b6c7-8494b01fed83',
+      source: NODE2_ID,
       sourceHandle: 'source',
-      target: 'node_8532d17d-7cec-43ad-8864-9fba85b94113',
+      target: NODE5_ID,
       targetHandle: 'validation',
       markerEnd: {
         type: 'arrowclosed',
@@ -192,15 +200,15 @@ export const MOCK_TRANSFORM_EXT = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_d2dc73c3-4bce-4126-b6c7-8494b01fed83source-node_8532d17d-7cec-43ad-8864-9fba85b94113validation',
       selected: false,
     },
     {
-      source: 'node_a94a5dc9-c092-4131-81d4-eae9ff0e0207',
+      source: NODE1_ID,
       sourceHandle: 'source',
-      target: 'node_d2dc73c3-4bce-4126-b6c7-8494b01fed83',
+      target: NODE2_ID,
       targetHandle: 'target',
       markerEnd: {
         type: 'arrowclosed',
@@ -210,14 +218,14 @@ export const MOCK_TRANSFORM_EXT = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_a94a5dc9-c092-4131-81d4-eae9ff0e0207source-node_d2dc73c3-4bce-4126-b6c7-8494b01fed83target',
     },
     {
-      source: 'node_704a4cdc-e4c3-46d8-822c-0922f0b2de98',
+      source: NODE4_ID,
       sourceHandle: 'source',
-      target: 'node_cf866b22-340a-41da-a669-4589a30969f9',
+      target: NODE3_ID,
       targetHandle: 'schema',
       markerEnd: {
         type: 'arrowclosed',
@@ -227,12 +235,12 @@ export const MOCK_TRANSFORM_EXT = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_704a4cdc-e4c3-46d8-822c-0922f0b2de98source-node_cf866b22-340a-41da-a669-4589a30969f9schema',
     },
     {
-      source: 'node_8532d17d-7cec-43ad-8864-9fba85b94113',
+      source: NODE5_ID,
       sourceHandle: 'onError',
       target: 'node_f9ed3037-78e7-42e2-8027-0be046dba6f1',
       targetHandle: 'input',
@@ -244,14 +252,14 @@ export const MOCK_TRANSFORM_EXT = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_8532d17d-7cec-43ad-8864-9fba85b94113onError-node_f9ed3037-78e7-42e2-8027-0be046dba6f1input',
     },
     {
       source: 'node_72457a3e-425c-48b1-aecb-71171a43edd7',
       sourceHandle: 'factory/#-0',
-      target: 'node_8532d17d-7cec-43ad-8864-9fba85b94113',
+      target: NODE5_ID,
       targetHandle: 'topicFilter',
       markerEnd: {
         type: 'arrowclosed',
@@ -261,14 +269,14 @@ export const MOCK_TRANSFORM_EXT = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_72457a3e-425c-48b1-aecb-71171a43edd7factory/#-0-node_8532d17d-7cec-43ad-8864-9fba85b94113topicFilter',
     },
     {
       source: 'node_3c6bd879-7058-4ae0-bfb1-6d6b126c6495',
       sourceHandle: 'source',
-      target: 'node_704a4cdc-e4c3-46d8-822c-0922f0b2de98',
+      target: NODE4_ID,
       targetHandle: 'deserialiser',
       markerEnd: {
         type: 'arrowclosed',
@@ -278,14 +286,14 @@ export const MOCK_TRANSFORM_EXT = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_3c6bd879-7058-4ae0-bfb1-6d6b126c6495source-node_704a4cdc-e4c3-46d8-822c-0922f0b2de98deserialiser',
     },
     {
-      source: 'node_a94a5dc9-c092-4131-81d4-eae9ff0e0207',
+      source: NODE1_ID,
       sourceHandle: 'source',
-      target: 'node_704a4cdc-e4c3-46d8-822c-0922f0b2de98',
+      target: NODE4_ID,
       targetHandle: 'serialiser',
       markerEnd: {
         type: 'arrowclosed',
@@ -295,14 +303,14 @@ export const MOCK_TRANSFORM_EXT = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_a94a5dc9-c092-4131-81d4-eae9ff0e0207source-node_704a4cdc-e4c3-46d8-822c-0922f0b2de98serialiser',
     },
     {
-      source: 'node_8532d17d-7cec-43ad-8864-9fba85b94113',
+      source: NODE5_ID,
       sourceHandle: 'onSuccess',
-      target: 'node_cf866b22-340a-41da-a669-4589a30969f9',
+      target: NODE3_ID,
       targetHandle: 'input',
       markerEnd: {
         type: 'arrowclosed',
@@ -312,7 +320,7 @@ export const MOCK_TRANSFORM_EXT = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_8532d17d-7cec-43ad-8864-9fba85b94113onSuccess-node_cf866b22-340a-41da-a669-4589a30969f9input',
     },

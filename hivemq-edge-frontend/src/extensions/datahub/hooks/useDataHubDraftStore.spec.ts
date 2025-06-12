@@ -14,6 +14,8 @@ const MOCK_NODE: NodeProps<Node<{ label: string }>> = {
   ...MOCK_DEFAULT_NODE,
 }
 
+const NODE_LABEL = 'the new one'
+
 describe('useDataHubDraftStore', () => {
   beforeEach(() => {
     const { result } = renderHook<WorkspaceState & WorkspaceAction, unknown>(useDataHubDraftStore)
@@ -228,18 +230,18 @@ describe('useDataHubDraftStore', () => {
 
     act(() => {
       const { onUpdateNodes } = result.current
-      onUpdateNodes<{ label: string }>('idAdapter', { label: 'the new one' })
+      onUpdateNodes<{ label: string }>('idAdapter', { label: NODE_LABEL })
     })
 
     expect(result.current.nodes).toHaveLength(1)
     expect(result.current.edges).toHaveLength(0)
-    expect(result.current.nodes[0].data).toEqual({ label: 'the new one' })
+    expect(result.current.nodes[0].data).toEqual({ label: NODE_LABEL })
 
     act(() => {
       const { onUpdateNodes } = result.current
       onUpdateNodes<{ label: string }>('fake', { label: 'a fake data' })
     })
-    expect(result.current.nodes[0].data).toEqual({ label: 'the new one' })
+    expect(result.current.nodes[0].data).toEqual({ label: NODE_LABEL })
   })
 
   it('should serialise a policy', async () => {

@@ -13,6 +13,7 @@ interface GroupSchemaTest {
   }
 }
 
+const CREATED_AT = '2021-10-13T11:51:24.234Z'
 const resourceNameTestSuite: GroupSchemaTest[] = [
   {
     data: undefined,
@@ -41,7 +42,7 @@ const resourceNameTestSuite: GroupSchemaTest[] = [
   {
     data: {
       items: [
-        { ...mockSchemaTempHumidity, createdAt: '2021-10-13T11:51:24.234Z' },
+        { ...mockSchemaTempHumidity, createdAt: CREATED_AT },
         { ...mockSchemaTempHumidity, version: 2 },
       ],
     },
@@ -50,7 +51,7 @@ const resourceNameTestSuite: GroupSchemaTest[] = [
         children: [
           {
             ...mockSchemaTempHumidity,
-            createdAt: '2021-10-13T11:51:24.234Z',
+            createdAt: CREATED_AT,
           },
           {
             ...mockSchemaTempHumidity,
@@ -58,7 +59,7 @@ const resourceNameTestSuite: GroupSchemaTest[] = [
           },
         ],
         ...mockSchemaTempHumidity,
-        createdAt: '2021-10-13T11:51:24.234Z',
+        createdAt: CREATED_AT,
         version: 2,
       },
     ],

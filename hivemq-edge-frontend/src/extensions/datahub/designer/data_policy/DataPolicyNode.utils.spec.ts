@@ -7,12 +7,14 @@ import { DataHubNodeType } from '@datahub/types.ts'
 import { checkValidityFilter, loadDataPolicy } from '@datahub/designer/data_policy/DataPolicyNode.utils.ts'
 import type { DataPolicy } from '@/api/__generated__'
 
+const NODE_DATA_ID = 'my-policy-id'
+
 describe('checkValidityFilter', () => {
   it('should return error if no topic filter connected', async () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
       type: DataHubNodeType.DATA_POLICY,
-      data: { id: 'my-policy-id' },
+      data: { id: NODE_DATA_ID },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
@@ -40,7 +42,7 @@ describe('checkValidityFilter', () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
       type: DataHubNodeType.DATA_POLICY,
-      data: { id: 'my-policy-id' },
+      data: { id: NODE_DATA_ID },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
@@ -101,7 +103,7 @@ describe('checkValidityFilter', () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
       type: DataHubNodeType.DATA_POLICY,
-      data: { id: 'my-policy-id' },
+      data: { id: NODE_DATA_ID },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }

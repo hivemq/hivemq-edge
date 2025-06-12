@@ -10,6 +10,9 @@ import NodeParams from '@datahub/components/helpers/NodeParams.tsx'
 import { CustomHandle } from '@datahub/components/nodes/CustomHandle.tsx'
 import { getHandlePosition } from '@datahub/utils/theme.utils.ts'
 
+const BACKGROUND_WHITE = 'var(--chakra-colors-white)'
+const BORDER_BLACK = 'var(--chakra-colors-black)'
+
 export const OperationNode: FC<NodeProps<Node<OperationData>>> = (props) => {
   const { t } = useTranslation('datahub')
   const { data, id } = props
@@ -74,7 +77,7 @@ export const OperationNode: FC<NodeProps<Node<OperationData>>> = (props) => {
           id={OperationData.Handle.SCHEMA}
           style={{
             top: getHandlePosition(1),
-            background: 'var(--chakra-colors-white)',
+            background: BACKGROUND_WHITE,
             borderColor: 'var(--chakra-colors-black)',
             borderWidth: 2,
           }}
@@ -88,8 +91,8 @@ export const OperationNode: FC<NodeProps<Node<OperationData>>> = (props) => {
             id={OperationData.Handle.DESERIALISER}
             style={{
               top: getHandlePosition(1),
-              background: 'var(--chakra-colors-white)',
-              borderColor: 'var(--chakra-colors-black)',
+              background: BACKGROUND_WHITE,
+              borderColor: BORDER_BLACK,
               borderWidth: 2,
             }}
           />
@@ -99,8 +102,8 @@ export const OperationNode: FC<NodeProps<Node<OperationData>>> = (props) => {
             id={OperationData.Handle.FUNCTION}
             style={{
               top: getHandlePosition(2),
-              background: 'var(--chakra-colors-white)',
-              borderColor: 'var(--chakra-colors-black)',
+              background: BACKGROUND_WHITE,
+              borderColor: BORDER_BLACK,
               borderWidth: 2,
             }}
           />
@@ -110,8 +113,8 @@ export const OperationNode: FC<NodeProps<Node<OperationData>>> = (props) => {
             id={OperationData.Handle.SERIALISER}
             style={{
               top: getHandlePosition(3),
-              background: 'var(--chakra-colors-white)',
-              borderColor: 'var(--chakra-colors-black)',
+              background: BACKGROUND_WHITE,
+              borderColor: BORDER_BLACK,
               borderWidth: 2,
             }}
           />

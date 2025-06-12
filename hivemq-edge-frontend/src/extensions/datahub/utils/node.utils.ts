@@ -6,11 +6,11 @@ import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-ico
 
 import i18n from '@/config/i18n.config.ts'
 
-import { DataPolicyValidator } from '@/api/__generated__'
+import { DataPolicyValidator, type FunctionSpecs } from '@/api/__generated__'
 import { customFormatsValidator } from '@/components/rjsf/Form/validation.utils.ts'
 
 import { MOCK_JSONSCHEMA_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
-import { CustomNodeJSONSchema } from '@datahub/config/schemas.config.ts'
+import { getNodeValidationSchema } from '@datahub/config/schemas.config.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import type {
   ClientFilterData,
@@ -390,9 +390,11 @@ export const renderResourceName = (name: string | undefined, version: number | u
   return `${name}:${formatedVersion}`
 }
 
-export const validateNode = (newNode: Node) => {
+export const validateNode = (newNode: Node, functions?: FunctionSpecs[]) => {
   if (!newNode.type) return { isValid: false }
-  const schema = CustomNodeJSONSchema[newNode.type]
+  const schema = getNodeValidationSchema(newNode.type, functions)
+  if (!schema) return { isValid: true }
+
   const validate = customFormatsValidator.ajv.compile(schema)
   const isValid = validate(newNode.data)
   return {
@@ -401,10 +403,10 @@ export const validateNode = (newNode: Node) => {
   }
 }
 
-export const checkValidityConfigurations = (allNodes: Node[]) => {
+export const checkValidityConfigurations = (allNodes: Node[], functions?: FunctionSpecs[]) => {
   const allConfigurations: DryRunResults<unknown>[] = []
   for (const node of allNodes) {
-    const nodeConfiguration = validateNode(node)
+    const nodeConfiguration = validateNode(node, functions)
     if (!nodeConfiguration.isValid && nodeConfiguration?.errors?.length) {
       for (const error of nodeConfiguration.errors) {
         allConfigurations.push({
