@@ -48,6 +48,7 @@ export function checkValidityTransformFunction(
 
   ///////// Check the function handle
   const functions = getIncomers(operationNode, nodes, edges).filter(isFunctionNodeType)
+
   if (!functions.length) {
     return [
       {
@@ -58,8 +59,8 @@ export function checkValidityTransformFunction(
   }
 
   ///////// Check the serializers
-  const serialisers = getIncomers(operationNode, nodes, edges).filter(isSchemaNodeType)
-  const connectedEdges = getConnectedEdges([...serialisers], edges).filter(
+  const schemas = getIncomers(operationNode, nodes, edges).filter(isSchemaNodeType)
+  const connectedEdges = getConnectedEdges([...schemas], edges).filter(
     (edge) =>
       (edge.targetHandle === OperationData.Handle.SERIALISER ||
         edge.targetHandle === OperationData.Handle.DESERIALISER) &&
@@ -70,7 +71,7 @@ export function checkValidityTransformFunction(
     (edge) => edge.targetHandle === OperationData.Handle.DESERIALISER
   )
 
-  if (serial === undefined || restSerial.length !== 0) {
+  if (serial === undefined) {
     return [
       {
         node: operationNode,
@@ -79,7 +80,16 @@ export function checkValidityTransformFunction(
     ]
   }
 
-  if (deserial === undefined || restDeserial.length !== 0) {
+  if (restSerial.length !== 0) {
+    return [
+      {
+        node: operationNode,
+        error: PolicyCheckErrors.cardinality(DataHubNodeType.SCHEMA, operationNode),
+      },
+    ]
+  }
+
+  if (deserial === undefined) {
     return [
       {
         node: operationNode,
@@ -88,9 +98,18 @@ export function checkValidityTransformFunction(
     ]
   }
 
+  if (restDeserial.length !== 0) {
+    return [
+      {
+        node: operationNode,
+        error: PolicyCheckErrors.cardinality(DataHubNodeType.SCHEMA, operationNode),
+      },
+    ]
+  }
+
   ///////// Check the resources
   const scriptNodes = functions.map((node) => checkValidityJSScript(node))
-  const schemaNodes = serialisers.map((node) => checkValiditySchema(node))
+  const schemaNodes = schemas.map((node) => checkValiditySchema(node))
 
   if (!scriptNodes.length) {
     return [
@@ -120,7 +139,7 @@ export function checkValidityTransformFunction(
     }
   }
 
-  const sourceDeserial = serialisers.find((node) => node.id === deserial.source)
+  const sourceDeserial = schemas.find((node) => node.id === deserial.source)
   if (!sourceDeserial) {
     return [
       {
@@ -142,7 +161,7 @@ export function checkValidityTransformFunction(
     id: `${operationNode.id}-deserializer`,
   }
 
-  const sourceSerial = serialisers.find((node) => node.id === serial.source)
+  const sourceSerial = schemas.find((node) => node.id === serial.source)
   if (!sourceSerial) {
     return [
       {
@@ -236,12 +255,11 @@ export const loadBehaviorPolicyPipelines = (
   scripts: Script[]
 ) => {
   const activeTransition = getActiveTransition(behaviorPolicyTransition)
-  if (!activeTransition)
-    throw new Error(i18n.t('datahub:error.loading.operation.noTransition', { source: activeTransition }) as string)
+  if (!activeTransition) throw new Error(i18n.t('datahub:error.loading.operation.noTransition'))
 
   const transitionOnEvent = behaviorPolicyTransition[activeTransition]
   if (!transitionOnEvent)
-    throw new Error(i18n.t('datahub:error.loading.operation.noTransition', { source: activeTransition }) as string)
+    throw new Error(i18n.t('datahub:error.loading.operation.noExistingTransition', { source: activeTransition }))
 
   return loadPipeline(transitionNode, transitionOnEvent.pipeline, null, schemas, scripts)
 }
