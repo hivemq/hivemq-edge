@@ -5,9 +5,13 @@ allOf:
       alias:
         type: string
         description: The schema alias.
-      message:
-        type: string
-        description: The error message.
+        example: "abc"
     required:
       - alias
-      - message
+example:
+  general:
+    status: 400
+    title: "Schema Parsing Failure"
+    detail: "The given schema 'abc' could not be parsed."
+    alias: "abc"
+    type: "https://hivemq.com/edge/api/model/SchemaParsingFailureError"
