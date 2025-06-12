@@ -5,5 +5,13 @@ allOf:
       id:
         type: string
         description: The script id.
+        example: "abc"
     required:
       - id
+example:
+  general:
+    status: 409
+    title: "Script Already Present"
+    detail: "The given script 'abc' is already present."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/ScriptAlreadyPresentError"
