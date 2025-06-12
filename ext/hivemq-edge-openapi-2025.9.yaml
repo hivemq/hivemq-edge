@@ -5780,21 +5780,25 @@ components:
             id:
               type: string
               description: The script ID.
-            message:
-              type: string
-              description: The error message.
+              example: abc
           required:
             - id
+      example:
+        general:
+          status: 404
+          title: Script Not Found
+          detail: Script with ID 'abc' is not found.
+          id: abc
+          type: https://hivemq.com/edge/api/model/ScriptNotFoundError
     ScriptParsingFailureError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
-        - type: object
-          properties:
-            reason:
-              type: string
-              description: The actual reason.
-          required:
-            - reason
+      example:
+        general:
+          status: 400
+          title: Script Parsing Failure
+          detail: The given script 'abc' could not be parsed.
+          type: https://hivemq.com/edge/api/model/ScriptParsingFailureError
     ScriptReferencedError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
