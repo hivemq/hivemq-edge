@@ -13,7 +13,6 @@ allOf:
         example: "functionDoesNotExist"
     required:
       - path
-      - value
 example:
   general:
     detail: "Referenced function does not exist."

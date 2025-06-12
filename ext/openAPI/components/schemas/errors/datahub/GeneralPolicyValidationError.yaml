@@ -1,2 +1,0 @@
-allOf:
-  - $ref: "../validation/ValidationError.yaml"
