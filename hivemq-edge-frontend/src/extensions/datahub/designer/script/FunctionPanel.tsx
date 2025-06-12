@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react'
 import type { Node } from '@xyflow/react'
 import { Card, CardBody } from '@chakra-ui/react'
 import type { UiSchema } from '@rjsf/utils'
-import type { IChangeEvent } from '@rjsf/core/src/components/Form.tsx'
+import type { IChangeEvent } from '@rjsf/core'
 
 import { MOCK_JAVASCRIPT_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
 import type { FunctionData, PanelProps } from '@datahub/types.ts'
