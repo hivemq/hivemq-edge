@@ -1,11 +1,12 @@
 import { expect } from 'vitest'
 import type { Node, NodeAddChange } from '@xyflow/react'
+
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
+import type { BehaviorPolicy, BehaviorPolicyOnTransition } from '@/api/__generated__'
 import type { BehaviorPolicyData } from '@datahub/types.ts'
 import { BehaviorPolicyType, DataHubNodeType } from '@datahub/types.ts'
 import { checkValidityModel, loadBehaviorPolicy } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
-import type { BehaviorPolicy, BehaviorPolicyOnTransition } from '@/api/__generated__'
 
 describe('checkValidityModel', () => {
   it('should return error if no model configured', async () => {
@@ -71,7 +72,7 @@ describe('loadBehaviorPolicy', () => {
     expect(loadBehaviorPolicy(behaviorPolicy)).toEqual<NodeAddChange>({
       item: {
         data: {
-          arguments: undefined,
+          arguments: {},
           id: 'string',
           model: 'Mqtt.events',
         },

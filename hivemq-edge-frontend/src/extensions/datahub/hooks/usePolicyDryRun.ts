@@ -25,6 +25,7 @@ import {
 } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
 import { checkValidityTransitions } from '@datahub/designer/transition/TransitionNode.utils.ts'
 import { checkValidityPipeline } from '@datahub/designer/operation/OperationNode.utils.ts'
+import { useFilteredFunctionsFetcher } from '@datahub/hooks/useFilteredFunctionsFetcher.tsx'
 
 /* istanbul ignore next -- @preserve */
 const mockDelay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -47,6 +48,7 @@ export const onlyUniqueResources = (acc: DryRunResults<unknown, never>[], item: 
 export const usePolicyDryRun = () => {
   const store = useDataHubDraftStore()
   const { nodes, edges, onUpdateNodes } = store
+  const { getFilteredFunctions } = useFilteredFunctionsFetcher()
 
   /* istanbul ignore next -- @preserve */
   const updateNodeStatus = async (results: DryRunResults<unknown>) => {
@@ -98,7 +100,8 @@ export const usePolicyDryRun = () => {
     const schemaResources = validators.reduce(onlyNonNullResources, [] as DryRunResults<PolicySchema>[])
     const allResources = [...successResources, ...errorResources, ...schemaResources].reduce(onlyUniqueResources, [])
 
-    const allConfigurations = checkValidityConfigurations(allNodes)
+    // TODO[29953] This is not enough, potential BehaviorPolicyTransitionEvent needs to be passed
+    const allConfigurations = checkValidityConfigurations(allNodes, getFilteredFunctions(DataHubNodeType.DATA_POLICY))
 
     const processedNodes = [
       ...allConfigurations,
@@ -141,10 +144,13 @@ export const usePolicyDryRun = () => {
 
     const pipelineResources = pipelines?.reduce(onlyNonNullResources, [] as DryRunResults<PolicySchema>[])
 
-    const allConfigurations = checkValidityConfigurations(allNodes)
+    // TODO[29953] This is not enough, potential BehaviorPolicyTransitionEvent needs to be passed
+    const allConfigurations = checkValidityConfigurations(
+      allNodes,
+      getFilteredFunctions(DataHubNodeType.BEHAVIOR_POLICY)
+    )
 
     const processedNodes = [
-      ...allConfigurations,
       ...allConfigurations,
       clients,
       model,

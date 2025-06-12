@@ -67,7 +67,7 @@ export const loadBehaviorPolicy = (behaviorPolicy: BehaviorPolicy): NodeAddChang
     data: {
       id: behaviorPolicy.id,
       model: model,
-      arguments: behaviorPolicy.behavior.arguments,
+      arguments: behaviorPolicy.behavior.arguments || {},
     },
   }
 

@@ -1,10 +1,15 @@
-import { expect } from 'vitest'
+import { beforeEach, expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
+import type { Node } from '@xyflow/react'
+
+import { server } from '@/__test-utils__/msw/mockServer.ts'
+import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
+import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
+
+import { handlers } from '@datahub/api/hooks/DataHubFunctionsService/__handlers__'
 import { onlyNonNullResources, usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
 import type { BehaviorPolicyData, DataPolicyData, DryRunResults } from '@datahub/types.ts'
 import { BehaviorPolicyType, DataHubNodeType } from '@datahub/types.ts'
-import type { Node } from '@xyflow/react'
-import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 describe('onlyNonNullResources', () => {
   it('should return an async function', async () => {
@@ -33,6 +38,10 @@ describe('onlyNonNullResources', () => {
 })
 
 describe('usePolicyDryRun', () => {
+  beforeEach(() => {
+    server.use(...handlers)
+  })
+
   it('should validate a Data Policy', async () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
@@ -42,7 +51,7 @@ describe('usePolicyDryRun', () => {
       position: { x: 0, y: 0 },
     }
 
-    const { result } = renderHook(usePolicyDryRun)
+    const { result } = renderHook(usePolicyDryRun, { wrapper })
     await act(async () => {
       const results = await result.current.checkPolicyAsync(MOCK_NODE_DATA_POLICY)
       expect(results).toHaveLength(1)
@@ -60,7 +69,7 @@ describe('usePolicyDryRun', () => {
       position: { x: 0, y: 0 },
     }
 
-    const { result } = renderHook(usePolicyDryRun)
+    const { result } = renderHook(usePolicyDryRun, { wrapper })
     await act(async () => {
       const results = await result.current.checkPolicyAsync(MOCK_NODE_DATA_POLICY)
       expect(results).toHaveLength(3)
@@ -70,15 +79,15 @@ describe('usePolicyDryRun', () => {
   })
 
   it('should return an error otherwise', async () => {
-    const MOCK_NODE_DATA_POLICY: Node = {
+    const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
       type: 'test',
-      data: {},
+      data: { id: 'node-id' },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
 
-    const { result } = renderHook(usePolicyDryRun)
+    const { result } = renderHook(usePolicyDryRun, { wrapper })
     await expect(result.current.checkPolicyAsync(MOCK_NODE_DATA_POLICY)).rejects.toEqual(
       Error('Policy Type not supported : test')
     )

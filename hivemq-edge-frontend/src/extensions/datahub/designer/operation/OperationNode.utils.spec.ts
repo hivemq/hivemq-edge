@@ -14,12 +14,19 @@ import {
   processOperations,
 } from '@datahub/designer/operation/OperationNode.utils.ts'
 
+const NODE_POLICY_ID = 'my-policy-id'
+const NODE_OPERATION_ID = 'my-operation-id'
+const NODE_FUNCTION_ID = 'node-function'
+const TRANSFORM_FUNCTION_ID = 'DataHub.transform'
+const NODE_DESERIALISER_ID = 'node-schema-deserializer'
+const NODE_SERIALISER_ID = 'node-schema-serializer'
+
 describe('checkValidityTransformFunction', () => {
   it('should return error if not configured', async () => {
     const MOCK_NODE_OPERATION: Node<OperationData> = {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
-      data: { id: 'my-operation-id', functionId: 'Javascript' },
+      data: { id: NODE_OPERATION_ID, functionId: 'Javascript' },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
@@ -50,8 +57,8 @@ describe('checkValidityTransformFunction', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
-        id: 'my-operation-id',
-        functionId: 'DataHub.transform',
+        id: NODE_OPERATION_ID,
+        functionId: TRANSFORM_FUNCTION_ID,
         formData: {
           transform: ['the_function'],
         },
@@ -64,7 +71,7 @@ describe('checkValidityTransformFunction', () => {
       position: { x: 0, y: 0 },
     }
     const MOCK_NODE_FUNCTION: Node<FunctionData> = {
-      id: 'node-function',
+      id: NODE_FUNCTION_ID,
       type: DataHubNodeType.FUNCTION,
       data: {
         type: 'Javascript',
@@ -104,48 +111,51 @@ describe('checkValidityTransformFunction', () => {
     )
   })
 
+  const NODE_SCHEMA_ID = 'node-schema'
+
+  const MOCK_NODE_OPERATION: Node<OperationData> = {
+    id: 'node-id',
+    type: DataHubNodeType.OPERATION,
+    data: {
+      id: NODE_OPERATION_ID,
+      functionId: TRANSFORM_FUNCTION_ID,
+      formData: {
+        transform: ['the_function'],
+      },
+      metadata: {
+        isTerminal: false,
+        hasArguments: true,
+      },
+    },
+    ...MOCK_DEFAULT_NODE,
+    position: { x: 0, y: 0 },
+  }
+  const MOCK_NODE_FUNCTION: Node<FunctionData> = {
+    id: NODE_FUNCTION_ID,
+    type: DataHubNodeType.FUNCTION,
+    data: {
+      type: 'Javascript',
+      name: 'the_function',
+      version: 1,
+      sourceCode: 'const t=1',
+    },
+    ...MOCK_DEFAULT_NODE,
+    position: { x: 0, y: 0 },
+  }
+  const MOCK_NODE_SERIAL: Node<SchemaData> = {
+    id: NODE_SCHEMA_ID,
+    type: DataHubNodeType.SCHEMA,
+    data: {
+      name: NODE_SCHEMA_ID,
+      type: SchemaType.JSON,
+      version: 1,
+      schemaSource: '{ t: 1}',
+    },
+    ...MOCK_DEFAULT_NODE,
+    position: { x: 0, y: 0 },
+  }
+
   it('should return error if no serialiser connected', async () => {
-    const MOCK_NODE_OPERATION: Node<OperationData> = {
-      id: 'node-id',
-      type: DataHubNodeType.OPERATION,
-      data: {
-        id: 'my-operation-id',
-        functionId: 'DataHub.transform',
-        formData: {
-          transform: ['the_function'],
-        },
-        metadata: {
-          isTerminal: false,
-          hasArguments: true,
-        },
-      },
-      ...MOCK_DEFAULT_NODE,
-      position: { x: 0, y: 0 },
-    }
-    const MOCK_NODE_FUNCTION: Node<FunctionData> = {
-      id: 'node-function',
-      type: DataHubNodeType.FUNCTION,
-      data: {
-        type: 'Javascript',
-        name: 'the_function',
-        version: 1,
-        sourceCode: 'const t=1',
-      },
-      ...MOCK_DEFAULT_NODE,
-      position: { x: 0, y: 0 },
-    }
-    const MOCK_NODE_SERIAL: Node<SchemaData> = {
-      id: 'node-schema',
-      type: DataHubNodeType.SCHEMA,
-      data: {
-        name: 'node-schema',
-        type: SchemaType.JSON,
-        version: 1,
-        schemaSource: '{ t: 1}',
-      },
-      ...MOCK_DEFAULT_NODE,
-      position: { x: 0, y: 0 },
-    }
     const MOCK_STORE: WorkspaceState = {
       nodes: [MOCK_NODE_SERIAL, MOCK_NODE_FUNCTION, MOCK_NODE_OPERATION],
       edges: [
@@ -176,47 +186,6 @@ describe('checkValidityTransformFunction', () => {
   })
 
   it('should return error if no deserialiser connected', async () => {
-    const MOCK_NODE_OPERATION: Node<OperationData> = {
-      id: 'node-id',
-      type: DataHubNodeType.OPERATION,
-      data: {
-        id: 'my-operation-id',
-        functionId: 'DataHub.transform',
-        formData: {
-          transform: ['the_function'],
-        },
-        metadata: {
-          isTerminal: false,
-          hasArguments: true,
-        },
-      },
-      ...MOCK_DEFAULT_NODE,
-      position: { x: 0, y: 0 },
-    }
-    const MOCK_NODE_FUNCTION: Node<FunctionData> = {
-      id: 'node-function',
-      type: DataHubNodeType.FUNCTION,
-      data: {
-        type: 'Javascript',
-        name: 'the_function',
-        version: 1,
-        sourceCode: 'const t=1',
-      },
-      ...MOCK_DEFAULT_NODE,
-      position: { x: 0, y: 0 },
-    }
-    const MOCK_NODE_SERIAL: Node<SchemaData> = {
-      id: 'node-schema',
-      type: DataHubNodeType.SCHEMA,
-      data: {
-        name: 'node-schema',
-        type: SchemaType.JSON,
-        version: 1,
-        schemaSource: '{ t: 1}',
-      },
-      ...MOCK_DEFAULT_NODE,
-      position: { x: 0, y: 0 },
-    }
     const MOCK_STORE: WorkspaceState = {
       nodes: [MOCK_NODE_SERIAL, MOCK_NODE_FUNCTION, MOCK_NODE_OPERATION],
       edges: [
@@ -254,25 +223,8 @@ describe('checkValidityTransformFunction', () => {
   })
 
   it('should return the payload otherwise', async () => {
-    const MOCK_NODE_OPERATION: Node<OperationData> = {
-      id: 'node-id',
-      type: DataHubNodeType.OPERATION,
-      data: {
-        id: 'my-operation-id',
-        functionId: 'DataHub.transform',
-        formData: {
-          transform: ['the_function'],
-        },
-        metadata: {
-          isTerminal: false,
-          hasArguments: true,
-        },
-      },
-      ...MOCK_DEFAULT_NODE,
-      position: { x: 0, y: 0 },
-    }
     const MOCK_NODE_FUNCTION: Node<FunctionData> = {
-      id: 'node-function',
+      id: NODE_FUNCTION_ID,
       type: DataHubNodeType.FUNCTION,
       data: {
         type: 'Javascript',
@@ -284,10 +236,10 @@ describe('checkValidityTransformFunction', () => {
       position: { x: 0, y: 0 },
     }
     const MOCK_NODE_SERIAL: Node<SchemaData> = {
-      id: 'node-schema',
+      id: NODE_SCHEMA_ID,
       type: DataHubNodeType.SCHEMA,
       data: {
-        name: 'node-schema',
+        name: NODE_SCHEMA_ID,
         type: SchemaType.JSON,
         version: 1,
         schemaSource: '{ t: 1}',
@@ -333,7 +285,7 @@ describe('checkValidityTransformFunction', () => {
       expect(data).toEqual(
         expect.objectContaining({
           arguments: {
-            schemaId: 'node-schema',
+            schemaId: NODE_SCHEMA_ID,
             schemaVersion: '1',
           },
           functionId: 'Serdes.deserialize',
@@ -349,7 +301,7 @@ describe('checkValidityTransformFunction', () => {
       expect(data).toEqual(
         expect.objectContaining({
           arguments: {
-            schemaId: 'node-schema',
+            schemaId: NODE_SCHEMA_ID,
             schemaVersion: '1',
           },
           functionId: OperationData.Function.SERDES_SERIALIZE,
@@ -366,7 +318,7 @@ describe('checkValidityTransformFunction', () => {
         expect.objectContaining({
           arguments: {},
           functionId: 'fn:the_function:latest',
-          id: 'node-function',
+          id: NODE_FUNCTION_ID,
         })
       )
     }
@@ -378,7 +330,7 @@ describe('checkValidityPipeline', () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
       type: DataHubNodeType.DATA_POLICY,
-      data: { id: 'my-policy-id' },
+      data: { id: NODE_POLICY_ID },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
@@ -396,7 +348,7 @@ describe('checkValidityPipeline', () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
       type: DataHubNodeType.DATA_POLICY,
-      data: { id: 'my-policy-id' },
+      data: { id: NODE_POLICY_ID },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
@@ -422,7 +374,7 @@ describe('processOperations', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
-        id: 'my-operation-id',
+        id: NODE_OPERATION_ID,
         functionId: undefined,
       },
       ...MOCK_DEFAULT_NODE,
@@ -450,8 +402,8 @@ describe('processOperations', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
-        id: 'my-operation-id',
-        functionId: 'DataHub.transform',
+        id: NODE_OPERATION_ID,
+        functionId: TRANSFORM_FUNCTION_ID,
         formData: {
           transform: ['the_function'],
         },
@@ -485,7 +437,7 @@ describe('processOperations', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
-        id: 'my-operation-id',
+        id: NODE_OPERATION_ID,
         functionId: 'System.log',
         formData: {
           level: 'DEBUG',
@@ -511,7 +463,7 @@ describe('processOperations', () => {
         message: 'test the message',
       },
       functionId: 'System.log',
-      id: 'my-operation-id',
+      id: NODE_OPERATION_ID,
     })
     expect(error).toBeUndefined()
   })
@@ -522,7 +474,7 @@ describe('loadPipeline', () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
       type: DataHubNodeType.DATA_POLICY,
-      data: { id: 'my-policy-id' },
+      data: { id: NODE_POLICY_ID },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
@@ -535,7 +487,7 @@ describe('loadPipeline', () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
       type: DataHubNodeType.DATA_POLICY,
-      data: { id: 'my-policy-id' },
+      data: { id: NODE_POLICY_ID },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
@@ -545,7 +497,7 @@ describe('loadPipeline', () => {
         id: 'node1',
         functionId: OperationData.Function.SERDES_DESERIALIZE,
         arguments: {
-          schemaId: 'node-schema-deserializer',
+          schemaId: NODE_DESERIALISER_ID,
           schemaVersion: '1',
         },
       },
@@ -558,7 +510,7 @@ describe('loadPipeline', () => {
         id: 'node3',
         functionId: OperationData.Function.SERDES_SERIALIZE,
         arguments: {
-          schemaId: 'node-schema-serializer',
+          schemaId: NODE_SERIALISER_ID,
           schemaVersion: '1',
         },
       },
@@ -569,8 +521,8 @@ describe('loadPipeline', () => {
       policyOperations,
       null,
       [
-        { ...mockSchemaTempHumidity, id: 'node-schema-deserializer' },
-        { ...mockSchemaTempHumidity, id: 'node-schema-serializer' },
+        { ...mockSchemaTempHumidity, id: NODE_DESERIALISER_ID },
+        { ...mockSchemaTempHumidity, id: NODE_SERIALISER_ID },
       ],
       [
         {
@@ -592,26 +544,26 @@ describe('loadPipeline', () => {
       expect.arrayContaining<NodeAddChange | Connection>([
         {
           item: expect.objectContaining<Partial<Node<SchemaData>>>({
-            id: 'node-schema-deserializer',
+            id: NODE_DESERIALISER_ID,
             type: DataHubNodeType.SCHEMA,
           }),
           type: 'add',
         },
         expect.objectContaining<Connection>({
-          source: 'node-schema-deserializer',
+          source: NODE_DESERIALISER_ID,
           sourceHandle: null,
           target: expect.stringContaining(transformNode),
           targetHandle: 'deserialiser',
         }),
         {
           item: expect.objectContaining<Partial<Node<SchemaData>>>({
-            id: 'node-schema-serializer',
+            id: NODE_SERIALISER_ID,
             type: DataHubNodeType.SCHEMA,
           }),
           type: 'add',
         },
         expect.objectContaining<Connection>({
-          source: 'node-schema-serializer',
+          source: NODE_SERIALISER_ID,
           sourceHandle: null,
           target: expect.stringContaining(transformNode),
           targetHandle: 'serialiser',
@@ -634,7 +586,7 @@ describe('loadPipeline', () => {
             id: expect.stringContaining(transformNode),
             type: 'OPERATION',
             data: expect.objectContaining({
-              functionId: 'DataHub.transform',
+              functionId: TRANSFORM_FUNCTION_ID,
             }),
           }),
           type: 'add',
