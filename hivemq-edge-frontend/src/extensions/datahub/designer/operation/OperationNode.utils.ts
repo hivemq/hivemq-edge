@@ -3,14 +3,7 @@ import { getConnectedEdges, getIncomers } from '@xyflow/react'
 
 import i18n from '@/config/i18n.config.ts'
 
-import type {
-  BehaviorPolicyOnTransition,
-  DataPolicy,
-  PolicyOperation,
-  PolicySchema,
-  SchemaReference,
-  Script,
-} from '@/api/__generated__'
+import type { BehaviorPolicyOnTransition, DataPolicy, PolicyOperation, PolicySchema, Script } from '@/api/__generated__'
 import type {
   DryRunResults,
   FunctionData,
@@ -30,6 +23,7 @@ import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { getNodeId, isFunctionNodeType, isSchemaNodeType } from '@datahub/utils/node.utils.ts'
 import { getActiveTransition } from '@datahub/designer/transition/TransitionNode.utils.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
+import { SCRIPT_FUNCTION_LATEST } from '@datahub/utils/datahub.utils.ts'
 
 export function checkValidityTransformFunction(
   operationNode: Node<OperationData>,
@@ -155,7 +149,7 @@ export function checkValidityTransformFunction(
       schemaVersion:
         sourceDeserial.data.version === ResourceWorkingVersion.DRAFT ||
         sourceDeserial.data.version === ResourceWorkingVersion.MODIFIED
-          ? 'latest'
+          ? SCRIPT_FUNCTION_LATEST
           : sourceDeserial.data.version.toString(),
     } as PolicyOperationArguments,
     id: `${operationNode.id}-deserializer`,
@@ -178,7 +172,7 @@ export function checkValidityTransformFunction(
       schemaVersion:
         sourceSerial.data.version === ResourceWorkingVersion.DRAFT ||
         sourceSerial.data.version === ResourceWorkingVersion.MODIFIED
-          ? 'latest'
+          ? SCRIPT_FUNCTION_LATEST
           : sourceSerial.data.version.toString(),
     } as PolicyOperationArguments,
     id: `${operationNode.id}-serializer`,
@@ -364,14 +358,14 @@ export const loadPipeline = (
             operationNode,
             OperationData.Handle.DESERIALISER,
             1,
-            deserializer.arguments as SchemaReference,
+            deserializer.arguments as PolicyOperationArguments,
             schemas
           )
           const serialisers = loadSchema(
             operationNode,
             OperationData.Handle.SERIALISER,
             nbItems,
-            policyOperation.arguments as SchemaReference,
+            policyOperation.arguments as PolicyOperationArguments,
             schemas
           )
 
