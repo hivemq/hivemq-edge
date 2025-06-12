@@ -4909,36 +4909,6 @@ components:
           title: Behavior Policy Creation Failed
           detail: 'Behavior policy creation failed: The policy was rejected.'
           type: https://hivemq.com/edge/api/model/BehaviorPolicyCreationFailureError
-    ValidationError:
-      type: object
-      properties:
-        detail:
-          type: string
-          description: Detailed contextual description of the validation error.
-        type:
-          type: string
-          format: uri
-          description: Type of the validation error.
-      required:
-        - detail
-        - type
-      discriminator:
-        propertyName: type
-        mapping:
-          https://hivemq.com/edge/api/model/AtLeastOneFieldMissingValidationError: '#/components/schemas/AtLeastOneFieldMissingValidationError'
-          https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError: '#/components/schemas/AtMostOneFunctionValidationError'
-          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
-          https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
-          https://hivemq.com/edge/api/model/GeneralPolicyValidationError: '#/components/schemas/GeneralPolicyValidationError'
-          https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError: '#/components/schemas/IllegalEventTransitionValidationError'
-          https://hivemq.com/edge/api/model/IllegalFunctionValidationError: '#/components/schemas/IllegalFunctionValidationError'
-          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
-          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
-          https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
-          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
-          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
-          https://hivemq.com/edge/api/model/UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
-          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
     AtLeastOneFieldMissingValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
@@ -4963,6 +4933,36 @@ components:
             - $.field1
             - $.field2
           type: https://hivemq.com/edge/api/model/AtLeastOneFieldMissingValidationError
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Detailed contextual description of the validation error.
+        type:
+          type: string
+          format: uri
+          description: Type of the validation error.
+      required:
+        - detail
+        - type
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/AtLeastOneFieldMissingValidationError: '#/components/schemas/AtLeastOneFieldMissingValidationError'
+          https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError: '#/components/schemas/AtMostOneFunctionValidationError'
+          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
+          https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError: '#/components/schemas/IllegalEventTransitionValidationError'
+          https://hivemq.com/edge/api/model/IllegalFunctionValidationError: '#/components/schemas/IllegalFunctionValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
+          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/InvalidSchemaVersionValidationError: '#/components/schemas/InvalidSchemaVersionValidationError'
+          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
+          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
     AtMostOneFunctionValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
@@ -5041,9 +5041,6 @@ components:
           existingFunction: function1
           missingFunction: function2
           type: https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError
-    GeneralPolicyValidationError:
-      allOf:
-        - $ref: '#/components/schemas/ValidationError'
     IllegalEventTransitionValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
@@ -5175,7 +5172,6 @@ components:
               example: functionDoesNotExist
           required:
             - path
-            - value
       example:
         general:
           detail: Referenced function does not exist.
@@ -5234,6 +5230,28 @@ components:
           path: $.id
           value: invalidId
           type: https://hivemq.com/edge/api/model/InvalidIdentifierValidationError
+    InvalidSchemaVersionValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema id.
+              example: abc
+            version:
+              type: string
+              description: The schema version.
+              example: '2'
+          required:
+            - id
+            - version
+      example:
+        general:
+          detail: The referenced schema with id 'abc' and version '2' was not found.
+          id: abc
+          version: '2'
+          type: https://hivemq.com/edge/api/model/InvalidSchemaVersionValidationError
     MissingFieldValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
@@ -5312,9 +5330,9 @@ components:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
         - oneOf:
-            - $ref: '#/components/schemas/GeneralPolicyValidationError'
-            - $ref: '#/components/schemas/IllegalFunctionValidationError'
             - $ref: '#/components/schemas/IllegalEventTransitionValidationError'
+            - $ref: '#/components/schemas/IllegalFunctionValidationError'
+            - $ref: '#/components/schemas/InvalidSchemaVersionValidationError'
             - $ref: '#/components/schemas/AtLeastOneFieldMissingValidationError'
             - $ref: '#/components/schemas/EmptyFieldValidationError'
             - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
@@ -5325,14 +5343,14 @@ components:
       discriminator:
         propertyName: type
         mapping:
-          https://hivemq.com/edge/api/model/GeneralPolicyValidationError: '#/components/schemas/GeneralPolicyValidationError'
-          https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError: '#/components/schemas/IllegalEventTransitionValidationError'
-          https://hivemq.com/edge/api/model/IllegalFunctionValidationError: '#/components/schemas/IllegalFunctionValidationError'
           https://hivemq.com/edge/api/model/AtLeastOneFieldMissingValidationError: '#/components/schemas/AtLeastOneFieldMissingValidationError'
           https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError: '#/components/schemas/IllegalEventTransitionValidationError'
+          https://hivemq.com/edge/api/model/IllegalFunctionValidationError: '#/components/schemas/IllegalFunctionValidationError'
           https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
           https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
           https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/InvalidSchemaVersionValidationError: '#/components/schemas/InvalidSchemaVersionValidationError'
           https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
           https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
     BehaviorPolicyInvalidErrors:
@@ -5475,6 +5493,7 @@ components:
             - $ref: '#/components/schemas/AtMostOneFunctionValidationError'
             - $ref: '#/components/schemas/FunctionMustBePairedValidationError'
             - $ref: '#/components/schemas/InvalidFunctionOrderValidationError'
+            - $ref: '#/components/schemas/InvalidSchemaVersionValidationError'
             - $ref: '#/components/schemas/UnknownVariableValidationError'
             - $ref: '#/components/schemas/EmptyFieldValidationError'
             - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
@@ -5486,14 +5505,15 @@ components:
         propertyName: type
         mapping:
           https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError: '#/components/schemas/AtMostOneFunctionValidationError'
-          https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
-          https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
-          https://hivemq.com/edge/api/model/UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
           https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
           https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
           https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
           https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/InvalidSchemaVersionValidationError: '#/components/schemas/InvalidSchemaVersionValidationError'
           https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
           https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
     DataPolicyInvalidErrors:
       allOf:

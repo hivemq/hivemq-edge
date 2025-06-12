@@ -24,6 +24,7 @@ import com.hivemq.edge.api.model.InvalidIdentifierValidationError;
 import com.hivemq.edge.api.model.MissingFieldValidationError;
 import com.hivemq.edge.api.model.UnsupportedFieldValidationError;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -80,7 +81,7 @@ public final class ValidationErrorFactory extends ErrorFactory {
     public static @NotNull InvalidFieldValueValidationError invalidFieldValueValidationError(
             final @NotNull String detail,
             final @NotNull String path,
-            final @NotNull String value) {
+            final @Nullable String value) {
         return InvalidFieldValueValidationError.builder()
                 .type(type(InvalidFieldValueValidationError.class))
                 .detail(detail)
