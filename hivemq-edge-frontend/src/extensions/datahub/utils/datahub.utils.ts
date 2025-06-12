@@ -6,7 +6,7 @@ export const SCRIPT_FUNCTION_SEPARATOR = ':'
 export const SCRIPT_FUNCTION_PREFIX = 'fn'
 export const SCRIPT_FUNCTION_LATEST = 'latest'
 
-export const DRYRUN_VALIDATION_DELAY = 250
+export const DRYRUN_VALIDATION_DELAY = 150
 
 export const DATAHUB_HOTKEY = {
   COPY: 'Meta+C',
