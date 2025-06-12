@@ -201,7 +201,7 @@ describe('loadValidators', () => {
             strategy: 'ALL_OF',
             type: 'SCHEMA',
           },
-          id: expect.stringContaining('node_'), //'node_0bf21139-7f2c-41d0-98b5-6024af1b31e4',
+          id: expect.stringContaining('VALIDATOR_'),
           position: {
             x: -320,
             y: 160,
@@ -211,7 +211,7 @@ describe('loadValidators', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: expect.stringContaining('node_'), //'node_0bf21139-7f2c-41d0-98b5-6024af1b31e4',
+        source: expect.stringContaining('VALIDATOR_'),
         target: 'node-id',
         targetHandle: 'validation',
       }),
@@ -235,7 +235,7 @@ describe('loadValidators', () => {
       }),
       expect.objectContaining({
         source: 'test',
-        target: expect.stringContaining('node_'), //'node_0bf21139-7f2c-41d0-98b5-6024af1b31e4',
+        target: expect.stringContaining('VALIDATOR_'),
       }),
       expect.objectContaining({
         item: {
@@ -257,7 +257,7 @@ describe('loadValidators', () => {
       }),
       expect.objectContaining({
         source: 'test',
-        target: expect.stringContaining('node_'), //'node_0bf21139-7f2c-41d0-98b5-6024af1b31e4',
+        target: expect.stringContaining('VALIDATOR_'),
       }),
     ])
   })

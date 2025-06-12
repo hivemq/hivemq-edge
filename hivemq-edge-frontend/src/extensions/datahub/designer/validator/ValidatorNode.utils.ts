@@ -76,7 +76,7 @@ export const loadValidators = (policy: DataPolicy, schemas: PolicySchema[], data
       )
 
     const validatorNode: Node<ValidatorData> = {
-      id: getNodeId(),
+      id: getNodeId(DataHubNodeType.VALIDATOR),
       type: DataHubNodeType.VALIDATOR,
       position,
       data: {

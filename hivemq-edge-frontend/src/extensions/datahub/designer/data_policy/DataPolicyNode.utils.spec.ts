@@ -147,7 +147,7 @@ describe('loadDataPolicy', () => {
   it('should return nodes', () => {
     expect(loadDataPolicy(dataPolicy)).toStrictEqual<NodeAddChange>({
       item: expect.objectContaining<Node<DataPolicyData>>({
-        id: expect.stringContaining('node_'),
+        id: expect.stringContaining('DATA_POLICY_'),
         type: DataHubNodeType.DATA_POLICY,
         data: { id: 'string' },
         position: { x: 0, y: 0 },
