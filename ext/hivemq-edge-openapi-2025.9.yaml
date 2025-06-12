@@ -4971,20 +4971,37 @@ components:
             function:
               type: string
               description: The function.
+              example: function1
             occurrences:
               type: integer
               format: int32
               description: The occurrences of the function.
+              minimum: 0
+              example: 3
             paths:
               type: array
               items:
                 type: string
                 format: json-path
               description: The json paths where the function occurs.
+              example:
+                - $.path1
+                - $.path2
+                - $.path3
           required:
             - function
             - occurrences
             - paths
+      example:
+        general:
+          detail: The pipeline must contain at most one 'function1' function, but 3 were found at ['$.path1', '$.path2', '$.path3'].
+          function: function1
+          occurrences: 3
+          paths:
+            - $.path1
+            - $.path2
+            - $.path3
+          type: https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError
     EmptyFieldValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
@@ -5010,12 +5027,20 @@ components:
             existingFunction:
               type: string
               description: The existing function.
+              example: function1
             missingFunction:
               type: string
               description: The missing function.
+              example: function2
           required:
             - existingFunction
             - missingFunction
+      example:
+        general:
+          detail: If 'function1' function is present in the pipeline, 'function2' function must be present as well.
+          existingFunction: function1
+          missingFunction: function2
+          type: https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError
     GeneralPolicyValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
@@ -5027,24 +5052,38 @@ components:
             event:
               type: string
               description: The event name.
+              example: event1
             fromState:
               type: string
               description: The event from state.
+              example: state1
             id:
               type: string
               description: The event id.
+              example: abc
             path:
               type: string
               description: The path.
+              example: $.event
             toState:
               type: string
               description: The event to state.
+              example: state2
           required:
             - event
             - fromState
             - id
             - path
             - toState
+      example:
+        general:
+          detail: The transition from state 'state1' to state 'state2' on event 'event1' in '$.event' is not defined for behavior 'abc'.
+          event: event1
+          fromState: state1
+          toState: state2
+          id: abc
+          path: $.event
+          type: https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError
     IllegalFunctionValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
@@ -5053,21 +5092,27 @@ components:
             event:
               type: string
               description: The event name.
+              example: event1
             id:
               type: string
               description: The function id.
-            message:
-              type: string
-              description: The error message.
+              example: abc
             path:
               type: string
               format: json-path
               description: The json path.
+              example: $.event
           required:
             - event
             - id
-            - message
             - path
+      example:
+        general:
+          detail: The function 'abc' is not allowed for event 'event1' in '$.event'.
+          event: event1
+          id: abc
+          path: $.event
+          type: https://hivemq.com/edge/api/model/IllegalFunctionValidationError
     InvalidFieldLengthValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
