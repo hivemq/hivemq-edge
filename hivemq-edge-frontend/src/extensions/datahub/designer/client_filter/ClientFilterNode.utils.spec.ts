@@ -145,7 +145,7 @@ describe('loadClientFilter', () => {
           data: {
             clients: ['*.*'],
           },
-          id: expect.stringContaining('node_'),
+          id: expect.stringContaining('CLIENT_FILTER_'),
           position: {
             x: -320,
             y: 0,
@@ -155,7 +155,7 @@ describe('loadClientFilter', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: expect.stringContaining('node_'),
+        source: expect.stringContaining('CLIENT_FILTER_'),
         target: 'node-id',
       }),
     ])

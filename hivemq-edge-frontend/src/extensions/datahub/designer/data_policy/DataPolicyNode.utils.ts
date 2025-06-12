@@ -123,7 +123,7 @@ export const loadDataPolicy = (policy: DataPolicy): NodeAddChange => {
   }
 
   const dataPolicyNode: Node<DataPolicyData> = {
-    id: getNodeId(),
+    id: getNodeId(DataHubNodeType.DATA_POLICY),
     type: DataHubNodeType.DATA_POLICY,
     position,
     data: { id: policy.id },

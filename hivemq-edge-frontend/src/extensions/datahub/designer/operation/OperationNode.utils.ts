@@ -324,7 +324,7 @@ export const loadPipeline = (
           const [deserializer, ...functions] = operationNode as PolicyOperation[]
 
           operationNode = {
-            id: getNodeId(),
+            id: getNodeId(DataHubNodeType.OPERATION),
             type: DataHubNodeType.OPERATION,
             position: { ...shiftPositionRight() },
             data: {
@@ -364,7 +364,7 @@ export const loadPipeline = (
       default:
         if (operationNode) throw new Error(i18n.t('datahub:error.loading.operation.unknown') as string)
         operationNode = {
-          id: getNodeId(),
+          id: getNodeId(DataHubNodeType.OPERATION),
           type: DataHubNodeType.OPERATION,
           position: { ...shiftPositionRight() },
           data: {

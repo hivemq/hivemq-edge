@@ -538,7 +538,7 @@ describe('loadPipeline', () => {
 
     // The transform node is created with a UI ID that starts with 'node_'
     const transformNode = (results[1] as Connection).target
-    expect(transformNode).toMatch('node_')
+    expect(transformNode).toMatch('OPERATION_')
 
     expect(results).toStrictEqual(
       expect.arrayContaining<NodeAddChange | Connection>([
