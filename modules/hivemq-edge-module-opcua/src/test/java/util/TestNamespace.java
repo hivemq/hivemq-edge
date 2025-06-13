@@ -24,10 +24,10 @@ import java.util.Random;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
+import static util.EmbeddedOpcUaServerExtension.NS_URI;
 
 public class TestNamespace extends ManagedNamespaceWithLifecycle {
 
-    private static final String NS_URI = "urn:hivemq:test:testns";
     private final @NotNull SubscriptionModel subscriptionModel;
     private @Nullable UaFolderNode dynamicFolder;
     private @Nullable UaFolderNode testFolder;
@@ -67,7 +67,6 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
                     false));
 
             addDynamicNodes();
-
         });
     }
 
@@ -103,7 +102,7 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
     private void addDefaultNode(
             final @NotNull String name,
             final @NotNull NodeId typeId,
-            final @NotNull Object intialValue,
+            final @NotNull Object initialValue,
             final @NotNull Supplier<Object> valueCallback,
             final @NotNull NodeId nodeId) {
         final UaVariableNode node = new UaVariableNode.UaVariableNodeBuilder(getNodeContext()).setNodeId(nodeId)
@@ -114,7 +113,7 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
                 .setTypeDefinition(NodeIds.BaseDataVariableType)
                 .build();
 
-        node.setValue(new DataValue(new Variant(intialValue)));
+        node.setValue(new DataValue(new Variant(initialValue)));
 
         node.getFilterChain()
                 .addLast(AttributeFilters.getValue(ctx -> new DataValue(new Variant(valueCallback.get()))));
