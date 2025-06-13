@@ -1,6 +1,7 @@
 import { expect } from 'vitest'
 import type { Connection, Node, NodeAddChange } from '@xyflow/react'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
+import { vitest_ExpectStringContainingUUIDFromNodeType } from '@datahub/__test-utils__/vitest.utils.ts'
 
 import type { DataPolicy, PolicySchema } from '@/api/__generated__'
 import { DataPolicyValidator } from '@/api/__generated__'
@@ -201,7 +202,7 @@ describe('loadValidators', () => {
             strategy: 'ALL_OF',
             type: 'SCHEMA',
           },
-          id: expect.stringContaining('VALIDATOR_'),
+          id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.VALIDATOR),
           position: {
             x: -320,
             y: 160,
@@ -211,7 +212,7 @@ describe('loadValidators', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: expect.stringContaining('VALIDATOR_'),
+        source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.VALIDATOR),
         target: 'node-id',
         targetHandle: 'validation',
       }),
@@ -224,7 +225,7 @@ describe('loadValidators', () => {
             type: 'JSON',
             version: 1,
           },
-          id: expect.stringContaining('SCHEMA_'),
+          id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
           position: {
             x: -640,
             y: 160,
@@ -234,8 +235,8 @@ describe('loadValidators', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: expect.stringContaining('SCHEMA_'),
-        target: expect.stringContaining('VALIDATOR_'),
+        source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
+        target: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.VALIDATOR),
       }),
       expect.objectContaining({
         item: {
@@ -246,7 +247,7 @@ describe('loadValidators', () => {
             type: 'JSON',
             version: 1,
           },
-          id: expect.stringContaining('SCHEMA_'),
+          id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
           position: {
             x: -640,
             y: 320,
@@ -256,8 +257,8 @@ describe('loadValidators', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: expect.stringContaining('SCHEMA_'),
-        target: expect.stringContaining('VALIDATOR_'),
+        source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
+        target: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.VALIDATOR),
       }),
     ])
   })

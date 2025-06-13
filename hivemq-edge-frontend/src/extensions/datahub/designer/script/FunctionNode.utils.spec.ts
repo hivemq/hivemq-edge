@@ -1,7 +1,8 @@
 import { expect } from 'vitest'
 import type { Connection, Node, NodeAddChange } from '@xyflow/react'
-
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
+import { vitest_ExpectStringContainingUUIDFromNodeType } from '@datahub/__test-utils__/vitest.utils.ts'
+
 import type { PolicyOperation } from '@/api/__generated__'
 import { Script } from '@/api/__generated__'
 import type { FunctionData } from '@datahub/types.ts'
@@ -148,7 +149,7 @@ describe('loadScripts', () => {
             type: 'Javascript',
             version: 1,
           },
-          id: expect.stringContaining('FUNCTION_'),
+          id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.FUNCTION),
           position: {
             x: -320,
             y: 0,
@@ -158,7 +159,7 @@ describe('loadScripts', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: expect.stringContaining('FUNCTION_'),
+        source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.FUNCTION),
         target: 'node-id',
       }),
     ])
