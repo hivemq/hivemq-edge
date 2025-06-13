@@ -18,10 +18,8 @@ package com.hivemq.edge.adapters.opcua.config.opcua2mqtt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNullElse;
@@ -60,8 +58,10 @@ public class OpcUaToMqttConfig {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(final @Nullable Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final OpcUaToMqttConfig that = (OpcUaToMqttConfig) o;
         return getServerQueueSize() == that.getServerQueueSize() &&
                 getPublishingInterval() == that.getPublishingInterval();

@@ -27,7 +27,7 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Module
 public abstract class NettyModule {

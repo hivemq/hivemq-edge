@@ -27,7 +27,7 @@ import dagger.Provides;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.EventExecutorGroup;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import static com.hivemq.configuration.service.InternalConfigurations.MQTT_EVENT_EXECUTOR_THREAD_COUNT;
 

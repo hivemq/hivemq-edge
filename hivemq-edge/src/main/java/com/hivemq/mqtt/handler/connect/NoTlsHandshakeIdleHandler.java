@@ -22,7 +22,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import static com.hivemq.logging.LoggingUtils.appendListenerToMessage;
 

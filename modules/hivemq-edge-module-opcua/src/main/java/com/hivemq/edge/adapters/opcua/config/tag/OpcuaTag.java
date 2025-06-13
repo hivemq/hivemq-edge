@@ -33,13 +33,11 @@ public class OpcuaTag implements Tag {
     private final @NotNull String name;
 
     @JsonProperty(value = "description")
-    @ModuleConfigField(title = "description",
-                       description = "A human readable description of the tag")
+    @ModuleConfigField(title = "description", description = "A human readable description of the tag")
     private final @NotNull String description;
 
     @JsonProperty(value = "definition", required = true)
-    @ModuleConfigField(title = "definition",
-                       description = "The actual definition of the tag on the device")
+    @ModuleConfigField(title = "definition", description = "The actual definition of the tag on the device")
     private final @NotNull OpcuaTagDefinition definition;
 
     public OpcuaTag(
@@ -67,7 +65,7 @@ public class OpcuaTag implements Tag {
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return "OpcuaTag{" +
                 "name='" +
                 name +
@@ -81,9 +79,13 @@ public class OpcuaTag implements Tag {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final OpcuaTag opcuaTag = (OpcuaTag) o;
         return Objects.equals(name, opcuaTag.name) &&
                 Objects.equals(description, opcuaTag.description) &&
