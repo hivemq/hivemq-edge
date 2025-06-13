@@ -17,6 +17,7 @@ import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 import { SCRIPT_FUNCTION_LATEST } from '@datahub/utils/datahub.utils.ts'
+import { getNodeId } from '@datahub/utils/node.utils.ts'
 
 export const getScriptFamilies = (items: Script[]) => {
   return items.reduce<Record<string, ResourceFamily>>((acc, script) => {
@@ -150,7 +151,7 @@ export function loadSchema(
 
   if (schema.type === SchemaType.JSON) {
     const schemaNode: Node<SchemaData> = {
-      id: schemaRef.schemaId,
+      id: getNodeId(DataHubNodeType.SCHEMA),
       type: DataHubNodeType.SCHEMA,
       position: {
         x: parentNode.position.x + CANVAS_POSITION.PolicySchema.x,
