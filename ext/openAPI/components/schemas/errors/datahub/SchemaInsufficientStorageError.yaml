@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "../ApiError.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The policy id.
+        example: "abc"
+    required:
+      - id
+example:
+  general:
+    status: 507
+    title: "Schema Insufficient Storage"
+    detail: "Schema with ID '123' could not be added because of insufficient server storage."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/SchemaInsufficientStorageError"

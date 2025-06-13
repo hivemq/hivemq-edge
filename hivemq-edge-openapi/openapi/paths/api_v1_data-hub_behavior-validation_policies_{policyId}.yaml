@@ -302,7 +302,7 @@ put:
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/errors/http/InsufficientStorageError.yaml"
+            $ref: "../components/schemas/errors/datahub/PolicyInsufficientStorageError.yaml"
       description: Insufficient storage
   summary: Update an existing behavior policy
   tags:
