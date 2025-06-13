@@ -1,3 +1,4 @@
+import { getNodeId } from '@datahub/utils/node.utils.ts'
 import type { Connection, Node, NodeAddChange, XYPosition } from '@xyflow/react'
 
 import type { PolicyOperation } from '@/api/__generated__'
@@ -78,7 +79,7 @@ export const loadScripts = (
       throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }) as string)
 
     const functionScriptNode: Node<FunctionData> = {
-      id: functionScript.id,
+      id: getNodeId(DataHubNodeType.FUNCTION),
       type: DataHubNodeType.FUNCTION,
       position: { ...shiftLeft() },
       data: {
