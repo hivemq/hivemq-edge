@@ -65,7 +65,7 @@ export const loadScripts = (
       throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }) as string)
 
     const scriptFamily = scripts.filter((script) => script.id === functionName)
-    if (!scriptFamily)
+    if (scriptFamily.length === 0)
       throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }) as string)
 
     let functionScript: Script | undefined
