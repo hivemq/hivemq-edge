@@ -148,7 +148,7 @@ describe('loadScripts', () => {
             type: 'Javascript',
             version: 1,
           },
-          id: 'script1',
+          id: expect.stringContaining('FUNCTION_'),
           position: {
             x: -320,
             y: 0,
@@ -158,7 +158,7 @@ describe('loadScripts', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: 'script1',
+        source: expect.stringContaining('FUNCTION_'),
         target: 'node-id',
       }),
     ])
