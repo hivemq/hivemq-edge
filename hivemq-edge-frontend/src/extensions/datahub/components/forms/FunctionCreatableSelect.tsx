@@ -70,6 +70,13 @@ const getValue = (props: WidgetProps) => {
   }
 }
 
+const filterOption = (option: { data: FunctionSpecs }, inputValue: string) => {
+  const { functionId, schema } = option.data
+  const description = schema?.description || ''
+  const search = inputValue.toLowerCase()
+  return functionId?.toLowerCase().includes(search) || description.toLowerCase().includes(search)
+}
+
 const FunctionCreatableSelect: FC<WidgetProps<unknown, RJSFSchema, ReactFlowSchemaFormContext>> = (props) => {
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
   const functions = props.formContext?.functions || []
@@ -109,6 +116,7 @@ const FunctionCreatableSelect: FC<WidgetProps<unknown, RJSFSchema, ReactFlowSche
           Option,
           SingleValue,
         }}
+        filterOption={filterOption}
       />
     </FormControl>
   )
