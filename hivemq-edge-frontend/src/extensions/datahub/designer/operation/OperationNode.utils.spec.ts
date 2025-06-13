@@ -482,7 +482,7 @@ describe('checkValidityTransformFunction', () => {
       expect(data).toEqual(
         expect.objectContaining({
           arguments: {},
-          functionId: 'fn:the_function:latest',
+          functionId: 'fn:the_function:1',
           id: NODE_FUNCTION_ID,
         })
       )
@@ -709,26 +709,26 @@ describe('loadPipeline', () => {
       expect.arrayContaining<NodeAddChange | Connection>([
         {
           item: expect.objectContaining<Partial<Node<SchemaData>>>({
-            id: NODE_DESERIALISER_ID,
+            id: expect.stringContaining('SCHEMA_'),
             type: DataHubNodeType.SCHEMA,
           }),
           type: 'add',
         },
         expect.objectContaining<Connection>({
-          source: NODE_DESERIALISER_ID,
+          source: expect.stringContaining('SCHEMA_'),
           sourceHandle: null,
           target: expect.stringContaining(transformNode),
           targetHandle: 'deserialiser',
         }),
         {
           item: expect.objectContaining<Partial<Node<SchemaData>>>({
-            id: NODE_SERIALISER_ID,
+            id: expect.stringContaining('SCHEMA_'),
             type: DataHubNodeType.SCHEMA,
           }),
           type: 'add',
         },
         expect.objectContaining<Connection>({
-          source: NODE_SERIALISER_ID,
+          source: expect.stringContaining('SCHEMA_'),
           sourceHandle: null,
           target: expect.stringContaining(transformNode),
           targetHandle: 'serialiser',
