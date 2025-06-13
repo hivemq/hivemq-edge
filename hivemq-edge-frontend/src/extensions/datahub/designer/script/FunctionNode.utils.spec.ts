@@ -5,7 +5,7 @@ import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 import type { PolicyOperation } from '@/api/__generated__'
 import { Script } from '@/api/__generated__'
 import type { FunctionData } from '@datahub/types.ts'
-import { DataHubNodeType } from '@datahub/types.ts'
+import { DataHubNodeType, ResourceWorkingVersion } from '@datahub/types.ts'
 import {
   checkValidityJSScript,
   formatScriptName,
@@ -85,6 +85,22 @@ describe('formatScriptName', () => {
         type: 'Javascript',
         name: 'my-name',
         version: 1,
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    expect(formatScriptName(MOCK_NODE_SCRIPT)).toEqual('fn:my-name:1')
+  })
+
+  it('should format the draft id of the script', async () => {
+    const MOCK_NODE_SCRIPT: Node<FunctionData> = {
+      id: 'node-id',
+      type: DataHubNodeType.FUNCTION,
+      data: {
+        type: 'Javascript',
+        name: 'my-name',
+        version: ResourceWorkingVersion.DRAFT,
       },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
