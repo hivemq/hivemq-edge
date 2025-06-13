@@ -247,7 +247,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/errors/http/InsufficientStorageError.yaml"
+            $ref: "../components/schemas/errors/datahub/ScriptInsufficientStorageError.yaml"
       description: Insufficient storage
   summary: Create a new script
   tags:
