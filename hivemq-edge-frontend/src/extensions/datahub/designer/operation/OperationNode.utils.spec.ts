@@ -735,13 +735,13 @@ describe('loadPipeline', () => {
         }),
         {
           item: expect.objectContaining<Partial<Node<FunctionData>>>({
-            id: 'script1',
+            id: expect.stringContaining('FUNCTION_'),
             type: DataHubNodeType.FUNCTION,
           }),
           type: 'add',
         },
         expect.objectContaining<Connection>({
-          source: 'script1',
+          source: expect.stringContaining('FUNCTION_'),
           sourceHandle: null,
           target: expect.stringContaining(transformNode),
           targetHandle: 'function',
