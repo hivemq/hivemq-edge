@@ -24,7 +24,7 @@ import java.util.Random;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static util.TestServer.NS_URI;
+import static util.EmbeddedOpcUaServerExtension.NS_URI;
 
 public class TestNamespace extends ManagedNamespaceWithLifecycle {
 
