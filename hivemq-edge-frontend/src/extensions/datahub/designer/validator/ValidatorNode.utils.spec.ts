@@ -224,7 +224,7 @@ describe('loadValidators', () => {
             type: 'JSON',
             version: 1,
           },
-          id: 'test',
+          id: expect.stringContaining('SCHEMA_'),
           position: {
             x: -640,
             y: 160,
@@ -234,7 +234,7 @@ describe('loadValidators', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: 'test',
+        source: expect.stringContaining('SCHEMA_'),
         target: expect.stringContaining('VALIDATOR_'),
       }),
       expect.objectContaining({
@@ -246,7 +246,7 @@ describe('loadValidators', () => {
             type: 'JSON',
             version: 1,
           },
-          id: 'test',
+          id: expect.stringContaining('SCHEMA_'),
           position: {
             x: -640,
             y: 320,
@@ -256,7 +256,7 @@ describe('loadValidators', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: 'test',
+        source: expect.stringContaining('SCHEMA_'),
         target: expect.stringContaining('VALIDATOR_'),
       }),
     ])
