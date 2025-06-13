@@ -6,8 +6,3 @@ example:
     title: "Insufficient Storage"
     detail: "Insufficient Storage."
     type: "https://hivemq.com/edge/api/model/InsufficientStorageError"
-  policy:
-    status: 507
-    title: "Insufficient Storage"
-    detail: "Insufficient Storage: The policy with id '123' could not be added because of insufficient server storage."
-    type: "https://hivemq.com/edge/api/model/InsufficientStorageError"
