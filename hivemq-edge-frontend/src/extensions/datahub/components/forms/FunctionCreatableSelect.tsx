@@ -108,6 +108,7 @@ const FunctionCreatableSelect: FC<WidgetProps<unknown, RJSFSchema, ReactFlowSche
 
       <Select<FunctionSpecs, false>
         inputId={props.id}
+        instanceId="functions"
         size="md"
         options={functions}
         value={value}
