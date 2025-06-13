@@ -18,9 +18,6 @@ package util;
 import java.io.IOException;
 import java.net.ServerSocket;
 
-/**
- * @author Georg Held
- */
 public class RandomPortGenerator {
 
     public static int get() {
@@ -29,10 +26,9 @@ public class RandomPortGenerator {
             tries--;
             try {
                 final int randomNumber = (int) (Math.round(Math.random() * 40000) + 10000);
-                final ServerSocket serverSocket = new ServerSocket(randomNumber);
-                final int port = serverSocket.getLocalPort();
-                serverSocket.close();
-                return port;
+                try (final ServerSocket serverSocket = new ServerSocket(randomNumber)){
+                    return serverSocket.getLocalPort();
+                }
             } catch (final IOException ex) {
                 //continue
             }

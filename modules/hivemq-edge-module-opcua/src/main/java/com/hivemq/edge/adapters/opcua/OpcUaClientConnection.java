@@ -29,6 +29,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.transport.client.tcp.OpcTcpClientTransportConfigBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -42,11 +43,11 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 import static java.util.Objects.requireNonNull;
@@ -54,7 +55,8 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 
 public class OpcUaClientConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
-
+    private static final @NotNull Consumer<OpcTcpClientTransportConfigBuilder> TRANSPORT_CONFIG_BUILDER_CONSUMER = ignore -> {
+    };
     private final @NotNull String uri;
     private final @NotNull List<OpcuaTag> tags;
     private final @NotNull ProtocolAdapterTagStreamingService tagStreamingService;
@@ -62,10 +64,9 @@ public class OpcUaClientConnection {
     private final @NotNull EventService eventService;
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final @NotNull AtomicBoolean started;
+    private final @NotNull AtomicReference<StartStatus> started;
     private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
-
     private volatile @Nullable OpcUaClientContext opcUaClientInstance;
 
     public OpcUaClientConnection(
@@ -87,7 +88,7 @@ public class OpcUaClientConnection {
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
-        this.started = new AtomicBoolean(false);
+        this.started = new AtomicReference<>(StartStatus.NOT_STARTED);
     }
 
     private static @NotNull String extractPayload(final @NotNull OpcUaClient client, final @NotNull DataValue value)
@@ -102,17 +103,17 @@ public class OpcUaClientConnection {
     }
 
     public @NotNull CompletableFuture<Void> start() {
-        if (started.compareAndSet(false, true)) {
+        if (started.compareAndSet(StartStatus.NOT_STARTED, StartStatus.STARTING)) {
+
             final ParsedConfig parsedConfig;
             final var result = ParsedConfig.fromConfig(config);
             if (result instanceof final Failure<ParsedConfig, String> failure) {
                 log.error("Failed to parse configuration for OPC UA client: {}", failure.failure());
-                started.set(false); // release lock
+                protocolAdapterState.setConnectionStatus(ERROR);
                 return CompletableFuture.failedFuture(new IllegalArgumentException(failure.failure()));
             } else if (result instanceof final Success<ParsedConfig, String> success) {
                 parsedConfig = success.result();
             } else {
-                started.set(false); // release lock
                 throw new IllegalStateException("Unexpected result type: " + result.getClass().getName());
             }
 
@@ -120,12 +121,12 @@ public class OpcUaClientConnection {
             try {
                 newOcpUaClient = OpcUaClient.create(uri,
                         endpoints -> endpoints.stream().findFirst(),
-                        transportConfigBuilder -> {},
+                        TRANSPORT_CONFIG_BUILDER_CONSUMER,
                         new OpcUaClientConfigurator(adapterId, parsedConfig));
             } catch (final UaException e) {
                 log.error("Unable to create OpcUaClient", e);
                 protocolAdapterState.setConnectionStatus(ERROR);
-                started.set(false); // release lock
+                started.set(StartStatus.NOT_STARTED); // release lock
                 return CompletableFuture.failedFuture(e);
             }
 
@@ -134,14 +135,14 @@ public class OpcUaClientConnection {
                 return createSubscription(newOcpUaClient);
             }).whenComplete((ignored, throwable) -> {
                 if (throwable != null) {
-                    log.error("Failed to create subscription", throwable);
-                    protocolAdapterState.setConnectionStatus(ERROR);
                     try {
+                        log.error("Failed to create subscription", throwable);
                         newOcpUaClient.disconnect();
                     } catch (final UaException e) {
                         log.error("Failed to disconnect client", e);
                     } finally {
-                        started.set(false); // release lock
+                        protocolAdapterState.setConnectionStatus(ERROR);
+                        started.set(StartStatus.NOT_STARTED); // release lock
                     }
                 } else {
                     log.info("Subscription created successfully");
@@ -151,39 +152,42 @@ public class OpcUaClientConnection {
                     newOcpUaClient.addFaultListener(faultListener);
                     opcUaClientInstance = new OpcUaClientContext(newOcpUaClient, faultListener, activityListener);
                     protocolAdapterState.setConnectionStatus(CONNECTED);
+                    started.set(StartStatus.STARTED);
                 }
             }).thenApply(ignored -> null);
-        } else {
-            log.warn("Start operation is already in progress or has been completed.");
-            return CompletableFuture.completedFuture(null);
         }
+        return CompletableFuture.completedFuture(null);
     }
 
     public @NotNull CompletableFuture<Void> stop() {
-        if (started.compareAndSet(true, false)) {
-            final var toBeClosed = opcUaClientInstance;
-            if (toBeClosed != null) {
+        if (started.get() == StartStatus.STARTED) {
+            try {
+                final var toBeClosed = opcUaClientInstance;
+                if (toBeClosed != null) {
+                    toBeClosed.client().removeSessionActivityListener(toBeClosed.sessionActivityListener());
+                    toBeClosed.client().removeFaultListener(toBeClosed.serviceFaultListener());
+                    return toBeClosed.client().disconnectAsync().thenApply(ignored -> {
+                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+                        return null;
+                    });
+                }
+            } finally {
                 opcUaClientInstance = null;
-                toBeClosed.client().removeSessionActivityListener(toBeClosed.sessionActivityListener());
-                toBeClosed.client().removeFaultListener(toBeClosed.serviceFaultListener());
-                return toBeClosed.client().disconnectAsync().thenApply(ignored -> {
-                    protocolAdapterState.setConnectionStatus(DISCONNECTED);
-                    return null;
-                });
+                started.set(StartStatus.NOT_STARTED); // release lock
             }
         }
         return CompletableFuture.completedFuture(null);
     }
 
     public boolean isStarted() {
-        return started.get();
+        return started.get() == StartStatus.STARTED;
     }
 
     public @NotNull CompletableFuture<List<StatusCode>> write(
             final @NotNull OpcuaTag opcuaTag,
             final @NotNull OpcUaPayload opcUAWritePayload) {
         final OpcUaClientContext instance = opcUaClientInstance;
-        if (started.get() && instance != null) {
+        if (started.get() == StartStatus.STARTED && instance != null) {
             final JsonToOpcUAConverter converter = new JsonToOpcUAConverter(instance.client());
             if (log.isDebugEnabled()) {
                 log.debug("Write for opcua is invoked with payload '{}' for tag '{}' ",
@@ -309,7 +313,7 @@ public class OpcUaClientConnection {
                         .withPayload(session.getSessionName() + '/' + session.getSessionId())
                         .withMessage("Adapter '" + adapterId + "' session has been disconnected.")
                         .fire();
-                protocolAdapterState.setConnectionStatus(DISCONNECTED);
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             }
 
             @Override
@@ -319,6 +323,12 @@ public class OpcUaClientConnection {
                 protocolAdapterState.setConnectionStatus(CONNECTED);
             }
         };
+    }
+
+    private enum StartStatus {
+        NOT_STARTED,
+        STARTING,
+        STARTED
     }
 
     public record OpcUaClientContext(OpcUaClient client, ServiceFaultListener serviceFaultListener,
