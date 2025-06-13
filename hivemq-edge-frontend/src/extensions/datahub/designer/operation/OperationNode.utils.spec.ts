@@ -1,7 +1,8 @@
 import { expect } from 'vitest'
 import type { Connection, Node, NodeAddChange } from '@xyflow/react'
-
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
+import { vitest_ExpectStringContainingUUIDFromNodeType } from '@datahub/__test-utils__/vitest.utils.ts'
+
 import { type BehaviorPolicyOnTransition, type DataPolicy, type PolicyOperation, Script } from '@/api/__generated__'
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
 
@@ -709,39 +710,39 @@ describe('loadPipeline', () => {
       expect.arrayContaining<NodeAddChange | Connection>([
         {
           item: expect.objectContaining<Partial<Node<SchemaData>>>({
-            id: expect.stringContaining('SCHEMA_'),
+            id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
             type: DataHubNodeType.SCHEMA,
           }),
           type: 'add',
         },
         expect.objectContaining<Connection>({
-          source: expect.stringContaining('SCHEMA_'),
+          source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
           sourceHandle: null,
           target: expect.stringContaining(transformNode),
           targetHandle: 'deserialiser',
         }),
         {
           item: expect.objectContaining<Partial<Node<SchemaData>>>({
-            id: expect.stringContaining('SCHEMA_'),
+            id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
             type: DataHubNodeType.SCHEMA,
           }),
           type: 'add',
         },
         expect.objectContaining<Connection>({
-          source: expect.stringContaining('SCHEMA_'),
+          source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
           sourceHandle: null,
           target: expect.stringContaining(transformNode),
           targetHandle: 'serialiser',
         }),
         {
           item: expect.objectContaining<Partial<Node<FunctionData>>>({
-            id: expect.stringContaining('FUNCTION_'),
+            id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.FUNCTION),
             type: DataHubNodeType.FUNCTION,
           }),
           type: 'add',
         },
         expect.objectContaining<Connection>({
-          source: expect.stringContaining('FUNCTION_'),
+          source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.FUNCTION),
           sourceHandle: null,
           target: expect.stringContaining(transformNode),
           targetHandle: 'function',
