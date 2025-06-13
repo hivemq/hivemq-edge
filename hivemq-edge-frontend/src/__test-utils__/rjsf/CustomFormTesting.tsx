@@ -13,7 +13,7 @@ import { DescriptionFieldTemplate, ErrorListTemplate, TitleFieldTemplate } from 
 interface CustomFormTestingProps
   extends Pick<
     FormProps<unknown>,
-    'schema' | 'uiSchema' | 'formData' | 'onChange' | 'onSubmit' | 'onError' | 'formContext'
+    'schema' | 'uiSchema' | 'formData' | 'onChange' | 'onSubmit' | 'onError' | 'formContext' | 'widgets'
   > {
   id?: string
 }
@@ -23,6 +23,7 @@ export const CustomFormTesting: FC<CustomFormTestingProps> = ({
   uiSchema,
   formData,
   formContext,
+  widgets,
   onChange,
   onError,
   onSubmit,
@@ -39,6 +40,7 @@ export const CustomFormTesting: FC<CustomFormTestingProps> = ({
       onSubmit={onSubmit}
       liveValidate
       showErrorList="bottom"
+      widgets={widgets}
       templates={{
         ObjectFieldTemplate,
         FieldTemplate,
