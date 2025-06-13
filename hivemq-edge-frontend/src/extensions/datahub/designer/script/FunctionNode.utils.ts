@@ -60,8 +60,20 @@ export const loadScripts = (
 
   const newNodes: (NodeAddChange | Connection)[] = []
   for (const fct of functions) {
-    const [, functionName] = fct.functionId.split(':')
-    const functionScript = scripts.find((script) => script.id === functionName)
+    const [, functionName, functionVersion] = fct.functionId.split(':')
+    if (!functionName || !functionVersion)
+      throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }) as string)
+
+    const scriptFamily = scripts.filter((script) => script.id === functionName)
+    if (!scriptFamily)
+      throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }) as string)
+
+    let functionScript: Script | undefined
+    if (functionVersion === SCRIPT_FUNCTION_LATEST) {
+      functionScript = scriptFamily.slice(-1)[0]
+    } else {
+      functionScript = scriptFamily.find((s) => s.version?.toString() === functionVersion)
+    }
     if (!functionScript)
       throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }) as string)
 
