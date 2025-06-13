@@ -3,14 +3,7 @@ import { getConnectedEdges, getIncomers } from '@xyflow/react'
 
 import i18n from '@/config/i18n.config.ts'
 
-import type {
-  BehaviorPolicyOnTransition,
-  DataPolicy,
-  PolicyOperation,
-  PolicySchema,
-  SchemaReference,
-  Script,
-} from '@/api/__generated__'
+import type { BehaviorPolicyOnTransition, DataPolicy, PolicyOperation, PolicySchema, Script } from '@/api/__generated__'
 import type {
   DryRunResults,
   FunctionData,
@@ -30,6 +23,7 @@ import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { getNodeId, isFunctionNodeType, isSchemaNodeType } from '@datahub/utils/node.utils.ts'
 import { getActiveTransition } from '@datahub/designer/transition/TransitionNode.utils.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
+import { SCRIPT_FUNCTION_LATEST } from '@datahub/utils/datahub.utils.ts'
 
 export function checkValidityTransformFunction(
   operationNode: Node<OperationData>,
@@ -48,6 +42,7 @@ export function checkValidityTransformFunction(
 
   ///////// Check the function handle
   const functions = getIncomers(operationNode, nodes, edges).filter(isFunctionNodeType)
+
   if (!functions.length) {
     return [
       {
@@ -58,17 +53,19 @@ export function checkValidityTransformFunction(
   }
 
   ///////// Check the serializers
-  const serialisers = getIncomers(operationNode, nodes, edges).filter(isSchemaNodeType)
-  const connectedEdges = getConnectedEdges([...serialisers], edges).filter(
+  const schemas = getIncomers(operationNode, nodes, edges).filter(isSchemaNodeType)
+  const connectedEdges = getConnectedEdges([...schemas], edges).filter(
     (edge) =>
-      edge.targetHandle === OperationData.Handle.SERIALISER || edge.targetHandle === OperationData.Handle.DESERIALISER
+      (edge.targetHandle === OperationData.Handle.SERIALISER ||
+        edge.targetHandle === OperationData.Handle.DESERIALISER) &&
+      edge.target === operationNode.id
   )
   const [serial, ...restSerial] = connectedEdges.filter((edge) => edge.targetHandle === OperationData.Handle.SERIALISER)
   const [deserial, ...restDeserial] = connectedEdges.filter(
     (edge) => edge.targetHandle === OperationData.Handle.DESERIALISER
   )
 
-  if (serial === undefined || restSerial.length !== 0) {
+  if (serial === undefined) {
     return [
       {
         node: operationNode,
@@ -77,7 +74,16 @@ export function checkValidityTransformFunction(
     ]
   }
 
-  if (deserial === undefined || restDeserial.length !== 0) {
+  if (restSerial.length !== 0) {
+    return [
+      {
+        node: operationNode,
+        error: PolicyCheckErrors.cardinality(DataHubNodeType.SCHEMA, operationNode),
+      },
+    ]
+  }
+
+  if (deserial === undefined) {
     return [
       {
         node: operationNode,
@@ -86,9 +92,18 @@ export function checkValidityTransformFunction(
     ]
   }
 
+  if (restDeserial.length !== 0) {
+    return [
+      {
+        node: operationNode,
+        error: PolicyCheckErrors.cardinality(DataHubNodeType.SCHEMA, operationNode),
+      },
+    ]
+  }
+
   ///////// Check the resources
   const scriptNodes = functions.map((node) => checkValidityJSScript(node))
-  const schemaNodes = serialisers.map((node) => checkValiditySchema(node))
+  const schemaNodes = schemas.map((node) => checkValiditySchema(node))
 
   if (!scriptNodes.length) {
     return [
@@ -118,7 +133,7 @@ export function checkValidityTransformFunction(
     }
   }
 
-  const sourceDeserial = serialisers.find((node) => node.id === deserial.source)
+  const sourceDeserial = schemas.find((node) => node.id === deserial.source)
   if (!sourceDeserial) {
     return [
       {
@@ -134,13 +149,13 @@ export function checkValidityTransformFunction(
       schemaVersion:
         sourceDeserial.data.version === ResourceWorkingVersion.DRAFT ||
         sourceDeserial.data.version === ResourceWorkingVersion.MODIFIED
-          ? 'latest'
+          ? SCRIPT_FUNCTION_LATEST
           : sourceDeserial.data.version.toString(),
     } as PolicyOperationArguments,
     id: `${operationNode.id}-deserializer`,
   }
 
-  const sourceSerial = serialisers.find((node) => node.id === serial.source)
+  const sourceSerial = schemas.find((node) => node.id === serial.source)
   if (!sourceSerial) {
     return [
       {
@@ -157,7 +172,7 @@ export function checkValidityTransformFunction(
       schemaVersion:
         sourceSerial.data.version === ResourceWorkingVersion.DRAFT ||
         sourceSerial.data.version === ResourceWorkingVersion.MODIFIED
-          ? 'latest'
+          ? SCRIPT_FUNCTION_LATEST
           : sourceSerial.data.version.toString(),
     } as PolicyOperationArguments,
     id: `${operationNode.id}-serializer`,
@@ -234,12 +249,11 @@ export const loadBehaviorPolicyPipelines = (
   scripts: Script[]
 ) => {
   const activeTransition = getActiveTransition(behaviorPolicyTransition)
-  if (!activeTransition)
-    throw new Error(i18n.t('datahub:error.loading.operation.noTransition', { source: activeTransition }) as string)
+  if (!activeTransition) throw new Error(i18n.t('datahub:error.loading.operation.noTransition'))
 
   const transitionOnEvent = behaviorPolicyTransition[activeTransition]
   if (!transitionOnEvent)
-    throw new Error(i18n.t('datahub:error.loading.operation.noTransition', { source: activeTransition }) as string)
+    throw new Error(i18n.t('datahub:error.loading.operation.noExistingTransition', { source: activeTransition }))
 
   return loadPipeline(transitionNode, transitionOnEvent.pipeline, null, schemas, scripts)
 }
@@ -324,7 +338,7 @@ export const loadPipeline = (
           const [deserializer, ...functions] = operationNode as PolicyOperation[]
 
           operationNode = {
-            id: getNodeId(),
+            id: getNodeId(DataHubNodeType.OPERATION),
             type: DataHubNodeType.OPERATION,
             position: { ...shiftPositionRight() },
             data: {
@@ -344,14 +358,14 @@ export const loadPipeline = (
             operationNode,
             OperationData.Handle.DESERIALISER,
             1,
-            deserializer.arguments as SchemaReference,
+            deserializer.arguments as PolicyOperationArguments,
             schemas
           )
           const serialisers = loadSchema(
             operationNode,
             OperationData.Handle.SERIALISER,
             nbItems,
-            policyOperation.arguments as SchemaReference,
+            policyOperation.arguments as PolicyOperationArguments,
             schemas
           )
 
@@ -364,7 +378,7 @@ export const loadPipeline = (
       default:
         if (operationNode) throw new Error(i18n.t('datahub:error.loading.operation.unknown') as string)
         operationNode = {
-          id: getNodeId(),
+          id: getNodeId(DataHubNodeType.OPERATION),
           type: DataHubNodeType.OPERATION,
           position: { ...shiftPositionRight() },
           data: {

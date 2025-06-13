@@ -1,4 +1,5 @@
 import { OperationData } from '@datahub/types.ts'
+import { SCRIPT_FUNCTION_LATEST } from '@datahub/utils/datahub.utils.ts'
 
 const NODE1_ID = 'node_07280ae8-6470-48f8-87da-84cc4bcb6d2b'
 const NODE2_ID = 'node_4ad0412f-e773-49d3-81e3-d5f54f9fbd09'
@@ -68,7 +69,7 @@ export const MOCK_TRANSFORM = {
         functionId: 'Serdes.deserialize',
         formData: {
           schemaId: 'dfdffd',
-          schemaVersion: 'latest',
+          schemaVersion: SCRIPT_FUNCTION_LATEST,
         },
         metadata: {
           isTerminal: false,

@@ -17,7 +17,7 @@ export const loadTopicFilter = (
   }
 
   const topicNode: Node<TopicFilterData> = {
-    id: getNodeId(),
+    id: getNodeId(DataHubNodeType.TOPIC_FILTER),
     type: DataHubNodeType.TOPIC_FILTER,
     position,
     data: {

@@ -1,6 +1,7 @@
 import { expect } from 'vitest'
 import type { Connection, Node, NodeAddChange } from '@xyflow/react'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
+import { vitest_ExpectStringContainingUUIDFromNodeType } from '@datahub/__test-utils__/vitest.utils.ts'
 
 import type { BehaviorPolicyData, ClientFilterData, WorkspaceState } from '@datahub/types.ts'
 import { BehaviorPolicyType, DataHubNodeType } from '@datahub/types.ts'
@@ -145,7 +146,7 @@ describe('loadClientFilter', () => {
           data: {
             clients: ['*.*'],
           },
-          id: expect.stringContaining('node_'),
+          id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.CLIENT_FILTER),
           position: {
             x: -320,
             y: 0,
@@ -155,7 +156,7 @@ describe('loadClientFilter', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: expect.stringContaining('node_'),
+        source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.CLIENT_FILTER),
         target: 'node-id',
       }),
     ])

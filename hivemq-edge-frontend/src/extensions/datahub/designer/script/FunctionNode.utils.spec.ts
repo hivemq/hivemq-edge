@@ -1,11 +1,12 @@
 import { expect } from 'vitest'
 import type { Connection, Node, NodeAddChange } from '@xyflow/react'
-
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
+import { vitest_ExpectStringContainingUUIDFromNodeType } from '@datahub/__test-utils__/vitest.utils.ts'
+
 import type { PolicyOperation } from '@/api/__generated__'
 import { Script } from '@/api/__generated__'
 import type { FunctionData } from '@datahub/types.ts'
-import { DataHubNodeType } from '@datahub/types.ts'
+import { DataHubNodeType, ResourceWorkingVersion } from '@datahub/types.ts'
 import {
   checkValidityJSScript,
   formatScriptName,
@@ -90,6 +91,22 @@ describe('formatScriptName', () => {
       position: { x: 0, y: 0 },
     }
 
+    expect(formatScriptName(MOCK_NODE_SCRIPT)).toEqual('fn:my-name:1')
+  })
+
+  it('should format the draft id of the script', async () => {
+    const MOCK_NODE_SCRIPT: Node<FunctionData> = {
+      id: 'node-id',
+      type: DataHubNodeType.FUNCTION,
+      data: {
+        type: 'Javascript',
+        name: 'my-name',
+        version: ResourceWorkingVersion.DRAFT,
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
     expect(formatScriptName(MOCK_NODE_SCRIPT)).toEqual('fn:my-name:latest')
   })
 })
@@ -132,7 +149,7 @@ describe('loadScripts', () => {
             type: 'Javascript',
             version: 1,
           },
-          id: 'script1',
+          id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.FUNCTION),
           position: {
             x: -320,
             y: 0,
@@ -142,7 +159,7 @@ describe('loadScripts', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: 'script1',
+        source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.FUNCTION),
         target: 'node-id',
       }),
     ])

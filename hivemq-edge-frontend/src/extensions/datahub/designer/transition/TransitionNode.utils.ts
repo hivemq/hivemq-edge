@@ -129,7 +129,7 @@ export const loadTransitions = (
   const newNodes: (NodeAddChange | Connection)[] = []
   for (const behaviorPolicyTransition of behaviorPolicy.onTransitions || []) {
     const transitionNode: Node<TransitionData> = {
-      id: getNodeId(),
+      id: getNodeId(DataHubNodeType.TRANSITION),
       type: DataHubNodeType.TRANSITION,
       position: { ...shiftBottom() },
       data: extractEventStates(model, behaviorPolicyTransition),
