@@ -5,7 +5,7 @@ import { Script } from '@/api/__generated__'
 import i18n from '@/config/i18n.config.ts'
 
 import type { DataHubNodeData, DryRunResults, FunctionData } from '@datahub/types.ts'
-import { DataHubNodeType, OperationData } from '@datahub/types.ts'
+import { DataHubNodeType, OperationData, ResourceWorkingVersion } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 import {
@@ -15,7 +15,7 @@ import {
 } from '@datahub/utils/datahub.utils.ts'
 
 export const formatScriptName = (functionNode: Node<FunctionData>): string => {
-  return `${SCRIPT_FUNCTION_PREFIX}:${functionNode.data.name}:${SCRIPT_FUNCTION_LATEST}`
+  return `${SCRIPT_FUNCTION_PREFIX}:${functionNode.data.name}:${functionNode.data.version === ResourceWorkingVersion.DRAFT ? SCRIPT_FUNCTION_LATEST : functionNode.data.version}`
 }
 
 export const parseScriptName = (operation: PolicyOperation): string => {
