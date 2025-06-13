@@ -15,6 +15,7 @@
  */
 package com.hivemq.util;
 
+import com.hivemq.edge.api.model.ApiError;
 import com.hivemq.http.error.ProblemDetails;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,7 +25,12 @@ import javax.ws.rs.core.Response;
  * @author Christoph Schäbel
  */
 public class ErrorResponseUtil {
-
+    public static @NotNull Response errorResponse(final @NotNull ApiError error) {
+        return Response.status(error.getStatus())
+                .entity(error)
+                .header("Content-Type", "application/json;charset=utf-8")
+                .build();
+    }
 
     public static @NotNull Response errorResponse(final @NotNull ProblemDetails errors) {
         return Response.status(errors.getStatus())
@@ -32,5 +38,4 @@ public class ErrorResponseUtil {
                 .header("Content-Type", "application/json;charset=utf-8")
                 .build();
     }
-
 }
