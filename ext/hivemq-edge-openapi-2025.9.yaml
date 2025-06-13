@@ -490,7 +490,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InsufficientStorageError'
+                $ref: '#/components/schemas/PolicyInsufficientStorageError'
           description: Insufficient storage
       summary: Create a new policy
       tags:
@@ -795,7 +795,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InsufficientStorageError'
+                $ref: '#/components/schemas/PolicyInsufficientStorageError'
           description: Insufficient storage
       summary: Update an existing behavior policy
       tags:
@@ -1251,7 +1251,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InsufficientStorageError'
+                $ref: '#/components/schemas/PolicyInsufficientStorageError'
           description: Insufficient storage
       summary: Create a new data policy
       tags:
@@ -1556,7 +1556,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InsufficientStorageError'
+                $ref: '#/components/schemas/PolicyInsufficientStorageError'
           description: Insufficient storage
       summary: Update an existing data policy
       tags:
@@ -2064,7 +2064,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InsufficientStorageError'
+                $ref: '#/components/schemas/SchemaInsufficientStorageError'
           description: Insufficient storage
       summary: Create a new schema
       tags:
@@ -2428,7 +2428,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InsufficientStorageError'
+                $ref: '#/components/schemas/ScriptInsufficientStorageError'
           description: Insufficient storage
       summary: Create a new script
       tags:
@@ -4858,9 +4858,11 @@ components:
           https://hivemq.com/edge/api/model/DataPolicyRejectedError: '#/components/schemas/DataPolicyRejectedError'
           https://hivemq.com/edge/api/model/DataPolicyUpdateFailureError: '#/components/schemas/DataPolicyUpdateFailureError'
           https://hivemq.com/edge/api/model/PolicyIdMismatchError: '#/components/schemas/PolicyIdMismatchError'
+          https://hivemq.com/edge/api/model/PolicyInsufficientStorageError: '#/components/schemas/PolicyInsufficientStorageError'
           https://hivemq.com/edge/api/model/PolicyNotFoundError: '#/components/schemas/PolicyNotFoundError'
           https://hivemq.com/edge/api/model/SchemaAlreadyPresentError: '#/components/schemas/SchemaAlreadyPresentError'
           https://hivemq.com/edge/api/model/SchemaEtagMismatchError: '#/components/schemas/SchemaEtagMismatchError'
+          https://hivemq.com/edge/api/model/SchemaInsufficientStorageError: '#/components/schemas/SchemaInsufficientStorageError'
           https://hivemq.com/edge/api/model/SchemaInvalidErrors: '#/components/schemas/SchemaInvalidErrors'
           https://hivemq.com/edge/api/model/SchemaNotFoundError: '#/components/schemas/SchemaNotFoundError'
           https://hivemq.com/edge/api/model/SchemaParsingFailureError: '#/components/schemas/SchemaParsingFailureError'
@@ -4868,6 +4870,7 @@ components:
           https://hivemq.com/edge/api/model/ScriptAlreadyPresentError: '#/components/schemas/ScriptAlreadyPresentError'
           https://hivemq.com/edge/api/model/ScriptCreationFailureError: '#/components/schemas/ScriptCreationFailureError'
           https://hivemq.com/edge/api/model/ScriptEtagMismatchError: '#/components/schemas/ScriptEtagMismatchError'
+          https://hivemq.com/edge/api/model/ScriptInsufficientStorageError: '#/components/schemas/ScriptInsufficientStorageError'
           https://hivemq.com/edge/api/model/ScriptInvalidErrors: '#/components/schemas/ScriptInvalidErrors'
           https://hivemq.com/edge/api/model/ScriptNotFoundError: '#/components/schemas/ScriptNotFoundError'
           https://hivemq.com/edge/api/model/ScriptParsingFailureError: '#/components/schemas/ScriptParsingFailureError'
@@ -5610,6 +5613,24 @@ components:
           detail: The policy ID 'id1' in the request parameter does not match the policy ID 'id2' in the policy request body.
           id: abc
           type: https://hivemq.com/edge/api/model/PolicyIdMismatchError
+    PolicyInsufficientStorageError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The policy id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 507
+          title: Policy Insufficient Storage
+          detail: Policy with ID '123' could not be added because of insufficient server storage.
+          id: abc
+          type: https://hivemq.com/edge/api/model/PolicyInsufficientStorageError
     PolicyNotFoundError:
       allOf:
         - $ref: '#/components/schemas/ApiError'
@@ -5669,6 +5690,24 @@ components:
           id: abc
           eTag: 33a64df551425fcc55e4d42a148795d9f25f89d4
           type: https://hivemq.com/edge/api/model/SchemaEtagMismatchError
+    SchemaInsufficientStorageError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The policy id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 507
+          title: Schema Insufficient Storage
+          detail: Schema with ID '123' could not be added because of insufficient server storage.
+          id: abc
+          type: https://hivemq.com/edge/api/model/SchemaInsufficientStorageError
     SchemaValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
@@ -5818,6 +5857,24 @@ components:
           id: abc
           eTag: 33a64df551425fcc55e4d42a148795d9f25f89d4
           type: https://hivemq.com/edge/api/model/ScriptEtagMismatchError
+    ScriptInsufficientStorageError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The policy id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 507
+          title: Script Insufficient Storage
+          detail: Script with ID '123' could not be added because of insufficient server storage.
+          id: abc
+          type: https://hivemq.com/edge/api/model/ScriptInsufficientStorageError
     ScriptValidationError:
       allOf:
         - $ref: '#/components/schemas/ValidationError'
@@ -5940,11 +5997,6 @@ components:
           status: 507
           title: Insufficient Storage
           detail: Insufficient Storage.
-          type: https://hivemq.com/edge/api/model/InsufficientStorageError
-        policy:
-          status: 507
-          title: Insufficient Storage
-          detail: 'Insufficient Storage: The policy with id ''123'' could not be added because of insufficient server storage.'
           type: https://hivemq.com/edge/api/model/InsufficientStorageError
     InternalServerError:
       allOf:
