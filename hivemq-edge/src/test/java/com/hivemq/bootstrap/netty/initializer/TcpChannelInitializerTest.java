@@ -29,7 +29,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NON_SSL_HANDLER;
 import static org.junit.Assert.assertEquals;

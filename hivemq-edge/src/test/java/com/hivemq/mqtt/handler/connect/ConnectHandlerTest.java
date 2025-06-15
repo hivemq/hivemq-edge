@@ -86,7 +86,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.*;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;

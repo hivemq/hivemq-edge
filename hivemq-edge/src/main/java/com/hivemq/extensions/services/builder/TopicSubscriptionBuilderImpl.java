@@ -31,7 +31,7 @@ import com.hivemq.extensions.packets.subscribe.SubscriptionImpl;
 import com.hivemq.extensions.services.subscription.TopicSubscriptionImpl;
 import com.hivemq.util.Topics;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import static com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
 

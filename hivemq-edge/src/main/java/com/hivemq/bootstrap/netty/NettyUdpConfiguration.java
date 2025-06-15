@@ -19,7 +19,7 @@ import com.hivemq.extension.sdk.api.annotations.Immutable;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

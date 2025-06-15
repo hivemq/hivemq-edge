@@ -29,7 +29,7 @@ import com.hivemq.util.Checkpoints;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.List;
 
 public class HiveMQEdgeGateway {

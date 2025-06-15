@@ -26,7 +26,7 @@ import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.Map;
 
 /**

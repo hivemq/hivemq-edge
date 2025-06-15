@@ -25,7 +25,7 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import io.netty.buffer.ByteBuf;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import static com.hivemq.codec.encoder.mqtt5.Mqtt5MessageEncoderUtil.*;
 import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT;

@@ -26,11 +26,11 @@ public class BidirectionalOpcUaSpecificAdapterConfig extends OpcUaSpecificAdapte
     @JsonCreator
     public BidirectionalOpcUaSpecificAdapterConfig(
             @JsonProperty(value = "uri", required = true) final @NotNull String uri,
-            @JsonProperty("overrideUri") final @Nullable Boolean overrideUri,
+            @JsonProperty(value = "overrideUri", defaultValue = "false") final @Nullable Boolean overrideUri,
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
             @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
             @JsonProperty("security") final @Nullable Security security) {
-        super( uri, overrideUri, auth, tls, opcuaToMqttConfig, security);
+        super(uri, overrideUri, auth, tls, opcuaToMqttConfig, security);
     }
 }

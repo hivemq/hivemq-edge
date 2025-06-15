@@ -1,0 +1,20 @@
+{
+  "$schema" : "https://json-schema.org/draft/2019-09/schema",
+  "title" : "QualifiedName JsonSchema",
+  "type" : "object",
+  "properties" : {
+    "value" : {
+      "type" : "object",
+      "properties" : {
+        "namespaceIndex" : {
+          "type" : "integer"
+        },
+        "name" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "name", "namespaceIndex" ]
+    }
+  },
+  "required" : [ "value" ]
+}
