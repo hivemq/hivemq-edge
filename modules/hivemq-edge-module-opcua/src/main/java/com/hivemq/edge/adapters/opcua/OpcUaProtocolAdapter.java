@@ -49,10 +49,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
@@ -62,15 +62,11 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
 public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
 
-    private static final long STOP_WAIT_MILLIS = 30 * 1000;
-    private static final long STOP_POLL_MILLIS = 100;
-
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
     private final @NotNull OpcUaClientConnection opcUaClientConnection;
     private final @NotNull Map<String, OpcuaTag> tagNameToTag;
-
     private final @NotNull ReentrantLock lock;
     private final @NotNull AtomicLong requestCounter;
     private final @NotNull AtomicBoolean stopRequested;
@@ -82,7 +78,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.adapterInformation = adapterInformation;
         this.protocolAdapterState = input.getProtocolAdapterState();
         final List<OpcuaTag> tagList = input.getTags().stream().map(tag -> (OpcuaTag) tag).toList();
-        this.tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::getName, tag -> tag));
+        this.tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::getName, Function.identity()));
+        this.lock = new ReentrantLock();
+        this.requestCounter = new AtomicLong();
+        this.stopRequested = new AtomicBoolean();
         this.opcUaClientConnection = new OpcUaClientConnection(input.getConfig().getUri(),
                 tagList,
                 input.getConfig(),
@@ -92,10 +91,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 input.getProtocolAdapterMetricsHelper(),
                 adapterId,
                 protocolAdapterState);
-
-        this.lock = new ReentrantLock();
-        this.requestCounter = new AtomicLong();
-        this.stopRequested = new AtomicBoolean();
     }
 
     @Override
@@ -109,21 +104,25 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             final @NotNull ProtocolAdapterStartOutput output) {
         lock.lock();
         try {
-            log.info("Starting OpcUa protocol adapter {}", adapterId);
-            try {
-                opcUaClientConnection.start();
-                protocolAdapterState.setConnectionStatus(CONNECTED);
-                output.startedSuccessfully();
-                log.info("Successfully started OpcUa protocol adapter {}", adapterId);
-            } catch (final Throwable t) {
-                protocolAdapterState.setConnectionStatus(ERROR);
-                log.error("Unable to connect and subscribe to the OPC UA server", t);
-                output.failStart(t, "Unable to connect and subscribe to the OPC UA server");
+            final var startFuture = opcUaClientConnection.start();
+            if (startFuture != null) {
+                requestCounter.set(0);
+                stopRequested.set(false);
+                log.info("Starting OPC UA protocol adapter {}", adapterId);
+                startFuture.whenComplete((ignore, throwable) -> {
+                    if (throwable == null) {
+                        protocolAdapterState.setConnectionStatus(CONNECTED);
+                        output.startedSuccessfully();
+                        log.info("Successfully started OPC UA protocol adapter {}", adapterId);
+                    } else {
+                        protocolAdapterState.setConnectionStatus(ERROR);
+                        output.failStart(throwable, "Unable to connect and subscribe to the OPC UA server");
+                        log.error("Unable to connect and subscribe to the OPC UA server", throwable);
+                    }
+                });
             }
         } finally {
-            requestCounter.set(0);
             lock.unlock();
-            stopRequested.set(false);
         }
     }
 
@@ -132,28 +131,27 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         if (stopRequested.compareAndSet(false, true)) {
             lock.lock();
             try {
-                log.info("Stopping OpcUa protocol adapter {}", adapterId);
-                final long startTime = System.currentTimeMillis();
-                while (requestCounter.get() > 0 && (System.currentTimeMillis() - startTime) < STOP_WAIT_MILLIS) {
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(STOP_POLL_MILLIS);
-                    } catch (final InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
+                final var stopFuture = opcUaClientConnection.stop(requestCounter);
+                if (stopFuture != null) {
+                    log.info("Stopping OPC UA protocol adapter {}", adapterId);
+                    stopFuture.whenComplete((cli, throwable) -> {
+                        try {
+                            if (throwable == null) {
+                                protocolAdapterState.setConnectionStatus(DISCONNECTED);
+                                output.stoppedSuccessfully();
+                                log.info("Successfully stopped OPC UA protocol adapter {}", adapterId);
+                            } else {
+                                protocolAdapterState.setConnectionStatus(ERROR);
+                                output.failStop(throwable, "Unable to stop the connection to the OPC UA server");
+                                log.error("Unable to stop the connection to the OPC UA server", throwable);
+                            }
+                        } finally {
+                            stopRequested.set(false);
+                        }
+                    });
                 }
-                opcUaClientConnection.stop();
-                protocolAdapterState.setConnectionStatus(DISCONNECTED);
-                output.stoppedSuccessfully();
-                log.info("Successfully stopped OpcUa protocol adapter {}", adapterId);
-            } catch (final Throwable t) {
-                protocolAdapterState.setConnectionStatus(ERROR);
-                output.failStop(t, "Unable to stop the connection to the OPC UA server");
-                log.error("Unable to stop the connection to the OPC UA server", t);
             } finally {
-                requestCounter.set(0);
                 lock.unlock();
-                stopRequested.set(false);
             }
         }
     }
@@ -174,25 +172,31 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
         lock.lock();
         try {
-            requestCounter.incrementAndGet();
-            OpcUaNodeDiscovery.discoverValues(opcUaClientConnection.client(), input.getRootNode(), input.getDepth())
-                    .whenComplete((collectedNodes, throwable) -> {
-                        if (throwable != null) {
-                            log.error("Unable to discover the OPC UA server", throwable);
-                            output.fail(throwable, "Unable to discover values");
-                        } else {
-                            final NodeTree nodeTree = output.getNodeTree();
-                            collectedNodes.forEach(node -> nodeTree.addNode(node.id(),
-                                    node.name(),
-                                    node.value(),
-                                    node.description(),
-                                    node.parentId(),
-                                    node.nodeType(),
-                                    node.selectable()));
-                            output.finish();
-                        }
-                        requestCounter.decrementAndGet();
-                    });
+            final OpcUaClient client = opcUaClientConnection.client();
+            if (client != null) {
+                requestCounter.incrementAndGet();
+                OpcUaNodeDiscovery.discoverValues(client, input.getRootNode(), input.getDepth())
+                        .whenComplete((collectedNodes, throwable) -> {
+                            try {
+                                if (throwable == null) {
+                                    final NodeTree nodeTree = output.getNodeTree();
+                                    collectedNodes.forEach(node -> nodeTree.addNode(node.id(),
+                                            node.name(),
+                                            node.value(),
+                                            node.description(),
+                                            node.parentId(),
+                                            node.nodeType(),
+                                            node.selectable()));
+                                    output.finish();
+                                } else {
+                                    log.error("Unable to discover the OPC UA server", throwable);
+                                    output.fail(throwable, "Unable to discover values");
+                                }
+                            } finally {
+                                requestCounter.decrementAndGet();
+                            }
+                        });
+            }
         } finally {
             lock.unlock();
         }
@@ -221,35 +225,39 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         lock.lock();
         try {
             final OpcUaClient client = opcUaClientConnection.client();
+            if (client != null) {
+                final JsonToOpcUAConverter converter = new JsonToOpcUAConverter(client);
+                if (log.isDebugEnabled()) {
+                    log.debug("Write for OPC UA is invoked with payload '{}' for tag '{}' ",
+                            opcUAWritePayload,
+                            opcuaTag.getName());
+                }
+                final NodeId nodeId = NodeId.parse(opcuaTag.getDefinition().getNode());
+                final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
 
-            final JsonToOpcUAConverter converter = new JsonToOpcUAConverter(client);
-            if (log.isDebugEnabled()) {
-                log.debug("Write for OPC UA is invoked with payload '{}' for tag '{}' ",
-                        opcUAWritePayload,
-                        opcuaTag.getName());
-            }
-            final NodeId nodeId = NodeId.parse(opcuaTag.getDefinition().getNode());
-            final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
-
-            requestCounter.incrementAndGet();
-            client.writeValuesAsync(List.of(nodeId),
-                            List.of(new DataValue(Variant.of(opcuaObject), StatusCode.GOOD, null)))
-                    .whenComplete((statusCode, throwable) -> {
-                        final var badStatus = statusCode.stream().filter(StatusCode::isBad).findFirst();
-                        badStatus.ifPresentOrElse(bad -> {
-                            log.error("Failed to write tag '{}': {}", tn, bad);
-                            output.fail("Failed to write tag '" + tn + "': " + bad);
-                        }, () -> {
-                            if (throwable != null) {
-                                log.error("Exception while writing tag '{}'", tn, throwable);
-                                output.fail(throwable, null);
-                            } else {
-                                log.debug("Wrote tag='{}'", opcuaTag.getName());
-                                output.finish();
+                requestCounter.incrementAndGet();
+                client.writeValuesAsync(List.of(nodeId),
+                                List.of(new DataValue(Variant.of(opcuaObject), StatusCode.GOOD, null)))
+                        .whenComplete((statusCode, throwable) -> {
+                            try {
+                                final var badStatus = statusCode.stream().filter(StatusCode::isBad).findFirst();
+                                badStatus.ifPresentOrElse(bad -> {
+                                    log.error("Failed to write tag '{}': {}", tn, bad);
+                                    output.fail("Failed to write tag '" + tn + "': " + bad);
+                                }, () -> {
+                                    if (throwable == null) {
+                                        log.debug("Wrote tag='{}'", opcuaTag.getName());
+                                        output.finish();
+                                    } else {
+                                        log.error("Exception while writing tag '{}'", tn, throwable);
+                                        output.fail(throwable, null);
+                                    }
+                                });
+                            } finally {
+                                requestCounter.decrementAndGet();
                             }
                         });
-                        requestCounter.decrementAndGet();
-                    });
+            }
         } finally {
             lock.unlock();
         }
@@ -268,13 +276,12 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
         lock.lock();
         try {
-            requestCounter.incrementAndGet();
-            new JsonSchemaGenerator(opcUaClientConnection.client()).createMqttPayloadJsonSchema(tag)
-                    .whenComplete((result, throwable) -> {
-                        if (throwable != null) {
-                            log.error("Exception while creating tag schema '{}'", tn, throwable);
-                            output.fail(throwable, null);
-                        } else {
+            final OpcUaClient client = opcUaClientConnection.client();
+            if (client != null) {
+                requestCounter.incrementAndGet();
+                new JsonSchemaGenerator(client).createMqttPayloadJsonSchema(tag).whenComplete((result, throwable) -> {
+                    try {
+                        if (throwable == null) {
                             log.debug("Created tag schema='{}'", input.getTagName());
                             result.ifPresentOrElse(schema -> {
                                 log.debug("Schema inferred for tag='{}'", input.getTagName());
@@ -283,9 +290,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                                 log.error("No schema inferred for tag='{}'", input.getTagName());
                                 output.fail("No schema inferred for tag='{}'");
                             });
+                        } else {
+                            log.error("Exception while creating tag schema '{}'", tn, throwable);
+                            output.fail(throwable, null);
                         }
+                    } finally {
                         requestCounter.decrementAndGet();
-                    });
+                    }
+                });
+            }
         } finally {
             lock.unlock();
         }
