@@ -6,6 +6,9 @@ interface Suite {
   expected: string
 }
 
+/**
+ * @see getHandlePosition for the definition of the expected parts
+ */
 const validationSuite = [
   {
     index: 0,
