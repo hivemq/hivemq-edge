@@ -1,4 +1,4 @@
-  description: The type of a policy in Data Hub
+  description: The type of policy in Data Hub
   type: string
   enum:
     - DATA_POLICY
