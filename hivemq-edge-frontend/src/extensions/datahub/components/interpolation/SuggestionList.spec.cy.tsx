@@ -26,6 +26,7 @@ const getWrapperFor = (type: DataHubNodeType.DATA_POLICY | DataHubNodeType.BEHAV
   )
   return wrapper
 }
+
 describe('SuggestionList', () => {
   beforeEach(() => {
     cy.viewport(400, 600)
