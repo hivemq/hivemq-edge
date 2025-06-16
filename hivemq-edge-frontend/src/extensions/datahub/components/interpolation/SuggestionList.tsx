@@ -90,24 +90,45 @@ const SuggestionList = forwardRef<SuggestionListRef, SuggestionListProps>(({ que
       bg="var(--chakra-colors-chakra-body-bg)"
       borderRadius="var(--chakra-radii-base)"
       boxShadow="var(--chakra-shadows-lg)"
+      role="listbox"
+      aria-label={t('workspace.interpolation.suggestions')}
+      tabIndex={0}
     >
-      {props.items.length ? (
-        props.items.map((item, index) => (
-          <Button
-            size="sm"
-            colorScheme="gray"
-            variant={index === selectedIndex ? 'solid' : 'ghost'}
-            key={item.id}
-            onClick={() => selectItem(index)}
-          >
-            {item.label}
-          </Button>
-        ))
-      ) : (
+      {isLoading && (
+        <Alert status="loading" size="sm" gap={2}>
+          <Spinner size="sm" data-testid="suggestion-loading-spinner" />
+          <AlertTitle> {t('workspace.interpolation.loading')}</AlertTitle>
+        </Alert>
+      )}
+      {!isLoading && !filterItems && (
+        <Alert status="error" size="sm" flexDirection="column" alignItems="flex-start">
+          <AlertTitle> {t('workspace.interpolation.errorLoading')}</AlertTitle>
+          {error && <AlertDescription>{error.message}</AlertDescription>}
+        </Alert>
+      )}
+      {filterItems?.length === 0 && (
         <Alert status="warning" size="sm">
           <AlertTitle> {t('workspace.interpolation.noResult')}</AlertTitle>
         </Alert>
       )}
+      {filterItems?.map((item, index) => (
+        <Button
+          size="sm"
+          colorScheme="gray"
+          variant={index === selectedIndex ? 'solid' : 'ghost'}
+          key={item.variable}
+          onClick={() => selectItem(index)}
+          role="option"
+          aria-selected={index === selectedIndex}
+          aria-describedby={`${item.variable}-description`}
+          aria-label={item.variable}
+        >
+          <VisuallyHidden data-testid="suggestion-description" id={`${item.variable}-description`}>
+            {item.description}
+          </VisuallyHidden>
+          {item.variable}
+        </Button>
+      ))}
     </VStack>
   )
 })
