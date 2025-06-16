@@ -92,7 +92,7 @@ jobs:
           path: ./hivemq-edge-frontend/dist
 
       - name: 🚥 Run Lighthouse audits
-        uses: treosh/lighthouse-ci-action@2f8dda6cf4de7d73b29853c3f29e73a01e297bd8 # v12
+        uses: treosh/lighthouse-ci-action@fcd65974f7c4c2bf0ee9d09b84d2489183c29726 # v12
         id: lighthouse
         with:
           temporaryPublicStorage: true # upload lighthouse report to the temporary storage
