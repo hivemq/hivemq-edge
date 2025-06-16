@@ -393,7 +393,7 @@
       "operation": {
         "unknown": "Something is wrong with the operation",
         "noTransition": "there is no transition pipeline for the operation",
-        "noExistingTransition": "cannot create the node for the transition pipeline - {{ source }}"
+        "noExistingTransition": "Cannot create the node for the transition pipeline - {{ source }}"
       }
     },
     "dryRun": {
