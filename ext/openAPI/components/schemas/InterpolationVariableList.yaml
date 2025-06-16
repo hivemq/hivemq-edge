@@ -1,0 +1,22 @@
+type: object
+description: The list of interpolation variables that can be used in this Datahub instance
+properties:
+  items:
+    type: array
+    items:
+      $ref: ./InterpolationVariable.yaml
+required:
+  - items
+example:
+  items:
+    - variable: clientId
+      type: string
+      description: The MQTT client ID
+      policyType:
+        - DATA_POLICY
+        - BEHAVIOR_POLICY
+    - variable: topic
+      type: string
+      description: The MQTT topic to which the MQTT message was published xxx
+      policyType:
+        - DATA_POLICY
