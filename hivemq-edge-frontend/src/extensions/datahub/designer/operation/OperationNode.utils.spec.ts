@@ -1,15 +1,19 @@
 import { expect } from 'vitest'
 import type { Connection, Node, NodeAddChange } from '@xyflow/react'
-
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
-import { type PolicyOperation, Script } from '@/api/__generated__'
+import { vitest_ExpectStringContainingUUIDFromNodeType } from '@datahub/__test-utils__/vitest.utils.ts'
+
+import { type BehaviorPolicyOnTransition, type DataPolicy, type PolicyOperation, Script } from '@/api/__generated__'
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
 
-import type { FunctionData, SchemaData, WorkspaceState } from '@datahub/types.ts'
+import type { FunctionData, SchemaData, TransitionData, WorkspaceState } from '@datahub/types.ts'
+import { BehaviorPolicyType } from '@datahub/types.ts'
 import { DataHubNodeType, DataPolicyData, OperationData, SchemaType } from '@datahub/types.ts'
 import {
   checkValidityPipeline,
   checkValidityTransformFunction,
+  loadBehaviorPolicyPipelines,
+  loadDataPolicyPipelines,
   loadPipeline,
   processOperations,
 } from '@datahub/designer/operation/OperationNode.utils.ts'
@@ -185,6 +189,87 @@ describe('checkValidityTransformFunction', () => {
     )
   })
 
+  it('should return error if multiple serialiser connected', async () => {
+    const MOCK_NODE_FUNCTION: Node<FunctionData> = {
+      id: NODE_FUNCTION_ID,
+      type: DataHubNodeType.FUNCTION,
+      data: {
+        type: 'Javascript',
+        name: 'the_function',
+        version: 1,
+        sourceCode: 'const t=1',
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_NODE_SERIAL: Node<SchemaData> = {
+      id: NODE_SCHEMA_ID,
+      type: DataHubNodeType.SCHEMA,
+      data: {
+        name: NODE_SCHEMA_ID,
+        type: SchemaType.JSON,
+        version: 1,
+        schemaSource: '{ t: 1}',
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_STORE: WorkspaceState = {
+      nodes: [
+        MOCK_NODE_SERIAL,
+        { ...MOCK_NODE_SERIAL, id: 'duplicate-serial' },
+        MOCK_NODE_FUNCTION,
+        MOCK_NODE_OPERATION,
+      ],
+      edges: [
+        {
+          source: MOCK_NODE_FUNCTION.id,
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'function',
+          id: '1',
+        },
+        {
+          source: MOCK_NODE_SERIAL.id,
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'serialiser',
+          id: '2',
+        },
+        {
+          source: MOCK_NODE_SERIAL.id,
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'deserialiser',
+          id: '3',
+        },
+        {
+          source: 'duplicate-serial',
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'serialiser',
+          id: '4',
+        },
+      ],
+    }
+
+    const results = checkValidityTransformFunction(MOCK_NODE_OPERATION, MOCK_STORE)
+    expect(results).toHaveLength(1)
+    const { node, data, error, resources } = results[0]
+    expect(node).toStrictEqual(MOCK_NODE_OPERATION)
+    expect(resources).toBeUndefined()
+    expect(data).toBeUndefined()
+    expect(error).toEqual(
+      expect.objectContaining({
+        detail: 'Too many Schema connected to Operation',
+        id: 'node-id',
+        status: 404,
+        title: 'OPERATION',
+        type: 'datahub.cardinality',
+      })
+    )
+  })
+
   it('should return error if no deserialiser connected', async () => {
     const MOCK_STORE: WorkspaceState = {
       nodes: [MOCK_NODE_SERIAL, MOCK_NODE_FUNCTION, MOCK_NODE_OPERATION],
@@ -218,6 +303,87 @@ describe('checkValidityTransformFunction', () => {
         id: 'node-id',
         title: 'OPERATION',
         type: 'datahub.notConnected',
+      })
+    )
+  })
+
+  it('should return error if multiple deserialiser connected', async () => {
+    const MOCK_NODE_FUNCTION: Node<FunctionData> = {
+      id: NODE_FUNCTION_ID,
+      type: DataHubNodeType.FUNCTION,
+      data: {
+        type: 'Javascript',
+        name: 'the_function',
+        version: 1,
+        sourceCode: 'const t=1',
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_NODE_SERIAL: Node<SchemaData> = {
+      id: NODE_SCHEMA_ID,
+      type: DataHubNodeType.SCHEMA,
+      data: {
+        name: NODE_SCHEMA_ID,
+        type: SchemaType.JSON,
+        version: 1,
+        schemaSource: '{ t: 1}',
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_STORE: WorkspaceState = {
+      nodes: [
+        MOCK_NODE_SERIAL,
+        { ...MOCK_NODE_SERIAL, id: 'duplicate-serial' },
+        MOCK_NODE_FUNCTION,
+        MOCK_NODE_OPERATION,
+      ],
+      edges: [
+        {
+          source: MOCK_NODE_FUNCTION.id,
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'function',
+          id: '1',
+        },
+        {
+          source: MOCK_NODE_SERIAL.id,
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'serialiser',
+          id: '2',
+        },
+        {
+          source: MOCK_NODE_SERIAL.id,
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'deserialiser',
+          id: '3',
+        },
+        {
+          source: 'duplicate-serial',
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'deserialiser',
+          id: '3',
+        },
+      ],
+    }
+
+    const results = checkValidityTransformFunction(MOCK_NODE_OPERATION, MOCK_STORE)
+    expect(results).toHaveLength(1)
+    const { node, data, error, resources } = results[0]
+    expect(node).toStrictEqual(MOCK_NODE_OPERATION)
+    expect(resources).toBeUndefined()
+    expect(data).toBeUndefined()
+    expect(error).toEqual(
+      expect.objectContaining({
+        detail: 'Too many Schema connected to Operation',
+        id: 'node-id',
+        status: 404,
+        title: 'OPERATION',
+        type: 'datahub.cardinality',
       })
     )
   })
@@ -317,7 +483,7 @@ describe('checkValidityTransformFunction', () => {
       expect(data).toEqual(
         expect.objectContaining({
           arguments: {},
-          functionId: 'fn:the_function:latest',
+          functionId: 'fn:the_function:1',
           id: NODE_FUNCTION_ID,
         })
       )
@@ -538,45 +704,45 @@ describe('loadPipeline', () => {
 
     // The transform node is created with a UI ID that starts with 'node_'
     const transformNode = (results[1] as Connection).target
-    expect(transformNode).toMatch('node_')
+    expect(transformNode).toMatch('OPERATION_')
 
     expect(results).toStrictEqual(
       expect.arrayContaining<NodeAddChange | Connection>([
         {
           item: expect.objectContaining<Partial<Node<SchemaData>>>({
-            id: NODE_DESERIALISER_ID,
+            id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
             type: DataHubNodeType.SCHEMA,
           }),
           type: 'add',
         },
         expect.objectContaining<Connection>({
-          source: NODE_DESERIALISER_ID,
+          source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
           sourceHandle: null,
           target: expect.stringContaining(transformNode),
           targetHandle: 'deserialiser',
         }),
         {
           item: expect.objectContaining<Partial<Node<SchemaData>>>({
-            id: NODE_SERIALISER_ID,
+            id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
             type: DataHubNodeType.SCHEMA,
           }),
           type: 'add',
         },
         expect.objectContaining<Connection>({
-          source: NODE_SERIALISER_ID,
+          source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
           sourceHandle: null,
           target: expect.stringContaining(transformNode),
           targetHandle: 'serialiser',
         }),
         {
           item: expect.objectContaining<Partial<Node<FunctionData>>>({
-            id: 'script1',
+            id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.FUNCTION),
             type: DataHubNodeType.FUNCTION,
           }),
           type: 'add',
         },
         expect.objectContaining<Connection>({
-          source: 'script1',
+          source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.FUNCTION),
           sourceHandle: null,
           target: expect.stringContaining(transformNode),
           targetHandle: 'function',
@@ -599,5 +765,56 @@ describe('loadPipeline', () => {
         }),
       ])
     )
+  })
+})
+
+describe('loadDataPolicyPipelines', () => {
+  it('should return no elements if no pipeline', async () => {
+    const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
+      id: 'node-id',
+      type: DataHubNodeType.DATA_POLICY,
+      data: { id: NODE_POLICY_ID },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    const dataPolicy: DataPolicy = {
+      id: 'string',
+      matching: { topicFilter: '*.*' },
+    }
+
+    const results = loadDataPolicyPipelines(dataPolicy, [], [], MOCK_NODE_DATA_POLICY)
+    expect(results).toHaveLength(0)
+  })
+})
+
+describe('loadBehaviorPolicyPipelines', () => {
+  const MOCK_TRANSITION_NODE: Node<TransitionData> = {
+    id: 'node-id',
+    type: DataHubNodeType.TRANSITION,
+    data: { model: BehaviorPolicyType.MQTT_EVENT },
+    ...MOCK_DEFAULT_NODE,
+    position: { x: 0, y: 0 },
+  }
+
+  it('should throw an error if no transition', async () => {
+    const pol: BehaviorPolicyOnTransition = {
+      fromState: 'state1',
+      toState: 'state2',
+    }
+
+    expect(() => loadBehaviorPolicyPipelines(pol, MOCK_TRANSITION_NODE, [], [])).toThrow(
+      'there is no transition pipeline for the operation'
+    )
+  })
+
+  it('should return an empty list of nodes if no pipeline', async () => {
+    const pol: BehaviorPolicyOnTransition = {
+      fromState: 'state1',
+      toState: 'state2',
+      'Mqtt.OnInboundConnect': { pipeline: [] },
+    }
+
+    expect(loadBehaviorPolicyPipelines(pol, MOCK_TRANSITION_NODE, [], [])).toStrictEqual([])
   })
 })

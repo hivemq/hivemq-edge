@@ -50,7 +50,6 @@ export const usePolicyDryRun = () => {
   const { nodes, edges, onUpdateNodes } = store
   const { getFilteredFunctions } = useFilteredFunctionsFetcher()
 
-  /* istanbul ignore next -- @preserve */
   const updateNodeStatus = async (results: DryRunResults<unknown>) => {
     const currentNode = nodes.find((node) => node.id === results.node.id)
 
@@ -66,7 +65,6 @@ export const usePolicyDryRun = () => {
     await mockDelay(DRYRUN_VALIDATION_DELAY)
   }
 
-  /* istanbul ignore next -- @preserve */
   const runPolicyChecks = async (
     allNodes: Node<DataHubNodeData>[],
     processedNodes: DryRunResults<unknown, never>[]
@@ -129,7 +127,6 @@ export const usePolicyDryRun = () => {
   }
 
   const checkBehaviorPolicyAsync = (behaviourPolicyNode: Node<BehaviorPolicyData>) => {
-    /* istanbul ignore next -- @preserve */
     const incomers = getIncomers(behaviourPolicyNode, nodes, edges).filter(isClientFilterNodeType)
     const allNodes = getSubFlow(
       behaviourPolicyNode,

@@ -49,7 +49,7 @@ export const loadClientFilter = (
   }
 
   const topicNode: Node<ClientFilterData> = {
-    id: getNodeId(),
+    id: getNodeId(DataHubNodeType.CLIENT_FILTER),
     type: DataHubNodeType.CLIENT_FILTER,
     position,
     data: {
