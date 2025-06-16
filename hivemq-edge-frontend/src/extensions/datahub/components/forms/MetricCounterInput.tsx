@@ -31,7 +31,7 @@ const PrefixInput = (prefix: string, placeholder: string, props: WidgetProps) =>
       )}
 
       <InputGroup>
-        <InputLeftAddon>{prefix}</InputLeftAddon>
+        <InputLeftAddon data-testid="input-prefix">{prefix}</InputLeftAddon>
         <Input
           id={props.id}
           isRequired={props.required}
@@ -48,6 +48,3 @@ const PrefixInput = (prefix: string, placeholder: string, props: WidgetProps) =>
 
 export const MetricCounterInput = (props: WidgetProps) =>
   PrefixInput('com.hivemq.com.data-hub.custom.counters.', 'workspace.function.metricName.placeholder', props)
-
-export const JsFunctionInput = (props: WidgetProps) =>
-  PrefixInput('fn:', 'workspace.function.transform.placeholder', props)
