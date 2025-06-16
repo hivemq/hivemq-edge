@@ -1,3 +1,4 @@
+import { getNodeId } from '@datahub/utils/node.utils.ts'
 import type { Connection, Node, NodeAddChange, XYPosition } from '@xyflow/react'
 
 import type { PolicyOperation } from '@/api/__generated__'
@@ -5,7 +6,7 @@ import { Script } from '@/api/__generated__'
 import i18n from '@/config/i18n.config.ts'
 
 import type { DataHubNodeData, DryRunResults, FunctionData } from '@datahub/types.ts'
-import { DataHubNodeType, OperationData } from '@datahub/types.ts'
+import { DataHubNodeType, OperationData, ResourceWorkingVersion } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 import {
@@ -15,7 +16,7 @@ import {
 } from '@datahub/utils/datahub.utils.ts'
 
 export const formatScriptName = (functionNode: Node<FunctionData>): string => {
-  return `${SCRIPT_FUNCTION_PREFIX}:${functionNode.data.name}:${SCRIPT_FUNCTION_LATEST}`
+  return `${SCRIPT_FUNCTION_PREFIX}:${functionNode.data.name}:${functionNode.data.version === ResourceWorkingVersion.DRAFT ? SCRIPT_FUNCTION_LATEST : functionNode.data.version}`
 }
 
 export const parseScriptName = (operation: PolicyOperation): string => {
@@ -60,13 +61,25 @@ export const loadScripts = (
 
   const newNodes: (NodeAddChange | Connection)[] = []
   for (const fct of functions) {
-    const [, functionName] = fct.functionId.split(':')
-    const functionScript = scripts.find((script) => script.id === functionName)
+    const [, functionName, functionVersion] = fct.functionId.split(':')
+    if (!functionName || !functionVersion)
+      throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }) as string)
+
+    const scriptFamily = scripts.filter((script) => script.id === functionName)
+    if (scriptFamily.length === 0)
+      throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }) as string)
+
+    let functionScript: Script | undefined
+    if (functionVersion === SCRIPT_FUNCTION_LATEST) {
+      functionScript = scriptFamily.slice(-1)[0]
+    } else {
+      functionScript = scriptFamily.find((s) => s.version?.toString() === functionVersion)
+    }
     if (!functionScript)
       throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }) as string)
 
     const functionScriptNode: Node<FunctionData> = {
-      id: functionScript.id,
+      id: getNodeId(DataHubNodeType.FUNCTION),
       type: DataHubNodeType.FUNCTION,
       position: { ...shiftLeft() },
       data: {

@@ -1,11 +1,12 @@
 import { expect } from 'vitest'
 import type { Node, NodeAddChange } from '@xyflow/react'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
+import { vitest_ExpectStringContainingUUIDFromNodeType } from '@datahub/__test-utils__/vitest.utils.ts'
 
+import type { DataPolicy } from '@/api/__generated__'
 import type { DataPolicyData, TopicFilterData, WorkspaceState } from '@datahub/types.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { checkValidityFilter, loadDataPolicy } from '@datahub/designer/data_policy/DataPolicyNode.utils.ts'
-import type { DataPolicy } from '@/api/__generated__'
 
 const NODE_DATA_ID = 'my-policy-id'
 
@@ -147,7 +148,7 @@ describe('loadDataPolicy', () => {
   it('should return nodes', () => {
     expect(loadDataPolicy(dataPolicy)).toStrictEqual<NodeAddChange>({
       item: expect.objectContaining<Node<DataPolicyData>>({
-        id: expect.stringContaining('node_'),
+        id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.DATA_POLICY),
         type: DataHubNodeType.DATA_POLICY,
         data: { id: 'string' },
         position: { x: 0, y: 0 },

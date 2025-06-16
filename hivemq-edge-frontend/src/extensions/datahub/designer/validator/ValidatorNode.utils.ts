@@ -13,6 +13,7 @@ import { checkValiditySchema, loadSchema } from '@datahub/designer/schema/Schema
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { getNodeId, isSchemaNodeType, isValidatorNodeType } from '@datahub/utils/node.utils.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
+import { SCRIPT_FUNCTION_LATEST } from '@datahub/utils/datahub.utils.ts'
 
 export function checkValidityPolicyValidator(
   validator: Node<ValidatorData>,
@@ -38,7 +39,7 @@ export function checkValidityPolicyValidator(
         const version =
           schema.data.version === ResourceWorkingVersion.DRAFT ||
           schema.data.version === ResourceWorkingVersion.MODIFIED
-            ? 'latest'
+            ? SCRIPT_FUNCTION_LATEST
             : schema.data.version.toString()
         return { schemaId: schema.data.name, version }
       }),
@@ -76,7 +77,7 @@ export const loadValidators = (policy: DataPolicy, schemas: PolicySchema[], data
       )
 
     const validatorNode: Node<ValidatorData> = {
-      id: getNodeId(),
+      id: getNodeId(DataHubNodeType.VALIDATOR),
       type: DataHubNodeType.VALIDATOR,
       position,
       data: {

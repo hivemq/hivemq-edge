@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react'
 import type { Node } from '@xyflow/react'
 import { parse } from 'protobufjs'
 import type { CustomValidator, UiSchema } from '@rjsf/utils'
-import type { IChangeEvent } from '@rjsf/core/src/components/Form.tsx'
+import type { IChangeEvent } from '@rjsf/core'
 import { Card, CardBody } from '@chakra-ui/react'
 
 import { enumFromStringValue } from '@/utils/types.utils.ts'
