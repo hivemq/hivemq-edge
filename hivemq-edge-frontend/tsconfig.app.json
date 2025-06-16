@@ -24,7 +24,7 @@
     "noUncheckedSideEffectImports": true,
 
     // Alias for the imports; also in vite.config.ts
-    "types": ["cypress", "cypress-axe", "@percy/cypress", "cypress-real-events", "vite/client", "cypress-each"],
+    "types": ["cypress", "cypress-axe", "@percy/cypress", "cypress-real-events", "vite/client", "cypress-each", "chai"],
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"],
