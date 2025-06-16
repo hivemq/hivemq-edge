@@ -3,8 +3,7 @@ required:
   - variable
   - type
   - description
-  - isDataPolicy
-  - isBehaviorPolicy
+  - policyType
 properties:
   variable:
     type: string
@@ -20,7 +19,7 @@ properties:
     description: The list of policy types this variable can be used with
     uniqueItems: true
     items:
-      $ref: "#/components/schemas/PolicyType"
+      $ref: ./PolicyType.yaml
 example:
   variable: clientId
   type: string
