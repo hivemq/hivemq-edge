@@ -250,6 +250,9 @@
       "test": "Test code"
     },
     "interpolation": {
+      "suggestions": "list of interpolation suggestions",
+      "loading": "Loading variables",
+      "errorLoading": "Error while loading the variables",
       "noResult": "No matching variables"
     },
     "version": {
