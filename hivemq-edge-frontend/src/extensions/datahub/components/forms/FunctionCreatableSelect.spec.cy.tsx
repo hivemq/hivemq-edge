@@ -24,25 +24,27 @@ const mockFunctionCreatableSelectSchema: JSONSchema7 = {
   },
 }
 
+const mockFunctionCreatableSelect = (
+  <CustomFormTesting
+    schema={mockFunctionCreatableSelectSchema}
+    uiSchema={mockFunctionCreatableSelectUISchema}
+    formContext={{ functions: MOCK_DATAHUB_FUNCTIONS.items }}
+    formData={{
+      items: [],
+    }}
+    widgets={{
+      'datahub:function-selector': FunctionCreatableSelect,
+    }}
+  />
+)
+
 describe('FunctionCreatableSelect', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
   })
 
-  it('should render the base table', () => {
-    cy.mountWithProviders(
-      <CustomFormTesting
-        schema={mockFunctionCreatableSelectSchema}
-        uiSchema={mockFunctionCreatableSelectUISchema}
-        formContext={{ functions: MOCK_DATAHUB_FUNCTIONS.items }}
-        formData={{
-          items: [],
-        }}
-        widgets={{
-          'datahub:function-selector': FunctionCreatableSelect,
-        }}
-      />
-    )
+  it('should render the function selector', () => {
+    cy.mountWithProviders(mockFunctionCreatableSelect)
 
     cy.get("label[for='root_functionId']").should('contain.text', 'functionId')
     cy.get("label[for='root_functionId'] + div").click()
@@ -77,19 +79,7 @@ describe('FunctionCreatableSelect', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(
-      <CustomFormTesting
-        schema={mockFunctionCreatableSelectSchema}
-        uiSchema={mockFunctionCreatableSelectUISchema}
-        formContext={{ functions: MOCK_DATAHUB_FUNCTIONS.items }}
-        formData={{
-          items: [],
-        }}
-        widgets={{
-          'datahub:function-selector': FunctionCreatableSelect,
-        }}
-      />
-    )
+    cy.mountWithProviders(mockFunctionCreatableSelect)
     cy.get("label[for='root_functionId'] + div").click()
     cy.checkAccessibility(undefined, {
       rules: {
