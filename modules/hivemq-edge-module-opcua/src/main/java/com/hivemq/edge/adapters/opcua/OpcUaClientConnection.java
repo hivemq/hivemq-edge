@@ -3,6 +3,7 @@ package com.hivemq.edge.adapters.opcua;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
@@ -23,6 +24,7 @@ import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.transport.client.tcp.OpcTcpClientTransportConfigBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -32,10 +34,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -47,42 +48,100 @@ class OpcUaClientConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
     private static final long STOP_WAIT_MILLIS = 30 * 1000;
     private static final long STOP_POLL_MILLIS = 100;
+    private static final @NotNull Consumer<OpcTcpClientTransportConfigBuilder> TRANSPORT_CONFIG = ignore -> {
+    };
 
-    private final @NotNull String uri;
+    private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull List<OpcuaTag> tags;
     private final @NotNull ProtocolAdapterTagStreamingService tagStreamingService;
     private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull EventService eventService;
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private volatile @Nullable ConnectionContext context;
 
     OpcUaClientConnection(
-            final @NotNull String uri,
-            final @NotNull List<OpcuaTag> tags,
-            final @NotNull OpcUaSpecificAdapterConfig config,
-            final @NotNull ProtocolAdapterTagStreamingService tagStreamingService,
-            final @NotNull DataPointFactory dataPointFactory,
-            final @NotNull EventService eventService,
-            final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull String adapterId,
+            final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input,
+            final @NotNull List<OpcuaTag> tags,
             final @NotNull ProtocolAdapterState protocolAdapterState) {
-        this.uri = uri;
-        this.tags = tags;
-        this.config = config;
-        this.tagStreamingService = tagStreamingService;
-        this.dataPointFactory = dataPointFactory;
-        this.eventService = eventService;
+        this.config = input.getConfig();
+        this.tagStreamingService = input.moduleServices().protocolAdapterTagStreamingService();
+        this.dataPointFactory = input.adapterFactories().dataPointFactory();
+        this.eventService = input.moduleServices().eventService();
+        this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
-        this.protocolAdapterMetricsService = protocolAdapterMetricsService;
+        this.tags = tags;
     }
 
-    @Nullable CompletableFuture<Void> start() {
+    private static void quietlyDeleteSubscription(
+            final @NotNull OpcUaClient client,
+            final @NotNull OpcUaSubscription subscription) {
+        try {
+            subscription.delete();
+            client.removeSubscription(subscription);
+        } catch (final Exception ignore) {
+            // we tried
+        }
+    }
+
+    private static void quietlyCloseClient(
+            final @NotNull OpcUaClient client,
+            final @Nullable OpcUaSubscription subscription,
+            final @Nullable ServiceFaultListener faultListener,
+            final @Nullable SessionActivityListener activityListener) {
+        if (subscription != null) {
+            quietlyDeleteSubscription(client, subscription);
+        }
+        try {
+            if (faultListener != null) {
+                client.removeFaultListener(faultListener);
+            }
+            if (activityListener != null) {
+                client.removeSessionActivityListener(activityListener);
+            }
+        } catch (final Throwable ignore) {
+            // we tried
+        }
+        try {
+            client.disconnectAsync();
+        } catch (final Throwable ignore) {
+            // we tried
+        }
+    }
+
+    private static void awaitOnCounter(final @NotNull AtomicLong requestCounter) {
+        final long startTime = System.currentTimeMillis();
+        while (requestCounter.get() > 0 && (System.currentTimeMillis() - startTime) < STOP_WAIT_MILLIS) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(STOP_POLL_MILLIS);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+    }
+
+    private static @NotNull String extractPayload(
+            final @NotNull OpcUaClient client,
+            final @NotNull DataValue value) throws UaException {
+        if (value.getValue().getValue() == null) {
+            return "";
+        }
+
+        final ByteBuffer byteBuffer =
+                OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(), value);
+        final byte[] buffer = new byte[byteBuffer.remaining()];
+        byteBuffer.get(buffer);
+        return new String(buffer, StandardCharsets.UTF_8);
+
+    }
+
+    @NotNull CompletableFuture<Void> start() {
         if (context != null) {
-            return null;
+            return CompletableFuture.completedFuture(null);
         }
 
         final ParsedConfig parsedConfig;
@@ -98,94 +157,84 @@ class OpcUaClientConnection {
         }
 
         final OpcUaClient client;
-
         try {
-            client = OpcUaClient.create(uri,
+            client = OpcUaClient.create(config.getUri(),
                     endpoints -> endpoints.stream().findFirst(),
-                    ignore -> {},
+                    TRANSPORT_CONFIG,
                     new OpcUaClientConfigurator(adapterId, parsedConfig));
         } catch (final Throwable error) {
             return CompletableFuture.failedFuture(error);
         }
 
-        final ServiceFaultListener faultListener = createServiceFaultListener();
-        final SessionActivityListener activityListener = createSessionActivityListener();
-        client.addSessionActivityListener(activityListener);
-        client.addFaultListener(faultListener);
-
-        return client.connectAsync().thenCompose((cli) -> {
-            final OpcUaSubscription subscription = new OpcUaSubscription(client);
-            subscription.setPublishingInterval((double) config.getOpcuaToMqttConfig().getPublishingInterval());
-            subscription.setSubscriptionListener(createSubscriptionListener(client));
-            try {
-                subscription.create();
-                tags.forEach(opcuaTag -> {
-                    final String nodeId = opcuaTag.getDefinition().getNode();
-                    final var monitoredItem = OpcUaMonitoredItem.newDataItem(NodeId.parse(nodeId));
-                    monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().getServerQueueSize()));
-                    monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().getPublishingInterval());
-                    subscription.addMonitoredItem(monitoredItem);
-                    log.info("Added monitored item: {}", nodeId);
-                });
-                subscription.synchronizeMonitoredItems();
-                log.info("Subscription created successfully");
-                return CompletableFuture.completedFuture(subscription);
-            } catch (final Throwable error) {
-                try {
-                    log.error("Failed to start OPC UA client", error);
-                    subscription.delete();
-                    client.removeSessionActivityListener(activityListener);
-                    client.removeFaultListener(faultListener);
-                    client.removeSubscription(subscription);
-                    client.disconnect();
-                } catch (final Throwable ignore) {
-                    // polite attempt to close, throw the existing exception
-                }
-                return CompletableFuture.failedFuture(error);
-            }
-        }).whenComplete((subscription, throwable) -> {
-            if (throwable != null) {
-                log.error("Failed to connect the OPC UA client", throwable);
-            } else {
-                context = new ConnectionContext(client, faultListener, activityListener, subscription);
-                log.info("Client created and connected successfully");
-            }
-        }).thenApply(subscription -> {
-            if (context == null) {
-                throw new IllegalStateException("Failed to start the OPC UA client");
-            }
-            return null;
-        });
+        return client.connectAsync()
+                .thenCompose(this::subscribe)
+                .whenComplete((subscription, throwable) -> {
+                    if (throwable == null) {
+                        final ServiceFaultListener faultListener = createServiceFaultListener();
+                        final SessionActivityListener activityListener = createSessionActivityListener();
+                        client.addSessionActivityListener(activityListener);
+                        client.addFaultListener(faultListener);
+                        context = new ConnectionContext(client, subscription, faultListener, activityListener);
+                        log.info("Client created and connected successfully");
+                    } else {
+                        log.error("Failed to start OPC UA client", throwable);
+                        quietlyCloseClient(client, subscription, null, null);
+                    }
+                }).thenApply(subscription -> null);
     }
 
-    @Nullable CompletableFuture<OpcUaClient> stop(final @NotNull AtomicLong requestCounter) {
-        try {
-            final ConnectionContext ctx = context;
-            if (ctx != null) {
-                final OpcUaClient client = ctx.client();
-                final long startTime = System.currentTimeMillis();
-                while (requestCounter.get() > 0 && (System.currentTimeMillis() - startTime) < STOP_WAIT_MILLIS) {
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(STOP_POLL_MILLIS);
-                    } catch (final InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
-                client.removeSubscription(ctx.subscription());
-                client.removeSessionActivityListener(ctx.activityListener());
-                client.removeFaultListener(ctx.faultListener());
-                return client.disconnectAsync();
-            }
-            return null;
-        } finally {
-            context = null;
+    @NotNull CompletableFuture<Void> stop(final @NotNull AtomicLong requestCounter) {
+        final ConnectionContext ctx = context;
+        context = null;
+        if (ctx == null) {
+            return CompletableFuture.completedFuture(null);
         }
+
+        return CompletableFuture.runAsync(() -> awaitOnCounter(requestCounter)).thenCompose(v -> {
+            quietlyCloseClient(ctx.client(), ctx.subscription(), ctx.faultListener(), ctx.activityListener());
+            return CompletableFuture.completedFuture(null);
+        });
     }
 
     @Nullable OpcUaClient client() {
         final ConnectionContext ctx = context;
         return ctx != null ? ctx.client() : null;
+    }
+
+    private @NotNull CompletionStage<OpcUaSubscription> subscribe(final @NotNull OpcUaClient client) {
+        final OpcUaSubscription subscription = new OpcUaSubscription(client);
+        subscription.setPublishingInterval((double) config.getOpcuaToMqttConfig().getPublishingInterval());
+        subscription.setSubscriptionListener(createSubscriptionListener(client));
+        return subscription.createAsync()
+                .thenCompose(unit -> addAndSynchronizeMonitoredItems(subscription))
+                .thenApply(sub -> subscription)
+                .exceptionally(error -> {
+                    log.error("Failed to create/synchronize OPC UA subscription/monitored items: {}", error.getMessage(), error);
+                    quietlyDeleteSubscription(client, subscription);
+                    throw new CompletionException(error);
+                });
+    }
+
+    private @NotNull CompletableFuture<Void> addAndSynchronizeMonitoredItems(final @NotNull OpcUaSubscription subscription) {
+        tags.forEach(opcuaTag -> {
+            final String nodeId = opcuaTag.getDefinition().getNode();
+            final var monitoredItem = OpcUaMonitoredItem.newDataItem(NodeId.parse(nodeId));
+            monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().getServerQueueSize()));
+            monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().getPublishingInterval());
+            subscription.addMonitoredItem(monitoredItem);
+            log.debug("Added monitored item: {}", nodeId);
+        });
+
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                subscription.synchronizeMonitoredItems();
+                log.info("All monitored items synchronized successfully for adapter '{}'.", adapterId);
+                return null;
+            } catch (final Throwable e) {
+                log.error("Failed to synchronize monitored items: {}", e.getMessage(), e);
+                throw new CompletionException("Failed to synchronize monitored items", e);
+            }
+        });
     }
 
     private @NotNull ServiceFaultListener createServiceFaultListener() {
@@ -205,20 +254,20 @@ class OpcUaClientConnection {
             @Override
             public void onSessionInactive(final @NotNull UaSession session) {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SESSION_INACTIVE_COUNT);
-                log.info("OPC UA client of protocol adapter '{}' disconnected: {}", adapterId, session);
                 eventService.createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                         .withSeverity(Event.SEVERITY.WARN)
                         .withPayload(session.getSessionName() + '/' + session.getSessionId())
                         .withMessage("Adapter '" + adapterId + "' session has been disconnected.")
                         .fire();
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+                log.info("OPC UA client of protocol adapter '{}' disconnected: {}", adapterId, session);
             }
 
             @Override
             public void onSessionActive(final @NotNull UaSession session) {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SESSION_ACTIVE_COUNT);
-                log.info("OPC UA client of protocol adapter '{}' connected: {}", adapterId, session);
                 protocolAdapterState.setConnectionStatus(CONNECTED);
+                log.info("OPC UA client of protocol adapter '{}' connected: {}", adapterId, session);
             }
         };
     }
@@ -251,7 +300,6 @@ class OpcUaClientConnection {
                 for (int i = 0; i < items.size(); i++) {
                     final var tag = nodeIdToTag.get(items.get(i).getReadValueId().getNodeId());
                     final String tn = tag.getName();
-
                     if (null == tagToFirstSeen.putIfAbsent(tag, true)) {
                         eventService.createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                                 .withSeverity(Event.SEVERITY.INFO)
@@ -260,22 +308,9 @@ class OpcUaClientConnection {
                                         tn))
                                 .fire();
                     }
-
                     try {
-                        final var value = values.get(i);
                         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
-
-                        final String payload;
-                        if (value.getValue().getValue() == null) {
-                            payload = "";
-                        } else {
-                            final ByteBuffer byteBuffer =
-                                    OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(), value);
-                            final byte[] buffer = new byte[byteBuffer.remaining()];
-                            byteBuffer.get(buffer);
-                            payload = new String(buffer, StandardCharsets.UTF_8);
-                        }
-
+                        final String payload = extractPayload(client, values.get(i));
                         tagStreamingService.feed(tn, List.of(dataPointFactory.createJsonDataPoint(tn, payload)));
                     } catch (final UaException e) {
                         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
@@ -286,8 +321,10 @@ class OpcUaClientConnection {
         };
     }
 
-
-    private record ConnectionContext(OpcUaClient client, ServiceFaultListener faultListener,
-                                     SessionActivityListener activityListener, OpcUaSubscription subscription) {
+    private record ConnectionContext(
+            OpcUaClient client,
+            OpcUaSubscription subscription,
+            ServiceFaultListener faultListener,
+            SessionActivityListener activityListener) {
     }
 }
