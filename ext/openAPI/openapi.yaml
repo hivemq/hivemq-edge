@@ -63,6 +63,8 @@ tags:
       This resource bundles endpoints for the available Functions for the HiveMQ
       Data Hub. Currently this is limited to getting the available Functions.
     name: Data Hub - Functions
+  - description: This resource bundles endpoints for the interpolation features.
+    name: Data Hub - Interpolation
   - description: >-
       Policies describe how you want the HiveMQ broker to validate the behavior
       of MQTT clients.
