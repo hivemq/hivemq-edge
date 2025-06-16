@@ -128,7 +128,7 @@ describe('MessageInterpolationTextArea', () => {
     })
   })
 
-  it.only('should be accessible', () => {
+  it('should be accessible', () => {
     cy.injectAxe()
     cy.intercept('/api/v1/data-hub/interpolation-variables', MOCK_INTERPOLATION_VARIABLES).as('getVariables')
     cy.mountWithProviders(<MockForm />, {
@@ -147,7 +147,7 @@ describe('MessageInterpolationTextArea', () => {
       rules: {
         // TODO[NVL] ReactSelect not tagging properly the listbox
         'aria-input-field-name': { enabled: false },
-        regionßå: { enabled: false },
+        region: { enabled: false },
       },
     })
   })
