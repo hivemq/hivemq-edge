@@ -15,17 +15,16 @@ properties:
   description:
     type: string
     description: The description of the variable name
-  isDataPolicy:
-    type: boolean
-    description: Indicate whether the variable can be used in a Data Policy
-    default: true
-  isBehaviorPolicy:
-    type: boolean
-    description: Indicate whether the variable can be used in a Behavior Policy
-    default: true
+  policyType:
+    type: array
+    description: The list of policy types this variable can be used with
+    uniqueItems: true
+    items:
+      $ref: "#/components/schemas/PolicyType"
 example:
   variable: clientId
   type: string
   description: The MQTT client ID
-  isDataPolicy: true
-  isBehaviorPolicy: true
+  policyType:
+    - DATA_POLICY
+    - BEHAVIOR_POLICY

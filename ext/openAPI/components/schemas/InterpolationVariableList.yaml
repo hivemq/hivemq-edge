@@ -12,10 +12,11 @@ example:
     - variable: clientId
       type: string
       description: The MQTT client ID
-      isDataPolicy: true
-      isBehaviorPolicy: true
+      policyType:
+        - DATA_POLICY
+        - BEHAVIOR_POLICY
     - variable: topic
       type: string
-      description: The MQTT topic to which the MQTT message was published
-      isDataPolicy: true
-      isBehaviorPolicy: false
+      description: The MQTT topic to which the MQTT message was published xxx
+      policyType:
+        - DATA_POLICY
