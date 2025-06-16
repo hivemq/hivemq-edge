@@ -1,5 +1,5 @@
 type: object
-description: The list of interpolation variables that can been used in this Datahub instance
+description: The list of interpolation variables that can be used in this Datahub instance
 properties:
   items:
     type: array
