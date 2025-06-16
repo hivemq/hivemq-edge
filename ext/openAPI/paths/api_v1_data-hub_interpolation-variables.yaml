@@ -1,0 +1,19 @@
+get:
+  description: This endpoint provides the means to get information on the interpolation variables available for the HiveMQ Data Hub.
+  operationId: getVariables
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/InterpolationVariableList.yaml
+      description: Success
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal server error
+  summary: Get all interpolation variables
+  tags:
+    - Data Hub - Interpolation
