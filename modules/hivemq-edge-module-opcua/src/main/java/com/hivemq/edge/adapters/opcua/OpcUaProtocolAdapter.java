@@ -70,6 +70,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull ReentrantLock lock;
     private final @NotNull AtomicLong requestCounter;
     private final @NotNull AtomicBoolean stopRequested;
+    private final @NotNull AtomicBoolean isRunning;
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -81,7 +82,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::getName, Function.identity()));
         this.lock = new ReentrantLock();
         this.requestCounter = new AtomicLong();
-        this.stopRequested = new AtomicBoolean();
+        this.stopRequested = new AtomicBoolean(false);
+        this.isRunning = new AtomicBoolean(false);
         this.opcUaClientConnection = new OpcUaClientConnection(input.getConfig().getUri(),
                 tagList,
                 input.getConfig(),
@@ -102,18 +104,21 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void start(
             final @NotNull ProtocolAdapterStartInput input,
             final @NotNull ProtocolAdapterStartOutput output) {
+        if (stopRequested.get() || isRunning.get()) {
+            return;
+        }
+
         lock.lock();
         try {
             final var startFuture = opcUaClientConnection.start();
             if (startFuture != null) {
-                requestCounter.set(0);
-                stopRequested.set(false);
                 log.info("Starting OPC UA protocol adapter {}", adapterId);
                 startFuture.whenComplete((ignore, throwable) -> {
                     if (throwable == null) {
                         protocolAdapterState.setConnectionStatus(CONNECTED);
                         output.startedSuccessfully();
                         log.info("Successfully started OPC UA protocol adapter {}", adapterId);
+                        isRunning.set(true);
                     } else {
                         protocolAdapterState.setConnectionStatus(ERROR);
                         output.failStart(throwable, "Unable to connect and subscribe to the OPC UA server");
@@ -128,7 +133,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
     @Override
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
-        if (stopRequested.compareAndSet(false, true)) {
+        if (isRunning.get() && stopRequested.compareAndSet(false, true)) {
             lock.lock();
             try {
                 final var stopFuture = opcUaClientConnection.stop(requestCounter);
@@ -146,6 +151,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                                 log.error("Unable to stop the connection to the OPC UA server", throwable);
                             }
                         } finally {
+                            isRunning.set(false);
                             stopRequested.set(false);
                         }
                     });
@@ -160,7 +166,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void discoverValues(
             final @NotNull ProtocolAdapterDiscoveryInput input,
             final @NotNull ProtocolAdapterDiscoveryOutput output) {
-        if (stopRequested.get()) {
+        if (stopRequested.get() || !isRunning.get()) {
             return;
         }
 
@@ -209,7 +215,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
     @Override
     public void write(final @NotNull WritingInput input, final @NotNull WritingOutput output) {
-        if (stopRequested.get()) {
+        if (stopRequested.get() || !isRunning.get()) {
             return;
         }
 
@@ -267,7 +273,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void createTagSchema(
             final @NotNull TagSchemaCreationInput input,
             final @NotNull TagSchemaCreationOutput output) {
-        if (stopRequested.get()) {
+        if (stopRequested.get() || !isRunning.get()) {
             return;
         }
 
