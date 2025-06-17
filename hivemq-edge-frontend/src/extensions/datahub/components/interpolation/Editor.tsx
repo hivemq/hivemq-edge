@@ -21,12 +21,14 @@ interface EditorProps {
   value: string | undefined
   onChange?: (value: string) => void
   isInvalid?: boolean
+  size?: string
 }
 
 const StyledEditor = chakra(EditorContent)
 const SingleLineDocument = Document.extend({
   content: 'block',
 })
+const minHeightOptions: Record<string, string> = { sm: '0', md: '36', lg: '48' }
 
 export const Editor: FC<EditorProps> = ({
   as = 'input',
@@ -38,9 +40,11 @@ export const Editor: FC<EditorProps> = ({
   value,
   placeholder,
   isInvalid,
+  size = 'md',
 }) => {
   const bgMention = useColorModeValue('gray.100', 'rgba(226, 232, 240, 0.16)')
   const colorMention = useColorModeValue('gray.800', 'gray.200')
+  const minHeight = minHeightOptions[size] || minHeightOptions['md']
 
   const editor = useEditor({
     onUpdate: ({ editor }) => {
@@ -76,7 +80,7 @@ export const Editor: FC<EditorProps> = ({
   return (
     <Box
       pt={2}
-      pb={4}
+      pb={2}
       w="full"
       onClick={focus}
       borderRadius="md"
@@ -110,7 +114,7 @@ export const Editor: FC<EditorProps> = ({
         aria-labelledby={labelId}
         editor={editor}
         id={id}
-        sx={{ minH: '36', pl: 4, '& :focus-visible': { outline: '0px' } }}
+        sx={{ minH: minHeight, pl: 4, '& :focus-visible': { outline: '0px' } }}
       />
     </Box>
   )

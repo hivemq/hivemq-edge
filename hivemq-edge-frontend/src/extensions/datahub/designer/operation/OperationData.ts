@@ -27,6 +27,9 @@ export const MOCK_OPERATION_SCHEMA: PanelSpecs = {
       // Cover MOCK_DATAHUB_FUNCTIONS_MQTT_USER_PROPERTY:
       name: {
         'ui:widget': MessageInterpolationTextArea,
+        'ui:options': {
+          size: 'sm',
+        },
       },
       value: {
         'ui:widget': MessageInterpolationTextArea,
