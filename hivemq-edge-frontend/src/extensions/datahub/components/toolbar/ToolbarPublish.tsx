@@ -85,18 +85,7 @@ export const ToolbarPublish: FC = () => {
           id: 'publish-success',
         })
       })
-      .catch((error) => {
-        let message
-        if (error instanceof Error) message = error.message
-        else message = String(error)
-        toast({
-          ...dataHubToastOption,
-          title: t('publish.error.title', { source: type || selectedNode?.type }),
-          description: message,
-          status: 'error',
-          id: 'publish-error',
-        })
-      })
+      .catch(() => {})
     return promise
   }
 
@@ -197,10 +186,10 @@ export const ToolbarPublish: FC = () => {
         else message = String(error)
         return toast({
           ...dataHubToastOption,
-          title: t('publish.error.title', { source: DataHubNodeType.DATA_POLICY }),
+          title: t('publish.error.title', { source: selectedNode?.type }),
           description: message.toString(),
           status: 'error',
-          id: 'publish-runtime-error',
+          id: 'publish-error',
         })
       })
   }
