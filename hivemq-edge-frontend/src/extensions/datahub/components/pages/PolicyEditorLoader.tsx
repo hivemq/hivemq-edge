@@ -7,7 +7,7 @@ import type { Connection, NodeAddChange } from '@xyflow/react'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
-import { DataHubNodeType, DesignerStatus, PolicyType } from '@datahub/types.ts'
+import { DataHubNodeType, DesignerStatus, DesignerPolicyType } from '@datahub/types.ts'
 import PolicyEditor from '@datahub/components/pages/PolicyEditor.tsx'
 import { useGetDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetDataPolicy.ts'
 import { useGetBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetBehaviorPolicy.ts'
@@ -77,7 +77,7 @@ export const DataPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
         toast({
           ...dataHubToastOption,
           id: DATAHUB_TOAST_ID,
-          title: t('error.load.errorTitle', { source: PolicyType.DATA_POLICY }),
+          title: t('error.load.errorTitle', { source: DesignerPolicyType.DATA_POLICY }),
           description: message,
           status: 'error',
         })
@@ -146,7 +146,7 @@ export const BehaviorPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
         toast({
           ...dataHubToastOption,
           id: DATAHUB_TOAST_ID,
-          title: t('error.load.errorTitle', { source: PolicyType.DATA_POLICY }),
+          title: t('error.load.errorTitle', { source: DesignerPolicyType.DATA_POLICY }),
           description: message,
           status: 'error',
         })
@@ -165,12 +165,12 @@ const PolicyEditorLoader: FC = () => {
   const { t } = useTranslation('datahub')
   const { policyType, policyId } = useParams()
 
-  if (!policyType || !(policyType in PolicyType))
+  if (!policyType || !(policyType in DesignerPolicyType))
     return <ErrorMessage type={t('error.notDefined.title')} message={t('error.notDefined.description')} />
 
   if (policyId) {
-    if (policyType === PolicyType.DATA_POLICY) return <DataPolicyLoader policyId={policyId} />
-    if (policyType === PolicyType.BEHAVIOR_POLICY) return <BehaviorPolicyLoader policyId={policyId} />
+    if (policyType === DesignerPolicyType.DATA_POLICY) return <DataPolicyLoader policyId={policyId} />
+    if (policyType === DesignerPolicyType.BEHAVIOR_POLICY) return <BehaviorPolicyLoader policyId={policyId} />
 
     return <ErrorMessage type={t('error.notDefined.title')} message={t('error.notDefined.description')} />
   }

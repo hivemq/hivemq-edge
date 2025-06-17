@@ -5,7 +5,7 @@ import { ButtonGroup, HStack } from '@chakra-ui/react'
 import { LuFileEdit, LuTrash2, LuFileSearch, LuDownload } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
-import { type CombinedPolicy, DesignerStatus, PolicyType } from '@datahub/types.ts'
+import { type CombinedPolicy, DesignerStatus, DesignerPolicyType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
 interface DataHubListActionProps {
@@ -53,7 +53,7 @@ const DataHubListAction: FC<DataHubListActionProps> = ({
     )
   }
 
-  if (policy?.type === PolicyType.CREATE_POLICY) {
+  if (policy?.type === DesignerPolicyType.CREATE_POLICY) {
     // If a draft
     return (
       <ButtonGroup size="sm" isAttached>
@@ -61,7 +61,7 @@ const DataHubListAction: FC<DataHubListActionProps> = ({
           data-testid="list-action-view"
           onClick={() => {
             setStatus(DesignerStatus.DRAFT)
-            navigate(`/datahub/${PolicyType.CREATE_POLICY}`)
+            navigate(`/datahub/${DesignerPolicyType.CREATE_POLICY}`)
           }}
           aria-label={t('Listings.policy.action.draft')}
           icon={<LuFileEdit />}

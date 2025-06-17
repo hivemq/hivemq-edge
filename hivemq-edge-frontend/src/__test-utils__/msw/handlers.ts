@@ -10,6 +10,7 @@ import { handlers as DataHubBehaviorPoliciesService } from '@/extensions/datahub
 import { handlers as DataHubSchemasService } from '@/extensions/datahub/api/hooks/DataHubSchemasService/__handlers__'
 import { handlers as DataHubScriptsService } from '@/extensions/datahub/api/hooks/DataHubScriptsService/__handlers__'
 import { handlersWithoutLicense as DataHubFunctionsService } from '@/extensions/datahub/api/hooks/DataHubFunctionsService/__handlers__'
+import { handlers as DataHubInterpolationService } from '@/extensions/datahub/api/hooks/DataHubInterpolationService/__handlers__'
 
 import type { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
 
@@ -33,6 +34,7 @@ export const createHandlersWithMQTTClient = (
 ) => {
   return [
     ...DataHubFunctionsService,
+    ...DataHubInterpolationService,
     // ...combinerHandlers,
     // ...DeviceHandlers,
     // ...TopicFilterHandlers,

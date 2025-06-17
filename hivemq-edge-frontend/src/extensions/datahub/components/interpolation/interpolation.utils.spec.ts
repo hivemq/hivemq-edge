@@ -1,6 +1,6 @@
+import type { MentionNodeAttrs } from '@tiptap/extension-mention'
 import { describe, expect } from 'vitest'
 import { getItems, parseInterpolations } from '@datahub/components/interpolation/interpolation.utils.ts'
-import type { MentionNodeAttrs } from '@datahub/components/interpolation/SuggestionList.tsx'
 
 describe('parseInterpolations', () => {
   it('should convert acceptable placeholders to HTML markup', async () => {

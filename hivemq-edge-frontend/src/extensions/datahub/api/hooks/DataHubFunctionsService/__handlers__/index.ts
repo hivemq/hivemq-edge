@@ -102,7 +102,7 @@ export const MOCK_DATAHUB_FUNCTIONS_SYSTEM_LOG: FunctionSpecs = {
         type: 'string',
         title: 'Message',
         description:
-          'Adds a user-defined string that prints to the log file. For more information, see Example log message.',
+          'Adds a user-defined string that prints to the log file. You can use interpolation variables to include dynamic values, starting with the character $.',
         format: 'interpolation',
       },
     },

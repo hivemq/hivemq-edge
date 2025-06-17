@@ -9,4 +9,5 @@ export const DATAHUB_QUERY_KEYS = {
   TRACE_RECORDING: 'datahub.trace_recordings',
   BEHAVIOR_FSM_MODEL: 'dataHub.behavior-fsm-model',
   FUNCTIONS: 'dataHub.functions',
+  INTERPOLATION_VARIABLES: 'dataHub.interpolation-variables',
 }

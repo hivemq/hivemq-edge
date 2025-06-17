@@ -5,7 +5,6 @@ import tippy, { type Instance as TippyInstance } from 'tippy.js'
 
 import type { SuggestionListRef } from './SuggestionList.jsx'
 import SuggestionList from './SuggestionList.jsx'
-import { getItems } from '@datahub/components/interpolation/interpolation.utils.ts'
 
 /**
  * Workaround for the current typing incompatibility between Tippy.js and Tiptap
@@ -31,7 +30,6 @@ const DOM_RECT_FALLBACK: DOMRect = {
 export const SUGGESTION_TRIGGER_CHAR = '$'
 
 export const Suggestion: MentionOptions['suggestion'] = {
-  items: ({ query }) => getItems(query),
   char: SUGGESTION_TRIGGER_CHAR,
   render: () => {
     let component: ReactRenderer<SuggestionListRef> | undefined

@@ -214,9 +214,9 @@ describe('OperationPanel', () => {
       })
       cy.get('h2').should('contain.text', 'Mqtt.UserProperties.add')
       cy.get('label#root_formData_name-label').should('contain.text', 'Property Name')
-      cy.get('label#root_formData_name-label + input').should('contain.value', 'key')
+      cy.get('label#root_formData_name-label + div').should('contain.text', 'key')
       cy.get('label#root_formData_value-label').should('contain.text', 'Property Value')
-      cy.get('label#root_formData_value-label + input').should('contain.value', 'value')
+      cy.get('label#root_formData_value-label + div').should('contain.text', 'value')
     })
 
     it('should be accessible', () => {

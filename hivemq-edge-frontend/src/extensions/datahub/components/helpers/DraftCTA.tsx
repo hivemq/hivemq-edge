@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@chakra-ui/react'
 import { LuFilePlus } from 'react-icons/lu'
 
-import { DesignerStatus, PolicyType } from '@datahub/types.ts'
+import { DesignerStatus, DesignerPolicyType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
 const DraftCTA: FC = () => {
@@ -15,7 +15,7 @@ const DraftCTA: FC = () => {
   const handleOnClick = () => {
     reset()
     setStatus(DesignerStatus.DRAFT)
-    navigate(`/datahub/${PolicyType.CREATE_POLICY}`)
+    navigate(`/datahub/${DesignerPolicyType.CREATE_POLICY}`)
   }
 
   return (
