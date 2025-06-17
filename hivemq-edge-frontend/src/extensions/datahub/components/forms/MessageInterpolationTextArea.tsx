@@ -38,7 +38,7 @@ export const MessageInterpolationTextArea = (props: WidgetProps) => {
         placeholder={t('workspace.function.message.placeholder')}
         value={props.value}
         onChange={onChange}
-        isInvalid={props.rawErrors && props.rawErrors.length > 0}
+        isInvalid={(props.required && !props.value) || (props.rawErrors && props.rawErrors.length > 0)}
       />
     </FormControl>
   )
