@@ -184,10 +184,10 @@ export const ToolbarPublish: FC = () => {
         else message = String(error)
         return toast({
           ...dataHubToastOption,
-          title: t('publish.error.title', { source: DataHubNodeType.DATA_POLICY }),
+          title: t('publish.error.title', { source: selectedNode?.type }),
           description: message.toString(),
           status: 'error',
-          id: 'publish-runtime-error',
+          id: 'publish-error',
         })
       })
   }
