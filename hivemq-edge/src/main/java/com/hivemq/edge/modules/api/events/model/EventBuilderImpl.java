@@ -40,7 +40,7 @@ public class EventBuilderImpl implements EventBuilder {
     private @Nullable TypeIdentifier source;
     private final @NotNull Consumer<Event> fireConsumer;
 
-    public EventBuilderImpl(@NotNull Consumer<Event> fireConsumer) {
+    public EventBuilderImpl(final @NotNull Consumer<Event> fireConsumer) {
         this.fireConsumer = fireConsumer;
     }
 

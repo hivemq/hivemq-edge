@@ -45,7 +45,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ProtocolAdapterWrapper {
@@ -64,6 +67,9 @@ public class ProtocolAdapterWrapper {
     private final @NotNull TagManager tagManager;
     protected @Nullable Long lastStartAttemptTime;
     private final List<NorthboundTagConsumer> consumers = new ArrayList<>();
+
+    private final AtomicReference<CompletableFuture<Boolean>> startFutureRef = new AtomicReference<>(null);
+    private final AtomicReference<CompletableFuture<Boolean>> stopFutureRef = new AtomicReference<>(null);
 
     public ProtocolAdapterWrapper(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -88,39 +94,109 @@ public class ProtocolAdapterWrapper {
         this.tagManager = tagManager;
     }
 
-    public @NotNull CompletableFuture<Void> start(
-            final boolean writingEnabled, final @NotNull ModuleServices moduleServices) {
-        initStartAttempt();
-        final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
-        final ProtocolAdapterStartInputImpl input = new ProtocolAdapterStartInputImpl(moduleServices);
-        //Instantly go to started so it has to be stopped first before retrying
-        adapter.start(input, output);
-        final CompletableFuture<Void> startFuture = output.getStartFuture();
+    public @NotNull CompletableFuture<Boolean> startAsync(
+            final boolean writingEnabled,
+            final @NotNull ModuleServices moduleServices) {
+        final var currentFuture = startFutureRef.get();
+        if(currentFuture == null) {
+            synchronized (startFutureRef) {
+                final var currentFutureDoubleCheck = startFutureRef.get();
+                if(currentFutureDoubleCheck != null) {
+                    return currentFutureDoubleCheck;
+                }
+                initStartAttempt();
+                final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
+                final ProtocolAdapterStartInputImpl input = new ProtocolAdapterStartInputImpl(moduleServices);
 
-        return startFuture.thenCompose(r -> {
-            createAndSubscribeTagConsumer();
-            startPolling(protocolAdapterPollingService, input.moduleServices().eventService());
-            return startWriting(writingEnabled, protocolAdapterWritingService);
-        }).thenApply(r -> {
-            setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
-            return null;
-        });
+                final CompletableFuture<Boolean> startFuture = new CompletableFuture<>();
+                startFutureRef.set(startFuture);
 
+                CompletableFuture
+                        .supplyAsync(() -> {
+                            adapter.start(input, output);
+                            return output.getStartFuture();
+                        })
+                        .thenCompose(Function.identity())
+                        .handle((ignored, t) -> {
+                            if(t == null) {
+                                createAndSubscribeTagConsumer();
+                                startPolling(protocolAdapterPollingService, input.moduleServices().eventService());
+                                return startWriting(writingEnabled, protocolAdapterWritingService)
+                                        .thenApply(v -> {
+                                            log.info("Successfully started adapter with id {}", adapter.getId());
+                                            setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
+                                            startFutureRef.get().complete(true);
+                                            startFutureRef.set(null);
+                                            return true;
+                                        });
+                            } else {
+                                log.error("Error starting protocol adapter", t);
+                                stopPolling(protocolAdapterPollingService);
+                                return stopWriting(protocolAdapterWritingService)
+                                        .thenApply(v -> {
+                                            log.error("Error starting adapter with id {}", adapter.getId(), t);
+                                            setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+                                            startFutureRef.get().complete(false);
+                                            startFutureRef.set(null);
+                                            return false;
+                                        });
+                            }
+                        });
+                return startFuture;
+            }
+        } else {
+            log.info("Multiple start requests received for adapter with id '{}', returning existing future", getId());
+            return currentFuture;
+        }
     }
 
-    public @NotNull CompletableFuture<Void> stop() {
-        destroyAndUnsubscribeTagConsumers();
-        final ProtocolAdapterStopInputImpl input = new ProtocolAdapterStopInputImpl();
-        final ProtocolAdapterStopOutputImpl output = new ProtocolAdapterStopOutputImpl();
-        adapter.stop(input, output);
-        stopPolling(protocolAdapterPollingService);
-        return stopWriting(protocolAdapterWritingService).thenApply(r -> {
-            //only transition to stopped whne it succeeded
-            setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-            return null;
-        });
-    }
+    public @NotNull CompletableFuture<Boolean> stopAsync(final boolean destroy) {
+        final var currentFuture = stopFutureRef.get();
+        if( currentFuture == null) {
+            synchronized (stopFutureRef) {
+                final var currentFutureDoubleCheck = stopFutureRef.get();
+                if (currentFutureDoubleCheck != null) {
+                    return currentFutureDoubleCheck;
+                }
+                consumers.forEach(tagManager::removeConsumer);
+                final ProtocolAdapterStopInputImpl input = new ProtocolAdapterStopInputImpl();
+                final ProtocolAdapterStopOutputImpl output = new ProtocolAdapterStopOutputImpl();
 
+
+                final CompletableFuture<Boolean> stopFuture = new CompletableFuture<>();
+                stopFutureRef.set(stopFuture);
+                CompletableFuture.supplyAsync(() -> {
+                            stopPolling(protocolAdapterPollingService);
+                            return stopWriting(protocolAdapterWritingService);
+                        }).thenCompose(Function.identity()).handle((stopped, t) -> {
+                            adapter.stop(input, output);
+                            return output.getOutputFuture();
+                        }).thenCompose(Function.identity()).handle((ignored, throwable) -> {
+                            if (destroy) {
+                                log.info("Destroying adapter with id '{}'", getId());
+                                adapter.destroy();
+                            }
+                            if (throwable == null) {
+                                setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+                                log.info("Stopped adapter with id {}", adapter.getId());
+                                stopFutureRef.get().complete(true);
+                                stopFutureRef.set(null);
+                                return true;
+                            } else {
+                                log.error("Error stopping adapter with id {}", adapter.getId(), throwable);
+                                stopFutureRef.get().complete(false);
+                                stopFutureRef.set(null);
+                                return false;
+                            }
+                        });
+
+                return stopFuture;
+            }
+        } else {
+            log.info("Multiple stop requests received for adapter with id '{}', returning existing future", getId());
+            return currentFuture;
+        }
+    }
 
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapter.getProtocolAdapterInformation();
@@ -257,9 +333,11 @@ public class ProtocolAdapterWrapper {
             final List<InternalWritingContext> writingContexts =
                     southboundMappings.stream().map(InternalWritingContextImpl::new).collect(Collectors.toList());
 
-            return protocolAdapterWritingService.startWriting((WritingProtocolAdapter) getAdapter(),
-                    getProtocolAdapterMetricsService(),
-                    writingContexts);
+            return protocolAdapterWritingService
+                    .startWriting(
+                        (WritingProtocolAdapter) getAdapter(),
+                        getProtocolAdapterMetricsService(),
+                        writingContexts);
         } else {
             return CompletableFuture.completedFuture(null);
         }
@@ -269,28 +347,23 @@ public class ProtocolAdapterWrapper {
         //no check for 'writing is enabled', as we have to stop it anyway since the license could have been removed in the meantime.
         if (isWriting()) {
             log.debug("Stopping writing for protocol adapter with id '{}'", getId());
-            final List<InternalWritingContext> writingContexts =
-                    getSouthboundMappings().stream().map(InternalWritingContextImpl::new).collect(Collectors.toList());
+            final var writingContexts =
+                    getSouthboundMappings().stream()
+                            .map(mapping -> (InternalWritingContext)new InternalWritingContextImpl(mapping))
+                            .toList();
             return protocolAdapterWritingService.stopWriting((WritingProtocolAdapter) getAdapter(), writingContexts);
         } else {
             return CompletableFuture.completedFuture(null);
         }
     }
 
-
-    private void destroyAndUnsubscribeTagConsumers() {
-        for (final NorthboundTagConsumer consumer : consumers) {
-            tagManager.removeConsumer(consumer);
-        }
-    }
-
     private void createAndSubscribeTagConsumer() {
-        for (final NorthboundMapping northboundMapping : getNorthboundMappings()) {
-            final NorthboundTagConsumer northboundTagConsumer =
-                    northboundConsumerFactory.build(this, northboundMapping, protocolAdapterMetricsService);
-            tagManager.addConsumer(northboundTagConsumer);
-            consumers.add(northboundTagConsumer);
-        }
+        getNorthboundMappings().stream()
+                .map(northboundMapping -> northboundConsumerFactory.build(this, northboundMapping, protocolAdapterMetricsService))
+                .forEach(northboundTagConsumer -> {
+                    tagManager.addConsumer(northboundTagConsumer);
+                    consumers.add(northboundTagConsumer);
+                });
     }
 
 
