@@ -75,15 +75,17 @@ export const ToolbarPublish: FC = () => {
   }
 
   const reportMutation = (promise: Promise<unknown>, type?: string) => {
-    promise.then(() => {
-      toast({
-        ...dataHubToastOption,
-        title: t('publish.success.title', { source: type || selectedNode?.type }),
-        description: t('publish.success.description', { source: type || selectedNode?.type, context: status }),
-        status: 'success',
-        id: 'publish-success',
+    promise
+      .then(() => {
+        toast({
+          ...dataHubToastOption,
+          title: t('publish.success.title', { source: type || selectedNode?.type }),
+          description: t('publish.success.description', { source: type || selectedNode?.type, context: status }),
+          status: 'success',
+          id: 'publish-success',
+        })
       })
-    })
+      .catch(() => {})
     return promise
   }
 
