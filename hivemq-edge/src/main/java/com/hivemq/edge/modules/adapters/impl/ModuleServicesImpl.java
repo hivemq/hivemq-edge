@@ -18,13 +18,16 @@ package com.hivemq.edge.modules.adapters.impl;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTemporaryDataService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.edge.tempdata.TempDataStorageFactory;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 
 import jakarta.inject.Inject;
+import java.util.concurrent.CompletableFuture;
 
 public class ModuleServicesImpl implements ModuleServices {
 
@@ -32,17 +35,21 @@ public class ModuleServicesImpl implements ModuleServices {
     private final @NotNull EventService eventService;
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull TagManager tagManager;
+    private final @NotNull TempDataStorageFactory tempDataStorageFactory;
+
 
     @Inject
     public ModuleServicesImpl(
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull EventService eventService,
             final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService,
-            final @NotNull TagManager tagManager) {
+            final @NotNull TagManager tagManager,
+            final @NotNull TempDataStorageFactory tempDataStorageFactory) {
         this.adapterPublishService = adapterPublishService;
         this.eventService = eventService;
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.tagManager = tagManager;
+        this.tempDataStorageFactory = tempDataStorageFactory;
     }
 
     @Override
@@ -63,6 +70,13 @@ public class ModuleServicesImpl implements ModuleServices {
     @Override
     public @NotNull ProtocolAdapterWritingService protocolAdapterWritingService() {
         return protocolAdapterWritingService;
+    }
+
+    @Override
+    public @NotNull CompletableFuture<ProtocolAdapterTemporaryDataService> protocolAdapterTemporaryDataService(
+            final String protocolId,
+            final String adapterId) {
+        return tempDataStorageFactory.getOrCreate(protocolId, adapterId);
     }
 }
 
