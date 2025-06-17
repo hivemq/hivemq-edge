@@ -32,7 +32,7 @@ export const MessageInterpolationTextArea = (props: WidgetProps) => {
       )}
 
       <Editor
-        size={(uiOptions.size as string) || 'md'}
+        size={uiOptions.size?.toString() || 'md'}
         id={props.id}
         labelId={`${props.id}-label`}
         isRequired={props.required}
