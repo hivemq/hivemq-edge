@@ -33,8 +33,6 @@ const SuggestionList = forwardRef<SuggestionListRef, SuggestionListProps>(({ que
       return undefined
     }
 
-    console.log('XXXX', data.items, type, isError)
-
     return data.items.filter(
       (item) =>
         ((item.policyType.includes(PolicyType.DATA_POLICY) && type === DataHubNodeType.DATA_POLICY) ||

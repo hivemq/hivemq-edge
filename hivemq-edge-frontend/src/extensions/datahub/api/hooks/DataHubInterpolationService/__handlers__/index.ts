@@ -60,6 +60,5 @@ export const MOCK_INTERPOLATION_VARIABLES: InterpolationVariableList = {
 export const handlers: HttpHandler[] = [
   http.get('*/data-hub/interpolation-variables', () => {
     return HttpResponse.json<InterpolationVariableList>(MOCK_INTERPOLATION_VARIABLES, { status: 200 })
-    // return HttpResponse.json(null, { status: 404 })
   }),
 ]
