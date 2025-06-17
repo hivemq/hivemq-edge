@@ -1,7 +1,7 @@
 import { mockDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/__handlers__'
 import { mockBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/__handlers__'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
-import { type CombinedPolicy, PolicyType } from '@datahub/types.ts'
+import { type CombinedPolicy, DesignerPolicyType } from '@datahub/types.ts'
 
 describe('DataHubListAction', () => {
   beforeEach(() => {
@@ -11,7 +11,7 @@ describe('DataHubListAction', () => {
   context('DRAFT', () => {
     it('should render the actions for DRAFT', () => {
       const policy: CombinedPolicy = {
-        type: PolicyType.CREATE_POLICY,
+        type: DesignerPolicyType.CREATE_POLICY,
         ...mockDataPolicy,
       }
       cy.mountWithProviders(
@@ -87,7 +87,7 @@ describe('DataHubListAction', () => {
   context('DATA_POLICY', () => {
     it('should render the actions for DATA_POLICY', () => {
       const policy: CombinedPolicy = {
-        type: PolicyType.DATA_POLICY,
+        type: DesignerPolicyType.DATA_POLICY,
         ...mockDataPolicy,
       }
       cy.mountWithProviders(
@@ -122,7 +122,7 @@ describe('DataHubListAction', () => {
   context('BEHAVIOR_POLICY', () => {
     it('should render the actions for BEHAVIOR_POLICY', () => {
       const policy: CombinedPolicy = {
-        type: PolicyType.BEHAVIOR_POLICY,
+        type: DesignerPolicyType.BEHAVIOR_POLICY,
         ...mockBehaviorPolicy,
       }
       cy.mountWithProviders(
@@ -156,7 +156,7 @@ describe('DataHubListAction', () => {
 
   it('should be accessible', () => {
     const policy: CombinedPolicy = {
-      type: PolicyType.BEHAVIOR_POLICY,
+      type: DesignerPolicyType.BEHAVIOR_POLICY,
       ...mockBehaviorPolicy,
     }
 

@@ -12,7 +12,7 @@ import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 
 import type { CombinedPolicy } from '@datahub/types.ts'
-import { PolicyType } from '@datahub/types.ts'
+import { DesignerPolicyType } from '@datahub/types.ts'
 import { useGetAllBehaviorPolicies } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetAllBehaviorPolicies.ts'
 import { useDeleteDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useDeleteDataPolicy.ts'
 import { mockDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/__handlers__'
@@ -50,12 +50,12 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const safeData = useMemo<CombinedPolicy[]>(() => {
     if (isLoading)
       return [
-        { ...mockDataPolicy, type: PolicyType.DATA_POLICY },
-        { ...mockBehaviorPolicy, type: PolicyType.BEHAVIOR_POLICY },
+        { ...mockDataPolicy, type: DesignerPolicyType.DATA_POLICY },
+        { ...mockBehaviorPolicy, type: DesignerPolicyType.BEHAVIOR_POLICY },
       ]
 
     const generateDraftPolicyItem = (): CombinedPolicy => ({
-      type: PolicyType.CREATE_POLICY,
+      type: DesignerPolicyType.CREATE_POLICY,
       id: '',
       createdAt: DateTime.now().toISO() as string,
       matching: { topicFilter: '' },
@@ -63,15 +63,15 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
 
     function insertItems<Item extends DataPolicy | BehaviorPolicy>(
       items: Item[] | undefined,
-      type: PolicyType
+      type: DesignerPolicyType
     ): CombinedPolicy[] {
       if (!items) return []
       return items.map((item) => ({ ...item, type }) as CombinedPolicy)
     }
 
     const draftPolicyItems = [
-      ...insertItems<DataPolicy>(dataPolicies?.items, PolicyType.DATA_POLICY),
-      ...insertItems<BehaviorPolicy>(behaviorPolicies?.items, PolicyType.BEHAVIOR_POLICY),
+      ...insertItems<DataPolicy>(dataPolicies?.items, DesignerPolicyType.DATA_POLICY),
+      ...insertItems<BehaviorPolicy>(behaviorPolicies?.items, DesignerPolicyType.BEHAVIOR_POLICY),
     ]
     if (isDraftDirty) draftPolicyItems.unshift(generateDraftPolicyItem())
 
@@ -80,13 +80,13 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
 
   const columns = useMemo<ColumnDef<CombinedPolicy>[]>(() => {
     const onHandleDelete = (info: CellContext<CombinedPolicy, unknown>) => {
-      if (info.row.original.type === PolicyType.CREATE_POLICY) {
+      if (info.row.original.type === DesignerPolicyType.CREATE_POLICY) {
         reset()
         return
       }
 
       const deleteMutation: UseMutationResult<void, unknown, string> =
-        info.row.original.type === PolicyType.DATA_POLICY ? deleteDataPolicy : deleteBehaviourPolicy
+        info.row.original.type === DesignerPolicyType.DATA_POLICY ? deleteDataPolicy : deleteBehaviourPolicy
 
       onDeleteItem?.(deleteMutation.mutateAsync, info.row.original.type, info.row.original.id)
     }

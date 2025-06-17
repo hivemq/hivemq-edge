@@ -40,7 +40,7 @@ export const MockStoreWrapper: FC<MockStoreWrapperProps> = ({ config, children }
         }))
       )
     if (initialState?.status) {
-      setStatus(initialState?.status)
+      setStatus(initialState?.status, { type: initialState.type })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
