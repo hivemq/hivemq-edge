@@ -41,14 +41,14 @@ describe('DraftCTA', () => {
       cy.get('[role="alertdialog"]').should('not.exist')
       cy.get('button').click()
       cy.get('section[role="alertdialog"]').within(() => {
-        cy.get('header').should('contain.text', 'Do you want to replace your draft?')
+        cy.get('header').should('contain.text', 'You already have an active draft')
         cy.getByTestId('confirmation-message').should(
-          'contain.text',
-          'You already have an active draft in the Designer.'
+          'have.text',
+          'If you create a new one, the content of your current draft will be cleared from the canvas. This action cannot be reversed.'
         )
         cy.get('footer button').eq(0).should('have.text', 'Cancel')
-        cy.get('footer button').eq(1).should('have.text', 'Show the draft')
-        cy.get('footer button').eq(2).should('have.text', 'Replace the draft')
+        cy.get('footer button').eq(1).should('have.text', 'Open existing draft')
+        cy.get('footer button').eq(2).should('have.text', 'Create new empty draft')
 
         cy.get('footer button').eq(0).click()
       })
