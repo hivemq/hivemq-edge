@@ -38,7 +38,12 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
   const cancelRef = useRef<HTMLButtonElement>()
 
   return (
-    <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef as RefObject<FocusableElement>} onClose={onClose}>
+    <AlertDialog
+      isOpen={isOpen}
+      leastDestructiveRef={cancelRef as RefObject<FocusableElement>}
+      onClose={onClose}
+      size="lg"
+    >
       <AlertDialogOverlay>
         <AlertDialogContent>
           <AlertDialogHeader fontSize="lg" fontWeight="bold">
