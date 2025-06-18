@@ -1,3 +1,4 @@
+import { Button } from '@chakra-ui/react'
 import ConfirmationDialog from './ConfirmationDialog'
 
 describe('ConfirmationDialog', () => {
@@ -47,6 +48,25 @@ describe('ConfirmationDialog', () => {
 
     cy.get('header').should('have.text', 'Hello')
     cy.getByTestId('confirmation-submit').should('have.text', 'Alternative Text')
+  })
+
+  it('should render secondary footer', () => {
+    cy.mountWithProviders(
+      <ConfirmationDialog
+        isOpen={true}
+        onClose={cy.stub}
+        header="Hello"
+        message="The nice long message"
+        footer={<Button>A new action</Button>}
+      />
+    )
+
+    cy.get('header').should('have.text', 'Hello')
+    cy.get('footer').within(() => {
+      cy.get('button').eq(0).should('have.text', 'Cancel')
+      cy.get('button').eq(1).should('have.text', 'A new action')
+      cy.get('button').eq(2).should('have.text', 'Delete')
+    })
   })
 
   it('should be accessible ', () => {

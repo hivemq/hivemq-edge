@@ -21,6 +21,7 @@ interface ConfirmationDialogProps {
   prompt?: string
   action?: string | null
   onSubmit?: () => void
+  footer?: React.ReactNode
 }
 
 const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
@@ -31,12 +32,18 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
   prompt,
   action,
   onSubmit,
+  footer,
 }) => {
   const { t } = useTranslation()
   const cancelRef = useRef<HTMLButtonElement>()
 
   return (
-    <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef as RefObject<FocusableElement>} onClose={onClose}>
+    <AlertDialog
+      isOpen={isOpen}
+      leastDestructiveRef={cancelRef as RefObject<FocusableElement>}
+      onClose={onClose}
+      size="lg"
+    >
       <AlertDialogOverlay>
         <AlertDialogContent>
           <AlertDialogHeader fontSize="lg" fontWeight="bold">
@@ -48,10 +55,11 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
             {prompt && <Text data-testid="confirmation-prompt">{prompt}</Text>}
           </AlertDialogBody>
 
-          <AlertDialogFooter>
+          <AlertDialogFooter gap={3}>
             <Button ref={cancelRef as LegacyRef<HTMLButtonElement>} onClick={onClose} data-testid="confirmation-cancel">
               {t('action.cancel')}
             </Button>
+            {footer}
             <Button
               data-testid="confirmation-submit"
               onClick={() => {
@@ -59,7 +67,6 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
                 onSubmit?.()
               }}
               variant="danger"
-              ml={3}
             >
               {action || t('action.delete')}
             </Button>

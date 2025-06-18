@@ -136,7 +136,11 @@
       "modal": {
         "clear": {
           "header": "Do you want to clear the Designer?",
-          "confirmation": "It will clean the content of the canvas, leaving the Designer empty and ready to create a new draft. The action cannot be reversed"
+          "confirmation": "It will clean the content of the canvas, leaving the Designer empty and ready to create a new draft. The action cannot be reversed."
+        },
+        "replace": {
+          "header": "You already have an active draft",
+          "confirmation": "If you create a new one, the content of your current draft will be cleared from the canvas. This action cannot be reversed."
         },
         "modify": {
           "header": "Do you want to modify the policy?",
@@ -151,6 +155,8 @@
       "fitView": "Fit to the canvas",
       "toggleInteractivity": "Lock the canvas",
       "clear": "Clear the Designer",
+      "replace": "Create new empty draft",
+      "goDraft": "Open existing draft",
       "modify": "Modify the policy",
       "clone": "Clone as a new draft",
       "shortcuts": "Help using the Designer"
