@@ -50,7 +50,7 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
             {prompt && <Text data-testid="confirmation-prompt">{prompt}</Text>}
           </AlertDialogBody>
 
-          <AlertDialogFooter>
+          <AlertDialogFooter gap={3}>
             <Button ref={cancelRef as LegacyRef<HTMLButtonElement>} onClick={onClose} data-testid="confirmation-cancel">
               {t('action.cancel')}
             </Button>
@@ -62,7 +62,6 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
                 onSubmit?.()
               }}
               variant="danger"
-              ml={3}
             >
               {action || t('action.delete')}
             </Button>
