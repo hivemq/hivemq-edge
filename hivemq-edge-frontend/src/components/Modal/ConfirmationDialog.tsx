@@ -21,6 +21,7 @@ interface ConfirmationDialogProps {
   prompt?: string
   action?: string | null
   onSubmit?: () => void
+  footer?: React.ReactNode
 }
 
 const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
@@ -31,6 +32,7 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
   prompt,
   action,
   onSubmit,
+  footer,
 }) => {
   const { t } = useTranslation()
   const cancelRef = useRef<HTMLButtonElement>()
@@ -52,6 +54,7 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
             <Button ref={cancelRef as LegacyRef<HTMLButtonElement>} onClick={onClose} data-testid="confirmation-cancel">
               {t('action.cancel')}
             </Button>
+            {footer}
             <Button
               data-testid="confirmation-submit"
               onClick={() => {
