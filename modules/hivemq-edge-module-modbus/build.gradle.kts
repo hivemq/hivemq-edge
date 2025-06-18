@@ -29,14 +29,8 @@ dependencies {
     compileOnly(libs.jackson.databind)
     compileOnly(libs.netty.buffer)
     compileOnly(libs.netty.codec)
-    implementation(libs.digitalpetri.modbus.master.tcp){
-        // exclude old dependency versions that edge provides:
-        exclude("io.netty", "netty-buffer")
-        exclude("io.netty", "netty-codec")
-    }
+    implementation(libs.digitalpetri.modbus.tcp)
 
-
-    testImplementation(libs.digitalpetri.modbus.master.tcp)
     testImplementation(libs.jackson.databind)
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
