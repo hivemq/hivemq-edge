@@ -1,7 +1,7 @@
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import type { FC, PropsWithChildren } from 'react'
 import type { Edge, Node } from '@xyflow/react'
-import { useLocation } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { Card, CardBody, CardHeader } from '@chakra-ui/react'
 
 import { BehaviorPolicyTransitionEvent, DataPolicyValidator } from '@/api/__generated__'
@@ -205,7 +205,7 @@ export const getPolicyPublishWrapper = (report?: DryRunResults<unknown, never>[]
   return Wrapper
 }
 
-export const getPolicyWrapper = ({ status, nodes }: { status?: DesignerStatus; nodes?: Node[] }) => {
+export const getPolicyWrapperWithRouter = ({ status, nodes }: { status?: DesignerStatus; nodes?: Node[] }) => {
   const Wrapper: FC<PropsWithChildren> = ({ children }) => {
     const { pathname } = useLocation()
     const { nodes: nodeList } = useDataHubDraftStore()
@@ -225,5 +225,14 @@ export const getPolicyWrapper = ({ status, nodes }: { status?: DesignerStatus; n
       </MockStoreWrapper>
     )
   }
-  return Wrapper
+
+  const WrapperRouter: FC<PropsWithChildren> = ({ children }) => {
+    return (
+      <MemoryRouter initialEntries={['/datahub/CREATE_POLICY']}>
+        <Wrapper>{children}</Wrapper>
+      </MemoryRouter>
+    )
+  }
+
+  return WrapperRouter
 }
