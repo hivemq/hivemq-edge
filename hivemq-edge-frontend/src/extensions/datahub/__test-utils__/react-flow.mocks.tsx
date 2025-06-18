@@ -1,3 +1,4 @@
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import type { FC, PropsWithChildren } from 'react'
 import type { Edge, Node } from '@xyflow/react'
 import { useLocation } from 'react-router-dom'
@@ -206,6 +207,9 @@ export const getPolicyPublishWrapper = (report?: DryRunResults<unknown, never>[]
 
 export const getPolicyWrapper = ({ status, nodes }: { status?: DesignerStatus; nodes?: Node[] }) => {
   const Wrapper: FC<PropsWithChildren> = ({ children }) => {
+    const { pathname } = useLocation()
+    const { nodes: nodeList } = useDataHubDraftStore()
+
     return (
       <MockStoreWrapper
         config={{
@@ -213,6 +217,11 @@ export const getPolicyWrapper = ({ status, nodes }: { status?: DesignerStatus; n
         }}
       >
         {children}
+        <Card mt={50} size="sm" variant="filled">
+          <CardHeader>Testing Dashboard</CardHeader>
+          <CardBody data-testid="test-pathname">{pathname}</CardBody>
+          <CardBody data-testid="test-nodes">{nodeList.length}</CardBody>
+        </Card>
       </MockStoreWrapper>
     )
   }
