@@ -51,7 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -67,10 +66,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull String adapterId;
     private final @NotNull OpcUaClientConnection opcUaClientConnection;
     private final @NotNull Map<String, OpcuaTag> tagNameToTag;
-    private final @NotNull ReentrantLock lock;
     private final @NotNull AtomicLong requestCounter;
     private final @NotNull AtomicBoolean stopRequested;
-    private final @NotNull AtomicBoolean isRunning;
+    private final @NotNull AtomicBoolean startRequested;
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -80,10 +78,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.protocolAdapterState = input.getProtocolAdapterState();
         final List<OpcuaTag> tagList = input.getTags().stream().map(tag -> (OpcuaTag) tag).toList();
         this.tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::getName, Function.identity()));
-        this.lock = new ReentrantLock();
         this.requestCounter = new AtomicLong();
         this.stopRequested = new AtomicBoolean(false);
-        this.isRunning = new AtomicBoolean(false);
+        this.startRequested = new AtomicBoolean(false);
         this.opcUaClientConnection = new OpcUaClientConnection(adapterId, input, tagList, protocolAdapterState);
     }
 
@@ -96,17 +93,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void start(
             final @NotNull ProtocolAdapterStartInput input,
             final @NotNull ProtocolAdapterStartOutput output) {
-        if (isRunning.get() || stopRequested.get()) {
-            return;
-        }
-
-        log.info("Starting OPC UA protocol adapter {}", adapterId);
-        lock.lock();
-        try {
-            if (isRunning.get() || stopRequested.get()) {
-                return;
-            }
-            isRunning.set(true);
+        if (!stopRequested.get() && startRequested.compareAndSet(false, true)) {
+            log.info("Starting OPC UA protocol adapter {}", adapterId);
             opcUaClientConnection.start().whenComplete((ignore, throwable) -> {
                 if (throwable == null) {
                     protocolAdapterState.setConnectionStatus(CONNECTED);
@@ -114,25 +102,18 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                     log.info("Successfully started OPC UA protocol adapter {}", adapterId);
                 } else {
                     protocolAdapterState.setConnectionStatus(ERROR);
+                    startRequested.set(false);
                     output.failStart(throwable, "Unable to connect and subscribe to the OPC UA server");
                     log.error("Unable to connect and subscribe to the OPC UA server", throwable);
-                    isRunning.set(false);
                 }
             });
-        } finally {
-            lock.unlock();
         }
     }
 
     @Override
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
-        if (!isRunning.get() || !stopRequested.compareAndSet(false, true)) {
-            return;
-        }
-
-        log.info("Stopping OPC UA protocol adapter {}", adapterId);
-        lock.lock();
-        try {
+        if (startRequested.get() && stopRequested.compareAndSet(false, true)) {
+            log.info("Stopping OPC UA protocol adapter {}", adapterId);
             opcUaClientConnection.stop(requestCounter).whenComplete((v, throwable) -> {
                 try {
                     if (throwable == null) {
@@ -145,12 +126,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                         log.error("Unable to stop the connection to the OPC UA server", throwable);
                     }
                 } finally {
-                    isRunning.set(false);
+                    startRequested.set(false);
                     stopRequested.set(false);
                 }
             });
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -158,23 +137,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void discoverValues(
             final @NotNull ProtocolAdapterDiscoveryInput input,
             final @NotNull ProtocolAdapterDiscoveryOutput output) {
-        if (!isRunning.get() || stopRequested.get()) {
-            return;
-        }
         if (input.getRootNode() == null) {
             log.error("Discovery failed: Root node is null");
             output.fail("Root node is null");
             return;
         }
 
-        lock.lock();
-        try {
-            final OpcUaClient client = opcUaClientConnection.client();
-            if (client == null) {
-                log.warn("Cannot perform discovery: OPC UA client is not connected.");
-                output.fail("OPC UA client is not connected.");
-                return;
-            }
+        final OpcUaClient client = opcUaClientConnection.client();
+        if (client != null && startRequested.get() && !stopRequested.get()) {
             requestCounter.incrementAndGet();
             OpcUaNodeDiscovery.discoverValues(client, input.getRootNode(), input.getDepth())
                     .whenComplete((collectedNodes, throwable) -> {
@@ -197,37 +167,25 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                             requestCounter.decrementAndGet();
                         }
                     });
-        } finally {
-            lock.unlock();
+        } else {
+            log.warn("Cannot perform discovery: OPC UA client is not connected.");
         }
     }
 
     @Override
     public void write(final @NotNull WritingInput input, final @NotNull WritingOutput output) {
-        if (!isRunning.get() || stopRequested.get()) {
-            return;
-        }
-
         final WritingContext writeContext = input.getWritingContext();
         final OpcUaPayload opcUAWritePayload = (OpcUaPayload) input.getWritingPayload();
         final String tagName = writeContext.getTagName();
         final OpcuaTag opcuaTag = tagNameToTag.get(tagName);
-
         if (opcuaTag == null) {
             log.error("Attempted to write to non-existent tag '{}'", tagName);
             output.fail("Tag '" + tagName + "' not found.");
             return;
         }
 
-        lock.lock();
-        try {
-            final OpcUaClient client = opcUaClientConnection.client();
-            if (client == null) {
-                log.warn("Cannot perform write: OPC UA client is not connected.");
-                output.fail("OPC UA client is not connected.");
-                return;
-            }
-
+        final OpcUaClient client = opcUaClientConnection.client();
+        if (client != null && startRequested.get() && !stopRequested.get()) {
             final JsonToOpcUAConverter converter = new JsonToOpcUAConverter(client);
             if (log.isDebugEnabled()) {
                 log.debug("Write invoked with payload '{}' for tag '{}'", opcUAWritePayload, opcuaTag.getName());
@@ -256,8 +214,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                             requestCounter.decrementAndGet();
                         }
                     });
-        } finally {
-            lock.unlock();
+        } else {
+            log.warn("Cannot perform write: OPC UA client is not connected.");
         }
     }
 
@@ -265,28 +223,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void createTagSchema(
             final @NotNull TagSchemaCreationInput input,
             final @NotNull TagSchemaCreationOutput output) {
-        if (!isRunning.get() || stopRequested.get()) {
-            return;
-        }
-
         final String tagName = input.getTagName();
         final OpcuaTag tag = tagNameToTag.get(tagName);
-
         if (tag == null) {
             log.error("Cannot create schema for non-existent tag '{}'", tagName);
             output.fail("Tag '" + tagName + "' not found.");
             return;
         }
 
-        lock.lock();
-        try {
-            final OpcUaClient client = opcUaClientConnection.client();
-            if (client == null) {
-                log.warn("Cannot create tag schema: OPC UA client is not connected.");
-                output.fail("OPC UA client is not connected.");
-                return;
-            }
-
+        final OpcUaClient client = opcUaClientConnection.client();
+        if (client != null) {
             requestCounter.incrementAndGet();
             new JsonSchemaGenerator(client).createMqttPayloadJsonSchema(tag).whenComplete((result, throwable) -> {
                 try {
@@ -306,8 +252,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                     requestCounter.decrementAndGet();
                 }
             });
-        } finally {
-            lock.unlock();
+        } else {
+            log.warn("Cannot create tag schema: OPC UA client is not connected.");
         }
     }
 
@@ -315,7 +261,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapterInformation;
     }
-
 
     @Override
     public @NotNull Class<? extends WritingPayload> getMqttPayloadClass() {

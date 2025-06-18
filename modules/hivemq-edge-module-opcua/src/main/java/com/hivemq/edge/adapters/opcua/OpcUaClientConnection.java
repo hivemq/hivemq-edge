@@ -49,8 +49,13 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -74,7 +79,7 @@ class OpcUaClientConnection {
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
-    private volatile @Nullable ConnectionContext context;
+    private final @NotNull AtomicReference<ConnectionContext> context;
 
     OpcUaClientConnection(
             final @NotNull String adapterId,
@@ -89,6 +94,7 @@ class OpcUaClientConnection {
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
         this.tags = tags;
+        this.context = new AtomicReference<>();
     }
 
     private static void quietlyDeleteSubscription(
@@ -97,8 +103,8 @@ class OpcUaClientConnection {
         try {
             subscription.delete();
             client.removeSubscription(subscription);
-        } catch (final Exception ignore) {
-            log.warn("Failed to delete subscription {}", subscription, ignore);
+        } catch (final Exception e) {
+            log.warn("Failed to delete subscription {}", subscription, e);
         }
     }
 
@@ -122,8 +128,8 @@ class OpcUaClientConnection {
         }
         try {
             client.disconnectAsync();
-        } catch (final Throwable ignore) {
-            log.warn("Failed to disconnect {}", subscription, ignore);
+        } catch (final Throwable e) {
+            log.warn("Failed to disconnect {}", subscription, e);
         }
     }
 
@@ -139,23 +145,20 @@ class OpcUaClientConnection {
         }
     }
 
-    private static @NotNull String extractPayload(
-            final @NotNull OpcUaClient client,
-            final @NotNull DataValue value) throws UaException {
+    private static @NotNull String extractPayload(final @NotNull OpcUaClient client, final @NotNull DataValue value)
+            throws UaException {
         if (value.getValue().getValue() == null) {
             return "";
         }
 
-        final ByteBuffer byteBuffer =
-                OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(), value);
+        final ByteBuffer byteBuffer = OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(), value);
         final byte[] buffer = new byte[byteBuffer.remaining()];
         byteBuffer.get(buffer);
         return new String(buffer, StandardCharsets.UTF_8);
-
     }
 
     @NotNull CompletableFuture<Void> start() {
-        if (context != null) {
+        if (context.get() != null) {
             return CompletableFuture.completedFuture(null);
         }
 
@@ -181,30 +184,31 @@ class OpcUaClientConnection {
             return CompletableFuture.failedFuture(error);
         }
 
-        return client.connectAsync()
-                .thenCompose(this::subscribe)
-                .whenComplete((subscription, throwable) -> {
-                    if (throwable == null) {
-                        final ServiceFaultListener faultListener = createServiceFaultListener();
-                        final SessionActivityListener activityListener = createSessionActivityListener();
-                        client.addSessionActivityListener(activityListener);
-                        client.addFaultListener(faultListener);
-                        context = new ConnectionContext(client, subscription, faultListener, activityListener);
-                        log.info("Client created and connected successfully");
-                    } else {
-                        log.error("Failed to start OPC UA client", throwable);
-                        quietlyCloseClient(client, subscription, null, null);
-                    }
-                }).thenApply(subscription -> null);
+        return client.connectAsync().thenCompose(this::subscribe).whenComplete((subscription, throwable) -> {
+            if (throwable == null) {
+                final ServiceFaultListener faultListener = createServiceFaultListener();
+                final SessionActivityListener activityListener = createSessionActivityListener();
+                client.addSessionActivityListener(activityListener);
+                client.addFaultListener(faultListener);
+                final ConnectionContext newContext = new ConnectionContext(client, subscription, faultListener, activityListener);
+                if (context.compareAndSet(null, newContext)) {
+                    log.info("Client created and connected successfully");
+                } else {
+                    log.warn("Concurrent start detected for adapter '{}'. Closing redundant OPC UA client connection.", adapterId);
+                    quietlyCloseClient(client, subscription, faultListener, activityListener); // <-- THIS IS THE MISSING CLEANUP
+                }
+            } else {
+                log.error("Failed to start OPC UA client", throwable);
+                quietlyCloseClient(client, subscription, null, null);
+            }
+        }).thenApply(subscription -> null);
     }
 
     @NotNull CompletableFuture<Void> stop(final @NotNull AtomicLong requestCounter) {
-        final ConnectionContext ctx = context;
-        context = null;
+        final ConnectionContext ctx = context.getAndSet(null);
         if (ctx == null) {
             return CompletableFuture.completedFuture(null);
         }
-
         return CompletableFuture.runAsync(() -> awaitOnCounter(requestCounter)).thenCompose(v -> {
             quietlyCloseClient(ctx.client(), ctx.subscription(), ctx.faultListener(), ctx.activityListener());
             return CompletableFuture.completedFuture(null);
@@ -212,7 +216,7 @@ class OpcUaClientConnection {
     }
 
     @Nullable OpcUaClient client() {
-        final ConnectionContext ctx = context;
+        final ConnectionContext ctx = context.get();
         return ctx != null ? ctx.client() : null;
     }
 
@@ -224,7 +228,9 @@ class OpcUaClientConnection {
                 .thenCompose(unit -> addAndSynchronizeMonitoredItems(subscription))
                 .thenApply(sub -> subscription)
                 .exceptionally(error -> {
-                    log.error("Failed to create/synchronize OPC UA subscription/monitored items: {}", error.getMessage(), error);
+                    log.error("Failed to create/synchronize OPC UA subscription/monitored items: {}",
+                            error.getMessage(),
+                            error);
                     quietlyDeleteSubscription(client, subscription);
                     throw new CompletionException(error);
                 });
@@ -327,7 +333,7 @@ class OpcUaClientConnection {
                         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
                         final String payload = extractPayload(client, values.get(i));
                         tagStreamingService.feed(tn, List.of(dataPointFactory.createJsonDataPoint(tn, payload)));
-                    } catch (final UaException e) {
+                    } catch (final Throwable e) {
                         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
                         throw new RuntimeException(e);
                     }
@@ -336,10 +342,7 @@ class OpcUaClientConnection {
         };
     }
 
-    private record ConnectionContext(
-            OpcUaClient client,
-            OpcUaSubscription subscription,
-            ServiceFaultListener faultListener,
-            SessionActivityListener activityListener) {
+    private record ConnectionContext(OpcUaClient client, OpcUaSubscription subscription,
+                                     ServiceFaultListener faultListener, SessionActivityListener activityListener) {
     }
 }
