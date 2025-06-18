@@ -205,6 +205,30 @@ export const getPolicyPublishWrapper = (report?: DryRunResults<unknown, never>[]
   return Wrapper
 }
 
+// TODO[NVL] Too much code duplication; refactor the whole wrappers as customisable factory
+export const getPolicyWrapper = ({ status, nodes }: { status?: DesignerStatus; nodes?: Node[] }) => {
+  const Wrapper: FC<PropsWithChildren> = ({ children }) => {
+    const { pathname } = useLocation()
+    const { nodes: nodeList } = useDataHubDraftStore()
+
+    return (
+      <MockStoreWrapper
+        config={{
+          initialState: { status: status, nodes: nodes || [] },
+        }}
+      >
+        {children}
+        <Card mt={50} size="sm" variant="filled">
+          <CardHeader>Testing Dashboard</CardHeader>
+          <CardBody data-testid="test-pathname">{pathname}</CardBody>
+          <CardBody data-testid="test-nodes">{nodeList.length}</CardBody>
+        </Card>
+      </MockStoreWrapper>
+    )
+  }
+  return Wrapper
+}
+
 export const getPolicyWrapperWithRouter = ({ status, nodes }: { status?: DesignerStatus; nodes?: Node[] }) => {
   const Wrapper: FC<PropsWithChildren> = ({ children }) => {
     const { pathname } = useLocation()
