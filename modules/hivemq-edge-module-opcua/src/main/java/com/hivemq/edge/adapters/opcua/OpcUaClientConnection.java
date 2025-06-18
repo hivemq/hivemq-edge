@@ -98,7 +98,7 @@ class OpcUaClientConnection {
             subscription.delete();
             client.removeSubscription(subscription);
         } catch (final Exception ignore) {
-            // we tried
+            log.warn("Failed to delete subscription {}", subscription, ignore);
         }
     }
 
@@ -123,7 +123,7 @@ class OpcUaClientConnection {
         try {
             client.disconnectAsync();
         } catch (final Throwable ignore) {
-            // we tried
+            log.warn("Failed to disconnect {}", subscription, ignore);
         }
     }
 
