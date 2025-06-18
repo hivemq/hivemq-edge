@@ -15,9 +15,11 @@
  */
 package com.hivemq.edge.adapters.modbus.config;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import org.jetbrains.annotations.NotNull;
+
+import java.nio.charset.StandardCharsets;
 
 public enum ModbusDataType {
     BOOL("BOOL", 1),
@@ -30,31 +32,84 @@ public enum ModbusDataType {
     FLOAT_64("FLOAT_64", 4),
     UTF_8("UTF_8", 4);
 
-    private static final Map<String, ModbusDataType> BY_LABEL;
-
-    static {
-        final Map<String, ModbusDataType> temp = new HashMap<>();
-        for (ModbusDataType e : values()) {
-            temp.put(e.label, e);
-        }
-        BY_LABEL = Collections.unmodifiableMap(temp);
-    }
-
-    public final String label;
+    public final @NotNull String label;
     public final int nrOfRegistersToRead;
 
-    ModbusDataType(String label, int nrOfRegistersToRead) {
+    ModbusDataType(final @NotNull String label, final int nrOfRegistersToRead) {
         this.label = label;
         this.nrOfRegistersToRead = nrOfRegistersToRead;
     }
 
-
-    public static ModbusDataType valueOfLabel(String label) {
-        return BY_LABEL.get(label);
+    private static @NotNull Object getUnsigned64(@NotNull final ByteBuf buffi) {
+        final byte b1 = buffi.readByte();
+        final byte b2 = buffi.readByte();
+        final byte b3 = buffi.readByte();
+        final byte b4 = buffi.readByte();
+        final byte b5 = buffi.readByte();
+        final byte b6 = buffi.readByte();
+        final byte b7 = buffi.readByte();
+        final byte b8 = buffi.readByte();
+        return Unpooled.wrappedBuffer(new byte[]{b7, b8, b5, b6, b3, b4, b1, b2}).readUnsignedInt();
     }
 
     @Override
-    public String toString() {
-        return this.label;
+    public @NotNull String toString() {
+        return label;
+    }
+
+    public @NotNull Object convert(final byte @NotNull [] payload, final boolean flipRegisters) {
+        final ByteBuf buff = Unpooled.wrappedBuffer(payload);
+        return switch (this) {
+            case BOOL -> buff.readBoolean();
+
+            case INT_16 -> buff.readShort();
+
+            case UINT_16 -> Short.toUnsignedInt(buff.readShort());
+
+            case INT_32 -> {
+                if (flipRegisters) {
+                    final byte b1 = buff.readByte();
+                    final byte b2 = buff.readByte();
+                    final byte b3 = buff.readByte();
+                    final byte b4 = buff.readByte();
+                    yield Unpooled.wrappedBuffer(new byte[]{b4, b3, b2, b1}).readInt();
+                } else {
+                    yield buff.readInt();
+                }
+            }
+
+            case UINT_32 -> {
+                if (flipRegisters) {
+                    final byte b1 = buff.readByte();
+                    final byte b2 = buff.readByte();
+                    final byte b3 = buff.readByte();
+                    final byte b4 = buff.readByte();
+                    yield Unpooled.wrappedBuffer(new byte[]{b3, b4, b1, b2}).readUnsignedInt();
+                } else {
+                    yield buff.readUnsignedInt();
+                }
+            }
+
+            case INT_64 -> flipRegisters ? getUnsigned64(buff) : buff.readLong();
+
+            case FLOAT_32 -> {
+                if (flipRegisters) {
+                    final byte b1 = buff.readByte();
+                    final byte b2 = buff.readByte();
+                    final byte b3 = buff.readByte();
+                    final byte b4 = buff.readByte();
+                    yield Unpooled.wrappedBuffer(new byte[]{b3, b4, b1, b2}).readFloat();
+                } else {
+                    yield buff.readFloat();
+                }
+            }
+            case FLOAT_64 -> flipRegisters ? getUnsigned64(buff) : buff.readDouble();
+
+            case UTF_8 -> {
+                final byte[] bytes = new byte[nrOfRegistersToRead * 2];
+                buff.readBytes(bytes);
+                yield new String(bytes, StandardCharsets.UTF_8);
+            }
+        };
     }
 }

@@ -9,6 +9,7 @@ bouncycastle = "1.80"
 byteBuddy = "1.17.5"
 concurrentUnit = "0.4.6"
 dagger = "2.56.2"
+digitalpetri-modbus-tcp = "2.1.0"
 dropwizard-metrics = "4.2.32"
 equalsVerifier = "3.19.4"
 errorprone = "2.38.0"
@@ -36,7 +37,6 @@ junit-jupiter = "5.13.1"
 logback = "1.5.18"
 milo = "1.0.0"
 mockito = "5.17.0"
-modbus = "1.2.2"
 mqtt-sn-codec = "838f51d691"
 mssql="12.8.1.jre11"
 mtconnect-protocol = "1.0.0"
@@ -69,7 +69,7 @@ byteBuddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byteBuddy" }
 concurrentUnit = { module = "net.jodah:concurrentunit", version.ref = "concurrentUnit" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
-digitalpetri-modbus-master-tcp = { module = "com.digitalpetri.modbus:modbus-master-tcp", version.ref = "modbus" }
+digitalpetri-modbus-tcp = { module = "com.digitalpetri.modbus:modbus-tcp", version.ref ="digitalpetri-modbus-tcp" }
 dropwizard-metrics = { module = "io.dropwizard.metrics:metrics-core", version.ref = "dropwizard-metrics" }
 dropwizard-metrics-jmx = { module = "io.dropwizard.metrics:metrics-jmx", version.ref = "dropwizard-metrics" }
 dropwizard-metrics-jvm = { module = "io.dropwizard.metrics:metrics-jvm", version.ref = "dropwizard-metrics" }

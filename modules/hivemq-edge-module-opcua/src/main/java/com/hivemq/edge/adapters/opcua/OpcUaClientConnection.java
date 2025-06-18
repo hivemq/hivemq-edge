@@ -99,12 +99,18 @@ class OpcUaClientConnection {
 
     private static void quietlyDeleteSubscription(
             final @NotNull OpcUaClient client,
-            final @NotNull OpcUaSubscription subscription) {
-        try {
-            subscription.delete();
-            client.removeSubscription(subscription);
-        } catch (final Exception e) {
-            log.warn("Failed to delete subscription {}", subscription, e);
+            final @Nullable OpcUaSubscription subscription) {
+        if (subscription != null) {
+            try {
+                subscription.delete();
+            } catch (final Exception e) {
+                log.warn("Failed to delete subscription {}: {}", subscription, e.getMessage());
+            }
+            try {
+                client.removeSubscription(subscription);
+            } catch (final Exception e) {
+                log.warn("Failed to remove subscription {}: {}", subscription, e.getMessage());
+            }
         }
     }
 
@@ -113,24 +119,27 @@ class OpcUaClientConnection {
             final @Nullable OpcUaSubscription subscription,
             final @Nullable ServiceFaultListener faultListener,
             final @Nullable SessionActivityListener activityListener) {
-        if (subscription != null) {
-            quietlyDeleteSubscription(client, subscription);
-        }
-        try {
-            if (faultListener != null) {
+
+        quietlyDeleteSubscription(client, subscription);
+        if (faultListener != null) {
+            try {
                 client.removeFaultListener(faultListener);
+            } catch (final Throwable e) {
+                log.warn("Failed to remove fault listener {}: {}", faultListener, e.getMessage());
             }
-            if (activityListener != null) {
+        }
+        if (activityListener != null) {
+            try {
                 client.removeSessionActivityListener(activityListener);
+            } catch (final Throwable e) {
+                log.warn("Failed to remove session activity listener {}: {}", activityListener, e.getMessage());
             }
-        } catch (final Throwable ignore) {
-            // we tried
         }
-        try {
-            client.disconnectAsync();
-        } catch (final Throwable e) {
-            log.warn("Failed to disconnect {}", subscription, e);
-        }
+
+        client.disconnectAsync().exceptionally(throwable -> {
+            log.warn("Failed to disconnect: {}", throwable.getMessage());
+            return null;
+        });
     }
 
     private static void awaitOnCounter(final @NotNull AtomicLong requestCounter) {
@@ -190,12 +199,17 @@ class OpcUaClientConnection {
                 final SessionActivityListener activityListener = createSessionActivityListener();
                 client.addSessionActivityListener(activityListener);
                 client.addFaultListener(faultListener);
-                final ConnectionContext newContext = new ConnectionContext(client, subscription, faultListener, activityListener);
+                final ConnectionContext newContext =
+                        new ConnectionContext(client, subscription, faultListener, activityListener);
                 if (context.compareAndSet(null, newContext)) {
                     log.info("Client created and connected successfully");
                 } else {
-                    log.warn("Concurrent start detected for adapter '{}'. Closing redundant OPC UA client connection.", adapterId);
-                    quietlyCloseClient(client, subscription, faultListener, activityListener); // <-- THIS IS THE MISSING CLEANUP
+                    log.warn("Concurrent start detected for adapter '{}'. Closing redundant OPC UA client connection.",
+                            adapterId);
+                    quietlyCloseClient(client,
+                            subscription,
+                            faultListener,
+                            activityListener); // <-- THIS IS THE MISSING CLEANUP
                 }
             } else {
                 log.error("Failed to start OPC UA client", throwable);
