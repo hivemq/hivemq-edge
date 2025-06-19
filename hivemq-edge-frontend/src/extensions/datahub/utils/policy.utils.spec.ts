@@ -115,8 +115,9 @@ describe('getResourceInternalStatus', () => {
 
     expect(getResourceInternalStatus<Script>(MOCK_SCRIPT_ID, { items: [mockScript] }, getScriptFamilies)).toStrictEqual(
       {
-        internalStatus: ResourceStatus.DRAFT,
-        version: ResourceWorkingVersion.DRAFT,
+        internalStatus: ResourceStatus.LOADED,
+        internalVersions: [1],
+        version: 1,
       }
     )
   })
