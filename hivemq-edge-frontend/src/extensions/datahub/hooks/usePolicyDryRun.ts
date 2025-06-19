@@ -56,11 +56,11 @@ export const usePolicyDryRun = () => {
 
     const getStatus = (): PolicyDryRunStatus => {
       if (results.error) return PolicyDryRunStatus.FAILURE
-      // TODO[NVL] There was a reason this test was there but it cannot be replicated
-      // if (currentNode?.data.dryRunStatus === PolicyDryRunStatus.FAILURE) return PolicyDryRunStatus.FAILURE
+      // If current node was already marked as failure, keep it
+      if (currentNode?.data.dryRunStatus === PolicyDryRunStatus.FAILURE) return PolicyDryRunStatus.FAILURE
       return PolicyDryRunStatus.SUCCESS
     }
-    onUpdateNodes<DataHubNodeData>(results.node.id, {
+    onUpdateNodes<DataHubNodeData>(currentNode.id, {
       ...currentNode.data,
       dryRunStatus: getStatus(),
     })
