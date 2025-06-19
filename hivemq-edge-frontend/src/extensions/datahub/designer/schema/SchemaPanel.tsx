@@ -6,10 +6,10 @@ import type { CustomValidator, UiSchema } from '@rjsf/utils'
 import type { IChangeEvent } from '@rjsf/core'
 import { Card, CardBody } from '@chakra-ui/react'
 
+import type { PolicySchema } from '@/api/__generated__'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 
-import type { PanelProps, SchemaData } from '@datahub/types.ts'
-import { ResourceStatus, ResourceWorkingVersion, SchemaType } from '@datahub/types.ts'
 import { MOCK_JSONSCHEMA_SCHEMA, MOCK_PROTOBUF_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
 import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
@@ -18,19 +18,23 @@ import { MOCK_SCHEMA_SCHEMA } from '@datahub/designer/schema/SchemaData.ts'
 import { getSchemaFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
-import ErrorMessage from '@/components/ErrorMessage.tsx'
+import { ResourceStatus, ResourceWorkingVersion, SchemaType } from '@datahub/types.ts'
+import type { PanelProps, SchemaData } from '@datahub/types.ts'
+import { getResourceInternalStatus } from '@datahub/utils/policy.utils.ts'
 
 export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { data: allSchemas } = useGetAllSchemas()
   const { nodes } = useDataHubDraftStore()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
   const [formData, setFormData] = useState<SchemaData | null>(() => {
+    if (!allSchemas) return null
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<SchemaData> | undefined
+    if (!adapterNode) return null
 
-    const internalStatus =
-      typeof adapterNode?.data.version === 'number' ? ResourceStatus.LOADED : adapterNode?.data.version
+    const internalState = getResourceInternalStatus<PolicySchema>(adapterNode.data.name, allSchemas, getSchemaFamilies)
+    const intData: SchemaData = { ...adapterNode.data, ...internalState }
 
-    return adapterNode ? { ...adapterNode.data, internalStatus } : null
+    return intData
   })
 
   const onReactFlowSchemaFormChange = useCallback(
