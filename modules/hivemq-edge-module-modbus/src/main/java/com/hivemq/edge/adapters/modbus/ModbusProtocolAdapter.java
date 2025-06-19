@@ -123,10 +123,13 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                     output.startedSuccessfully();
                     log.info("Successfully started Modbus protocol adapter {}", adapterId);
                 } else {
-                    protocolAdapterState.setConnectionStatus(ERROR);
-                    startRequested.set(false);
-                    output.failStart(throwable, "Exception during setup of Modbus client.");
-                    log.error("Unable to connect to the Modbus device", throwable);
+                    try {
+                        protocolAdapterState.setConnectionStatus(ERROR);
+                        output.failStart(throwable, "Exception during setup of Modbus client.");
+                    } finally {
+                        startRequested.set(false);
+                        log.error("Unable to connect to the Modbus device", throwable);
+                    }
                 }
             });
         }
@@ -138,53 +141,65 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
             log.info("Stopping Modbus protocol adapter {}", adapterId);
             publishChangedDataOnlyHandler.clear();
             client.disconnect().whenComplete((unused, throwable) -> {
-                if (throwable == null) {
-                    protocolAdapterState.setConnectionStatus(DISCONNECTED);
-                    output.stoppedSuccessfully();
-                    log.info("Successfully stopped Modbus protocol adapter {}", adapterId);
-                } else {
-                    protocolAdapterState.setConnectionStatus(ERROR);
-                    output.failStop(throwable, "Error encountered closing connection to Modbus server.");
-                    log.error("Unable to stop the connection to the Modbus server", throwable);
+                try {
+                    if (throwable == null) {
+                        protocolAdapterState.setConnectionStatus(DISCONNECTED);
+                        output.stoppedSuccessfully();
+                        log.info("Successfully stopped Modbus protocol adapter {}", adapterId);
+                    } else {
+                        protocolAdapterState.setConnectionStatus(ERROR);
+                        output.failStop(throwable, "Error encountered closing connection to Modbus server.");
+                        log.error("Unable to stop the connection to the Modbus server", throwable);
+                    }
+                } finally {
+                    startRequested.set(false);
+                    stopRequested.set(false);
                 }
             });
         }
     }
 
+    private boolean isPublishAllChanges() {
+        final var toMqttConfig = adapterConfig.getModbusToMQTTConfig();
+        return toMqttConfig == null || !toMqttConfig.getPublishChangedDataOnly();
+    }
+
     @Override
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         if (startRequested.get() && !stopRequested.get() && client.isConnected()) {
-            final var readRegisterFutures = tags.stream()
-                    .map(tag -> client.readRegisters(tag)
-                            .toCompletableFuture()
-                            .thenApply(result -> new ResulTuple(tag.getName(), result)))
-                    .toList();
 
-            final var toMqttConfig = adapterConfig.getModbusToMQTTConfig();
-            final boolean publishAllChanges = toMqttConfig == null || !toMqttConfig.getPublishChangedDataOnly();
-            CompletableFuture.allOf(readRegisterFutures.toArray(new CompletableFuture[]{}))
-                    .whenComplete((result, throwable) -> {
-                        if (throwable != null) {
-                            protocolAdapterState.setConnectionStatus(ERROR);
-                            pollingOutput.fail(throwable, "Unable to read tags from modbus");
-                            pollingOutput.finish();
-                            return;
-                        }
+            final int limit = tags.size();
+            final CompletableFuture<ResulTuple>[] readRegisterFutures = new CompletableFuture[limit];
+            for (int i = 0; i < limit; i++) {
+                final ModbusTag tag = tags.get(i);
+                readRegisterFutures[i] = client.readRegisters(tag)
+                        .thenApply(result -> new ResulTuple(tag.getName(), result))
+                        .toCompletableFuture();
+            }
 
-                        for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
-                            final ResulTuple entry = readRegisterFuture.join();
-                            final var tagName = entry.tagName();
-                            final var value = entry.value();
-                            if (value != null) {
-                                final var dataPoints = List.of(dataPointFactory.create(tagName, value));
-                                if (publishAllChanges ||
-                                        publishChangedDataOnlyHandler.replaceIfValueIsNew(tagName, dataPoints)) {
-                                    dataPoints.forEach(pollingOutput::addDataPoint);
-                                }
-                            }
+            final boolean publishAllChanges = isPublishAllChanges();
+
+            CompletableFuture.allOf(readRegisterFutures).whenComplete((result, throwable) -> {
+                try {
+                    if (throwable != null) {
+                        protocolAdapterState.setConnectionStatus(ERROR);
+                        pollingOutput.fail(throwable, "Unable to read tags from modbus");
+                    }
+
+                    for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
+                        final ResulTuple entry = readRegisterFuture.join();
+                        final var tagName = entry.tagName();
+                        final var value = entry.value();
+                        final var dataPoints = List.of(dataPointFactory.create(tagName, value));
+                        if (publishAllChanges ||
+                                publishChangedDataOnlyHandler.replaceIfValueIsNew(tagName, dataPoints)) {
+                            dataPoints.forEach(pollingOutput::addDataPoint);
                         }
-                        pollingOutput.finish();
-                    });
+                    }
+                } finally {
+                    pollingOutput.finish();
+                }
+            });
         }
     }
 

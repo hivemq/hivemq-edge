@@ -27,13 +27,12 @@ import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTagDefinition;
-import io.netty.buffer.Unpooled;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static com.hivemq.edge.adapters.modbus.ModbusDataTypeConverter.convert;
 
 class ModbusClient {
 
@@ -66,17 +65,13 @@ class ModbusClient {
 
     @NotNull CompletionStage<Object> readRegisters(
             final @NotNull ModbusTag modbusTag) {
-        final ModbusTagDefinition tagDefinition = modbusTag.getDefinition();
-        final var startIdx = tagDefinition.startIdx;
-        final var unitId = tagDefinition.unitId;
-        final var flipRegisters = tagDefinition.flipRegisters;
-        final var dataType = tagDefinition.getDataType();
-        final var readType = tagDefinition.readType;
-        return (switch (readType) {
-            case HOLDING_REGISTERS -> readHoldingRegisters(startIdx, dataType, unitId, flipRegisters);
-            case INPUT_REGISTERS -> readInputRegisters(startIdx, dataType, unitId, flipRegisters);
-            case COILS -> readCoils(startIdx, unitId);
-            case DISCRETE_INPUTS -> readDiscreteInput(startIdx, unitId);
+        final ModbusTagDefinition def = modbusTag.getDefinition();
+        final var dataType = def.getDataType();
+        return (switch (def.readType) {
+            case HOLDING_REGISTERS -> readHoldingRegisters(def.startIdx, dataType, def.unitId, def.flipRegisters);
+            case INPUT_REGISTERS -> readInputRegisters(def.startIdx, dataType, def.unitId, def.flipRegisters);
+            case COILS -> readCoils(def.startIdx, def.unitId);
+            case DISCRETE_INPUTS -> readDiscreteInput(def.startIdx, def.unitId);
         });
     }
 
@@ -84,23 +79,25 @@ class ModbusClient {
      * Coils are 1bit.
      */
     @NotNull CompletionStage<Object> readCoils(final int startIdx, final int unitId) {
+        if (!client.isConnected()) {
+            return CompletableFuture.completedFuture(null);
+        }
+
         return client.readCoilsAsync(unitId, new ReadCoilsRequest(startIdx, Math.min(1, DEFAULT_MAX_DISCRETE_INPUTS)))
-                .thenApply(response -> convert(Unpooled.wrappedBuffer(response.coils()),
-                        ModbusDataType.BOOL,
-                        1,
-                        false));
+                .thenApply(response -> ModbusDataType.BOOL.convert(response.coils(), false));
     }
 
     /**
      * Discrete registers are 1bit.
      */
     @NotNull CompletionStage<Object> readDiscreteInput(final int startIdx, final int unitId) {
+        if (!client.isConnected()) {
+            return CompletableFuture.completedFuture(null);
+        }
+
         return client.readDiscreteInputsAsync(unitId,
                         new ReadDiscreteInputsRequest(startIdx, Math.min(1, DEFAULT_MAX_DISCRETE_INPUTS)))
-                .thenApply(response -> convert(Unpooled.wrappedBuffer(response.inputs()),
-                        ModbusDataType.BOOL,
-                        1,
-                        false));
+                .thenApply(response -> ModbusDataType.BOOL.convert(response.inputs(), false));
     }
 
     /**
@@ -111,13 +108,14 @@ class ModbusClient {
             final @NotNull ModbusDataType dataType,
             final int unitId,
             final boolean flipRegisters) {
+        if (!client.isConnected()) {
+            return CompletableFuture.completedFuture(null);
+        }
+
         return client.readHoldingRegistersAsync(unitId,
                         new ReadHoldingRegistersRequest(startIdx,
                                 Math.min(dataType.nrOfRegistersToRead, DEFAULT_MAX_INPUT_REGISTERS)))
-                .thenApply(response -> convert(Unpooled.wrappedBuffer(response.registers()),
-                        dataType,
-                        dataType.nrOfRegistersToRead,
-                        flipRegisters));
+                .thenApply(response -> dataType.convert(response.registers(), flipRegisters));
     }
 
     /**
@@ -128,12 +126,13 @@ class ModbusClient {
             final @NotNull ModbusDataType dataType,
             final int unitId,
             final boolean flipRegisters) {
+        if (!client.isConnected()) {
+            return CompletableFuture.completedFuture(null);
+        }
+
         return client.readInputRegistersAsync(unitId,
                         new ReadInputRegistersRequest(startIdx,
                                 Math.min(dataType.nrOfRegistersToRead, DEFAULT_MAX_INPUT_REGISTERS)))
-                .thenApply(response -> convert(Unpooled.wrappedBuffer(response.registers()),
-                        dataType,
-                        dataType.nrOfRegistersToRead,
-                        flipRegisters));
+                .thenApply(response -> dataType.convert(response.registers(), flipRegisters));
     }
 }
