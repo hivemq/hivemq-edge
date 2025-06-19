@@ -52,14 +52,16 @@ export const usePolicyDryRun = () => {
 
   const updateNodeStatus = async (results: DryRunResults<unknown>) => {
     const currentNode = nodes.find((node) => node.id === results.node.id)
+    if (!currentNode) return
 
     const getStatus = (): PolicyDryRunStatus => {
       if (results.error) return PolicyDryRunStatus.FAILURE
-      if (currentNode?.data.dryRunStatus === PolicyDryRunStatus.FAILURE) return PolicyDryRunStatus.FAILURE
+      // TODO[NVL] There was a reason this test was there but it cannot be replicated
+      // if (currentNode?.data.dryRunStatus === PolicyDryRunStatus.FAILURE) return PolicyDryRunStatus.FAILURE
       return PolicyDryRunStatus.SUCCESS
     }
     onUpdateNodes<DataHubNodeData>(results.node.id, {
-      ...results.node.data,
+      ...currentNode.data,
       dryRunStatus: getStatus(),
     })
     await mockDelay(DRYRUN_VALIDATION_DELAY)
@@ -98,7 +100,6 @@ export const usePolicyDryRun = () => {
     const schemaResources = validators.reduce(onlyNonNullResources, [] as DryRunResults<PolicySchema>[])
     const allResources = [...successResources, ...errorResources, ...schemaResources].reduce(onlyUniqueResources, [])
 
-    // TODO[29953] This is not enough, potential BehaviorPolicyTransitionEvent needs to be passed
     const allConfigurations = checkValidityConfigurations(allNodes, getFilteredFunctions(DataHubNodeType.DATA_POLICY))
 
     const processedNodes = [
