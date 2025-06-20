@@ -1,5 +1,6 @@
 import type { Node } from '@xyflow/react'
 import { getIncomers } from '@xyflow/react'
+import debug from 'debug'
 
 import type { PolicySchema, Script } from '@/api/__generated__'
 
@@ -27,6 +28,8 @@ import { checkValidityTransitions } from '@datahub/designer/transition/Transitio
 import { checkValidityPipeline } from '@datahub/designer/operation/OperationNode.utils.ts'
 import { useFilteredFunctionsFetcher } from '@datahub/hooks/useFilteredFunctionsFetcher.tsx'
 
+const datahubLog = debug('DataHub:usePolicyDryRun')
+
 /* istanbul ignore next -- @preserve */
 const mockDelay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -52,7 +55,10 @@ export const usePolicyDryRun = () => {
 
   const updateNodeStatus = async (results: DryRunResults<unknown>) => {
     const currentNode = nodes.find((node) => node.id === results.node.id)
-    if (!currentNode) return
+    if (!currentNode) {
+      datahubLog(`Node with ID ${results.node.id} not found in the current nodes list`)
+      return
+    }
 
     const getStatus = (): PolicyDryRunStatus => {
       if (results.error) return PolicyDryRunStatus.FAILURE
