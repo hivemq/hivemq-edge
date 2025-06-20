@@ -1,0 +1,25 @@
+# See https://redocly.com/docs/cli/configuration/ for more information.
+apis:
+  hivemq-edge@v1: 
+    root: ./openapi/openapi.yaml
+extends:
+  - recommended
+rules:
+  no-unused-components: error
+  ### Custom rules - error must be fixed
+  security-defined: off
+  no-server-example.com: error
+theme:
+  openapi:
+    htmlTemplate: ./docs/index.html
+    theme:
+      colors:
+        primary:
+          main: "#32329f"
+    generateCodeSamples:
+      languages:  # Array of language config objects; indicates in which languages to generate code samples.
+        - lang: curl
+        - lang: Node.js
+        - lang: JavaScript
+        - lang: PHP
+        - lang: Python

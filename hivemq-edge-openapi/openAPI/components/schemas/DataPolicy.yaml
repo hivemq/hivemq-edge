@@ -1,0 +1,31 @@
+type: object
+description: >-
+  A data policy which is used to validate and execute certain actions based on
+  the validation result.
+properties:
+  createdAt:
+    type: string
+    format: date-time
+    description: The formatted UTC timestamp indicating when the policy was created.
+    readOnly: true
+  id:
+    type: string
+    description: The unique identifier of the policy.
+  lastUpdatedAt:
+    type: string
+    format: date-time
+    description: >-
+      The formatted UTC timestamp indicating when the policy was updated the
+      last time.
+    readOnly: true
+  matching:
+    $ref: ./DataPolicyMatching.yaml
+  onFailure:
+    $ref: ./DataPolicyAction.yaml
+  onSuccess:
+    $ref: ./DataPolicyAction.yaml
+  validation:
+    $ref: ./DataPolicyValidation.yaml
+required:
+  - id
+  - matching
