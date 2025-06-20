@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import type { Node } from '@xyflow/react'
 import type { UseMutateAsyncFunction } from '@tanstack/react-query'
+import type { UseToastOptions } from '@chakra-ui/react'
 import { Button, Icon, useToast } from '@chakra-ui/react'
 import { MdPublishedWithChanges } from 'react-icons/md'
 
@@ -65,25 +66,29 @@ export const ToolbarPublish: FC = () => {
 
   const isValid = !!report && report.length >= 1 && report?.every((e) => !e.error)
 
+  const manageToast = (id: string, conf: UseToastOptions) => {
+    const { id: _, ...cleanConfig } = conf
+    if (!toast.isActive(id)) toast({ ...cleanConfig, id })
+    else toast.update(id, cleanConfig)
+  }
+
   const toastInternalError = (message: string) => {
-    toast({
+    manageToast(`publish-internal-${selectedNode?.type}`, {
       ...dataHubToastOption,
       title: t('publish.internal.title', { source: selectedNode?.type }),
       description: message,
       status: 'error',
-      id: 'publish-internal',
     })
   }
 
   const reportMutation = (promise: Promise<unknown>, type?: string) => {
     promise
       .then(() => {
-        toast({
+        manageToast(`publish-success-${type || selectedNode?.type}`, {
           ...dataHubToastOption,
           title: t('publish.success.title', { source: type || selectedNode?.type }),
           description: t('publish.success.description', { source: type || selectedNode?.type, context: status }),
           status: 'success',
-          id: 'publish-success',
         })
       })
       .catch(() => {})
@@ -208,16 +213,15 @@ export const ToolbarPublish: FC = () => {
         navigate(`/datahub/${selectedNode?.type}/${selectedNode?.data.id}`, { replace: true })
       })
       .catch((error) => {
-        console.log('XXXXXXXXXXXX, error', { ...error })
         let message
         if (error instanceof Error) message = error.message
         else message = String(error)
-        return toast({
+
+        manageToast(`publish-error-${selectedNode?.type}`, {
           ...dataHubToastOption,
           title: t('publish.error.title', { source: selectedNode?.type }),
           description: message.toString(),
           status: 'error',
-          id: 'publish-error',
         })
       })
   }
