@@ -66,6 +66,7 @@ export const ToolbarPublish: FC = () => {
 
   const isValid = !!report && report.length >= 1 && report?.every((e) => !e.error)
 
+  // TODO[NVL] The routine doesn't change title/description based on the number of resources published
   const manageToast = (id: string, conf: UseToastOptions) => {
     const { id: _, ...cleanConfig } = conf
     if (!toast.isActive(id)) toast({ ...cleanConfig, id })
