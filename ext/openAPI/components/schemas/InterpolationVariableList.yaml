@@ -11,12 +11,44 @@ example:
   items:
     - variable: clientId
       type: string
-      description: The MQTT client ID
+      description: "The MQTT client ID."
       policyType:
-        - DATA_POLICY
         - BEHAVIOR_POLICY
+        - DATA_POLICY
     - variable: topic
       type: string
-      description: The MQTT topic to which the MQTT message was published xxx
+      description: "The MQTT topic to which the MQTT message was published."
       policyType:
+        - DATA_POLICY
+    - variable: policyId
+      type: string
+      description: "The id of the policy that is currently executed."
+      policyType:
+        - BEHAVIOR_POLICY
+        - DATA_POLICY
+    - variable: validationResult
+      type: string
+      description: "A textual description of the validation result. This text can contain schema validation errors for further debugging."
+      policyType:
+        - BEHAVIOR_POLICY
+    - variable: fromState
+      type: string
+      description: "Textual representation of the state of the state machine before the transition."
+      policyType:
+        - BEHAVIOR_POLICY
+    - variable: toState
+      type: string
+      description: "Textual representation of the state to which the state machine transitions."
+      policyType:
+        - BEHAVIOR_POLICY
+    - variable: triggerEvent
+      type: string
+      description: "Textual representation of the event that triggered the state machine transition."
+      policyType:
+        - BEHAVIOR_POLICY
+    - variable: timestamp
+      type: string
+      description: "Current time in milliseconds since the UNIX epoch (Jan 1, 1970)."
+      policyType:
+        - BEHAVIOR_POLICY
         - DATA_POLICY
