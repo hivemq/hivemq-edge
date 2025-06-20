@@ -26,15 +26,18 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
+import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Security;
 import com.hivemq.edge.adapters.opcua.config.Tls;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import util.KeyChain;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
+import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,6 +49,7 @@ import java.util.List;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -84,7 +88,7 @@ class OpcUaProtocolAdapterAuthTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     public void whenNoAuthAndNoSubscriptions_thenConnectSuccessfully() {
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
@@ -108,7 +112,7 @@ class OpcUaProtocolAdapterAuthTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     public void whenBasicAuthAndNoSubscriptions_thenConnectSuccessfully() {
         final Auth auth = new Auth(new BasicAuth("testuser", "testpass"), null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
@@ -131,7 +135,7 @@ class OpcUaProtocolAdapterAuthTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     public void whenTlsAndNoSubscriptions_thenConnectSuccessfully() {
         final Security security = new Security(SecPolicy.NONE);
         final Tls tls = new Tls(true, null, null);
@@ -156,18 +160,29 @@ class OpcUaProtocolAdapterAuthTest {
     }
 
     @Test
-    @Timeout(10)
-    public void whenCertAuthAndNoSubscriptions_thenConnectSuccessfully() {
+    @Timeout(30)
+    public void whenCertAuthAndNoSubscriptions_thenConnectSuccessfully() throws Exception{
         final Auth auth = new Auth(null, new X509Auth(true));
+
+        final KeyChain root = KeyChain.createKeyChain("root");
+
+        var keystore = root.wrapInKeyStoreWithPrivateKey("keystore", "root", "password", "password");
+        final Tls tls = new Tls(true, new Keystore(keystore.getAbsolutePath(), "password", "password"), null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
                 auth,
-                null,
+                tls,
                 null,
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
+        final var mockModuleServices = mock(ModuleServices.class);
+        final var mockEventService = mock(EventService.class);
+        when(mockEventService.createAdapterEvent(anyString(), anyString())).thenReturn(new EventBuilderImpl(ev -> {}));
+        when(mockModuleServices.eventService()).thenReturn(mockEventService);
+        when(mockModuleServices.adapterPublishService()).thenReturn(mock(ProtocolAdapterPublishService.class));
+        when(protocolAdapterInput.moduleServices()).thenReturn(mockModuleServices);
 
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);

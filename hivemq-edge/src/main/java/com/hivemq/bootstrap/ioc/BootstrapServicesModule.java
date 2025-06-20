@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import dagger.Binds;
 import dagger.Module;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Module
 public abstract class BootstrapServicesModule {

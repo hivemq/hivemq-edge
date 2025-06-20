@@ -21,7 +21,6 @@ buildscript {
 
 plugins {
     java
-    idea
     `java-library`
     `maven-publish`
     signing
@@ -150,7 +149,7 @@ dependencies {
     implementation(libs.dagger)
     annotationProcessor(libs.dagger.compiler)
 
-    implementation(libs.javax.annotation.api)
+    implementation(libs.jakarta.annotation.api)
 
     // common
     implementation(libs.apache.commonsIO)
@@ -249,6 +248,8 @@ tasks.test {
         "--add-opens",
         "java.base/java.util=ALL-UNNAMED",
         "--add-opens",
+        "java.xml/javax.xml.namespace=ALL-UNNAMED",
+        "--add-opens",
         "jdk.management/com.sun.management.internal=ALL-UNNAMED",
         "--add-exports",
         "java.base/jdk.internal.misc=ALL-UNNAMED"
@@ -280,6 +281,7 @@ tasks.register<GenerateTask>("genJaxRs") {
     generateApiTests.set(false)
     configOptions.set(
         hashMapOf(
+            "useJakartaEe" to "true",
             "dateLibrary" to "java8",
             "generateBuilders" to "true",
             "generatePom" to "false",

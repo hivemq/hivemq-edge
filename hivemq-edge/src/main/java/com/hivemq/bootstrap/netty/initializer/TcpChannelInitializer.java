@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.security.ssl.NonSslHandler;
 import io.netty.channel.Channel;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NON_SSL_HANDLER;
 

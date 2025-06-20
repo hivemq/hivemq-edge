@@ -22,13 +22,8 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class OpcUaProtocolAdapterFactory
-        implements ProtocolAdapterFactory<OpcUaSpecificAdapterConfig> {
-
-    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapterFactory.class);
+public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUaSpecificAdapterConfig> {
 
     final boolean writingEnabled;
 

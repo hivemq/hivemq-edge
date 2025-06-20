@@ -17,24 +17,22 @@ package com.hivemq.edge.adapters.opcua.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.edge.adapters.opcua.Constants;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public class Security {
-
-    @JsonProperty("policy")
-    @ModuleConfigField(title = "OPC UA security policy",
-                       description = "Security policy to use for communication with the server.",
-                       defaultValue = "NONE")
-    private final @NotNull SecPolicy policy;
+public record Security(@JsonProperty("policy") @ModuleConfigField(title = "OPC UA security policy",
+                                                                  description = "Security policy to use for communication with the server.",
+                                                                  defaultValue = "NONE") @NotNull SecPolicy policy) {
 
     public Security(@JsonProperty("policy") final @Nullable SecPolicy policy) {
-        this.policy = Objects.requireNonNullElse(policy, SecPolicy.DEFAULT);
+        this.policy = Objects.requireNonNullElse(policy, Constants.DEFAULT_SECURITY_POLICY);
     }
 
-    public @NotNull SecPolicy getPolicy() {
+    @Override
+    public @NotNull SecPolicy policy() {
         return policy;
     }
 }

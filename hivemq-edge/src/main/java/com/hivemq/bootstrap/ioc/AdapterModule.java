@@ -23,7 +23,7 @@ import dagger.Module;
 import dagger.Provides;
 import org.jetbrains.annotations.NotNull;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Module
 public abstract class AdapterModule {

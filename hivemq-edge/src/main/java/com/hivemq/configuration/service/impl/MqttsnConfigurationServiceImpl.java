@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqttsn.MqttsnTopicAlias;
 import org.slj.mqtt.sn.MqttsnConstants;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

@@ -13,12 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua;
+package com.hivemq.edge.adapters.opcua.client;
 
-import org.jetbrains.annotations.NotNull;
+public sealed interface Result<S, F> permits Success, Failure {
 
-public class OpcUaException extends RuntimeException {
-    public OpcUaException(final @NotNull String message) {
-        super(message);
-    }
 }

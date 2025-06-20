@@ -26,8 +26,8 @@ import com.hivemq.extensions.executor.task.AsyncOutputImpl;
 import com.hivemq.extensions.executor.task.PluginTaskOutput;
 import com.hivemq.util.ThreadFactoryUtil;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;

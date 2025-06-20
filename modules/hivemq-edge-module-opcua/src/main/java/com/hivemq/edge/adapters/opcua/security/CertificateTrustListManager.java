@@ -15,9 +15,9 @@
  */
 package com.hivemq.edge.adapters.opcua.security;
 
-import com.google.common.collect.ImmutableList;
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.jetbrains.annotations.NotNull;
 
 import java.security.cert.X509CRL;
@@ -26,86 +26,78 @@ import java.util.List;
 
 public class CertificateTrustListManager implements TrustListManager {
 
-    private final @NotNull ImmutableList<X509Certificate> trustedCerts;
+    private final @NotNull List<X509Certificate> trustedCerts;
+    private final @NotNull DateTime dateTime;
 
     public CertificateTrustListManager(final @NotNull List<X509Certificate> trustedCerts) {
-        this.trustedCerts = ImmutableList.copyOf(trustedCerts);
+        this.trustedCerts = List.copyOf(trustedCerts);
+        this.dateTime = DateTime.now();
     }
 
     @Override
-    public ImmutableList<X509CRL> getIssuerCrls() {
-        return ImmutableList.of();
+    public @NotNull List<X509CRL> getIssuerCrls() {
+        return List.of();
     }
 
     @Override
-    public ImmutableList<X509CRL> getTrustedCrls() {
-        return ImmutableList.of();
+    public void setIssuerCrls(final @NotNull List<X509CRL> issuerCrls) {
+        //no-op
     }
 
     @Override
-    public ImmutableList<X509Certificate> getIssuerCertificates() {
+    public @NotNull List<X509CRL> getTrustedCrls() {
+        return List.of();
+    }
+
+    @Override
+    public void setTrustedCrls(final @NotNull List<X509CRL> trustedCrls) {
+        //no-op
+    }
+
+    @Override
+    public @NotNull List<X509Certificate> getIssuerCertificates() {
         //allowed for chain building, but not "trusted"
-        return ImmutableList.of();
+        return List.of();
     }
 
     @Override
-    public ImmutableList<X509Certificate> getTrustedCertificates() {
+    public void setIssuerCertificates(final @NotNull List<X509Certificate> issuerCertificates) {
+        //no-op
+    }
+
+    @Override
+    public @NotNull List<X509Certificate> getTrustedCertificates() {
         //"trusted" certs
-        return ImmutableList.copyOf(trustedCerts);
+        return List.copyOf(trustedCerts);
     }
 
     @Override
-    public ImmutableList<X509Certificate> getRejectedCertificates() {
-        return ImmutableList.of();
-    }
-
-    @Override
-    public void setIssuerCrls(final List<X509CRL> issuerCrls) {
+    public void setTrustedCertificates(final @NotNull List<X509Certificate> trustedCertificates) {
         //no-op
     }
 
     @Override
-    public void setTrustedCrls(final List<X509CRL> trustedCrls) {
+    public void addIssuerCertificate(final @NotNull X509Certificate certificate) {
         //no-op
     }
 
     @Override
-    public void setIssuerCertificates(final List<X509Certificate> issuerCertificates) {
+    public void addTrustedCertificate(final @NotNull X509Certificate certificate) {
         //no-op
     }
 
     @Override
-    public void setTrustedCertificates(final List<X509Certificate> trustedCertificates) {
-        //no-op
-    }
-
-    @Override
-    public void addIssuerCertificate(final X509Certificate certificate) {
-        //no-op
-    }
-
-    @Override
-    public void addTrustedCertificate(final X509Certificate certificate) {
-        //no-op
-    }
-
-    @Override
-    public void addRejectedCertificate(final X509Certificate certificate) {
-        //no-op
-    }
-
-    @Override
-    public boolean removeIssuerCertificate(final ByteString thumbprint) {
+    public boolean removeIssuerCertificate(final @NotNull ByteString thumbprint) {
         return false;
     }
 
     @Override
-    public boolean removeTrustedCertificate(final ByteString thumbprint) {
+    public boolean removeTrustedCertificate(final @NotNull ByteString thumbprint) {
         return false;
     }
 
     @Override
-    public boolean removeRejectedCertificate(final ByteString thumbprint) {
-        return false;
+    public @NotNull DateTime getLastUpdateTime() {
+        return dateTime;
     }
 }

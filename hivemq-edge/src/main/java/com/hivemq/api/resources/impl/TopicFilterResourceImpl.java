@@ -26,23 +26,20 @@ import com.hivemq.api.format.DataUrl;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.api.TopicFiltersApi;
 import com.hivemq.edge.api.model.TopicFilterList;
-import com.hivemq.persistence.topicfilter.TopicFilterAddResult;
 import com.hivemq.persistence.topicfilter.TopicFilterDeleteResult;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import com.hivemq.persistence.topicfilter.TopicFilterUpdateResult;
 import com.hivemq.util.ErrorResponseUtil;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.core.Response;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.ws.rs.core.Response;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Singleton
 public class TopicFilterResourceImpl extends AbstractApi implements TopicFiltersApi {
@@ -63,88 +60,74 @@ public class TopicFilterResourceImpl extends AbstractApi implements TopicFilters
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
-        final @NotNull TopicFilterAddResult addResult =
-                topicFilterPersistence.addTopicFilter(TopicFilterPojo.fromModel(topicFilterModel));
-        final @NotNull String name = topicFilterModel.getDescription();
-        switch (addResult.getTopicFilterPutStatus()) {
-            case SUCCESS:
-                return Response.ok().build();
-            case TOPIC_NAME_ALREADY_USED:
-                return ErrorResponseUtil.errorResponse(new AlreadyExistsError("The topic filter '" +
-                        name +
-                        "' cannot be created since another item already exists with the same name."));
-            case TOPIC_FILTER_ALREADY_PRESENT:
-                return ErrorResponseUtil.errorResponse(new AlreadyExistsError("The topic filter '" +
-                        name +
-                        "' cannot be created since another item already exists with the same filter."));
-            default:
-                return ErrorResponseUtil.errorResponse(new InternalServerError("Internal error"));
-        }
+
+        final var result = topicFilterPersistence.addTopicFilter(TopicFilterPojo.fromModel(topicFilterModel));
+        return switch (result.getTopicFilterPutStatus()) {
+            case SUCCESS -> Response.ok().build();
+            case TOPIC_NAME_ALREADY_USED ->
+                    ErrorResponseUtil.errorResponse(new AlreadyExistsError("The topic filter '" +
+                            topicFilterModel.getDescription() +
+                            "' cannot be created since another item already exists with the same name."));
+            case TOPIC_FILTER_ALREADY_PRESENT ->
+                    ErrorResponseUtil.errorResponse(new AlreadyExistsError("The topic filter '" +
+                            topicFilterModel.getDescription() +
+                            "' cannot be created since another item already exists with the same filter."));
+        };
     }
 
     @Override
     public @NotNull Response getTopicFilters() {
         final List<com.hivemq.edge.api.model.TopicFilter> topicFilterModelList =
-                topicFilterPersistence.getTopicFilters()
-                        .stream()
-                        .map(TopicFilterPojo::toModel)
-                        .collect(Collectors.toList());
+                topicFilterPersistence.getTopicFilters().stream().map(TopicFilterPojo::toModel).toList();
         return Response.ok(new TopicFilterList().items(topicFilterModelList)).build();
     }
 
     @Override
-    public Response getTopicFilter(final String filter) {
+    public @NotNull Response getTopicFilter(final @NotNull String filter) {
         final TopicFilterPojo topicFilter = topicFilterPersistence.getTopicFilter(filter);
-        if (topicFilter == null) {
-            return ErrorResponseUtil.errorResponse(new NotFoundError());
-        } else {
-            return Response.ok(topicFilter.toModel()).build();
-        }
+        return topicFilter != null ?
+                Response.ok(topicFilter.toModel()).build() :
+                ErrorResponseUtil.errorResponse(new NotFoundError());
     }
 
     @Override
-    public Response getTopicFilterSchema(final String filter) {
+    public @NotNull Response getTopicFilterSchema(final @NotNull String filter) {
         final TopicFilterPojo topicFilter = topicFilterPersistence.getTopicFilter(filter);
         if (topicFilter == null) {
             return ErrorResponseUtil.errorResponse(new NotFoundError());
-        } else {
-            final @Nullable DataUrl schemaAsDataUrl = topicFilter.getSchema();
-            if (schemaAsDataUrl == null) {
-                return ErrorResponseUtil.errorResponse(new NotFoundError());
-            }
-            final String schema = new String(Base64.getDecoder().decode(schemaAsDataUrl.getData()));
-            return Response.ok(schema).build();
         }
-    }
 
+        final DataUrl schemaAsDataUrl = topicFilter.getSchema();
+        if (schemaAsDataUrl == null) {
+            return ErrorResponseUtil.errorResponse(new NotFoundError());
+        }
+
+        final String schema = new String(Base64.getDecoder().decode(schemaAsDataUrl.getData()), StandardCharsets.UTF_8);
+        return Response.ok(schema).header("Content-Type", "text/plain; charset=UTF-8").build();
+    }
 
     @Override
     public @NotNull Response deleteTopicFilter(final @NotNull String filterUriEncoded) {
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
+
         final String filter = URLDecoder.decode(filterUriEncoded, StandardCharsets.UTF_8);
-
-        final @NotNull TopicFilterDeleteResult deleteResult = topicFilterPersistence.deleteTopicFilter(filter);
-        switch (deleteResult.getTopicFilterDeleteStatus()) {
-            case SUCCESS:
-                return Response.ok().build();
-            case NOT_FOUND:
-                return ErrorResponseUtil.errorResponse(new TopicFilterNotFoundError(filter));
-            default:
-                return ErrorResponseUtil.errorResponse(new InternalServerError("Internal Error"));
-        }
+        final TopicFilterDeleteResult result = topicFilterPersistence.deleteTopicFilter(filter);
+        return switch (result.getTopicFilterDeleteStatus()) {
+            case SUCCESS -> Response.ok().build();
+            case NOT_FOUND -> ErrorResponseUtil.errorResponse(new TopicFilterNotFoundError(filter));
+        };
     }
-
 
     @Override
     public @NotNull Response updateTopicFilter(
             final @NotNull String filterUriEncoded,
             final @NotNull com.hivemq.edge.api.model.TopicFilter topicFilterModel) {
-
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
+
         final String filter = URLDecoder.decode(filterUriEncoded, StandardCharsets.UTF_8);
         if (!filter.equals(topicFilterModel.getTopicFilter())) {
             return ErrorResponseUtil.errorResponse(new BadRequestError("the filter in the path '" +
@@ -156,32 +139,29 @@ public class TopicFilterResourceImpl extends AbstractApi implements TopicFilters
                     "'"));
         }
 
-        final @NotNull TopicFilterUpdateResult updateResult =
+        final TopicFilterUpdateResult result =
                 topicFilterPersistence.updateTopicFilter(TopicFilterPojo.fromModel(topicFilterModel));
-        switch (updateResult.getTopicFilterUpdateStatus()) {
-            case SUCCESS:
-                return Response.ok().build();
-            case INTERNAL_ERROR:
-            default:
-                return ErrorResponseUtil.errorResponse(new InternalServerError("Internal Error"));
-        }
+        return switch (result.getTopicFilterUpdateStatus()) {
+            case SUCCESS -> Response.ok().build();
+            case NOT_FOUND -> ErrorResponseUtil.errorResponse(new TopicFilterNotFoundError(filter));
+            case INTERNAL_ERROR -> ErrorResponseUtil.errorResponse(new InternalServerError(result.getErrorMessage()));
+        };
     }
 
     @Override
-    public @NotNull Response updateTopicFilters(final @NotNull TopicFilterList topicFilterModelList) {
+    public @NotNull Response updateTopicFilters(final @NotNull TopicFilterList model) {
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
-        final List<TopicFilterPojo> topicFilters =
-                topicFilterModelList.getItems().stream().map(TopicFilterPojo::fromModel).collect(Collectors.toList());
-        final @NotNull TopicFilterUpdateResult updateResult =
-                topicFilterPersistence.updateAllTopicFilters(topicFilters);
-        switch (updateResult.getTopicFilterUpdateStatus()) {
-            case SUCCESS:
-                return Response.ok().build();
-            case INTERNAL_ERROR:
-            default:
-                return ErrorResponseUtil.errorResponse(new InternalServerError("Internal Error"));
-        }
+
+        final TopicFilterUpdateResult result = topicFilterPersistence.updateAllTopicFilters(model.getItems()
+                .stream()
+                .map(TopicFilterPojo::fromModel)
+                .toList());
+        return switch (result.getTopicFilterUpdateStatus()) {
+            case SUCCESS -> Response.ok().build();
+            case NOT_FOUND -> ErrorResponseUtil.errorResponse(new NotFoundError());
+            case INTERNAL_ERROR -> ErrorResponseUtil.errorResponse(new InternalServerError(result.getErrorMessage()));
+        };
     }
 }

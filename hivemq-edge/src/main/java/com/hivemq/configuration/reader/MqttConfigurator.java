@@ -24,7 +24,7 @@ import com.hivemq.mqtt.message.QoS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.KEEP_ALIVE_MAX_DEFAULT;
 import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.MAXIMUM_QOS_DEFAULT;
