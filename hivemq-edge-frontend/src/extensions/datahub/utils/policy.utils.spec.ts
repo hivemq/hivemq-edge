@@ -1,8 +1,11 @@
+import { MOCK_SCRIPT_ID, mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers__'
+import { getSchemaFamilies, getScriptFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
+import { ResourceStatus, ResourceWorkingVersion } from '@datahub/types.ts'
 import { describe, expect } from 'vitest'
 
-import type { PolicySchema, SchemaList } from '@/api/__generated__'
-import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
-import { type ExpandableGroupedResource, groupResourceItems } from './policy.utils'
+import type { PolicySchema, SchemaList, Script } from '@/api/__generated__'
+import { MOCK_SCHEMA_ID, mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
+import { type ExpandableGroupedResource, getResourceInternalStatus, groupResourceItems } from './policy.utils'
 
 interface GroupSchemaTest {
   data: SchemaList | undefined
@@ -87,4 +90,35 @@ describe('groupResourceItems', () => {
       expect(groupResourceItems<SchemaList, PolicySchema>(data)).toStrictEqual(result)
     }
   )
+})
+
+describe('getResourceInternalStatus', () => {
+  it('should work for Schemas', () => {
+    expect(getResourceInternalStatus<PolicySchema>('my-schema', {}, getSchemaFamilies)).toStrictEqual({
+      internalStatus: ResourceStatus.DRAFT,
+      version: ResourceWorkingVersion.DRAFT,
+    })
+
+    expect(
+      getResourceInternalStatus<PolicySchema>(MOCK_SCHEMA_ID, { items: [mockSchemaTempHumidity] }, getSchemaFamilies)
+    ).toStrictEqual({
+      internalStatus: ResourceStatus.LOADED,
+      internalVersions: [1],
+      version: 1,
+    })
+  })
+  it('should work for Scripts', () => {
+    expect(getResourceInternalStatus<Script>('my-script', {}, getScriptFamilies)).toStrictEqual({
+      internalStatus: ResourceStatus.DRAFT,
+      version: ResourceWorkingVersion.DRAFT,
+    })
+
+    expect(getResourceInternalStatus<Script>(MOCK_SCRIPT_ID, { items: [mockScript] }, getScriptFamilies)).toStrictEqual(
+      {
+        internalStatus: ResourceStatus.LOADED,
+        internalVersions: [1],
+        version: 1,
+      }
+    )
+  })
 })

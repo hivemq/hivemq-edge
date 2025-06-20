@@ -1,8 +1,12 @@
-// TODO[OpenAPI] This MUST be the common properties of DataHub resources, i.e. Script and Schema
-export interface ResourceBase {
-  id: string
-  readonly version?: number
-}
+import type { PolicySchema, Script } from '@/api/__generated__'
+import { type ResourceFamily, ResourceStatus } from '@datahub/types.ts'
+import type { ResourceState } from '@datahub/types.ts'
+import { ResourceWorkingVersion } from '@datahub/types.ts'
+
+// TODO[OpenAPI]
+//  - This MUST be the common properties of DataHub resources, i.e. Script and Schema
+//  - Assuming that Script and Schema both have the same properties
+export type ResourceBase = Pick<PolicySchema, 'id' | 'version'> | Pick<Script, 'id' | 'version'>
 
 export type ExpandableGroupedResource<T extends ResourceBase> = T & {
   children?: T[]
@@ -38,4 +42,23 @@ export const groupResourceItems = <T extends { items?: Array<U> }, U extends Res
       children: schemas,
     } as ExpandableGroupedResource<U>
   })
+}
+
+export const getResourceInternalStatus = <U extends ResourceBase>(
+  id: string,
+  allResources: { items?: U[] },
+  formatter: (items: U[]) => Record<string, ResourceFamily>
+): ResourceState | undefined => {
+  const schema = allResources.items?.findLast((resource) => resource.id === id)
+  if (schema) {
+    return {
+      version: schema.version || ResourceWorkingVersion.MODIFIED,
+      internalVersions: formatter(allResources?.items || [])[schema.id].versions,
+      internalStatus: ResourceStatus.LOADED,
+    }
+  }
+  return {
+    internalStatus: ResourceStatus.DRAFT,
+    version: ResourceWorkingVersion.DRAFT,
+  }
 }
