@@ -1,6 +1,7 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import type { Node } from '@xyflow/react'
 import type { UseMutateAsyncFunction } from '@tanstack/react-query'
 import { Button, Icon, useToast } from '@chakra-ui/react'
 import { MdPublishedWithChanges } from 'react-icons/md'
@@ -19,7 +20,7 @@ import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 
 import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
-import type { DryRunResults, ResourceState } from '@datahub/types.ts'
+import type { DryRunResults, ResourceState, SchemaData } from '@datahub/types.ts'
 import { DataHubNodeType, ResourceWorkingVersion, DesignerStatus } from '@datahub/types.ts'
 
 // Should be PolicySchema | Script | DataPolicy | BehaviorPolicy
@@ -50,7 +51,7 @@ const resourceReducer =
 
 export const ToolbarPublish: FC = () => {
   const { t } = useTranslation('datahub')
-  const { status } = useDataHubDraftStore()
+  const { status, nodes, onUpdateNodes } = useDataHubDraftStore()
   const { report, node: selectedNode, setNode, reset } = usePolicyChecksStore()
   const createSchema = useCreateSchema()
   const createScript = useCreateScript()
@@ -89,6 +90,32 @@ export const ToolbarPublish: FC = () => {
     return promise
   }
 
+  /**
+   * This routine is called on successful publish of a resource node (script or schema), in order to update a draft node to its published version.
+   * In case the main policy fails, the graph will be holding the newly published resource nodes, but the main policy will not be updated.
+   * TODO[NVL] This is so much a hack, but we need to update the draft resource nodes and we lost the link between nodes and mutation requests
+   *  The whole publish process needs to be refactored
+   */
+  const updateDraftResourceNodes = (request: Mutate<PolicySchema> | Mutate<Script>) => (value: unknown) => {
+    if (request.type === DataHubNodeType.SCHEMA) {
+      const draftSchemaNodes = nodes.filter(
+        (node): node is Node<SchemaData> =>
+          node.type === DataHubNodeType.SCHEMA &&
+          node.data.name === request.payload.id &&
+          // if this is a draft, versions MUST be 1 AND ResourceWorkingVersion.DRAFT
+          node.data.version === ResourceWorkingVersion.DRAFT &&
+          (value as PolicySchema).version === 1
+      )
+
+      draftSchemaNodes.forEach((node) => {
+        onUpdateNodes<SchemaData>(node.id, {
+          ...node.data,
+          version: 1,
+        })
+      })
+    }
+  }
+
   const publishResources = (resources?: DryRunResults<never>[]) => {
     const allSchemas =
       resources
@@ -107,7 +134,7 @@ export const ToolbarPublish: FC = () => {
       })) || []
 
     return [...allSchemas, ...allScripts].map((request) =>
-      reportMutation(request.mutation(request.payload), request.type)
+      reportMutation(request.mutation(request.payload), request.type).then(updateDraftResourceNodes(request))
     )
   }
 
@@ -181,6 +208,7 @@ export const ToolbarPublish: FC = () => {
         navigate(`/datahub/${selectedNode?.type}/${selectedNode?.data.id}`, { replace: true })
       })
       .catch((error) => {
+        console.log('XXXXXXXXXXXX, error', { ...error })
         let message
         if (error instanceof Error) message = error.message
         else message = String(error)
