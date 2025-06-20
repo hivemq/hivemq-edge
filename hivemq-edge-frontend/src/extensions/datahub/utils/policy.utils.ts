@@ -56,10 +56,9 @@ export const getResourceInternalStatus = <U extends ResourceBase>(
       internalVersions: formatter(allResources?.items || [])[schema.id].versions,
       internalStatus: ResourceStatus.LOADED,
     }
-  } else {
-    return {
-      internalStatus: ResourceStatus.DRAFT,
-      version: ResourceWorkingVersion.DRAFT,
-    }
+  }
+  return {
+    internalStatus: ResourceStatus.DRAFT,
+    version: ResourceWorkingVersion.DRAFT,
   }
 }

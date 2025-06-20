@@ -30,10 +30,6 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =>
     const sourceNode = nodes.find((node) => node.id === selectedNode) as Node<FunctionData> | undefined
     if (!sourceNode) return null
 
-    // const internalStatus =
-    //   typeof sourceNode?.data.version === 'number' ? ResourceStatus.LOADED : sourceNode?.data.version
-    //
-    // return sourceNode ? { ...sourceNode.data, internalStatus } : null
     const internalState = getResourceInternalStatus<Script>(sourceNode.data.name, allScripts, getScriptFamilies)
     const intData: FunctionData = { ...sourceNode.data, ...internalState }
 
@@ -46,10 +42,6 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =>
       type: {
         'ui:widget': 'hidden',
       },
-      // 'ui:order':
-      //   internalStatus === ResourceStatus.DRAFT || !internalStatus
-      //     ? ['name', 'type', 'schemaSource', 'messageType', 'version']
-      //     : ['name', 'version', 'schemaSource', 'messageType', 'type'],
       name: {
         'ui:widget': 'datahub:function-name',
         'ui:options': {
