@@ -13,6 +13,7 @@
       "description": "Create handles on the workflow for specific topics or topic filters you want to add a policy to.",
       "items": {
         "type": "string",
+        "format": "mqtt-topic-filter",
         "description": "The full topic to use as a starting point"
       }
     }

@@ -69,6 +69,7 @@ export interface WorkspaceAction {
 }
 
 export interface PolicyCheckState {
+  // TODO[30991] The bug is fixed but replace with a reference to the id, NOT the node itself!
   node?: Node
   status?: PolicyDryRunStatus
   report?: DryRunResults<unknown, never>[]
