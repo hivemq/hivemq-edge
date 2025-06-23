@@ -14,7 +14,7 @@ info:
     ## OpenAPI
     HiveMQ's REST API provides an OpenAPI 3.0 schema definition that can imported into popular API tooling (e.g. Postman) or can be used to generate client-code for multiple programming languages.
   title: HiveMQ Edge REST API
-  version: 2025.9-SNAPSHOT
+  version: 2025.10-SNAPSHOT
   x-logo:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
@@ -42,6 +42,8 @@ tags:
     name: Data Hub - FSM
   - description: This resource bundles endpoints for the available Functions for the HiveMQ Data Hub. Currently this is limited to getting the available Functions.
     name: Data Hub - Functions
+  - description: This resource bundles endpoints for the interpolation features.
+    name: Data Hub - Interpolation
   - description: |-
       Policies describe how you want the HiveMQ broker to validate the behavior of MQTT clients.
       Each policy has four sections:
@@ -1701,6 +1703,26 @@ paths:
       summary: Get all functions as a JSON Schema
       tags:
         - Data Hub - Functions
+  /api/v1/data-hub/interpolation-variables:
+    get:
+      description: This endpoint provides the means to get information on the interpolation variables available for the HiveMQ Data Hub.
+      operationId: getVariables
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterpolationVariableList'
+          description: Success
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal server error
+      summary: Get all interpolation variables
+      tags:
+        - Data Hub - Interpolation
   /api/v1/data-hub/function-specs:
     get:
       description: This endpoints provides the means to get information on the available Functions for the HiveMQ Data Hub.
@@ -4769,6 +4791,99 @@ components:
             $ref: '#/components/schemas/DataPolicy'
     Errors:
       type: object
+    PolicyType:
+      description: The type of policy in Data Hub
+      type: string
+      enum:
+        - DATA_POLICY
+        - BEHAVIOR_POLICY
+    InterpolationVariable:
+      type: object
+      required:
+        - variable
+        - type
+        - description
+        - policyType
+      properties:
+        variable:
+          type: string
+          description: The unique variable name
+        type:
+          type: string
+          enum:
+            - string
+            - long
+        description:
+          type: string
+          description: The description of the variable name
+        policyType:
+          type: array
+          description: The list of policy types this variable can be used with
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/PolicyType'
+      example:
+        variable: clientId
+        type: string
+        description: The MQTT client ID
+        policyType:
+          - DATA_POLICY
+          - BEHAVIOR_POLICY
+    InterpolationVariableList:
+      type: object
+      description: The list of interpolation variables that can be used in this Datahub instance
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InterpolationVariable'
+      required:
+        - items
+      example:
+        items:
+          - variable: clientId
+            type: string
+            description: The MQTT client ID.
+            policyType:
+              - BEHAVIOR_POLICY
+              - DATA_POLICY
+          - variable: topic
+            type: string
+            description: The MQTT topic to which the MQTT message was published.
+            policyType:
+              - DATA_POLICY
+          - variable: policyId
+            type: string
+            description: The id of the policy that is currently executed.
+            policyType:
+              - BEHAVIOR_POLICY
+              - DATA_POLICY
+          - variable: validationResult
+            type: string
+            description: A textual description of the validation result. This text can contain schema validation errors for further debugging.
+            policyType:
+              - BEHAVIOR_POLICY
+          - variable: fromState
+            type: string
+            description: Textual representation of the state of the state machine before the transition.
+            policyType:
+              - BEHAVIOR_POLICY
+          - variable: toState
+            type: string
+            description: Textual representation of the state to which the state machine transitions.
+            policyType:
+              - BEHAVIOR_POLICY
+          - variable: triggerEvent
+            type: string
+            description: Textual representation of the event that triggered the state machine transition.
+            policyType:
+              - BEHAVIOR_POLICY
+          - variable: timestamp
+            type: string
+            description: Current time in milliseconds since the UNIX epoch (Jan 1, 1970).
+            policyType:
+              - BEHAVIOR_POLICY
+              - DATA_POLICY
     BehaviorPolicyTransitionEvent:
       type: string
       description: Accepted event in transition
