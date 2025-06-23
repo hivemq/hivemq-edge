@@ -42,6 +42,18 @@ describe('TransitionPanel', () => {
     cy.viewport(800, 800)
   })
 
+  it('should render loading and error states', () => {
+    const onFormError = cy.stub().as('onFormError')
+    cy.mountWithProviders(<TransitionPanel selectedNode="fakenosde" onFormError={onFormError} />, { wrapper })
+
+    cy.get('[role="alert"]')
+      .should('be.visible')
+      .should('have.attr', 'data-status', 'error')
+      .should('contain.text', 'The Transition is not a valid element')
+
+    cy.get('@onFormError').should('have.been.calledWithErrorMessage', 'The Transition is not a valid element')
+  })
+
   it('should render the fields for a Validator', () => {
     cy.mountWithProviders(<TransitionPanel selectedNode="3" />, { wrapper })
 
