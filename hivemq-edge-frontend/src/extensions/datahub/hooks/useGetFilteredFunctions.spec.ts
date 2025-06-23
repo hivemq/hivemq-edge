@@ -24,7 +24,7 @@ describe('useGetFilteredFunctions', () => {
 
   it.each<TestEachSuite>([
     {
-      expected: ['Delivery.redirectTo', 'Serdes.serialize', 'Serdes.deserialize', 'DataHub.transform'],
+      expected: ['Delivery.redirectTo', 'DataHub.transform'],
       target: 'no policy type',
     },
     {
@@ -34,8 +34,6 @@ describe('useGetFilteredFunctions', () => {
         'Mqtt.UserProperties.add',
         'Delivery.redirectTo',
         'System.log',
-        'Serdes.serialize',
-        'Serdes.deserialize',
         'Metrics.Counter.increment',
         'Mqtt.disconnect',
         'Mqtt.drop',
@@ -62,8 +60,6 @@ describe('useGetFilteredFunctions', () => {
         'Mqtt.UserProperties.add',
         'Delivery.redirectTo',
         'System.log',
-        'Serdes.serialize',
-        'Serdes.deserialize',
         'Metrics.Counter.increment',
         'Mqtt.disconnect',
         'Mqtt.drop',
