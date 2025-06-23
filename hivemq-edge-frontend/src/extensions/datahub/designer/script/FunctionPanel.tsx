@@ -4,6 +4,7 @@ import type { Node } from '@xyflow/react'
 import { Card, CardBody } from '@chakra-ui/react'
 import type { UiSchema } from '@rjsf/utils'
 import type { IChangeEvent } from '@rjsf/core'
+import debug from 'debug'
 
 import type { Script } from '@/api/__generated__'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
@@ -21,6 +22,8 @@ import type { FunctionData, PanelProps } from '@datahub/types.ts'
 import { ResourceStatus, ResourceWorkingVersion } from '@datahub/types.ts'
 import { getResourceInternalStatus } from '@datahub/utils/policy.utils.ts'
 
+const datahubLog = debug('DataHub:FunctionPanel')
+
 export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFormError }) => {
   const { data: allScripts, isLoading, isSuccess, error } = useGetAllScripts({})
   const { nodes } = useDataHubDraftStore()
@@ -30,7 +33,10 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFo
   useEffect(() => {
     if (!allScripts) return
     const sourceNode = nodes.find((node) => node.id === selectedNode) as Node<FunctionData> | undefined
-    if (!sourceNode) return
+    if (!sourceNode) {
+      datahubLog(`Node with ID ${selectedNode} not found in the current nodes list`)
+      return
+    }
 
     const internalState = getResourceInternalStatus<Script>(sourceNode.data.name, allScripts, getScriptFamilies)
     const intData: FunctionData = { ...sourceNode.data, ...internalState }
