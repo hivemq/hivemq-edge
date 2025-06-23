@@ -1,13 +1,14 @@
 import type { FC } from 'react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Node } from '@xyflow/react'
-import { parse } from 'protobufjs'
 import type { CustomValidator, UiSchema } from '@rjsf/utils'
 import type { IChangeEvent } from '@rjsf/core'
 import { Card, CardBody } from '@chakra-ui/react'
+import { parse } from 'protobufjs'
 
 import type { PolicySchema } from '@/api/__generated__'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 
 import { MOCK_JSONSCHEMA_SCHEMA, MOCK_PROTOBUF_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
@@ -22,20 +23,25 @@ import { ResourceStatus, ResourceWorkingVersion, SchemaType } from '@datahub/typ
 import type { PanelProps, SchemaData } from '@datahub/types.ts'
 import { getResourceInternalStatus } from '@datahub/utils/policy.utils.ts'
 
-export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
-  const { data: allSchemas } = useGetAllSchemas()
+export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFormError }) => {
+  const { data: allSchemas, isLoading, isSuccess, error } = useGetAllSchemas()
   const { nodes } = useDataHubDraftStore()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
-  const [formData, setFormData] = useState<SchemaData | null>(() => {
-    if (!allSchemas) return null
+  const [formData, setFormData] = useState<SchemaData | null>(null)
+
+  useEffect(() => {
+    if (!allSchemas) return
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<SchemaData> | undefined
-    if (!adapterNode) return null
+    if (!adapterNode) return
 
     const internalState = getResourceInternalStatus<PolicySchema>(adapterNode.data.name, allSchemas, getSchemaFamilies)
     const intData: SchemaData = { ...adapterNode.data, ...internalState }
+    setFormData(intData)
+  }, [allSchemas, nodes, selectedNode])
 
-    return intData
-  })
+  useEffect(() => {
+    if (error) onFormError?.(error)
+  }, [error, onFormError])
 
   const onReactFlowSchemaFormChange = useCallback(
     (changeEvent: IChangeEvent, id?: string | undefined) => {
@@ -165,19 +171,23 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
 
   return (
     <Card>
+      {isLoading && <LoaderSpinner />}
       {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
-      <CardBody>
-        <ReactFlowSchemaForm
-          isNodeEditable={isNodeEditable}
-          schema={MOCK_SCHEMA_SCHEMA.schema}
-          uiSchema={getUISchema(formData)}
-          formData={formData}
-          widgets={datahubRJSFWidgets}
-          customValidate={customValidate}
-          onSubmit={onFormSubmit}
-          onChange={onReactFlowSchemaFormChange}
-        />
-      </CardBody>
+      {error && <ErrorMessage status="error" message={error.message} />}
+      {isSuccess && (
+        <CardBody>
+          <ReactFlowSchemaForm
+            isNodeEditable={isNodeEditable}
+            schema={MOCK_SCHEMA_SCHEMA.schema}
+            uiSchema={getUISchema(formData)}
+            formData={formData}
+            widgets={datahubRJSFWidgets}
+            customValidate={customValidate}
+            onSubmit={onFormSubmit}
+            onChange={onReactFlowSchemaFormChange}
+          />
+        </CardBody>
+      )}
     </Card>
   )
 }
