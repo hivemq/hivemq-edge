@@ -6,7 +6,7 @@ import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.t
 import type { BehaviorPolicyTransitionEvent } from '@/api/__generated__'
 
 import { handlers, handlersWithoutLicense } from '@datahub/api/hooks/DataHubFunctionsService/__handlers__'
-import { useGetFilteredFunction } from '@datahub/hooks/useGetFilteredFunctions.tsx'
+import { useGetFilteredFunction } from '@datahub/hooks/useGetFilteredFunctions.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
 
 describe('useGetFilteredFunctions', () => {
