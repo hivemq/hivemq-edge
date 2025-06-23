@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 import type { BehaviorPolicyTransitionEvent, FunctionSpecs } from '@/api/__generated__'
 import { useGetAllFunctionSpecs } from '@datahub/api/hooks/DataHubFunctionsService/useGetAllFunctionSpecs.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
-import { OPERATION_FUNCTION_BLACKLIST } from '@datahub/utils/datahub.utils.ts'
+import { OPERATION_FUNCTION_BLOCKLIST } from '@datahub/utils/datahub.utils.ts'
 
 /**
  * This is a composite function that implements a combined serialiser, deserialiser and user-defined scripts
@@ -39,7 +39,7 @@ export const MqttTransformFunction: FunctionSpecs = {
 export const filterFunctionSpecsByContext =
   (type?: DataHubNodeType, transition?: BehaviorPolicyTransitionEvent) => (functionSpec: FunctionSpecs) => {
     // Remove blocklisted functions
-    if (OPERATION_FUNCTION_BLACKLIST.includes(functionSpec.functionId)) return false
+    if (OPERATION_FUNCTION_BLOCKLIST.includes(functionSpec.functionId)) return false
     // Check licence allowance
     if (!functionSpec.metadata.inLicenseAllowed) return false
 

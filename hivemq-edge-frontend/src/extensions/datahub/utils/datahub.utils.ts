@@ -36,7 +36,7 @@ export const DATAHUB_HOTKEY_CONTEXT: HotKeyItem[] = [
 /**
  * List of operation functions that are not allowed to be used in the DataHub Designer.
  */
-export const OPERATION_FUNCTION_BLACKLIST: string[] = [
+export const OPERATION_FUNCTION_BLOCKLIST: string[] = [
   OperationData.Function.SERDES_DESERIALIZE,
   OperationData.Function.SERDES_SERIALIZE,
 ]
