@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatHost } from './formatters.tsx'
+import { formatHost } from './formatters.ts'
 
 describe('formatHost', () => {
   it('should return null when the host is empty', () => {
