@@ -38,6 +38,24 @@ describe('DataPolicyPanel', () => {
     })
   })
 
+  it('should render loading and error states', () => {
+    const onFormError = cy.stub().as('onFormError')
+    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 404 }).as('getPolicies')
+
+    cy.mountWithProviders(<DataPolicyPanel selectedNode="3" onFormError={onFormError} />, {
+      wrapper,
+    })
+    cy.getByTestId('loading-spinner').should('be.visible')
+
+    cy.wait('@getPolicies')
+    cy.get('[role="alert"]')
+      .should('be.visible')
+      .should('have.attr', 'data-status', 'error')
+      .should('have.text', 'DataPolicy not found')
+
+    cy.get('@onFormError').should('have.been.calledWithErrorMessage', 'DataPolicy not found')
+  })
+
   it('should render the fields for the panel', () => {
     const onSubmit = cy.stub().as('onSubmit')
 
