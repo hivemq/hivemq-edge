@@ -22,7 +22,7 @@ import com.hivemq.security.ssl.NonSslHandler;
 import com.hivemq.websocket.WebSocketInitializer;
 import io.netty.channel.Channel;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NON_SSL_HANDLER;
 

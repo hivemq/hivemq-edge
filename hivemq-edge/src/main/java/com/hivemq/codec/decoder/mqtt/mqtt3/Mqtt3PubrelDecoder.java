@@ -26,8 +26,8 @@ import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.pubrel.PUBREL;
 import io.netty.buffer.ByteBuf;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * @author Dominik Obermaier

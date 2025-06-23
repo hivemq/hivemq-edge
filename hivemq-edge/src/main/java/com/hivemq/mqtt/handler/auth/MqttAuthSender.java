@@ -26,8 +26,8 @@ import com.hivemq.util.Bytes;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.nio.ByteBuffer;
 
 /**

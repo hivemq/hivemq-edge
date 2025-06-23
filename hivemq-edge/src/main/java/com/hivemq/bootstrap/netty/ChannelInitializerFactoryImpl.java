@@ -23,8 +23,8 @@ import com.hivemq.security.ssl.NonSslHandler;
 import com.hivemq.security.ssl.SslFactory;
 
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

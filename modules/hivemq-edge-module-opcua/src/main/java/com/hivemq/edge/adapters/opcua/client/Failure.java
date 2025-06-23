@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.config;
+package com.hivemq.edge.adapters.opcua.client;
 
-public enum PayloadMode {
-    STRING,
-    JSON
+public record Failure<S,F>(F failure) implements Result<S,F>{
+    public static <S,F> Failure<S,F> of(final F result) {
+        return new Failure<>(result);
+    }
 }

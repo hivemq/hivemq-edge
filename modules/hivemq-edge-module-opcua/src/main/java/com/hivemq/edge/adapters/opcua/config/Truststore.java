@@ -20,29 +20,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 
-public class Truststore {
-
-    @JsonProperty(value = "path")
-    @ModuleConfigField(title = "Truststore path", description = "Path on the local file system to the truststore.")
-    private final @NotNull String path;
-
-    @JsonProperty(value = "password")
-    @ModuleConfigField(title = "Truststore password", description = "Password to open the truststore.")
-    private final @NotNull String password;
+public record Truststore(@JsonProperty(value = "path") @ModuleConfigField(title = "Truststore path",
+                                                                          description = "Path on the local file system to the truststore.") @NotNull String path,
+                         @JsonProperty(value = "password") @ModuleConfigField(title = "Truststore password",
+                                                                              description = "Password to open the truststore.") @NotNull String password) {
 
     @JsonCreator
-    public Truststore(
-            @JsonProperty(value = "path") final @NotNull String path,
-            @JsonProperty(value = "password") final @NotNull String password) {
-        this.path = path;
-        this.password = password;
+    public Truststore {
     }
 
-    public @NotNull String getPath() {
+    @Override
+    public @NotNull String path() {
         return path;
     }
 
-    public @NotNull String getPassword() {
+    @Override
+    public @NotNull String password() {
         return password;
     }
 }

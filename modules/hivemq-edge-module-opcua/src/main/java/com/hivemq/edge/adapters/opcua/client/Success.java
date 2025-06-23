@@ -13,22 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.util;
+package com.hivemq.edge.adapters.opcua.client;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.nio.ByteBuffer;
-
-/**
- * @author Dominik Obermaier
- */
-public class Bytes {
-
-    public static byte @NotNull [] fromReadOnlyBuffer(final @NotNull ByteBuffer byteBuffer) {
-        final ByteBuffer rewind = byteBuffer.asReadOnlyBuffer().rewind();
-        final byte[] array = new byte[rewind.remaining()];
-        rewind.get(array);
-        return array;
+public record Success<S,F>(S result) implements Result<S,F>{
+    public static <S,F> Success<S,F> of(final S result) {
+        return new Success<>(result);
     }
 }

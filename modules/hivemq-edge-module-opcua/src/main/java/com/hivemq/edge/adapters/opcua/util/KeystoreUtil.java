@@ -15,10 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua.util;
 
-import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
 
-import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import java.io.FileInputStream;
@@ -32,12 +30,15 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 
 public class KeystoreUtil {
-
 
     public static @NotNull List<X509Certificate> getCertificatesFromTruststore(
             final @NotNull String keyStoreType,
@@ -47,13 +48,13 @@ public class KeystoreUtil {
             //load keystore from TLS config
             final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
             keyStore.load(fileInputStream, keyStorePassword.toCharArray());
-            final ImmutableList.Builder<X509Certificate> certificates = ImmutableList.<X509Certificate>builder();
+            final List<X509Certificate> certificates = new ArrayList<>();
             final Iterator<String> aliasIter = keyStore.aliases().asIterator();
             while (aliasIter.hasNext()) {
                 final String alias = aliasIter.next();
                 certificates.add((X509Certificate) keyStore.getCertificate(alias));
             }
-            return certificates.build();
+            return Collections.unmodifiableList(certificates);
         } catch (final FileNotFoundException e) {
             throw new SslException("Cannot find KeyStore at path '" + keyStorePath + "'");
         } catch (final KeyStoreException | IOException e) {
@@ -62,29 +63,25 @@ public class KeystoreUtil {
                     keyStoreType), e);
         } catch (final NoSuchAlgorithmException | CertificateException e) {
             throw new SslException("Not able to read the certificate from KeyStore '" + keyStorePath + "'", e);
-        } catch (NoSuchElementException e) {
+        } catch (final NoSuchElementException e) {
             throw new SslException("Not able to find key in KeyStore '" + keyStorePath + "'", e);
         }
     }
 
-
     public static @NotNull List<X509Certificate> getCertificatesFromDefaultTruststore() {
         //if no truststore is set use java default
         try {
-            final ImmutableList.Builder<X509Certificate> certificates = ImmutableList.<X509Certificate>builder();
             // Loads default Root CA certificates (generally, from JAVA_HOME/lib/cacerts)
             final TrustManagerFactory trustManagerFactory =
                     TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             trustManagerFactory.init((KeyStore) null);
-            for (TrustManager trustManager : trustManagerFactory.getTrustManagers()) {
+            return Arrays.stream(trustManagerFactory.getTrustManagers()).flatMap(trustManager -> {
                 if (trustManager instanceof X509TrustManager) {
-                    for (X509Certificate acceptedIssuer : ((X509TrustManager) trustManager).getAcceptedIssuers()) {
-                        certificates.add(acceptedIssuer);
-                    }
+                    return Arrays.stream(((X509TrustManager) trustManager).getAcceptedIssuers());
                 }
-            }
-            return certificates.build();
-        } catch (NoSuchAlgorithmException | KeyStoreException e) {
+                return Stream.empty();
+            }).toList();
+        } catch (final NoSuchAlgorithmException | KeyStoreException e) {
             throw new SslException("Not able to load system default truststore", e);
         }
     }
@@ -122,36 +119,12 @@ public class KeystoreUtil {
                     keyStoreType), e);
         } catch (final NoSuchAlgorithmException | CertificateException e) {
             throw new SslException("Not able to read the certificate from KeyStore '" + keyStorePath + "'", e);
-        } catch (NoSuchElementException e) {
+        } catch (final NoSuchElementException e) {
             throw new SslException("Not able to find key in KeyStore '" + keyStorePath + "'", e);
         }
     }
 
-    public static class KeyPairWithChain {
-
-        private final @NotNull PrivateKey privateKey;
-        private final @NotNull X509Certificate publicKey;
-        private final @NotNull X509Certificate[] certificateChain;
-
-        public KeyPairWithChain(
-                final @NotNull PrivateKey privateKey,
-                final @NotNull X509Certificate publicKey,
-                final @NotNull X509Certificate[] certificateChain) {
-            this.privateKey = privateKey;
-            this.publicKey = publicKey;
-            this.certificateChain = certificateChain;
-        }
-
-        public @NotNull PrivateKey getPrivateKey() {
-            return privateKey;
-        }
-
-        public @NotNull X509Certificate getPublicKey() {
-            return publicKey;
-        }
-
-        public @NotNull X509Certificate[] getCertificateChain() {
-            return certificateChain;
-        }
+    public record KeyPairWithChain(@NotNull PrivateKey privateKey, @NotNull X509Certificate publicKey,
+                                   @NotNull X509Certificate[] certificateChain) {
     }
 }

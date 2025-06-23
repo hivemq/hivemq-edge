@@ -23,7 +23,7 @@ import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.dropping.IncomingPublishDropper;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class HandlerProvider {
 

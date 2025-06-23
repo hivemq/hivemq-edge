@@ -1,7 +1,6 @@
 group = "com.hivemq"
 
 plugins {
-    idea
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.repository-convention")
     id("io.github.sgtsilvio.gradle.oci") version "0.22.0"
