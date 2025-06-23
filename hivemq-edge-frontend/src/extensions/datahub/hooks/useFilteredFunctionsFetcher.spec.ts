@@ -102,42 +102,66 @@ describe('useGetFilteredFunctionsFetcher', () => {
     transition?: BehaviorPolicyTransitionEvent
     omitLicense?: boolean
     isTransformIncluded?: boolean
-    expectedMinLength: number
+    expected: string[]
     target: string
   }
 
   it.each<TestEachSuite>([
     {
       target: 'default parameters',
-      expectedMinLength: 4,
+      expected: [
+        'Mqtt.UserProperties.add',
+        'Delivery.redirectTo',
+        'System.log',
+        'Metrics.Counter.increment',
+        'Mqtt.disconnect',
+        'Mqtt.drop',
+        'DataHub.transform',
+      ],
       isTransformIncluded: true,
     },
     {
       target: 'behavior policy type',
       type: DataHubNodeType.BEHAVIOR_POLICY,
-      expectedMinLength: 3,
+      expected: ['Mqtt.UserProperties.add', 'System.log', 'Metrics.Counter.increment', 'Mqtt.disconnect', 'Mqtt.drop'],
     },
     {
       target: 'data policy type',
       type: DataHubNodeType.DATA_POLICY,
-      expectedMinLength: 4,
       isTransformIncluded: true,
+      expected: [
+        'Mqtt.UserProperties.add',
+        'Delivery.redirectTo',
+        'System.log',
+        'Metrics.Counter.increment',
+        'Mqtt.disconnect',
+        'Mqtt.drop',
+        'DataHub.transform',
+      ],
     },
     {
       target: 'with specific transition event',
       type: DataHubNodeType.BEHAVIOR_POLICY,
       transition: BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_CONNECT,
-      expectedMinLength: 2,
+      expected: ['Mqtt.UserProperties.add', 'System.log', 'Metrics.Counter.increment', 'Mqtt.disconnect'],
     },
     {
       target: 'without license restrictions',
       omitLicense: true,
-      expectedMinLength: 8,
       isTransformIncluded: true,
+      expected: [
+        'Mqtt.UserProperties.add',
+        'Delivery.redirectTo',
+        'System.log',
+        'Metrics.Counter.increment',
+        'Mqtt.disconnect',
+        'Mqtt.drop',
+        'DataHub.transform',
+      ],
     },
   ])(
     'should return expected functions with $target',
-    async ({ type, transition, omitLicense, expectedMinLength, isTransformIncluded }) => {
+    async ({ type, transition, omitLicense, expected, isTransformIncluded }) => {
       server.use(...(omitLicense ? handlersWithoutLicense : handlers))
 
       const { result } = renderHook(() => useFilteredFunctionsFetcher(), { wrapper })
@@ -148,7 +172,9 @@ describe('useGetFilteredFunctionsFetcher', () => {
       })
 
       const filteredFunctions = result.current.getFilteredFunctions(type, transition)
-      expect(filteredFunctions.length).toBeGreaterThanOrEqual(expectedMinLength)
+      const functionIDs = filteredFunctions.map((specs) => specs.functionId)
+
+      expect(functionIDs).toStrictEqual(expected)
 
       // Verify DataHub.transform is included
       const transformFunction = filteredFunctions.find((f) => f.functionId === 'DataHub.transform')
