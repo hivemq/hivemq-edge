@@ -97,7 +97,12 @@ const PropertyPanelController = () => {
         <DrawerFooter borderTopWidth="1px">
           {isEditorValid && (
             <Flex flexGrow={1} justifyContent="flex-end">
-              <Button variant="primary" type="submit" form="datahub-node-form" isDisabled={!isNodeEditable}>
+              <Button
+                variant="primary"
+                type="submit"
+                form="datahub-node-form"
+                isDisabled={!isNodeEditable || !!formError}
+              >
                 {t('workspace.panel.submit')}
               </Button>
             </Flex>
