@@ -26,7 +26,7 @@ import {
 } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
 import { checkValidityTransitions } from '@datahub/designer/transition/TransitionNode.utils.ts'
 import { checkValidityPipeline } from '@datahub/designer/operation/OperationNode.utils.ts'
-import { useFilteredFunctionsFetcher } from '@datahub/hooks/useFilteredFunctionsFetcher.tsx'
+import { useFilteredFunctionsFetcher } from '@datahub/hooks/useFilteredFunctionsFetcher.ts'
 
 const datahubLog = debug('DataHub:usePolicyDryRun')
 
