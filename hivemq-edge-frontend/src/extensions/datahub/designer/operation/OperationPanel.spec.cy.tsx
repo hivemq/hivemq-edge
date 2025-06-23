@@ -58,9 +58,10 @@ describe('OperationPanel', () => {
     cy.get('label#root_functionId-label + div').click()
     cy.get('label#root_functionId-label + div').find("[role='listbox']").find("[role='option']").as('functionSelect')
 
+    cy.get('@functionSelect').should('have.length', 7)
     cy.get('@functionSelect').eq(0).should('contain.text', 'Mqtt.UserProperties.add')
-    cy.get('@functionSelect').eq(7).should('contain.text', 'Mqtt.drop')
-    cy.get('@functionSelect').eq(7).click()
+    cy.get('@functionSelect').eq(5).should('contain.text', 'Mqtt.drop')
+    cy.get('@functionSelect').eq(5).click()
 
     cy.get('@submit').should('not.have.been.calledWith')
     cy.get("button[type='submit']").click()
@@ -229,7 +230,8 @@ describe('OperationPanel', () => {
     })
   })
 
-  describe(OperationData.Function.SERDES_DESERIALIZE, () => {
+  describe.skip(OperationData.Function.SERDES_DESERIALIZE, () => {
+    // The Serdes.Deserialize function is not included in the frontend any more,
     const node: Node<OperationData> = {
       id: 'my-node',
       type: DataHubNodeType.OPERATION,
@@ -265,7 +267,8 @@ describe('OperationPanel', () => {
     })
   })
 
-  describe(OperationData.Function.SERDES_SERIALIZE, () => {
+  describe.skip(OperationData.Function.SERDES_SERIALIZE, () => {
+    // The Serdes.Serialize function is not included in the frontend any more,
     const node: Node<OperationData> = {
       id: 'my-node',
       type: DataHubNodeType.OPERATION,
