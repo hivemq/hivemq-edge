@@ -77,6 +77,7 @@
     "@types/d3-scale-chromatic": "3.1.0",
     "@types/d3-shape": "3.1.7",
     "@types/json-schema": "7.0.15",
+    "@types/sinon": "^17.0.4",
     "@uidotdev/usehooks": "2.4.1",
     "@vitest/coverage-v8": "3.1.1",
     "@xyflow/react": "12.5.4",
