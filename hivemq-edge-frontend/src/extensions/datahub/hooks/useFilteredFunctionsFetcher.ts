@@ -40,7 +40,7 @@ export const filterFunctionSpecsByContext =
   (type?: DataHubNodeType, transition?: BehaviorPolicyTransitionEvent) => (functionSpec: FunctionSpecs) => {
     // Remove blocklisted functions
     if (OPERATION_FUNCTION_BLOCKLIST.includes(functionSpec.functionId)) return false
-    // Check licence allowance
+    // Check license allowance
     if (!functionSpec.metadata.inLicenseAllowed) return false
 
     // Check supported events if transition is provided
