@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import type { CustomValidator } from '@rjsf/utils'
 import type { Node } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
@@ -15,16 +15,20 @@ import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 import type { DataPolicyData, PanelProps } from '@datahub/types.ts'
 
-export const DataPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
+export const DataPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFormError }) => {
   const { t } = useTranslation('datahub')
   const { nodes } = useDataHubDraftStore()
-  const { data: allPolicies, isLoading, isError } = useGetAllDataPolicies()
+  const { data: allPolicies, isLoading, isError, error, isSuccess } = useGetAllDataPolicies()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
   const data = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<DataPolicyData> | undefined
     return adapterNode ? adapterNode.data : null
   }, [selectedNode, nodes])
+
+  useEffect(() => {
+    if (error) onFormError?.(error)
+  }, [error, onFormError])
 
   const customValidate: CustomValidator<DataPolicyData> = (formData, errors) => {
     if (isError) errors['id']?.addError(t('error.validation.dataPolicy.notLoading'))
@@ -39,7 +43,8 @@ export const DataPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
     <Card>
       {isLoading && <LoaderSpinner />}
       {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
-      {!isLoading && (
+      {error && <ErrorMessage status="error" message={error.message} />}
+      {isSuccess && (
         <CardBody>
           <ReactFlowSchemaForm
             isNodeEditable={isNodeEditable}
