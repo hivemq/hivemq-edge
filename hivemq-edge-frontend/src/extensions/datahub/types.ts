@@ -29,6 +29,7 @@ export interface PanelSpecs {
 export interface PanelProps {
   selectedNode: string
   onFormSubmit?: (data: IChangeEvent) => void
+  onFormError?: (error: Error) => void
 }
 
 export enum DesignerStatus {
