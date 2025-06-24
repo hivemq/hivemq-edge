@@ -44,6 +44,30 @@ describe('OperationPanel', () => {
     }).as('getFunctionSpecs')
   })
 
+  it('should render loading and error states', () => {
+    const onFormError = cy.stub().as('onFormError')
+    cy.intercept('/api/v1/data-hub/function-specs', { statusCode: 404 }).as('getFunctionSpecs')
+
+    cy.mountWithProviders(<OperationPanel selectedNode="3" onFormError={onFormError} />, {
+      wrapper: getWrapperWith([]),
+    })
+    cy.getByTestId('loading-spinner').should('be.visible')
+
+    cy.wait('@getFunctionSpecs')
+    cy.get('[role="alert"]')
+      .should('be.visible')
+      .should('have.attr', 'data-status', 'error')
+      .should('have.text', 'Not Found')
+
+    cy.get('@onFormError').should((stub) => {
+      expect(stub).to.have.been.called
+      // @ts-ignore stub is not properly typed
+      const errorArg = stub.getCall(0).args[0]
+      expect(errorArg).to.be.instanceOf(Error)
+      expect(errorArg.message).to.equal('Not Found')
+    })
+  })
+
   it('should render a validating form', () => {
     cy.mountWithProviders(<OperationPanel selectedNode="0" onFormSubmit={cy.stub().as('submit')} />, {
       wrapper: getWrapperWith([]),
