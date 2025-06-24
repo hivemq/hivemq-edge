@@ -6,7 +6,7 @@ import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.t
 import type { BehaviorPolicyTransitionEvent } from '@/api/__generated__'
 
 import { handlers, handlersWithoutLicense } from '@datahub/api/hooks/DataHubFunctionsService/__handlers__'
-import { useGetFilteredFunction } from '@datahub/hooks/useGetFilteredFunctions.tsx'
+import { useGetFilteredFunction } from '@datahub/hooks/useGetFilteredFunctions.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
 
 describe('useGetFilteredFunctions', () => {
@@ -24,7 +24,7 @@ describe('useGetFilteredFunctions', () => {
 
   it.each<TestEachSuite>([
     {
-      expected: ['Delivery.redirectTo', 'Serdes.serialize', 'Serdes.deserialize', 'DataHub.transform'],
+      expected: ['Delivery.redirectTo', 'DataHub.transform'],
       target: 'no policy type',
     },
     {
@@ -34,8 +34,6 @@ describe('useGetFilteredFunctions', () => {
         'Mqtt.UserProperties.add',
         'Delivery.redirectTo',
         'System.log',
-        'Serdes.serialize',
-        'Serdes.deserialize',
         'Metrics.Counter.increment',
         'Mqtt.disconnect',
         'Mqtt.drop',
@@ -62,8 +60,6 @@ describe('useGetFilteredFunctions', () => {
         'Mqtt.UserProperties.add',
         'Delivery.redirectTo',
         'System.log',
-        'Serdes.serialize',
-        'Serdes.deserialize',
         'Metrics.Counter.increment',
         'Mqtt.disconnect',
         'Mqtt.drop',
