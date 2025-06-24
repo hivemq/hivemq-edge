@@ -66,6 +66,7 @@ export const MOCK_DATAHUB_FUNCTIONS_DELIVERY_REDIRECT: FunctionSpecs = {
         title: 'Apply Policies',
         description: 'Defines whether policies are executed after publishing to a different topic.',
         format: 'interpolation',
+        default: false,
       },
     },
   },

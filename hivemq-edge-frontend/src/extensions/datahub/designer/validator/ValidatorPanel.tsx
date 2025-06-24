@@ -45,7 +45,6 @@ export const ValidatorPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onF
           <ReactFlowSchemaForm
             isNodeEditable={isNodeEditable}
             schema={MOCK_VALIDATOR_SCHEMA.schema}
-            // uiSchema={MOCK_TOPIC_FILTER_SCHEMA.uiSchema}
             formData={data}
             onSubmit={onFormSubmit}
           />
