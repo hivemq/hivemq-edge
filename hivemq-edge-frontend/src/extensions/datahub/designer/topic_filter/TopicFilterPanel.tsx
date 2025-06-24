@@ -1,4 +1,6 @@
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import type { FC } from 'react'
+import { useEffect } from 'react'
 import { useMemo } from 'react'
 import type { Node } from '@xyflow/react'
 import type { CustomValidator } from '@rjsf/utils'
@@ -15,9 +17,9 @@ import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesSer
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
-export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
+export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFormError }) => {
   const { t } = useTranslation('datahub')
-  const { isLoading, data } = useGetAllDataPolicies()
+  const { isLoading, data, isSuccess, error } = useGetAllDataPolicies()
   const { nodes } = useDataHubDraftStore()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
@@ -30,6 +32,11 @@ export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit })
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<TopicFilterData> | undefined
     return adapterNode ? adapterNode.data : null
   }, [selectedNode, nodes])
+
+  useEffect(() => {
+    if (error) onFormError?.(error)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error])
 
   const customValidate: CustomValidator<TopicFilterData> = (formData, errors) => {
     const duplicates = validateDuplicates(formData?.['topics'] || [])
@@ -53,18 +60,22 @@ export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit })
 
   return (
     <Card>
+      {isLoading && <LoaderSpinner />}
       {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
-      <CardBody>
-        <ReactFlowSchemaForm
-          isNodeEditable={isNodeEditable}
-          schema={MOCK_TOPIC_FILTER_SCHEMA.schema}
-          uiSchema={MOCK_TOPIC_FILTER_SCHEMA.uiSchema}
-          formData={formData}
-          customValidate={customValidate}
-          widgets={datahubRJSFWidgets}
-          onSubmit={onFormSubmit}
-        />
-      </CardBody>
+      {error && <ErrorMessage status="error" message={error.message} />}
+      {isSuccess && formData && (
+        <CardBody>
+          <ReactFlowSchemaForm
+            isNodeEditable={isNodeEditable}
+            schema={MOCK_TOPIC_FILTER_SCHEMA.schema}
+            uiSchema={MOCK_TOPIC_FILTER_SCHEMA.uiSchema}
+            formData={formData}
+            customValidate={customValidate}
+            widgets={datahubRJSFWidgets}
+            onSubmit={onFormSubmit}
+          />
+        </CardBody>
+      )}
     </Card>
   )
 }

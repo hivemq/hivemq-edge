@@ -1,4 +1,4 @@
-import { type FC, useCallback, useMemo } from 'react'
+import { type FC, useCallback, useEffect, useMemo } from 'react'
 import { type Node, getIncomers } from '@xyflow/react'
 import type { IChangeEvent } from '@rjsf/core'
 import type { CustomValidator } from '@rjsf/utils'
@@ -7,6 +7,7 @@ import { Card, CardBody } from '@chakra-ui/react'
 
 import type { BehaviorPolicyTransitionEvent } from '@/api/__generated__'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
@@ -23,7 +24,7 @@ interface OperationPanelContext {
   transition: BehaviorPolicyTransitionEvent | undefined
 }
 
-export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
+export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFormError }) => {
   const { t } = useTranslation('datahub')
   const { nodes, edges } = useDataHubDraftStore()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
@@ -44,7 +45,7 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
     return { type, transition }
   }, [edges, nodes, selectedNode])
 
-  const { getFilteredFunctions } = useFilteredFunctionsFetcher()
+  const { getFilteredFunctions, isLoading, isSuccess, error } = useFilteredFunctionsFetcher()
   const functions = getFilteredFunctions(context.type, context.transition)
 
   const formData = useMemo(() => {
@@ -93,6 +94,11 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
     return getOperationSchema(functions)
   }, [functions])
 
+  useEffect(() => {
+    if (error) onFormError?.(error)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error])
+
   const customValidate: CustomValidator<DataPolicyData> = (formData, errors) => {
     const isIdNotUnique = Boolean(pipelineIds?.find((id) => id === formData?.id))
     if (isIdNotUnique) errors['id']?.addError(t('error.validation.operation.notUnique'))
@@ -101,20 +107,24 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
 
   return (
     <Card>
+      {isLoading && <LoaderSpinner />}
       {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
-      <CardBody>
-        <ReactFlowSchemaForm
-          isNodeEditable={isNodeEditable}
-          schema={schema}
-          uiSchema={uiSchema}
-          formData={formData}
-          formContext={{ functions }}
-          widgets={datahubRJSFWidgets}
-          noHtml5Validate={true}
-          onSubmit={onFixFormSubmit}
-          customValidate={customValidate}
-        />
-      </CardBody>
+      {error && <ErrorMessage status="error" message={error.message} />}
+      {isSuccess && (
+        <CardBody>
+          <ReactFlowSchemaForm
+            isNodeEditable={isNodeEditable}
+            schema={schema}
+            uiSchema={uiSchema}
+            formData={formData}
+            formContext={{ functions }}
+            widgets={datahubRJSFWidgets}
+            noHtml5Validate={true}
+            onSubmit={onFixFormSubmit}
+            customValidate={customValidate}
+          />
+        </CardBody>
+      )}
     </Card>
   )
 }

@@ -33,10 +33,25 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
 describe('SchemaPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept('/api/v1/data-hub/schemas', { items: [{ ...mockSchemaTempHumidity, type: SchemaType.PROTOBUF }] })
+  })
+
+  it('should render loading and error states', () => {
+    const onFormError = cy.stub().as('onFormError')
+    cy.intercept('/api/v1/data-hub/schemas', { statusCode: 404 }).as('getSchemas')
+    cy.mountWithProviders(<SchemaPanel selectedNode="3" onFormError={onFormError} />, { wrapper })
+    cy.getByTestId('loading-spinner').should('be.visible')
+
+    cy.wait('@getSchemas')
+    cy.get('[role="alert"]')
+      .should('be.visible')
+      .should('have.attr', 'data-status', 'error')
+      .should('have.text', 'Not Found')
+
+    cy.get('@onFormError').should('have.been.calledWithErrorMessage', 'Not Found')
   })
 
   it('should render the fields for a Validator', () => {
+    cy.intercept('/api/v1/data-hub/schemas', { items: [{ ...mockSchemaTempHumidity, type: SchemaType.PROTOBUF }] })
     cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
 
     cy.get('label#root_name-label').should('contain.text', 'Name')
@@ -53,6 +68,7 @@ describe('SchemaPanel', () => {
   })
 
   it('should control the editing flow', () => {
+    cy.intercept('/api/v1/data-hub/schemas', { items: [{ ...mockSchemaTempHumidity, type: SchemaType.PROTOBUF }] })
     cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
 
     cy.get('#root_name-label + div').should('contain.text', 'Select...')
@@ -94,17 +110,11 @@ describe('SchemaPanel', () => {
     // cy.get('#root_version-label + div input').should('be.disabled')
   })
 
-  // TODO[NVL] Weird import worker error
-  it.skip('should be accessible', () => {
+  it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
 
-    cy.checkAccessibility(undefined, {
-      rules: {
-        // TODO[a11y] False positive with the react-select [?]
-        'color-contrast': { enabled: false },
-      },
-    })
+    cy.checkAccessibility()
     cy.percySnapshot('Component: SchemaPanel')
   })
 })

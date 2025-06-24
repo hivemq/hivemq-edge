@@ -1,11 +1,12 @@
 import type { FC } from 'react'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import type { Node } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardBody } from '@chakra-ui/react'
 import type { CustomValidator } from '@rjsf/utils'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
 import { useGetAllBehaviorPolicies } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetAllBehaviorPolicies.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
@@ -17,16 +18,21 @@ import { BehaviorPolicyType } from '@datahub/types.ts'
 
 const UNLIMITED_PUBLISH = -1
 
-export const BehaviorPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
+export const BehaviorPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFormError }) => {
   const { t } = useTranslation('datahub')
   const { nodes } = useDataHubDraftStore()
-  const { data: allPolicies } = useGetAllBehaviorPolicies({})
+  const { data: allPolicies, isSuccess, isLoading, error } = useGetAllBehaviorPolicies({})
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
   const data = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<BehaviorPolicyData> | undefined
     return adapterNode ? adapterNode.data : null
   }, [selectedNode, nodes])
+
+  useEffect(() => {
+    if (error) onFormError?.(error)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error])
 
   const customValidate: CustomValidator<BehaviorPolicyData> = (formData, errors) => {
     if (!allPolicies) errors['id']?.addError(t('error.validation.behaviourPolicy.notLoading'))
@@ -50,17 +56,21 @@ export const BehaviorPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit
 
   return (
     <Card>
+      {isLoading && <LoaderSpinner />}
       {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
-      <CardBody>
-        <ReactFlowSchemaForm
-          isNodeEditable={isNodeEditable}
-          schema={MOCK_BEHAVIOR_POLICY_SCHEMA.schema}
-          uiSchema={MOCK_BEHAVIOR_POLICY_SCHEMA.uiSchema}
-          customValidate={customValidate}
-          formData={data}
-          onSubmit={onFormSubmit}
-        />
-      </CardBody>
+      {error && <ErrorMessage status="error" message={error.message} />}
+      {isSuccess && (
+        <CardBody>
+          <ReactFlowSchemaForm
+            isNodeEditable={isNodeEditable}
+            schema={MOCK_BEHAVIOR_POLICY_SCHEMA.schema}
+            uiSchema={MOCK_BEHAVIOR_POLICY_SCHEMA.uiSchema}
+            customValidate={customValidate}
+            formData={data}
+            onSubmit={onFormSubmit}
+          />
+        </CardBody>
+      )}
     </Card>
   )
 }

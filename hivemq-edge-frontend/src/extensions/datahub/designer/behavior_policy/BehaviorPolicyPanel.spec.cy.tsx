@@ -44,6 +44,24 @@ describe('BehaviorPolicyPanel', () => {
     }).as('getNodePayload')
   })
 
+  it('should render loading and error states', () => {
+    const onFormError = cy.stub().as('onFormError')
+    cy.intercept('/api/v1/data-hub/behavior-validation/policies', { statusCode: 404 }).as('getPolicies')
+
+    cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormError={onFormError} />, {
+      wrapper,
+    })
+    cy.getByTestId('loading-spinner').should('be.visible')
+
+    cy.wait('@getPolicies')
+    cy.get('[role="alert"]')
+      .should('be.visible')
+      .should('have.attr', 'data-status', 'error')
+      .should('have.text', 'Not Found')
+
+    cy.get('@onFormError').should('have.been.calledWithErrorMessage', 'Not Found')
+  })
+
   it('should render the fields for the panel', () => {
     const onSubmit = cy.stub().as('onSubmit')
 
@@ -114,13 +132,10 @@ describe('BehaviorPolicyPanel', () => {
       cy.get("button[type='submit']").click()
 
       cy.get('[role="group"]:has(> label#root_id-label) + ul > li').as('idErrors')
-      cy.get('@idErrors').should('have.length', 2)
+      cy.get('@idErrors').should('have.length', 1)
       cy.get('@idErrors').eq(0).should('contain.text', "must have required property 'id'")
-      cy.get('@idErrors').eq(1).should('contain.text', 'Cannot load the existing policies for checking ids')
 
-      cy.get('[role="alert"]')
-        .should('contain.text', "must have required property 'id'")
-        .should('contain.text', 'Cannot load the existing policies for checking ids')
+      cy.get('[role="alert"]').should('contain.text', "must have required property 'id'")
     })
 
     it('should render arguments errors', () => {

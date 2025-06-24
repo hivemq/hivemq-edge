@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { IChangeEvent } from '@rjsf/core'
@@ -35,6 +35,7 @@ const PropertyPanelController = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { onUpdateNodes } = useDataHubDraftStore()
   const { isNodeEditable } = usePolicyGuards(nodeId)
+  const [formError, setFormError] = useState<Error | null>(null)
 
   useEffect(() => {
     if (type && nodeId) {
@@ -86,7 +87,7 @@ const PropertyPanelController = () => {
 
         <DrawerBody>
           {isEditorValid ? (
-            <Editor selectedNode={nodeId} onFormSubmit={onFormSubmit} />
+            <Editor selectedNode={nodeId} onFormSubmit={onFormSubmit} onFormError={setFormError} />
           ) : (
             <AbsoluteCenter axis="both" data-testid="node-editor-under-construction">
               <Icon as={LuConstruction} boxSize={100} />
@@ -96,7 +97,12 @@ const PropertyPanelController = () => {
         <DrawerFooter borderTopWidth="1px">
           {isEditorValid && (
             <Flex flexGrow={1} justifyContent="flex-end">
-              <Button variant="primary" type="submit" form="datahub-node-form" isDisabled={!isNodeEditable}>
+              <Button
+                variant="primary"
+                type="submit"
+                form="datahub-node-form"
+                isDisabled={!isNodeEditable || !!formError}
+              >
                 {t('workspace.panel.submit')}
               </Button>
             </Flex>
