@@ -27,7 +27,8 @@ export const ClientFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, 
     if (!clients) {
       onFormError?.(new Error(t('error.elementNotDefined.description', { nodeType: DataHubNodeType.CLIENT_FILTER })))
     }
-  }, [clients, onFormError, t])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients])
 
   return (
     <Card>

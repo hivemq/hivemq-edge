@@ -31,7 +31,8 @@ export const BehaviorPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit
 
   useEffect(() => {
     if (error) onFormError?.(error)
-  }, [error, onFormError])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error])
 
   const customValidate: CustomValidator<BehaviorPolicyData> = (formData, errors) => {
     if (!allPolicies) errors['id']?.addError(t('error.validation.behaviourPolicy.notLoading'))

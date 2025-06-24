@@ -41,7 +41,8 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onForm
 
   useEffect(() => {
     if (error) onFormError?.(error)
-  }, [error, onFormError])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error])
 
   const onReactFlowSchemaFormChange = useCallback(
     (changeEvent: IChangeEvent, id?: string | undefined) => {

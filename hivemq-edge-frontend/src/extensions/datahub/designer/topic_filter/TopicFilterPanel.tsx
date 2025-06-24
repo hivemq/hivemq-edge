@@ -35,7 +35,8 @@ export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, o
 
   useEffect(() => {
     if (error) onFormError?.(error)
-  }, [error, onFormError])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error])
 
   const customValidate: CustomValidator<TopicFilterData> = (formData, errors) => {
     const duplicates = validateDuplicates(formData?.['topics'] || [])

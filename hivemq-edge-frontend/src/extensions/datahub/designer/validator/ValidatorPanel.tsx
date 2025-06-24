@@ -28,7 +28,8 @@ export const ValidatorPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onF
     if (!data) {
       onFormError?.(new Error(t('error.elementNotDefined.description', { nodeType: DataHubNodeType.VALIDATOR })))
     }
-  }, [data, onFormError, t])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data])
 
   return (
     <Card>

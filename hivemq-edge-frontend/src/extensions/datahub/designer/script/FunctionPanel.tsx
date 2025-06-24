@@ -46,7 +46,8 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFo
 
   useEffect(() => {
     if (error) onFormError?.(error)
-  }, [error, onFormError])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error])
 
   const getUISchema = (script: FunctionData | null): UiSchema => {
     const { internalStatus, internalVersions } = script || {}

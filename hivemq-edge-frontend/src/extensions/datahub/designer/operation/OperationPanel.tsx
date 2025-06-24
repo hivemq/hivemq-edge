@@ -96,7 +96,8 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onF
 
   useEffect(() => {
     if (error) onFormError?.(error)
-  }, [error, onFormError])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error])
 
   const customValidate: CustomValidator<DataPolicyData> = (formData, errors) => {
     const isIdNotUnique = Boolean(pipelineIds?.find((id) => id === formData?.id))

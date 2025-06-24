@@ -122,7 +122,8 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, on
     if (!data) {
       onFormError?.(new Error(t('error.elementNotDefined.description', { nodeType: DataHubNodeType.TRANSITION })))
     }
-  }, [data, onFormError, t])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data])
 
   return (
     <Card>

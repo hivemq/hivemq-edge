@@ -28,7 +28,8 @@ export const DataPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, on
 
   useEffect(() => {
     if (error) onFormError?.(error)
-  }, [error, onFormError])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error])
 
   const customValidate: CustomValidator<DataPolicyData> = (formData, errors) => {
     if (isError) errors['id']?.addError(t('error.validation.dataPolicy.notLoading'))
