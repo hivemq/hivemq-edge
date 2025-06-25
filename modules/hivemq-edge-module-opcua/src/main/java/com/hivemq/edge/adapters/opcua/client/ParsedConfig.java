@@ -51,11 +51,11 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
     private static final @NotNull Logger log = LoggerFactory.getLogger(ParsedConfig.class);
 
     public static Result<ParsedConfig, String> fromConfig(final OpcUaSpecificAdapterConfig adapterConfig) {
-        final boolean tlsEnabled = adapterConfig.getTls().isEnabled();
+        final boolean tlsEnabled = adapterConfig.getTls().enabled();
 
         CertificateValidator certValidator = null;
         if (tlsEnabled) {
-            final var truststore = adapterConfig.getTls().getTruststore();
+            final var truststore = adapterConfig.getTls().truststore();
             final var certOptional = getTrustedCerts(truststore).map(ParsedConfig::createServerCertificateValidator);
             if (certOptional.isEmpty()) {
                 return Failure.of("Failed to create certificate validator, check truststore configuration");
@@ -63,7 +63,7 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
             certValidator = certOptional.get();
         }
 
-        final Keystore keystore = adapterConfig.getTls().getKeystore();
+        final Keystore keystore = adapterConfig.getTls().keystore();
         KeystoreUtil.KeyPairWithChain keyPairWithChain = null;
         if (keystore != null && !keystore.path().isBlank()) {
             final var kpWithChain = getKeyPairWithChain(keystore);

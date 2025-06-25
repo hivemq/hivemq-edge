@@ -97,7 +97,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
             throws Exception {
 
         final OpcUaToMqttConfig opcuaToMqttConfig =
-                new OpcUaToMqttConfig(null, null);
+                new OpcUaToMqttConfig(1, 1000);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,

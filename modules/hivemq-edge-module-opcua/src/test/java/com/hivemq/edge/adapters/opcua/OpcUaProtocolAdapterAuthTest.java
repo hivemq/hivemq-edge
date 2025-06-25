@@ -95,7 +95,7 @@ class OpcUaProtocolAdapterAuthTest {
                 false,
                 null,
                 null,
-                new OpcUaToMqttConfig(null, null),
+                new OpcUaToMqttConfig(1, 1000),
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
