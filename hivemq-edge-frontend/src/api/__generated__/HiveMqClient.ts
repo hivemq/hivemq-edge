@@ -14,6 +14,7 @@ import { DataHubBehaviorPoliciesService } from './services/DataHubBehaviorPolici
 import { DataHubDataPoliciesService } from './services/DataHubDataPoliciesService';
 import { DataHubFsmService } from './services/DataHubFsmService';
 import { DataHubFunctionsService } from './services/DataHubFunctionsService';
+import { DataHubInterpolationService } from './services/DataHubInterpolationService';
 import { DataHubSchemasService } from './services/DataHubSchemasService';
 import { DataHubScriptsService } from './services/DataHubScriptsService';
 import { DataHubStateService } from './services/DataHubStateService';
@@ -41,6 +42,7 @@ export class HiveMqClient {
     public readonly dataHubDataPolicies: DataHubDataPoliciesService;
     public readonly dataHubFsm: DataHubFsmService;
     public readonly dataHubFunctions: DataHubFunctionsService;
+    public readonly dataHubInterpolation: DataHubInterpolationService;
     public readonly dataHubSchemas: DataHubSchemasService;
     public readonly dataHubScripts: DataHubScriptsService;
     public readonly dataHubState: DataHubStateService;
@@ -61,7 +63,7 @@ export class HiveMqClient {
     constructor(config?: Partial<OpenAPIConfig>, HttpRequest: HttpRequestConstructor = AxiosHttpRequest) {
         this.request = new HttpRequest({
             BASE: config?.BASE ?? '',
-            VERSION: config?.VERSION ?? '2025.4-SNAPSHOT',
+            VERSION: config?.VERSION ?? '2025.10-SNAPSHOT',
             WITH_CREDENTIALS: config?.WITH_CREDENTIALS ?? false,
             CREDENTIALS: config?.CREDENTIALS ?? 'include',
             TOKEN: config?.TOKEN,
@@ -79,6 +81,7 @@ export class HiveMqClient {
         this.dataHubDataPolicies = new DataHubDataPoliciesService(this.request);
         this.dataHubFsm = new DataHubFsmService(this.request);
         this.dataHubFunctions = new DataHubFunctionsService(this.request);
+        this.dataHubInterpolation = new DataHubInterpolationService(this.request);
         this.dataHubSchemas = new DataHubSchemasService(this.request);
         this.dataHubScripts = new DataHubScriptsService(this.request);
         this.dataHubState = new DataHubStateService(this.request);

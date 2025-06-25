@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Box, Tooltip, chakra as Chakra, VisuallyHidden, Badge } from '@chakra-ui/react'
 
 import type { Bridge } from '@/api/__generated__'
-import { formatHost } from '../../utils/formatters.tsx'
+import { formatHost } from '../../utils/formatters.ts'
 
 type BridgeConnection = Pick<
   Bridge,

@@ -2,7 +2,7 @@ import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import type { EdgeAddChange, Node, Edge, NodeProps } from '@xyflow/react'
 
-import type { DataPolicyData, FunctionSpecs, WorkspaceAction, WorkspaceState } from '../types.ts'
+import type { DataPolicyData, WorkspaceAction, WorkspaceState } from '../types.ts'
 import { DataHubNodeType } from '../types.ts'
 import useDataHubDraftStore from '@/extensions/datahub/hooks/useDataHubDraftStore.ts'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
@@ -13,6 +13,8 @@ const MOCK_NODE: NodeProps<Node<{ label: string }>> = {
   data: { label: 'Hello1' },
   ...MOCK_DEFAULT_NODE,
 }
+
+const NODE_LABEL = 'the new one'
 
 describe('useDataHubDraftStore', () => {
   beforeEach(() => {
@@ -228,31 +230,18 @@ describe('useDataHubDraftStore', () => {
 
     act(() => {
       const { onUpdateNodes } = result.current
-      onUpdateNodes<{ label: string }>('idAdapter', { label: 'the new one' })
+      onUpdateNodes<{ label: string }>('idAdapter', { label: NODE_LABEL })
     })
 
     expect(result.current.nodes).toHaveLength(1)
     expect(result.current.edges).toHaveLength(0)
-    expect(result.current.nodes[0].data).toEqual({ label: 'the new one' })
+    expect(result.current.nodes[0].data).toEqual({ label: NODE_LABEL })
 
     act(() => {
       const { onUpdateNodes } = result.current
       onUpdateNodes<{ label: string }>('fake', { label: 'a fake data' })
     })
-    expect(result.current.nodes[0].data).toEqual({ label: 'the new one' })
-  })
-
-  it('should add a function to the store', async () => {
-    const { result } = renderHook<WorkspaceState & WorkspaceAction, unknown>(useDataHubDraftStore)
-    expect(result.current.functions).toHaveLength(9)
-
-    act(() => {
-      const { onAddFunctions } = result.current
-      const item: FunctionSpecs = { functionId: 'string' }
-      onAddFunctions([item])
-    })
-
-    expect(result.current.functions).toHaveLength(10)
+    expect(result.current.nodes[0].data).toEqual({ label: NODE_LABEL })
   })
 
   it('should serialise a policy', async () => {

@@ -31,6 +31,8 @@ import {
 } from '@datahub/types.ts'
 import i18n from '@/config/i18n.config.ts'
 
+const NODE_OPERATION_ID = 'node-operation'
+
 describe('getNodeId', () => {
   it('should return the initial state of the store', async () => {
     expect(getNodeId()).toContain('node_')
@@ -144,7 +146,7 @@ describe('isValidPolicyConnection', () => {
     }
 
     const MOCK_NODE_OPERATION: Node = {
-      id: 'node-operation',
+      id: NODE_OPERATION_ID,
       type: DataHubNodeType.OPERATION,
       data: {},
       ...MOCK_DEFAULT_NODE,
@@ -152,7 +154,7 @@ describe('isValidPolicyConnection', () => {
     }
     expect(
       isValidPolicyConnection(
-        { source: 'node-id', target: 'node-operation', sourceHandle: null, targetHandle: null },
+        { source: 'node-id', target: NODE_OPERATION_ID, sourceHandle: null, targetHandle: null },
         [MOCK_NODE_DATA_POLICY, MOCK_NODE_OPERATION],
         []
       )
@@ -169,7 +171,7 @@ describe('isValidPolicyConnection', () => {
     }
 
     const MOCK_NODE_OPERATION: Node = {
-      id: 'node-operation',
+      id: NODE_OPERATION_ID,
       type: DataHubNodeType.OPERATION,
       data: {},
       ...MOCK_DEFAULT_NODE,
@@ -179,7 +181,7 @@ describe('isValidPolicyConnection', () => {
       isValidPolicyConnection(
         {
           source: 'node-schema',
-          target: 'node-operation',
+          target: NODE_OPERATION_ID,
           sourceHandle: null,
           targetHandle: OperationData.Handle.SCHEMA,
         },
@@ -192,7 +194,7 @@ describe('isValidPolicyConnection', () => {
       isValidPolicyConnection(
         {
           source: 'node-schema',
-          target: 'node-operation',
+          target: NODE_OPERATION_ID,
           sourceHandle: null,
           targetHandle: DataPolicyData.Handle.ON_SUCCESS,
         },
@@ -204,7 +206,7 @@ describe('isValidPolicyConnection', () => {
 
   it('should not be a valid connection if self-referencing', async () => {
     const MOCK_NODE_OPERATION: Node = {
-      id: 'node-operation',
+      id: NODE_OPERATION_ID,
       type: DataHubNodeType.OPERATION,
       data: {},
       ...MOCK_DEFAULT_NODE,
@@ -213,8 +215,8 @@ describe('isValidPolicyConnection', () => {
     expect(
       isValidPolicyConnection(
         {
-          source: 'node-operation',
-          target: 'node-operation',
+          source: NODE_OPERATION_ID,
+          target: NODE_OPERATION_ID,
           sourceHandle: null,
           targetHandle: null,
         },
@@ -226,7 +228,7 @@ describe('isValidPolicyConnection', () => {
 
   it('should not be a valid connection if creating a cycle', async () => {
     const MOCK_NODE_OPERATION: Node = {
-      id: 'node-operation',
+      id: NODE_OPERATION_ID,
       type: DataHubNodeType.OPERATION,
       data: {},
       ...MOCK_DEFAULT_NODE,
@@ -239,7 +241,7 @@ describe('isValidPolicyConnection', () => {
       { ...MOCK_NODE_OPERATION, id: 'node-operation-2' },
     ]
     const edges: Edge[] = [
-      { id: '1', source: 'node-operation', target: 'node-operation-1', sourceHandle: null, targetHandle: null },
+      { id: '1', source: NODE_OPERATION_ID, target: 'node-operation-1', sourceHandle: null, targetHandle: null },
       { id: '1', source: 'node-operation-1', target: 'node-operation-2', sourceHandle: null, targetHandle: null },
     ]
 
@@ -247,7 +249,7 @@ describe('isValidPolicyConnection', () => {
       isValidPolicyConnection(
         {
           source: 'node-operation-1',
-          target: 'node-operation',
+          target: NODE_OPERATION_ID,
           sourceHandle: null,
           targetHandle: null,
         },
@@ -259,7 +261,7 @@ describe('isValidPolicyConnection', () => {
       isValidPolicyConnection(
         {
           source: 'node-operation-2',
-          target: 'node-operation',
+          target: NODE_OPERATION_ID,
           sourceHandle: null,
           targetHandle: null,
         },

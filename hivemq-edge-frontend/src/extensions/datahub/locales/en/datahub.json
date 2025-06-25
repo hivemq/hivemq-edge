@@ -38,7 +38,9 @@
       "config": "Configure",
       "download": "Download",
       "delete": "Delete",
-      "copy": "Copy"
+      "copy": "Copy",
+      "expand": "Show the versions",
+      "collapse": "Hide the versions"
     },
     "tabs": {
       "policy": {
@@ -56,8 +58,14 @@
     },
     "modal": {
       "delete": {
-        "header": "Delete Item",
-        "message": "Are you sure? You can't undo this action afterward."
+        "header_SCHEMA": "Delete Schema",
+        "header_FUNCTION": "Delete Script",
+        "header_DATA_POLICY": "Delete Data Policy",
+        "header_BEHAVIOR_POLICY": "Delete Behaviour Policy",
+        "message": "The policy will be deleted.",
+        "message_SCHEMA": "Schemas are internally stored as a bundle; every version of the schema will be deleted.",
+        "message_FUNCTION": "Scripts are internally stored as a bundle; every version of the script will be deleted.",
+        "prompt": "You can't undo this action afterward. Are you sure?"
       }
     },
     "policy": {
@@ -74,7 +82,14 @@
         "clear": "Clear the draft"
       }
     },
-
+    "resources": {
+      "versions_RANGE_zero": "no version",
+      "versions_RANGE_one": "1",
+      "versions_RANGE_other": "1–{{ count }}",
+      "versions_COUNT_zero": "no version",
+      "versions_COUNT_one": "{{ count }} version xxx",
+      "versions_COUNT_other": "{{ count }} versions"
+    },
     "schema": {
       "label": "List of schemas",
       "header": {
@@ -121,7 +136,11 @@
       "modal": {
         "clear": {
           "header": "Do you want to clear the Designer?",
-          "confirmation": "It will clean the content of the canvas, leaving the Designer empty and ready to create a new draft. The action cannot be reversed"
+          "confirmation": "It will clean the content of the canvas, leaving the Designer empty and ready to create a new draft. The action cannot be reversed."
+        },
+        "replace": {
+          "header": "You already have an active draft",
+          "confirmation": "If you create a new one, the content of your current draft will be cleared from the canvas. This action cannot be reversed."
         },
         "modify": {
           "header": "Do you want to modify the policy?",
@@ -136,6 +155,8 @@
       "fitView": "Fit to the canvas",
       "toggleInteractivity": "Lock the canvas",
       "clear": "Clear the Designer",
+      "replace": "Create new empty draft",
+      "goDraft": "Open existing draft",
       "modify": "Modify the policy",
       "clone": "Clone as a new draft",
       "shortcuts": "Help using the Designer"
@@ -235,6 +256,9 @@
       "test": "Test code"
     },
     "interpolation": {
+      "suggestions": "list of interpolation suggestions",
+      "loading": "Loading variables",
+      "errorLoading": "Error while loading the variables",
       "noResult": "No matching variables"
     },
     "version": {
@@ -354,7 +378,11 @@
       },
       "behaviourPolicy": {
         "notLoading": "Cannot load the existing policies for checking ids",
-        "notUnique": "The id is already in use by another behavior policy"
+        "notUnique": "The id is already in use by another behavior policy",
+        "publishQuota": {
+          "maxLessThanMin": "The maximum publish quota must be greater than or equal to the minimum publish quota",
+          "minMoreThanMax": "The minimum publish quota must be less than or equal to the maximum publish quota"
+        }
       },
       "operation": {
         "notLoading": "Cannot load the existing operations for checking ids",
@@ -373,7 +401,8 @@
       },
       "operation": {
         "unknown": "Something is wrong with the operation",
-        "noTransition": "cannot create the node for the transition pipeline - {{ source }}"
+        "noTransition": "there is no transition pipeline for the operation",
+        "noExistingTransition": "Cannot create the node for the transition pipeline - {{ source }}"
       }
     },
     "dryRun": {

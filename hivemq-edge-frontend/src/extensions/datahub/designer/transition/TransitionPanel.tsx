@@ -1,10 +1,12 @@
 import type { FC } from 'react'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import type { Node } from '@xyflow/react'
 import { getIncomers } from '@xyflow/react'
 import { Card, CardBody } from '@chakra-ui/react'
 import type { IChangeEvent } from '@rjsf/core'
+import { useTranslation } from 'react-i18next'
 
+import type { BehaviorPolicyTransitionEvent } from '@/api/__generated__'
 import type {
   BehaviorPolicyData,
   FiniteStateMachineSchema,
@@ -12,7 +14,6 @@ import type {
   PanelProps,
   StateType,
   TransitionData,
-  TransitionType,
 } from '@datahub/types.ts'
 import { DataHubNodeType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
@@ -24,7 +25,8 @@ import { FiniteStateMachineFlow } from '@datahub/components/fsm/FiniteStateMachi
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
-export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
+export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFormError }) => {
+  const { t } = useTranslation('datahub')
   const { nodes, edges } = useDataHubDraftStore()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
 
@@ -97,7 +99,7 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
         const { event: originalEvent } = formData
         if (originalEvent) {
           const [event, from, to, type] = originalEvent.split('-') as [
-            TransitionType,
+            BehaviorPolicyTransitionEvent,
             StateType,
             StateType,
             FsmState.Type | undefined,
@@ -116,28 +118,43 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
     [onFormSubmit]
   )
 
+  useEffect(() => {
+    if (!data) {
+      onFormError?.(new Error(t('error.elementNotDefined.description', { nodeType: DataHubNodeType.TRANSITION })))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data])
+
   return (
     <Card>
       {guardAlert && <ErrorMessage status="info" type={guardAlert.title} message={guardAlert.description} />}
-      <CardBody>
-        <ReactFlowSchemaForm
-          isNodeEditable={isNodeEditable}
-          schema={MOCK_TRANSITION_SCHEMA.schema}
-          uiSchema={{
-            ...MOCK_TRANSITION_SCHEMA.uiSchema,
-            event: {
-              ...MOCK_TRANSITION_SCHEMA.uiSchema?.event,
-              'ui:options': {
-                metadata: options,
-              },
-            },
-          }}
-          formData={data}
-          widgets={datahubRJSFWidgets}
-          onSubmit={onSafeFormSubmit}
+      {!data && (
+        <ErrorMessage
+          type={t('error.elementNotDefined.title')}
+          message={t('error.elementNotDefined.description', { nodeType: DataHubNodeType.TRANSITION })}
         />
-        {options && <FiniteStateMachineFlow transitions={options.transitions} states={options.states} />}
-      </CardBody>
+      )}
+      {data && (
+        <CardBody>
+          <ReactFlowSchemaForm
+            isNodeEditable={isNodeEditable}
+            schema={MOCK_TRANSITION_SCHEMA.schema}
+            uiSchema={{
+              ...MOCK_TRANSITION_SCHEMA.uiSchema,
+              event: {
+                ...MOCK_TRANSITION_SCHEMA.uiSchema?.event,
+                'ui:options': {
+                  metadata: options,
+                },
+              },
+            }}
+            formData={data}
+            widgets={datahubRJSFWidgets}
+            onSubmit={onSafeFormSubmit}
+          />
+          {options && <FiniteStateMachineFlow transitions={options.transitions} states={options.states} />}
+        </CardBody>
+      )}
     </Card>
   )
 }

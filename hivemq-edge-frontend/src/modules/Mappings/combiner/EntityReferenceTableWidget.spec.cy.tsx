@@ -1,7 +1,6 @@
 /// <reference types="cypress" />
 
-import type { WidgetProps } from '@rjsf/utils'
-import type { RJSFSchema } from '@rjsf/utils/src/types'
+import type { WidgetProps, RJSFSchema } from '@rjsf/utils'
 import type { EntityReference } from '@/api/__generated__'
 import { mockCombiner } from '@/api/hooks/useCombiners/__handlers__'
 import { EntityReferenceTableWidget } from './EntityReferenceTableWidget'

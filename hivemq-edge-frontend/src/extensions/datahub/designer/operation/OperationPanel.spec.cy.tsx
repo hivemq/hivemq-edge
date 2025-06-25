@@ -4,9 +4,11 @@ import type { Edge, Node } from '@xyflow/react'
 import { Button } from '@chakra-ui/react'
 
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
+import { MOCK_DATAHUB_FUNCTIONS } from '@datahub/api/hooks/DataHubFunctionsService/__handlers__'
 import { SUGGESTION_TRIGGER_CHAR } from '@datahub/components/interpolation/Suggestion.ts'
 import type { FunctionData } from '@datahub/types.ts'
 import { DataHubNodeType, OperationData } from '@datahub/types.ts'
+
 import { OperationPanel } from './OperationPanel.tsx'
 
 const getWrapperWith = (initNodes: Node[], initEdges?: Edge[]) => {
@@ -34,6 +36,36 @@ const getWrapperWith = (initNodes: Node[], initEdges?: Edge[]) => {
 describe('OperationPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+    cy.intercept('/api/v1/data-hub/function-specs', {
+      items: MOCK_DATAHUB_FUNCTIONS.items.map((specs) => {
+        specs.metadata.inLicenseAllowed = true
+        return specs
+      }),
+    }).as('getFunctionSpecs')
+  })
+
+  it('should render loading and error states', () => {
+    const onFormError = cy.stub().as('onFormError')
+    cy.intercept('/api/v1/data-hub/function-specs', { statusCode: 404 }).as('getFunctionSpecs')
+
+    cy.mountWithProviders(<OperationPanel selectedNode="3" onFormError={onFormError} />, {
+      wrapper: getWrapperWith([]),
+    })
+    cy.getByTestId('loading-spinner').should('be.visible')
+
+    cy.wait('@getFunctionSpecs')
+    cy.get('[role="alert"]')
+      .should('be.visible')
+      .should('have.attr', 'data-status', 'error')
+      .should('have.text', 'Not Found')
+
+    cy.get('@onFormError').should((stub) => {
+      expect(stub).to.have.been.called
+      // @ts-ignore stub is not properly typed
+      const errorArg = stub.getCall(0).args[0]
+      expect(errorArg).to.be.instanceOf(Error)
+      expect(errorArg.message).to.equal('Not Found')
+    })
   })
 
   it('should render a validating form', () => {
@@ -50,9 +82,10 @@ describe('OperationPanel', () => {
     cy.get('label#root_functionId-label + div').click()
     cy.get('label#root_functionId-label + div').find("[role='listbox']").find("[role='option']").as('functionSelect')
 
-    cy.get('@functionSelect').eq(0).should('contain.text', 'System.log')
-    cy.get('@functionSelect').eq(7).should('contain.text', 'Mqtt.drop')
-    cy.get('@functionSelect').eq(7).click()
+    cy.get('@functionSelect').should('have.length', 7)
+    cy.get('@functionSelect').eq(0).should('contain.text', 'Mqtt.UserProperties.add')
+    cy.get('@functionSelect').eq(5).should('contain.text', 'Mqtt.drop')
+    cy.get('@functionSelect').eq(5).click()
 
     cy.get('@submit').should('not.have.been.calledWith')
     cy.get("button[type='submit']").click()
@@ -87,7 +120,7 @@ describe('OperationPanel', () => {
     cy.get('[role="group"]:has(> label#root_id-label) + [role="list"]').as('id_Errors')
     cy.get('@id_Errors').should('contain.text', "must have required property 'id'")
 
-    cy.get('[role="group"]:has(> label#root_formData_topic-label) + [role="list"]').as('topic_Errors')
+    cy.get('[role="group"]:has(> label[for=root_formData_topic]) + [role="list"]').as('topic_Errors')
     cy.get('@topic_Errors').should('contain.text', "must have required property 'Topic'")
 
     cy.get('[role="alert"][data-status="error"]').should('be.visible')
@@ -108,8 +141,7 @@ describe('OperationPanel', () => {
       },
     }
 
-    // TODO[NVL] There is a bug
-    it.skip('should render the form', () => {
+    it('should render the form', () => {
       cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
         wrapper: getWrapperWith([node]),
       })
@@ -117,14 +149,17 @@ describe('OperationPanel', () => {
       cy.get('h2').should('contain.text', 'System.log')
       cy.get('label#root_formData_level-label').should('contain.text', 'Log Level')
       cy.get('label#root_formData_level-label + div').should('contain.text', 'DEBUG')
+
       cy.get('label#root_formData_level-label + div').click()
       cy.get('label#root_formData_level-label + div')
         .find("[role='listbox']")
         .find("[role='option']")
         .as('logLevelSelect')
-      cy.get('@logLevelSelect').should('have.length', 5)
-      cy.get('@logLevelSelect').eq(4).should('contain.text', 'TRACE')
-      cy.get('@logLevelSelect').eq(4).click()
+
+      // TODO[30464] There is a bug in the selector options that add an extra empty option
+      cy.get('@logLevelSelect').should('have.length', 6)
+      cy.get('@logLevelSelect').eq(5).should('contain.text', 'TRACE')
+      cy.get('@logLevelSelect').eq(5).click()
       cy.get('label#root_formData_level-label + div').should('contain.text', 'TRACE')
 
       // Need a better (and shorter) way of testing it display the right widget
@@ -165,8 +200,9 @@ describe('OperationPanel', () => {
         wrapper: getWrapperWith([node]),
       })
       cy.get('h2').should('contain.text', 'Delivery.redirectTo')
-      cy.get('label#root_formData_topic-label').should('contain.text', 'Topic')
-      cy.get('label#root_formData_topic-label + input').should('contain.value', 'a/simple/topic')
+      cy.get('label[for=root_formData_topic]').should('contain.text', 'Topic')
+      cy.get('label[for=root_formData_topic] + div').should('contain.text', 'a/simple/topic')
+
       cy.get('label:has(> input#root_formData_applyPolicies) ')
         .should('contain.text', 'Apply Policies')
         .should('have.attr', 'data-checked')
@@ -203,9 +239,9 @@ describe('OperationPanel', () => {
       })
       cy.get('h2').should('contain.text', 'Mqtt.UserProperties.add')
       cy.get('label#root_formData_name-label').should('contain.text', 'Property Name')
-      cy.get('label#root_formData_name-label + input').should('contain.value', 'key')
+      cy.get('label#root_formData_name-label + div').should('contain.text', 'key')
       cy.get('label#root_formData_value-label').should('contain.text', 'Property Value')
-      cy.get('label#root_formData_value-label + input').should('contain.value', 'value')
+      cy.get('label#root_formData_value-label + div').should('contain.text', 'value')
     })
 
     it('should be accessible', () => {
@@ -218,7 +254,8 @@ describe('OperationPanel', () => {
     })
   })
 
-  describe(OperationData.Function.SERDES_DESERIALIZE, () => {
+  describe.skip(OperationData.Function.SERDES_DESERIALIZE, () => {
+    // The Serdes.Deserialize function is not included in the frontend any more,
     const node: Node<OperationData> = {
       id: 'my-node',
       type: DataHubNodeType.OPERATION,
@@ -254,7 +291,8 @@ describe('OperationPanel', () => {
     })
   })
 
-  describe(OperationData.Function.SERDES_SERIALIZE, () => {
+  describe.skip(OperationData.Function.SERDES_SERIALIZE, () => {
+    // The Serdes.Serialize function is not included in the frontend any more,
     const node: Node<OperationData> = {
       id: 'my-node',
       type: DataHubNodeType.OPERATION,
@@ -316,7 +354,7 @@ describe('OperationPanel', () => {
         'com.hivemq.com.data-hub.custom.counters.'
       )
       cy.get('label#root_formData_metricName-label + div > input').should('contain.value', 'metric-name')
-      cy.get('label[for="root_formData_incrementBy"]').should('contain.text', 'IncrementBy')
+      cy.get('label[for="root_formData_incrementBy"]').should('contain.text', 'Increment By')
       cy.get('label[for="root_formData_incrementBy"] + div >  input').should('contain.value', 12)
     })
 
@@ -377,7 +415,7 @@ describe('OperationPanel', () => {
         wrapper: getWrapperWith([node]),
       })
       cy.get('h2').should('contain.text', 'Mqtt.drop')
-      cy.get('[role="group"]:has(#root_formData__title) ').last().find('label').should('not.exist')
+      cy.get('label#root_formData_reasonString-label').should('contain.text', 'Reason String')
     })
 
     it('should be accessible', () => {

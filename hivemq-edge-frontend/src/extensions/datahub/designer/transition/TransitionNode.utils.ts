@@ -9,11 +9,12 @@ import type {
   PolicySchema,
   Script,
 } from '@/api/__generated__'
+import { BehaviorPolicyTransitionEvent } from '@/api/__generated__'
 import i18n from '@/config/i18n.config.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 
 import type { BehaviorPolicyData, DryRunResults, FiniteStateMachineSchema, WorkspaceState } from '@datahub/types.ts'
-import { BehaviorPolicyType, DataHubNodeType, StateType, TransitionData, TransitionType } from '@datahub/types.ts'
+import { BehaviorPolicyType, DataHubNodeType, StateType, TransitionData } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { checkValidityPipeline, loadBehaviorPolicyPipelines } from '@datahub/designer/operation/OperationNode.utils.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
@@ -98,7 +99,7 @@ export const extractEventStates = (
 
   return {
     model: model,
-    event: enumFromStringValue(TransitionType, getActiveTransition(behaviorPolicyTransition) || ''),
+    event: enumFromStringValue(BehaviorPolicyTransitionEvent, getActiveTransition(behaviorPolicyTransition) || ''),
     from: enumFromStringValue(StateType, behaviorPolicyTransition.fromState),
     to,
     type: endState?.type,
@@ -128,7 +129,7 @@ export const loadTransitions = (
   const newNodes: (NodeAddChange | Connection)[] = []
   for (const behaviorPolicyTransition of behaviorPolicy.onTransitions || []) {
     const transitionNode: Node<TransitionData> = {
-      id: getNodeId(),
+      id: getNodeId(DataHubNodeType.TRANSITION),
       type: DataHubNodeType.TRANSITION,
       position: { ...shiftBottom() },
       data: extractEventStates(model, behaviorPolicyTransition),

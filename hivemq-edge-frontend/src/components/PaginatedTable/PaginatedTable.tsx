@@ -1,10 +1,11 @@
 import type { CSSProperties } from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ColumnDef, ColumnFiltersState, Row } from '@tanstack/react-table'
+import type { ColumnDef, ColumnFiltersState, ExpandedState, Row } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
+  getExpandedRowModel,
   getFacetedMinMaxValues,
   getFacetedRowModel,
   getFacetedUniqueValues,
@@ -49,6 +50,7 @@ interface PaginatedTableProps<T> {
    * Define row styles
    */
   getRowStyles?: (row: Row<T>) => CSSProperties
+  getSubRows?: (originalRow: T, index: number) => undefined | T[]
 }
 
 const DEFAULT_PAGE_SIZES = [5, 10, 20, 30, 40, 50]
@@ -64,12 +66,14 @@ const PaginatedTable = <T,>({
   enablePaginationSizes = true,
   enablePaginationGoTo = true,
   isError = false,
+  getSubRows = undefined,
   'aria-label': ariaLabel,
 }: PaginatedTableProps<T>) => {
   const { t } = useTranslation()
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [rowSelection, setRowSelection] = useState({})
+  const [expanded, setExpanded] = useState<ExpandedState>({})
 
   const table = useReactTable({
     data: data,
@@ -79,12 +83,16 @@ const PaginatedTable = <T,>({
       columnFilters,
       globalFilter,
       rowSelection,
+      expanded,
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     enableColumnFilters: enableColumnFilters,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
+    getSubRows,
+    onExpandedChange: setExpanded,
+    getExpandedRowModel: getExpandedRowModel(),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),

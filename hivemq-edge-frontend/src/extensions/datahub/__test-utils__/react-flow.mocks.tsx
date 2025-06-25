@@ -1,9 +1,10 @@
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import type { FC, PropsWithChildren } from 'react'
 import type { Edge, Node } from '@xyflow/react'
-import { useLocation } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { Card, CardBody, CardHeader } from '@chakra-ui/react'
 
-import { DataPolicyValidator } from '@/api/__generated__'
+import { BehaviorPolicyTransitionEvent, DataPolicyValidator } from '@/api/__generated__'
 import type {
   ClientFilterData,
   DesignerStatus,
@@ -21,11 +22,12 @@ import {
   OperationData,
   SchemaType,
   StrategyType,
-  TransitionType,
 } from '@/extensions/datahub/types.ts'
 import { styleDefaultEdge } from '@/extensions/datahub/utils/edge.utils.ts'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 import { MockChecksStoreWrapper, MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
+
+const MOCK_POLICY_ID = 'my-policy-id'
 
 export const MOCK_INITIAL_POLICY = () => {
   const baseNode: Node<{ label: string }> = {
@@ -50,7 +52,7 @@ export const MOCK_INITIAL_POLICY = () => {
 
   const dataPolicyNode: Node<DataPolicyData> = {
     id: '3',
-    data: { id: 'my-policy-id' },
+    data: { id: MOCK_POLICY_ID },
     type: DataHubNodeType.DATA_POLICY,
     position: { x: 345, y: 105 },
   }
@@ -88,14 +90,14 @@ export const MOCK_INITIAL_POLICY = () => {
 
   const behaviorPolicyNode: Node<BehaviorPolicyData> = {
     id: '7',
-    data: { id: 'my-policy-id', model: BehaviorPolicyType.MQTT_EVENT },
+    data: { id: MOCK_POLICY_ID, model: BehaviorPolicyType.MQTT_EVENT },
     type: DataHubNodeType.BEHAVIOR_POLICY,
     position: { x: 345, y: 195 },
   }
 
   const transitionNode: Node<TransitionData> = {
     id: '8',
-    data: { event: TransitionType.ON_ANY },
+    data: { event: BehaviorPolicyTransitionEvent.EVENT_ON_ANY },
     type: DataHubNodeType.TRANSITION,
     position: { x: 645, y: 210 },
   }
@@ -177,7 +179,7 @@ export const MOCK_INITIAL_POLICY = () => {
 export const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
   id: 'node-id',
   type: DataHubNodeType.DATA_POLICY,
-  data: { id: 'my-policy-id' },
+  data: { id: MOCK_POLICY_ID },
   ...MOCK_DEFAULT_NODE,
   position: { x: 0, y: 0 },
 }
@@ -203,8 +205,12 @@ export const getPolicyPublishWrapper = (report?: DryRunResults<unknown, never>[]
   return Wrapper
 }
 
+// TODO[NVL] Too much code duplication; refactor the whole wrappers as customisable factory
 export const getPolicyWrapper = ({ status, nodes }: { status?: DesignerStatus; nodes?: Node[] }) => {
   const Wrapper: FC<PropsWithChildren> = ({ children }) => {
+    const { pathname } = useLocation()
+    const { nodes: nodeList } = useDataHubDraftStore()
+
     return (
       <MockStoreWrapper
         config={{
@@ -212,8 +218,45 @@ export const getPolicyWrapper = ({ status, nodes }: { status?: DesignerStatus; n
         }}
       >
         {children}
+        <Card mt={50} size="sm" variant="filled">
+          <CardHeader>Testing Dashboard</CardHeader>
+          <CardBody data-testid="test-pathname">{pathname}</CardBody>
+          <CardBody data-testid="test-nodes">{nodeList.length}</CardBody>
+        </Card>
       </MockStoreWrapper>
     )
   }
   return Wrapper
+}
+
+export const getPolicyWrapperWithRouter = ({ status, nodes }: { status?: DesignerStatus; nodes?: Node[] }) => {
+  const Wrapper: FC<PropsWithChildren> = ({ children }) => {
+    const { pathname } = useLocation()
+    const { nodes: nodeList } = useDataHubDraftStore()
+
+    return (
+      <MockStoreWrapper
+        config={{
+          initialState: { status: status, nodes: nodes || [] },
+        }}
+      >
+        {children}
+        <Card mt={50} size="sm" variant="filled">
+          <CardHeader>Testing Dashboard</CardHeader>
+          <CardBody data-testid="test-pathname">{pathname}</CardBody>
+          <CardBody data-testid="test-nodes">{nodeList.length}</CardBody>
+        </Card>
+      </MockStoreWrapper>
+    )
+  }
+
+  const WrapperRouter: FC<PropsWithChildren> = ({ children }) => {
+    return (
+      <MemoryRouter initialEntries={['/datahub/CREATE_POLICY']}>
+        <Wrapper>{children}</Wrapper>
+      </MemoryRouter>
+    )
+  }
+
+  return WrapperRouter
 }

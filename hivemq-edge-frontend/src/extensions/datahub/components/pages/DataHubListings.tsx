@@ -90,13 +90,16 @@ const DataHubListings: FC = () => {
           <ScriptTable onDeleteItem={handleOnDelete} />
         </TabPanel>
       </TabPanels>
-      <ConfirmationDialog
-        isOpen={isConfirmDeleteOpen}
-        onClose={handleConfirmOnClose}
-        onSubmit={handleConfirmOnSubmit}
-        message={t('Listings.modal.delete.message')}
-        header={t('Listings.modal.delete.header')}
-      />
+      {deleteItem && (
+        <ConfirmationDialog
+          isOpen={isConfirmDeleteOpen}
+          onClose={handleConfirmOnClose}
+          onSubmit={handleConfirmOnSubmit}
+          header={t('Listings.modal.delete.header', { context: deleteItem?.type })}
+          message={t('Listings.modal.delete.message', { context: deleteItem?.type })}
+          prompt={t('Listings.modal.delete.prompt')}
+        />
+      )}
     </Tabs>
   )
 }

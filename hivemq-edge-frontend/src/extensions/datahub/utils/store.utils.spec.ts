@@ -11,12 +11,10 @@ describe('initialStore', () => {
     expect(store).toStrictEqual<WorkspaceState & WorkspaceStatus>({
       nodes: [],
       edges: [],
-      functions: expect.arrayContaining([]),
       name: '',
       status: DesignerStatus.DRAFT,
       type: undefined,
     })
-    expect(store.functions).toHaveLength(9)
   })
 })
 

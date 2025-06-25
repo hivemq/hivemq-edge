@@ -61,13 +61,13 @@ export const loadBehaviorPolicy = (behaviorPolicy: BehaviorPolicy): NodeAddChang
   }
 
   const behaviorPolicyNode: Node<BehaviorPolicyData> = {
-    id: getNodeId(),
+    id: getNodeId(DataHubNodeType.BEHAVIOR_POLICY),
     type: DataHubNodeType.BEHAVIOR_POLICY,
     position,
     data: {
       id: behaviorPolicy.id,
       model: model,
-      arguments: behaviorPolicy.behavior.arguments,
+      arguments: behaviorPolicy.behavior.arguments || {},
     },
   }
 

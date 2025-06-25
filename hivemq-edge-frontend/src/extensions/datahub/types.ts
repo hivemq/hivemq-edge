@@ -2,14 +2,16 @@ import type { Connection, Edge, EdgeAddChange, Node, NodeAddChange, OnEdgesChang
 import type {
   BehaviorPolicy,
   BehaviorPolicyOnTransition,
+  BehaviorPolicyTransitionEvent,
   DataPolicy,
+  DataPolicyMatching,
   DataPolicyValidator,
   PolicyOperation,
   PolicySchema,
   SchemaReference,
   Script,
 } from '@/api/__generated__'
-import { type DataPolicyMatching } from '@/api/__generated__'
+import { PolicyType } from '@/api/__generated__'
 import type { RJSFSchema, UiSchema } from '@rjsf/utils'
 import type { IChangeEvent } from '@rjsf/core'
 import type { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
@@ -27,6 +29,7 @@ export interface PanelSpecs {
 export interface PanelProps {
   selectedNode: string
   onFormSubmit?: (data: IChangeEvent) => void
+  onFormError?: (error: Error) => void
 }
 
 export enum DesignerStatus {
@@ -38,7 +41,6 @@ export enum DesignerStatus {
 export interface WorkspaceState {
   nodes: Node[]
   edges: Edge[]
-  functions: FunctionSpecs[]
 }
 
 export interface WorkspaceStatus {
@@ -56,7 +58,6 @@ export interface WorkspaceAction {
   onAddEdges: (changes: EdgeAddChange[]) => void
   onUpdateNodes: <T>(item: string, data: T) => void
 
-  onAddFunctions: (changes: FunctionSpecs[]) => void
   onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>) => string | undefined
 
   isDirty: () => boolean
@@ -69,6 +70,7 @@ export interface WorkspaceAction {
 }
 
 export interface PolicyCheckState {
+  // TODO[30991] The bug is fixed but replace with a reference to the id, NOT the node itself!
   node?: Node
   status?: PolicyDryRunStatus
   report?: DryRunResults<unknown, never>[]
@@ -93,8 +95,8 @@ export enum DataHubNodeType {
   BRIDGE = 'BRIDGE',
   TOPIC_FILTER = 'TOPIC_FILTER',
   CLIENT_FILTER = 'CLIENT_FILTER',
-  DATA_POLICY = 'DATA_POLICY',
-  BEHAVIOR_POLICY = 'BEHAVIOR_POLICY',
+  DATA_POLICY = PolicyType.DATA_POLICY,
+  BEHAVIOR_POLICY = PolicyType.BEHAVIOR_POLICY,
   VALIDATOR = 'VALIDATOR',
   SCHEMA = 'SCHEMA',
   OPERATION = 'OPERATION',
@@ -103,10 +105,10 @@ export enum DataHubNodeType {
   EVENT = 'EVENT',
 }
 
-export enum PolicyType {
+export enum DesignerPolicyType {
   CREATE_POLICY = 'CREATE_POLICY',
-  DATA_POLICY = DataHubNodeType.DATA_POLICY,
-  BEHAVIOR_POLICY = DataHubNodeType.BEHAVIOR_POLICY,
+  DATA_POLICY = PolicyType.DATA_POLICY,
+  BEHAVIOR_POLICY = PolicyType.BEHAVIOR_POLICY,
 }
 
 export enum NodeCategory {
@@ -278,17 +280,23 @@ export namespace OperationData {
   }
 }
 
-// TODO[18757] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18757/details/
+// TODO[33539] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18757/details/
 export enum BehaviorPolicyType {
   MQTT_EVENT = 'Mqtt.events',
   PUBLISH_DUPLICATE = 'Publish.duplicate',
   PUBLISH_QUOTA = 'Publish.quota',
 }
 
+// TODO[33539] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18757/details/
+export interface PublishQuotaArguments {
+  minPublishes: number
+  maxPublishes: number
+}
+
 export interface BehaviorPolicyData extends DataHubNodeData {
   id: string
   model: BehaviorPolicyType
-  arguments?: Record<string, string | number>
+  arguments?: PublishQuotaArguments | Record<string, string | number>
   core?: BehaviorPolicy
 }
 
@@ -312,19 +320,9 @@ export enum StateType {
   Publishing = 'Publishing',
 }
 
-// TODO[18761] Add to the OpenAPI specs, see https://hivemq.kanbanize.com/ctrl_board/4/cards/18761/details/
-export enum TransitionType {
-  ON_ANY = 'Event.OnAny',
-  ON_DISCONNECT = 'Connection.OnDisconnect',
-  ON_INBOUND_CONNECT = 'Mqtt.OnInboundConnect',
-  ON_INBOUND_DISCONNECT = 'Mqtt.OnInboundDisconnect',
-  ON_INBOUND_PUBLISH = 'Mqtt.OnInboundPublish',
-  ON_INBOUND_SUBSCRIBE = 'Mqtt.OnInboundSubscribe',
-}
-
 export interface TransitionData extends DataHubNodeData {
   model?: BehaviorPolicyType
-  event?: TransitionType
+  event?: BehaviorPolicyTransitionEvent
   from?: StateType
   to?: StateType
   type?: FsmState.Type
@@ -399,6 +397,10 @@ export interface DraftPolicy {
 }
 
 export type CombinedPolicy =
-  | (DataPolicy & { type: PolicyType.DATA_POLICY })
-  | (BehaviorPolicy & { type: PolicyType.BEHAVIOR_POLICY })
-  | (DraftPolicy & { type: PolicyType.CREATE_POLICY })
+  | (DataPolicy & { type: DesignerPolicyType.DATA_POLICY })
+  | (BehaviorPolicy & { type: DesignerPolicyType.BEHAVIOR_POLICY })
+  | (DraftPolicy & { type: DesignerPolicyType.CREATE_POLICY })
+
+export interface ReactFlowSchemaFormContext {
+  functions: FunctionSpecs[]
+}

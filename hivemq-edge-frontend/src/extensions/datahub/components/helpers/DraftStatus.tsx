@@ -7,7 +7,7 @@ import { PiPencilSimpleLineFill } from 'react-icons/pi'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { NodeIcon } from '@datahub/components/helpers/index.ts'
-import { DataHubNodeType, DesignerStatus, PolicyType } from '@datahub/types.ts'
+import { DataHubNodeType, DesignerStatus, DesignerPolicyType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
@@ -29,7 +29,7 @@ const DraftStatus: FC = () => {
 
   function onHandleClone() {
     setStatus(DesignerStatus.DRAFT, { name: '' })
-    navigate(`/datahub/${PolicyType.CREATE_POLICY}`)
+    navigate(`/datahub/${DesignerPolicyType.CREATE_POLICY}`)
     // TODO[NVL] This is not enough, we should "clean" the id of protected elements
   }
 
@@ -39,7 +39,7 @@ const DraftStatus: FC = () => {
 
   function handleConfirmOnSubmit() {
     reset()
-    navigate(`/datahub/${PolicyType.CREATE_POLICY}`)
+    navigate(`/datahub/${DesignerPolicyType.CREATE_POLICY}`)
   }
 
   return (
@@ -49,7 +49,7 @@ const DraftStatus: FC = () => {
         <Breadcrumb separator="|">
           <BreadcrumbItem>
             <Text data-testid="status-container-type">
-              {t('policy.type', { context: type || PolicyType.CREATE_POLICY })}
+              {t('policy.type', { context: type || DesignerPolicyType.CREATE_POLICY })}
             </Text>
           </BreadcrumbItem>
 

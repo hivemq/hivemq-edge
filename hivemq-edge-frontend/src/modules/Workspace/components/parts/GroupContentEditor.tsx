@@ -17,11 +17,15 @@ interface GroupContentEditorProps {
   group: Node<Group>
 }
 
+type ContentNodeProps = {
+  id: string
+}
+
 const GroupContentEditor: FC<GroupContentEditorProps> = ({ group }) => {
   const { t } = useTranslation()
   const { nodes } = useWorkspaceStore()
 
-  const columns = useMemo<ColumnDef<Node>[]>(() => {
+  const columns = useMemo<ColumnDef<Node<ContentNodeProps>>[]>(() => {
     return [
       {
         accessorKey: 'type',
@@ -81,15 +85,17 @@ const GroupContentEditor: FC<GroupContentEditorProps> = ({ group }) => {
     ]
   }, [t])
 
-  const data = useMemo<Node[]>(() => {
-    return group.data.childrenNodeIds.map((e) => nodes.find((x) => x.id === e)).filter((e) => Boolean(e)) as Node[]
+  const data = useMemo<Node<ContentNodeProps>[]>(() => {
+    return group.data.childrenNodeIds.map((e) => nodes.find((x) => x.id === e)).filter((e) => Boolean(e)) as Node<{
+      id: string
+    }>[]
   }, [group.data.childrenNodeIds, nodes])
 
   return (
     <Card size="sm">
       <CardHeader data-testid="group-content-header">{t('Content Management')}</CardHeader>
       <CardBody>
-        <PaginatedTable<Node>
+        <PaginatedTable<Node<ContentNodeProps>>
           aria-label={t('eventLog.title')}
           data={data}
           columns={columns}

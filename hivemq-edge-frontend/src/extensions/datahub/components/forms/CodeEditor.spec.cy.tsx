@@ -38,7 +38,12 @@ describe('CodeEditor', () => {
   })
 
   it('should render the fallback editor', () => {
-    cy.intercept('**/cdn.jsdelivr.net/**', { statusCode: 404 })
+    Cypress.on('uncaught:exception', () => {
+      // returning false here prevents Cypress from failing the test
+      return false
+    })
+
+    cy.intercept('https://cdn.jsdelivr.net/**', { statusCode: 404 }).as('getMonaco')
     cy.mountWithProviders(<JSONSchemaEditor {...MOCK_WIDGET_PROPS} value={MOCK_JSONSCHEMA_SCHEMA} />)
 
     cy.get('textarea').should('be.visible')

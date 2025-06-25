@@ -19,13 +19,13 @@ export const TopicFilterNode: FC<NodeProps<Node<TopicFilterData>>> = (props) => 
           {data.topics?.map((t) => <Topic tagTitle={t} key={t} />)}
         </VStack>
       </NodeWrapper>
-      {data.topics?.map((t, index) => (
+      {data.topics?.map((_, index) => (
         <CustomHandle
           type="source"
           isConnectable={1}
           position={Position.Right}
-          id={`${t}-${index}`}
-          key={`${id}-${t}-${index}`}
+          id={`topic-${index}`}
+          key={`${id}-topic-${index}`}
           style={{
             top: getHandlePosition(index),
           }}
