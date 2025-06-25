@@ -78,16 +78,16 @@ class OpcUaProtocolAdapterConfigTest {
         });
 
         assertThat(config.getTls()).satisfies(tls -> {
-            assertThat(tls.isEnabled()).isTrue();
+            assertThat(tls.enabled()).isTrue();
 
-            assertThat(tls.getKeystore()).isNotNull();
-            assertThat(tls.getKeystore().path()).isEqualTo("path/to/keystore");
-            assertThat(tls.getKeystore().password()).isEqualTo("keystore-password");
-            assertThat(tls.getKeystore().privateKeyPassword()).isEqualTo("private-key-password");
+            assertThat(tls.keystore()).isNotNull();
+            assertThat(tls.keystore().path()).isEqualTo("path/to/keystore");
+            assertThat(tls.keystore().password()).isEqualTo("keystore-password");
+            assertThat(tls.keystore().privateKeyPassword()).isEqualTo("private-key-password");
 
-            assertThat(tls.getTruststore()).isNotNull();
-            assertThat(tls.getTruststore().path()).isEqualTo("path/to/truststore");
-            assertThat(tls.getTruststore().password()).isEqualTo("truststore-password");
+            assertThat(tls.truststore()).isNotNull();
+            assertThat(tls.truststore().path()).isEqualTo("path/to/truststore");
+            assertThat(tls.truststore().password()).isEqualTo("truststore-password");
         });
 
 
@@ -105,8 +105,8 @@ class OpcUaProtocolAdapterConfigTest {
         });
 
         assertThat(config.getOpcuaToMqttConfig()).satisfies(mapping -> {
-            assertThat(mapping.getPublishingInterval()).isEqualTo(12);
-            assertThat(mapping.getServerQueueSize()).isEqualTo(13);
+            assertThat(mapping.publishingInterval()).isEqualTo(12);
+            assertThat(mapping.serverQueueSize()).isEqualTo(13);
         });
 
         assertThat(protocolAdapterConfig.getSouthboundMappings()).satisfiesExactly(mapping -> {
@@ -135,7 +135,7 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(config.getAuth()).isNull();
 
         assertThat(config.getTls()).satisfies(tls -> {
-            assertThat(tls.isEnabled()).isFalse();
+            assertThat(tls.enabled()).isFalse();
         });
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
@@ -148,8 +148,8 @@ class OpcUaProtocolAdapterConfigTest {
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
         assertThat(config.getOpcuaToMqttConfig()).satisfies(mapping -> {
-            assertThat(mapping.getPublishingInterval()).isEqualTo(1000);
-            assertThat(mapping.getServerQueueSize()).isEqualTo(1);
+            assertThat(mapping.publishingInterval()).isEqualTo(1000);
+            assertThat(mapping.serverQueueSize()).isEqualTo(1);
         });
 
         assertThat(protocolAdapterConfig.getSouthboundMappings()).satisfiesExactly(mapping -> {
@@ -180,7 +180,7 @@ class OpcUaProtocolAdapterConfigTest {
                 new Tls(true,
                         new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
                         new Truststore("my/truststore/path", "truststore-password")),
-                new OpcUaToMqttConfig(null, null),
+                new OpcUaToMqttConfig(1, 1000),
                 new Security(BASIC128RSA15)
         );
 
@@ -224,7 +224,7 @@ class OpcUaProtocolAdapterConfigTest {
                 true,
                 null,
                 null,
-                new OpcUaToMqttConfig(null, null),
+                new OpcUaToMqttConfig(1, 1000),
                 null
         );
 

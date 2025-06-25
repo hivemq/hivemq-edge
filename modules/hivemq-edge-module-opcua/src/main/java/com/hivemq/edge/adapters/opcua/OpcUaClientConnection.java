@@ -236,7 +236,7 @@ class OpcUaClientConnection {
 
     private @NotNull CompletionStage<OpcUaSubscription> subscribe(final @NotNull OpcUaClient client) {
         final OpcUaSubscription subscription = new OpcUaSubscription(client);
-        subscription.setPublishingInterval((double) config.getOpcuaToMqttConfig().getPublishingInterval());
+        subscription.setPublishingInterval((double) config.getOpcuaToMqttConfig().publishingInterval());
         subscription.setSubscriptionListener(createSubscriptionListener(client));
         return subscription.createAsync()
                 .thenCompose(unit -> addAndSynchronizeMonitoredItems(subscription))
@@ -254,8 +254,8 @@ class OpcUaClientConnection {
         tags.forEach(opcuaTag -> {
             final String nodeId = opcuaTag.getDefinition().getNode();
             final var monitoredItem = OpcUaMonitoredItem.newDataItem(NodeId.parse(nodeId));
-            monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().getServerQueueSize()));
-            monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().getPublishingInterval());
+            monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().serverQueueSize()));
+            monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().publishingInterval());
             subscription.addMonitoredItem(monitoredItem);
             log.debug("Added monitored item: {}", nodeId);
         });

@@ -83,7 +83,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         this.auth = auth;
         this.tls = requireNonNullElse(tls, new Tls(false, null, null));
         this.opcuaToMqttConfig =
-                Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(null, null));
+                Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(1, 1000));
         this.security = requireNonNullElse(security, new Security(Constants.DEFAULT_SECURITY_POLICY));
     }
 
@@ -118,13 +118,13 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
             return false;
         }
         final OpcUaSpecificAdapterConfig that = (OpcUaSpecificAdapterConfig) o;
-        return getOverrideUri().equals(that.getOverrideUri() &&
+        return getOverrideUri().equals(that.getOverrideUri()) &&
                 Objects.equals(id, that.id) &&
                 Objects.equals(getUri(), that.getUri()) &&
                 Objects.equals(getAuth(), that.getAuth()) &&
                 Objects.equals(getTls(), that.getTls()) &&
                 Objects.equals(getSecurity(), that.getSecurity()) &&
-                Objects.equals(getOpcuaToMqttConfig(), that.getOpcuaToMqttConfig()));
+                Objects.equals(getOpcuaToMqttConfig(), that.getOpcuaToMqttConfig());
     }
 
     @Override

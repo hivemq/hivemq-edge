@@ -17,7 +17,8 @@ tasks.register("clean") {
     group = "build"
     //required since we don't apply the base plugin and otherwise the reports can't be cleaned out
     project.delete(files("${project.layout.buildDirectory.get()}"))
-    dependsOn(gradle.includedBuilds.map { it.task(":clean") })
+
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.map { it.task(":$name") })
 }
 
 tasks.register("build") {

@@ -54,8 +54,8 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
             if (policyUri.equals(SecurityPolicy.None.getUri())) {
                 return true;
             }
-            if (adapterConfig.getTls().isEnabled() &&
-                    adapterConfig.getTls().getKeystore() != null) {
+            if (adapterConfig.getTls().enabled() &&
+                    adapterConfig.getTls().keystore() != null) {
                 //if security policy is not 'None', then skip the policy if no keystore is available
                 return true;
             }
