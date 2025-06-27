@@ -1,0 +1,10 @@
+type: object
+description: A listing of data policies.
+properties:
+  _links:
+    $ref: ./PaginationCursor.yaml
+  items:
+    type: array
+    description: List of result items that are returned by this endpoint
+    items:
+      $ref: ./DataPolicy.yaml

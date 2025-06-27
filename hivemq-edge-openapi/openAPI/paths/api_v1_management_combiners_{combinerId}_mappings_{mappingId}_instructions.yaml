@@ -1,0 +1,25 @@
+get:
+  description: Get all the instructions for a designated mapping
+  summary: Get all instructions
+  operationId: getMappingInstructions
+  tags:
+    - Combiners
+  parameters:
+    - $ref: ../components/parameters/CombinerId.yaml
+    - $ref: ../components/parameters/MappingId.yaml
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: array
+            description: List of instructions to be applied to incoming data
+            items:
+              $ref: ../components/schemas/Instruction.yaml
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Combiner not found
