@@ -17,8 +17,8 @@ package com.hivemq.extensions.services;
 
 import com.hivemq.extension.sdk.api.services.exception.RateLimitExceededException;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 

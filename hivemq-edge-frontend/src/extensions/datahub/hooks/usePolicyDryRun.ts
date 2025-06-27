@@ -1,5 +1,6 @@
 import type { Node } from '@xyflow/react'
 import { getIncomers } from '@xyflow/react'
+import debug from 'debug'
 
 import type { PolicySchema, Script } from '@/api/__generated__'
 
@@ -25,6 +26,9 @@ import {
 } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
 import { checkValidityTransitions } from '@datahub/designer/transition/TransitionNode.utils.ts'
 import { checkValidityPipeline } from '@datahub/designer/operation/OperationNode.utils.ts'
+import { useFilteredFunctionsFetcher } from '@datahub/hooks/useFilteredFunctionsFetcher.ts'
+
+const datahubLog = debug('DataHub:usePolicyDryRun')
 
 /* istanbul ignore next -- @preserve */
 const mockDelay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -47,24 +51,28 @@ export const onlyUniqueResources = (acc: DryRunResults<unknown, never>[], item: 
 export const usePolicyDryRun = () => {
   const store = useDataHubDraftStore()
   const { nodes, edges, onUpdateNodes } = store
+  const { getFilteredFunctions } = useFilteredFunctionsFetcher()
 
-  /* istanbul ignore next -- @preserve */
   const updateNodeStatus = async (results: DryRunResults<unknown>) => {
     const currentNode = nodes.find((node) => node.id === results.node.id)
+    if (!currentNode) {
+      datahubLog(`Node with ID ${results.node.id} not found in the current nodes list`)
+      return
+    }
 
     const getStatus = (): PolicyDryRunStatus => {
       if (results.error) return PolicyDryRunStatus.FAILURE
+      // If current node was already marked as failure, keep it
       if (currentNode?.data.dryRunStatus === PolicyDryRunStatus.FAILURE) return PolicyDryRunStatus.FAILURE
       return PolicyDryRunStatus.SUCCESS
     }
-    onUpdateNodes<DataHubNodeData>(results.node.id, {
-      ...results.node.data,
+    onUpdateNodes<DataHubNodeData>(currentNode.id, {
+      ...currentNode.data,
       dryRunStatus: getStatus(),
     })
     await mockDelay(DRYRUN_VALIDATION_DELAY)
   }
 
-  /* istanbul ignore next -- @preserve */
   const runPolicyChecks = async (
     allNodes: Node<DataHubNodeData>[],
     processedNodes: DryRunResults<unknown, never>[]
@@ -98,7 +106,7 @@ export const usePolicyDryRun = () => {
     const schemaResources = validators.reduce(onlyNonNullResources, [] as DryRunResults<PolicySchema>[])
     const allResources = [...successResources, ...errorResources, ...schemaResources].reduce(onlyUniqueResources, [])
 
-    const allConfigurations = checkValidityConfigurations(allNodes)
+    const allConfigurations = checkValidityConfigurations(allNodes, getFilteredFunctions(DataHubNodeType.DATA_POLICY))
 
     const processedNodes = [
       ...allConfigurations,
@@ -126,7 +134,6 @@ export const usePolicyDryRun = () => {
   }
 
   const checkBehaviorPolicyAsync = (behaviourPolicyNode: Node<BehaviorPolicyData>) => {
-    /* istanbul ignore next -- @preserve */
     const incomers = getIncomers(behaviourPolicyNode, nodes, edges).filter(isClientFilterNodeType)
     const allNodes = getSubFlow(
       behaviourPolicyNode,
@@ -141,10 +148,13 @@ export const usePolicyDryRun = () => {
 
     const pipelineResources = pipelines?.reduce(onlyNonNullResources, [] as DryRunResults<PolicySchema>[])
 
-    const allConfigurations = checkValidityConfigurations(allNodes)
+    // TODO[29953] This is not enough, potential BehaviorPolicyTransitionEvent needs to be passed
+    const allConfigurations = checkValidityConfigurations(
+      allNodes,
+      getFilteredFunctions(DataHubNodeType.BEHAVIOR_POLICY)
+    )
 
     const processedNodes = [
-      ...allConfigurations,
       ...allConfigurations,
       clients,
       model,

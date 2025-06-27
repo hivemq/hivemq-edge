@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
-import type { WidgetProps } from '@rjsf/utils'
-import type { RJSFSchema } from '@rjsf/utils/src/types'
+import type { WidgetProps, RJSFSchema } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ButtonGroup } from '@chakra-ui/react'

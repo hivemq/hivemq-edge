@@ -31,8 +31,8 @@ import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
 import com.hivemq.util.ReasonStrings;
 import io.netty.buffer.ByteBuf;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.Objects;
 
 import static com.hivemq.mqtt.message.mqtt5.MessageProperties.USER_PROPERTY;

@@ -36,8 +36,8 @@ import com.hivemq.extensions.services.executor.GlobalManagedExtensionExecutorSer
 import com.hivemq.persistence.RetainedMessage;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;

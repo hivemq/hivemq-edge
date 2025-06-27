@@ -29,8 +29,8 @@ import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import org.jetbrains.annotations.NotNull;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

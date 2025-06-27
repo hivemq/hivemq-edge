@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogOverlay,
   Button,
+  Text,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import type { FocusableElement } from '@chakra-ui/utils'
@@ -17,28 +18,48 @@ interface ConfirmationDialogProps {
   onClose: () => void
   header: string
   message: string
+  prompt?: string
   action?: string | null
   onSubmit?: () => void
+  footer?: React.ReactNode
 }
 
-const ConfirmationDialog: FC<ConfirmationDialogProps> = ({ isOpen, onClose, header, message, action, onSubmit }) => {
+const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
+  isOpen,
+  onClose,
+  header,
+  message,
+  prompt,
+  action,
+  onSubmit,
+  footer,
+}) => {
   const { t } = useTranslation()
   const cancelRef = useRef<HTMLButtonElement>()
 
   return (
-    <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef as RefObject<FocusableElement>} onClose={onClose}>
+    <AlertDialog
+      isOpen={isOpen}
+      leastDestructiveRef={cancelRef as RefObject<FocusableElement>}
+      onClose={onClose}
+      size="lg"
+    >
       <AlertDialogOverlay>
         <AlertDialogContent>
           <AlertDialogHeader fontSize="lg" fontWeight="bold">
             {header}
           </AlertDialogHeader>
 
-          <AlertDialogBody>{message}</AlertDialogBody>
+          <AlertDialogBody>
+            <Text data-testid="confirmation-message">{message}</Text>
+            {prompt && <Text data-testid="confirmation-prompt">{prompt}</Text>}
+          </AlertDialogBody>
 
-          <AlertDialogFooter>
+          <AlertDialogFooter gap={3}>
             <Button ref={cancelRef as LegacyRef<HTMLButtonElement>} onClick={onClose} data-testid="confirmation-cancel">
               {t('action.cancel')}
             </Button>
+            {footer}
             <Button
               data-testid="confirmation-submit"
               onClick={() => {
@@ -46,7 +67,6 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({ isOpen, onClose, head
                 onSubmit?.()
               }}
               variant="danger"
-              ml={3}
             >
               {action || t('action.delete')}
             </Button>

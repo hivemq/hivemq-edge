@@ -48,8 +48,8 @@ export const MqttTransformationField: FC<FieldProps<SouthboundMapping[], RJSFSch
     setSubsData((old) => [
       ...(old || []),
       {
-        topicFilter: undefined,
-        tagName: undefined,
+        topicFilter: '',
+        tagName: '',
         maxQoS: MOCK_MAX_QOS,
         fieldMapping: {
           instructions: [],

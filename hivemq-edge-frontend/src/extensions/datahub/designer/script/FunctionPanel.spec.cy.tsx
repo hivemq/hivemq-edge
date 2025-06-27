@@ -24,7 +24,7 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
     }}
   >
     {children}
-    <Button variant="primary" type="submit" form="datahub-node-form">
+    <Button variant="primary" type="submit" form="datahub-node-form" mt={4}>
       SUBMIT
     </Button>
   </MockStoreWrapper>
@@ -34,6 +34,21 @@ describe('FunctionPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
     cy.intercept('/api/v1/data-hub/scripts', { items: [{ ...mockScript, type: SchemaType.PROTOBUF }] })
+  })
+
+  it('should render loading and error states', () => {
+    const onFormError = cy.stub().as('onFormError')
+    cy.intercept('/api/v1/data-hub/scripts', { statusCode: 404 }).as('getScripts')
+    cy.mountWithProviders(<FunctionPanel selectedNode="3" onFormError={onFormError} />, { wrapper })
+    cy.getByTestId('loading-spinner').should('be.visible')
+
+    cy.wait('@getScripts')
+    cy.get('[role="alert"]')
+      .should('be.visible')
+      .should('have.attr', 'data-status', 'error')
+      .should('have.text', 'Not Found')
+
+    cy.get('@onFormError').should('have.been.calledWithErrorMessage', 'Not Found')
   })
 
   it('should render the fields for a Function node', () => {
@@ -85,17 +100,11 @@ describe('FunctionPanel', () => {
     cy.get('#root_version-label + div').should('contain.text', '1')
   })
 
-  // TODO[NVL] Weird import worker error
-  it.skip('should be accessible', () => {
+  it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<FunctionPanel selectedNode="3" />, { wrapper })
 
-    cy.checkAccessibility(undefined, {
-      rules: {
-        // TODO[a11y] False positive with the react-select [?]
-        'color-contrast': { enabled: false },
-      },
-    })
+    cy.checkAccessibility()
     cy.percySnapshot('Component: SchemaPanel')
   })
 })

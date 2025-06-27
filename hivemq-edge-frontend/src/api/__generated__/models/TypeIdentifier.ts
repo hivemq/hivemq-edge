@@ -29,9 +29,6 @@ export namespace TypeIdentifier {
         ADAPTER_TYPE = 'ADAPTER_TYPE',
         EVENT = 'EVENT',
         USER = 'USER',
-        /**
-         * @deprecated Must be using COMBINER instead
-         */
         DATA_COMBINING = 'DATA_COMBINING',
         COMBINER = 'COMBINER',
         EDGE = 'EDGE',

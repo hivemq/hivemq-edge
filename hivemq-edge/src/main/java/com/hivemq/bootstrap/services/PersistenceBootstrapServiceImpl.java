@@ -24,8 +24,8 @@ import com.hivemq.edge.HiveMQCapabilityService;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.core.PersistencesService;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class PersistenceBootstrapServiceImpl implements PersistenceBootstrapService {

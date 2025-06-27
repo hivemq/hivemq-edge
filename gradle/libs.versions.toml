@@ -9,8 +9,10 @@ bouncycastle = "1.80"
 byteBuddy = "1.17.5"
 concurrentUnit = "0.4.6"
 dagger = "2.56.2"
+digitalpetri-modbus-tcp = "2.1.0"
 dropwizard-metrics = "4.2.32"
 equalsVerifier = "3.19.4"
+errorprone = "2.38.0"
 future-converter = "1.2.0"
 guava = "32.1.3-jre"
 hikari = "6.2.1"
@@ -23,19 +25,18 @@ jackson = "2.18.3"
 jacoco = "0.8.11"
 jsonSchemaInferrer = "0.2.1"
 javassist = "3.30.2-GA"
-javax-annotation-api = "1.3.2"
+jakarta-annotation-api = "2.1.1"
 jaxb2 = "2.3.9"
 jaxb4-bind = "4.0.2"
 jaxb4-impl = "4.0.5"
 jctools = "4.0.5"
-jersey = "2.46"
+jersey = "3.1.10"
 jose4j = "0.9.6"
 jsonSchemaValidator = "1.5.7"
 junit-jupiter = "5.13.1"
 logback = "1.5.18"
-milo = "0.6.15"
+milo = "1.0.0"
 mockito = "5.17.0"
-modbus = "1.2.2"
 mqtt-sn-codec = "838f51d691"
 mssql="12.8.1.jre11"
 mtconnect-protocol = "1.0.0"
@@ -68,12 +69,13 @@ byteBuddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byteBuddy" }
 concurrentUnit = { module = "net.jodah:concurrentunit", version.ref = "concurrentUnit" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
-digitalpetri-modbus-master-tcp = { module = "com.digitalpetri.modbus:modbus-master-tcp", version.ref = "modbus" }
+digitalpetri-modbus-tcp = { module = "com.digitalpetri.modbus:modbus-tcp", version.ref ="digitalpetri-modbus-tcp" }
 dropwizard-metrics = { module = "io.dropwizard.metrics:metrics-core", version.ref = "dropwizard-metrics" }
 dropwizard-metrics-jmx = { module = "io.dropwizard.metrics:metrics-jmx", version.ref = "dropwizard-metrics" }
 dropwizard-metrics-jvm = { module = "io.dropwizard.metrics:metrics-jvm", version.ref = "dropwizard-metrics" }
 dropwizard-metrics-logback = { module = "io.dropwizard.metrics:metrics-logback", version.ref = "dropwizard-metrics" }
 equalsVerifier = { module = "nl.jqno.equalsverifier:equalsverifier", version.ref = "equalsVerifier" }
+errorprone = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
 jsonSchemaInferrer = { module = "com.github.saasquatch:json-schema-inferrer", version.ref = "jsonSchemaInferrer" }
 jersey-container-jdk-http = { module = "org.glassfish.jersey.containers:jersey-container-jdk-http", version.ref = "jersey" }
 jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jersey" }
@@ -90,10 +92,10 @@ jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", ver
 jackson-databind-nullable = { module = "org.openapitools:jackson-databind-nullable", version.ref = "jacksonDatabindNullable" }
 jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson" }
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
-jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider", version.ref = "jackson" }
+jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider", version.ref = "jackson" }
 javacrumbs-futureConverter = { module = "net.javacrumbs.future-converter:future-converter-java8-guava", version.ref = "future-converter" }
 javassist = { module = "org.javassist:javassist", version.ref = "javassist" }
-javax-annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref = "javax-annotation-api" }
+jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotation-api" }
 jaxb2-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb2" }
 jaxb4-bind = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref = "jaxb4-bind" }
 jaxb4-impl = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "jaxb4-impl" }
@@ -104,10 +106,14 @@ julToSlf4j = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-jupiter" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
-milo-bsdParserGson = { module = "org.eclipse.milo:bsd-parser-gson", version.ref = "milo" }
-milo-client = { module = "org.eclipse.milo:sdk-client", version.ref = "milo" }
-milo-dictionaryReader = { module = "org.eclipse.milo:dictionary-reader", version.ref = "milo" }
-milo-server = { module = "org.eclipse.milo:sdk-server", version.ref = "milo" }
+
+milo-client = { module = "org.eclipse.milo:milo-sdk-client", version.ref = "milo" }
+milo-server = { module = "org.eclipse.milo:milo-sdk-server", version.ref = "milo" }
+milo-encoding-json = { module = "org.eclipse.milo:milo-encoding-json", version.ref = "milo" }
+milo-encoding-xml = { module = "org.eclipse.milo:milo-encoding-xml", version.ref = "milo" }
+milo-dtd-reader = { module = "org.eclipse.milo:milo-dtd-reader", version.ref = "milo" }
+milo-dtd-manager = { module = "org.eclipse.milo:milo-dtd-manager", version.ref = "milo" }
+
 mockito-junitJupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 mqtt-sn-codec = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn-codec" }
 mssql= { module = "com.microsoft.sqlserver:mssql-jdbc", version.ref = "mssql" }
@@ -141,6 +147,7 @@ zeroAllocationHashing = { module = "net.openhft:zero-allocation-hashing", versio
 [plugins]
 cyclonedx = { id = "org.cyclonedx.bom", version = "1.10.0" }
 defaults = { id = "io.github.sgtsilvio.gradle.defaults", version = "0.2.0" }
+errorprone = { id = "net.ltgt.errorprone", version = "4.2.0" }
 metadata = { id = "io.github.sgtsilvio.gradle.metadata", version = "0.6.0" }
 javadocLinks = { id = "io.github.sgtsilvio.gradle.javadoc-links", version = "0.8.0" }
 githubRelease = { id = "com.github.breadmoirai.github-release", version = "2.5.2" }

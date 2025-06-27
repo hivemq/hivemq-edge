@@ -1,0 +1,29 @@
+type: object
+required:
+  - variable
+  - type
+  - description
+  - policyType
+properties:
+  variable:
+    type: string
+    description: The unique variable name
+  type:
+    type: string
+    enum: ["string", "long"]
+  description:
+    type: string
+    description: The description of the variable name
+  policyType:
+    type: array
+    description: The list of policy types this variable can be used with
+    uniqueItems: true
+    items:
+      $ref: ./PolicyType.yaml
+example:
+  variable: clientId
+  type: string
+  description: The MQTT client ID
+  policyType:
+    - DATA_POLICY
+    - BEHAVIOR_POLICY

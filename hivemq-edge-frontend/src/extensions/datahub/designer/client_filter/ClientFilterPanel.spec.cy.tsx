@@ -36,6 +36,18 @@ describe('ClientFilterPanel', () => {
     cy.viewport(800, 800)
   })
 
+  it('should render loading and error states', () => {
+    const onFormError = cy.stub().as('onFormError')
+    cy.mountWithProviders(<ClientFilterPanel selectedNode="fakenosde" onFormError={onFormError} />, { wrapper })
+
+    cy.get('[role="alert"]')
+      .should('be.visible')
+      .should('have.attr', 'data-status', 'error')
+      .should('contain.text', 'The Client Filter is not a valid element')
+
+    cy.get('@onFormError').should('have.been.calledWithErrorMessage', 'The Client Filter is not a valid element')
+  })
+
   it('should render the fields for a Validator', () => {
     const onSubmit = cy.stub().as('onSubmit')
 

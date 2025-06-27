@@ -18,16 +18,16 @@ package com.hivemq.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
 import org.jetbrains.annotations.NotNull;
 
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.ext.Provider;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.ext.Provider;
 
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
-public class CustomJsonProvider extends JacksonJaxbJsonProvider {
+public class CustomJsonProvider extends JacksonJsonProvider {
 
     private static final @NotNull ObjectMapper mapper = new ObjectMapper();
 

@@ -1,10 +1,13 @@
 import type { HotKeyItem } from '@datahub/types.ts'
+import { OperationData } from '@datahub/types.ts'
+
+export const DND_DESIGNER_NODE_TYPE = 'application/reactflow;type=designer-node'
 
 export const SCRIPT_FUNCTION_SEPARATOR = ':'
 export const SCRIPT_FUNCTION_PREFIX = 'fn'
 export const SCRIPT_FUNCTION_LATEST = 'latest'
 
-export const DRYRUN_VALIDATION_DELAY = 250
+export const DRYRUN_VALIDATION_DELAY = 150
 
 export const DATAHUB_HOTKEY = {
   COPY: 'Meta+C',
@@ -28,4 +31,12 @@ export const DATAHUB_HOTKEY_CONTEXT: HotKeyItem[] = [
   { key: 'Backspace', category: 'Selected' },
   { key: 'Shift+drag', category: 'Designer' },
   { key: 'Meta+click', category: 'Designer' },
+]
+
+/**
+ * List of operation functions that are not allowed to be used in the DataHub Designer.
+ */
+export const OPERATION_FUNCTION_BLOCKLIST: string[] = [
+  OperationData.Function.SERDES_DESERIALIZE,
+  OperationData.Function.SERDES_SERIALIZE,
 ]

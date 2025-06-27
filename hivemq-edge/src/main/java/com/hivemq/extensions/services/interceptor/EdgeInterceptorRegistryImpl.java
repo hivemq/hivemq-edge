@@ -22,8 +22,8 @@ import com.hivemq.extension.sdk.api.interceptor.bridge.BridgePublishOutboundInte
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.ProtocolAdapterPublishInboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.services.interceptor.EdgeInterceptorRegistry;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class EdgeInterceptorRegistryImpl implements EdgeInterceptorRegistry {

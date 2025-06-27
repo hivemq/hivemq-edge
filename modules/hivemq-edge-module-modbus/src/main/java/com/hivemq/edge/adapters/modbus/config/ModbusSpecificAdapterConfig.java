@@ -68,12 +68,8 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
         this.port = port;
         this.host = host;
         this.timeoutMillis = Objects.requireNonNullElse(timeoutMillis, 5000);
-
-        if (modbusToMQTTConfig == null) {
-            this.modbusToMQTTConfig = new ModbusToMqttConfig(null, null, null);
-        } else {
-            this.modbusToMQTTConfig = modbusToMQTTConfig;
-        }
+        this.modbusToMQTTConfig =
+                Objects.requireNonNullElseGet(modbusToMQTTConfig, () -> new ModbusToMqttConfig(null, null, null));
     }
 
     public @NotNull String getHost() {
@@ -93,8 +89,10 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(final @Nullable Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final ModbusSpecificAdapterConfig that = (ModbusSpecificAdapterConfig) o;
         return getPort() == that.getPort() &&
                 getTimeoutMillis() == that.getTimeoutMillis() &&

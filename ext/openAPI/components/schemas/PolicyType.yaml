@@ -1,0 +1,5 @@
+  description: The type of policy in Data Hub
+  type: string
+  enum:
+    - DATA_POLICY
+    - BEHAVIOR_POLICY

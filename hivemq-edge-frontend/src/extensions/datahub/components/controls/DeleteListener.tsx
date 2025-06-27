@@ -44,7 +44,7 @@ const DeleteListener: FC = () => {
 
     const { selectedNodes, selectedEdges } = selectedElements
     const canDeleteNodes = selectedNodes.map((node) => canDeleteNode(node, status))
-    const canDeleteEdges = selectedEdges.map((edge) => canDeleteEdge(edge, nodes))
+    const canDeleteEdges = selectedEdges.map((edge) => canDeleteEdge(edge, nodes, status))
 
     const allElements = [...canDeleteNodes, ...canDeleteEdges]
     if (allElements.length === 0) return

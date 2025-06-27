@@ -1,4 +1,14 @@
 import { OperationData } from '@datahub/types.ts'
+import { SCRIPT_FUNCTION_LATEST } from '@datahub/utils/datahub.utils.ts'
+
+const NODE1_ID = 'node_07280ae8-6470-48f8-87da-84cc4bcb6d2b'
+const NODE2_ID = 'node_4ad0412f-e773-49d3-81e3-d5f54f9fbd09'
+const NODE3_ID = 'node_a94a5dc9-c092-4131-81d4-eae9ff0e0207'
+const NODE4_ID = 'node_d2dc73c3-4bce-4126-b6c7-8494b01fed83'
+const NODE6_ID = 'node_8532d17d-7cec-43ad-8864-9fba85b94113'
+const NODE7_ID = 'node_cf866b22-340a-41da-a669-4589a30969f9'
+
+const STROKE_DEFAULT = 'var(--chakra-colors-green-500)'
 
 export const MOCK_TRANSFORM = {
   nodes: [
@@ -25,7 +35,7 @@ export const MOCK_TRANSFORM = {
       },
     },
     {
-      id: 'node_07280ae8-6470-48f8-87da-84cc4bcb6d2b',
+      id: NODE1_ID,
       type: 'OPERATION',
       position: {
         x: 960,
@@ -49,7 +59,7 @@ export const MOCK_TRANSFORM = {
       },
     },
     {
-      id: 'node_4ad0412f-e773-49d3-81e3-d5f54f9fbd09',
+      id: NODE2_ID,
       type: 'OPERATION',
       position: {
         x: 300,
@@ -59,7 +69,7 @@ export const MOCK_TRANSFORM = {
         functionId: 'Serdes.deserialize',
         formData: {
           schemaId: 'dfdffd',
-          schemaVersion: 'latest',
+          schemaVersion: SCRIPT_FUNCTION_LATEST,
         },
         metadata: {
           isTerminal: false,
@@ -118,7 +128,7 @@ export const MOCK_TRANSFORM = {
       },
     },
     {
-      id: 'node_a94a5dc9-c092-4131-81d4-eae9ff0e0207',
+      id: NODE3_ID,
       type: 'SCHEMA',
       position: {
         x: 195,
@@ -140,7 +150,7 @@ export const MOCK_TRANSFORM = {
       dragging: false,
     },
     {
-      id: 'node_d2dc73c3-4bce-4126-b6c7-8494b01fed83',
+      id: NODE4_ID,
       type: 'VALIDATOR',
       position: {
         x: 0,
@@ -166,7 +176,7 @@ export const MOCK_TRANSFORM = {
       dragging: false,
     },
     {
-      id: 'node_8532d17d-7cec-43ad-8864-9fba85b94113',
+      id: NODE6_ID,
       type: 'DATA_POLICY',
       position: {
         x: 0,
@@ -208,7 +218,7 @@ export const MOCK_TRANSFORM = {
       },
     },
     {
-      id: 'node_cf866b22-340a-41da-a669-4589a30969f9',
+      id: NODE7_ID,
       type: 'OPERATION',
       position: {
         x: 630,
@@ -234,9 +244,9 @@ export const MOCK_TRANSFORM = {
   ],
   edges: [
     {
-      source: 'node_d2dc73c3-4bce-4126-b6c7-8494b01fed83',
+      source: NODE4_ID,
       sourceHandle: 'source',
-      target: 'node_8532d17d-7cec-43ad-8864-9fba85b94113',
+      target: NODE6_ID,
       targetHandle: 'validation',
       markerEnd: {
         type: 'arrowclosed',
@@ -246,14 +256,14 @@ export const MOCK_TRANSFORM = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_d2dc73c3-4bce-4126-b6c7-8494b01fed83source-node_8532d17d-7cec-43ad-8864-9fba85b94113validation',
     },
     {
-      source: 'node_a94a5dc9-c092-4131-81d4-eae9ff0e0207',
+      source: NODE3_ID,
       sourceHandle: 'source',
-      target: 'node_d2dc73c3-4bce-4126-b6c7-8494b01fed83',
+      target: NODE4_ID,
       targetHandle: 'target',
       markerEnd: {
         type: 'arrowclosed',
@@ -263,14 +273,14 @@ export const MOCK_TRANSFORM = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_a94a5dc9-c092-4131-81d4-eae9ff0e0207source-node_d2dc73c3-4bce-4126-b6c7-8494b01fed83target',
     },
     {
-      source: 'node_a94a5dc9-c092-4131-81d4-eae9ff0e0207',
+      source: NODE3_ID,
       sourceHandle: 'source',
-      target: 'node_4ad0412f-e773-49d3-81e3-d5f54f9fbd09',
+      target: NODE2_ID,
       targetHandle: 'schema',
       markerEnd: {
         type: 'arrowclosed',
@@ -280,14 +290,14 @@ export const MOCK_TRANSFORM = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_a94a5dc9-c092-4131-81d4-eae9ff0e0207source-node_4ad0412f-e773-49d3-81e3-d5f54f9fbd09schema',
     },
     {
-      source: 'node_8532d17d-7cec-43ad-8864-9fba85b94113',
+      source: NODE6_ID,
       sourceHandle: 'onSuccess',
-      target: 'node_4ad0412f-e773-49d3-81e3-d5f54f9fbd09',
+      target: NODE2_ID,
       targetHandle: 'input',
       markerEnd: {
         type: 'arrowclosed',
@@ -297,14 +307,14 @@ export const MOCK_TRANSFORM = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_8532d17d-7cec-43ad-8864-9fba85b94113onSuccess-node_4ad0412f-e773-49d3-81e3-d5f54f9fbd09input',
     },
     {
-      source: 'node_4ad0412f-e773-49d3-81e3-d5f54f9fbd09',
+      source: NODE2_ID,
       sourceHandle: 'output',
-      target: 'node_cf866b22-340a-41da-a669-4589a30969f9',
+      target: NODE7_ID,
       targetHandle: 'input',
       markerEnd: {
         type: 'arrowclosed',
@@ -314,14 +324,14 @@ export const MOCK_TRANSFORM = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_4ad0412f-e773-49d3-81e3-d5f54f9fbd09output-node_cf866b22-340a-41da-a669-4589a30969f9input',
     },
     {
       source: 'node_704a4cdc-e4c3-46d8-822c-0922f0b2de98',
       sourceHandle: 'source',
-      target: 'node_cf866b22-340a-41da-a669-4589a30969f9',
+      target: NODE7_ID,
       targetHandle: 'schema',
       markerEnd: {
         type: 'arrowclosed',
@@ -331,14 +341,14 @@ export const MOCK_TRANSFORM = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_704a4cdc-e4c3-46d8-822c-0922f0b2de98source-node_cf866b22-340a-41da-a669-4589a30969f9schema',
     },
     {
-      source: 'node_cf866b22-340a-41da-a669-4589a30969f9',
+      source: NODE7_ID,
       sourceHandle: 'output',
-      target: 'node_07280ae8-6470-48f8-87da-84cc4bcb6d2b',
+      target: NODE1_ID,
       targetHandle: 'input',
       markerEnd: {
         type: 'arrowclosed',
@@ -348,14 +358,14 @@ export const MOCK_TRANSFORM = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_cf866b22-340a-41da-a669-4589a30969f9output-node_07280ae8-6470-48f8-87da-84cc4bcb6d2binput',
     },
     {
       source: 'node_3c6bd879-7058-4ae0-bfb1-6d6b126c6495',
       sourceHandle: 'source',
-      target: 'node_07280ae8-6470-48f8-87da-84cc4bcb6d2b',
+      target: NODE1_ID,
       targetHandle: 'schema',
       markerEnd: {
         type: 'arrowclosed',
@@ -365,12 +375,12 @@ export const MOCK_TRANSFORM = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_3c6bd879-7058-4ae0-bfb1-6d6b126c6495source-node_07280ae8-6470-48f8-87da-84cc4bcb6d2bschema',
     },
     {
-      source: 'node_8532d17d-7cec-43ad-8864-9fba85b94113',
+      source: NODE6_ID,
       sourceHandle: 'onError',
       target: 'node_f9ed3037-78e7-42e2-8027-0be046dba6f1',
       targetHandle: 'input',
@@ -382,14 +392,14 @@ export const MOCK_TRANSFORM = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_8532d17d-7cec-43ad-8864-9fba85b94113onError-node_f9ed3037-78e7-42e2-8027-0be046dba6f1input',
     },
     {
       source: 'node_72457a3e-425c-48b1-aecb-71171a43edd7',
       sourceHandle: 'factory/#-0',
-      target: 'node_8532d17d-7cec-43ad-8864-9fba85b94113',
+      target: NODE6_ID,
       targetHandle: 'topicFilter',
       markerEnd: {
         type: 'arrowclosed',
@@ -399,7 +409,7 @@ export const MOCK_TRANSFORM = {
       },
       style: {
         strokeWidth: 2,
-        stroke: 'var(--chakra-colors-green-500)',
+        stroke: STROKE_DEFAULT,
       },
       id: 'reactflow__edge-node_72457a3e-425c-48b1-aecb-71171a43edd7factory/#-0-node_8532d17d-7cec-43ad-8864-9fba85b94113topicFilter',
     },

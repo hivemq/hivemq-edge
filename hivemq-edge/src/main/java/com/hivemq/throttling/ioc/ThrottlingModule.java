@@ -20,7 +20,7 @@ import dagger.Module;
 import dagger.Provides;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Module
 public abstract class ThrottlingModule {

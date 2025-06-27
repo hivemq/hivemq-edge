@@ -5,8 +5,7 @@ import { ButtonGroup, HStack } from '@chakra-ui/react'
 import { LuFileEdit, LuTrash2, LuFileSearch, LuDownload } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
-import type { CombinedPolicy } from '@datahub/types.ts'
-import { DesignerStatus, PolicyType } from '@datahub/types.ts'
+import { type CombinedPolicy, DesignerStatus, DesignerPolicyType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
 interface DataHubListActionProps {
@@ -14,9 +13,18 @@ interface DataHubListActionProps {
   onEdit?: MouseEventHandler<HTMLButtonElement>
   onDelete?: MouseEventHandler<HTMLButtonElement>
   onDownload?: MouseEventHandler<HTMLButtonElement>
+  canDelete?: boolean
+  canDownload?: boolean
 }
 
-const DataHubListAction: FC<DataHubListActionProps> = ({ policy, onEdit, onDelete, onDownload }) => {
+const DataHubListAction: FC<DataHubListActionProps> = ({
+  policy,
+  onEdit,
+  onDelete,
+  onDownload,
+  canDownload = true,
+  canDelete = true,
+}) => {
   const { t } = useTranslation('datahub')
   const navigate = useNavigate()
   const { setStatus } = useDataHubDraftStore()
@@ -25,23 +33,27 @@ const DataHubListAction: FC<DataHubListActionProps> = ({ policy, onEdit, onDelet
     // If not policy, it's a resource toolbar
     return (
       <ButtonGroup size="sm" isAttached>
-        <IconButton
-          data-testid="list-action-download"
-          onClick={onDownload}
-          aria-label={t('Listings.action.download')}
-          icon={<LuDownload />}
-        />
-        <IconButton
-          data-testid="list-action-delete"
-          onClick={onDelete}
-          aria-label={t('Listings.action.delete')}
-          icon={<LuTrash2 />}
-        />
+        {canDownload && (
+          <IconButton
+            data-testid="list-action-download"
+            onClick={onDownload}
+            aria-label={t('Listings.action.download')}
+            icon={<LuDownload />}
+          />
+        )}
+        {canDelete && (
+          <IconButton
+            data-testid="list-action-delete"
+            onClick={onDelete}
+            aria-label={t('Listings.action.delete')}
+            icon={<LuTrash2 />}
+          />
+        )}
       </ButtonGroup>
     )
   }
 
-  if (policy?.type === PolicyType.CREATE_POLICY) {
+  if (policy?.type === DesignerPolicyType.CREATE_POLICY) {
     // If a draft
     return (
       <ButtonGroup size="sm" isAttached>
@@ -49,7 +61,7 @@ const DataHubListAction: FC<DataHubListActionProps> = ({ policy, onEdit, onDelet
           data-testid="list-action-view"
           onClick={() => {
             setStatus(DesignerStatus.DRAFT)
-            navigate(`/datahub/${PolicyType.CREATE_POLICY}`)
+            navigate(`/datahub/${DesignerPolicyType.CREATE_POLICY}`)
           }}
           aria-label={t('Listings.policy.action.draft')}
           icon={<LuFileEdit />}

@@ -61,7 +61,6 @@ const MetricsContainer: FC<MetricsProps> = ({ nodeId, filters, initMetrics, defa
   }
 
   const metrics = getMetricsFor(nodeId)
-  console.log('XXXXXXX mer', metrics)
 
   useEffect(() => {
     const metrics = getMetricsFor(nodeId)

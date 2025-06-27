@@ -24,7 +24,7 @@ import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.dropping.IncomingPublishDropper;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class AdapterHandlingProvider {
 

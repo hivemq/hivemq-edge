@@ -5,11 +5,19 @@ import descriptor from 'protobufjs/ext/descriptor'
 import i18n from '@/config/i18n.config.ts'
 
 import type { PolicySchema, SchemaReference, Script } from '@/api/__generated__'
-import type { DataHubNodeData, DryRunResults, ResourceFamily, SchemaData } from '@datahub/types.ts'
+import type {
+  DataHubNodeData,
+  DryRunResults,
+  PolicyOperationArguments,
+  ResourceFamily,
+  SchemaData,
+} from '@datahub/types.ts'
 import { DataHubNodeType, ResourceWorkingVersion, SchemaType } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
+import { SCRIPT_FUNCTION_LATEST } from '@datahub/utils/datahub.utils.ts'
+import { getNodeId } from '@datahub/utils/node.utils.ts'
 
 export const getScriptFamilies = (items: Script[]) => {
   return items.reduce<Record<string, ResourceFamily>>((acc, script) => {
@@ -97,7 +105,6 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
       }
       return { data: schema, node: schemaNode }
     } catch (e) {
-      console.log(e)
       return {
         node: schemaNode,
         error: PolicyCheckErrors.internal(schemaNode, e),
@@ -111,20 +118,40 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
   }
 }
 
+/**
+ * Get the version of a schema reference from either the validator or the argument of the script operation.
+ * TODO[20139] Remove the PolicyOperationArguments type when the OpenAPI specs are updated. Both should use the same type.
+ * @param schemaRef
+ */
+export const getSchemaRefVersion = (schemaRef: SchemaReference | PolicyOperationArguments): string => {
+  return (schemaRef as SchemaReference).version || (schemaRef as PolicyOperationArguments).schemaVersion
+}
+
 export function loadSchema(
   parentNode: Node<DataHubNodeData>,
   targetHandle: string | null,
   positionInGroup: number,
-  schemaRef: SchemaReference,
+  schemaRef: SchemaReference | PolicyOperationArguments,
   schemas: PolicySchema[]
 ): (NodeAddChange | Connection)[] {
-  const schema = schemas.find((schema) => schema.id === schemaRef.schemaId)
+  const schemaFamily = schemas.filter((schema) => schema.id === schemaRef.schemaId)
+  if (!schemaFamily.length)
+    throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.SCHEMA }) as string)
+
+  let schema: PolicySchema | undefined
+  const version = getSchemaRefVersion(schemaRef)
+  if (version === SCRIPT_FUNCTION_LATEST) {
+    schema = schemaFamily.slice(-1)[0]
+  } else {
+    schema = schemaFamily.find((s) => s.version?.toString() === version)
+  }
+
   if (!schema)
     throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.SCHEMA }) as string)
 
   if (schema.type === SchemaType.JSON) {
     const schemaNode: Node<SchemaData> = {
-      id: schemaRef.schemaId,
+      id: getNodeId(DataHubNodeType.SCHEMA),
       type: DataHubNodeType.SCHEMA,
       position: {
         x: parentNode.position.x + CANVAS_POSITION.PolicySchema.x,

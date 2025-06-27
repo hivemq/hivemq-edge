@@ -35,8 +35,8 @@ import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.services.executor.GlobalManagedExtensionExecutorService;
 import com.hivemq.extensions.services.executor.ManagedExecutorServicePerExtension;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ExtensionServicesDependenciesImpl implements ExtensionServicesDependencies {

@@ -88,7 +88,7 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 

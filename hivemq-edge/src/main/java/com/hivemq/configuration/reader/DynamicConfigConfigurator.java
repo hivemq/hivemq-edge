@@ -21,7 +21,7 @@ import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import org.jetbrains.annotations.NotNull;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.List;
 
 public class DynamicConfigConfigurator implements Configurator<DynamicConfigEntity> {

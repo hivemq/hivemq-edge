@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC128RSA15;
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.NONE;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
@@ -64,29 +65,29 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
         assertThat(config.getOverrideUri()).isTrue();
         assertThat(config.getSecurity()).satisfies(security -> {
-            assertThat(security.getPolicy()).isEqualTo(BASIC128RSA15);
+            assertThat(security.policy()).isEqualTo(BASIC128RSA15);
         });
 
         assertThat(config.getAuth()).satisfies(auth -> {
-            assertThat(auth.getBasicAuth()).isNotNull();
-            assertThat(auth.getBasicAuth().getUsername()).isEqualTo("edge");
-            assertThat(auth.getBasicAuth().getPassword()).isEqualTo("password");
+            assertThat(auth.basicAuth()).isNotNull();
+            assertThat(auth.basicAuth().username()).isEqualTo("edge");
+            assertThat(auth.basicAuth().password()).isEqualTo("password");
 
-            assertThat(auth.getX509Auth()).isNotNull();
-            assertThat(auth.getX509Auth().isEnabled()).isTrue();
+            assertThat(auth.x509Auth()).isNotNull();
+            assertThat(auth.x509Auth().enabled()).isTrue();
         });
 
         assertThat(config.getTls()).satisfies(tls -> {
-            assertThat(tls.isEnabled()).isTrue();
+            assertThat(tls.enabled()).isTrue();
 
-            assertThat(tls.getKeystore()).isNotNull();
-            assertThat(tls.getKeystore().getPath()).isEqualTo("path/to/keystore");
-            assertThat(tls.getKeystore().getPassword()).isEqualTo("keystore-password");
-            assertThat(tls.getKeystore().getPrivateKeyPassword()).isEqualTo("private-key-password");
+            assertThat(tls.keystore()).isNotNull();
+            assertThat(tls.keystore().path()).isEqualTo("path/to/keystore");
+            assertThat(tls.keystore().password()).isEqualTo("keystore-password");
+            assertThat(tls.keystore().privateKeyPassword()).isEqualTo("private-key-password");
 
-            assertThat(tls.getTruststore()).isNotNull();
-            assertThat(tls.getTruststore().getPath()).isEqualTo("path/to/truststore");
-            assertThat(tls.getTruststore().getPassword()).isEqualTo("truststore-password");
+            assertThat(tls.truststore()).isNotNull();
+            assertThat(tls.truststore().path()).isEqualTo("path/to/truststore");
+            assertThat(tls.truststore().password()).isEqualTo("truststore-password");
         });
 
 
@@ -104,8 +105,8 @@ class OpcUaProtocolAdapterConfigTest {
         });
 
         assertThat(config.getOpcuaToMqttConfig()).satisfies(mapping -> {
-            assertThat(mapping.getPublishingInterval()).isEqualTo(12);
-            assertThat(mapping.getServerQueueSize()).isEqualTo(13);
+            assertThat(mapping.publishingInterval()).isEqualTo(12);
+            assertThat(mapping.serverQueueSize()).isEqualTo(13);
         });
 
         assertThat(protocolAdapterConfig.getSouthboundMappings()).satisfiesExactly(mapping -> {
@@ -129,12 +130,12 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
         assertThat(config.getOverrideUri()).isFalse();
-        assertThat(config.getSecurity().getPolicy()).isEqualTo(NONE);
+        assertThat(config.getSecurity().policy()).isEqualTo(NONE);
 
         assertThat(config.getAuth()).isNull();
 
         assertThat(config.getTls()).satisfies(tls -> {
-            assertThat(tls.isEnabled()).isFalse();
+            assertThat(tls.enabled()).isFalse();
         });
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
@@ -147,8 +148,8 @@ class OpcUaProtocolAdapterConfigTest {
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
         assertThat(config.getOpcuaToMqttConfig()).satisfies(mapping -> {
-            assertThat(mapping.getPublishingInterval()).isEqualTo(1000);
-            assertThat(mapping.getServerQueueSize()).isEqualTo(1);
+            assertThat(mapping.publishingInterval()).isEqualTo(1000);
+            assertThat(mapping.serverQueueSize()).isEqualTo(1);
         });
 
         assertThat(protocolAdapterConfig.getSouthboundMappings()).satisfiesExactly(mapping -> {
@@ -179,7 +180,7 @@ class OpcUaProtocolAdapterConfigTest {
                 new Tls(true,
                         new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
                         new Truststore("my/truststore/path", "truststore-password")),
-                new OpcUaToMqttConfig(null, null),
+                new OpcUaToMqttConfig(1, 1000),
                 new Security(BASIC128RSA15)
         );
 
@@ -223,7 +224,7 @@ class OpcUaProtocolAdapterConfigTest {
                 true,
                 null,
                 null,
-                new OpcUaToMqttConfig(null, null),
+                new OpcUaToMqttConfig(1, 1000),
                 null
         );
 
@@ -261,7 +262,7 @@ class OpcUaProtocolAdapterConfigTest {
 
         final OpcUaProtocolAdapterFactory protocolAdapterFactory = new OpcUaProtocolAdapterFactory(mockInput);
         final ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
-        when(manager.get("opcua")).thenReturn(Optional.of(protocolAdapterFactory));
+        when(manager.get(PROTOCOL_ID_OPCUA)).thenReturn(Optional.of(protocolAdapterFactory));
         final ProtocolAdapterConfigConverter converter = new ProtocolAdapterConfigConverter(manager, mapper);
         return converter;
     }

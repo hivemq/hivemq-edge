@@ -2,15 +2,14 @@ import type { FC } from 'react'
 import { useCallback } from 'react'
 import type { OptionProps, SingleValueProps, ActionMeta, OnChangeValue } from 'chakra-react-select'
 import { chakraComponents, Select } from 'chakra-react-select'
-import type { WidgetProps } from '@rjsf/utils'
+import type { WidgetProps, RJSFSchema } from '@rjsf/utils'
 import { labelValue } from '@rjsf/utils'
 import { HStack, VStack, Text, FormLabel, FormControl } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import { getChakra } from '@/components/rjsf/utils/getChakra'
 
-import type { FunctionSpecs } from '../../types.ts'
-import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
+import type { FunctionSpecs, ReactFlowSchemaFormContext } from '@datahub/types.ts'
 
 const SingleValue = (props: SingleValueProps<FunctionSpecs>) => {
   return (
@@ -71,9 +70,21 @@ const getValue = (props: WidgetProps) => {
   }
 }
 
-const FunctionCreatableSelect: FC<WidgetProps> = (props) => {
-  const { functions } = useDataHubDraftStore()
+const filterOption = (option: { data: FunctionSpecs }, inputValue: string) => {
+  const { functionId, schema } = option.data
+  const description = schema?.description || ''
+  const title = schema?.title || ''
+  const search = inputValue.toLowerCase()
+  return (
+    functionId?.toLowerCase().includes(search) ||
+    description.toLowerCase().includes(search) ||
+    title.toLowerCase().includes(search)
+  )
+}
+
+const FunctionCreatableSelect: FC<WidgetProps<unknown, RJSFSchema, ReactFlowSchemaFormContext>> = (props) => {
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
+  const functions = props.formContext?.functions || []
 
   const onCreatableSelectChange = useCallback<
     (newValue: OnChangeValue<FunctionSpecs, false>, actionMeta: ActionMeta<FunctionSpecs>) => void
@@ -102,6 +113,7 @@ const FunctionCreatableSelect: FC<WidgetProps> = (props) => {
 
       <Select<FunctionSpecs, false>
         inputId={props.id}
+        instanceId="functions"
         size="md"
         options={functions}
         value={value}
@@ -110,6 +122,7 @@ const FunctionCreatableSelect: FC<WidgetProps> = (props) => {
           Option,
           SingleValue,
         }}
+        filterOption={filterOption}
       />
     </FormControl>
   )

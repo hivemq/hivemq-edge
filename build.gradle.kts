@@ -1,7 +1,6 @@
 group = "com.hivemq"
 
 plugins {
-    idea
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.repository-convention")
     id("io.github.sgtsilvio.gradle.oci") version "0.22.0"
@@ -18,7 +17,8 @@ tasks.register("clean") {
     group = "build"
     //required since we don't apply the base plugin and otherwise the reports can't be cleaned out
     project.delete(files("${project.layout.buildDirectory.get()}"))
-    dependsOn(gradle.includedBuilds.map { it.task(":clean") })
+
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.map { it.task(":$name") })
 }
 
 tasks.register("build") {

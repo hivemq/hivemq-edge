@@ -20,8 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.events.EventRegistry;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListenerProvider;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * @author Florian Limpöck

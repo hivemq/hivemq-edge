@@ -22,8 +22,8 @@ import com.hivemq.extension.sdk.api.services.admin.LicenseEdition;
 import com.hivemq.extension.sdk.api.services.admin.LicenseInformation;
 import com.hivemq.extension.sdk.api.services.admin.LifecycleStage;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * @author Lukas Brandl

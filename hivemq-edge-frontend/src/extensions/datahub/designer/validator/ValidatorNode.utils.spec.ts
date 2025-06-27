@@ -1,6 +1,7 @@
 import { expect } from 'vitest'
 import type { Connection, Node, NodeAddChange } from '@xyflow/react'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
+import { vitest_ExpectStringContainingUUIDFromNodeType } from '@datahub/__test-utils__/vitest.utils.ts'
 
 import type { DataPolicy, PolicySchema } from '@/api/__generated__'
 import { DataPolicyValidator } from '@/api/__generated__'
@@ -12,6 +13,8 @@ import {
   checkValidityPolicyValidators,
   loadValidators,
 } from '@datahub/designer/validator/ValidatorNode.utils.ts'
+
+const NODE_SCHEMA_ID = 'node-schema'
 
 const MOCK_NODE_VALIDATOR: Node<ValidatorData> = {
   id: 'node-id',
@@ -30,7 +33,6 @@ describe('checkValidityPolicyValidator', () => {
     const MOCK_STORE: WorkspaceState = {
       nodes: [],
       edges: [],
-      functions: [],
     }
 
     const { node, data, error, resources } = checkValidityPolicyValidator(MOCK_NODE_VALIDATOR, MOCK_STORE)
@@ -50,10 +52,10 @@ describe('checkValidityPolicyValidator', () => {
 
   it('should return a payload otherwise', async () => {
     const MOCK_NODE_SCHEMA: Node<SchemaData> = {
-      id: 'node-schema',
+      id: NODE_SCHEMA_ID,
       type: DataHubNodeType.SCHEMA,
       data: {
-        name: 'node-schema',
+        name: NODE_SCHEMA_ID,
         type: SchemaType.JSON,
         version: 1,
         schemaSource: '{}',
@@ -65,7 +67,6 @@ describe('checkValidityPolicyValidator', () => {
     const MOCK_STORE: WorkspaceState = {
       nodes: [MOCK_NODE_SCHEMA, MOCK_NODE_VALIDATOR],
       edges: [{ id: '1', source: MOCK_NODE_SCHEMA.id, target: MOCK_NODE_VALIDATOR.id }],
-      functions: [],
     }
 
     const { node, data, error, resources } = checkValidityPolicyValidator(MOCK_NODE_VALIDATOR, MOCK_STORE)
@@ -75,7 +76,7 @@ describe('checkValidityPolicyValidator', () => {
         arguments: {
           schemas: [
             {
-              schemaId: 'node-schema',
+              schemaId: NODE_SCHEMA_ID,
               version: '1',
             },
           ],
@@ -89,7 +90,7 @@ describe('checkValidityPolicyValidator', () => {
     expect(resources?.[0]).toStrictEqual(
       expect.objectContaining({
         data: {
-          id: 'node-schema',
+          id: NODE_SCHEMA_ID,
           schemaDefinition: 'e30=',
           type: 'JSON',
         },
@@ -110,10 +111,10 @@ describe('checkValidityPolicyValidators', () => {
 
   it('should return a payload otherwise', async () => {
     const MOCK_NODE_SCHEMA: Node<SchemaData> = {
-      id: 'node-schema',
+      id: NODE_SCHEMA_ID,
       type: DataHubNodeType.SCHEMA,
       data: {
-        name: 'node-schema',
+        name: NODE_SCHEMA_ID,
         type: SchemaType.JSON,
         version: 1,
         schemaSource: '{}',
@@ -128,7 +129,6 @@ describe('checkValidityPolicyValidators', () => {
         { id: '1', source: MOCK_NODE_SCHEMA.id, target: MOCK_NODE_VALIDATOR.id },
         { id: '2', source: MOCK_NODE_VALIDATOR.id, target: MOCK_NODE_DATA_POLICY.id },
       ],
-      functions: [],
     }
 
     const results = checkValidityPolicyValidators(MOCK_NODE_DATA_POLICY, MOCK_STORE)
@@ -202,7 +202,7 @@ describe('loadValidators', () => {
             strategy: 'ALL_OF',
             type: 'SCHEMA',
           },
-          id: expect.stringContaining('node_'), //'node_0bf21139-7f2c-41d0-98b5-6024af1b31e4',
+          id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.VALIDATOR),
           position: {
             x: -320,
             y: 160,
@@ -212,7 +212,7 @@ describe('loadValidators', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: expect.stringContaining('node_'), //'node_0bf21139-7f2c-41d0-98b5-6024af1b31e4',
+        source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.VALIDATOR),
         target: 'node-id',
         targetHandle: 'validation',
       }),
@@ -225,7 +225,7 @@ describe('loadValidators', () => {
             type: 'JSON',
             version: 1,
           },
-          id: 'test',
+          id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
           position: {
             x: -640,
             y: 160,
@@ -235,8 +235,8 @@ describe('loadValidators', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: 'test',
-        target: expect.stringContaining('node_'), //'node_0bf21139-7f2c-41d0-98b5-6024af1b31e4',
+        source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
+        target: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.VALIDATOR),
       }),
       expect.objectContaining({
         item: {
@@ -247,7 +247,7 @@ describe('loadValidators', () => {
             type: 'JSON',
             version: 1,
           },
-          id: 'test',
+          id: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
           position: {
             x: -640,
             y: 320,
@@ -257,8 +257,8 @@ describe('loadValidators', () => {
         type: 'add',
       }),
       expect.objectContaining({
-        source: 'test',
-        target: expect.stringContaining('node_'), //'node_0bf21139-7f2c-41d0-98b5-6024af1b31e4',
+        source: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.SCHEMA),
+        target: vitest_ExpectStringContainingUUIDFromNodeType(DataHubNodeType.VALIDATOR),
       }),
     ])
   })
