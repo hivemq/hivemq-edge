@@ -39,8 +39,8 @@ public record Tls (@JsonProperty("enabled")
 
                    @JsonProperty("truststore")
                    @JsonInclude(NON_NULL)
-                   @ModuleConfigField(title = "truststore",
-                                      description = "Truststore that contains certs to be trusted. Required for X509 authentication.")
+                   @ModuleConfigField(title = "Truststore",
+                                      description = "Truststore which contains the trusted server certificates or trusted intermediates.")
                    @Nullable Truststore truststore
                    ) {
     @JsonCreator
