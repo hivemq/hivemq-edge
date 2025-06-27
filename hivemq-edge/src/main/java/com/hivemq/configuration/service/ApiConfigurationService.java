@@ -17,12 +17,12 @@ package com.hivemq.configuration.service;
 
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
-import com.hivemq.api.config.ApiStaticResourcePath;
+import com.hivemq.http.core.UsernamePasswordRoles;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.http.core.UsernamePasswordRoles;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A Configuration service which allows access to API Configuration properties
@@ -33,20 +33,20 @@ public interface ApiConfigurationService {
 
     boolean isEnabled();
 
-    @NotNull List<ApiStaticResourcePath> getResourcePaths();
-
     @Nullable ApiJwtConfiguration getApiJwtConfiguration();
 
     @NotNull List<UsernamePasswordRoles> getUserList();
 
     void setEnabled(boolean enabled);
 
-    void setResourcePaths(@NotNull List<ApiStaticResourcePath> resourcePaths);
-
     void setUserList(@NotNull List<UsernamePasswordRoles> userList);
 
     void setListeners(@NotNull List<ApiListener> listeners);
 
     void setApiJwtConfiguration(@NotNull ApiJwtConfiguration apiJwtConfiguration);
+
+    @NotNull Optional<String> getProxyContextPath();
+
+    void setProxyContextPath(@Nullable String proxyContextPath);
 
 }

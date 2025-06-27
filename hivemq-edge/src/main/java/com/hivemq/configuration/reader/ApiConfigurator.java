@@ -100,6 +100,9 @@ public class ApiConfigurator implements Configurator<AdminApiEntity>{
         }
         apiConfigurationService.setApiJwtConfiguration(apiJwtConfigurationBuilder.build());
 
+        // Set proxy context path
+        apiConfigurationService.setProxyContextPath(configEntity.getProxyContextPath());
+
         if (configEntity.getListeners().isEmpty()) {
             //set default listener
             apiConfigurationService.setListeners(List.of(new HttpListener(8080, "127.0.0.1")));

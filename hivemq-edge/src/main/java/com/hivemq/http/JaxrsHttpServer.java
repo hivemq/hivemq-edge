@@ -15,13 +15,11 @@
  */
 package com.hivemq.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.IHttpRequestResponseHandler;
 import com.hivemq.http.error.DefaultExceptionMapper;
@@ -32,21 +30,18 @@ import com.hivemq.http.handlers.WebAppHandler;
 import com.hivemq.http.sun.SunHttpHandlerProxy;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
-import org.apache.commons.lang3.tuple.Pair;
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.core.UriBuilder;
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.ws.rs.ProcessingException;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.ext.ExceptionMapper;
 import java.net.BindException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -70,6 +65,7 @@ public class JaxrsHttpServer {
     private @Nullable JaxrsObjectMapperProvider objectMapperProvider;
     private final @NotNull Object mutex = new Object();
     private volatile boolean running = false;
+    private @Nullable ApiConfigurationService apiConfigurationService;
 
     public JaxrsHttpServer(
             final @NotNull ShutdownHooks shutdownHooks,
@@ -79,6 +75,10 @@ public class JaxrsHttpServer {
         this.configs = configs;
         this.resourceConfig = resourceConfig;
         shutdownHooks.add(new Shutdown());
+    }
+
+    public void setApiConfigurationService(final @NotNull ApiConfigurationService apiConfigurationService) {
+        this.apiConfigurationService = apiConfigurationService;
     }
 
     public void startServer() {
@@ -92,13 +92,13 @@ public class JaxrsHttpServer {
                     System.setProperty(MAX_REQ_TIME, "45");
                     System.setProperty(MAX_RESP_TIME, "45");
 
-                    ResourceConfig resources = resourceConfig == null ? new ResourceConfig() : resourceConfig;
+                    final ResourceConfig resources = resourceConfig == null ? new ResourceConfig() : resourceConfig;
                     // https://github.com/eclipse-ee4j/jersey/issues/2986
                     // This server property tells jersey not to resolve relative location
                     // so that the Location of the response headers is /path/ instead of http://host:port/path/.
                     resources.property(LOCATION_RELATIVE_RESOLUTION_DISABLED, true);
 
-                    for (JaxrsHttpServerConfiguration config : configs) {
+                    for (final JaxrsHttpServerConfiguration config : configs) {
 
                         final long startClasses = System.currentTimeMillis();
                         if (config.getResourceClasses() != null) {
@@ -112,12 +112,12 @@ public class JaxrsHttpServer {
                         logger.debug("Starting WebServer with protocol '{}' on port {}",
                                 config.getProtocol(),
                                 config.getPort());
-                        URI baseUri =
+                        final var baseUri =
                                 UriBuilder.fromUri(String.format("%s://%s/", config.getProtocol(), config.getHost()))
                                         .port(config.getPort())
                                         .build();
 
-                        boolean isSecure = JaxrsHttpServerConfiguration.HTTPS_PROTOCOL.equals(config.getProtocol());
+                        final var isSecure = JaxrsHttpServerConfiguration.HTTPS_PROTOCOL.equals(config.getProtocol());
 
                         final HttpServer httpServer;
 
@@ -136,7 +136,7 @@ public class JaxrsHttpServer {
                                             config.getHttpsConfigurator().getSSLContext().getProtocol());
                                     ((HttpsServer) httpServer).setHttpsConfigurator(config.getHttpsConfigurator());
                                 }
-                            } catch (ProcessingException processingException) {
+                            } catch (final ProcessingException processingException) {
                                 if (processingException.getCause() instanceof BindException) {
                                     logger.error(
                                             "Unable to start the Http Server for uri '{}'. The port '{}' is already in use.",
@@ -155,7 +155,7 @@ public class JaxrsHttpServer {
                             logger.trace("Creating HTTP service {} with {}", baseUri, resources);
                             try {
                                 httpServer = JdkHttpServerFactory.createHttpServer(baseUri, resources, false);
-                            } catch (ProcessingException processingException) {
+                            } catch (final ProcessingException processingException) {
                                 if (processingException.getCause() instanceof BindException) {
                                     logger.error(
                                             "Unable to start the Https Server for uri '{}'. The port '{}' is already in use.",
@@ -172,8 +172,8 @@ public class JaxrsHttpServer {
                             }
                         }
                         logger.trace("Created API server in {}ms", (System.currentTimeMillis() - startCreate));
-                        final long startRegister = System.currentTimeMillis();
-                        Executor executorService = config.getHttpThreadPoolExecutor();
+                        final var startRegister = System.currentTimeMillis();
+                        final var executorService = config.getHttpThreadPoolExecutor();
                         if (executorService != null) {
                             httpServer.setExecutor(executorService);
                         }
@@ -182,7 +182,7 @@ public class JaxrsHttpServer {
                         registerStaticRoot(config, httpServer);
 
                         registerContext("/app",
-                                new WebAppHandler(objectMapperProvider.getMapper(), "httpd"),
+                                new WebAppHandler(objectMapperProvider.getMapper(), apiConfigurationService.getProxyContextPath().orElse(null), "httpd"),
                                 httpServer);
                         registerContext("/images",
                                 new StaticFileHandler(objectMapperProvider.getMapper(), "httpd/images"),
@@ -227,7 +227,7 @@ public class JaxrsHttpServer {
         resources.register(new DefaultExceptionMapper(), MAX_BINDING_PRIORITY);
 
         //-- Register any supplied mappers
-        final List<ExceptionMapper> mappers = config.getExceptionMappers();
+        final var mappers = config.getExceptionMappers();
         if (!mappers.isEmpty()) {
             mappers.stream().forEach(resources::register);
         }
@@ -240,7 +240,7 @@ public class JaxrsHttpServer {
                     try {
                         running = false;
                         if (!httpServers.isEmpty()) {
-                            for (HttpServer httpServer : httpServers) {
+                            for (final HttpServer httpServer : httpServers) {
                                 httpServer.stop(InternalConfigurations.HTTP_API_SHUTDOWN_TIME_SECONDS.get());
                                 logger.info("Stopped HTTP server {}", httpServer.getAddress());
                             }
@@ -248,9 +248,9 @@ public class JaxrsHttpServer {
                     } finally {
                         httpServers.clear();
                         //-- If we have a config supplied executor, bring them down gracefully
-                        for (JaxrsHttpServerConfiguration config : configs) {
+                        for (final JaxrsHttpServerConfiguration config : configs) {
                             if (config.getHttpThreadPoolExecutor() != null) {
-                                ExecutorService threadPoolExecutor = config.getHttpThreadPoolExecutor();
+                                final var threadPoolExecutor = config.getHttpThreadPoolExecutor();
                                 if (!threadPoolExecutor.isShutdown()) {
                                     threadPoolExecutor.shutdown();
                                     try {
@@ -273,7 +273,7 @@ public class JaxrsHttpServer {
     }
 
     protected JaxrsObjectMapperProvider createObjectMapperProvider(final @NotNull JaxrsHttpServerConfiguration config) {
-        ObjectMapper mapper = config.getObjectMapper();
+        final var mapper = config.getObjectMapper();
         if (mapper != null) {
             return new JaxrsObjectMapperProvider(mapper);
         } else {
@@ -284,9 +284,9 @@ public class JaxrsHttpServer {
 
     private void registerStaticRoot(
             final @NotNull JaxrsHttpServerConfiguration config, final @NotNull HttpServer server) {
-        List<Pair<String, String>> staticResources = config.getStaticResources();
+        final var staticResources = config.getStaticResources();
         if (staticResources != null && !staticResources.isEmpty()) {
-            staticResources.stream()
+            staticResources
                     .forEach(s -> registerContext(s.getLeft(),
                             new StaticFileHandler(objectMapperProvider.getMapper(), s.getRight()),
                             server));
@@ -299,10 +299,8 @@ public class JaxrsHttpServer {
             final @NotNull HttpServer server) {
         Preconditions.checkNotNull(contextPath);
         Preconditions.checkNotNull(handler);
-        if (handler != null && contextPath != null) {
-            logger.trace("Registering context on http server at {}", contextPath);
-            server.createContext(contextPath, new SunHttpHandlerProxy(handler));
-        }
+        logger.trace("Registering context on http server at {}", contextPath);
+        server.createContext(contextPath, new SunHttpHandlerProxy(handler));
     }
 
     class Shutdown implements HiveMQShutdownHook {
