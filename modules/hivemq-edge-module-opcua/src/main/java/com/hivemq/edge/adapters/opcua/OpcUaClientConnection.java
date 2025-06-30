@@ -186,7 +186,12 @@ class OpcUaClientConnection {
         final OpcUaClient client;
         try {
             client = OpcUaClient.create(config.getUri(),
-                    endpoints -> endpoints.stream().findFirst(),
+                    endpoints -> endpoints.stream()
+                                .filter(e -> {
+                                    final var requiredPolicy = config.getSecurity().policy().getSecurityPolicy().getUri();
+                                    return requiredPolicy.equals(e.getSecurityPolicyUri());
+                                })
+                                .findFirst(),
                     TRANSPORT_CONFIG,
                     new OpcUaClientConfigurator(adapterId, parsedConfig));
         } catch (final Throwable error) {
