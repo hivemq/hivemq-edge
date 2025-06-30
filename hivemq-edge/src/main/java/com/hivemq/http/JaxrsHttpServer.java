@@ -182,7 +182,7 @@ public class JaxrsHttpServer {
                         registerStaticRoot(config, httpServer);
 
                         registerContext("/app",
-                                new WebAppHandler(objectMapperProvider.getMapper(), apiConfigurationService.getProxyContextPath().orElse(null), "httpd"),
+                                new WebAppHandler(objectMapperProvider.getMapper(), "httpd"),
                                 httpServer);
                         registerContext("/images",
                                 new StaticFileHandler(objectMapperProvider.getMapper(), "httpd/images"),
