@@ -12,7 +12,7 @@ get:
       description: Success
     '500':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/InternalServerError.yaml"
       description: Internal server error
