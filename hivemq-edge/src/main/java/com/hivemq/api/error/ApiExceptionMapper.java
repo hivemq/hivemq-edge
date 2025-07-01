@@ -16,14 +16,13 @@
 package com.hivemq.api.error;
 
 import com.hivemq.api.model.ApiErrorMessage;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Mapper that handles StrongTyped ApiErrors and will respond with either the
@@ -33,19 +32,22 @@ import jakarta.ws.rs.ext.Provider;
  */
 @Provider
 public class ApiExceptionMapper implements ExceptionMapper<ApiException> {
-
-    private static final Logger logger = LoggerFactory.getLogger(ApiExceptionMapper.class);
+    public static final @NotNull String APPLICATION_PROBLEM_JSON_CHARSET_UTF_8 =
+            "application/problem+json;charset=utf-8";
+    public static final @NotNull MediaType APPLICATION_PROBLEM_JSON_TYPE =
+            new MediaType("application", "problem+json", "utf-8");
+    private static final @NotNull Logger logger = LoggerFactory.getLogger(ApiExceptionMapper.class);
 
     @Override
-    public Response toResponse(final @NotNull ApiException exception) {
+    public @NotNull Response toResponse(final @NotNull ApiException exception) {
         logger.warn("Api Error Handled Api Exception Mapper {}", exception.getMessage(), exception.getCause());
-        String message = exception.getMessage();
-        ApiErrorMessage apiError = new ApiErrorMessage();
+        final String message = exception.getMessage();
+        final ApiErrorMessage apiError = new ApiErrorMessage();
         apiError.setTitle(message);
         apiError.setFieldName(exception.getFieldName());
         return Response.status(exception.getHttpStatusCode())
                 .entity(apiError)
-                .type(MediaType.APPLICATION_JSON_TYPE)
+                .type(APPLICATION_PROBLEM_JSON_TYPE)
                 .build();
     }
 }
