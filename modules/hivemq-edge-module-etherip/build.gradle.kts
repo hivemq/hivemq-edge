@@ -23,9 +23,9 @@ java {
 }
 
 dependencies {
-    compileOnly(libs.hivemq.edge.adapterSdk)
-    compileOnly(libs.apache.commonsIO)
-    compileOnly(libs.apache.commonsLang)
+    compileOnly(libs.hivemq.edge.adaptersdk)
+    compileOnly(libs.apache.commons.io)
+    compileOnly(libs.apache.commons.lang)
     implementation(files("libs/etherip-1.0.0.jar"))
     implementation(libs.jackson.databind)
     implementation(libs.slf4j.api)
@@ -33,11 +33,11 @@ dependencies {
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation(libs.apache.commonsIO)
+    testImplementation(libs.apache.commons.io)
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation(libs.mockito.junitJupiter)
+    testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.assertj)
 }
 

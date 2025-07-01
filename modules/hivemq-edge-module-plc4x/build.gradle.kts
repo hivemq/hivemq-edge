@@ -32,8 +32,8 @@ configurations.runtimeClasspath {
 }
 
 dependencies {
-    compileOnly(libs.hivemq.edge.adapterSdk)
-    compileOnly(libs.apache.commonsIO)
+    compileOnly(libs.hivemq.edge.adaptersdk)
+    compileOnly(libs.apache.commons.io)
 
     implementation(libs.plc4j.s7)
     implementation(libs.plc4j.ads)
@@ -47,15 +47,15 @@ dependencies {
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation(libs.hivemq.edge.adapterSdk)
+    testImplementation(libs.hivemq.edge.adaptersdk)
     testImplementation(libs.plc4j.api)
 
-    testImplementation(libs.apache.commonsIO)
+    testImplementation(libs.apache.commons.io)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation(libs.mockito.junitJupiter)
+    testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.assertj)
 }
 

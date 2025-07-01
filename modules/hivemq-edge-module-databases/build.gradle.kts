@@ -39,8 +39,8 @@ repositories {
 
 dependencies {
     implementation(libs.hikari)
-    compileOnly(libs.hivemq.edge.adapterSdk)
-    compileOnly(libs.apache.commonsIO)
+    compileOnly(libs.hivemq.edge.adaptersdk)
+    compileOnly(libs.apache.commons.io)
     compileOnly(libs.jackson.databind)
     compileOnly(libs.slf4j.api)
     implementation(libs.postgresql)
@@ -51,9 +51,9 @@ dependencies {
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
     testImplementation(libs.jackson.databind)
-    testImplementation(libs.hivemq.edge.adapterSdk)
-    testImplementation(libs.apache.commonsIO)
-    testImplementation(libs.mockito.junitJupiter)
+    testImplementation(libs.hivemq.edge.adaptersdk)
+    testImplementation(libs.apache.commons.io)
+    testImplementation(libs.mockito.junit.jupiter)
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
