@@ -23,7 +23,7 @@ delete:
       description: Success, no response body
     '400':
       content:
-        application/json:
+        application/problem+json:
           schema:
             oneOf:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
@@ -34,25 +34,25 @@ delete:
       description: URL parameter missing
     '404':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
       description: Data policy not found
     '412':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/PreconditionFailedError.yaml"
       description: Precondition failed
     '500':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/InternalServerError.yaml"
       description: Internal server error
     '503':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
       description: Request resource temporary unavailable
@@ -129,7 +129,7 @@ get:
       description: Success
     '400':
       content:
-        application/json:
+        application/problem+json:
           schema:
             oneOf:
               - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
@@ -140,19 +140,19 @@ get:
       description: Bad request
     '404':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
       description: Resource not found
     '500':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/InternalServerError.yaml"
       description: Internal server error
     '503':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
       description: Request resource temporary unavailable
@@ -265,7 +265,7 @@ put:
       description: Success
     '400':
       content:
-        application/json:
+        application/problem+json:
           schema:
             oneOf:
               - $ref: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
@@ -288,31 +288,31 @@ put:
       description: Data policy creation failed
     '404':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/datahub/DataPolicyNotFoundError.yaml"
       description: Data policy not found
     '412':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/PreconditionFailedError.yaml"
       description: Precondition failed
     '500':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/InternalServerError.yaml"
       description: Internal server error
     '503':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
       description: Request resource temporary unavailable
     '507':
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: "../components/schemas/errors/datahub/PolicyInsufficientStorageError.yaml"
       description: Insufficient storage

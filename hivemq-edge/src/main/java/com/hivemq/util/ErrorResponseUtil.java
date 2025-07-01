@@ -15,11 +15,11 @@
  */
 package com.hivemq.util;
 
+import com.hivemq.api.error.ApiExceptionMapper;
 import com.hivemq.edge.api.model.ApiError;
 import com.hivemq.http.error.ProblemDetails;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.ws.rs.core.Response;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -28,14 +28,14 @@ public class ErrorResponseUtil {
     public static @NotNull Response errorResponse(final @NotNull ApiError error) {
         return Response.status(error.getStatus())
                 .entity(error)
-                .header("Content-Type", "application/json;charset=utf-8")
+                .type(ApiExceptionMapper.APPLICATION_PROBLEM_JSON_TYPE)
                 .build();
     }
 
     public static @NotNull Response errorResponse(final @NotNull ProblemDetails errors) {
         return Response.status(errors.getStatus())
                 .entity(errors)
-                .header("Content-Type", "application/json;charset=utf-8")
+                .type(ApiExceptionMapper.APPLICATION_PROBLEM_JSON_TYPE)
                 .build();
     }
 }
