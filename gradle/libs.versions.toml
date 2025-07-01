@@ -10,20 +10,19 @@ byteBuddy = "1.17.5"
 concurrentUnit = "0.4.6"
 dagger = "2.56.2"
 digitalpetri-modbus-tcp = "2.1.0"
-dropwizard-metrics = "4.2.32"
+dropwizard-metrics = "4.2.33"
 equalsVerifier = "3.19.4"
 errorprone = "2.38.0"
 future-converter = "1.2.0"
-guava = "32.1.3-jre"
+guava = "33.4.8-jre"
 hikari = "6.2.1"
-hivemq-edge-adapterSdk = "2024.5"
-hivemq-edge-extensionSdk = "2024.5"
+hivemq-edge-adapterSdk = "2024.11"
+hivemq-edge-extensionSdk = "2024.11"
 hivemq-extensionSdk = "4.30.0"
 hivemq-mqttClient = "1.3.6"
 kotlin = "1.9.25"
-jackson = "2.18.3"
+jackson = "2.19.1"
 jacoco = "0.8.11"
-jsonSchemaInferrer = "0.2.1"
 javassist = "3.30.2-GA"
 jakarta-annotation-api = "2.1.1"
 jaxb2 = "2.3.9"
@@ -32,7 +31,8 @@ jaxb4-impl = "4.0.5"
 jctools = "4.0.5"
 jersey = "3.1.10"
 jose4j = "0.9.6"
-jsonSchemaValidator = "1.5.7"
+json-schema-inferrer = "0.2.1"
+json-schema-validator = "1.5.8"
 junit-jupiter = "5.13.2"
 logback = "1.5.18"
 milo = "1.0.0"
@@ -42,20 +42,33 @@ mssql="12.8.1.jre11"
 mtconnect-protocol = "1.0.0"
 mariadb= "3.5.3"
 netty = "4.2.0.Final"
-org_json = "20250107"
+json = "20250107"
 pmd = "6.55.0"
 postgresql = "42.7.3"
 shrinkwrap = "1.2.6"
 slf4j = "2.0.17"
 spotBugs = "4.8.5"
 stefanBirkner-systemRules = "1.19.0"
-swagger-annotations = "2.2.32"
+swagger-annotations = "2.2.34"
 swagger-jaxrs = "1.6.16"
-victools-jsonschema = "4.38.0"
+victools = "4.38.0"
 wiremock = "3.0.1"
-zeroAllocationHashing = "0.16"
-openApiGeneratorVersion="7.12.0"
+zeroAllocationHashing = "0.27ea0"
 jacksonDatabindNullable="0.2.6"
+
+#Plugin Versions
+plugin-cyclonedx = "1.10.0"
+plugin-defaults = "0.2.0"
+plugin-errorprone = "4.2.0"
+plugin-javadoc-links = "0.8.0"
+plugin-license = "0.16.1"
+plugin-metadata = "0.5.0"
+plugin-openapigenerator = "7.13.0"
+plugin-forbiddenapis = "3.9"
+plugin-github-release = "2.5.2"
+plugin-shadow = "8.1.1"
+plugin-spotbugs = "4.8.0"
+plugin-versions = "0.51.0"
 
 [libraries]
 apache-commonsIO = { module = "commons-io:commons-io", version.ref = "apache-commonsIO" }
@@ -76,7 +89,7 @@ dropwizard-metrics-jvm = { module = "io.dropwizard.metrics:metrics-jvm", version
 dropwizard-metrics-logback = { module = "io.dropwizard.metrics:metrics-logback", version.ref = "dropwizard-metrics" }
 equalsVerifier = { module = "nl.jqno.equalsverifier:equalsverifier", version.ref = "equalsVerifier" }
 errorprone = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
-jsonSchemaInferrer = { module = "com.github.saasquatch:json-schema-inferrer", version.ref = "jsonSchemaInferrer" }
+jsonSchemaInferrer = { module = "com.github.saasquatch:json-schema-inferrer", version.ref = "json-schema-inferrer" }
 jersey-container-jdk-http = { module = "org.glassfish.jersey.containers:jersey-container-jdk-http", version.ref = "jersey" }
 jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jersey" }
 jersey-media-json-jackson = { module = "org.glassfish.jersey.media:jersey-media-json-jackson", version.ref = "jersey" }
@@ -101,7 +114,7 @@ jaxb4-bind = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref = "
 jaxb4-impl = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "jaxb4-impl" }
 jctools = { module = "org.jctools:jctools-core", version.ref = "jctools" }
 jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
-jsonSchemaValidator = { module = "com.networknt:json-schema-validator", version.ref = "jsonSchemaValidator" }
+jsonSchemaValidator = { module = "com.networknt:json-schema-validator", version.ref = "json-schema-validator" }
 julToSlf4j = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-jupiter" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
@@ -125,7 +138,7 @@ netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty"
 netty-commons = { module = "io.netty:netty-common", version.ref = "netty" }
 netty-handler = { module = "io.netty:netty-handler", version.ref = "netty" }
 netty-transport = { module = "io.netty:netty-transport", version.ref = "netty" }
-org_json = { module = "org.json:json", version.ref = "org_json" }
+org_json = { module = "org.json:json", version.ref = "json" }
 plc4j-api = { module = "org.apache.plc4x:plc4j-api", version.ref = "apache-plc4x" }
 plc4j-s7 = { module = "org.apache.plc4x:plc4j-driver-s7", version.ref = "apache-plc4x" }
 plc4j-ads = { module = "org.apache.plc4x:plc4j-driver-ads", version.ref = "apache-plc4x" }
@@ -137,26 +150,26 @@ slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 stefanBirkner-systemRules = { module = "com.github.stefanbirkner:system-rules", version.ref = "stefanBirkner-systemRules" }
 swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger-annotations" }
 swagger-jaxrs = { module = "io.swagger:swagger-jaxrs", version.ref = "swagger-jaxrs" }
-victools-jsonschema-generator = { module = "com.github.victools:jsonschema-generator", version.ref = "victools-jsonschema" }
-victools-jsonschema-jackson = { module = "com.github.victools:jsonschema-module-jackson", version.ref = "victools-jsonschema" }
+victools-jsonschema-generator = { module = "com.github.victools:jsonschema-generator", version.ref = "victools" }
+victools-jsonschema-jackson = { module = "com.github.victools:jsonschema-module-jackson", version.ref = "victools" }
 wiremock-jre8-standalone = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version.ref = "wiremock" }
 zeroAllocationHashing = { module = "net.openhft:zero-allocation-hashing", version.ref = "zeroAllocationHashing" }
 
 
 
 [plugins]
-cyclonedx = { id = "org.cyclonedx.bom", version = "1.10.0" }
-defaults = { id = "io.github.sgtsilvio.gradle.defaults", version = "0.2.0" }
-errorprone = { id = "net.ltgt.errorprone", version = "4.2.0" }
-metadata = { id = "io.github.sgtsilvio.gradle.metadata", version = "0.6.0" }
-javadocLinks = { id = "io.github.sgtsilvio.gradle.javadoc-links", version = "0.8.0" }
-githubRelease = { id = "com.github.breadmoirai.github-release", version = "2.5.2" }
-versions = { id = "com.github.ben-manes.versions", version = "0.51.0" }
-license = { id = "com.github.hierynomus.license", version = "0.16.1" }
-shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
-spotbugs = { id = "com.github.spotbugs", version = "4.8.0" }
-forbiddenApis = { id = "de.thetaphi.forbiddenapis", version = "3.9" }
-openapi-generator = { id = "org.openapi.generator", version.ref = "openApiGeneratorVersion" }
+cyclonedx = { id = "org.cyclonedx.bom", version.ref = "plugin-cyclonedx" }
+defaults = { id = "io.github.sgtsilvio.gradle.defaults", version.ref = "plugin-defaults" }
+errorprone = { id = "net.ltgt.errorprone", version.ref = "plugin-errorprone" }
+forbiddenApis = { id = "de.thetaphi.forbiddenapis", version.ref = "plugin-forbiddenapis" }
+githubRelease = { id = "com.github.breadmoirai.github-release", version.ref = "plugin-github-release" }
+javadocLinks = { id = "io.github.sgtsilvio.gradle.javadoc-links", version.ref = "plugin-javadoc-links" }
+license = { id = "com.github.hierynomus.license", version.ref = "plugin-license" }
+metadata = { id = "io.github.sgtsilvio.gradle.metadata", version.ref = "plugin-metadata" }
+openapi-generator = { id = "org.openapi.generator", version.ref = "plugin-openapigenerator" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "plugin-shadow" }
+spotbugs = { id = "com.github.spotbugs", version.ref = "plugin-spotbugs" }
+versions = { id = "com.github.ben-manes.versions", version.ref = "plugin-versions" }
 
 
 
