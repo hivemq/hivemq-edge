@@ -24,8 +24,8 @@ java {
 // Repository settings are now applied by the repository-convention plugin
 
 dependencies {
-    compileOnly(libs.hivemq.edge.adapterSdk)
-    compileOnly(libs.apache.commonsIO)
+    compileOnly(libs.hivemq.edge.adaptersdk)
+    compileOnly(libs.apache.commons.io)
     compileOnly(libs.jackson.databind)
     compileOnly(libs.netty.buffer)
     compileOnly(libs.netty.codec)
@@ -36,7 +36,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.assertj)
-    testImplementation(libs.mockito.junitJupiter)
+    testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.guava)
     testImplementation("com.hivemq:hivemq-edge")
 

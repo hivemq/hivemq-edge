@@ -22,22 +22,22 @@ java {
 }
 
 dependencies {
-    compileOnly(libs.hivemq.edge.adapterSdk)
-    compileOnly(libs.apache.commonsIO)
+    compileOnly(libs.hivemq.edge.adaptersdk)
+    compileOnly(libs.apache.commons.io)
     compileOnly(libs.slf4j.api)
     compileOnly(libs.jackson.databind)
 }
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation(libs.apache.commonsIO)
+    testImplementation(libs.apache.commons.io)
     testImplementation(libs.assertj)
-    testImplementation(libs.hivemq.edge.adapterSdk)
+    testImplementation(libs.hivemq.edge.adaptersdk)
     testImplementation(libs.jackson.databind)
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation(libs.mockito.junitJupiter)
+    testImplementation(libs.mockito.junit.jupiter)
 }
 
 tasks.test {

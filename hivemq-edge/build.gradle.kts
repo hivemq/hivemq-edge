@@ -27,14 +27,14 @@ plugins {
     alias(libs.plugins.shadow)
     alias(libs.plugins.defaults)
     alias(libs.plugins.metadata)
-    alias(libs.plugins.javadocLinks)
-    alias(libs.plugins.githubRelease)
+    alias(libs.plugins.javadoclinks)
+    alias(libs.plugins.githubrelease)
     alias(libs.plugins.license)
     alias(libs.plugins.versions)
 
     /* Code Quality Plugins */
     alias(libs.plugins.spotbugs)
-    alias(libs.plugins.forbiddenApis)
+    alias(libs.plugins.forbiddenapis)
 
     alias(libs.plugins.openapi.generator)
 
@@ -106,9 +106,9 @@ java {
 dependencies {
 
     //HiveMQ
-    api(libs.hivemq.extensionSdk)
-    api(libs.hivemq.edge.extensionSdk)
-    api(libs.hivemq.edge.adapterSdk)
+    api(libs.hivemq.extensionsdk)
+    api(libs.hivemq.edge.extensionsdk)
+    api(libs.hivemq.edge.adaptersdk)
 
     // netty
     implementation(libs.netty.buffer)
@@ -120,7 +120,7 @@ dependencies {
 
     // logging
     implementation(libs.slf4j.api)
-    implementation(libs.julToSlf4j)
+    implementation(libs.slf4j.jultoslf4j)
     implementation(libs.logback.classic)
 
     // security
@@ -130,7 +130,7 @@ dependencies {
     // override transitive dependencies that have security vulnerabilities
     implementation(platform(libs.kotlin.bom))
     constraints {
-        implementation(libs.apache.commonsCompress)
+        implementation(libs.apache.commons.compress)
     }
 
 
@@ -152,21 +152,21 @@ dependencies {
     implementation(libs.jakarta.annotation.api)
 
     // common
-    implementation(libs.apache.commonsIO)
-    implementation(libs.apache.commonsLang)
+    implementation(libs.apache.commons.io)
+    implementation(libs.apache.commons.lang)
     implementation(libs.guava) {
         exclude("org.checkerframework", "checker-qual")
         exclude("com.google.errorprone", "error_prone_annotations")
     }
-    implementation(libs.javacrumbs.futureConverter)
+    implementation(libs.javacrumbs.futureconverter)
 
     // com.google.code.findbugs:jsr305 (transitive dependency of com.google.guava:guava) is used in imports
-    implementation(libs.zeroAllocationHashing)
+    implementation(libs.zeroallocationhashing)
     implementation(libs.jctools)
 
     //mqtt-sn codec
     implementation(libs.mqtt.sn.codec)
-    implementation(libs.hivemq.mqttClient)
+    implementation(libs.hivemq.mqtt.client)
 
     //JAX-RS + Http Connector + Serializers
     implementation(libs.jersey.container.jdk.http)
@@ -189,10 +189,10 @@ dependencies {
     implementation(libs.jose4j)
 
     //json schema
-    implementation(libs.jsonSchemaValidator)
+    implementation(libs.json.schema.validator)
     implementation(libs.victools.jsonschema.generator)
     implementation(libs.victools.jsonschema.jackson)
-    implementation(libs.jsonSchemaInferrer)
+    implementation(libs.json.schema.inferrer)
 
     // Edge modules
     compileOnly("com.hivemq:hivemq-edge-module-etherip")
@@ -215,18 +215,18 @@ dependencies {
     testImplementation("org.junit.vintage:junit-vintage-engine")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-    testImplementation(libs.mockito.junitJupiter)
+    testImplementation(libs.mockito.junit.jupiter)
 
-    testImplementation(libs.equalsVerifier)
-    testImplementation(libs.concurrentUnit)
+    testImplementation(libs.equalsverifier)
+    testImplementation(libs.concurrentunit)
     testImplementation(libs.shrinkwrap.api)
     testRuntimeOnly(libs.shrinkwrap.impl)
-    testImplementation(libs.byteBuddy)
+    testImplementation(libs.bytebuddy)
     testImplementation(libs.wiremock.jre8.standalone)
     testImplementation(libs.javassist)
     testImplementation(libs.awaitility)
     testImplementation(libs.assertj)
-    testImplementation(libs.stefanBirkner.systemRules) {
+    testImplementation(libs.stefanbirkner.systemrules) {
         exclude("junit", "junit-dep")
     }
 }
