@@ -24,6 +24,7 @@ import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
+import com.hivemq.api.error.ApiExceptionMapper;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.edge.api.model.ApiBearerToken;
@@ -35,6 +36,7 @@ import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import com.hivemq.http.core.HttpUtils;
 import com.hivemq.http.error.ProblemDetails;
+import jakarta.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -44,7 +46,6 @@ import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashSet;
@@ -60,17 +61,14 @@ import static org.mockito.Mockito.mock;
  */
 public class BearerTokenAuthTests {
 
-    protected final Logger logger = LoggerFactory.getLogger(BearerTokenAuthTests.class);
-
     static final int TEST_HTTP_PORT = 8088;
     static final int CONNECT_TIMEOUT = 1000;
     static final int READ_TIMEOUT = 1000;
     static final String HTTP = "http";
-
     protected static JaxrsHttpServer server;
-
     @Mock
     private static Injector injector;
+    protected final Logger logger = LoggerFactory.getLogger(BearerTokenAuthTests.class);
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -86,7 +84,8 @@ public class BearerTokenAuthTests {
         final ResourceConfig conf = new ResourceConfig() {
             {
                 register(new ApiAuthenticationFeature(authenticationHandlers));
-            }};
+            }
+        };
         conf.register(TestApiResource.class);
         conf.register(TestPermitAllApiResource.class);
         conf.register(TestResourceLevelRolesApiResource.class);
@@ -132,17 +131,16 @@ public class BearerTokenAuthTests {
     @Test
     public void testAuthenticateInvalidUser() throws IOException {
         final ObjectMapper mapper = new ObjectMapper();
-        final UsernamePasswordCredentials creds =
+        final UsernamePasswordCredentials credentials =
                 new UsernamePasswordCredentials().userName("testuser").password("invalidpassword");
         final HttpResponse response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
                 getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
-                new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
+                new ByteArrayInputStream(mapper.writeValueAsBytes(credentials)),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-
         assertThat(response.getStatusCode()).as("Resource should NOT be accepted").isEqualTo(401);
         assertThat(response.getContentType()).as("API authenticate response should be json")
-                .startsWith(MediaType.APPLICATION_JSON);
+                .isEqualTo(ApiExceptionMapper.APPLICATION_PROBLEM_JSON_CHARSET_UTF_8);
         assertThat(mapper.readValue(response.getResponseBody(), ProblemDetails.class)
                 .getErrors()
                 .get(0)
@@ -154,7 +152,8 @@ public class BearerTokenAuthTests {
     public void testAuthenticatedTokenAllowsApiAccess() throws IOException {
 
         final ObjectMapper mapper = new ObjectMapper();
-        final UsernamePasswordCredentials creds = new UsernamePasswordCredentials().userName("testuser").password("test");
+        final UsernamePasswordCredentials creds =
+                new UsernamePasswordCredentials().userName("testuser").password("test");
         HttpResponse response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
                 getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
                 new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),

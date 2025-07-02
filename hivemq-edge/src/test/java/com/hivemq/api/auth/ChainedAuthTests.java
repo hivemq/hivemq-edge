@@ -25,6 +25,7 @@ import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
+import com.hivemq.api.error.ApiExceptionMapper;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.edge.api.model.ApiBearerToken;
 import com.hivemq.edge.api.model.UsernamePasswordCredentials;
@@ -60,14 +61,12 @@ import static org.mockito.Mockito.mock;
  */
 public class ChainedAuthTests {
 
-    protected final Logger logger = LoggerFactory.getLogger(ChainedAuthTests.class);
-
     static final int TEST_HTTP_PORT = 8088;
     static final int CONNECT_TIMEOUT = 1000;
     static final int READ_TIMEOUT = 1000;
     static final String HTTP = "http";
-
     protected static @NotNull JaxrsHttpServer server;
+    protected final Logger logger = LoggerFactory.getLogger(ChainedAuthTests.class);
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -114,7 +113,8 @@ public class ChainedAuthTests {
     public void testAuthenticateValidUser() throws IOException {
 
         final ObjectMapper mapper = new ObjectMapper();
-        final UsernamePasswordCredentials creds = new UsernamePasswordCredentials().userName("testuser").password("test");
+        final UsernamePasswordCredentials creds =
+                new UsernamePasswordCredentials().userName("testuser").password("test");
         final HttpResponse response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
                 getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
                 new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
@@ -130,19 +130,17 @@ public class ChainedAuthTests {
 
     @Test
     public void testAuthenticateInvalidUser() throws IOException {
-
         final ObjectMapper mapper = new ObjectMapper();
-        final UsernamePasswordCredentials creds =
+        final UsernamePasswordCredentials credentials =
                 new UsernamePasswordCredentials().userName("testuser").password("invalidpassword");
         final HttpResponse response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
                 getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
-                new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
+                new ByteArrayInputStream(mapper.writeValueAsBytes(credentials)),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-
         assertThat(response.getStatusCode()).as("Resource should NOT be accepted").isEqualTo(401);
         assertThat(response.getContentType()).as("API authenticate response should be json")
-                .startsWith(MediaType.APPLICATION_JSON);
+                .isEqualTo(ApiExceptionMapper.APPLICATION_PROBLEM_JSON_CHARSET_UTF_8);
         assertThat(mapper.readValue(response.getResponseBody(), ProblemDetails.class)
                 .getErrors()
                 .get(0)
@@ -154,7 +152,8 @@ public class ChainedAuthTests {
     public void testAuthenticatedTokenAllowsApiAccess() throws IOException {
 
         final ObjectMapper mapper = new ObjectMapper();
-        final UsernamePasswordCredentials creds = new UsernamePasswordCredentials().userName("testuser").password("test");
+        final UsernamePasswordCredentials creds =
+                new UsernamePasswordCredentials().userName("testuser").password("test");
         HttpResponse response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
                 getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
                 new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
