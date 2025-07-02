@@ -16,6 +16,7 @@
 package com.hivemq.api.error;
 
 import com.hivemq.api.model.ApiErrorMessage;
+import com.hivemq.http.HttpConstants;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -32,10 +33,6 @@ import org.slf4j.LoggerFactory;
  */
 @Provider
 public class ApiExceptionMapper implements ExceptionMapper<ApiException> {
-    public static final @NotNull String APPLICATION_PROBLEM_JSON_CHARSET_UTF_8 =
-            "application/problem+json;charset=utf-8";
-    public static final @NotNull MediaType APPLICATION_PROBLEM_JSON_TYPE =
-            new MediaType("application", "problem+json", "utf-8");
     private static final @NotNull Logger logger = LoggerFactory.getLogger(ApiExceptionMapper.class);
 
     @Override
@@ -47,7 +44,7 @@ public class ApiExceptionMapper implements ExceptionMapper<ApiException> {
         apiError.setFieldName(exception.getFieldName());
         return Response.status(exception.getHttpStatusCode())
                 .entity(apiError)
-                .type(APPLICATION_PROBLEM_JSON_TYPE)
+                .type(HttpConstants.APPLICATION_PROBLEM_JSON_TYPE)
                 .build();
     }
 }

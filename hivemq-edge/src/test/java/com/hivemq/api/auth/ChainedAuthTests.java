@@ -25,7 +25,6 @@ import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
-import com.hivemq.api.error.ApiExceptionMapper;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.edge.api.model.ApiBearerToken;
 import com.hivemq.edge.api.model.UsernamePasswordCredentials;
@@ -140,7 +139,7 @@ public class ChainedAuthTests {
                 READ_TIMEOUT);
         assertThat(response.getStatusCode()).as("Resource should NOT be accepted").isEqualTo(401);
         assertThat(response.getContentType()).as("API authenticate response should be json")
-                .isEqualTo(ApiExceptionMapper.APPLICATION_PROBLEM_JSON_CHARSET_UTF_8);
+                .isEqualTo(HttpConstants.APPLICATION_PROBLEM_JSON_CHARSET_UTF_8);
         assertThat(mapper.readValue(response.getResponseBody(), ProblemDetails.class)
                 .getErrors()
                 .get(0)
