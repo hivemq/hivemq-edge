@@ -285,27 +285,20 @@ get:
       description: Success
     '400':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            oneOf:
+              - $ref: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
+            discriminator:
+              propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/InvalidQueryParameterError: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
       description: URL parameter missing
-    '404':
-      content:
-        application/json:
-          schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: DataPolicy not found
-    '500':
-      content:
-        application/json:
-          schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Internal server error
     '503':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
       description: Request resource temporary unavailable
   summary: Get all data policies
   tags:
@@ -397,33 +390,44 @@ post:
       description: Success
     '400':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: DataPolicy creation failed
+            oneOf:
+              - $ref: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
+              - $ref: "../components/schemas/errors/datahub/DataPolicyCreationFailureError.yaml"
+              - $ref: "../components/schemas/errors/datahub/DataPolicyInvalidErrors.yaml"
+              - $ref: "../components/schemas/errors/datahub/DataPolicyRejectedError.yaml"
+            discriminator:
+              propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/RequestBodyMissingError: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
+                https://hivemq.com/edge/api/model/DataPolicyCreationFailureError: "../components/schemas/errors/datahub/DataPolicyCreationFailureError.yaml"
+                https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: "../components/schemas/errors/datahub/DataPolicyInvalidErrors.yaml"
+                https://hivemq.com/edge/api/model/DataPolicyRejectedError: "../components/schemas/errors/datahub/DataPolicyRejectedError.yaml"
+      description: Data policy creation failed
     '409':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: DataPolicy already present
+            $ref: "../components/schemas/errors/datahub/DataPolicyAlreadyPresentError.yaml"
+      description: Data policy already present
     '500':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/http/InternalServerError.yaml"
       description: Internal server error
     '503':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
       description: Request resource temporary unavailable
     '507':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/datahub/PolicyInsufficientStorageError.yaml"
       description: Insufficient storage
   summary: Create a new data policy
   tags:
