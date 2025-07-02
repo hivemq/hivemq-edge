@@ -118,6 +118,9 @@ dependencies {
     implementation(libs.netty.handler)
     implementation(libs.netty.transport)
 
+    //MapDB
+    implementation(libs.mapdb)
+
     // logging
     implementation(libs.slf4j.api)
     implementation(libs.slf4j.jultoslf4j)

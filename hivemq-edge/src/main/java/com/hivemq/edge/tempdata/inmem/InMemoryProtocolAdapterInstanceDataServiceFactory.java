@@ -1,31 +1,37 @@
 package com.hivemq.edge.tempdata.inmem;
 
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTemporaryDataService;
-import com.hivemq.edge.tempdata.TempDataStorageFactory;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterInstanceDataService;
+import com.hivemq.edge.tempdata.InstanceDataStorageFactory;
+import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class InMemoryProtocolAdapterTemporaryDataServiceFactory implements TempDataStorageFactory {
+@Singleton
+public class InMemoryProtocolAdapterInstanceDataServiceFactory implements InstanceDataStorageFactory {
 
-    private final @NotNull ConcurrentHashMap<String, ProtocolAdapterTemporaryDataService>
+    private final @NotNull ConcurrentHashMap<String, InMemoryProtocolAdapterInstanceDataService>
             protocolAdapterTemporaryDataServiceMap = new ConcurrentHashMap<>();
 
     @Override
-    public CompletableFuture<ProtocolAdapterTemporaryDataService> getOrCreate(
+    public CompletableFuture<ProtocolAdapterInstanceDataService> getOrCreate(
             final @NotNull String protocolId,
             final @NotNull String adapterId) {
         return CompletableFuture.supplyAsync(() ->
                 protocolAdapterTemporaryDataServiceMap.computeIfAbsent(
-                        generateKey(protocolId, adapterId), k -> new InMemoryProtocolAdapterTemporaryDataService()));
+                        generateKey(protocolId, adapterId), k -> new InMemoryProtocolAdapterInstanceDataService()));
     }
 
     @Override
     public CompletableFuture<Void> destroy(final String protocolId, final String adapterId) {
-        return CompletableFuture.runAsync(() ->
-                protocolAdapterTemporaryDataServiceMap.remove(generateKey(protocolId, adapterId)));
+        return CompletableFuture.runAsync(() -> {
+                    var db = protocolAdapterTemporaryDataServiceMap.remove(generateKey(protocolId, adapterId));
+                    if(db != null) {
+                        db.getDb().close();
+                    }
+                });
     }
 
     @Override

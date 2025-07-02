@@ -20,19 +20,23 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterInstanceDataService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
+import com.hivemq.edge.tempdata.InstanceDataStorageFactory;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> implements ProtocolAdapterInput<T> {
     public static final AdapterFactoriesImpl ADAPTER_FACTORIES = new AdapterFactoriesImpl();
-    private final String adapterId;
+    private final @NotNull String adapterId;
+    private final @NotNull String protocolId;
     private final @NotNull T configObject;
     private final @NotNull String version;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -40,8 +44,10 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull List<Tag> tags;
     private final @NotNull List<PollingContext> pollingContexts;
+    private final @NotNull InstanceDataStorageFactory instanceDataStorageFactory;
 
     public ProtocolAdapterInputImpl(
+            final @NotNull String protocolId,
             final @NotNull String adapterId,
             final @NotNull T configObject,
             final @NotNull List<Tag> tags,
@@ -49,8 +55,10 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
             final @NotNull String version,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull ModuleServices moduleServices,
-            final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService) {
+            final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            final @NotNull InstanceDataStorageFactory instanceDataStorageFactory) {
         this.adapterId = adapterId;
+        this.protocolId = protocolId;
         this.configObject = configObject;
         this.version = version;
         this.protocolAdapterState = protocolAdapterState;
@@ -59,6 +67,7 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
         this.tags = tags;
         this.pollingContexts =
                 northboundMappings.stream().map(PollingContextWrapper::from).collect(Collectors.toList());
+        this.instanceDataStorageFactory = instanceDataStorageFactory;
     }
 
     @Override
@@ -104,5 +113,11 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
     @Override
     public @NotNull List<PollingContext> getPollingContexts() {
         return pollingContexts;
+    }
+
+
+    @Override
+    public @NotNull CompletableFuture<ProtocolAdapterInstanceDataService> protocolAdapterInstanceDataService() {
+        return instanceDataStorageFactory.getOrCreate(protocolId, adapterId);
     }
 }

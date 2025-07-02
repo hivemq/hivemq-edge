@@ -37,6 +37,7 @@ import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
+import com.hivemq.edge.tempdata.InstanceDataStorageFactory;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
@@ -83,6 +84,7 @@ public class ProtocolAdapterManager {
     private final @NotNull NorthboundConsumerFactory northboundConsumerFactory;
     private final @NotNull TagManager tagManager;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
+    private final @NotNull InstanceDataStorageFactory instanceDataStorageFactory;
 
     @Inject
     public ProtocolAdapterManager(
@@ -99,7 +101,8 @@ public class ProtocolAdapterManager {
             final @NotNull ExecutorService executorService,
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
             final @NotNull TagManager tagManager,
-            final @NotNull ProtocolAdapterExtractor protocolAdapterConfig) {
+            final @NotNull ProtocolAdapterExtractor protocolAdapterConfig,
+            final @NotNull InstanceDataStorageFactory instanceDataStorageFactory) {
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
         this.remoteService = remoteService;
@@ -114,6 +117,7 @@ public class ProtocolAdapterManager {
         this.northboundConsumerFactory = northboundConsumerFactory;
         this.tagManager = tagManager;
         this.protocolAdapterConfig = protocolAdapterConfig;
+        this.instanceDataStorageFactory = instanceDataStorageFactory;
         protocolAdapterWritingService.addWritingChangedCallback(() -> protocolAdapterFactoryManager.writingEnabledChanged(
                 protocolAdapterWritingService.writingEnabled()));
     }
@@ -168,6 +172,7 @@ public class ProtocolAdapterManager {
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
                             new ProtocolAdapterInputImpl(
+                                    config.getProtocolId(),
                                     config.getAdapterId(),
                                     config.getAdapterConfig(),
                                     config.getTags(),
@@ -175,7 +180,8 @@ public class ProtocolAdapterManager {
                                     version,
                                     protocolAdapterState,
                                     moduleServicesPerModule,
-                                    protocolAdapterMetricsService));
+                                    protocolAdapterMetricsService,
+                                    instanceDataStorageFactory));
             // hen-egg problem. Rather solve this here as have not final fields in the adapter.
             moduleServicesPerModule.setAdapter(protocolAdapter);
 

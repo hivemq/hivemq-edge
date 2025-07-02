@@ -81,7 +81,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.requestCounter = new AtomicLong();
         this.stopRequested = new AtomicBoolean(false);
         this.startRequested = new AtomicBoolean(false);
-        this.opcUaClientConnection = new OpcUaClientConnection(adapterId, input, tagList, protocolAdapterState);
+        this.opcUaClientConnection = new OpcUaClientConnection(
+                adapterId,
+                input,
+                tagList,
+                protocolAdapterState);
     }
 
     @Override
