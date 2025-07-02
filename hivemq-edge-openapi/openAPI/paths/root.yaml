@@ -1,0 +1,7 @@
+get:
+  operationId: getRoot
+  responses:
+    default:
+      content:
+        '*/*': {}
+      description: default response

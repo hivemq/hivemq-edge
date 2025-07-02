@@ -1,0 +1,11 @@
+type: object
+description: >-
+  The section of the policy that defines how incoming MQTT messages are
+  validated. If this section is empty, the result of the policy validation is
+  always successful.
+properties:
+  validators:
+    type: array
+    description: The validators of the policy.
+    items:
+      $ref: ./DataPolicyValidator.yaml
