@@ -25,6 +25,7 @@ import com.hivemq.http.core.UsernamePasswordRoles;
 
 import jakarta.inject.Singleton;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -34,10 +35,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ApiConfigurationServiceImpl implements ApiConfigurationService {
 
     private boolean enabled = true;
-    private @NotNull List<ApiStaticResourcePath> resourcePaths = new CopyOnWriteArrayList<>();
     private @NotNull List<UsernamePasswordRoles> userList = new CopyOnWriteArrayList<>();
     private @NotNull List<ApiListener> listeners = new CopyOnWriteArrayList<>();
     private @Nullable ApiJwtConfiguration apiJwtConfiguration;
+    private @Nullable String proxyContextPath;
 
     @Override
     public @NotNull List<ApiListener> getListeners() {
@@ -47,11 +48,6 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
     @Override
     public boolean isEnabled() {
         return enabled;
-    }
-
-    @Override
-    public @NotNull List<ApiStaticResourcePath> getResourcePaths() {
-        return resourcePaths;
     }
 
     @Override
@@ -69,10 +65,6 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
         this.enabled = enabled;
     }
 
-    public void setResourcePaths(final @NotNull List<ApiStaticResourcePath> resourcePaths) {
-        this.resourcePaths = resourcePaths;
-    }
-
     public void setUserList(final @NotNull List<UsernamePasswordRoles> userList) {
         this.userList = userList;
     }
@@ -83,5 +75,27 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
 
     public void setApiJwtConfiguration(final @NotNull ApiJwtConfiguration apiJwtConfiguration) {
         this.apiJwtConfiguration = apiJwtConfiguration;
+    }
+
+    @Override
+    public @Nullable Optional<String> getProxyContextPath() {
+        if( proxyContextPath == null || proxyContextPath.isEmpty()) {
+            return Optional.empty();
+        }
+        else {
+            String normalizedPath = proxyContextPath;
+            if (!normalizedPath.startsWith("/")) {
+                normalizedPath = "/" + normalizedPath;
+            }
+            if (normalizedPath.endsWith("/")) {
+                normalizedPath = normalizedPath.substring(0, normalizedPath.length() - 1);
+            }
+            return Optional.of(normalizedPath);
+        }
+    }
+
+    @Override
+    public void setProxyContextPath(final @Nullable String proxyContextPath) {
+        this.proxyContextPath = proxyContextPath;
     }
 }

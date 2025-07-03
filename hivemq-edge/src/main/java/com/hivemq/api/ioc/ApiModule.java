@@ -143,10 +143,12 @@ public abstract class ApiModule {
 
         for (final ApiListener listener : apiConfigurationService.getListeners()) {
             final JaxrsHttpServerConfiguration jaxrsConfiguration =
-                    JaxrsBootstrapFactory.createJaxrsConfiguration(apiConfigurationService, listener);
+                    JaxrsBootstrapFactory.createJaxrsConfiguration(listener);
             builder.add(jaxrsConfiguration);
         }
 
-        return new JaxrsHttpServer(shutdownHooks, builder.build(), registry);
+        final JaxrsHttpServer server = new JaxrsHttpServer(shutdownHooks, builder.build(), registry);
+        server.setApiConfigurationService(apiConfigurationService);
+        return server;
     }
 }

@@ -21,8 +21,10 @@ import com.hivemq.http.core.Files;
 import com.hivemq.http.core.HttpUtils;
 import com.hivemq.http.core.IHttpRequestResponse;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 public class WebAppHandler extends AbstractHttpRequestResponseHandler {
 
@@ -53,12 +55,12 @@ public class WebAppHandler extends AbstractHttpRequestResponseHandler {
                 String ext = Files.getFileExtension(resourcePath);
                 if (ext == null) {
                     is = loadClasspathResource(HttpUtils.combinePaths(resourceRoot, "/index.html"));
+
                     writeStreamResponse(requestResponse, HttpConstants.SC_OK, "text/html", is);
                 } else {
                     sendNotFoundResponse(requestResponse);
                 }
             } else {
-                String fileName = Files.getFileName(resourcePath);
                 String ext = Files.getFileExtension(resourcePath);
                 String mimeType = HttpUtils.getMimeTypeFromFileExtension(ext);
                 writeStreamResponse(requestResponse, HttpConstants.SC_OK, mimeType, is);
@@ -70,5 +72,12 @@ public class WebAppHandler extends AbstractHttpRequestResponseHandler {
                 is.close();
             }
         }
+    }
+
+    InputStream fixIndexHtmL(InputStream is) throws IOException {
+        var index = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        var replaced = index.replace("/app/", "/gnarf/app/");
+        is.close();
+        return new ByteArrayInputStream(replaced.getBytes(StandardCharsets.UTF_8));
     }
 }

@@ -15,24 +15,35 @@
  */
 package com.hivemq.api.resources.impl;
 
+import com.hivemq.configuration.service.ApiConfigurationService;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
+import org.jetbrains.annotations.NotNull;
 import java.net.URI;
 
 @Path("/")
 @Singleton
 public class RootResource {
 
+    private final @NotNull ApiConfigurationService apiConfigurationService;
+
     @Inject
-    public RootResource() {
+    public RootResource(final @NotNull ApiConfigurationService apiConfigurationService) {
+        this.apiConfigurationService = apiConfigurationService;
     }
 
     @GET
     public Response getRoot() {
-        return Response.temporaryRedirect(URI.create("/app/")).build();
+
+        final String redirectPath = apiConfigurationService
+                .getProxyContextPath()
+                .map(path -> path + "/app/")
+                .orElse("/app/");
+        
+        return Response.temporaryRedirect(URI.create(redirectPath)).build();
     }
 
 }
