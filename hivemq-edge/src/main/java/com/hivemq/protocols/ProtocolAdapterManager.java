@@ -38,6 +38,7 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.tempdata.InstanceDataStorageFactory;
+import com.hivemq.edge.tempdata.inmem.InMemoryProtocolAdapterInstanceDataServiceFactory;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
@@ -102,7 +103,7 @@ public class ProtocolAdapterManager {
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
             final @NotNull TagManager tagManager,
             final @NotNull ProtocolAdapterExtractor protocolAdapterConfig,
-            final @NotNull InstanceDataStorageFactory instanceDataStorageFactory) {
+            final @NotNull InMemoryProtocolAdapterInstanceDataServiceFactory instanceDataStorageFactory) {
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
         this.remoteService = remoteService;

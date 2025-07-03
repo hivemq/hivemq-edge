@@ -84,7 +84,7 @@ import java.util.Set;
         AdapterModule.class,
         CombiningModule.class})
 @Singleton
-public interface Injector {
+public  interface Injector {
 
     ConfigurationService configurationService();
 

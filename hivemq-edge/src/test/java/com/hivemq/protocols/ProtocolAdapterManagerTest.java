@@ -41,6 +41,7 @@ import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
+import com.hivemq.edge.tempdata.inmem.InMemoryProtocolAdapterInstanceDataServiceFactory;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -81,6 +82,7 @@ class ProtocolAdapterManagerTest {
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor = mock();
 
     private final @NotNull ProtocolAdapterConfigConverter protocolAdapterConfigConverter = mock();
+    private final @NotNull InMemoryProtocolAdapterInstanceDataServiceFactory inMemoryProtocolAdapterInstanceDataServiceFactory = mock();
 
 
     private final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -103,7 +105,8 @@ class ProtocolAdapterManagerTest {
                 executorService,
                 northboundConsumerFactory,
                 tagManager,
-                protocolAdapterExtractor);
+                protocolAdapterExtractor,
+                inMemoryProtocolAdapterInstanceDataServiceFactory);
     }
 
     @AfterEach
