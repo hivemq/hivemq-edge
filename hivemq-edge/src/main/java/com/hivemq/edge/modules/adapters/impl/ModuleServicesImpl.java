@@ -21,7 +21,6 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.modules.adapters.data.TagManager;
-import com.hivemq.edge.tempdata.InstanceDataStorageFactory;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import jakarta.inject.Inject;
 import org.jetbrains.annotations.NotNull;

@@ -41,7 +41,7 @@ import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import com.hivemq.edge.tempdata.inmem.InMemoryProtocolAdapterInstanceDataServiceFactory;
+import com.hivemq.edge.instancedata.inmem.InMemoryProtocolAdapterInstanceDataServiceFactory;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

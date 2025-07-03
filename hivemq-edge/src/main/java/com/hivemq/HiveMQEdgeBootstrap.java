@@ -26,7 +26,6 @@ import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.bootstrap.ioc.Persistences;
 import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
 import com.hivemq.bootstrap.services.GeneralBootstrapServiceImpl;
-import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.ConfigurationBootstrap;
 import com.hivemq.configuration.HivemqId;
@@ -34,6 +33,7 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.impl.capability.CapabilityServiceImpl;
+import com.hivemq.edge.instancedata.PersistentProtocolAdapterInstanceDataServiceFactory;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
 import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;
@@ -77,7 +77,6 @@ public class HiveMQEdgeBootstrap {
     private volatile @Nullable ConfigurationService configService;
     private @Nullable CommercialModuleLoaderDiscovery commercialModuleLoaderDiscovery;
     private @Nullable GeneralBootstrapServiceImpl generalBootstrapService;
-    private @Nullable PersistenceBootstrapService persistenceBootstrapService;
     private @Nullable Injector injector;
 
     public HiveMQEdgeBootstrap(
@@ -94,7 +93,6 @@ public class HiveMQEdgeBootstrap {
 
     public @NotNull Injector bootstrap() throws HiveMQEdgeStartupException {
         metricRegistry.addListener(new MetricRegistryLogger());
-
         if(systemInformation.isConfigWriteable()) {
             capabilityService.addCapability(new Capability("config-writeable",
                     "Config can be manipulated via the REST API",
@@ -147,7 +145,8 @@ public class HiveMQEdgeBootstrap {
     }
 
     private void awaitPersistenceStartup() {
-        Preconditions.checkNotNull(configService);
+        final var tmpConfigService = this.configService;
+        Preconditions.checkNotNull(tmpConfigService);
         Preconditions.checkNotNull(injector);
         // ensure that persistences are built
         injector.persistences();
@@ -158,7 +157,7 @@ public class HiveMQEdgeBootstrap {
             throw new HiveMQEdgeStartupException(e);
         }
         log.info("HiveMQ Edge starts with Persistence Mode: '{}'",
-                configService.persistenceConfigurationService().getMode());
+                tmpConfigService.persistenceConfigurationService().getMode());
     }
 
     private void bootstrapInjector() {
@@ -181,19 +180,21 @@ public class HiveMQEdgeBootstrap {
                 .generalBootstrapService(generalBootstrapService)
                 .hivemqId(hivemqId)
                 .edgeCoreFactoryService(edgeCoreFactoryService)
+                .instanceDataStorageFactory(new PersistentProtocolAdapterInstanceDataServiceFactory(systemInformation))
                 .build();
         log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
     }
 
     private void bootstrapCoreComponents() {
         log.debug("Integrating Core Modules");
+        final var tmpConfigService = this.configService;
         // configService is always set in caller
-        Preconditions.checkNotNull(configService);
+        Preconditions.checkNotNull(tmpConfigService);
 
         try {
             commercialModuleLoaderDiscovery = new CommercialModuleLoaderDiscovery(moduleLoader);
             generalBootstrapService =
-                    new GeneralBootstrapServiceImpl(shutdownHooks, metricRegistry, systemInformation, configService, hivemqId, edgeCoreFactoryService);
+                    new GeneralBootstrapServiceImpl(shutdownHooks, metricRegistry, systemInformation, tmpConfigService, hivemqId, edgeCoreFactoryService);
             commercialModuleLoaderDiscovery.generalBootstrap(generalBootstrapService);
         } catch (final Exception e) {
             log.warn("Error on loading the commercial module loader.", e);
@@ -210,7 +211,7 @@ public class HiveMQEdgeBootstrap {
 
 
         try {
-            persistenceBootstrapService = injector.persistenceBootstrapService();
+            final var persistenceBootstrapService = injector.persistenceBootstrapService();
             commercialModuleLoaderDiscovery.persistenceBootstrap(persistenceBootstrapService);
         } catch (final Exception e) {
             log.warn("Error on bootstrapping persistences.", e);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.tempdata;
+package com.hivemq.edge.instancedata;
 
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterInstanceDataService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;

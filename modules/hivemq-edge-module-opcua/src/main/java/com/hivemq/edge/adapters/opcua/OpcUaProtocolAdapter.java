@@ -85,7 +85,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 adapterId,
                 input,
                 tagList,
-                protocolAdapterState);
+                protocolAdapterState,
+                input.protocolAdapterInstanceDataService());
     }
 
     @Override

@@ -19,6 +19,7 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterInstanceDataService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
@@ -85,7 +86,8 @@ class OpcUaClientConnection {
             final @NotNull String adapterId,
             final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input,
             final @NotNull List<OpcuaTag> tags,
-            final @NotNull ProtocolAdapterState protocolAdapterState) {
+            final @NotNull ProtocolAdapterState protocolAdapterState,
+            final @NotNull CompletableFuture<ProtocolAdapterInstanceDataService> protocolAdapterInstanceDataServiceCompletableFuture) {
         this.config = input.getConfig();
         this.tagStreamingService = input.moduleServices().protocolAdapterTagStreamingService();
         this.dataPointFactory = input.adapterFactories().dataPointFactory();

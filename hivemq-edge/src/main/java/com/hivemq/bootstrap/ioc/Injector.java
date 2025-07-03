@@ -38,6 +38,7 @@ import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.ioc.ModulesModule;
 import com.hivemq.edge.modules.ioc.RemoteServiceModule;
+import com.hivemq.edge.instancedata.InstanceDataStorageFactory;
 import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
@@ -118,6 +119,8 @@ public  interface Injector {
 
     ProtocolAdapterManager protocolAdapterManager();
 
+    InstanceDataStorageFactory instanceDataStorageFactory();
+
 //    UnsServiceModule uns();
 
 //    ExecutorsModule executors();
@@ -172,6 +175,9 @@ public  interface Injector {
 
         @BindsInstance
         Builder edgeCoreFactoryService(EdgeCoreFactoryService edgeCoreFactoryService);
+
+        @BindsInstance
+        Builder instanceDataStorageFactory(InstanceDataStorageFactory instanceDataStorageFactory);
 
         Injector build();
     }

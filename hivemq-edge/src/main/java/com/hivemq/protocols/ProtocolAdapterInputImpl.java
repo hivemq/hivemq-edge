@@ -25,7 +25,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
-import com.hivemq.edge.tempdata.InstanceDataStorageFactory;
+import com.hivemq.edge.instancedata.InstanceDataStorageFactory;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import org.jetbrains.annotations.NotNull;
 
