@@ -21,7 +21,7 @@ export class TopicFiltersService {
     public getTopicFilters(): CancelablePromise<TopicFilterList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/topic-filters',
+            url: './api/v1/management/topic-filters',
         });
     }
 
@@ -37,7 +37,7 @@ export class TopicFiltersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/api/v1/management/topic-filters',
+            url: './api/v1/management/topic-filters',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -59,7 +59,7 @@ export class TopicFiltersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: '/api/v1/management/topic-filters',
+            url: './api/v1/management/topic-filters',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -80,7 +80,7 @@ export class TopicFiltersService {
     ): CancelablePromise<TopicFilter> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/topic-filters/{filter}',
+            url: './api/v1/management/topic-filters/{filter}',
             path: {
                 'filter': filter,
             },
@@ -99,7 +99,7 @@ export class TopicFiltersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: '/api/v1/management/topic-filters/{filter}',
+            url: './api/v1/management/topic-filters/{filter}',
             path: {
                 'filter': filter,
             },
@@ -124,7 +124,7 @@ export class TopicFiltersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: '/api/v1/management/topic-filters/{filter}',
+            url: './api/v1/management/topic-filters/{filter}',
             path: {
                 'filter': filter,
             },
@@ -149,7 +149,7 @@ export class TopicFiltersService {
     ): CancelablePromise<string> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/topic-filters/{filter}/schema',
+            url: './api/v1/management/topic-filters/{filter}/schema',
             path: {
                 'filter': filter,
             },

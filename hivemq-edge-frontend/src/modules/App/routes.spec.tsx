@@ -7,7 +7,7 @@ describe('createBrowserRouter', () => {
     expect(routes.routes).toStrictEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          path: '/',
+          path: './',
           children: expect.arrayContaining([
             expect.objectContaining({ path: '' }),
             expect.objectContaining({ path: 'mqtt-bridges/' }),
@@ -18,7 +18,7 @@ describe('createBrowserRouter', () => {
             expect.objectContaining({ path: 'datahub/' }),
           ]),
         }),
-        expect.objectContaining({ path: '/login' }),
+        expect.objectContaining({ path: './login' }),
       ])
     )
   })

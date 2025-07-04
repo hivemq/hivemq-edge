@@ -32,7 +32,7 @@ export class DataHubScriptsService {
     ): CancelablePromise<ScriptList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/data-hub/scripts',
+            url: './api/v1/data-hub/scripts',
             query: {
                 'fields': fields,
                 'functionTypes': functionTypes,
@@ -60,7 +60,7 @@ export class DataHubScriptsService {
     ): CancelablePromise<Script> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/api/v1/data-hub/scripts',
+            url: './api/v1/data-hub/scripts',
             headers: {
                 'If-Match': ifMatch,
             },
@@ -91,7 +91,7 @@ export class DataHubScriptsService {
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: '/api/v1/data-hub/scripts/{scriptId}',
+            url: './api/v1/data-hub/scripts/{scriptId}',
             path: {
                 'scriptId': scriptId,
             },
@@ -122,7 +122,7 @@ export class DataHubScriptsService {
     ): CancelablePromise<Script> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/data-hub/scripts/{scriptId}',
+            url: './api/v1/data-hub/scripts/{scriptId}',
             path: {
                 'scriptId': scriptId,
             },

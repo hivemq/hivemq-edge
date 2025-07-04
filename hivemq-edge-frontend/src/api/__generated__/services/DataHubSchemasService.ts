@@ -36,7 +36,7 @@ export class DataHubSchemasService {
     ): CancelablePromise<SchemaList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/data-hub/schemas',
+            url: './api/v1/data-hub/schemas',
             query: {
                 'fields': fields,
                 'types': types,
@@ -66,7 +66,7 @@ export class DataHubSchemasService {
     ): CancelablePromise<PolicySchema> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/api/v1/data-hub/schemas',
+            url: './api/v1/data-hub/schemas',
             headers: {
                 'If-Match': ifMatch,
             },
@@ -98,7 +98,7 @@ export class DataHubSchemasService {
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: '/api/v1/data-hub/schemas/{schemaId}',
+            url: './api/v1/data-hub/schemas/{schemaId}',
             path: {
                 'schemaId': schemaId,
             },
@@ -133,7 +133,7 @@ export class DataHubSchemasService {
     ): CancelablePromise<PolicySchema> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/data-hub/schemas/{schemaId}',
+            url: './api/v1/data-hub/schemas/{schemaId}',
             path: {
                 'schemaId': schemaId,
             },

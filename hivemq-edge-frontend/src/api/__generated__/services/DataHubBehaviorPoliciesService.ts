@@ -36,7 +36,7 @@ export class DataHubBehaviorPoliciesService {
     ): CancelablePromise<BehaviorPolicyList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/data-hub/behavior-validation/policies',
+            url: './api/v1/data-hub/behavior-validation/policies',
             query: {
                 'fields': fields,
                 'policyIds': policyIds,
@@ -64,7 +64,7 @@ export class DataHubBehaviorPoliciesService {
     ): CancelablePromise<BehaviorPolicy> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/api/v1/data-hub/behavior-validation/policies',
+            url: './api/v1/data-hub/behavior-validation/policies',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -93,7 +93,7 @@ export class DataHubBehaviorPoliciesService {
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: '/api/v1/data-hub/behavior-validation/policies/{policyId}',
+            url: './api/v1/data-hub/behavior-validation/policies/{policyId}',
             path: {
                 'policyId': policyId,
             },
@@ -128,7 +128,7 @@ export class DataHubBehaviorPoliciesService {
     ): CancelablePromise<BehaviorPolicy> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/data-hub/behavior-validation/policies/{policyId}',
+            url: './api/v1/data-hub/behavior-validation/policies/{policyId}',
             path: {
                 'policyId': policyId,
             },
@@ -161,7 +161,7 @@ export class DataHubBehaviorPoliciesService {
     ): CancelablePromise<BehaviorPolicy> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: '/api/v1/data-hub/behavior-validation/policies/{policyId}',
+            url: './api/v1/data-hub/behavior-validation/policies/{policyId}',
             path: {
                 'policyId': policyId,
             },

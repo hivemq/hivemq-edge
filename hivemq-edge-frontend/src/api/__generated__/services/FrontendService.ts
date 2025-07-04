@@ -22,7 +22,7 @@ export class FrontendService {
     public getCapabilities(): CancelablePromise<CapabilityList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/frontend/capabilities',
+            url: './api/v1/frontend/capabilities',
         });
     }
 
@@ -35,7 +35,7 @@ export class FrontendService {
     public getConfiguration(): CancelablePromise<GatewayConfiguration> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/frontend/configuration',
+            url: './api/v1/frontend/configuration',
         });
     }
 
@@ -48,7 +48,7 @@ export class FrontendService {
     public getNotifications(): CancelablePromise<NotificationList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/frontend/notifications',
+            url: './api/v1/frontend/notifications',
         });
     }
 

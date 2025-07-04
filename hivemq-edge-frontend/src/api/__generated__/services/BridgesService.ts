@@ -25,7 +25,7 @@ export class BridgesService {
     public getBridges(): CancelablePromise<BridgeList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/bridges',
+            url: './api/v1/management/bridges',
         });
     }
 
@@ -41,7 +41,7 @@ export class BridgesService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/api/v1/management/bridges',
+            url: './api/v1/management/bridges',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -59,7 +59,7 @@ export class BridgesService {
     public getBridgesStatus(): CancelablePromise<StatusList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/bridges/status',
+            url: './api/v1/management/bridges/status',
         });
     }
 
@@ -75,7 +75,7 @@ export class BridgesService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: '/api/v1/management/bridges/{bridgeId}',
+            url: './api/v1/management/bridges/{bridgeId}',
             path: {
                 'bridgeId': bridgeId,
             },
@@ -98,7 +98,7 @@ export class BridgesService {
     ): CancelablePromise<Bridge> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/bridges/{bridgeId}',
+            url: './api/v1/management/bridges/{bridgeId}',
             path: {
                 'bridgeId': bridgeId,
             },
@@ -123,7 +123,7 @@ export class BridgesService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: '/api/v1/management/bridges/{bridgeId}',
+            url: './api/v1/management/bridges/{bridgeId}',
             path: {
                 'bridgeId': bridgeId,
             },
@@ -148,7 +148,7 @@ export class BridgesService {
     ): CancelablePromise<Status> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/bridges/{bridgeId}/connection-status',
+            url: './api/v1/management/bridges/{bridgeId}/connection-status',
             path: {
                 'bridgeId': bridgeId,
             },
@@ -173,7 +173,7 @@ export class BridgesService {
     ): CancelablePromise<StatusTransitionResult> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: '/api/v1/management/bridges/{bridgeId}/status',
+            url: './api/v1/management/bridges/{bridgeId}/status',
             path: {
                 'bridgeId': bridgeId,
             },

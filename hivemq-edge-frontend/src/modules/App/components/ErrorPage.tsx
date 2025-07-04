@@ -33,7 +33,7 @@ const ErrorPage = () => {
       <VStack justify="center" spacing="4" as="section" mt={['20', null, '40']} textAlign="center">
         <Heading as="h1">{t('error.notfound.heading')}</Heading>
         <Text fontSize={{ md: 'xl' }}>{message}</Text>
-        <Button as={RouterLink} to="/" aria-label="Back to Home" leftIcon={<FaHome />} size="lg">
+        <Button as={RouterLink} to="./" aria-label="Back to Home" leftIcon={<FaHome />} size="lg">
           {t('error.backHome')}
         </Button>
       </VStack>

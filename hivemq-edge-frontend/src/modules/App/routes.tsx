@@ -30,7 +30,7 @@ import { MappingType } from '@/modules/Mappings/types.ts'
 export const routes = createBrowserRouter(
   [
     {
-      path: '/',
+      path: './',
       element: <Dashboard />,
       errorElement: <ErrorPage />,
       children: [
@@ -128,9 +128,9 @@ export const routes = createBrowserRouter(
       ],
     },
     {
-      path: '/login',
+      path: './login',
       element: <LoginPage />,
     },
   ],
-  { basename: '/app' }
+  { basename: './app' }
 )

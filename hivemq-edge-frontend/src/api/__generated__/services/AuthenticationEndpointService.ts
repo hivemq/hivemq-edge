@@ -24,7 +24,7 @@ export class AuthenticationEndpointService {
     ): CancelablePromise<ApiBearerToken> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/api/v1/auth/authenticate',
+            url: './api/v1/auth/authenticate',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -43,7 +43,7 @@ export class AuthenticationEndpointService {
     public refreshToken(): CancelablePromise<ApiBearerToken> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/api/v1/auth/refresh-token',
+            url: './api/v1/auth/refresh-token',
             errors: {
                 401: `The requested credentials could not be authenticated.`,
             },
@@ -62,7 +62,7 @@ export class AuthenticationEndpointService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/api/v1/auth/validate-token',
+            url: './api/v1/auth/validate-token',
             body: requestBody,
             mediaType: 'application/json',
             errors: {

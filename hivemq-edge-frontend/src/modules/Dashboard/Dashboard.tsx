@@ -23,7 +23,7 @@ const Dashboard: FC = () => {
     )
   }
   if (!credentials) {
-    return <Navigate to="/login" state={{ from: location }} />
+    return <Navigate to="./login" state={{ from: location }} />
   }
 
   return (
