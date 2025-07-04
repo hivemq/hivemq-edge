@@ -25,7 +25,7 @@ export class EventsService {
     ): CancelablePromise<EventList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/events',
+            url: './api/v1/management/events',
             query: {
                 'limit': limit,
                 'since': since,

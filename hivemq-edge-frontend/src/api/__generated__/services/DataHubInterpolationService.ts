@@ -20,7 +20,7 @@ export class DataHubInterpolationService {
     public getVariables(): CancelablePromise<InterpolationVariableList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/data-hub/interpolation-variables',
+            url: './api/v1/data-hub/interpolation-variables',
             errors: {
                 500: `Internal server error`,
             },
