@@ -20,6 +20,8 @@ import jakarta.inject.Singleton;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
+import org.jetbrains.annotations.NotNull;
+
 import java.net.URI;
 
 @Path("/")
@@ -31,8 +33,8 @@ public class RootResource {
     }
 
     @GET
-    public Response getRoot() {
-        return Response.temporaryRedirect(URI.create("/app/")).build();
+    public @NotNull Response getRoot() {
+        return Response.temporaryRedirect(URI.create("app/")).build();
     }
 
 }

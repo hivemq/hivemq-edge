@@ -25,7 +25,7 @@ export class DataHubStateService {
     ): CancelablePromise<FsmStatesInformationListItem> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/data-hub/behavior-validation/states/{clientId}',
+            url: './api/v1/data-hub/behavior-validation/states/{clientId}',
             path: {
                 'clientId': clientId,
             },

@@ -23,7 +23,7 @@ val buildFrontend by tasks.registering(PnpmTask::class) {
   environment = mapOf(
     "NODE_OPTIONS" to "--max-old-space-size=4096",
   )
-  pnpmCommand.set(listOf("build", "--base=/app"))
+  pnpmCommand.set(listOf("build", "--base=./"))
   dependsOn(tasks.pnpmInstall)
   inputs.dir(project.fileTree("src"))
   inputs.dir(project.fileTree("public"))

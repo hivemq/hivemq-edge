@@ -20,3 +20,4 @@ out/
 /hivemq-edge/src/distribution/log/migration.log
 /hivemq-edge/src/test/resources/opc-large-config.xml
 /edge-plugins/.kotlin/
+.vscode/
