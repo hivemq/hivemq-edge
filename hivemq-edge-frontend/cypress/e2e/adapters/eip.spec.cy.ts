@@ -12,7 +12,7 @@ describe('EIP adapter', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_EIP] }).as('getProtocols')
 
     // TODO[E2E] This doesn't work: JWT needs mocking
-    loginPage.visit('/app/protocol-adapters/catalog/new/eip')
+    loginPage.visit('/app/#/protocol-adapters/catalog/new/eip')
     loginPage.loginButton.click()
     adapterPage.navLink.click()
   })

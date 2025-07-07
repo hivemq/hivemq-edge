@@ -23,7 +23,7 @@ export class CombinersService {
     public getCombiners(): CancelablePromise<CombinerList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/combiners',
+            url: './api/v1/management/combiners',
         });
     }
 
@@ -39,7 +39,7 @@ export class CombinersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/api/v1/management/combiners',
+            url: './api/v1/management/combiners',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -60,7 +60,7 @@ export class CombinersService {
     ): CancelablePromise<Combiner> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/combiners/{combinerId}',
+            url: './api/v1/management/combiners/{combinerId}',
             path: {
                 'combinerId': combinerId,
             },
@@ -82,7 +82,7 @@ export class CombinersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: '/api/v1/management/combiners/{combinerId}',
+            url: './api/v1/management/combiners/{combinerId}',
             path: {
                 'combinerId': combinerId,
             },
@@ -106,7 +106,7 @@ export class CombinersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: '/api/v1/management/combiners/{combinerId}',
+            url: './api/v1/management/combiners/{combinerId}',
             path: {
                 'combinerId': combinerId,
             },
@@ -130,7 +130,7 @@ export class CombinersService {
     ): CancelablePromise<DataCombiningList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/combiners/{combinerId}/mappings',
+            url: './api/v1/management/combiners/{combinerId}/mappings',
             path: {
                 'combinerId': combinerId,
             },
@@ -154,7 +154,7 @@ export class CombinersService {
     ): CancelablePromise<Array<Instruction>> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/combiners/{combinerId}/mappings/{mappingId}/instructions',
+            url: './api/v1/management/combiners/{combinerId}/mappings/{mappingId}/instructions',
             path: {
                 'combinerId': combinerId,
                 'mappingId': mappingId,

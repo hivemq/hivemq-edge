@@ -2,7 +2,7 @@ import { expect } from 'vitest'
 
 import { routes } from '@/modules/App/routes.tsx'
 
-describe('createBrowserRouter', () => {
+describe('createHashRouter', () => {
   it('should create the app routes', async () => {
     expect(routes.routes).toStrictEqual(
       expect.arrayContaining([

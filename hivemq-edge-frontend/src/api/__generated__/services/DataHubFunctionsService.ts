@@ -22,7 +22,7 @@ export class DataHubFunctionsService {
     public getFunctions(): CancelablePromise<JsonNode> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/data-hub/functions',
+            url: './api/v1/data-hub/functions',
             errors: {
                 500: `Internal server error`,
             },
@@ -38,7 +38,7 @@ export class DataHubFunctionsService {
     public getFunctionSpecs(): CancelablePromise<FunctionSpecsList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/data-hub/function-specs',
+            url: './api/v1/data-hub/function-specs',
             errors: {
                 500: `Internal server error`,
             },
