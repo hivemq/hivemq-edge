@@ -11,7 +11,7 @@ describe('OPCUA adapter', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_OPC_UA] }).as('getProtocols')
 
     // TODO[E2E] This doesn't work: JWT needs mocking
-    loginPage.visit('/app/protocol-adapters/catalog/new/opcua')
+    loginPage.visit('/app/#/protocol-adapters/catalog/new/opcua')
     loginPage.loginButton.click()
     adapterPage.navLink.click()
   })
