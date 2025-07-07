@@ -160,7 +160,7 @@ public class EmbeddedHiveMQImplHttpsTest {
             HttpHeaders httpHeaders = httpResponse.headers();
             List<String> locations = httpHeaders.allValues("Location");
             assertThat(locations.size()).as("Location should exist in the response headers").isOne();
-            assertThat(locations.get(0)).as("Location should be relative").isEqualTo("/app/");
+            assertThat(locations.get(0)).as("Location should be relative").isEqualTo("app/");
             assertThat(httpResponse.body()).as("Body should be empty").isEqualTo("");
 
             embeddedHiveMQ.stop().join();
