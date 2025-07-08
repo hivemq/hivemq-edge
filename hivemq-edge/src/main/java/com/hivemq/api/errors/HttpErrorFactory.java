@@ -100,7 +100,7 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull RequestBodyParameterMissingError requestBodyParameterMissingError(final @NotNull String parameter) {
         return RequestBodyParameterMissingError.builder()
                 .type(type(RequestBodyParameterMissingError.class))
-                .title(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_TITLE.getKey())
+                .title(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_TITLE.get())
                 .detail(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_DETAIL.get(Map.of("parameter", parameter)))
                 .parameter(parameter)
                 .status(HttpStatus.BAD_REQUEST_400)
