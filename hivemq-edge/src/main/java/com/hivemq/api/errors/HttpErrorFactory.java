@@ -41,8 +41,10 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull InsufficientStorageError insufficientStorageError(final @Nullable String reason) {
         return InsufficientStorageError.builder()
                 .type(type(InsufficientStorageError.class))
-                .title("Insufficient Storage")
-                .detail(reason == null ? "Insufficient Storage." : "Insufficient Storage: " + reason)
+                .title(OpenAPIHttpError.HTTP_ERROR_507_TITLE.get())
+                .detail(reason == null ?
+                        OpenAPIHttpError.HTTP_ERROR_507_DETAIL_DEFAULT.get() :
+                        OpenAPIHttpError.HTTP_ERROR_507_DETAIL_WITH_REASON.get(Map.of("reason", reason)))
                 .status(HttpStatus.INSUFFICIENT_STORAGE_507)
                 .build();
     }
@@ -67,8 +69,10 @@ public final class HttpErrorFactory extends ErrorFactory {
             final @NotNull String reason) {
         return InvalidQueryParameterError.builder()
                 .type(type(InvalidQueryParameterError.class))
-                .title("Query Parameter is Invalid")
-                .detail("Query parameter '" + parameter + "' is invalid: " + reason)
+                .title(OpenAPIHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_TITLE.get())
+                .detail(OpenAPIHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_DETAIL.get(Map.of(
+                        "parameter", parameter,
+                        "reason", reason)))
                 .parameter(parameter)
                 .status(HttpStatus.BAD_REQUEST_400)
                 .build();
@@ -78,8 +82,8 @@ public final class HttpErrorFactory extends ErrorFactory {
             final @NotNull String reason) {
         return PreconditionFailedError.builder()
                 .type(type(PreconditionFailedError.class))
-                .title("Precondition Failed")
-                .detail("A precondition required for fulfilling the request was not fulfilled: " + reason)
+                .title(OpenAPIHttpError.HTTP_ERROR_412_TITLE.get())
+                .detail(OpenAPIHttpError.HTTP_ERROR_412_DETAIL.get(Map.of("reason", reason)))
                 .status(HttpStatus.PRECONDITION_FAILED_412)
                 .build();
     }
@@ -87,8 +91,8 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull RequestBodyMissingError requestBodyMissingError() {
         return RequestBodyMissingError.builder()
                 .type(type(RequestBodyMissingError.class))
-                .title("Required Request Body Missing")
-                .detail("Required request body is missing.")
+                .title(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_MISSING_TITLE.get())
+                .detail(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_MISSING_DETAIL.get())
                 .status(HttpStatus.BAD_REQUEST_400)
                 .build();
     }
@@ -96,8 +100,8 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull RequestBodyParameterMissingError requestBodyParameterMissingError(final @NotNull String parameter) {
         return RequestBodyParameterMissingError.builder()
                 .type(type(RequestBodyParameterMissingError.class))
-                .title("Required Request Body Parameter Missing")
-                .detail("Required request body parameter '" + parameter + "' is missing.")
+                .title(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_TITLE.getKey())
+                .detail(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_DETAIL.get(Map.of("parameter", parameter)))
                 .parameter(parameter)
                 .status(HttpStatus.BAD_REQUEST_400)
                 .build();
@@ -106,8 +110,8 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull TemporaryNotAvailableError temporaryNotAvailableError() {
         return TemporaryNotAvailableError.builder()
                 .type(type(TemporaryNotAvailableError.class))
-                .title("Endpoint Temporarily not Available")
-                .detail("The endpoint is temporarily not available, please try again later.")
+                .title(OpenAPIHttpError.HTTP_ERROR_503_TITLE.get())
+                .detail(OpenAPIHttpError.HTTP_ERROR_503_DETAIL.get())
                 .status(HttpStatus.SERVICE_UNAVAILABLE_503)
                 .build();
     }
@@ -115,8 +119,8 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull UrlParameterMissingError urlParameterMissingError(final @NotNull String parameter) {
         return UrlParameterMissingError.builder()
                 .type(type(UrlParameterMissingError.class))
-                .title("Required URL Parameter Missing")
-                .detail("Required URL parameter '" + parameter + "' is missing.")
+                .title(OpenAPIHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_TITLE.get())
+                .detail(OpenAPIHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_DETAIL.get(Map.of("parameter", parameter)))
                 .parameter(parameter)
                 .status(HttpStatus.BAD_REQUEST_400)
                 .build();
