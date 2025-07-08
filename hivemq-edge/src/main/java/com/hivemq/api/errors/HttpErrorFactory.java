@@ -16,17 +16,18 @@
 
 package com.hivemq.api.errors;
 
+import com.hivemq.common.i18n.OpenAPIHttpError;
+import com.hivemq.edge.api.model.*;
 import com.hivemq.edge.api.model.InsufficientStorageError;
 import com.hivemq.edge.api.model.InternalServerError;
 import com.hivemq.edge.api.model.InvalidQueryParameterError;
-import com.hivemq.edge.api.model.PreconditionFailedError;
-import com.hivemq.edge.api.model.RequestBodyMissingError;
-import com.hivemq.edge.api.model.RequestBodyParameterMissingError;
 import com.hivemq.edge.api.model.TemporaryNotAvailableError;
 import com.hivemq.edge.api.model.UrlParameterMissingError;
 import com.hivemq.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
 
 public final class HttpErrorFactory extends ErrorFactory {
     private HttpErrorFactory() {
@@ -53,10 +54,10 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull InternalServerError internalServerError(final @Nullable String reason) {
         return InternalServerError.builder()
                 .type(type(InternalServerError.class))
-                .title("Internal Server Error")
+                .title(OpenAPIHttpError.HTTP_ERROR_500_TITLE.get())
                 .detail(reason == null ?
-                        "An unexpected error occurred, check the logs." :
-                        "An unexpected error occurred: " + reason)
+                        OpenAPIHttpError.HTTP_ERROR_500_DETAIL_DEFAULT.get() :
+                        OpenAPIHttpError.HTTP_ERROR_500_DETAIL_WITH_REASON.get(Map.of("reason", reason)))
                 .status(HttpStatus.INTERNAL_SERVER_ERROR_500)
                 .build();
     }
