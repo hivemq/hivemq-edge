@@ -16,14 +16,15 @@
 
 package com.hivemq.common.i18n;
 
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class OpenAPIErrorTemplateTest {
     @Test
     public void whenLocaleIsNull_thenUseDefaultLocale() {
-        LocaleContext.setCurrentLocale(null);
-        assertThat(LocaleContext.getCurrentLocale()).isEqualTo(LocaleContext.DEFAULT_LOCALE);
+        LocaleContext.setLocale(null);
+        assertThat(LocaleContext.getLocale()).isEqualTo(LocaleContext.DEFAULT_LOCALE);
     }
 }
