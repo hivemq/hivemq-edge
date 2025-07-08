@@ -13,6 +13,7 @@ digitalpetri-modbus-tcp = "2.1.0"
 dropwizard-metrics = "4.2.33"
 equalsverifier = "3.17.5"
 errorprone = "2.38.0"
+freemarker = "2.3.34"
 future-converter = "1.2.0"
 guava = "33.4.8-jre"
 hikari = "6.2.1"
@@ -89,6 +90,7 @@ dropwizard-metrics-jvm = { module = "io.dropwizard.metrics:metrics-jvm", version
 dropwizard-metrics-logback = { module = "io.dropwizard.metrics:metrics-logback", version.ref = "dropwizard-metrics" }
 equalsverifier = { module = "nl.jqno.equalsverifier:equalsverifier", version.ref = "equalsverifier" }
 errorprone = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
+freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
 json-schema-inferrer = { module = "com.github.saasquatch:json-schema-inferrer", version.ref = "json-schema-inferrer" }
 jersey-container-jdk-http = { module = "org.glassfish.jersey.containers:jersey-container-jdk-http", version.ref = "jersey" }
 jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jersey" }
