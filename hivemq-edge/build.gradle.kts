@@ -200,6 +200,9 @@ dependencies {
     // json path
     implementation(libs.json.path)
 
+    // i18n
+    implementation(libs.freemarker)
+
     // Edge modules
     compileOnly("com.hivemq:hivemq-edge-module-etherip")
     compileOnly("com.hivemq:hivemq-edge-module-plc4x")
