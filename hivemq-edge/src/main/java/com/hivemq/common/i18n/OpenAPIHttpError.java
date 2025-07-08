@@ -21,17 +21,30 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Map;
 
 public enum OpenAPIHttpError implements I18nTemplate {
-    HTTP_ERROR_500_TITLE("http.error.500.title"),
-    HTTP_ERROR_500_DETAIL_DEFAULT("http.error.500.detail.default"),
-    HTTP_ERROR_500_DETAIL_WITH_REASON("http.error.500.detail.with.reason"),
+    HTTP_ERROR_400_INVALID_QUERY_PARAMETER_DETAIL,
+    HTTP_ERROR_400_INVALID_QUERY_PARAMETER_TITLE,
+    HTTP_ERROR_400_REQUEST_BODY_MISSING_DETAIL,
+    HTTP_ERROR_400_REQUEST_BODY_MISSING_TITLE,
+    HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_DETAIL,
+    HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_TITLE,
+    HTTP_ERROR_400_URL_PARAMETER_MISSING_DETAIL,
+    HTTP_ERROR_400_URL_PARAMETER_MISSING_TITLE,
+    HTTP_ERROR_412_DETAIL,
+    HTTP_ERROR_412_TITLE,
+    HTTP_ERROR_500_DETAIL_DEFAULT,
+    HTTP_ERROR_500_DETAIL_WITH_REASON,
+    HTTP_ERROR_500_TITLE,
+    HTTP_ERROR_503_DETAIL,
+    HTTP_ERROR_503_TITLE,
+    HTTP_ERROR_507_DETAIL_DEFAULT,
+    HTTP_ERROR_507_DETAIL_WITH_REASON,
+    HTTP_ERROR_507_TITLE,
     ;
 
     private static final String RESOURCE_NAME_PREFIX = "/templates/openapi-errors-";
     private static final String RESOURCE_NAME_SUFFIX = ".properties";
-    private final @NotNull String key;
 
-    OpenAPIHttpError(final @NotNull String key) {
-        this.key = key;
+    OpenAPIHttpError() {
     }
 
     public @NotNull String get() {
@@ -44,7 +57,7 @@ public enum OpenAPIHttpError implements I18nTemplate {
 
     @Override
     public @NotNull String getKey() {
-        return key;
+        return name().toLowerCase().replace("_", ".");
     }
 
     @Override
@@ -54,6 +67,6 @@ public enum OpenAPIHttpError implements I18nTemplate {
 
     @Override
     public @NotNull String getResourceName() {
-        return RESOURCE_NAME_PREFIX + LocaleContext.getCurrentLocale() + RESOURCE_NAME_SUFFIX;
+        return RESOURCE_NAME_PREFIX + LocaleContext.getLocale() + RESOURCE_NAME_SUFFIX;
     }
 }
