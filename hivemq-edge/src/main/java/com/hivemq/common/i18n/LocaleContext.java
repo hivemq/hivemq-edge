@@ -26,11 +26,11 @@ public final class LocaleContext {
 
     private static final ThreadLocal<Locale> THREAD_LOCAL_LOCALE = ThreadLocal.withInitial(() -> DEFAULT_LOCALE);
 
-    public static @NotNull Locale getCurrentLocale() {
+    public static @NotNull Locale getLocale() {
         return THREAD_LOCAL_LOCALE.get();
     }
 
-    public static void setCurrentLocale(final @Nullable Locale locale) {
+    public static void setLocale(final @Nullable Locale locale) {
         THREAD_LOCAL_LOCALE.set(locale == null ? DEFAULT_LOCALE : locale);
     }
 }

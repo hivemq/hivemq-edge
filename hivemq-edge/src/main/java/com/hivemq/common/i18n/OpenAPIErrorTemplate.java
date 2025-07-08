@@ -70,7 +70,7 @@ public final class OpenAPIErrorTemplate {
     }
 
     public @NotNull String get(final @NotNull I18nTemplate i18nTemplate, final @NotNull Map<String, Object> map) {
-        final Locale locale = LocaleContext.getCurrentLocale();
+        final Locale locale = LocaleContext.getLocale();
         Configuration configuration = configurationMap.get(locale.toString());
         if (configuration == null) {
             configuration = createConfiguration(locale);

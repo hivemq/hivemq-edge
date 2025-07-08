@@ -16,7 +16,9 @@
 
 package com.hivemq.common.i18n;
 
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Locale;
 import java.util.Map;
@@ -24,9 +26,47 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class OpenAPIHttpErrorTest {
+    @BeforeEach
+    public void setUp() {
+        LocaleContext.setLocale(Locale.US);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        LocaleContext.setLocale(LocaleContext.DEFAULT_LOCALE);
+    }
+
+    @Test
+    public void whenLocaleIsEnUS_thenHttpError400ShouldWork() {
+        assertThat(OpenAPIHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_TITLE.get()).isEqualTo(
+                "Query Parameter is Invalid");
+        assertThat(OpenAPIHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_DETAIL.get(Map.of("parameter",
+                "p1",
+                "reason",
+                "test."))).isEqualTo("Query parameter 'p1' is invalid: test.");
+        assertThat(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_MISSING_TITLE.get()).isEqualTo(
+                "Required Request Body Missing");
+        assertThat(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_MISSING_DETAIL.get()).isEqualTo(
+                "Required request body is missing.");
+        assertThat(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_TITLE.get()).isEqualTo(
+                "Required Request Body Parameter Missing");
+        assertThat(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_DETAIL.get(Map.of("parameter",
+                "p1"))).isEqualTo("Required request body parameter 'p1' is missing.");
+        assertThat(OpenAPIHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_TITLE.get()).isEqualTo(
+                "Required URL Parameter Missing");
+        assertThat(OpenAPIHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_DETAIL.get(Map.of("parameter",
+                "p1"))).isEqualTo("Required URL parameter 'p1' is missing.");
+    }
+
+    @Test
+    public void whenLocaleIsEnUS_thenHttpError412ShouldWork() {
+        assertThat(OpenAPIHttpError.HTTP_ERROR_412_TITLE.get()).isEqualTo("Precondition Failed");
+        assertThat(OpenAPIHttpError.HTTP_ERROR_412_DETAIL.get(Map.of("reason", "test."))).isEqualTo(
+                "A precondition required for fulfilling the request was not fulfilled: test.");
+    }
+
     @Test
     public void whenLocaleIsEnUS_thenHttpError500ShouldWork() {
-        LocaleContext.setCurrentLocale(Locale.US);
         assertThat(OpenAPIHttpError.HTTP_ERROR_500_TITLE.get()).isEqualTo("Internal Server Error");
         assertThat(OpenAPIHttpError.HTTP_ERROR_500_DETAIL_DEFAULT.get()).isEqualTo(
                 "An unexpected error occurred, check the logs.");
@@ -35,8 +75,23 @@ public class OpenAPIHttpErrorTest {
     }
 
     @Test
+    public void whenLocaleIsEnUS_thenHttpError503ShouldWork() {
+        assertThat(OpenAPIHttpError.HTTP_ERROR_503_TITLE.get()).isEqualTo("Endpoint Temporarily not Available");
+        assertThat(OpenAPIHttpError.HTTP_ERROR_503_DETAIL.get()).isEqualTo(
+                "The endpoint is temporarily not available, please try again later.");
+    }
+
+    @Test
+    public void whenLocaleIsEnUS_thenHttpError507ShouldWork() {
+        assertThat(OpenAPIHttpError.HTTP_ERROR_507_TITLE.get()).isEqualTo("Insufficient Storage");
+        assertThat(OpenAPIHttpError.HTTP_ERROR_507_DETAIL_DEFAULT.get()).isEqualTo("Insufficient Storage.");
+        assertThat(OpenAPIHttpError.HTTP_ERROR_507_DETAIL_WITH_REASON.get(Map.of("reason", "test."))).isEqualTo(
+                "Insufficient Storage: test.");
+    }
+
+    @Test
     public void whenLocaleIsEnGB_thenHttpError500ShouldFail() {
-        LocaleContext.setCurrentLocale(Locale.UK);
+        LocaleContext.setLocale(Locale.UK);
         assertThat(OpenAPIHttpError.HTTP_ERROR_500_TITLE.get()).isEqualTo(
                 "Error: Template http.error.500.title for en_GB could not be loaded.");
         assertThat(OpenAPIHttpError.HTTP_ERROR_500_DETAIL_DEFAULT.get()).isEqualTo(
