@@ -55,14 +55,14 @@ public class I18nHttpErrorTest {
                 .getResourceName(), StandardCharsets.UTF_8))) {
             properties.load(stringReader);
         }
-        assertThat(properties.size()).isEqualTo(errors.size());
-        final Set<Object> keySet = properties.keySet();
-        errors.forEach(error -> assertThat(keySet.contains(error.getKey())).as(error.getKey() + " is not found.")
-                .isTrue());
-        properties.values().forEach(template -> {
-            assertThat(template).isInstanceOf(String.class);
-            assertThat((String) template).isNotBlank();
+        final Set<Object> propertyKeySet = properties.keySet();
+        final Set<String> errorKeySet = errors.stream().map(I18nHttpError::getKey).collect(Collectors.toSet());
+        propertyKeySet.forEach(key -> {
+            assertThat(key).isInstanceOf(String.class);
+            assertThat(errorKeySet.contains((String) key)).as(key + " is not found in the enum.").isTrue();
         });
+        errorKeySet.forEach(key -> assertThat(propertyKeySet.contains(key)).as(key + " is not found in the properties.")
+                .isTrue());
     }
 
     @Test
