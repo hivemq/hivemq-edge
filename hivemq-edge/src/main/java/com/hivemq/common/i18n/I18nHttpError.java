@@ -43,6 +43,8 @@ public enum I18nHttpError implements I18nError {
 
     private static final @NotNull String RESOURCE_NAME_PREFIX = "/templates/http-errors-";
     private static final @NotNull String RESOURCE_NAME_SUFFIX = ".properties";
+    private static final I18nErrorTemplate TEMPLATE =
+            new I18nErrorTemplate(locale -> RESOURCE_NAME_PREFIX + locale + RESOURCE_NAME_SUFFIX);
 
     I18nHttpError() {
     }
@@ -52,7 +54,7 @@ public enum I18nHttpError implements I18nError {
     }
 
     public @NotNull String get(final @NotNull Map<String, Object> map) {
-        return I18nErrorTemplate.getInstance().get(this, map);
+        return TEMPLATE.get(this, map);
     }
 
     @Override
@@ -63,10 +65,5 @@ public enum I18nHttpError implements I18nError {
     @Override
     public @NotNull String getName() {
         return name();
-    }
-
-    @Override
-    public @NotNull String getResourceName() {
-        return RESOURCE_NAME_PREFIX + I18nLocaleContext.getLocale() + RESOURCE_NAME_SUFFIX;
     }
 }

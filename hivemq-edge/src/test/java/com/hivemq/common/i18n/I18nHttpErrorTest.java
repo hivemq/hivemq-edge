@@ -49,10 +49,10 @@ public class I18nHttpErrorTest {
     public void whenLocaleIsEnUS_thenErrorCountShouldMatch() throws IOException {
         final List<I18nHttpError> errors = Arrays.asList(I18nHttpError.values());
         assertThat(errors.size()).isGreaterThan(0);
-        assertThat(errors.stream().map(I18nHttpError::getResourceName).collect(Collectors.toSet())).hasSize(1);
         final Properties properties = new Properties();
-        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString(errors.get(0)
-                .getResourceName(), StandardCharsets.UTF_8))) {
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString(
+                "/templates/http-errors-en_US.properties",
+                StandardCharsets.UTF_8))) {
             properties.load(stringReader);
         }
         final Set<Object> propertyKeySet = properties.keySet();
