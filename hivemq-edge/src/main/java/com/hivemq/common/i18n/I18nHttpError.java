@@ -45,21 +45,26 @@ public enum I18nHttpError implements I18nError {
     private static final @NotNull String RESOURCE_NAME_SUFFIX = ".properties";
     private static final I18nErrorTemplate TEMPLATE =
             new I18nErrorTemplate(locale -> RESOURCE_NAME_PREFIX + locale + RESOURCE_NAME_SUFFIX);
+   
+    private final @NotNull String key;
 
     I18nHttpError() {
+        key = name().toLowerCase().replace("_", ".");
     }
 
+    @Override
     public @NotNull String get() {
         return get(Map.of());
     }
 
+    @Override
     public @NotNull String get(final @NotNull Map<String, Object> map) {
         return TEMPLATE.get(this, map);
     }
 
     @Override
     public @NotNull String getKey() {
-        return name().toLowerCase().replace("_", ".");
+        return key;
     }
 
     @Override
