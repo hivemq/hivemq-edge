@@ -33,6 +33,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * Singleton class to manage OpenAPI i18n error templates using FreeMarker.
@@ -41,27 +42,30 @@ import java.util.concurrent.ConcurrentHashMap;
  * This class is thread-safe and uses a cache to store configurations for different locales.
  */
 public final class I18nErrorTemplate {
-
-    private static final I18nErrorTemplate INSTANCE = new I18nErrorTemplate();
-
+    private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(I18nErrorTemplate.class);
     private final @NotNull Map<String, Configuration> configurationMap;
-    private final @NotNull Logger logger;
+    private final @NotNull Function<Locale, String> resourceNameFunction;
 
-    private I18nErrorTemplate() {
+    public I18nErrorTemplate(final @NotNull Function<Locale, String> resourceNameFunction) {
         configurationMap = new ConcurrentHashMap<>();
-        logger = LoggerFactory.getLogger(getClass());
+        this.resourceNameFunction = resourceNameFunction;
     }
 
-    public static @NotNull I18nErrorTemplate getInstance() {
-        return INSTANCE;
-    }
-
-    private Configuration createConfiguration(final @NotNull Locale locale) {
+    private Configuration createConfiguration(final @NotNull Locale locale) throws IOException {
         final Configuration configuration = new Configuration(Configuration.VERSION_2_3_34);
-        configuration.setDefaultEncoding(StandardCharsets.UTF_8.name());
         final StringTemplateLoader stringTemplateLoader = new StringTemplateLoader();
+        configuration.setDefaultEncoding(StandardCharsets.UTF_8.name());
         configuration.setTemplateLoader(stringTemplateLoader);
         configuration.setLocale(locale);
+        final Properties properties = new Properties();
+        final String resourceName = resourceNameFunction.apply(locale);
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString(resourceName,
+                StandardCharsets.UTF_8))) {
+            properties.load(stringReader);
+        }
+        for (final Map.Entry<Object, Object> entry : properties.entrySet()) {
+            stringTemplateLoader.putTemplate(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
+        }
         return configuration;
     }
 
@@ -71,25 +75,14 @@ public final class I18nErrorTemplate {
 
     public @NotNull String get(final @NotNull I18nError i18NError, final @NotNull Map<String, Object> map) {
         final Locale locale = I18nLocaleContext.getLocale();
-        Configuration configuration = configurationMap.get(locale.toString());
-        if (configuration == null) {
-            configuration = createConfiguration(locale);
-            configurationMap.put(locale.toString(), configuration);
-        }
         try {
-            final StringTemplateLoader stringTemplateLoader = (StringTemplateLoader) configuration.getTemplateLoader();
-            if (stringTemplateLoader.findTemplateSource(i18NError.getKey()) == null) {
-                final Properties properties = new Properties();
-                try (final StringReader stringReader = new StringReader(IOUtils.resourceToString(i18NError.getResourceName(),
-                        StandardCharsets.UTF_8))) {
-                    properties.load(stringReader);
-                }
-                synchronized (configuration) {
-                    for (final Map.Entry<Object, Object> entry : properties.entrySet()) {
-                        stringTemplateLoader.putTemplate(String.valueOf(entry.getKey()),
-                                String.valueOf(entry.getValue()));
-                    }
-                }
+            Configuration configuration = configurationMap.get(locale.toString());
+            if (configuration == null) {
+                // The whole configuration creation process is not thread-safe, but creating a new configuration
+                // multiple times among concurrent threads brings no harm.
+                // So, we don't use a lock here to improve the overall performance.
+                configuration = createConfiguration(locale);
+                configurationMap.put(locale.toString(), configuration);
             }
             final Template template = configuration.getTemplate(i18NError.getKey());
             try (final StringWriter stringWriter = new StringWriter()) {
@@ -99,12 +92,12 @@ public final class I18nErrorTemplate {
         } catch (final TemplateException e) {
             final String errorMessage =
                     "Error: Template " + i18NError.getKey() + " for " + locale + " could not be processed.";
-            logger.error(errorMessage, e);
+            LOGGER.error(errorMessage, e);
             return errorMessage;
         } catch (final IOException e) {
             final String errorMessage =
                     "Error: Template " + i18NError.getKey() + " for " + locale + " could not be loaded.";
-            logger.error(errorMessage, e);
+            LOGGER.error(errorMessage, e);
             return errorMessage;
         }
     }

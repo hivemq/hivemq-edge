@@ -22,6 +22,4 @@ public interface I18nError {
     @NotNull String getKey();
 
     @NotNull String getName();
-
-    @NotNull String getResourceName();
 }
