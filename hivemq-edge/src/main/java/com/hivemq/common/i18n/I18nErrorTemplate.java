@@ -35,24 +35,24 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Singleton class to manage OpenAPI error templates using FreeMarker.
+ * Singleton class to manage OpenAPI i18n error templates using FreeMarker.
  * It provides methods to retrieve error messages based on the current locale and template keys.
  * <p>
  * This class is thread-safe and uses a cache to store configurations for different locales.
  */
-public final class OpenAPIErrorTemplate {
+public final class I18nErrorTemplate {
 
-    private static final OpenAPIErrorTemplate INSTANCE = new OpenAPIErrorTemplate();
+    private static final I18nErrorTemplate INSTANCE = new I18nErrorTemplate();
 
     private final @NotNull Map<String, Configuration> configurationMap;
     private final @NotNull Logger logger;
 
-    private OpenAPIErrorTemplate() {
+    private I18nErrorTemplate() {
         configurationMap = new ConcurrentHashMap<>();
         logger = LoggerFactory.getLogger(getClass());
     }
 
-    public static @NotNull OpenAPIErrorTemplate getInstance() {
+    public static @NotNull I18nErrorTemplate getInstance() {
         return INSTANCE;
     }
 
@@ -65,12 +65,12 @@ public final class OpenAPIErrorTemplate {
         return configuration;
     }
 
-    public @NotNull String get(final @NotNull I18nTemplate i18nTemplate) {
-        return get(i18nTemplate, Map.of());
+    public @NotNull String get(final @NotNull I18nError i18NError) {
+        return get(i18NError, Map.of());
     }
 
-    public @NotNull String get(final @NotNull I18nTemplate i18nTemplate, final @NotNull Map<String, Object> map) {
-        final Locale locale = LocaleContext.getLocale();
+    public @NotNull String get(final @NotNull I18nError i18NError, final @NotNull Map<String, Object> map) {
+        final Locale locale = I18nLocaleContext.getLocale();
         Configuration configuration = configurationMap.get(locale.toString());
         if (configuration == null) {
             configuration = createConfiguration(locale);
@@ -78,9 +78,9 @@ public final class OpenAPIErrorTemplate {
         }
         try {
             final StringTemplateLoader stringTemplateLoader = (StringTemplateLoader) configuration.getTemplateLoader();
-            if (stringTemplateLoader.findTemplateSource(i18nTemplate.getKey()) == null) {
+            if (stringTemplateLoader.findTemplateSource(i18NError.getKey()) == null) {
                 final Properties properties = new Properties();
-                try (final StringReader stringReader = new StringReader(IOUtils.resourceToString(i18nTemplate.getResourceName(),
+                try (final StringReader stringReader = new StringReader(IOUtils.resourceToString(i18NError.getResourceName(),
                         StandardCharsets.UTF_8))) {
                     properties.load(stringReader);
                 }
@@ -91,19 +91,19 @@ public final class OpenAPIErrorTemplate {
                     }
                 }
             }
-            final Template template = configuration.getTemplate(i18nTemplate.getKey());
+            final Template template = configuration.getTemplate(i18NError.getKey());
             try (final StringWriter stringWriter = new StringWriter()) {
                 template.process(map, stringWriter);
                 return stringWriter.toString();
             }
         } catch (final TemplateException e) {
             final String errorMessage =
-                    "Error: Template " + i18nTemplate.getKey() + " for " + locale + " could not be processed.";
+                    "Error: Template " + i18NError.getKey() + " for " + locale + " could not be processed.";
             logger.error(errorMessage);
             return errorMessage;
         } catch (final IOException e) {
             final String errorMessage =
-                    "Error: Template " + i18nTemplate.getKey() + " for " + locale + " could not be loaded.";
+                    "Error: Template " + i18NError.getKey() + " for " + locale + " could not be loaded.";
             logger.error(errorMessage);
             return errorMessage;
         }
