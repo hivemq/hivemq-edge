@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
-public enum OpenAPIHttpError implements I18nTemplate {
+public enum I18nHttpError implements I18nError {
     HTTP_ERROR_400_INVALID_QUERY_PARAMETER_DETAIL,
     HTTP_ERROR_400_INVALID_QUERY_PARAMETER_TITLE,
     HTTP_ERROR_400_REQUEST_BODY_MISSING_DETAIL,
@@ -44,7 +44,7 @@ public enum OpenAPIHttpError implements I18nTemplate {
     private static final @NotNull String RESOURCE_NAME_PREFIX = "/templates/openapi-errors-";
     private static final @NotNull String RESOURCE_NAME_SUFFIX = ".properties";
 
-    OpenAPIHttpError() {
+    I18nHttpError() {
     }
 
     public @NotNull String get() {
@@ -52,7 +52,7 @@ public enum OpenAPIHttpError implements I18nTemplate {
     }
 
     public @NotNull String get(final @NotNull Map<String, Object> map) {
-        return OpenAPIErrorTemplate.getInstance().get(this, map);
+        return I18nErrorTemplate.getInstance().get(this, map);
     }
 
     @Override
@@ -67,6 +67,6 @@ public enum OpenAPIHttpError implements I18nTemplate {
 
     @Override
     public @NotNull String getResourceName() {
-        return RESOURCE_NAME_PREFIX + LocaleContext.getLocale() + RESOURCE_NAME_SUFFIX;
+        return RESOURCE_NAME_PREFIX + I18nLocaleContext.getLocale() + RESOURCE_NAME_SUFFIX;
     }
 }
