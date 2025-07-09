@@ -21,7 +21,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Map;
 
 public interface I18nError {
-    @NotNull String get();
+    default @NotNull String get() {
+        return get(Map.of());
+    }
 
     @NotNull String get(final @NotNull Map<String, Object> map);
 
