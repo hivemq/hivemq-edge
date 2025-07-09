@@ -99,12 +99,12 @@ public final class I18nErrorTemplate {
         } catch (final TemplateException e) {
             final String errorMessage =
                     "Error: Template " + i18NError.getKey() + " for " + locale + " could not be processed.";
-            logger.error(errorMessage);
+            logger.error(errorMessage, e);
             return errorMessage;
         } catch (final IOException e) {
             final String errorMessage =
                     "Error: Template " + i18NError.getKey() + " for " + locale + " could not be loaded.";
-            logger.error(errorMessage);
+            logger.error(errorMessage, e);
             return errorMessage;
         }
     }
