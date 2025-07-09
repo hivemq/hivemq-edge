@@ -16,15 +16,12 @@
 
 package com.hivemq.common.i18n;
 
+import org.jetbrains.annotations.NotNull;
 
-import org.junit.jupiter.api.Test;
+public interface I18nError {
+    @NotNull String getKey();
 
-import static org.assertj.core.api.Assertions.assertThat;
+    @NotNull String getName();
 
-public class OpenAPIErrorTemplateTest {
-    @Test
-    public void whenLocaleIsNull_thenUseDefaultLocale() {
-        LocaleContext.setLocale(null);
-        assertThat(LocaleContext.getLocale()).isEqualTo(LocaleContext.DEFAULT_LOCALE);
-    }
+    @NotNull String getResourceName();
 }
