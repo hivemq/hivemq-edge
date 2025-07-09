@@ -16,7 +16,7 @@
 
 package com.hivemq.api.errors;
 
-import com.hivemq.common.i18n.OpenAPIHttpError;
+import com.hivemq.common.i18n.I18nHttpError;
 import com.hivemq.edge.api.model.*;
 import com.hivemq.edge.api.model.InsufficientStorageError;
 import com.hivemq.edge.api.model.InternalServerError;
@@ -41,10 +41,10 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull InsufficientStorageError insufficientStorageError(final @Nullable String reason) {
         return InsufficientStorageError.builder()
                 .type(type(InsufficientStorageError.class))
-                .title(OpenAPIHttpError.HTTP_ERROR_507_TITLE.get())
+                .title(I18nHttpError.HTTP_ERROR_507_TITLE.get())
                 .detail(reason == null ?
-                        OpenAPIHttpError.HTTP_ERROR_507_DETAIL_DEFAULT.get() :
-                        OpenAPIHttpError.HTTP_ERROR_507_DETAIL_WITH_REASON.get(Map.of("reason", reason)))
+                        I18nHttpError.HTTP_ERROR_507_DETAIL_DEFAULT.get() :
+                        I18nHttpError.HTTP_ERROR_507_DETAIL_WITH_REASON.get(Map.of("reason", reason)))
                 .status(HttpStatus.INSUFFICIENT_STORAGE_507)
                 .build();
     }
@@ -56,10 +56,10 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull InternalServerError internalServerError(final @Nullable String reason) {
         return InternalServerError.builder()
                 .type(type(InternalServerError.class))
-                .title(OpenAPIHttpError.HTTP_ERROR_500_TITLE.get())
+                .title(I18nHttpError.HTTP_ERROR_500_TITLE.get())
                 .detail(reason == null ?
-                        OpenAPIHttpError.HTTP_ERROR_500_DETAIL_DEFAULT.get() :
-                        OpenAPIHttpError.HTTP_ERROR_500_DETAIL_WITH_REASON.get(Map.of("reason", reason)))
+                        I18nHttpError.HTTP_ERROR_500_DETAIL_DEFAULT.get() :
+                        I18nHttpError.HTTP_ERROR_500_DETAIL_WITH_REASON.get(Map.of("reason", reason)))
                 .status(HttpStatus.INTERNAL_SERVER_ERROR_500)
                 .build();
     }
@@ -69,8 +69,8 @@ public final class HttpErrorFactory extends ErrorFactory {
             final @NotNull String reason) {
         return InvalidQueryParameterError.builder()
                 .type(type(InvalidQueryParameterError.class))
-                .title(OpenAPIHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_TITLE.get())
-                .detail(OpenAPIHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_DETAIL.get(Map.of(
+                .title(I18nHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_TITLE.get())
+                .detail(I18nHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_DETAIL.get(Map.of(
                         "parameter", parameter,
                         "reason", reason)))
                 .parameter(parameter)
@@ -82,8 +82,8 @@ public final class HttpErrorFactory extends ErrorFactory {
             final @NotNull String reason) {
         return PreconditionFailedError.builder()
                 .type(type(PreconditionFailedError.class))
-                .title(OpenAPIHttpError.HTTP_ERROR_412_TITLE.get())
-                .detail(OpenAPIHttpError.HTTP_ERROR_412_DETAIL.get(Map.of("reason", reason)))
+                .title(I18nHttpError.HTTP_ERROR_412_TITLE.get())
+                .detail(I18nHttpError.HTTP_ERROR_412_DETAIL.get(Map.of("reason", reason)))
                 .status(HttpStatus.PRECONDITION_FAILED_412)
                 .build();
     }
@@ -91,8 +91,8 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull RequestBodyMissingError requestBodyMissingError() {
         return RequestBodyMissingError.builder()
                 .type(type(RequestBodyMissingError.class))
-                .title(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_MISSING_TITLE.get())
-                .detail(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_MISSING_DETAIL.get())
+                .title(I18nHttpError.HTTP_ERROR_400_REQUEST_BODY_MISSING_TITLE.get())
+                .detail(I18nHttpError.HTTP_ERROR_400_REQUEST_BODY_MISSING_DETAIL.get())
                 .status(HttpStatus.BAD_REQUEST_400)
                 .build();
     }
@@ -100,8 +100,8 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull RequestBodyParameterMissingError requestBodyParameterMissingError(final @NotNull String parameter) {
         return RequestBodyParameterMissingError.builder()
                 .type(type(RequestBodyParameterMissingError.class))
-                .title(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_TITLE.get())
-                .detail(OpenAPIHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_DETAIL.get(Map.of("parameter", parameter)))
+                .title(I18nHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_TITLE.get())
+                .detail(I18nHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_DETAIL.get(Map.of("parameter", parameter)))
                 .parameter(parameter)
                 .status(HttpStatus.BAD_REQUEST_400)
                 .build();
@@ -110,8 +110,8 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull TemporaryNotAvailableError temporaryNotAvailableError() {
         return TemporaryNotAvailableError.builder()
                 .type(type(TemporaryNotAvailableError.class))
-                .title(OpenAPIHttpError.HTTP_ERROR_503_TITLE.get())
-                .detail(OpenAPIHttpError.HTTP_ERROR_503_DETAIL.get())
+                .title(I18nHttpError.HTTP_ERROR_503_TITLE.get())
+                .detail(I18nHttpError.HTTP_ERROR_503_DETAIL.get())
                 .status(HttpStatus.SERVICE_UNAVAILABLE_503)
                 .build();
     }
@@ -119,8 +119,8 @@ public final class HttpErrorFactory extends ErrorFactory {
     public static @NotNull UrlParameterMissingError urlParameterMissingError(final @NotNull String parameter) {
         return UrlParameterMissingError.builder()
                 .type(type(UrlParameterMissingError.class))
-                .title(OpenAPIHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_TITLE.get())
-                .detail(OpenAPIHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_DETAIL.get(Map.of("parameter", parameter)))
+                .title(I18nHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_TITLE.get())
+                .detail(I18nHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_DETAIL.get(Map.of("parameter", parameter)))
                 .parameter(parameter)
                 .status(HttpStatus.BAD_REQUEST_400)
                 .build();

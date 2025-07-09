@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
-public final class LocaleContext {
+public final class I18nLocaleContext {
     public static @NotNull Locale DEFAULT_LOCALE = Locale.US;
 
     private static final ThreadLocal<Locale> THREAD_LOCAL_LOCALE = ThreadLocal.withInitial(() -> DEFAULT_LOCALE);
