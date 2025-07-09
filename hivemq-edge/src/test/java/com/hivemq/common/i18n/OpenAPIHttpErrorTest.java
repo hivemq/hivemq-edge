@@ -16,12 +16,20 @@
 
 package com.hivemq.common.i18n;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,6 +42,25 @@ public class OpenAPIHttpErrorTest {
     @AfterEach
     public void tearDown() {
         LocaleContext.setLocale(LocaleContext.DEFAULT_LOCALE);
+    }
+
+    @Test
+    public void whenLocaleIsEnUS_thenErrorCountShouldMatch() throws IOException {
+        final List<OpenAPIHttpError> errors = Arrays.asList(OpenAPIHttpError.values());
+        assertThat(errors.size()).isGreaterThan(0);
+        final Properties properties = new Properties();
+        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString(errors.get(0)
+                .getResourceName(), StandardCharsets.UTF_8))) {
+            properties.load(stringReader);
+        }
+        assertThat(properties.size()).isEqualTo(errors.size());
+        final Set<Object> keySet = properties.keySet();
+        errors.forEach(error -> assertThat(keySet.contains(error.getKey())).as(error.getKey() + " is not found.")
+                .isTrue());
+        properties.values().forEach(template -> {
+            assertThat(template).isInstanceOf(String.class);
+            assertThat((String) template).isNotBlank();
+        });
     }
 
     @Test
