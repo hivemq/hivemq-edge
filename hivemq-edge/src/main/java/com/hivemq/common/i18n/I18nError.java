@@ -18,7 +18,13 @@ package com.hivemq.common.i18n;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
+
 public interface I18nError {
+    @NotNull String get();
+
+    @NotNull String get(final @NotNull Map<String, Object> map);
+
     @NotNull String getKey();
 
     @NotNull String getName();
