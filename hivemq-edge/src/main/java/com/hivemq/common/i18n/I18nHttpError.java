@@ -41,7 +41,7 @@ public enum I18nHttpError implements I18nError {
     HTTP_ERROR_507_TITLE,
     ;
 
-    private static final @NotNull String RESOURCE_NAME_PREFIX = "/templates/openapi-errors-";
+    private static final @NotNull String RESOURCE_NAME_PREFIX = "/templates/http-errors-";
     private static final @NotNull String RESOURCE_NAME_SUFFIX = ".properties";
 
     I18nHttpError() {
