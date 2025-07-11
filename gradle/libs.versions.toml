@@ -167,7 +167,7 @@ javadoclinks = { id = "io.github.sgtsilvio.gradle.javadoc-links", version.ref = 
 license = { id = "com.github.hierynomus.license", version.ref = "plugin-license" }
 metadata = { id = "io.github.sgtsilvio.gradle.metadata", version.ref = "plugin-metadata" }
 openapi-generator = { id = "org.openapi.generator", version.ref = "plugin-openapigenerator" }
-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "plugin-shadow" }
+shadow = { id = "com.gradleup.shadow", version.ref = "plugin-shadow" }
 spotbugs = { id = "com.github.spotbugs", version.ref = "plugin-spotbugs" }
 versions = { id = "com.github.ben-manes.versions", version.ref = "plugin-versions" }
 
