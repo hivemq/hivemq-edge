@@ -66,7 +66,7 @@ plugin-metadata = "0.5.0"
 plugin-openapigenerator = "7.13.0"
 plugin-forbiddenapis = "3.9"
 plugin-github-release = "2.5.2"
-plugin-shadow = "8.1.1"
+plugin-shadow = "8.3.8"
 plugin-spotbugs = "4.8.0"
 plugin-versions = "0.51.0"
 
@@ -167,7 +167,7 @@ javadoclinks = { id = "io.github.sgtsilvio.gradle.javadoc-links", version.ref = 
 license = { id = "com.github.hierynomus.license", version.ref = "plugin-license" }
 metadata = { id = "io.github.sgtsilvio.gradle.metadata", version.ref = "plugin-metadata" }
 openapi-generator = { id = "org.openapi.generator", version.ref = "plugin-openapigenerator" }
-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "plugin-shadow" }
+shadow = { id = "com.gradleup.shadow", version.ref = "plugin-shadow" }
 spotbugs = { id = "com.github.spotbugs", version.ref = "plugin-spotbugs" }
 versions = { id = "com.github.ben-manes.versions", version.ref = "plugin-versions" }
 
