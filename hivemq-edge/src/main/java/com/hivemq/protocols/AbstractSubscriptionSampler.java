@@ -88,7 +88,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             final @NotNull Throwable exception, final boolean continuing) {
         protocolAdapter.setErrorConnectionStatus(exception, null);
         if (!continuing) {
-            protocolAdapter.stop();
+            protocolAdapter.stopAsync(false);
         }
     }
 

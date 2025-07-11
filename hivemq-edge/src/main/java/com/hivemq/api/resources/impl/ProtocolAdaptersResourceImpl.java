@@ -26,7 +26,6 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
-import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.BadRequestError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
@@ -88,15 +87,14 @@ import com.hivemq.protocols.params.NodeTreeImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationInputImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
 import com.hivemq.util.ErrorResponseUtil;
-import io.netty.handler.codec.base64.Base64Decoder;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.core.Response;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-import jakarta.ws.rs.core.Response;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -188,7 +186,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 .values()
                 .stream()
                 .map(this::convertToAdapter)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
         return Response.ok(new AdaptersList().items(adapters)).build();
     }
 
@@ -205,7 +203,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 .stream()
                 .filter(adapterInstance -> adapterInstance.getAdapterInformation().getProtocolId().equals(adapterType))
                 .map(this::convertToAdapter)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         return Response.ok(new AdaptersList().items(adapters)).build();
     }
@@ -388,15 +386,29 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         } else {
             switch (command.getCommand()) {
-                case START:
-                    protocolAdapterManager.start(adapterId);
-                    break;
-                case STOP:
-                    protocolAdapterManager.stop(adapterId);
-                    break;
-                case RESTART:
-                    protocolAdapterManager.stop(adapterId).thenRun(() -> protocolAdapterManager.start(adapterId));
-                    break;
+                case START -> protocolAdapterManager.start(adapterId).whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Failed to start adapter '{}'.", adapterId, throwable);
+                    } else {
+                        log.trace("Adapter '{}' was started successfully.", adapterId);
+                    }
+                });
+                case STOP -> protocolAdapterManager.stop(adapterId, false).whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Failed to stop adapter '{}'.", adapterId, throwable);
+                    } else {
+                        log.trace("Adapter '{}' was stopped successfully.", adapterId);
+                    }
+                });
+                case RESTART -> protocolAdapterManager.stop(adapterId, false)
+                        .thenRun(() -> protocolAdapterManager.start(adapterId))
+                        .whenComplete((result, throwable) -> {
+                            if (throwable != null) {
+                                log.error("Failed to restart adapter '{}'.", adapterId, throwable);
+                            } else {
+                                log.trace("Adapter '{}' was restarted successfully.", adapterId);
+                            }
+                        });
             }
 
             final var statusTransitionResult =
@@ -521,7 +533,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                             domainTag.getDescription(),
                             objectMapper.convertValue(domainTag.getDefinition(), new TypeReference<>(){})));
 
-                    var updated = protocolAdapterConfig.updateAdapter(new ProtocolAdapterEntity(
+                    final var updated = protocolAdapterConfig.updateAdapter(new ProtocolAdapterEntity(
                             oldInstance.getAdapterId(),
                             oldInstance.getProtocolId(),
                             oldInstance.getConfigVersion(),
@@ -644,7 +656,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                                             objectMapper.convertValue(tag.getDefinition(), new TypeReference<>(){})
                                     ))
                             .toList();
-                    var newConfig = new ProtocolAdapterEntity(oldInstance.getAdapterId(),
+                    final var newConfig = new ProtocolAdapterEntity(oldInstance.getAdapterId(),
                             oldInstance.getProtocolId(),
                             oldInstance.getConfigVersion(),
                             oldInstance.getConfig(),
@@ -856,7 +868,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 protocolAdapterConfig.getAllConfigs()
                         .stream()
                         .flatMap(adapter -> adapter.getSouthboundMappingEntities().stream().map(SouthboundMappingEntity::toAPi))
-                        .collect(Collectors.toList());
+                        .toList();
         return Response.status(200).entity(new SouthboundMappingList().items(southboundMappingModels)).build();
     }
 
@@ -873,7 +885,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     final List<NorthboundMapping> converted = northboundMappingList.getItems().stream().map(mapping -> {
                         requiredTags.add(mapping.getTagName());
                         return NorthboundMapping.fromModel(mapping);
-                    }).collect(Collectors.toList());
+                    }).toList();
                     adapter.getTags().forEach(tag -> requiredTags.remove(tag.getName()));
 
                     if (requiredTags.isEmpty()) {
