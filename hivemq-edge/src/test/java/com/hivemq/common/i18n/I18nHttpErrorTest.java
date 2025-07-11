@@ -69,7 +69,8 @@ public class I18nHttpErrorTest {
     public void whenLocaleIsEnUS_thenHttpError400ShouldWork() {
         assertThat(I18nHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_TITLE.get()).isEqualTo(
                 "Query Parameter is Invalid");
-        assertThat(I18nHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_DETAIL.get(Map.of("parameter",
+        assertThat(I18nHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_DETAIL_WITH_PARAMETER_AND_REASON.get(Map.of(
+                "parameter",
                 "p1",
                 "reason",
                 "test."))).isEqualTo("Query parameter 'p1' is invalid: test.");
@@ -79,26 +80,26 @@ public class I18nHttpErrorTest {
                 "Required request body is missing.");
         assertThat(I18nHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_TITLE.get()).isEqualTo(
                 "Required Request Body Parameter Missing");
-        assertThat(I18nHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_DETAIL.get(Map.of("parameter",
+        assertThat(I18nHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_DETAIL_WITH_PARAMETER.get(Map.of(
+                "parameter",
                 "p1"))).isEqualTo("Required request body parameter 'p1' is missing.");
         assertThat(I18nHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_TITLE.get()).isEqualTo(
                 "Required URL Parameter Missing");
-        assertThat(I18nHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_DETAIL.get(Map.of("parameter", "p1"))).isEqualTo(
-                "Required URL parameter 'p1' is missing.");
+        assertThat(I18nHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_DETAIL_WITH_PARAMETER.get(Map.of("parameter",
+                "p1"))).isEqualTo("Required URL parameter 'p1' is missing.");
     }
 
     @Test
     public void whenLocaleIsEnUS_thenHttpError412ShouldWork() {
         assertThat(I18nHttpError.HTTP_ERROR_412_TITLE.get()).isEqualTo("Precondition Failed");
-        assertThat(I18nHttpError.HTTP_ERROR_412_DETAIL.get(Map.of("reason", "test."))).isEqualTo(
+        assertThat(I18nHttpError.HTTP_ERROR_412_DETAIL_WITH_REASON.get(Map.of("reason", "test."))).isEqualTo(
                 "A precondition required for fulfilling the request was not fulfilled: test.");
     }
 
     @Test
     public void whenLocaleIsEnUS_thenHttpError500ShouldWork() {
         assertThat(I18nHttpError.HTTP_ERROR_500_TITLE.get()).isEqualTo("Internal Server Error");
-        assertThat(I18nHttpError.HTTP_ERROR_500_DETAIL_DEFAULT.get()).isEqualTo(
-                "An unexpected error occurred, check the logs.");
+        assertThat(I18nHttpError.HTTP_ERROR_500_DETAIL.get()).isEqualTo("An unexpected error occurred, check the logs.");
         assertThat(I18nHttpError.HTTP_ERROR_500_DETAIL_WITH_REASON.get(Map.of("reason", "test."))).isEqualTo(
                 "An unexpected error occurred: test.");
     }
@@ -113,7 +114,7 @@ public class I18nHttpErrorTest {
     @Test
     public void whenLocaleIsEnUS_thenHttpError507ShouldWork() {
         assertThat(I18nHttpError.HTTP_ERROR_507_TITLE.get()).isEqualTo("Insufficient Storage");
-        assertThat(I18nHttpError.HTTP_ERROR_507_DETAIL_DEFAULT.get()).isEqualTo("Insufficient Storage.");
+        assertThat(I18nHttpError.HTTP_ERROR_507_DETAIL.get()).isEqualTo("Insufficient Storage.");
         assertThat(I18nHttpError.HTTP_ERROR_507_DETAIL_WITH_REASON.get(Map.of("reason", "test."))).isEqualTo(
                 "Insufficient Storage: test.");
     }
@@ -123,8 +124,8 @@ public class I18nHttpErrorTest {
         I18nLocaleContext.setLocale(Locale.UK);
         assertThat(I18nHttpError.HTTP_ERROR_500_TITLE.get()).isEqualTo(
                 "Error: Template http.error.500.title for en_GB could not be loaded.");
-        assertThat(I18nHttpError.HTTP_ERROR_500_DETAIL_DEFAULT.get()).isEqualTo(
-                "Error: Template http.error.500.detail.default for en_GB could not be loaded.");
+        assertThat(I18nHttpError.HTTP_ERROR_500_DETAIL.get()).isEqualTo(
+                "Error: Template http.error.500.detail for en_GB could not be loaded.");
         assertThat(I18nHttpError.HTTP_ERROR_500_DETAIL_WITH_REASON.get(Map.of("reason", "test."))).isEqualTo(
                 "Error: Template http.error.500.detail.with.reason for en_GB could not be loaded.");
     }
