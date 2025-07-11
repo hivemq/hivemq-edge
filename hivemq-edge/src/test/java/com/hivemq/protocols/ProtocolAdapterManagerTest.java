@@ -99,7 +99,6 @@ class ProtocolAdapterManagerTest {
 
     @Test
     void test_startWritingAdapterSucceeded_eventsFired() throws Exception {
-
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
@@ -127,7 +126,6 @@ class ProtocolAdapterManagerTest {
 
     @Test
     void test_startWritingNotEnabled_notStarted() throws Exception {
-
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
@@ -153,7 +151,6 @@ class ProtocolAdapterManagerTest {
 
     @Test
     void test_startWriting_adapterFailedStart_resourcesCleanedUp() throws Exception{
-
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
@@ -186,7 +183,6 @@ class ProtocolAdapterManagerTest {
 
     @Test
     void test_startWriting_eventServiceFailedStart_resourcesCleanedUp() {
-
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
         when(protocolAdapterWritingService.startWriting(any(),
                 any(),
@@ -216,7 +212,6 @@ class ProtocolAdapterManagerTest {
 
     @Test
     void test_stopWritingAdapterSucceeded_eventsFired() throws Exception {
-
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
@@ -244,7 +239,6 @@ class ProtocolAdapterManagerTest {
 
     @Test
     void test_stopWritingAdapterFailed_eventsFired() throws Exception {
-
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
