@@ -199,11 +199,15 @@ public class ProtocolAdapterManager {
 
     private void deleteAdapterInternal(final @NotNull String adapterId) {
         final ProtocolAdapterWrapper adapterWrapper = protocolAdapters.remove(adapterId);
-        protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapterWrapper.getAdapterInformation().getProtocolId());
-        eventService.createAdapterEvent(adapterId, adapterWrapper.getProtocolAdapterInformation().getProtocolId())
-                .withSeverity(Event.SEVERITY.WARN)
-                .withMessage(String.format("Adapter '%s' was deleted from the system permanently.", adapterId))
-                .fire();
+        if(adapterWrapper != null) {
+            protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapterWrapper.getAdapterInformation().getProtocolId());
+            eventService.createAdapterEvent(adapterId, adapterWrapper.getProtocolAdapterInformation().getProtocolId())
+                    .withSeverity(Event.SEVERITY.WARN)
+                    .withMessage(String.format("Adapter '%s' was deleted from the system permanently.", adapterId))
+                    .fire();
+        } else {
+            log.warn("Tried to delete adapter '{}' but it was not found in the system.", adapterId);
+        }
     }
 
     public void start() {
