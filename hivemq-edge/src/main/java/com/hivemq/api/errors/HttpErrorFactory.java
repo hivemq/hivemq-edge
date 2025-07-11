@@ -43,7 +43,7 @@ public final class HttpErrorFactory extends ErrorFactory {
                 .type(type(InsufficientStorageError.class))
                 .title(I18nHttpError.HTTP_ERROR_507_TITLE.get())
                 .detail(reason == null ?
-                        I18nHttpError.HTTP_ERROR_507_DETAIL_DEFAULT.get() :
+                        I18nHttpError.HTTP_ERROR_507_DETAIL.get() :
                         I18nHttpError.HTTP_ERROR_507_DETAIL_WITH_REASON.get(Map.of("reason", reason)))
                 .status(HttpStatus.INSUFFICIENT_STORAGE_507)
                 .build();
@@ -58,7 +58,7 @@ public final class HttpErrorFactory extends ErrorFactory {
                 .type(type(InternalServerError.class))
                 .title(I18nHttpError.HTTP_ERROR_500_TITLE.get())
                 .detail(reason == null ?
-                        I18nHttpError.HTTP_ERROR_500_DETAIL_DEFAULT.get() :
+                        I18nHttpError.HTTP_ERROR_500_DETAIL.get() :
                         I18nHttpError.HTTP_ERROR_500_DETAIL_WITH_REASON.get(Map.of("reason", reason)))
                 .status(HttpStatus.INTERNAL_SERVER_ERROR_500)
                 .build();
@@ -70,7 +70,7 @@ public final class HttpErrorFactory extends ErrorFactory {
         return InvalidQueryParameterError.builder()
                 .type(type(InvalidQueryParameterError.class))
                 .title(I18nHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_TITLE.get())
-                .detail(I18nHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_DETAIL.get(Map.of(
+                .detail(I18nHttpError.HTTP_ERROR_400_INVALID_QUERY_PARAMETER_DETAIL_WITH_PARAMETER_AND_REASON.get(Map.of(
                         "parameter", parameter,
                         "reason", reason)))
                 .parameter(parameter)
@@ -83,7 +83,7 @@ public final class HttpErrorFactory extends ErrorFactory {
         return PreconditionFailedError.builder()
                 .type(type(PreconditionFailedError.class))
                 .title(I18nHttpError.HTTP_ERROR_412_TITLE.get())
-                .detail(I18nHttpError.HTTP_ERROR_412_DETAIL.get(Map.of("reason", reason)))
+                .detail(I18nHttpError.HTTP_ERROR_412_DETAIL_WITH_REASON.get(Map.of("reason", reason)))
                 .status(HttpStatus.PRECONDITION_FAILED_412)
                 .build();
     }
@@ -101,7 +101,7 @@ public final class HttpErrorFactory extends ErrorFactory {
         return RequestBodyParameterMissingError.builder()
                 .type(type(RequestBodyParameterMissingError.class))
                 .title(I18nHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_TITLE.get())
-                .detail(I18nHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_DETAIL.get(Map.of("parameter", parameter)))
+                .detail(I18nHttpError.HTTP_ERROR_400_REQUEST_BODY_PARAMETER_MISSING_DETAIL_WITH_PARAMETER.get(Map.of("parameter", parameter)))
                 .parameter(parameter)
                 .status(HttpStatus.BAD_REQUEST_400)
                 .build();
@@ -120,7 +120,7 @@ public final class HttpErrorFactory extends ErrorFactory {
         return UrlParameterMissingError.builder()
                 .type(type(UrlParameterMissingError.class))
                 .title(I18nHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_TITLE.get())
-                .detail(I18nHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_DETAIL.get(Map.of("parameter", parameter)))
+                .detail(I18nHttpError.HTTP_ERROR_400_URL_PARAMETER_MISSING_DETAIL_WITH_PARAMETER.get(Map.of("parameter", parameter)))
                 .parameter(parameter)
                 .status(HttpStatus.BAD_REQUEST_400)
                 .build();
