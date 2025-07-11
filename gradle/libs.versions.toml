@@ -66,7 +66,7 @@ plugin-metadata = "0.5.0"
 plugin-openapigenerator = "7.13.0"
 plugin-forbiddenapis = "3.9"
 plugin-github-release = "2.5.2"
-plugin-shadow = "9.0.0"
+plugin-shadow = "8.3.8"
 plugin-spotbugs = "4.8.0"
 plugin-versions = "0.51.0"
 
