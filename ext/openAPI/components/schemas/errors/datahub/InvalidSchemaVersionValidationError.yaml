@@ -1,0 +1,21 @@
+allOf:
+  - $ref: "../validation/ValidationError.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The schema id.
+        example: "abc"
+      version:
+        type: string
+        description: The schema version.
+        example: "2"
+    required:
+      - id
+      - version
+example:
+  general:
+    detail: "The referenced schema with id 'abc' and version '2' was not found."
+    id: "abc"
+    version: "2"
+    type: "https://hivemq.com/edge/api/model/InvalidSchemaVersionValidationError"

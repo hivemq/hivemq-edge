@@ -1,0 +1,26 @@
+allOf:
+  - $ref: "./ValidationError.yaml"
+  - type: object
+    properties:
+      actualValue:
+        type: string
+        description: The actual value.
+      expectedValue:
+        type: string
+        description: The expected value.
+      path:
+        type: string
+        format: json-path
+        description: The json path.
+        example: "$.id"
+    required:
+      - actualValue
+      - expectedValue
+      - path
+example:
+  general:
+    detail: "Unsupported type 'String' for field '$.id'. Expected type is 'Object'."
+    actualValue: "String"
+    expectedValue: "Object"
+    path: "$.id"
+    type: "https://hivemq.com/edge/api/model/UnsupportedFieldValidationError"
