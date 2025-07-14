@@ -188,7 +188,7 @@ public class BridgeService {
             final @NotNull String bridgeId, final @Nullable MqttBridge newBridgeConfig) {
         final var bridgeToClient = activeBridgeNamesToClient.get(bridgeId);
         if (bridgeToClient != null) {
-            log.info("Restarting bridge '{}'", bridgeToClient);
+            log.info("Restarting bridge '{}'", bridgeId);
             final List<String> unchangedForwarders = newForwarderIds(newBridgeConfig);
             stopBridge(bridgeId, true, unchangedForwarders);
             final var mqttBridgeAndClient = new MqttBridgeAndClient(
