@@ -93,7 +93,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
     }
 
     @NotNull
-    protected OpcUaProtocolAdapter createAndStartAdapter(final @NotNull String subcribedNodeId)
+    protected OpcUaProtocolAdapter createAndStartAdapter(final @NotNull String subcribedNodeId, final @Nullable Boolean collectAllProperties)
             throws Exception {
 
         final OpcUaToMqttConfig opcuaToMqttConfig =
@@ -107,7 +107,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
-        when(protocolAdapterInput.getTags()).thenReturn(List.of(new OpcuaTag(subcribedNodeId, "", new OpcuaTagDefinition(subcribedNodeId))));
+        when(protocolAdapterInput.getTags()).thenReturn(List.of(new OpcuaTag(subcribedNodeId, "", new OpcuaTagDefinition(subcribedNodeId, collectAllProperties))));
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 

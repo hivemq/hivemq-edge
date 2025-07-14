@@ -50,6 +50,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.hivemq.edge.adapters.opcua.Constants.EMPTY_BYTES;
@@ -59,15 +60,15 @@ public class OpcUaToJsonConverter {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaToJsonConverter.class);
 
-    private static final @NotNull Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
     private static final @NotNull Base64.Encoder BASE_64 = Base64.getEncoder();
 
-    public static @NotNull ByteBuffer convertPayload(
+    public static @NotNull Optional<JsonElement> convertPayload(
             final @NotNull EncodingContext serializationContext,
-            final @NotNull DataValue dataValue) {
+            final @NotNull DataValue dataValue,
+            final @NotNull Gson gson) {
         final Object value = dataValue.getValue().getValue();
         if (value == null) {
-            return ByteBuffer.wrap(EMPTY_BYTES);
+            return Optional.empty();
         }
         final JsonObject jsonObject = new JsonObject();
         if (value instanceof final DataValue v) {
@@ -89,15 +90,15 @@ public class OpcUaToJsonConverter {
                 jsonObject.add("serverPicoseconds", new JsonPrimitive(v.getServerPicoseconds().intValue()));
             }
         }
-        jsonObject.add("value", convertValue(value, serializationContext));
-        return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
+        return Optional.ofNullable(convertValue(value, serializationContext, gson));
     }
 
     private static JsonElement convertValue(
             final @NotNull Object value,
-            final @NotNull EncodingContext serializationContext) {
+            final @NotNull EncodingContext serializationContext,
+            final @NotNull Gson gson) {
         if (value instanceof final DataValue dv) {
-            return convertValue(dv.getValue(), serializationContext);
+            return convertValue(dv.getValue(), serializationContext, gson);
         } else if (value instanceof final Boolean b) {
             return new JsonPrimitive(b);
         } else if (value instanceof final Byte b) {
@@ -162,31 +163,31 @@ public class OpcUaToJsonConverter {
         } else if (value instanceof final ExtensionObject eo) {
             try {
                 final Object decodedValue = eo.decode(serializationContext);
-                return convertValue(decodedValue, serializationContext);
+                return convertValue(decodedValue, serializationContext, gson);
             } catch (final Throwable t) {
                 log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead", t);
-                return convertValue(eo.getBody(), serializationContext);
+                return convertValue(eo.getBody(), serializationContext, gson);
             }
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
-            return variantValue != null ? convertValue(variantValue, serializationContext) : null;
+            return variantValue != null ? convertValue(variantValue, serializationContext, gson) : null;
         } else if (value instanceof final DiagnosticInfo info) {
             return convertDiagnosticInfo(info);
         } else if (value instanceof final DynamicStructType struct) {
             final JsonObject structRoot = new JsonObject();
             struct.getMembers()
-                    .forEach((key, value1) -> structRoot.add(key, convertValue(value1, serializationContext)));
+                    .forEach((key, value1) -> structRoot.add(key, convertValue(value1, serializationContext, gson)));
             return structRoot;
         } else if (value.getClass().isArray()) {
             final Object[] values = (Object[]) value;
             final JsonArray ret = new JsonArray();
-            Arrays.asList(values).forEach(in -> ret.add(convertValue(in, serializationContext)));
+            Arrays.asList(values).forEach(in -> ret.add(convertValue(in, serializationContext, gson)));
             return ret;
         }
 
         log.warn("No explicit converter for OPC UA type {} falling back to best effort json",
                 value.getClass().getSimpleName());
-        return GSON.toJsonTree(value);
+        return gson.toJsonTree(value);
     }
 
     private static @NotNull JsonObject convertNodeId(final @NotNull NodeId nodeId) {

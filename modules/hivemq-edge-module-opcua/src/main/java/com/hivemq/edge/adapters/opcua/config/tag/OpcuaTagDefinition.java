@@ -22,6 +22,8 @@ import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 public class OpcuaTagDefinition implements TagDefinition {
 
     @JsonProperty(value = "node", required = true)
@@ -30,35 +32,45 @@ public class OpcuaTagDefinition implements TagDefinition {
                        required = true)
     private final @NotNull String node;
 
+    @JsonProperty(value = "collectAllProperties")
+    @ModuleConfigField(title = "Collect all properties of the node",
+                       description = "OPC UA defines a set of properties for each node. If this is enabled, all properties will be collected and sent to the MQTT broker.")
+    private final @NotNull boolean collectAllProperties;
+
     @JsonCreator
-    public OpcuaTagDefinition(@JsonProperty(value = "node", required = true) final @NotNull String node) {
+    public OpcuaTagDefinition(
+            @JsonProperty(value = "node", required = true) final @NotNull String node,
+            @JsonProperty(value = "collectAllProperties", defaultValue = "false") final @Nullable Boolean collectAllProperties) {
         this.node = node;
+        if(collectAllProperties == null) {
+            this.collectAllProperties = false;
+        } else {
+            this.collectAllProperties = collectAllProperties;
+        }
     }
 
     public @NotNull String getNode() {
         return node;
     }
 
-    @Override
-    public boolean equals(final @Nullable Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+    public boolean isCollectAllProperties() {
+        return collectAllProperties;
+    }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
         final OpcuaTagDefinition that = (OpcuaTagDefinition) o;
-        return node.equals(that.node);
+        return isCollectAllProperties() == that.isCollectAllProperties() && Objects.equals(getNode(), that.getNode());
     }
 
     @Override
     public int hashCode() {
-        return node.hashCode();
+        return Objects.hash(getNode(), isCollectAllProperties());
     }
 
     @Override
-    public @NotNull String toString() {
-        return "OpcuaTagDefinition{" + "node='" + node + '\'' + '}';
+    public String toString() {
+        return "OpcuaTagDefinition{" + "node='" + node + '\'' + ", collectAllProperties=" + collectAllProperties + '}';
     }
 }
