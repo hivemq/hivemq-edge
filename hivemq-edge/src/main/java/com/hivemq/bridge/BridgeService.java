@@ -197,7 +197,9 @@ public class BridgeService {
             activeBridgeNamesToClient.put(
                     bridgeId,
                     mqttBridgeAndClient);
-            allKnownBridgeConfigs.put(bridgeId, newBridgeConfig);
+            if(newBridgeConfig != null) {
+                allKnownBridgeConfigs.put(bridgeId, newBridgeConfig);
+            }
             return true;
         } else {
             log.debug("Not restarting bridge '{}' since it wasn't active", bridgeId);
