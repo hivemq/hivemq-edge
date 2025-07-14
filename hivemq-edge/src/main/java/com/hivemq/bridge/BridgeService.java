@@ -200,7 +200,7 @@ public class BridgeService {
             allKnownBridgeConfigs.put(bridgeId, newBridgeConfig);
             return true;
         } else {
-            log.debug("Not restarting bridge '{}' since it wasn't active", bridgeToClient);
+            log.debug("Not restarting bridge '{}' since it wasn't active", bridgeId);
             return false;
         }
     }
