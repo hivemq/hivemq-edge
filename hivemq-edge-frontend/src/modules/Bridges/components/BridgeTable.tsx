@@ -51,19 +51,14 @@ export const BridgeTable: FC = () => {
     return [
       {
         accessorKey: 'id',
+        header: t('bridge.listing.column.id'),
         cell: (info) => {
           return <Skeleton isLoaded={!isLoading}>{info.getValue<string>()}</Skeleton>
         },
       },
-      // Might not need these fields
-      // {
-      //   accessorKey: 'host',
-      // },
-      // {
-      //   accessorKey: 'port',
-      // },
       {
         accessorKey: 'localSubscriptions',
+        header: t('bridge.listing.column.subscriptions', { context: 'local' }),
         cell: (info) => {
           const val = info.getValue<Array<LocalBridgeSubscription>>()
           return (
@@ -75,6 +70,7 @@ export const BridgeTable: FC = () => {
       },
       {
         accessorKey: 'remoteSubscriptions',
+        header: t('bridge.listing.column.subscriptions', { context: 'remote' }),
         cell: (info) => {
           const val = info.getValue<Array<BridgeSubscription>>()
           return (
@@ -86,6 +82,7 @@ export const BridgeTable: FC = () => {
       },
       {
         accessorKey: 'status',
+        header: t('bridge.listing.column.status'),
         cell: (info) => {
           const val = info.getValue<Status>()
           return (
@@ -97,6 +94,7 @@ export const BridgeTable: FC = () => {
       },
       {
         accessorFn: (row) => row.status?.startedAt,
+        header: t('bridge.listing.column.lastStarted'),
         id: 'lastStartedAttemptTime',
         cell: (info) => {
           return (
@@ -108,7 +106,7 @@ export const BridgeTable: FC = () => {
       },
       {
         id: 'actions',
-        header: t('topicFilter.listing.column.action'),
+        header: t('bridge.listing.column.actions'),
         sortingFn: undefined,
 
         cell: (info) => {
