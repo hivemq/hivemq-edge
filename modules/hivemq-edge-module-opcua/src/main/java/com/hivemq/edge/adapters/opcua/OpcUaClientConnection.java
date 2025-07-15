@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
@@ -55,6 +57,7 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 
 class OpcUaClientConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
+    private static final @NotNull Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
 
     private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull List<OpcuaTag> tags;
@@ -206,7 +209,7 @@ class OpcUaClientConnection {
         log.debug("Creating new OPC UA subscription");
         final OpcUaSubscription subscription = new OpcUaSubscription(client);
         subscription.setPublishingInterval((double) config.getOpcuaToMqttConfig().publishingInterval());
-        subscription.setSubscriptionListener(new OpcUaSubscriptionListener(protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, dataPointFactory));
+        subscription.setSubscriptionListener(new OpcUaSubscriptionListener(protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, dataPointFactory, GSON));
         try {
             subscription.create();
             return subscription
