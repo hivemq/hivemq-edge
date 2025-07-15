@@ -147,7 +147,17 @@
   "bridge": {
     "title": "MQTT bridges",
     "description": "MQTT bridges let you connect multiple MQTT brokers to enable seamless data sharing between different networks or systems.",
-    "list": "List of bridges",
+    "listing": {
+      "aria-label": "List of bridges",
+      "column": {
+        "actions": "Actions",
+        "id": "ID",
+        "subscriptions_local": "Local Subscriptions",
+        "subscriptions_remote": "Remote Subscriptions",
+        "status": "Status",
+        "lastStarted": "Last started"
+      }
+    },
     "action": {
       "add": "Add bridge connection",
       "edit": "Edit",

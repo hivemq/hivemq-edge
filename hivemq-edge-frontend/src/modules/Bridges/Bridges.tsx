@@ -61,7 +61,7 @@ const Bridges: FC = () => {
       templateColumns={{ base: 'repeat(1, 1fr)', lg: 'repeat(2, 1fr)', '2xl': 'repeat(3, 1fr)' }}
       gap={6}
       role="list"
-      aria-label={t('bridge.list')}
+      aria-label={t('bridge.listing.aria-label')}
     >
       {data?.map((bridge, i) => (
         <BridgeCard key={`${bridge.id}-${i}`} {...bridge} onNavigate={handleNavigate} role="listitem" />
