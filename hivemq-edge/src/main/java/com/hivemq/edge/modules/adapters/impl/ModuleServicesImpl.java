@@ -21,10 +21,9 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.modules.adapters.data.TagManager;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
-
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
 
 public class ModuleServicesImpl implements ModuleServices {
 
@@ -32,6 +31,7 @@ public class ModuleServicesImpl implements ModuleServices {
     private final @NotNull EventService eventService;
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull TagManager tagManager;
+
 
     @Inject
     public ModuleServicesImpl(

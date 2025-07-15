@@ -32,7 +32,8 @@ import java.util.stream.Collectors;
 
 public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> implements ProtocolAdapterInput<T> {
     public static final AdapterFactoriesImpl ADAPTER_FACTORIES = new AdapterFactoriesImpl();
-    private final String adapterId;
+    private final @NotNull String adapterId;
+    private final @NotNull String protocolId;
     private final @NotNull T configObject;
     private final @NotNull String version;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -42,6 +43,7 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
     private final @NotNull List<PollingContext> pollingContexts;
 
     public ProtocolAdapterInputImpl(
+            final @NotNull String protocolId,
             final @NotNull String adapterId,
             final @NotNull T configObject,
             final @NotNull List<Tag> tags,
@@ -51,6 +53,7 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
             final @NotNull ModuleServices moduleServices,
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService) {
         this.adapterId = adapterId;
+        this.protocolId = protocolId;
         this.configObject = configObject;
         this.version = version;
         this.protocolAdapterState = protocolAdapterState;

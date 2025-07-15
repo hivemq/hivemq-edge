@@ -16,13 +16,13 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
@@ -33,23 +33,21 @@ import com.hivemq.edge.adapters.opcua.config.Security;
 import com.hivemq.edge.adapters.opcua.config.Tls;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
-import util.KeyChain;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
-import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import util.EmbeddedOpcUaServerExtension;
+import util.KeyChain;
 
 import java.util.List;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static org.awaitility.Awaitility.await;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -66,9 +64,13 @@ class OpcUaProtocolAdapterAuthTest {
                 "id",
                 "protocolId"));
         final ModuleServices moduleServices = mock();
-        when(moduleServices.eventService()).thenReturn(mock(EventService.class));
+        when(moduleServices.adapterPublishService()).thenReturn(mock(ProtocolAdapterPublishService.class));
+        when(moduleServices.eventService()).thenReturn(new FakeEventService());
         when(moduleServices.adapterPublishService()).thenReturn(mock(ProtocolAdapterPublishService.class));
         when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
+        final var metricsService = mock(ProtocolAdapterMetricsService.class);
+        when(protocolAdapterInput.getProtocolAdapterMetricsHelper()).thenReturn(metricsService);
+        when(protocolAdapterInput.getAdapterId()).thenReturn("id");
 
         final AdapterFactories adapterFactories = mock(AdapterFactoriesImpl.class);
         when(adapterFactories.dataPointFactory()).thenReturn(new DataPointFactory() {
@@ -104,10 +106,12 @@ class OpcUaProtocolAdapterAuthTest {
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
-        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
+        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(protocolAdapterInput.moduleServices());
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out);
 
+        final var metricsService = mock(ProtocolAdapterMetricsService.class);
+        when(protocolAdapterInput.getProtocolAdapterMetricsHelper()).thenReturn(metricsService);
         await().until(() -> CONNECTED == protocolAdapter.getProtocolAdapterState().getConnectionStatus());
     }
 
@@ -124,10 +128,11 @@ class OpcUaProtocolAdapterAuthTest {
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
+
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
-        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
+        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(protocolAdapterInput.moduleServices());
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out);
 
@@ -146,13 +151,12 @@ class OpcUaProtocolAdapterAuthTest {
                 tls,
                 null,
                 security);
-
         when(protocolAdapterInput.getConfig()).thenReturn(config);
 
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
-        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
+        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(protocolAdapterInput.moduleServices());
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out);
 
@@ -166,7 +170,7 @@ class OpcUaProtocolAdapterAuthTest {
 
         final KeyChain root = KeyChain.createKeyChain("root");
 
-        var keystore = root.wrapInKeyStoreWithPrivateKey("keystore", "root", "password", "password");
+        final var keystore = root.wrapInKeyStoreWithPrivateKey("keystore", "root", "password", "password");
         final Tls tls = new Tls(true, new Keystore(keystore.getAbsolutePath(), "password", "password"), null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
@@ -177,17 +181,11 @@ class OpcUaProtocolAdapterAuthTest {
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
-        final var mockModuleServices = mock(ModuleServices.class);
-        final var mockEventService = mock(EventService.class);
-        when(mockEventService.createAdapterEvent(anyString(), anyString())).thenReturn(new EventBuilderImpl(ev -> {}));
-        when(mockModuleServices.eventService()).thenReturn(mockEventService);
-        when(mockModuleServices.adapterPublishService()).thenReturn(mock(ProtocolAdapterPublishService.class));
-        when(protocolAdapterInput.moduleServices()).thenReturn(mockModuleServices);
 
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
-        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
+        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(protocolAdapterInput.moduleServices());
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out);
 
@@ -199,9 +197,8 @@ class OpcUaProtocolAdapterAuthTest {
 
         private final @NotNull ModuleServices moduleServices;
 
-        TestProtocolAdapterStartInput() {
-            moduleServices = mock(ModuleServices.class);
-            when(moduleServices.eventService()).thenReturn(mock(EventService.class));
+        TestProtocolAdapterStartInput(final @NotNull ModuleServices moduleServices) {
+            this.moduleServices = moduleServices;
         }
 
         @Override
