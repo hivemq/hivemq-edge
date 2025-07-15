@@ -123,10 +123,9 @@ public class BridgeService {
             final var newBridge = bridgeIdToConfig.get(bridgeId);
             if(active != null) {
                 if(active.bridge().equals(newBridge)) {
-                    log.debug("Not restarting bridge {} because config  is unchanged", bridgeId);
+                    log.debug("Not restarting bridge {} because config is unchanged", bridgeId);
                 } else {
                     log.info("Restarting bridge {} because config has changed", bridgeId);
-                    allKnownBridgeConfigs.remove(bridgeId);
                     allKnownBridgeConfigs.put(bridgeId, newBridge);
                     internalStopBridge(active, true, List.of());
                     activeBridgeNamesToClient.put(
