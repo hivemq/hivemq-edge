@@ -24,7 +24,7 @@ export const BridgeActionMenu: FC<BridgeActionMenuProps> = ({ bridge, onEdit, on
         size="sm"
         as={IconButton}
         icon={<ChevronDownIcon />}
-        aria-label={t('bridge.actions.label')}
+        aria-label={t('bridge.listing.column.actions')}
       />
       <MenuList>
         <ConnectionController type={DeviceTypes.BRIDGE} id={bridge.id} status={bridge.status} variant="menuItem" />
