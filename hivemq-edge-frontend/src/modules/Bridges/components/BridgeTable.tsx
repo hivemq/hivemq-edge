@@ -164,6 +164,7 @@ export const BridgeTable: FC = () => {
     <>
       <PaginatedTable<Bridge>
         aria-label={t('bridge.listing.aria-label')}
+        noDataText={t('bridge.listing.noDataText')}
         data={safeData}
         columns={columns}
         enablePagination={true}

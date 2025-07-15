@@ -156,7 +156,8 @@
         "subscriptions_remote": "Remote Subscriptions",
         "status": "Status",
         "lastStarted": "Last started"
-      }
+      },
+      "noDataText": "No bridges currently created"
     },
     "action": {
       "add": "Add bridge connection",
