@@ -38,7 +38,7 @@ jobs:
           gradle-version: wrapper
 
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@3a74b2957438d0b6e2e61d67b05318aa25c9e6c6
+        uses: EnricoMi/publish-unit-test-result-action@a5ca2095ab79d1c9dab8904a6ced60f50d4a15c3
         with:
           files: |
             ${{ github.workspace }}/**/build/test-results/**/*.xml
