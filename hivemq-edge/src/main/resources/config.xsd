@@ -959,6 +959,11 @@
                     <xs:documentation>Default: true</xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="proxy-context-path" type="nonEmptyString" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Default: /</xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="listeners" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>

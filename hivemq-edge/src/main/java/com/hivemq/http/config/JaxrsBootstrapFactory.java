@@ -21,7 +21,6 @@ import com.hivemq.api.config.HttpsListener;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
@@ -29,7 +28,7 @@ import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.ssl.SupportedCipherSuiteFilter;
-import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,8 +45,7 @@ public class JaxrsBootstrapFactory {
 
     private static final Logger log = LoggerFactory.getLogger(JaxrsBootstrapFactory.class);
 
-    public static @NotNull JaxrsHttpServerConfiguration createJaxrsConfiguration(
-            final @NotNull ApiConfigurationService apiConfigurationService, final @NotNull ApiListener listener) {
+    public static @NotNull JaxrsHttpServerConfiguration createJaxrsConfiguration(final @NotNull ApiListener listener) {
 
         JaxrsHttpServerConfiguration jaxrsConfig = new JaxrsHttpServerConfiguration();
         jaxrsConfig.setHost(listener.getBindAddress());
@@ -93,9 +91,6 @@ public class JaxrsBootstrapFactory {
             }
         }
 
-        //Static Resource Mouth Points
-        apiConfigurationService.getResourcePaths()
-                .forEach(s -> jaxrsConfig.addStaticResource(Pair.of(s.getUri(), s.getPath())));
         return jaxrsConfig;
     }
 }

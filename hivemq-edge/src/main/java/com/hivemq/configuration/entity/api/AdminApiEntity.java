@@ -17,9 +17,11 @@ package com.hivemq.configuration.entity.api;
 
 import com.hivemq.configuration.entity.EnabledEntity;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementRef;
 import jakarta.xml.bind.annotation.XmlElementRefs;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
@@ -52,6 +54,9 @@ public class AdminApiEntity extends EnabledEntity {
     @XmlElementRef(required = false)
     private @NotNull List<UserEntity> users = new ArrayList<>();
 
+    @XmlElement(name = "proxy-context-path", required = false)
+    private @Nullable String proxyContextPath;
+
     public @NotNull List<ApiListenerEntity> getListeners() {
         return listeners;
     }
@@ -68,6 +73,14 @@ public class AdminApiEntity extends EnabledEntity {
         return tls;
     }
 
+    public @Nullable String getProxyContextPath() {
+        return proxyContextPath;
+    }
+
+    public void setProxyContextPath(final @Nullable String proxyContextPath) {
+        this.proxyContextPath = proxyContextPath;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -77,11 +90,12 @@ public class AdminApiEntity extends EnabledEntity {
         return Objects.equals(getListeners(), that.getListeners()) &&
                 Objects.equals(getTls(), that.getTls()) &&
                 Objects.equals(getJws(), that.getJws()) &&
-                Objects.equals(getUsers(), that.getUsers());
+                Objects.equals(getUsers(), that.getUsers()) &&
+                Objects.equals(getProxyContextPath(), that.getProxyContextPath());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), getListeners(), getTls(), getJws(), getUsers());
+        return Objects.hash(super.hashCode(), getListeners(), getTls(), getJws(), getUsers(), getProxyContextPath());
     }
 }
