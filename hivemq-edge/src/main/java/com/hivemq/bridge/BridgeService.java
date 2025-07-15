@@ -35,6 +35,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,8 +56,8 @@ public class BridgeService {
 
     private final @NotNull Map<String, Throwable> bridgeNameToLastError = new ConcurrentHashMap<>(0);
 
-    private final @NotNull Map<String, MqttBridgeAndClient> activeBridgeNamesToClient = new ConcurrentHashMap<>();
-    private final @NotNull Map<String, MqttBridge> allKnownBridgeConfigs = new ConcurrentHashMap<>();
+    private final @NotNull Map<String, MqttBridgeAndClient> activeBridgeNamesToClient = new HashMap<>();
+    private final @NotNull Map<String, MqttBridge> allKnownBridgeConfigs = new HashMap<>();
 
     @Inject
     public BridgeService(
@@ -154,7 +155,7 @@ public class BridgeService {
         return bridgeNameToLastError.get(bridgeName);
     }
 
-    public boolean isConnected(final @NotNull String bridgeName) {
+    public synchronized boolean isConnected(final @NotNull String bridgeName) {
         final var mqttBridgeAndClient = activeBridgeNamesToClient.get(bridgeName);
         if(mqttBridgeAndClient != null) {
             return mqttBridgeAndClient.mqttClient().isConnected();
@@ -162,7 +163,7 @@ public class BridgeService {
         return false;
     }
 
-    public boolean isRunning(final @NotNull String bridgeName) {
+    public synchronized boolean isRunning(final @NotNull String bridgeName) {
         return activeBridgeNamesToClient.containsKey(bridgeName);
     }
 
