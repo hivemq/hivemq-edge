@@ -112,10 +112,10 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
 
     @Override
     public synchronized Configurator.ConfigResult updateConfig(final HiveMQConfigEntity config) {
-        var bridgeEntities = convertBridgeConfigs(config);
+        final var bridgeEntities = convertBridgeConfigs(config);
 
-        Set<String> bridgeIds = new HashSet<>();
-        var duplicates = bridgeEntities.stream()
+        final Set<String> bridgeIds = new HashSet<>();
+        final var duplicates = bridgeEntities.stream()
             .filter(n -> !bridgeIds.add(n.getId()))
             .toList();
 
@@ -207,7 +207,7 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
     }
 
     private @NotNull List<LocalSubscription> convertLocalSubscriptions(
-            final @NotNull String name, @NotNull List<ForwardedTopicEntity> forwardedTopics) {
+            final @NotNull String name, final @NotNull List<ForwardedTopicEntity> forwardedTopics) {
         final ImmutableList.Builder<LocalSubscription> builder = ImmutableList.builder();
         for (final ForwardedTopicEntity forwardedTopic : forwardedTopics) {
             validateTopicFilters(name, forwardedTopic.getFilters());
@@ -283,7 +283,7 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
             final @NotNull String name, final @NotNull List<CustomUserPropertyEntity> customUserProperties) {
         final ImmutableList.Builder<CustomUserProperty> builder = ImmutableList.builder();
 
-        for (CustomUserPropertyEntity customUserProperty : customUserProperties) {
+        for (final CustomUserPropertyEntity customUserProperty : customUserProperties) {
             if (customUserProperty.getKey() != null && customUserProperty.getValue() != null) {
                 builder.add(CustomUserProperty.of(customUserProperty.getKey(), customUserProperty.getValue()));
             } else {
