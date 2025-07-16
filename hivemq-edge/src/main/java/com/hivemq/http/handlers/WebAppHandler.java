@@ -43,9 +43,13 @@ public class WebAppHandler extends AbstractHttpRequestResponseHandler {
     protected void handleHttpGet(final @NotNull IHttpRequestResponse requestResponse) throws IOException {
 
         final String relativePath = requestResponse.getContextRelativePath();
-        final String resourcePath = HttpUtils.sanitizePath(relativePath);
-        final String filePath = HttpUtils.combinePaths(resourceRoot, resourcePath);
-        writeDataFromResource(requestResponse, filePath);
+        if (StringUtils.isEmpty(relativePath)) {
+            sendRedirect(requestResponse, "app/");
+        } else {
+            final String resourcePath = HttpUtils.sanitizePath(relativePath);
+            final String filePath = HttpUtils.combinePaths(resourceRoot, resourcePath);
+            writeDataFromResource(requestResponse, filePath);
+        }
     }
 
     protected void writeDataFromResource(
