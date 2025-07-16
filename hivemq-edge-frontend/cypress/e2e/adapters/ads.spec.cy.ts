@@ -12,7 +12,7 @@ describe('ADS adapter', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_ADS] }).as('getProtocols')
 
     // TODO[E2E] This doesn't work: JWT needs mocking
-    loginPage.visit('/app/#/protocol-adapters/catalog/new/ads')
+    loginPage.visit('/app/protocol-adapters/catalog/new/ads')
     loginPage.loginButton.click()
     adapterPage.navLink.click()
   })

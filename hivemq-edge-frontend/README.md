@@ -79,7 +79,7 @@ Start the application locally by running
 pnpm dev
 ```
 
-The web app will be running on http://localhost:3000/app/#/login
+The web app will be running on http://localhost:3000/app/login
 
 ### Deployment
 

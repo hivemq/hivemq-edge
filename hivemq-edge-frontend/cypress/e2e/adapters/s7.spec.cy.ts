@@ -15,7 +15,7 @@ describe('S7 adapter', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_S7] }).as('getProtocols')
 
     // TODO[E2E] This doesn't work: JWT needs mocking
-    loginPage.visit('/app/#/protocol-adapters/catalog/new/s7')
+    loginPage.visit('/app/protocol-adapters/catalog/new/s7')
     loginPage.loginButton.click()
     adapterPage.navLink.click()
   })

@@ -92,7 +92,7 @@ describe('Combiner', () => {
       } else req.reply(400)
     }).as('deleteCombiner')
 
-    loginPage.visit('/app/#/workspace')
+    loginPage.visit('/app/workspace')
     loginPage.loginButton.click()
     workspacePage.navLink.click()
   })
