@@ -30,8 +30,7 @@ import java.nio.charset.StandardCharsets;
 
 public class WebAppHandler extends AbstractHttpRequestResponseHandler {
     protected static final @NotNull String INDEX_HTML = "index.html";
-    protected static final @NotNull String ROOT_PATH = "/";
-    protected static final @NotNull String ROOT_INDEX_HTML = ROOT_PATH + INDEX_HTML;
+    protected static final @NotNull String ROOT_INDEX_HTML = HttpConstants.SLASH + INDEX_HTML;
     protected final @NotNull String resourceRoot;
 
     public WebAppHandler(final @NotNull ObjectMapper mapper, final @NotNull String resourceRoot) {
@@ -55,7 +54,7 @@ public class WebAppHandler extends AbstractHttpRequestResponseHandler {
     protected void writeDataFromResource(
             final @NotNull IHttpRequestResponse requestResponse,
             @NotNull String resourcePath) throws IOException {
-        if (resourcePath.endsWith(ROOT_PATH)) {
+        if (resourcePath.endsWith(HttpConstants.SLASH)) {
             resourcePath += INDEX_HTML;
         }
         InputStream inputStream = loadClasspathResource(resourcePath);
