@@ -20,7 +20,7 @@ export class GatewayEndpointService {
     public getXmlConfiguration(): CancelablePromise<string> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/gateway/configuration',
+            url: '/api/v1/gateway/configuration',
             errors: {
                 405: `Error - function not supported`,
             },
@@ -36,7 +36,7 @@ export class GatewayEndpointService {
     public getListeners(): CancelablePromise<ListenerList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/gateway/listeners',
+            url: '/api/v1/gateway/listeners',
         });
     }
 

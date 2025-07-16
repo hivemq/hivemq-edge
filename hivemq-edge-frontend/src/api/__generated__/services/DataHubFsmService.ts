@@ -20,7 +20,7 @@ export class DataHubFsmService {
     public getFsms(): CancelablePromise<JsonNode> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/data-hub/fsm',
+            url: '/api/v1/data-hub/fsm',
             errors: {
                 500: `Internal server error`,
             },

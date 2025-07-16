@@ -20,7 +20,7 @@ export class UnsService {
     public getIsa95(): CancelablePromise<ISA95ApiBean> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/uns/isa95',
+            url: '/api/v1/management/uns/isa95',
         });
     }
 
@@ -36,7 +36,7 @@ export class UnsService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'POST',
-            url: './api/v1/management/uns/isa95',
+            url: '/api/v1/management/uns/isa95',
             body: requestBody,
             mediaType: 'application/json',
             errors: {

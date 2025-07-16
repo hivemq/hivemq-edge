@@ -21,7 +21,7 @@ export class MetricsService {
     public getMetrics(): CancelablePromise<MetricList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/metrics',
+            url: '/api/v1/metrics',
         });
     }
 
@@ -37,7 +37,7 @@ export class MetricsService {
     ): CancelablePromise<DataPoint> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/metrics/{metricName}/latest',
+            url: '/api/v1/metrics/{metricName}/latest',
             path: {
                 'metricName': metricName,
             },

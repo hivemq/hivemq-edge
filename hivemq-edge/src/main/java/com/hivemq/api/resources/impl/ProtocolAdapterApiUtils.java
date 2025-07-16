@@ -78,7 +78,7 @@ public class ProtocolAdapterApiUtils {
         String logoUrl = info.getLogoUrl();
         //noinspection ConstantValue
         if (logoUrl != null) {
-            logoUrl = logoUrl.startsWith("/") ? "../module" + logoUrl : "../module/" + logoUrl;
+            logoUrl = logoUrl.startsWith("/") ? "../../module" + logoUrl : "../../module/" + logoUrl;
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
         } else {
             // although it is marked as not null it is input from outside (possible customer adapter),

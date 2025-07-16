@@ -27,13 +27,22 @@ interface configType {
   }
 }
 
+function getApiBaseUrl(): string {
+  const url = window.location.href;
+  const index = url.lastIndexOf('/app/');
+  if (index === -1) {
+    return url;
+  }
+  return url.substring(0, index);
+}
+
 const config: configType = {
   environment: import.meta.env.MODE,
 
   isDevMode: import.meta.env.MODE === 'development',
   isProdMode: import.meta.env.MODE === 'production',
 
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
+  apiBaseUrl: getApiBaseUrl(),
 
   version: import.meta.env.VITE_APP_VERSION,
   documentationUrl: import.meta.env.VITE_APP_DOCUMENTATION,

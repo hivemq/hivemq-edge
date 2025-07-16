@@ -38,7 +38,7 @@ export class DataHubDataPoliciesService {
     ): CancelablePromise<DataPolicyList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/data-hub/data-validation/policies',
+            url: '/api/v1/data-hub/data-validation/policies',
             query: {
                 'fields': fields,
                 'policyIds': policyIds,
@@ -70,7 +70,7 @@ export class DataHubDataPoliciesService {
     ): CancelablePromise<DataPolicy> {
         return this.httpRequest.request({
             method: 'POST',
-            url: './api/v1/data-hub/data-validation/policies',
+            url: '/api/v1/data-hub/data-validation/policies',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -99,7 +99,7 @@ export class DataHubDataPoliciesService {
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: './api/v1/data-hub/data-validation/policies/{policyId}',
+            url: '/api/v1/data-hub/data-validation/policies/{policyId}',
             path: {
                 'policyId': policyId,
             },
@@ -133,7 +133,7 @@ export class DataHubDataPoliciesService {
     ): CancelablePromise<DataPolicy> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/data-hub/data-validation/policies/{policyId}',
+            url: '/api/v1/data-hub/data-validation/policies/{policyId}',
             path: {
                 'policyId': policyId,
             },
@@ -167,7 +167,7 @@ export class DataHubDataPoliciesService {
     ): CancelablePromise<DataPolicy> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: './api/v1/data-hub/data-validation/policies/{policyId}',
+            url: '/api/v1/data-hub/data-validation/policies/{policyId}',
             path: {
                 'policyId': policyId,
             },

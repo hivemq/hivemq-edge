@@ -24,7 +24,7 @@ export class PayloadSamplingService {
     ): CancelablePromise<JsonNode> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/sampling/schema/{topic}',
+            url: '/api/v1/management/sampling/schema/{topic}',
             path: {
                 'topic': topic,
             },
@@ -47,7 +47,7 @@ export class PayloadSamplingService {
     ): CancelablePromise<PayloadSampleList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/sampling/topic/{topic}',
+            url: '/api/v1/management/sampling/topic/{topic}',
             path: {
                 'topic': topic,
             },
@@ -66,7 +66,7 @@ export class PayloadSamplingService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'POST',
-            url: './api/v1/management/sampling/topic/{topic}',
+            url: '/api/v1/management/sampling/topic/{topic}',
             path: {
                 'topic': topic,
             },

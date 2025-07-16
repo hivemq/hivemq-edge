@@ -41,7 +41,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: './api/v1/management/protocol-adapters/adapterconfigs/{adaptertype}/{adaptername}',
+            url: '/api/v1/management/protocol-adapters/adapterconfigs/{adaptertype}/{adaptername}',
             path: {
                 'adaptertype': adaptertype,
                 'adaptername': adaptername,
@@ -65,7 +65,7 @@ export class ProtocolAdaptersService {
     public getAdapters(): CancelablePromise<AdaptersList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/adapters',
+            url: '/api/v1/management/protocol-adapters/adapters',
         });
     }
 
@@ -81,7 +81,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}',
             path: {
                 'adapterId': adapterId,
             },
@@ -103,7 +103,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<Adapter> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}',
             path: {
                 'adapterId': adapterId,
             },
@@ -127,7 +127,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}',
             path: {
                 'adapterId': adapterId,
             },
@@ -157,7 +157,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<ValuesTree> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}/discover',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/discover',
             path: {
                 'adapterId': adapterId,
             },
@@ -185,7 +185,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<NorthboundMappingList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings',
             path: {
                 'adapterId': adapterId,
             },
@@ -209,7 +209,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings',
             path: {
                 'adapterId': adapterId,
             },
@@ -235,7 +235,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<SouthboundMappingList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings',
             path: {
                 'adapterId': adapterId,
             },
@@ -259,7 +259,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings',
             path: {
                 'adapterId': adapterId,
             },
@@ -285,7 +285,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<Status> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}/status',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/status',
             path: {
                 'adapterId': adapterId,
             },
@@ -310,7 +310,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<StatusTransitionResult> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}/status',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/status',
             path: {
                 'adapterId': adapterId,
             },
@@ -335,7 +335,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<DomainTagList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}/tags',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags',
             path: {
                 'adapterId': adapterId,
             },
@@ -359,7 +359,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'POST',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}/tags',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags',
             path: {
                 'adapterId': adapterId,
             },
@@ -387,7 +387,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}/tags',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags',
             path: {
                 'adapterId': adapterId,
             },
@@ -414,7 +414,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}',
             path: {
                 'adapterId': adapterId,
                 'tagName': tagName,
@@ -442,7 +442,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}',
             path: {
                 'adapterId': adapterId,
                 'tagName': tagName,
@@ -471,7 +471,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'POST',
-            url: './api/v1/management/protocol-adapters/adapters/{adapterType}',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterType}',
             path: {
                 'adapterType': adapterType,
             },
@@ -493,7 +493,7 @@ export class ProtocolAdaptersService {
     public getNorthboundMappings(): CancelablePromise<NorthboundMappingList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/northboundMappings',
+            url: '/api/v1/management/protocol-adapters/northboundMappings',
         });
     }
 
@@ -506,7 +506,7 @@ export class ProtocolAdaptersService {
     public getSouthboundMappings(): CancelablePromise<SouthboundMappingList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/southboundMappings',
+            url: '/api/v1/management/protocol-adapters/southboundMappings',
         });
     }
 
@@ -519,7 +519,7 @@ export class ProtocolAdaptersService {
     public getAdaptersStatus(): CancelablePromise<StatusList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/status',
+            url: '/api/v1/management/protocol-adapters/status',
         });
     }
 
@@ -535,7 +535,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<TagSchema> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/tag-schemas/{protocolId}',
+            url: '/api/v1/management/protocol-adapters/tag-schemas/{protocolId}',
             path: {
                 'protocolId': protocolId,
             },
@@ -554,7 +554,7 @@ export class ProtocolAdaptersService {
     public getDomainTags(): CancelablePromise<DomainTagList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/tags',
+            url: '/api/v1/management/protocol-adapters/tags',
         });
     }
 
@@ -570,7 +570,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<DomainTag> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/tags/{tagName}',
+            url: '/api/v1/management/protocol-adapters/tags/{tagName}',
             path: {
                 'tagName': tagName,
             },
@@ -589,7 +589,7 @@ export class ProtocolAdaptersService {
     public getAdapterTypes(): CancelablePromise<ProtocolAdaptersList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/types',
+            url: '/api/v1/management/protocol-adapters/types',
         });
     }
 
@@ -605,7 +605,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<AdaptersList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/types/{adapterType}',
+            url: '/api/v1/management/protocol-adapters/types/{adapterType}',
             path: {
                 'adapterType': adapterType,
             },
@@ -629,7 +629,7 @@ export class ProtocolAdaptersService {
     ): CancelablePromise<JsonNode> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}',
+            url: '/api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}',
             path: {
                 'adapterId': adapterId,
                 'tagName': tagName,

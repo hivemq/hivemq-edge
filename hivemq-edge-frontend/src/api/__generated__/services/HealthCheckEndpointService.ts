@@ -20,7 +20,7 @@ export class HealthCheckEndpointService {
     public liveness(): CancelablePromise<HealthStatus> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/health/liveness',
+            url: '/api/v1/health/liveness',
         });
     }
 
@@ -33,7 +33,7 @@ export class HealthCheckEndpointService {
     public readiness(): CancelablePromise<HealthStatus> {
         return this.httpRequest.request({
             method: 'GET',
-            url: './api/v1/health/readiness',
+            url: '/api/v1/health/readiness',
         });
     }
 

@@ -40,7 +40,7 @@ describe('useGetAdapterInfo', () => {
           'Without needing to configure real devices, simulate traffic from an edge device into HiveMQ Edge.',
         id: 'simulation',
         installed: true,
-        logoUrl: '/module/images/hivemq-icon.png',
+        logoUrl: '../../module/images/hivemq-icon.png',
         name: 'Simulated Edge Device',
         protocol: 'Simulation',
       })

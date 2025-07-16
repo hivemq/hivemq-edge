@@ -1,5 +1,5 @@
 import { lazy } from 'react'
-import { createHashRouter } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 
 import LoginPage from '@/modules/Login/LoginPage.tsx'
 import Dashboard from '@/modules/Dashboard/Dashboard.tsx'
@@ -27,7 +27,16 @@ const ProtocolAdapters = lazy(() => import('@/modules/ProtocolAdapters/component
 import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
 import { MappingType } from '@/modules/Mappings/types.ts'
 
-export const routes = createHashRouter(
+function getBasename(): string {
+  const pathname = window.location.pathname;
+  const index = pathname.lastIndexOf('/app/');
+  if (index === -1) {
+    return pathname;
+  }
+  return pathname.substring(0, index + 4);
+}
+
+export const routes = createBrowserRouter(
   [
     {
       path: '/',
@@ -132,5 +141,5 @@ export const routes = createHashRouter(
       element: <LoginPage />,
     },
   ],
-  { basename: '/' }
+  { basename: getBasename() }
 )
