@@ -28,12 +28,12 @@ import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
 import { MappingType } from '@/modules/Mappings/types.ts'
 
 function getBasename(): string {
-  const pathname = window.location.pathname;
-  const index = pathname.lastIndexOf('/app/');
+  const pathname = window.location.pathname
+  const index = pathname.lastIndexOf('/app/')
   if (index === -1) {
-    return pathname;
+    return pathname
   }
-  return pathname.substring(0, index + 4);
+  return pathname.substring(0, index + 4)
 }
 
 export const routes = createBrowserRouter(

@@ -28,12 +28,12 @@ interface configType {
 }
 
 function getApiBaseUrl(): string {
-  const url = window.location.href;
-  const index = url.lastIndexOf('/app/');
+  const url = window.location.href
+  const index = url.lastIndexOf('/app/')
   if (index === -1) {
-    return url;
+    return url
   }
-  return url.substring(0, index);
+  return url.substring(0, index)
 }
 
 const config: configType = {
