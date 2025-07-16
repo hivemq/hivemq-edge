@@ -27,7 +27,12 @@ interface configType {
   }
 }
 
+/**
+ * @experimental This function is used to determine the base path for the API in production.
+ */
 function getApiBaseUrl(): string {
+  if (import.meta.env.MODE === 'development') return import.meta.env.VITE_API_BASE_URL
+
   const url = window.location.href
   const index = url.lastIndexOf('/app/')
   if (index === -1) {

@@ -26,8 +26,14 @@ const ProtocolAdapters = lazy(() => import('@/modules/ProtocolAdapters/component
 
 import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
 import { MappingType } from '@/modules/Mappings/types.ts'
+import config from '@/config'
 
+/**
+ * @experimental This function is used to determine the base path for the router in production.
+ */
 function getBasename(): string {
+  if (config.isDevMode) return '/app'
+
   const pathname = window.location.pathname
   const index = pathname.lastIndexOf('/app/')
   if (index === -1) {
