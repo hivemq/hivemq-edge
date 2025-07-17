@@ -120,7 +120,7 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
       }}
       widgets={{
         ...(!showNativeWidgets && adapterJSFWidgets),
-        updown: UpDownWidget,
+        UpDownWidget: UpDownWidget,
       }}
       fields={{
         ...(!showNativeWidgets && {
