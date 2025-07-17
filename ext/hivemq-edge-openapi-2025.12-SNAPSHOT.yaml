@@ -3842,6 +3842,12 @@ paths:
     get:
       description: Obtain a list of available protocol adapter types.
       operationId: getAdapterTypes
+      parameters:
+        - name: X-Original-URI
+          in: header
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           content:
