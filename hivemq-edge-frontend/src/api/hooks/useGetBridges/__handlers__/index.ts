@@ -24,6 +24,7 @@ export const mockBridge: Bridge = {
   clientId: 'my-client-id',
   status: {
     connection: Status.connection.CONNECTED,
+    startedAt: '2023-08-21T11:51:24.234+01',
   },
   localSubscriptions: [
     {
