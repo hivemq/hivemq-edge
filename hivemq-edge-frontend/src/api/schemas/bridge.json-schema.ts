@@ -226,17 +226,25 @@ export const bridgeSchema: JSONSchema7 = {
       },
     },
     Bridge: {
-      required: ['id', 'host', 'port'],
+      required: [
+        'id',
+        'host',
+        'port',
+        // 'cleanStart',
+        'clientId',
+        'keepAlive',
+        'sessionExpiry',
+      ],
       properties: {
         cleanStart: {
           type: 'boolean',
           description: `The cleanStart value associated the the MQTT connection.`,
           format: 'boolean',
+          default: true,
         },
         clientId: {
           type: 'string',
           description: `The client identifier associated the the MQTT connection.`,
-          format: 'string',
           maxLength: 65535,
         },
         host: {
@@ -250,12 +258,14 @@ export const bridgeSchema: JSONSchema7 = {
           maxLength: 500,
           minLength: 1,
           pattern: '^([a-zA-Z_0-9-_])*$',
+          format: 'identifier',
         },
         keepAlive: {
           type: 'number',
           description: `The keepAlive associated the the MQTT connection.`,
           format: 'int32',
           maximum: 65535,
+          default: 60,
         },
         localSubscriptions: {
           type: 'array',
@@ -266,12 +276,7 @@ export const bridgeSchema: JSONSchema7 = {
         loopPreventionEnabled: {
           type: 'boolean',
           description: `Is loop prevention enabled on the connection`,
-        },
-        loopPreventionHopCount: {
-          type: 'number',
-          description: `Loop prevention hop count`,
-          format: 'int32',
-          maximum: 100,
+          default: false,
         },
         password: {
           type: 'string',
@@ -289,6 +294,7 @@ export const bridgeSchema: JSONSchema7 = {
           format: 'int32',
           maximum: 65535,
           minimum: 1,
+          default: 1883,
         },
         remoteSubscriptions: {
           type: 'array',
@@ -300,6 +306,7 @@ export const bridgeSchema: JSONSchema7 = {
           type: 'number',
           description: `The sessionExpiry associated the the MQTT connection.`,
           format: 'int64',
+          default: 3600,
         },
         status: {
           $ref: '#/definitions/Status',
