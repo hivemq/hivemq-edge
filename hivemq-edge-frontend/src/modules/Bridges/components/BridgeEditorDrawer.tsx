@@ -49,6 +49,7 @@ const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
       id: {
         ...id,
         'ui:disabled': !isNew,
+        'ui:options': { isNewBridge: isNew },
       },
       ...(!hasPersistence && optional),
     }
@@ -69,7 +70,7 @@ const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
                 id="bridge-form"
                 schema={bridgeSchema}
                 uiSchema={uiSchemaPersistence}
-                customValidate={customUniqueBridgeValidate(bridgeSchema, allBridges)}
+                customValidate={customUniqueBridgeValidate(allBridges?.map((e) => e.id))}
                 onSubmit={() => {
                   console.log('XXXX')
                 }}
