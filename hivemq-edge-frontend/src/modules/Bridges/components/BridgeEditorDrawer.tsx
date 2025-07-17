@@ -56,7 +56,7 @@ const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
   }, [hasPersistence, isNew])
 
   return (
-    <Drawer isOpen={true} placement="right" size="xl" onClose={onClose} variant="hivemq">
+    <Drawer isOpen={true} placement="right" size="lg" onClose={onClose} variant="hivemq">
       <DrawerOverlay />
       <DrawerContent aria-label={t('combiner.schema.mapping.panel.header')}>
         <DrawerCloseButton />
