@@ -121,64 +121,76 @@ export const bridgeSchema: JSONSchema7 = {
     TlsConfiguration: {
       description: `tlsConfiguration associated with the bridge`,
       properties: {
-        cipherSuites: {
-          type: 'array',
-          uniqueItems: true,
-          items: {
-            type: 'string',
-            description: `The cipherSuites from the config`,
-            enum: CYPHER_SUITES,
-          },
-        },
         enabled: {
           type: 'boolean',
           description: `If TLS is used`,
+          default: false,
         },
-        handshakeTimeout: {
-          type: 'number',
-          description: `The handshakeTimeout from the config`,
-          format: 'int32',
-        },
-        keystorePassword: {
-          type: 'string',
-          description: `The keystorePassword from the config`,
-        },
-        keystorePath: {
-          type: 'string',
-          description: `The keystorePath from the config`,
-        },
-        keystoreType: {
-          type: 'string',
-          description: `The keystoreType from the config`,
-        },
-        privateKeyPassword: {
-          type: 'string',
-          description: `The privateKeyPassword from the config`,
-        },
-        protocols: {
-          type: 'array',
-          uniqueItems: true,
-          items: {
-            type: 'string',
-            description: `The protocols from the config`,
-            enum: TLS_PROTOCOLS,
+      },
+      if: {
+        properties: {
+          enabled: {
+            const: true,
           },
         },
-        truststorePassword: {
-          type: 'string',
-          description: `The truststorePassword from the config`,
-        },
-        truststorePath: {
-          type: 'string',
-          description: `The truststorePath from the config`,
-        },
-        truststoreType: {
-          type: 'string',
-          description: `The truststoreType from the config`,
-        },
-        verifyHostname: {
-          type: 'boolean',
-          description: `The verifyHostname from the config`,
+      },
+      then: {
+        properties: {
+          cipherSuites: {
+            type: 'array',
+            uniqueItems: true,
+            items: {
+              type: 'string',
+              description: `The cipherSuites from the config`,
+              enum: CYPHER_SUITES,
+            },
+          },
+          handshakeTimeout: {
+            type: 'number',
+            description: `The handshakeTimeout from the config`,
+            format: 'int32',
+          },
+          keystorePassword: {
+            type: 'string',
+            description: `The keystorePassword from the config`,
+          },
+          keystorePath: {
+            type: 'string',
+            description: `The keystorePath from the config`,
+          },
+          keystoreType: {
+            type: 'string',
+            description: `The keystoreType from the config`,
+          },
+          privateKeyPassword: {
+            type: 'string',
+            description: `The privateKeyPassword from the config`,
+          },
+          protocols: {
+            type: 'array',
+            uniqueItems: true,
+            items: {
+              type: 'string',
+              description: `The protocols from the config`,
+              enum: TLS_PROTOCOLS,
+            },
+          },
+          truststorePassword: {
+            type: 'string',
+            description: `The truststorePassword from the config`,
+          },
+          truststorePath: {
+            type: 'string',
+            description: `The truststorePath from the config`,
+          },
+          truststoreType: {
+            type: 'string',
+            description: `The truststoreType from the config`,
+          },
+          verifyHostname: {
+            type: 'boolean',
+            description: `The verifyHostname from the config`,
+          },
         },
       },
     },
@@ -188,14 +200,28 @@ export const bridgeSchema: JSONSchema7 = {
         enabled: {
           type: 'boolean',
           description: `If Websockets are used`,
+          default: false,
         },
-        serverPath: {
-          type: 'string',
-          description: `The server path used by the bridge client. This must be setup as path at the remote broker`,
+      },
+      if: {
+        properties: {
+          enabled: {
+            const: true,
+          },
         },
-        subProtocol: {
-          type: 'string',
-          description: `The sub-protocol used by the bridge client. This must be supported by the remote broker`,
+      },
+      then: {
+        properties: {
+          serverPath: {
+            type: 'string',
+            description: `The server path used by the bridge client. This must be setup as path at the remote broker`,
+            default: '/mqtt',
+          },
+          subProtocol: {
+            type: 'string',
+            description: `The sub-protocol used by the bridge client. This must be supported by the remote broker`,
+            default: 'mqtt',
+          },
         },
       },
     },
@@ -288,6 +314,24 @@ export const bridgeSchema: JSONSchema7 = {
         },
         websocketConfiguration: {
           $ref: '#/definitions/WebsocketConfiguration',
+        },
+      },
+      if: {
+        properties: {
+          loopPreventionEnabled: {
+            const: true,
+          },
+        },
+      },
+      then: {
+        required: ['loopPreventionHopCount'],
+        properties: {
+          loopPreventionHopCount: {
+            type: 'number',
+            description: `Loop prevention hop count`,
+            format: 'int32',
+            maximum: 100,
+          },
         },
       },
     },
