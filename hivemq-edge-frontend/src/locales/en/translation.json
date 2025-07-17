@@ -167,6 +167,16 @@
       "update": "Update the bridge",
       "submitting": "Submitting"
     },
+    "schema": {
+      "tabs": {
+        "connection": "Connection",
+        "broker": "Broker Configuration",
+        "subscriptions": "Subscriptions",
+        "security": "Security",
+        "webSocket": "Websocket",
+        "persistence": "Persistence"
+      }
+    },
     "error": {
       "loading": "We cannot load your bridges for the time being. Please try again later"
     },
@@ -217,11 +227,16 @@
       "filters": {
         "label": "Filters",
         "helper": "The list of topics used to filter the messages. MQTT wildcards are supported.",
+        "addButton": "Add a new filter",
         "error": {
           "required": "At least one topic is required"
         }
       },
-      "excludes": "Excludes",
+      "excludes": {
+        "label": "Excludes",
+        "helper": "The exclusion patterns",
+        "addButton": "Add a new pattern"
+      },
       "destination": {
         "label": "Destination",
         "helper": "The destination topic. You can use '{#}' to keep the original topic.",
@@ -315,6 +330,10 @@
       }
     },
     "security": {
+      "tlsConfiguration": {
+        "label": "TLS Configuration",
+        "helper": "TLS configuration associated with the bridge"
+      },
       "cipherSuites": {
         "label": "Cipher Suites",
         "placeholder": "Add cipher suite",
@@ -363,6 +382,7 @@
       }
     },
     "websocket": {
+      "label": "Websockets",
       "description": "Websocket configuration associated with the bridge",
       "enabled": { "label": "Enabled", "helper": "If Websockets are used" },
       "serverPath": {
@@ -995,6 +1015,9 @@
     "identifier": {
       "adapter": {
         "unique": "This identifier is already in use for another adapter"
+      },
+      "bridge": {
+        "unique": "This identifier is already in use for another bridge"
       },
       "tag": {
         "uniqueDevice": "This tag name is already used on this device",
