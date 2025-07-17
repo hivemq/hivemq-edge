@@ -70,7 +70,9 @@ public class ConfigurationBootstrap {
 
         final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
 
-        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
+        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(
+                systemInformation,
+                configurationFile,
                 List.of(
                         new RestrictionConfigurator(configurationService.restrictionsConfiguration()),
                         new SecurityConfigurator(configurationService.securityConfiguration()),

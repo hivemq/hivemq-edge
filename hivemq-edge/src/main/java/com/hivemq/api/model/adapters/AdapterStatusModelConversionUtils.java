@@ -47,29 +47,20 @@ public class AdapterStatusModelConversionUtils {
 
     public static @NotNull Status.ConnectionEnum convertConnectionStatus(final @NotNull ProtocolAdapterState.ConnectionStatus connectionStatus) {
         Preconditions.checkNotNull(connectionStatus);
-        switch (connectionStatus) {
-            case DISCONNECTED:
-                return Status.ConnectionEnum.DISCONNECTED;
-            case CONNECTED:
-                return Status.ConnectionEnum.CONNECTED;
-            case ERROR:
-                return Status.ConnectionEnum.ERROR;
-            case STATELESS:
-                return Status.ConnectionEnum.STATELESS;
-            default:
-            case UNKNOWN:
-                return Status.ConnectionEnum.UNKNOWN;
-        }
+        return switch (connectionStatus) {
+            case DISCONNECTED -> Status.ConnectionEnum.DISCONNECTED;
+            case CONNECTED -> Status.ConnectionEnum.CONNECTED;
+            case ERROR -> Status.ConnectionEnum.ERROR;
+            case STATELESS -> Status.ConnectionEnum.STATELESS;
+            default -> Status.ConnectionEnum.UNKNOWN;
+        };
     }
 
     public static @NotNull Status.RuntimeEnum convertRuntimeStatus(final @NotNull ProtocolAdapterState.RuntimeStatus runtimeStatus) {
         Preconditions.checkNotNull(runtimeStatus);
-        switch (runtimeStatus) {
-            case STARTED:
-                return Status.RuntimeEnum.STARTED;
-            default:
-            case STOPPED:
-                return Status.RuntimeEnum.STOPPED;
+        if(ProtocolAdapterState.RuntimeStatus.STARTED.equals(runtimeStatus)) {
+            return Status.RuntimeEnum.STARTED;
         }
+        return Status.RuntimeEnum.STOPPED;
     }
 }

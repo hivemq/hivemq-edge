@@ -59,6 +59,8 @@ public class SystemInformationImpl implements SystemInformation {
 
     private final boolean configWriteable;
 
+    private final boolean configFragmentBase64Zip;
+
     public SystemInformationImpl() {
         this(false);
     }
@@ -78,6 +80,7 @@ public class SystemInformationImpl implements SystemInformation {
             final @Nullable File licenseFolder) {
         final String refreshInterval = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_REFRESH_INTERVAL, EnvironmentVariables.CONFIG_REFRESH_INTERVAL);
         final String configWriteable = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_WRITEABLE, EnvironmentVariables.CONFIG_WRITEABLE);
+        final String configFragmentBase64ZipString = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_FRAGMENT_BASE64ZIP, EnvironmentVariables.CONFIG_FRAGMENT_BASE64ZIP);
         this.usePathOfRunningJar = usePathOfRunningJar;
         this.embedded = embedded;
         this.configFolder = configFolder;
@@ -89,6 +92,7 @@ public class SystemInformationImpl implements SystemInformation {
         this.runningSince = System.currentTimeMillis();
         this.configRefreshIntervalInMs = Long.parseLong(Objects.requireNonNullElse(refreshInterval, "-1"));
         this.configWriteable = Boolean.parseBoolean((configWriteable == null || configWriteable.isEmpty()) ? "true" : configWriteable );
+        this.configFragmentBase64Zip = Boolean.parseBoolean((configFragmentBase64ZipString == null || configFragmentBase64ZipString.isEmpty()) ? "false" : configFragmentBase64ZipString );
         processorCount = getPhysicalProcessorCount();
     }
 
@@ -365,5 +369,10 @@ public class SystemInformationImpl implements SystemInformation {
     @Override
     public boolean isConfigWriteable() {
         return configWriteable;
+    }
+
+    @Override
+    public boolean isConfigFragmentBase64Zip() {
+        return configFragmentBase64Zip;
     }
 }
