@@ -1,14 +1,13 @@
-import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import type { UseToastOptions } from '@chakra-ui/react'
-import { Text } from '@chakra-ui/react'
 import { useToast } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
+import { isRouteErrorResponse } from 'react-router-dom'
 
 import type { Bridge } from '@/api/__generated__'
 import { useCreateBridge } from '@/api/hooks/useGetBridges/useCreateBridge.ts'
 import { useDeleteBridge } from '@/api/hooks/useGetBridges/useDeleteBridge.ts'
 import { useUpdateBridge } from '@/api/hooks/useGetBridges/useUpdateBridge.ts'
-import { isRouteErrorResponse } from 'react-router-dom'
+import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 
 export const useBridgeManager = () => {
   const { t } = useTranslation()
@@ -64,12 +63,7 @@ export const useBridgeManager = () => {
         ...DEFAULT_TOAST_OPTION,
         ...options,
         status: 'error',
-        description: (
-          <>
-            <Text>{options?.description}</Text>
-            {message && <Text>{message}</Text>}
-          </>
-        ),
+        description: `${options?.description} ${message}`,
       })
     }
   }

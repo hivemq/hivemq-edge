@@ -26,7 +26,7 @@ import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import { customUniqueBridgeValidate } from '@/modules/Bridges/utils/validation-utils.ts'
-import { useBridgeManager } from '@/modules/Bridges/hooks/useTopicFilterManager.tsx'
+import { useBridgeManager } from '@/modules/Bridges/hooks/useBridgeManager.ts'
 import { bridgeInitialState } from '@/modules/Bridges/utils/defaults.utils.ts'
 
 interface BridgeEditorDrawerProps {
