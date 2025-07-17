@@ -18,7 +18,7 @@ export const BridgeActionMenu: FC<BridgeActionMenuProps> = ({ bridge, onEdit, on
   const { t } = useTranslation()
 
   return (
-    <Menu>
+    <Menu isLazy>
       <MenuButton
         variant="outline"
         size="sm"
