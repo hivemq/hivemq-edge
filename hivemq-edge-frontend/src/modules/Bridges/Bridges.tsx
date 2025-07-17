@@ -15,6 +15,11 @@ import WarningMessage from '@/components/WarningMessage.tsx'
 
 import BridgeCard from '@/modules/Bridges/components/overview/BridgeCard.tsx'
 
+/**
+ * @deprecated The Bridges component is deprecated and will be removed in a future release.
+ *    Use the BridgeTable component directly instead.
+ * @see BridgeTable
+ */
 const Bridges: FC = () => {
   const { data, isLoading, isError, error } = useListBridges()
   const { t } = useTranslation()
