@@ -58,9 +58,9 @@ const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
   return (
     <Drawer isOpen={true} placement="right" size="lg" onClose={onClose} variant="hivemq">
       <DrawerOverlay />
-      <DrawerContent aria-label={t('combiner.schema.mapping.panel.header')}>
+      <DrawerContent aria-label={t('bridge.drawer.label')}>
         <DrawerCloseButton />
-        <DrawerHeader>{t('combiner.schema.mapping.panel.header')}</DrawerHeader>
+        <DrawerHeader>{isNew ? t('bridge.drawer.title.create') : t('bridge.drawer.title.update')}</DrawerHeader>
 
         <DrawerBody>
           <Card>
@@ -80,10 +80,18 @@ const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
         </DrawerBody>
 
         <DrawerFooter>
-          <ButtonGroup>
-            <Button onClick={onClose}>{t('combiner.schema.mapping.action.cancel')}</Button>
-            <Button variant="primary" type="submit" form="combiner-mapping-form">
-              {t('combiner.schema.mapping.action.save')}
+          {!isNew && (
+            <ButtonGroup>
+              <Button type="button" variant="danger" form="bridge-form" onClick={handleOnDelete} isDisabled>
+                {t('bridge.action.delete')}
+              </Button>
+            </ButtonGroup>
+          )}
+
+          <ButtonGroup flexGrow={1} justifyContent="flex-end">
+            <Button onClick={handleEditorOnClose}>{t('bridge.action.cancel')}</Button>
+            <Button variant="primary" type="submit" form="bridge-form">
+              {isNew ? t('bridge.action.create') : t('bridge.action.update')}
             </Button>
           </ButtonGroup>
         </DrawerFooter>
