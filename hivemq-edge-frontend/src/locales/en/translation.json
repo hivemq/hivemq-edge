@@ -163,6 +163,7 @@
       "add": "Add bridge connection",
       "edit": "Edit",
       "delete": "Delete",
+      "cancel": "Cancel",
       "create": "Create the bridge",
       "update": "Update the bridge",
       "submitting": "Submitting"
