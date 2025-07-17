@@ -25,7 +25,7 @@ describe('Login Page', () => {
   })
 
   it('should redirect to login', () => {
-    cy.visit('/app')
+    cy.visit('/app/')
     cy.url().should('contain', '/login')
   })
 
