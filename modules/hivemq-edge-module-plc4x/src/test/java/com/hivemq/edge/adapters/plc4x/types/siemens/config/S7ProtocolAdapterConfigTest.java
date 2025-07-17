@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
@@ -196,7 +197,7 @@ class S7ProtocolAdapterConfigTest {
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile), List.of());
+        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(mock(SystemInformation.class), new ConfigurationFile(configFile), List.of());
         return readerWriter.applyConfig();
     }
 }

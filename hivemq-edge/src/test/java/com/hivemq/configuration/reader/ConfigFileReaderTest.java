@@ -19,6 +19,7 @@ import com.google.common.io.Files;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.exceptions.UnrecoverableException;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -145,7 +146,7 @@ public class ConfigFileReaderTest {
         assertTrue(userPropertiesAfterReload.contains(new MqttUserPropertyEntity("my-name", "my-value2")));
     }
 
-    private static @NotNull ConfigFileReaderWriter getConfigFileReaderWriter(File tempFile) {
+    private static @NotNull ConfigFileReaderWriter getConfigFileReaderWriter(final File tempFile) {
         final ConfigurationFile configurationFile = new ConfigurationFile(tempFile);
 
         final RestrictionConfigurator restrictionConfigurator = mock(RestrictionConfigurator.class);
@@ -184,10 +185,12 @@ public class ConfigFileReaderTest {
         final InternalConfigurator internalConfigurator = mock(InternalConfigurator.class);
         when(internalConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
 
-
-        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(
+        final var sysInfo = mock(SystemInformation.class);
+        //ALways set to true for the test to ensure the fragment zipping code doesn't interfer with regular file rendering
+        when(sysInfo.isConfigFragmentBase64Zip()).thenReturn(true);
+        return new ConfigFileReaderWriter(
+                sysInfo,
                 configurationFile,
                 List.of());
-        return configFileReader;
     }
 }

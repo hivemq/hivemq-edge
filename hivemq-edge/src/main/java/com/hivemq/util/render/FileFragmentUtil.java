@@ -17,17 +17,25 @@ package com.hivemq.util.render;
 
 import com.hivemq.exceptions.UnrecoverableException;
 import org.jetbrains.annotations.NotNull;
+import org.jose4j.base64url.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class FileFragmentUtil {
     private static final Logger log = LoggerFactory.getLogger(EnvVarUtil.class);
@@ -41,9 +49,9 @@ public class FileFragmentUtil {
      * @return replacement result containing the actual string and file and their modification time used in the replacement
      * @throws UnrecoverableException if a fragment used in a placeholder can't be loaded
      */
-    public static @NotNull FragmentResult replaceFragmentPlaceHolders(final @NotNull String text) {
+    public static @NotNull FragmentResult replaceFragmentPlaceHolders(final @NotNull String text, final boolean contentIsZippedAndBase64Encoded) {
 
-        final StringBuffer resultString = new StringBuffer();
+        final StringBuilder resultString = new StringBuilder();
         final Map<Path, Long> fragmentToModificationTime = new HashMap<>();
         final Matcher matcher = Pattern.compile(FRAGMENT_VAR_PATTERN)
                 .matcher(text);
@@ -60,8 +68,19 @@ public class FileFragmentUtil {
             try {
                 final Path fragmentPath = Path.of(pathString);
                 final Long modificationTime = fragmentPath.toRealPath().toFile().lastModified();
-                final String replacement = Files.readString(fragmentPath, StandardCharsets.UTF_8);
                 fragmentToModificationTime.put(fragmentPath, modificationTime);
+
+                final String replacement;
+                if (contentIsZippedAndBase64Encoded) {
+                    log.info("Config fragment {} is expected to be zipped and base64 encoded, extracting content.", pathString);
+                    replacement =
+                            deflate(Base64.decode(Files.readString(fragmentPath, StandardCharsets.UTF_8)))
+                                    .map(deflated -> new String(deflated, StandardCharsets.UTF_8))
+                                    .orElseThrow(UnrecoverableException::new);
+                } else {
+                    replacement = Files.readString(fragmentPath, StandardCharsets.UTF_8);
+                }
+
                 //sets replacement for this match
                 matcher.appendReplacement(resultString, escapeReplacement(replacement));
             } catch (IOException e) {
@@ -98,6 +117,18 @@ public class FileFragmentUtil {
 
         public @NotNull String getRenderResult() {
             return renderResult;
+        }
+    }
+
+    public static Optional<byte[]> deflate(final byte[] zipData) {
+        try (final var zipStream = new ZipInputStream(new ByteArrayInputStream(zipData))) {
+            if (zipStream.getNextEntry() != null) {
+                return Optional.of(zipStream.readAllBytes());
+            }
+            return Optional.empty();
+        } catch (final IOException e) {
+            log.error("Error while extracting from ZIP: {}", e.getMessage());
+            return Optional.empty();
         }
     }
 }
