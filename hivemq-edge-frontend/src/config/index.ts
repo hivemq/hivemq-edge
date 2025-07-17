@@ -31,14 +31,18 @@ interface configType {
  * @experimental This function is used to determine the base path for the API in production.
  */
 function getApiBaseUrl(): string {
-  if (import.meta.env.MODE === 'development') return import.meta.env.VITE_API_BASE_URL
-
-  const url = window.location.href
-  const index = url.lastIndexOf('/app/')
-  if (index === -1) {
-    return url
+  if (import.meta.env.MODE === 'development') {
+    return import.meta.env.VITE_API_BASE_URL
   }
-  return url.substring(0, index)
+  const url = window.location.href
+  if (url.endsWith('/app')) {
+    return url.substring(0, url.length - 4)
+  }
+  const index = url.lastIndexOf('/app/')
+  if (index !== -1) {
+    return url.substring(0, index)
+  }
+  return url
 }
 
 const config: configType = {

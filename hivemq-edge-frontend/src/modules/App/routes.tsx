@@ -32,14 +32,18 @@ import config from '@/config'
  * @experimental This function is used to determine the base path for the router in production.
  */
 function getBasename(): string {
-  if (config.isDevMode) return '/app'
-
-  const pathname = window.location.pathname
-  const index = pathname.lastIndexOf('/app/')
-  if (index === -1) {
-    return pathname
+  if (config.isDevMode) {
+    return '/app'
   }
-  return pathname.substring(0, index + 4)
+  const pathname = window.location.pathname
+  if (pathname.endsWith('/app')) {
+    return pathname.substring(0, pathname.length - 4)
+  }
+  const index = pathname.lastIndexOf('/app/')
+  if (index !== -1) {
+    return pathname.substring(0, index + 4)
+  }
+  return pathname
 }
 
 export const routes = createBrowserRouter(
