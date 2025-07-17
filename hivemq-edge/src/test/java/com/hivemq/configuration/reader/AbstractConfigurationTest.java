@@ -88,6 +88,7 @@ public class AbstractConfigurationTest {
 
         final ConfigurationFile configurationFile = new ConfigurationFile(xmlFile);
         reader = new ConfigFileReaderWriter(
+                systemInformation,
                 configurationFile,
                 List.of(
                         new RestrictionConfigurator(restrictionsConfigurationService),

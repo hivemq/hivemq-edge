@@ -29,12 +29,20 @@ import com.hivemq.configuration.entity.listener.UDPListenerEntity;
 import com.hivemq.configuration.entity.listener.WebsocketListenerEntity;
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.entity.listener.tls.TruststoreEntity;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.util.ThreadFactoryUtil;
 import com.hivemq.util.render.EnvVarUtil;
 import com.hivemq.util.render.FileFragmentUtil;
 import com.hivemq.util.render.IfUtil;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.ValidationEventLocator;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,17 +52,11 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBElement;
-import jakarta.xml.bind.JAXBException;
-import jakarta.xml.bind.Marshaller;
-import jakarta.xml.bind.Unmarshaller;
-import jakarta.xml.bind.ValidationEvent;
-import jakarta.xml.bind.ValidationEventLocator;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -74,6 +76,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -81,6 +84,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 
 import static java.util.Objects.requireNonNullElse;
 
@@ -91,7 +96,7 @@ public class ConfigFileReaderWriter {
     public static final String CONFIG_FRAGMENT_PATH = "/fragment/config";
 
     private final @NotNull ConfigurationFile configurationFile;
-    protected volatile @NotNull HiveMQConfigEntity configEntity;
+    protected volatile HiveMQConfigEntity configEntity;
     private final Object lock = new Object();
     private boolean defaultBackupConfig = true;
     private volatile @Nullable ScheduledExecutorService scheduledExecutorService = null;
@@ -103,10 +108,12 @@ public class ConfigFileReaderWriter {
     private final @NotNull DataCombiningExtractor dataCombiningExtractor;
     private final @NotNull UnsExtractor unsExtractor;
     private final @NotNull List<ReloadableExtractor> reloadableExtractors;
+    private final @NotNull SystemInformation systemInformation;
 
     private final @NotNull AtomicLong lastWrite = new AtomicLong(0L);
 
     public ConfigFileReaderWriter(
+            final @NotNull SystemInformation systemInformation,
             final @NotNull ConfigurationFile configurationFile,
             final @NotNull List<Configurator<?>> configurators) {
         this.configurationFile = configurationFile;
@@ -115,6 +122,7 @@ public class ConfigFileReaderWriter {
         this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this);
         this.dataCombiningExtractor = new DataCombiningExtractor(this);
         this.unsExtractor = new UnsExtractor(this);
+        this.systemInformation = systemInformation;
         reloadableExtractors = List.of(
                 bridgeExtractor,
                 protocolAdapterExtractor,
@@ -201,14 +209,17 @@ public class ConfigFileReaderWriter {
 
                 pathsToCheck.putAll(fileModificationTimestamps);
 
-                pathsToCheck.entrySet().forEach(pathToTs -> {
+                pathsToCheck.forEach((key, value) -> {
                     try {
-                        if (!pathToTs.getKey().toString().equals(CONFIG_FRAGMENT_PATH) && Files.getFileAttributeView(pathToTs.getKey().toRealPath(LinkOption.NOFOLLOW_LINKS), BasicFileAttributeView.class).readAttributes().lastModifiedTime().toMillis() > pathToTs.getValue()) {
-                            log.error("Restarting because a required file was updated: {}", pathToTs.getKey());
+                        if (!key.toString().equals(CONFIG_FRAGMENT_PATH) &&
+                                Files.getFileAttributeView(key.toRealPath(LinkOption.NOFOLLOW_LINKS),
+                                        BasicFileAttributeView.class).readAttributes().lastModifiedTime().toMillis() >
+                                        value) {
+                            log.error("Restarting because a required file was updated: {}", key);
                             System.exit(0);
                         }
                     } catch (final IOException e) {
-                        throw new RuntimeException("Unable to read last modified time for " + pathToTs.getKey(), e);
+                        throw new RuntimeException("Unable to read last modified time for " + key, e);
                     }
                 });
             }
@@ -339,8 +350,7 @@ public class ConfigFileReaderWriter {
                 .build()
                 .toArray(new Class<?>[0]);
 
-        final JAXBContext context = JAXBContext.newInstance(classes);
-        return context;
+        return JAXBContext.newInstance(classes);
     }
 
     private void writeConfigToXML(final @NotNull ConfigurationFile outputFile, final boolean rollConfig) {
@@ -442,7 +452,10 @@ public class ConfigFileReaderWriter {
 
                 //replace environment variable placeholders
                 String configFileContent = Files.readString(configFile.toPath());
-                final FileFragmentUtil.FragmentResult fragmentResult = FileFragmentUtil.replaceFragmentPlaceHolders(configFileContent);
+                final var fragmentResult = FileFragmentUtil
+                        .replaceFragmentPlaceHolders(
+                                configFileContent,
+                                systemInformation.isConfigFragmentBase64Zip());
 
                 fragmentToModificationTime.putAll(fragmentResult.getFragmentToModificationTime());
 
@@ -461,7 +474,6 @@ public class ConfigFileReaderWriter {
                     return true;
 
                 });
-
                 final JAXBElement<? extends HiveMQConfigEntity> result =
                         unmarshaller.unmarshal(streamSource, getConfigEntityClass());
 
@@ -587,8 +599,7 @@ public class ConfigFileReaderWriter {
         if (resource != null) {
             try (final InputStream is = uncachedStream(resource)) {
                 final SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-                final Schema schema = sf.newSchema(new StreamSource(is));
-                return schema;
+                return sf.newSchema(new StreamSource(is));
             }
         }
         log.warn("No schema loaded for validation of config xml.");
