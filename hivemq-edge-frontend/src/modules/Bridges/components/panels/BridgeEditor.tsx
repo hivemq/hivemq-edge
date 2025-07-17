@@ -25,6 +25,11 @@ interface BridgeEditorProps {
   children?: ReactNode
 }
 
+/**
+ * @deprecated The BridgeEditor component is deprecated and will be removed in a future release.
+ *    Use the BridgeEditorDrawer component directly instead.
+ * @see BridgeEditorDrawer
+ */
 const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
   const { t } = useTranslation()
   const { successToast, errorToast } = useEdgeToast()
