@@ -63,7 +63,7 @@ export const BridgeTable: FC = () => {
           const val = info.getValue<Array<LocalBridgeSubscription>>()
           return (
             <Skeleton isLoaded={!isLoading}>
-              <Badge variant="subtle">{val.length} </Badge>
+              <Badge variant="subtle">{val.length}</Badge>
             </Skeleton>
           )
         },
@@ -75,7 +75,7 @@ export const BridgeTable: FC = () => {
           const val = info.getValue<Array<BridgeSubscription>>()
           return (
             <Skeleton isLoaded={!isLoading}>
-              <Badge variant="subtle">{val.length} </Badge>
+              <Badge variant="subtle">{val.length}</Badge>
             </Skeleton>
           )
         },
