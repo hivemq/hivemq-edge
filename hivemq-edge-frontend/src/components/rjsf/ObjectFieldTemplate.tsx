@@ -63,48 +63,46 @@ export const ObjectFieldTemplate = <
   }
 
   // TODO[NVL] Not efficient. Build a cluster
-  const allGrouped = tabs.map((e) => e.properties).flat()
+  const allGrouped = tabs.map((tab) => tab.properties).flat()
 
   return (
-    <>
-      <Tabs index={tabIndex} onChange={setTabIndex}>
-        <TabList>
-          {tabs.map((e) => {
-            const filteredProps = properties.filter((property) => e.properties.includes(property.name))
-            if (!filteredProps.length) return null
-            return (
-              <Tab fontSize="md" key={e.id}>
-                {e.title}
-              </Tab>
-            )
-          })}
-        </TabList>
+    <Tabs index={tabIndex} onChange={setTabIndex}>
+      <TabList flexWrap="wrap">
+        {tabs.map((tab) => {
+          const filteredProps = properties.filter((property) => tab.properties.includes(property.name))
+          if (!filteredProps.length) return null
+          return (
+            <Tab fontSize="md" key={tab.id}>
+              {tab.title}
+            </Tab>
+          )
+        })}
+      </TabList>
 
-        <TabPanels>
-          {tabs.map((e) => {
-            const filteredProps = properties.filter((property) => e.properties.includes(property.name))
-            if (!filteredProps.length) return null
-            return (
-              <TabPanel key={e.id} p={0} pt="1px" mb={6}>
-                <>
-                  {filteredProps.map((prop) => (
-                    <Box _first={{ marginTop: '24px' }} _notLast={{ marginBottom: '24px' }} key={prop.content.key}>
-                      {prop.content}
-                    </Box>
-                  ))}
-                </>
-              </TabPanel>
-            )
-          })}
-        </TabPanels>
-        {properties
-          .filter((property) => !allGrouped.includes(property.name))
-          .map((prop) => (
-            <Box _first={{ marginTop: '24px' }} _notLast={{ marginBottom: '24px' }} key={prop.content.key}>
-              {prop.content}
-            </Box>
-          ))}
-      </Tabs>
-    </>
+      <TabPanels>
+        {tabs.map((e) => {
+          const filteredProps = properties.filter((property) => e.properties.includes(property.name))
+          if (!filteredProps.length) return null
+          return (
+            <TabPanel key={e.id} p={0} pt="1px" mb={6}>
+              <>
+                {filteredProps.map((prop) => (
+                  <Box _first={{ marginTop: '24px' }} _notLast={{ marginBottom: '24px' }} key={prop.content.key}>
+                    {prop.content}
+                  </Box>
+                ))}
+              </>
+            </TabPanel>
+          )
+        })}
+      </TabPanels>
+      {properties
+        .filter((property) => !allGrouped.includes(property.name))
+        .map((prop) => (
+          <Box _first={{ marginTop: '24px' }} _notLast={{ marginBottom: '24px' }} key={prop.content.key}>
+            {prop.content}
+          </Box>
+        ))}
+    </Tabs>
   )
 }
