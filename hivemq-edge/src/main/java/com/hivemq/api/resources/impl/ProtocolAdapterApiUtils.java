@@ -30,11 +30,12 @@ import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.VersionProvider;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,15 +71,29 @@ public class ProtocolAdapterApiUtils {
             final @NotNull ProtocolAdapterManager adapterManager,
             final @NotNull ProtocolAdapterInformation info,
             final @NotNull ConfigurationService configurationService,
-            final @NotNull VersionProvider versionProvider) {
+            final @NotNull VersionProvider versionProvider,
+            final @Nullable String xOriginalURI) {
 
         Preconditions.checkNotNull(adapterManager);
         Preconditions.checkNotNull(info);
         Preconditions.checkNotNull(configurationService);
         String logoUrl = info.getLogoUrl();
-        //noinspection ConstantValue
-        if (logoUrl != null) {
-            logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : "/module/" + logoUrl;
+        if (StringUtils.isNotBlank(logoUrl)) {
+            while (logoUrl.startsWith(HttpConstants.SLASH)) {
+                logoUrl = logoUrl.substring(HttpConstants.SLASH.length());
+            }
+            if (StringUtils.isEmpty(xOriginalURI)) {
+                // We are not behind a reverse proxy, so we can use the absolute path.
+                logoUrl = "/module/" + logoUrl;
+            } else {
+                // We are behind a reverse proxy, so we need to use the relative path.
+                final int index = xOriginalURI.lastIndexOf("/api/v1/");
+                if (index == -1) {
+                    logoUrl = "../../module/" + logoUrl;
+                } else {
+                    logoUrl = xOriginalURI.substring(0, index) + "/module/" + logoUrl;
+                }
+            }
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
         } else {
             // although it is marked as not null it is input from outside (possible customer adapter),
@@ -92,8 +107,10 @@ public class ProtocolAdapterApiUtils {
             return null;
         }
 
-        final ProtocolAdapterSchemaManager protocolAdapterSchemaManager =
-                new ProtocolAdapterSchemaManager(objectMapper, adapterManager.writingEnabled() ? info.configurationClassNorthAndSouthbound() : info.configurationClassNorthbound());
+        final ProtocolAdapterSchemaManager protocolAdapterSchemaManager = new ProtocolAdapterSchemaManager(objectMapper,
+                adapterManager.writingEnabled() ?
+                        info.configurationClassNorthAndSouthbound() :
+                        info.configurationClassNorthbound());
 
 
         final String rawVersion = info.getVersion();
@@ -144,7 +161,8 @@ public class ProtocolAdapterApiUtils {
     }
 
     private static @NotNull Set<ProtocolAdapter.Capability> getCapabilities(
-            final @NotNull ProtocolAdapterManager adapterManager, final @NotNull ProtocolAdapterInformation info) {
+            final @NotNull ProtocolAdapterManager adapterManager,
+            final @NotNull ProtocolAdapterInformation info) {
         final Set<ProtocolAdapter.Capability> capabilities = new HashSet<>();
         for (final ProtocolAdapterCapability capability : info.getCapabilities()) {
             if (capability == ProtocolAdapterCapability.WRITE && adapterManager.writingEnabled()) {
@@ -163,13 +181,16 @@ public class ProtocolAdapterApiUtils {
      * @return The instance to be sent across the API
      */
     public static ProtocolAdapter convertModuleAdapterType(
-            final @NotNull Module module, final @NotNull ConfigurationService configurationService) {
+            final @NotNull Module module,
+            final @NotNull ConfigurationService configurationService) {
 
         Preconditions.checkNotNull(module);
         Preconditions.checkNotNull(configurationService);
         String logoUrl = module.getLogoUrl() == null ? null : module.getLogoUrl().getUrl();
-        final String documentationUrl = module.getDocumentationLink() == null ? null : module.getDocumentationLink().getUrl();
-        final String provisioningUrl = module.getProvisioningLink() == null ? null : module.getProvisioningLink().getUrl();
+        final String documentationUrl =
+                module.getDocumentationLink() == null ? null : module.getDocumentationLink().getUrl();
+        final String provisioningUrl =
+                module.getProvisioningLink() == null ? null : module.getProvisioningLink().getUrl();
         if (logoUrl != null) {
             logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : logoUrl;
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
@@ -192,7 +213,8 @@ public class ProtocolAdapterApiUtils {
     }
 
     public static @NotNull String applyAbsoluteServerAddressInDeveloperMode(
-            final @NotNull String logoUrl, final @NotNull ConfigurationService configurationService) {
+            final @NotNull String logoUrl,
+            final @NotNull ConfigurationService configurationService) {
         Preconditions.checkNotNull(logoUrl);
         Preconditions.checkNotNull(configurationService);
         if (Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)) {

@@ -20,54 +20,81 @@ import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.Files;
 import com.hivemq.http.core.HttpUtils;
 import com.hivemq.http.core.IHttpRequestResponse;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 public class WebAppHandler extends AbstractHttpRequestResponseHandler {
+    protected static final @NotNull String INDEX_HTML = "index.html";
+    protected static final @NotNull String ROOT_INDEX_HTML = HttpConstants.SLASH + INDEX_HTML;
+    protected final @NotNull String resourceRoot;
 
-    protected final String resourceRoot;
-
-    public WebAppHandler(ObjectMapper mapper, String resourceRoot) {
+    public WebAppHandler(final @NotNull ObjectMapper mapper, final @NotNull String resourceRoot) {
         super(mapper);
         this.resourceRoot = resourceRoot;
     }
 
     @Override
-    protected void handleHttpGet(IHttpRequestResponse requestResponse) throws IOException {
+    protected void handleHttpGet(final @NotNull IHttpRequestResponse requestResponse) throws IOException {
 
-        String resourcePath = requestResponse.getContextRelativePath();
-        resourcePath = HttpUtils.sanitizePath(resourcePath);
-        String filePath = HttpUtils.combinePaths(resourceRoot, resourcePath);
-        writeDataFromResource(requestResponse, filePath);
+        final String relativePath = requestResponse.getContextRelativePath();
+        if (StringUtils.isEmpty(relativePath)) {
+            sendRedirect(requestResponse, "app/");
+        } else {
+            final String resourcePath = HttpUtils.sanitizePath(relativePath);
+            final String filePath = HttpUtils.combinePaths(resourceRoot, resourcePath);
+            writeDataFromResource(requestResponse, filePath);
+        }
     }
 
-    protected void writeDataFromResource(IHttpRequestResponse requestResponse, String resourcePath) throws IOException {
-        if (resourcePath.endsWith("/")) {
-            resourcePath += "index.html";
+    protected void writeDataFromResource(
+            final @NotNull IHttpRequestResponse requestResponse,
+            @NotNull String resourcePath) throws IOException {
+        if (resourcePath.endsWith(HttpConstants.SLASH)) {
+            resourcePath += INDEX_HTML;
         }
-        InputStream is = loadClasspathResource(resourcePath);
+        InputStream inputStream = loadClasspathResource(resourcePath);
         try {
-            logger.trace("loading resource from cp '{}' exists ? {}", resourcePath, is != null);
-            if (is == null) {
-                String ext = Files.getFileExtension(resourcePath);
-                if (ext == null) {
-                    is = loadClasspathResource(HttpUtils.combinePaths(resourceRoot, "/index.html"));
-                    writeStreamResponse(requestResponse, HttpConstants.SC_OK, "text/html", is);
-                } else {
-                    sendNotFoundResponse(requestResponse);
-                }
+            logger.trace("loading resource from cp '{}' exists ? {}", resourcePath, inputStream != null);
+            String ext = Files.getFileExtension(resourcePath);
+            if (inputStream == null && ext != null) {
+                sendNotFoundResponse(requestResponse);
             } else {
-                String fileName = Files.getFileName(resourcePath);
-                String ext = Files.getFileExtension(resourcePath);
-                String mimeType = HttpUtils.getMimeTypeFromFileExtension(ext);
-                writeStreamResponse(requestResponse, HttpConstants.SC_OK, mimeType, is);
+                if (inputStream == null) {
+                    resourcePath = HttpUtils.combinePaths(resourceRoot, ROOT_INDEX_HTML);
+                    ext = Files.getFileExtension(resourcePath);
+                    inputStream = loadClasspathResource(resourcePath);
+                }
+                if (resourcePath.endsWith(ROOT_INDEX_HTML)) {
+                    String indexContent = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+                    final int depth = StringUtils.countMatches(requestResponse.getContextRelativePath(), '/');
+                    if (depth > 1) {
+                        final String relativePathPrefix = StringUtils.repeat("../", depth - 1);
+                        /*
+                         * Adjust relative paths inside the index.html to support Edge behind a reverse proxy.
+                         * As Edge doesn't get the absolute path from the request, we can only calculate the
+                         * depth from the context relative path and patch the index.html dynamically.
+                         */
+                        indexContent = indexContent.replaceAll("(href|src)=\"\\./", "$1=\"" + relativePathPrefix);
+                    }
+                    writeResponseInternal(requestResponse,
+                            HttpConstants.SC_OK,
+                            HttpConstants.HTML_MIME_TYPE,
+                            indexContent.getBytes(StandardCharsets.UTF_8));
+                } else {
+                    final String mimeType = HttpUtils.getMimeTypeFromFileExtension(ext);
+                    writeStreamResponse(requestResponse, HttpConstants.SC_OK, mimeType, inputStream);
+                }
             }
-        } catch (IOException e) {
+        } catch (final IOException ignored) {
             //ignore
         } finally {
-            if (is != null) {
-                is.close();
+            if (inputStream != null) {
+                inputStream.close();
             }
         }
     }

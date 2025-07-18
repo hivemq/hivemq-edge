@@ -26,6 +26,25 @@ const ProtocolAdapters = lazy(() => import('@/modules/ProtocolAdapters/component
 
 import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
 import { MappingType } from '@/modules/Mappings/types.ts'
+import config from '@/config'
+
+/**
+ * @experimental This function is used to determine the base path for the router in production.
+ */
+function getBasename(): string {
+  if (config.isDevMode) {
+    return '/app'
+  }
+  const pathname = window.location.pathname
+  if (pathname.endsWith('/app')) {
+    return pathname.substring(0, pathname.length - 4)
+  }
+  const index = pathname.lastIndexOf('/app/')
+  if (index !== -1) {
+    return pathname.substring(0, index + 4)
+  }
+  return pathname
+}
 
 export const routes = createBrowserRouter(
   [
@@ -132,5 +151,5 @@ export const routes = createBrowserRouter(
       element: <LoginPage />,
     },
   ],
-  { basename: '/app' }
+  { basename: getBasename() }
 )

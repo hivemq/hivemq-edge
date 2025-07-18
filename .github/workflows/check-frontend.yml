@@ -68,7 +68,7 @@ jobs:
           working-directory: ./hivemq-edge-frontend/
 
       - name: 🏗️ Build Application
-        run: pnpm run build
+        run: pnpm run build --base=/
 
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

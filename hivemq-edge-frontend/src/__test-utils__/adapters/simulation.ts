@@ -9,7 +9,7 @@ export const MOCK_PROTOCOL_SIMULATION: ProtocolAdapter = {
     'Simulates device message traffic to enable observation of adapter behavior without the need to configure actual devices.',
   url: 'https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#simulation-adapter',
   version: 'Development Version',
-  logoUrl: '/module/images/hivemq-icon.png',
+  logoUrl: '../../module/images/hivemq-icon.png',
   author: 'HiveMQ',
   installed: true,
   capabilities: ['READ'],

@@ -86,7 +86,10 @@ The web app will be running on http://localhost:3000/app/login
 To build a version ready for deployment, run the command
 
 ```shell
+# Relative path for production.
 pnpm run build
+# Absolute path for dev / test.
+pnpm run build --base=/
 ```
 
 ## OpenAPI

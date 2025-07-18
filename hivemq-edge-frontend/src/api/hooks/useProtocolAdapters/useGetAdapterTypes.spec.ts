@@ -26,7 +26,7 @@ describe('useGetAdapterTypes', () => {
       expect.objectContaining({
         id: 'simulation',
         installed: true,
-        logoUrl: '/module/images/hivemq-icon.png',
+        logoUrl: '../../module/images/hivemq-icon.png',
         name: 'Simulated Edge Device',
         protocol: 'Simulation',
         tags: ['tag1', 'tag2', 'tag3'],

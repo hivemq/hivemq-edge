@@ -150,8 +150,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public @NotNull Response getAdapterTypes() {
-
+    public @NotNull Response getAdapterTypes(final @Nullable String xOriginalURI) {
         //-- Obtain the adapters installed by the runtime (these will be marked as installed = true).
         final Set<ProtocolAdapter> installedAdapters =
                 protocolAdapterManager.getAllAvailableAdapterTypes().values().stream().map(installedAdapter -> {
@@ -160,7 +159,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                                 protocolAdapterManager,
                                 installedAdapter,
                                 configurationService,
-                                versionProvider);
+                                versionProvider,
+                                xOriginalURI);
                     } catch (final Throwable t) {
                         if (logger.isWarnEnabled()) {
                             logger.warn("Not able to properly load protocol adapter.", t);
