@@ -46,7 +46,8 @@ const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
 
   useEffect(() => {
     if (!allBridges) return
-    if (bridgeId) {
+
+    if (bridgeId && !isNew) {
       const foundBridge = allBridges?.find((e) => e.id === bridgeId)
       if (foundBridge) {
         setFormData(foundBridge)
@@ -59,11 +60,20 @@ const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
         })
         navigate('/mqtt-bridges', { replace: true })
       }
-    } else {
+      return
+    }
+
+    if (!bridgeId && isNew) {
       setFormData(bridgeInitialState)
       onOpen()
+      return
     }
-  }, [allBridges, bridgeId, navigate, onError, onOpen, t])
+
+    onError(new Error(t('bridge.toast.view.noLongerExist', { id: bridgeId })), {
+      id: 'bridge-open-noExist',
+      title: t('bridge.toast.view.error'),
+    })
+  }, [allBridges, bridgeId, isNew, navigate, onError, onOpen, t])
 
   const uiSchemaPersistence = useMemo(() => {
     const { id, ['ui:tabs']: uiTabs, persist } = bridgeUISchema
