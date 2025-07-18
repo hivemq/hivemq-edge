@@ -35,6 +35,7 @@ export const bridgeSchema: JSONSchema7 = {
         destination: {
           type: 'string',
           description: `The destination topic for this filter set.`,
+          format: 'mqtt-topic',
         },
         excludes: {
           type: 'array',
@@ -48,6 +49,7 @@ export const bridgeSchema: JSONSchema7 = {
           items: {
             type: 'string',
             description: `The filters for this subscription.`,
+            format: 'mqtt-topic-filter',
           },
         },
         maxQoS: QoS,
@@ -74,12 +76,14 @@ export const bridgeSchema: JSONSchema7 = {
         destination: {
           type: 'string',
           description: `The destination topic for this filter set.`,
+          format: 'mqtt-topic',
         },
         filters: {
           type: 'array',
           items: {
             type: 'string',
             description: `The filters for this subscription.`,
+            format: 'mqtt-topic-filter',
           },
         },
         maxQoS: QoS,

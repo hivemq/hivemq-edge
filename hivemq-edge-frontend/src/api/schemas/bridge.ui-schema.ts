@@ -119,11 +119,17 @@ export const bridgeUISchema: UiSchema = {
         'ui:description': i18nConfig.t('bridge.subscription.filters.helper'),
         items: {
           'ui:addButton': i18nConfig.t('bridge.subscription.filters.addButton'),
+          'ui:options': {
+            create: true,
+          },
         },
       },
       destination: {
         'ui:title': i18nConfig.t('bridge.subscription.destination.label'),
         'ui:description': i18nConfig.t('bridge.subscription.destination.helper'),
+        'ui:options': {
+          create: true,
+        },
       },
       customUserProperties: {
         'ui:title': i18nConfig.t('bridge.subscription.customUserProperties.label'),
@@ -179,11 +185,17 @@ export const bridgeUISchema: UiSchema = {
         'ui:description': i18nConfig.t('bridge.subscription.filters.helper'),
         items: {
           'ui:addButton': i18nConfig.t('bridge.subscription.filters.addButton'),
+          'ui:options': {
+            create: true,
+          },
         },
       },
       destination: {
         'ui:title': i18nConfig.t('bridge.subscription.destination.label'),
         'ui:description': i18nConfig.t('bridge.subscription.destination.helper'),
+        'ui:options': {
+          create: true,
+        },
       },
       customUserProperties: {
         'ui:title': i18nConfig.t('bridge.subscription.customUserProperties.label'),
