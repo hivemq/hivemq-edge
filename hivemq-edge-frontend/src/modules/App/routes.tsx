@@ -7,7 +7,7 @@ import ErrorPage from '@/modules/App/components/ErrorPage.tsx'
 
 const WelcomePage = lazy(() => import('@/modules/Welcome/WelcomePage.tsx'))
 const BridgePage = lazy(() => import('@/modules/Bridges/BridgePage.tsx'))
-const BridgeEditor = lazy(() => import('@/modules/Bridges/components/panels/BridgeEditor.tsx'))
+const BridgeEditorDrawer = lazy(() => import('@/modules/Bridges/components/BridgeEditorDrawer.tsx'))
 const ProtocolAdapterPage = lazy(() => import('@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'))
 const AdapterController = lazy(() => import('@/modules/ProtocolAdapters/components/AdapterController.tsx'))
 const ExportDrawer = lazy(() => import('@/modules/ProtocolAdapters/components/drawers/ExportDrawer.tsx'))
@@ -64,11 +64,11 @@ export const routes = createBrowserRouter(
           children: [
             {
               path: 'new',
-              element: <BridgeEditor isNew />,
+              element: <BridgeEditorDrawer isNew />,
             },
             {
               path: ':bridgeId',
-              element: <BridgeEditor />,
+              element: <BridgeEditorDrawer />,
             },
           ],
         },

@@ -147,14 +147,36 @@
   "bridge": {
     "title": "MQTT bridges",
     "description": "MQTT bridges let you connect multiple MQTT brokers to enable seamless data sharing between different networks or systems.",
-    "list": "List of bridges",
+    "listing": {
+      "aria-label": "List of bridges",
+      "column": {
+        "actions": "Actions",
+        "id": "ID",
+        "subscriptions_local": "Local Subscriptions",
+        "subscriptions_remote": "Remote Subscriptions",
+        "status": "Status",
+        "lastStarted": "Last started"
+      },
+      "noDataText": "No bridges currently created"
+    },
     "action": {
       "add": "Add bridge connection",
       "edit": "Edit",
       "delete": "Delete",
+      "cancel": "Cancel",
       "create": "Create the bridge",
       "update": "Update the bridge",
       "submitting": "Submitting"
+    },
+    "schema": {
+      "tabs": {
+        "connection": "Connection",
+        "broker": "Broker Configuration",
+        "subscriptions": "Subscriptions",
+        "security": "Security",
+        "webSocket": "Websocket",
+        "persistence": "Persistence"
+      }
     },
     "error": {
       "loading": "We cannot load your bridges for the time being. Please try again later"
@@ -178,7 +200,8 @@
       "view": {
         "title": "Viewing Bridge",
         "error": "There was a problem trying to view the bridge",
-        "noLongerExist": "The bridge {{id}} doesn't exist anymore"
+        "noLongerExist": "The bridge {{id}} doesn't exist anymore",
+        "internalError": "Please try again later. If the problem persists, contact support."
       }
     },
     "status": {
@@ -206,11 +229,16 @@
       "filters": {
         "label": "Filters",
         "helper": "The list of topics used to filter the messages. MQTT wildcards are supported.",
+        "addButton": "Add a new filter",
         "error": {
           "required": "At least one topic is required"
         }
       },
-      "excludes": "Excludes",
+      "excludes": {
+        "label": "Excludes",
+        "helper": "The exclusion patterns",
+        "addButton": "Add a new pattern"
+      },
       "destination": {
         "label": "Destination",
         "helper": "The destination topic. You can use '{#}' to keep the original topic.",
@@ -304,6 +332,10 @@
       }
     },
     "security": {
+      "tlsConfiguration": {
+        "label": "TLS Configuration",
+        "helper": "TLS configuration associated with the bridge"
+      },
       "cipherSuites": {
         "label": "Cipher Suites",
         "placeholder": "Add cipher suite",
@@ -352,6 +384,7 @@
       }
     },
     "websocket": {
+      "label": "Websockets",
       "description": "Websocket configuration associated with the bridge",
       "enabled": { "label": "Enabled", "helper": "If Websockets are used" },
       "serverPath": {
@@ -984,6 +1017,9 @@
     "identifier": {
       "adapter": {
         "unique": "This identifier is already in use for another adapter"
+      },
+      "bridge": {
+        "unique": "This identifier is already in use for another bridge"
       },
       "tag": {
         "uniqueDevice": "This tag name is already used on this device",
