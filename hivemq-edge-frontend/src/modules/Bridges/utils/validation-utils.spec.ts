@@ -7,7 +7,7 @@ import { describe, it, expect, vi } from 'vitest'
 describe('customUniqueBridgeValidate', () => {
   it('should detect duplication of id', () => {
     const mockExistingBridges: Bridge[] | undefined = [mockBridge]
-    const moclkUiSchema: UiSchema = {
+    const mockUiSchema: UiSchema = {
       id: {
         'ui:disabled': false,
         'ui:options': { isNewBridge: true },
