@@ -121,7 +121,14 @@ const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
   const handleOnDelete = () => {}
 
   return (
-    <Drawer isOpen={isOpen} placement="right" size="lg" onClose={handleEditorOnClose} variant="hivemq">
+    <Drawer
+      isOpen={isOpen}
+      placement="right"
+      size="lg"
+      onClose={handleEditorOnClose}
+      variant="hivemq"
+      id="bridge-editor"
+    >
       <DrawerOverlay />
       <DrawerContent aria-label={t('bridge.drawer.label')}>
         <DrawerCloseButton />
