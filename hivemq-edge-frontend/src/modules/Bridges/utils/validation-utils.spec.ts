@@ -24,7 +24,7 @@ describe('customUniqueBridgeValidate', () => {
     expect(addError).not.toHaveBeenCalled()
     const customValidateFn = customUniqueBridgeValidate(mockExistingBridges.map((e) => e.id))
     expect(customValidateFn).toBeTypeOf('function')
-    customValidateFn({ id: mockBridgeId }, errors, moclkUiSchema)
+    customValidateFn({ id: mockBridgeId }, errors, mockUiSchema)
     expect(addError).toHaveBeenCalledWith('This identifier is already in use for another bridge')
   })
 
