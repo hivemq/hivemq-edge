@@ -110,6 +110,9 @@ export const bridgeUISchema: UiSchema = {
     items: {
       'ui:order': ['filters', 'destination', 'maxQoS', '*'],
       'ui:addButton': i18nConfig.t('bridge.subscription.add'),
+      'ui:collapsable': {
+        titleKey: 'destination',
+      },
 
       filters: {
         'ui:title': i18nConfig.t('bridge.subscription.filters.label'),
@@ -167,6 +170,9 @@ export const bridgeUISchema: UiSchema = {
     items: {
       'ui:order': ['filters', 'destination', 'maxQoS', '*'],
       'ui:addButton': i18nConfig.t('bridge.subscription.add'),
+      'ui:collapsable': {
+        titleKey: 'destination',
+      },
 
       filters: {
         'ui:title': i18nConfig.t('bridge.subscription.filters.label'),
