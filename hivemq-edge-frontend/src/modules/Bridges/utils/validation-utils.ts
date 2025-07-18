@@ -8,7 +8,7 @@ export const customUniqueBridgeValidate =
     const { disabled, isNewBridge } = getUiOptions(uiSchema?.['id'])
 
     if (disabled === false && isNewBridge) {
-      if (existingBridges!.includes(formData.id as string)) {
+      if (existingBridges && existingBridges.includes(formData.id as string)) {
         errors.id?.addError(i18n.t('validation.identifier.bridge.unique'))
       }
     }
