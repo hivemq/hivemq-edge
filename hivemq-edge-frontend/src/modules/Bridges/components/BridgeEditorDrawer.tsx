@@ -139,7 +139,7 @@ const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
                 customValidate={customUniqueBridgeValidate(allBridges?.map((bridge) => bridge.id))}
                 onSubmit={handleEditorOnSubmit}
                 onChange={(e) => {
-                  console.log('XXXX', e.formData)
+                  // Handle form data changes here if needed
                 }}
               />
             </CardBody>
