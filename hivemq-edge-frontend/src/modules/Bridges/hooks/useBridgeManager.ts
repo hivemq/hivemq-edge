@@ -48,7 +48,8 @@ export const useBridgeManager = () => {
     return promise
   }
 
-  const onError = (error: Error, options?: UseToastOptions) => {
+  // TODO[NVL] Very clunky. Redesign
+  const onError = (error?: Error, options?: UseToastOptions) => {
     if ((options?.id && !createToast.isActive(options.id)) || !options?.id) {
       let message
       if (isRouteErrorResponse(error)) {
@@ -63,7 +64,7 @@ export const useBridgeManager = () => {
         ...DEFAULT_TOAST_OPTION,
         ...options,
         status: 'error',
-        description: `${options?.description} ${message}`,
+        description: options?.description || message,
       })
     }
   }
