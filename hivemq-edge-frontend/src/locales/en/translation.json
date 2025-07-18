@@ -200,7 +200,8 @@
       "view": {
         "title": "Viewing Bridge",
         "error": "There was a problem trying to view the bridge",
-        "noLongerExist": "The bridge {{id}} doesn't exist anymore"
+        "noLongerExist": "The bridge {{id}} doesn't exist anymore",
+        "internalError": "Please try again later. If the problem persists, contact support."
       }
     },
     "status": {
