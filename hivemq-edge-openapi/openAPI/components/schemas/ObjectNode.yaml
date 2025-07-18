@@ -1,0 +1,23 @@
+type: object
+description: List of result items that are returned by this endpoint
+properties:
+  children:
+    type: array
+    items:
+      $ref: ./ObjectNode.yaml
+  description:
+    type: string
+  id:
+    type: string
+  name:
+    type: string
+  nodeType:
+    type: string
+    enum:
+      - FOLDER
+      - OBJECT
+      - VALUE
+  selectable:
+    type: boolean
+  value:
+    type: string
