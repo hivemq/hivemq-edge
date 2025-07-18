@@ -11,7 +11,7 @@ describe('BridgePage', () => {
   it('should render properly', () => {
     cy.mountWithProviders(<BridgePage />, {
       wrapper: WrapperTestRoute,
-      routerProps: { initialEntries: [`/mqtt-bridge`] },
+      routerProps: { initialEntries: [`/mqtt-bridges`] },
     })
     cy.wait('@getBridges')
 
