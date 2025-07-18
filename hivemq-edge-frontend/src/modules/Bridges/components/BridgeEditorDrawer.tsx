@@ -138,7 +138,7 @@ const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
                 formData={formData}
                 customValidate={customUniqueBridgeValidate(allBridges?.map((bridge) => bridge.id))}
                 onSubmit={handleEditorOnSubmit}
-                onChange={(e) => {
+                onChange={() => {
                   // Handle form data changes here if needed
                 }}
               />
