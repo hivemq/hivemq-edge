@@ -23,7 +23,7 @@ describe('Bridges', () => {
       const allBridgeData = mswDB.bridge.getAll()
       const allBridges = allBridgeData.map<Bridge>((data) => ({ ...JSON.parse(data.json) }))
       req.reply(200, { items: allBridges })
-    }).as('getBridges')
+    })
 
     cy.intercept<Bridge>('POST', '/api/v1/management/bridges', (req) => {
       const bridge = req.body
@@ -32,7 +32,7 @@ describe('Bridges', () => {
         json: JSON.stringify(bridge),
       })
       req.reply(200, newBridgeData)
-    }).as('postBridge')
+    })
 
     cy.intercept<Bridge>('PUT', '/api/v1/management/bridges/**', (req) => {
       const bridge = req.body
@@ -48,7 +48,7 @@ describe('Bridges', () => {
       })
 
       req.reply(200, '')
-    }).as('putBridge')
+    })
 
     cy.intercept<Bridge>('DELETE', '/api/v1/management/bridges/**', (req) => {
       const urlParts = req.url.split('/')
