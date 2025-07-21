@@ -136,6 +136,7 @@ public class ProtocolAdapterWrapper {
                                         .thenApply(v -> {
                                             log.error("Error starting adapter with id {}", adapter.getId(), t);
                                             setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+                                            setErrorConnectionStatus(t, t.getMessage());
                                             startFutureRef.get().complete(false);
                                             startFutureRef.set(null);
                                             return false;

@@ -91,16 +91,16 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                         plcConnection = CompletableFuture.supplyAsync(() -> {
                                 try {
                                     return Optional.of(plcDriverManager.getConnectionManager().getConnection(connectionString));
-                                } catch (Throwable e) {
+                                } catch (final Throwable e) {
                                     log.info("Error encountered connecting to external device", e);
                                 }
                                 return Optional.<PlcConnection>empty();
                         })
                         .get(2_000, TimeUnit.MILLISECONDS)
-                        .orElseThrow(() -> new Plc4xException("Unable to connect to device."));
-                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        .orElseThrow(() -> new Plc4xException("Error encountered connecting to external device"));
+                    } catch (final Throwable e) {
                         log.error("Error encountered connecting to external device", e);
-                        throw new Plc4xException(e);
+                        throw new Plc4xException("Error encountered connecting to external device");
                     }
                 }
             }
