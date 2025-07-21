@@ -119,7 +119,8 @@ export const BridgeTable: FC = () => {
         },
       },
     ]
-  }, [isLoading, navigate, onConfirmDeleteOpen, t])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading])
 
   const handleConfirmOnClose = () => {
     onConfirmDeleteClose()

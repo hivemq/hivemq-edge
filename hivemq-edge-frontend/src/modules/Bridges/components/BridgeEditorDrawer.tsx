@@ -73,7 +73,8 @@ const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
       id: 'bridge-open-noExist',
       title: t('bridge.toast.view.error'),
     })
-  }, [allBridges, bridgeId, isNew, navigate, onError, onOpen, t])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allBridges, bridgeId, isNew, navigate])
 
   const uiSchemaPersistence = useMemo(() => {
     const { id, ['ui:tabs']: uiTabs, persist } = bridgeUISchema
@@ -118,6 +119,7 @@ const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
     }
   }
 
+  // TODO[NVL] Implement delete functionality
   const handleOnDelete = () => {}
 
   return (
@@ -145,9 +147,6 @@ const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
                 formData={formData}
                 customValidate={customUniqueBridgeValidate(allBridges?.map((bridge) => bridge.id))}
                 onSubmit={handleEditorOnSubmit}
-                onChange={() => {
-                  // Handle form data changes here if needed
-                }}
               />
             </CardBody>
           </Card>
