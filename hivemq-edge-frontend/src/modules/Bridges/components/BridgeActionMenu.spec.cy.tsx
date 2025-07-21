@@ -20,7 +20,7 @@ describe('BridgeActionMenu', () => {
     cy.getByTestId('device-action-start').should('not.exist')
   })
 
-  it.only('should trigger actions', () => {
+  it('should trigger actions', () => {
     const onEdit = cy.stub().as('onEdit')
 
     cy.mountWithProviders(<BridgeActionMenu bridge={mockBridge} onEdit={onEdit} />)
@@ -32,7 +32,7 @@ describe('BridgeActionMenu', () => {
     cy.getByTestId('device-action-start').should('not.exist')
   })
 
-  it.only('should trigger actions', () => {
+  it('should trigger actions', () => {
     const onDelete = cy.stub().as('onDelete')
 
     cy.mountWithProviders(<BridgeActionMenu bridge={mockBridge} onDelete={onDelete} />)
@@ -44,7 +44,7 @@ describe('BridgeActionMenu', () => {
     cy.getByTestId('device-action-start').should('not.exist')
   })
 
-  it.only('should be accessible', () => {
+  it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<BridgeActionMenu bridge={mockBridge} />)
     cy.getByAriaLabel('Actions').click()
