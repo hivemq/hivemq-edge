@@ -84,7 +84,6 @@ public class ProtocolAdapterManager {
     private final @NotNull NorthboundConsumerFactory northboundConsumerFactory;
     private final @NotNull TagManager tagManager;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
-    private final @NotNull AtomicBoolean refreshing = new AtomicBoolean(false);
     private final @NotNull ExecutorService executorService;
 
     @Inject
@@ -221,91 +220,83 @@ public class ProtocolAdapterManager {
 
     public void refresh(final @NotNull List<ProtocolAdapterEntity> configs) {
         executorService.submit(() -> {
-            if(refreshing.compareAndSet(false, true)) {
+            log.info("Refreshing adapters");
+
+            final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configs
+                    .stream()
+                    .map(configConverter::fromEntity)
+                    .collect(Collectors.toMap(ProtocolAdapterConfig::getAdapterId, Function.identity()));
+
+            final List<String> loadListOfAdapterNames = new ArrayList<>(protocolAdapterConfigs.keySet());
+
+            final List<String> adaptersToBeDeleted = new ArrayList<>(protocolAdapters.keySet());
+            adaptersToBeDeleted.removeAll(loadListOfAdapterNames);
+
+            final List<String> adaptersToBeCreated = new ArrayList<>(loadListOfAdapterNames);
+            adaptersToBeCreated.removeAll(protocolAdapters.keySet());
+
+            final List<String> adaptersToBeUpdated = new ArrayList<>(protocolAdapters.keySet());
+            adaptersToBeUpdated.removeAll(adaptersToBeCreated);
+            adaptersToBeUpdated.removeAll(adaptersToBeDeleted);
+
+            final List<String> failedAdapters = new ArrayList<>();
+
+            adaptersToBeDeleted.forEach(name -> {
                 try {
-                    log.info("Refreshing adapters");
-
-                    final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configs
-                            .stream()
-                            .map(configConverter::fromEntity)
-                            .collect(Collectors.toMap(ProtocolAdapterConfig::getAdapterId, Function.identity()));
-
-                    final List<String> loadListOfAdapterNames = new ArrayList<>(protocolAdapterConfigs.keySet());
-
-                    final List<String> adaptersToBeDeleted = new ArrayList<>(protocolAdapters.keySet());
-                    adaptersToBeDeleted.removeAll(loadListOfAdapterNames);
-
-                    final List<String> adaptersToBeCreated = new ArrayList<>(loadListOfAdapterNames);
-                    adaptersToBeCreated.removeAll(protocolAdapters.keySet());
-
-                    final List<String> adaptersToBeUpdated = new ArrayList<>(protocolAdapters.keySet());
-                    adaptersToBeUpdated.removeAll(adaptersToBeCreated);
-                    adaptersToBeUpdated.removeAll(adaptersToBeDeleted);
-
-                    final List<String> failedAdapters = new ArrayList<>();
-
-                    adaptersToBeDeleted.forEach(name -> {
-                        try {
-                            log.debug("Deleting adapter '{}'", name);
-                            stop(name, true).whenComplete((ignored, t) -> {
-                                deleteAdapterInternal(name);
-                            }).get();
-                        } catch (final InterruptedException | ExecutionException e) {
-                            failedAdapters.add(name);
-                            log.error("Failed deleting adapter {}", name, e);
-                        }
-                    });
-
-                    adaptersToBeCreated.forEach(name -> {
-                        try {
-                            log.debug("Creating adapter '{}'", name);
-                            start(createAdapterInternal(protocolAdapterConfigs.get(name), versionProvider.getVersion())).get();
-                        } catch (final InterruptedException | ExecutionException e) {
-                            failedAdapters.add(name);
-                            log.error("Failed adding adapter {}", name, e);
-                        }
-                    });
-
-                    adaptersToBeUpdated.forEach(name -> {
-                        try {
-                            if(!protocolAdapterConfigs.get(name).equals(knownConfigs.get(name))) {
-                                log.debug("Updating adapter '{}'", name);
-                                stop(name, true)
-                                        .thenApply(v -> {
-                                            deleteAdapterInternal(name);
-                                            return null;
-                                        })
-                                        .thenCompose(ignored ->
-                                                start(
-                                                        createAdapterInternal(protocolAdapterConfigs.get(name),
-                                                                versionProvider.getVersion())))
-                                        .get();
-                            } else {
-                                log.debug("Not-updating adapter '{}' since the config is unchanged", name);
-                            }
-                        } catch (final InterruptedException | ExecutionException e) {
-                            failedAdapters.add(name);
-                            log.error("Failed updating adapter {}", name, e);
-                        }
-
-                    });
-
-                    if (failedAdapters.isEmpty()) {
-                        eventService.configurationEvent()
-                                .withSeverity(Event.SEVERITY.INFO)
-                                .withMessage("Configuration has been successfully updated")
-                                .fire();
-                    } else {
-                        eventService.configurationEvent()
-                                .withSeverity(Event.SEVERITY.CRITICAL)
-                                .withMessage("Reloading of configuration failed")
-                                .fire();
-                    }
-                } finally {
-                    refreshing.set(false);
+                    log.debug("Deleting adapter '{}'", name);
+                    stop(name, true).whenComplete((ignored, t) -> {
+                        deleteAdapterInternal(name);
+                    }).get();
+                } catch (final InterruptedException | ExecutionException e) {
+                    failedAdapters.add(name);
+                    log.error("Failed deleting adapter {}", name, e);
                 }
+            });
+
+            adaptersToBeCreated.forEach(name -> {
+                try {
+                    log.debug("Creating adapter '{}'", name);
+                    start(createAdapterInternal(protocolAdapterConfigs.get(name), versionProvider.getVersion())).get();
+                } catch (final InterruptedException | ExecutionException e) {
+                    failedAdapters.add(name);
+                    log.error("Failed adding adapter {}", name, e);
+                }
+            });
+
+            adaptersToBeUpdated.forEach(name -> {
+                try {
+                    if(!protocolAdapterConfigs.get(name).equals(knownConfigs.get(name))) {
+                        log.debug("Updating adapter '{}'", name);
+                        stop(name, true)
+                                .thenApply(v -> {
+                                    deleteAdapterInternal(name);
+                                    return null;
+                                })
+                                .thenCompose(ignored ->
+                                        start(
+                                                createAdapterInternal(protocolAdapterConfigs.get(name),
+                                                        versionProvider.getVersion())))
+                                .get();
+                    } else {
+                        log.debug("Not-updating adapter '{}' since the config is unchanged", name);
+                    }
+                } catch (final InterruptedException | ExecutionException e) {
+                    failedAdapters.add(name);
+                    log.error("Failed updating adapter {}", name, e);
+                }
+
+            });
+
+            if (failedAdapters.isEmpty()) {
+                eventService.configurationEvent()
+                        .withSeverity(Event.SEVERITY.INFO)
+                        .withMessage("Configuration has been successfully updated")
+                        .fire();
             } else {
-                log.warn("Refresh already in progress, skipping this refresh call");
+                eventService.configurationEvent()
+                        .withSeverity(Event.SEVERITY.CRITICAL)
+                        .withMessage("Reloading of configuration failed")
+                        .fire();
             }
         });
     }
