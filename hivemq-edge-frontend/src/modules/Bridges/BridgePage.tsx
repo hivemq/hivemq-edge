@@ -1,14 +1,14 @@
 import type { FC } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex } from '@chakra-ui/react'
 import { BiAddToQueue } from 'react-icons/bi'
-import { useNavigate } from 'react-router-dom'
 
+import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import PageContainer from '@/components/PageContainer.tsx'
-import Bridges from '@/modules/Bridges/Bridges.tsx'
-import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { BridgeProvider } from '@/modules/Bridges/hooks/BridgeProvider.tsx'
+import { BridgeTable } from '@/modules/Bridges/components/BridgeTable.tsx'
 
 const BridgePage: FC = () => {
   const { t } = useTranslation()
@@ -33,7 +33,7 @@ const BridgePage: FC = () => {
       }
     >
       <BridgeProvider>
-        <Bridges />
+        <BridgeTable />
         <SuspenseOutlet />
       </BridgeProvider>
     </PageContainer>

@@ -28,6 +28,7 @@ describe('useGetBridge', () => {
         id: 'bridge-id-01',
         status: {
           connection: 'CONNECTED',
+          startedAt: '2023-08-21T11:51:24.234+01',
         },
       })
     )

@@ -28,7 +28,7 @@ import UpDownWidget from '@/components/rjsf/Widgets/UpDownWidget'
 interface CustomFormProps<T>
   extends Pick<
     FormProps<T>,
-    'id' | 'schema' | 'uiSchema' | 'formData' | 'formContext' | 'customValidate' | 'readonly'
+    'id' | 'schema' | 'uiSchema' | 'formData' | 'formContext' | 'customValidate' | 'readonly' | 'onChange'
   > {
   onSubmit: (data: IChangeEvent) => void
   showNativeWidgets?: boolean
@@ -43,6 +43,7 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
   uiSchema,
   formData,
   onSubmit,
+  onChange,
   formContext,
   customValidate,
   readonly,
@@ -119,7 +120,7 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
       }}
       widgets={{
         ...(!showNativeWidgets && adapterJSFWidgets),
-        updown: UpDownWidget,
+        UpDownWidget,
       }}
       fields={{
         ...(!showNativeWidgets && {
@@ -135,6 +136,7 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
       onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
       showErrorList="bottom"
       focusOnFirstError={context.focusOnError}
+      onChange={onChange}
     />
   )
 }
