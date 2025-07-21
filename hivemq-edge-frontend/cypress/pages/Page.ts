@@ -12,4 +12,20 @@ export abstract class Page {
       },
     })
   }
+
+  get pageHeader() {
+    return cy.get('main header > h1')
+  }
+
+  get pageHeaderSubTitle() {
+    return cy.get('main header > p')
+  }
+
+  toast = {
+    close() {
+      cy.get('[role="status"]').within(() => {
+        cy.getByAriaLabel('Close').click()
+      })
+    },
+  }
 }
