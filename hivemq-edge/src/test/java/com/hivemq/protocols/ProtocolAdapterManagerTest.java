@@ -182,13 +182,15 @@ class ProtocolAdapterManagerTest {
     }
 
     @Test
-    void test_startWriting_eventServiceFailedStart_resourcesCleanedUp() {
+    void test_startWriting_eventServiceFailedStart_resourcesCleanedUp() throws Exception {
+
+        final EventBuilder eventBuilder = new EventBuilderImpl(mock());
+        when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
+
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
         when(protocolAdapterWritingService.startWriting(any(),
                 any(),
                 any())).thenReturn(CompletableFuture.completedFuture(null));
-        when(eventService.createAdapterEvent(anyString(),
-                anyString())).thenThrow(new RuntimeException("we failed start"));
         when(protocolAdapterWritingService.stopWriting(any(),
                 any())).thenReturn(CompletableFuture.completedFuture(null));
 
@@ -203,7 +205,7 @@ class ProtocolAdapterManagerTest {
                 northboundConsumerFactory,
                 tagManager);
 
-        assertThrows(ExecutionException.class, () -> protocolAdapterManager.start(adapterWrapper).get());
+        protocolAdapterManager.start(adapterWrapper).get();
 
         assertEquals(ProtocolAdapterState.RuntimeStatus.STOPPED, adapterWrapper.getRuntimeStatus());
         verify(protocolAdapterWritingService).stopWriting(eq((WritingProtocolAdapter) adapterWrapper.getAdapter()),
