@@ -24,12 +24,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,8 +46,9 @@ public class I18nHttpErrorTest {
         assertThat(errors.size()).isGreaterThan(0);
         final Properties properties = new Properties();
         try (final StringReader stringReader = new StringReader(IOUtils.resourceToString(
-                "/templates/http-errors-en_US.properties",
-                StandardCharsets.UTF_8))) {
+                "templates/http-errors-en_US.properties",
+                StandardCharsets.UTF_8,
+                I18nHttpError.class.getClassLoader()))) {
             properties.load(stringReader);
         }
         final Set<Object> propertyKeySet = properties.keySet();

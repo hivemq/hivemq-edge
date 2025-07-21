@@ -45,9 +45,13 @@ public final class I18nErrorTemplate {
     private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(I18nErrorTemplate.class);
     private final @NotNull Map<String, Configuration> configurationMap;
     private final @NotNull Function<Locale, String> resourceNameFunction;
+    private final @NotNull ClassLoader classLoader;
 
-    public I18nErrorTemplate(final @NotNull Function<Locale, String> resourceNameFunction) {
+    public I18nErrorTemplate(
+            final @NotNull Function<Locale, String> resourceNameFunction,
+            final @NotNull ClassLoader classLoader) {
         configurationMap = new ConcurrentHashMap<>();
+        this.classLoader = classLoader;
         this.resourceNameFunction = resourceNameFunction;
     }
 
@@ -60,7 +64,7 @@ public final class I18nErrorTemplate {
         final Properties properties = new Properties();
         final String resourceName = resourceNameFunction.apply(locale);
         try (final StringReader stringReader = new StringReader(IOUtils.resourceToString(resourceName,
-                StandardCharsets.UTF_8))) {
+                StandardCharsets.UTF_8, classLoader))) {
             properties.load(stringReader);
         }
         for (final Map.Entry<Object, Object> entry : properties.entrySet()) {
