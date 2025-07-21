@@ -237,7 +237,7 @@
       },
       "excludes": {
         "label": "Excludes",
-        "helper": "The exclusion patterns",
+        "helper": "Exclusion patterns",
         "addButton": "Add a new pattern"
       },
       "destination": {
