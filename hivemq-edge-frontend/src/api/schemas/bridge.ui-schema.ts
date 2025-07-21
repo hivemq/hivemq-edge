@@ -162,6 +162,15 @@ export const bridgeUISchema: UiSchema = {
         'ui:description': i18nConfig.t('bridge.subscription.queueLimit.helper'),
         'ui:widget': 'updown',
       },
+      maxQoS: {
+        'ui:title': i18nConfig.t('bridge.subscription.maxQoS.label'),
+        'ui:description': i18nConfig.t('bridge.subscription.maxQoS.helper'),
+        'ui:enumNames': [
+          i18nConfig.t('bridge.subscription.maxQoS.values.0'),
+          i18nConfig.t('bridge.subscription.maxQoS.values.1'),
+          i18nConfig.t('bridge.subscription.maxQoS.values.2'),
+        ],
+      },
     },
   },
 
@@ -214,6 +223,15 @@ export const bridgeUISchema: UiSchema = {
       preserveRetain: {
         'ui:title': i18nConfig.t('bridge.subscription.preserveRetain.label'),
         'ui:description': i18nConfig.t('bridge.subscription.preserveRetain.helper'),
+      },
+      maxQoS: {
+        'ui:title': i18nConfig.t('bridge.subscription.maxQoS.label'),
+        'ui:description': i18nConfig.t('bridge.subscription.maxQoS.helper'),
+        'ui:enumNames': [
+          i18nConfig.t('bridge.subscription.maxQoS.values.0'),
+          i18nConfig.t('bridge.subscription.maxQoS.values.1'),
+          i18nConfig.t('bridge.subscription.maxQoS.values.2'),
+        ],
       },
     },
   },

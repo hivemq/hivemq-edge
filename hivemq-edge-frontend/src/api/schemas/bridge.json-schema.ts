@@ -1,6 +1,7 @@
+import { MaxQoS } from '@/api/schemas/definitions/MaxQoS.json-schema.ts'
 import type { JSONSchema7 } from 'json-schema'
 
-import { QoS, StatusConnection, StatusRuntime } from '@/api/schemas/definitions'
+import { StatusConnection, StatusRuntime } from '@/api/schemas/definitions'
 import { CYPHER_SUITES, TLS_PROTOCOLS } from '@/modules/Bridges/utils/tlsConfiguration.ts'
 
 /**
@@ -52,7 +53,7 @@ export const bridgeSchema: JSONSchema7 = {
             format: 'mqtt-topic-filter',
           },
         },
-        maxQoS: QoS,
+        maxQoS: MaxQoS,
         preserveRetain: {
           type: 'boolean',
           description: `The preserveRetain for this subscription`,
@@ -86,7 +87,7 @@ export const bridgeSchema: JSONSchema7 = {
             format: 'mqtt-topic-filter',
           },
         },
-        maxQoS: QoS,
+        maxQoS: MaxQoS,
         preserveRetain: {
           type: 'boolean',
           description: `The preserveRetain for this subscription`,
