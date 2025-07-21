@@ -41,10 +41,11 @@ public enum I18nHttpError implements I18nError {
     HTTP_ERROR_507_TITLE,
     ;
 
-    private static final @NotNull String RESOURCE_NAME_PREFIX = "/templates/http-errors-";
+    private static final @NotNull String RESOURCE_NAME_PREFIX = "templates/http-errors-";
     private static final @NotNull String RESOURCE_NAME_SUFFIX = ".properties";
-    private static final I18nErrorTemplate TEMPLATE =
-            new I18nErrorTemplate(locale -> RESOURCE_NAME_PREFIX + locale + RESOURCE_NAME_SUFFIX);
+    private static final @NotNull I18nErrorTemplate TEMPLATE =
+            new I18nErrorTemplate(locale -> RESOURCE_NAME_PREFIX + locale + RESOURCE_NAME_SUFFIX,
+                    I18nHttpError.class.getClassLoader());
 
     private final @NotNull String key;
 
