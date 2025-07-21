@@ -105,6 +105,11 @@ public interface SystemInformation {
     boolean isEmbedded();
 
     /**
+     * @return should the fragment config be treated as bing zipped and base64 encoded
+     */
+    boolean isConfigFragmentBase64Zip();
+
+    /**
      * @return the interval between refreshing config files, 0 means no refreshing
      */
     long configRefreshIntervalInMs();

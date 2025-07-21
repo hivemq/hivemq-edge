@@ -22,6 +22,7 @@ import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.SouthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.exceptions.UnrecoverableException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +39,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 
 public class ProtocolAdapterExtractorTest {
     @TempDir
@@ -53,7 +55,7 @@ public class ProtocolAdapterExtractorTest {
         }
         final File tempFile = new File(tempDir, "conf.xml");
         Files.writeString(tempFile.toPath(), xmlString);
-        return new ConfigFileReaderWriter(new ConfigurationFile(tempFile), List.of());
+        return new ConfigFileReaderWriter(mock(SystemInformation.class), new ConfigurationFile(tempFile), List.of());
     }
 
     @Test

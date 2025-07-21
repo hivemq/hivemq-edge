@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ApiConfigurator;
 import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
@@ -263,6 +264,7 @@ class SimulationProtocolAdapterConfigTest {
         when(internalConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
 
         final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(
+                mock(SystemInformation.class),
                 new ConfigurationFile(configFile),
                 List.of(restrictionConfigurator,
                     securityConfigurator,

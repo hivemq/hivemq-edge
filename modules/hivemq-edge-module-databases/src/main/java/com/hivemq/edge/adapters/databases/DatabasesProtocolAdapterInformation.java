@@ -72,7 +72,7 @@ public class DatabasesProtocolAdapterInformation implements ProtocolAdapterInfor
     public @NotNull String getUrl() {
         // this url will be displayed in the ui as a link to further documentation on this protocol adapter.
         // e.g. this could be a link to the source code and a readme
-        return "TO BE DEFINED";
+        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#databases-protocol-adapter";
     }
 
     @Override
