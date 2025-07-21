@@ -16,11 +16,11 @@ export const bridgeSchema: JSONSchema7 = {
       properties: {
         key: {
           type: 'string',
-          description: `The key the from the property`,
+          description: `The key from the property`,
         },
         value: {
           type: 'string',
-          description: `The value the from the property`,
+          description: `The value from the property`,
         },
       },
     },
@@ -231,15 +231,7 @@ export const bridgeSchema: JSONSchema7 = {
       },
     },
     Bridge: {
-      required: [
-        'id',
-        'host',
-        'port',
-        // 'cleanStart',
-        'clientId',
-        'keepAlive',
-        'sessionExpiry',
-      ],
+      required: ['id', 'host', 'port', 'clientId', 'keepAlive', 'sessionExpiry'],
       properties: {
         cleanStart: {
           type: 'boolean',
