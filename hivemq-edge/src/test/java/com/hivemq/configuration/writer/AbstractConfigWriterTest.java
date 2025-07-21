@@ -16,6 +16,7 @@
 
 package com.hivemq.configuration.writer;
 
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ApiConfigurator;
 import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
@@ -79,6 +80,7 @@ public abstract class AbstractConfigWriterTest {
 
         final ConfigurationFile configurationFile = new ConfigurationFile(file);
         final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(
+                mock(SystemInformation.class),
                 configurationFile,
                 List.of(
                     restrictionConfigurator,

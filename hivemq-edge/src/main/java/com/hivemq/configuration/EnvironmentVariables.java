@@ -59,6 +59,11 @@ public class EnvironmentVariables {
     public static final String CONFIG_WRITEABLE = "HIVEMQ_CONFIG_WRITEABLE";
 
     /**
+     * Name of the environment variable for indicating that the config fragment will be zipped and base64 encoded
+     */
+    public static final String CONFIG_FRAGMENT_BASE64ZIP = "HIVEMQ_CONFIG_FRAGMENT_BASE64ZIP";
+
+    /**
      * Name of the environment variable for configuring the data folder.
      */
     public static final String DATA_FOLDER = "HIVEMQ_DATA_FOLDER";

@@ -28,6 +28,7 @@ public class SystemProperties {
     public static final String CONFIG_FOLDER_SECONDARY = "hivemq.config.secondary";
     public static final String CONFIG_REFRESH_INTERVAL = "hivemq.config.refreshinterval";
     public static final String CONFIG_WRITEABLE = "hivemq.config.writeable";
+    public static final String CONFIG_FRAGMENT_BASE64ZIP = "hivemq.config.fragment.base64zip";
     public static final String LICENSE_FOLDER = "hivemq.license.folder";
 
     public static final String DATA_FOLDER = "hivemq.data.folder";
