@@ -182,20 +182,21 @@
       "loading": "We cannot load your bridges for the time being. Please try again later"
     },
     "toast": {
+      "description_loading": "Processing the request",
       "delete": {
         "title": "Deleting Bridge",
-        "description": "We've successfully deleted the bridge for you.",
-        "error": "There was a problem trying to delete the bridge"
+        "description_success": "We've successfully deleted the bridge for you.",
+        "description_error": "There was a problem trying to delete the bridge"
       },
       "update": {
         "title": "Updating Bridge",
-        "description": "We've successfully updated the bridge for you.",
-        "error": "There was a problem trying to update the bridge"
+        "description_success": "We've successfully updated the bridge for you.",
+        "description_error": "There was a problem trying to update the bridge"
       },
       "create": {
         "title": "Creating Bridge",
-        "description": "We've successfully created a new bridge for you.",
-        "error": "There was a problem trying to create the bridge"
+        "description_success": "We've successfully created a new bridge for you.",
+        "description_error": "There was a problem trying to create the bridge"
       },
       "view": {
         "title": "Viewing Bridge",

@@ -19,15 +19,15 @@ export const useBridgeManager = () => {
 
   const formatToast = (operation: 'delete' | 'create' | 'update') => ({
     success: {
-      title: t(`topicFilter.toast.${operation}.title`),
+      title: t(`bridge.toast.${operation}.title`),
       description: t(`bridge.toast.${operation}.description`, { context: 'success' }),
     },
     error: {
-      title: t(`topicFilter.toast.${operation}.title`),
+      title: t(`bridge.toast.${operation}.title`),
       description: t(`bridge.toast.${operation}.description`, { context: 'error' }),
     },
     loading: {
-      title: t(`topicFilter.toast.${operation}.title`),
+      title: t(`bridge.toast.${operation}.title`),
       description: t('bridge.toast.description', { context: 'loading' }),
     },
   })
