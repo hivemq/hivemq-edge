@@ -15,6 +15,11 @@ import WarningMessage from '@/components/WarningMessage.tsx'
 
 import BridgeCard from '@/modules/Bridges/components/overview/BridgeCard.tsx'
 
+/**
+ * @deprecated The Bridges component is deprecated and will be removed in a future release.
+ *    Use the BridgeTable component directly instead.
+ * @see BridgeTable
+ */
 const Bridges: FC = () => {
   const { data, isLoading, isError, error } = useListBridges()
   const { t } = useTranslation()
@@ -61,7 +66,7 @@ const Bridges: FC = () => {
       templateColumns={{ base: 'repeat(1, 1fr)', lg: 'repeat(2, 1fr)', '2xl': 'repeat(3, 1fr)' }}
       gap={6}
       role="list"
-      aria-label={t('bridge.list')}
+      aria-label={t('bridge.listing.aria-label')}
     >
       {data?.map((bridge, i) => (
         <BridgeCard key={`${bridge.id}-${i}`} {...bridge} onNavigate={handleNavigate} role="listitem" />

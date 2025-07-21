@@ -213,7 +213,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                       {type === 'localSubscriptions' && (
                         <FormControl>
                           <FormLabel htmlFor={`${type}.${index}.excludes`}>
-                            {t('bridge.subscription.excludes')}
+                            {t('bridge.subscription.excludes.label')}
                           </FormLabel>
                           <Controller
                             name={`${type}.${index}.excludes`}

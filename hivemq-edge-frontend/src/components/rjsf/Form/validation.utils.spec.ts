@@ -141,11 +141,18 @@ describe('customFormatsValidator', () => {
     const {
       ajv: { formats },
     } = customFormatsValidator
-    const { boolean, 'mqtt-topic': mqttTopic, 'mqtt-tag': mqttTag, 'mqtt-topic-filter': mqttTopicFilter } = formats
+    const {
+      identifier,
+      boolean,
+      'mqtt-topic': mqttTopic,
+      'mqtt-tag': mqttTag,
+      'mqtt-topic-filter': mqttTopicFilter,
+    } = formats
 
     expect((boolean as FormatValidator<string>)('test')).toBeDefined()
     expect((mqttTopic as FormatValidator<string>)('test')).toBeDefined()
     expect((mqttTag as FormatValidator<string>)('test')).toBeDefined()
     expect((mqttTopicFilter as FormatValidator<string>)('test')).toBeDefined()
+    expect((identifier as FormatValidator<string>)('test')).toBeDefined()
   })
 })
