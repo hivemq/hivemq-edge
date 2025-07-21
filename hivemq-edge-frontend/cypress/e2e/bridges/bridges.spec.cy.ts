@@ -193,7 +193,7 @@ describe('Bridges', () => {
 
   context('Bridge in Event Log', () => {})
 
-  it.only('should be accessible', () => {
+  it('should be accessible', () => {
     cy.injectAxe()
     bridgePage.table.status.should('have.text', 'No bridges currently created')
 
