@@ -214,7 +214,7 @@
       "description" : "Connects HiveMQ Edge to existing databases (MySQL, PostgresSQL or MS SQL).",
       "author" : "HiveMQ",
       "documentationLink" : {
-        "url" : "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html",
+        "url" : "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#databases-protocol-adapter",
         "external" : true
       },
       "provisioningLink" : {
