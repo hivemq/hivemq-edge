@@ -19,6 +19,10 @@ export class WorkspacePage extends ShellPage {
     get fit() {
       return cy.getByAriaLabel('Fit to the canvas')
     },
+
+    get zoomIn() {
+      return cy.getByAriaLabel('Zoom in')
+    },
   }
 
   get nodeToolbar() {
@@ -53,6 +57,14 @@ export class WorkspacePage extends ShellPage {
 
   adapterNode(id: string) {
     return cy.get(`[role="button"][data-id="adapter@${id}"]`)
+  }
+
+  bridgeNodes() {
+    return cy.get(`[role="button"][data-id^="bridge@"]`)
+  }
+
+  bridgeNode(id: string) {
+    return cy.get(`[role="button"][data-id="bridge@${id}"]`)
   }
 
   /**
