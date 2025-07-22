@@ -100,9 +100,10 @@ export class BridgePage extends Page {
     },
 
     formTab(index: number) {
-      return this.formTabs.within(() => {
-        return cy.get('button').eq(index)
+      this.formTabs.within(() => {
+        cy.get('button').eq(index).as('nthTab')
       })
+      return cy.get('@nthTab')
     },
 
     get formTabPanel() {
