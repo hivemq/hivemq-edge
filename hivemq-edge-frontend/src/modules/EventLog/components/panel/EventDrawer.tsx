@@ -46,7 +46,7 @@ const EventDrawer: FC<BridgeMainDrawerProps> = ({ event, isOpen, onClose }) => {
   return (
     <>
       <Drawer variant="hivemq" closeOnOverlayClick={true} size="lg" isOpen={isOpen} placement="right" onClose={onClose}>
-        <DrawerContent aria-label={t('bridge.drawer.label')}>
+        <DrawerContent aria-label={t('eventLog.panel.title')}>
           <DrawerCloseButton />
           <DrawerHeader id="bridge-form-header">{t('eventLog.panel.title')}</DrawerHeader>
 
