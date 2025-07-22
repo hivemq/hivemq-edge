@@ -76,6 +76,10 @@ export class RJSFomField {
         return cy.get(`${rootSelector} #${safeId}__error`)
       },
 
+      get addItem() {
+        return cy.get(`${rootSelector} button[data-testid="array-item-add"]`)
+      },
+
       table: {
         get noDataMessage() {
           return cy.get(`${rootSelector} tbody tr td [role="alert"][data-status="info"]`)
