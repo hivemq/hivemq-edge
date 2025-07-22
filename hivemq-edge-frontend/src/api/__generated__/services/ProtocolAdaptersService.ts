@@ -583,13 +583,19 @@ export class ProtocolAdaptersService {
     /**
      * Obtain a list of available protocol adapter types
      * Obtain a list of available protocol adapter types.
+     * @param xOriginalUri
      * @returns ProtocolAdaptersList Success
      * @throws ApiError
      */
-    public getAdapterTypes(): CancelablePromise<ProtocolAdaptersList> {
+    public getAdapterTypes(
+        xOriginalUri?: string,
+    ): CancelablePromise<ProtocolAdaptersList> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/management/protocol-adapters/types',
+            headers: {
+                'X-Original-URI': xOriginalUri,
+            },
         });
     }
 
