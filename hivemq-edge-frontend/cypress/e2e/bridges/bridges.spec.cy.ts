@@ -1,8 +1,8 @@
 import { drop, factory, primaryKey } from '@mswjs/data'
 
-import type { Bridge } from '@/api/__generated__'
-import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
-import { bridgePage, loginPage, rjsf } from 'cypress/pages'
+import { cy_interceptCoreE2E, cy_interceptWithMockDB } from 'cypress/utils/intercept.utils.ts'
+import { bridgePage, loginPage, rjsf, workspacePage } from 'cypress/pages'
+import { workspaceBridgePanel } from '../../pages/Workspace/BridgeFormPage.ts'
 
 describe('Bridges', () => {
   // Creating a mock storage for the Bridges
@@ -18,51 +18,7 @@ describe('Bridges', () => {
 
     cy_interceptCoreE2E()
 
-    // TODO[NVL] Add support for the Event Log
-    cy.intercept('GET', '/api/v1/management/bridges', (req) => {
-      const allBridgeData = mswDB.bridge.getAll()
-      const allBridges = allBridgeData.map<Bridge>((data) => ({ ...JSON.parse(data.json) }))
-      req.reply(200, { items: allBridges })
-    })
-
-    cy.intercept<Bridge>('POST', '/api/v1/management/bridges', (req) => {
-      const bridge = req.body
-      const newBridgeData = mswDB.bridge.create({
-        id: bridge.id,
-        json: JSON.stringify(bridge),
-      })
-      req.reply(200, newBridgeData)
-    })
-
-    cy.intercept<Bridge>('PUT', '/api/v1/management/bridges/**', (req) => {
-      const bridge = req.body
-
-      mswDB.bridge.update({
-        where: {
-          id: {
-            equals: bridge.id,
-          },
-        },
-
-        data: { json: JSON.stringify(bridge) },
-      })
-
-      req.reply(200, '')
-    })
-
-    cy.intercept<Bridge>('DELETE', '/api/v1/management/bridges/**', (req) => {
-      const urlParts = req.url.split('/')
-      const bridgeId = urlParts[urlParts.length - 1]
-
-      mswDB.bridge.delete({
-        where: {
-          id: {
-            equals: bridgeId,
-          },
-        },
-      })
-      req.reply(200, '')
-    }).as('deleteBridge')
+    cy_interceptWithMockDB(mswDB)
 
     loginPage.visit('/app/mqtt-bridges')
     loginPage.loginButton.click()
@@ -175,6 +131,12 @@ describe('Bridges', () => {
     it('should create a bridge also in the Workspace', () => {
       bridgePage.table.status.should('have.text', 'No bridges currently created')
 
+      workspacePage.navLink.click()
+      workspacePage.edgeNode.should('contain.text', 'HiveMQ Edge')
+      workspacePage.bridgeNodes().should('have.length', 0)
+
+      bridgePage.navLink.click()
+
       bridgePage.addNewBridge.click()
 
       bridgePage.config.panel.should('be.visible')
@@ -186,12 +148,36 @@ describe('Bridges', () => {
       rjsf.field('clientId').input.type('my-client-id')
 
       bridgePage.config.submitButton.click()
+      bridgePage.toast.close()
 
-      //TODO[NVL] Better create a subscription
+      workspacePage.navLink.click()
+      workspacePage.toolbox.fit.click()
+      // Needed because the fit reduce the visual content of the nodes
+      workspacePage.toolbox.zoomIn.click().click()
+      workspacePage.bridgeNode('my-bridge').should('be.visible')
+      workspacePage.bridgeNode('my-bridge').within(() => {
+        cy.getByTestId('connection-status').should('have.text', 'Connected')
+      })
+      workspacePage.bridgeNode('my-bridge').click()
+      workspacePage.toolbar.overview.click()
+
+      workspaceBridgePanel.form.should('be.visible')
+      workspaceBridgePanel.modifyBridge.click()
+      workspaceBridgePanel.form.should('not.exist')
+
+      bridgePage.config.panel.should('be.visible')
+      bridgePage.config.formTab(2).click()
+
+      // This will be item #0
+      rjsf.field('localSubscriptions').addItem.click()
+      rjsf.field(['localSubscriptions', '0', 'destination']).input.type('my/topic')
+
+      rjsf.field(['localSubscriptions', '0', 'filters']).addItem.click()
+      rjsf.field(['localSubscriptions', '0', 'filters', '0']).input.type('first/filter')
+
+      bridgePage.config.submitButton.click()
     })
   })
-
-  context('Bridge in Event Log', () => {})
 
   it('should be accessible', () => {
     cy.injectAxe()
