@@ -1,11 +1,12 @@
 import { Page } from '../Page.ts'
+import { EDGE_MENU_LINKS } from 'cypress/utils/constants.utils.ts'
 
 export class AdapterPage extends Page {
   get navLink() {
     cy.get('nav [role="list"]')
       .eq(0)
       .within(() => {
-        cy.get('li').eq(3).as('link')
+        cy.get('li').eq(EDGE_MENU_LINKS.ADAPTERS).as('link')
       })
     return cy.get('@link')
   }
