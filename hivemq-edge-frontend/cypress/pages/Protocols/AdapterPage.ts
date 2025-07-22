@@ -18,6 +18,21 @@ export class AdapterPage extends Page {
     return cy.get('@button')
   }
 
+  protocols = {
+    get list() {
+      return cy.get('[role="list"][aria-label="List of protocol adapters"]')
+    },
+
+    createNewConnection(index: number) {
+      cy.get('[role="list"][aria-label="List of protocol adapters"] [role="listitem"]')
+        .eq(index)
+        .within(() => {
+          cy.getByTestId('protocol-create-adapter').as('button')
+        })
+      return cy.get('@button')
+    },
+  }
+
   config = {
     get panel() {
       return cy.get('[role="dialog"][aria-label="Protocol Adapter Editor"]')
