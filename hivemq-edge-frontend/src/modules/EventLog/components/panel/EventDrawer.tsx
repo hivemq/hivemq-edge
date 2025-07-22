@@ -54,7 +54,7 @@ const EventDrawer: FC<BridgeMainDrawerProps> = ({ event, isOpen, onClose }) => {
             <VStack gap={2}>
               <Card w="100%">
                 <CardHeader>
-                  <SeverityBadge event={event} />
+                  <SeverityBadge event={event} data-testid="event-title-status" />
                 </CardHeader>
                 <CardBody>
                   <Grid templateColumns="repeat(2, 1fr)" gap={6}>
