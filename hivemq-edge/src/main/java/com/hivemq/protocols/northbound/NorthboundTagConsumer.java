@@ -112,12 +112,14 @@ public class NorthboundTagConsumer implements TagConsumer{
                 try {
                     final var jsonMap=objectMapper.readValue((String)jsonDataPoint.getTagValue(), typeRef);
                     final var value = jsonMap.get("value");
-                    if(value!=null) {
+                    if(value!=null && jsonMap.size() == 1) {
                         return dataPointFactory.create(jsonDataPoint.getTagName(), value);
-                    } else {
+                    } else if(value!=null && jsonMap.size() > 1) {
+                        return dataPointFactory.create(jsonDataPoint.getTagName(), jsonMap);
+                    }else {
                         throw new RuntimeException("No value entry in JSON message");
                     }
-                } catch (JsonProcessingException e) {
+                } catch (final JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
             }).toList();

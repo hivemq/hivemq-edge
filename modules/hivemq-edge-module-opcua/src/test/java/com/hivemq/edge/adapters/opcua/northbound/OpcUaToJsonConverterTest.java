@@ -15,6 +15,9 @@
  */
 package com.hivemq.edge.adapters.opcua.northbound;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
@@ -32,10 +35,15 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.LONG;
 
 class OpcUaToJsonConverterTest extends AbstractOpcUaPayloadConverterTest {
 
@@ -88,7 +96,7 @@ class OpcUaToJsonConverterTest extends AbstractOpcUaPayloadConverterTest {
         final String nodeId =
                 opcUaServerExtension.getTestNamespace().addNode("Test" + name + "Node", typeId, () -> value, 999);
 
-        final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId);
+        final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId, null);
         assertThat(ProtocolAdapterState.ConnectionStatus.CONNECTED).isEqualTo(protocolAdapter.getProtocolAdapterState()
                 .getConnectionStatus());
 
@@ -101,5 +109,65 @@ class OpcUaToJsonConverterTest extends AbstractOpcUaPayloadConverterTest {
                     .extracting(DataPoint::getTagName, DataPoint::getTagValue)
                     .containsExactly(Tuple.tuple(nodeId, "{\"value\":" + jsonValue + "}"));
         });
+    }
+
+    @ParameterizedTest(name = "{index} - {0}")
+    @MethodSource("provideBaseTypes")
+    @Timeout(10)
+    public void whenTypeSubscriptionPresent_thenReceiveMsgAndCollectAllProperties(
+            final @NotNull String name,
+            final @NotNull NodeId typeId,
+            final @NotNull Object value,
+            final @NotNull String jsonValue) throws Exception {
+        final String nodeId =
+                opcUaServerExtension.getTestNamespace().addNode("Test" + name + "Node", typeId, () -> value, 999);
+
+        final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId, true);
+        assertThat(ProtocolAdapterState.ConnectionStatus.CONNECTED).isEqualTo(protocolAdapter.getProtocolAdapterState()
+                .getConnectionStatus());
+
+        final var received = expectAdapterPublish();
+        protocolAdapter.stop(new ProtocolAdapterStopInput() {
+        }, new ProtocolAdapterStopOutputImpl());
+
+        final var typeRef
+                = new TypeReference<HashMap<String, Object>>() {};
+        var mapper = new ObjectMapper();
+        var dataPoints = received.get(nodeId);
+        var tagNameToValue = dataPoints.stream().collect(Collectors.toMap(DataPoint::getTagName, v -> {
+            try {
+                return mapper.readValue((String)v.getTagValue(), typeRef);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }));
+
+        assertThat(tagNameToValue)
+                .hasSize(1)
+                .containsKey(nodeId)
+                .extractingByKey(nodeId)
+                .satisfies(innerMap -> {
+                    assertThat(innerMap.get("serverPicoseconds")).isEqualTo(0);
+                    assertThat(innerMap.get("sourcePicoseconds")).isEqualTo(0);
+                    assertThat(innerMap.get("sourceTime")).asInstanceOf(LONG).isGreaterThan(1000L);
+                    assertThat(innerMap.get("serverTime")).asInstanceOf(LONG).isGreaterThan(1000L);
+
+                    final String sanitized;
+                    if(jsonValue.startsWith("\"")) {
+                        final var temp = jsonValue.replaceFirst("\"", "");
+                        sanitized = temp.substring(0, temp.length() - 1);
+                    } else {
+                        sanitized = jsonValue;
+                    }
+
+                    final Object toCheck;
+                    if(value instanceof Float) {
+                        //jackson deserializes Float as Double
+                        toCheck = ((Double)innerMap.get("value")).floatValue();
+                    } else {
+                        toCheck = innerMap.get("value");
+                    }
+                    assertThat(toCheck).isIn(value, sanitized);
+                });
     }
 }
