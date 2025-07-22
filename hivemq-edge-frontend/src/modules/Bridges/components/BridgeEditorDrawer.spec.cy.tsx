@@ -105,7 +105,7 @@ describe('BridgeEditorDrawer', () => {
     cy.get('[role="dialog"]#chakra-modal-bridge-editor').within(() => {
       cy.get('header').should('have.text', 'Create a new bridge configuration')
 
-      cy_bridgeShouldBeDefinedProperly
+      cy_bridgeShouldBeDefinedProperly()
     })
   })
 })
