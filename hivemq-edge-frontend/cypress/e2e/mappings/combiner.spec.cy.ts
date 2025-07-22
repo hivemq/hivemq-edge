@@ -6,7 +6,7 @@ import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 
 import { adapterPage, loginPage, rjsf, workspacePage } from 'cypress/pages'
 import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
-import { combinerForm } from '../../pages/Workspace/CombinerFormPage.ts'
+import { workspaceCombinerPanel } from '../../pages/Workspace/CombinerFormPage.ts'
 
 const COMBINER_ID = '9e975b62-6f8d-410f-9007-3f83719aec6f'
 
@@ -129,7 +129,7 @@ describe('Combiner', () => {
     workspacePage.combinerNode(COMBINER_ID).click()
     workspacePage.combinerNode(COMBINER_ID).dblclick()
 
-    combinerForm.form.should('be.visible')
+    workspaceCombinerPanel.form.should('be.visible')
 
     rjsf.field('name').input.should('have.value', '< unnamed combiner >')
     rjsf.field('name').input.clear()
@@ -143,36 +143,39 @@ describe('Combiner', () => {
     rjsf.field('mappings').table.rows.should('have.length', 1)
     rjsf.field('mappings').table.row(0).edit.click()
 
-    combinerForm.mappingEditor.form.should('be.visible')
-    combinerForm.mappingEditor.sources.selector.should('contain.text', 'Select tags and topic filters to combine ...')
-    combinerForm.mappingEditor.sources.selector.click()
-    combinerForm.mappingEditor.sources.options.should('have.length', 3)
+    workspaceCombinerPanel.mappingEditor.form.should('be.visible')
+    workspaceCombinerPanel.mappingEditor.sources.selector.should(
+      'contain.text',
+      'Select tags and topic filters to combine ...'
+    )
+    workspaceCombinerPanel.mappingEditor.sources.selector.click()
+    workspaceCombinerPanel.mappingEditor.sources.options.should('have.length', 3)
 
-    combinerForm.mappingEditor.sources.selector.type('a/topic/')
-    combinerForm.mappingEditor.sources.options.click()
-    combinerForm.mappingEditor.sources.selector.should('contain.text', 'a/topic/+/filter')
-    combinerForm.mappingEditor.sources.schema.should('have.length', 2)
-    combinerForm.mappingEditor.primary.selector.type('a/topic{enter}')
+    workspaceCombinerPanel.mappingEditor.sources.selector.type('a/topic/')
+    workspaceCombinerPanel.mappingEditor.sources.options.click()
+    workspaceCombinerPanel.mappingEditor.sources.selector.should('contain.text', 'a/topic/+/filter')
+    workspaceCombinerPanel.mappingEditor.sources.schema.should('have.length', 2)
+    workspaceCombinerPanel.mappingEditor.primary.selector.type('a/topic{enter}')
 
-    combinerForm.mappingEditor.destination.selector.type('my/topic{enter}')
-    combinerForm.mappingEditor.destination.inferSchema.click()
+    workspaceCombinerPanel.mappingEditor.destination.selector.type('my/topic{enter}')
+    workspaceCombinerPanel.mappingEditor.destination.inferSchema.click()
 
-    combinerForm.inferSchema.modal.should('be.visible')
-    combinerForm.inferSchema.submit.click()
+    workspaceCombinerPanel.inferSchema.modal.should('be.visible')
+    workspaceCombinerPanel.inferSchema.submit.click()
 
-    combinerForm.mappingEditor.destination.schema.should('have.length', 2)
-    combinerForm.mappingEditor.instruction(0).mapping.should('have.text', 'description')
-    combinerForm.mappingEditor.instruction(1).status.should('have.attr', 'data-status', 'success')
-    combinerForm.mappingEditor.instruction(1).mapping.should('have.text', 'name')
-    combinerForm.mappingEditor.instruction(1).status.should('have.attr', 'data-status', 'success')
+    workspaceCombinerPanel.mappingEditor.destination.schema.should('have.length', 2)
+    workspaceCombinerPanel.mappingEditor.instruction(0).mapping.should('have.text', 'description')
+    workspaceCombinerPanel.mappingEditor.instruction(1).status.should('have.attr', 'data-status', 'success')
+    workspaceCombinerPanel.mappingEditor.instruction(1).mapping.should('have.text', 'name')
+    workspaceCombinerPanel.mappingEditor.instruction(1).status.should('have.attr', 'data-status', 'success')
 
-    combinerForm.mappingEditor.submit.click()
+    workspaceCombinerPanel.mappingEditor.submit.click()
 
     adapterPage.config.formTab(2).click()
 
     rjsf.field('mappings').table.rows.should('have.length', 1)
-    combinerForm.table.destination.should('have.text', 'my / topic')
-    combinerForm.table.sources.within(() => {
+    workspaceCombinerPanel.table.destination.should('have.text', 'my / topic')
+    workspaceCombinerPanel.table.sources.within(() => {
       cy.getByTestId('primary-wrapper').should('have.length', 1)
       cy.getByTestId('primary-wrapper').should('have.text', 'a / topic / + / filter')
     })
@@ -180,7 +183,7 @@ describe('Combiner', () => {
     // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500)
 
-    combinerForm.submit.click()
+    workspaceCombinerPanel.submit.click()
 
     // workspacePage.toast.error
     //   .should('contain.text', 'There was a problem trying to update the combiner')
@@ -212,12 +215,12 @@ describe('Combiner', () => {
     workspacePage.combinerNode(COMBINER_ID).click()
     workspacePage.combinerNode(COMBINER_ID).dblclick()
 
-    combinerForm.form.should('be.visible')
-    combinerForm.delete.click()
+    workspaceCombinerPanel.form.should('be.visible')
+    workspaceCombinerPanel.delete.click()
 
-    combinerForm.confirmDelete.modal.should('be.visible')
-    combinerForm.confirmDelete.submit.click()
-    combinerForm.confirmDelete.modal.should('not.exist')
+    workspaceCombinerPanel.confirmDelete.modal.should('be.visible')
+    workspaceCombinerPanel.confirmDelete.submit.click()
+    workspaceCombinerPanel.confirmDelete.modal.should('not.exist')
 
     cy.wait('@deleteCombiner')
     workspacePage.toast.success
