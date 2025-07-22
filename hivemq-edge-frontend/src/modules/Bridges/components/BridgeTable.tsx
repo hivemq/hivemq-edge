@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Badge, Box, Skeleton, useDisclosure } from '@chakra-ui/react'
 import { useNavigate } from 'react-router-dom'
 
-import type { ApiError, Bridge, BridgeSubscription, LocalBridgeSubscription, Status } from '@/api/__generated__'
+import type { ApiError, Bridge, BridgeSubscription, LocalBridgeSubscription } from '@/api/__generated__'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { useDeleteBridge } from '@/api/hooks/useGetBridges/useDeleteBridge.ts'
@@ -14,13 +14,13 @@ import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
-import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import { BridgeActionMenu } from '@/modules/Bridges/components/BridgeActionMenu.tsx'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
+import { BridgeStatusContainer } from '@/modules/Bridges/components/BridgeStatusContainer.tsx'
 
 export const BridgeTable: FC = () => {
   const { t } = useTranslation()
@@ -84,10 +84,9 @@ export const BridgeTable: FC = () => {
         accessorKey: 'status',
         header: t('bridge.listing.column.status'),
         cell: (info) => {
-          const val = info.getValue<Status>()
           return (
             <Skeleton isLoaded={!isLoading}>
-              <ConnectionStatusBadge status={val} />
+              <BridgeStatusContainer id={info.row.original.id} />
             </Skeleton>
           )
         },
