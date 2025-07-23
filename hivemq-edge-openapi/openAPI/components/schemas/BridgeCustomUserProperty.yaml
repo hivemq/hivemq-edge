@@ -1,0 +1,14 @@
+type: object
+description: The customUserProperties for this subscription
+properties:
+  key:
+    type: string
+    format: string
+    description: The key the from the property
+  value:
+    type: string
+    format: string
+    description: The value the from the property
+required:
+  - key
+  - value
