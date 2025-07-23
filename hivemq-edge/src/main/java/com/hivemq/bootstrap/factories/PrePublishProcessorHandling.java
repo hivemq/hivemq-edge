@@ -13,28 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.mqtt.services;
+package com.hivemq.bootstrap.factories;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hivemq.api.mqtt.PublishReturnCode;
+import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.mqtt.message.publish.PUBLISH;
 
 import java.util.concurrent.ExecutorService;
 
-public interface InternalPublishService {
+public interface PrePublishProcessorHandling {
 
-    /**
-     * Send a message to all clients and shared subscription groups which have an active subscription
-     *
-     * @param publish         the message to send
-     * @param executorService the executor service in which all callbacks are executed
-     * @param sender          client identifier of the client which sent the message
-     */
-    @NotNull ListenableFuture<PublishReturnCode> publish(
-            final @NotNull PUBLISH publish,
-            final @NotNull ExecutorService executorService,
-            final @Nullable String sender);
+    @NotNull ListenableFuture<HandlerResult> apply(
+            final @NotNull PUBLISH originalPublish,
+            final @Nullable String sender,
+            final @NotNull ExecutorService executorService);
 
 }
