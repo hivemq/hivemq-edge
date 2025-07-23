@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.RandomPortGenerator;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -43,7 +44,7 @@ public class JaxrsResourceTests {
 
     protected final Logger logger = LoggerFactory.getLogger(JaxrsResourceTests.class);
 
-    static final int TEST_HTTP_PORT = 8088;
+    static final int TEST_HTTP_PORT = RandomPortGenerator.get();
     static final int CONNECT_TIMEOUT = 1000;
     static final int READ_TIMEOUT = 1000;
     static final String HTTP = "http";
@@ -57,11 +58,11 @@ public class JaxrsResourceTests {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
+        final JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
         config.addResourceClasses(TestApiResource.class);
         //-- ensure we supplied our own test mapper as this can effect output
-        ObjectMapper mapper = new ObjectMapper();
+        final ObjectMapper mapper = new ObjectMapper();
         config.setObjectMapper(mapper);
         server = new JaxrsHttpServer(mock(), List.of(config), null);
         server.startServer();
@@ -72,14 +73,14 @@ public class JaxrsResourceTests {
         server.stopServer();
     }
 
-    protected static String getTestServerAddress(String protocol, int port, String uri){
-        String url = String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
+    protected static String getTestServerAddress(final String protocol, final int port, final String uri){
+        final String url = String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
         return url;
     }
 
     @Test
     public void testGetNotFoundResource() throws IOException {
-        HttpResponse response =
+        final HttpResponse response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "doesnt/exist"), CONNECT_TIMEOUT, READ_TIMEOUT);
         Assert.assertEquals("Resource should not exist", 404, response.getStatusCode());
@@ -87,7 +88,7 @@ public class JaxrsResourceTests {
 
     @Test
     public void testGetResource() throws IOException {
-        HttpResponse response =
+        final HttpResponse response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
         Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
@@ -95,7 +96,7 @@ public class JaxrsResourceTests {
 
     @Test
     public void testHeadResourceOK() throws IOException {
-        HttpResponse response =
+        final HttpResponse response =
                 HttpUrlConnectionClient.head(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/head"), READ_TIMEOUT);
         Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
@@ -103,7 +104,7 @@ public class JaxrsResourceTests {
 
     @Test
     public void testHeadResourceNotFound() throws IOException {
-        HttpResponse response =
+        final HttpResponse response =
                 HttpUrlConnectionClient.head(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/head/not/found"), READ_TIMEOUT);
         Assert.assertEquals("Resource should not exist", 404, response.getStatusCode());
@@ -111,7 +112,7 @@ public class JaxrsResourceTests {
 
     @Test
     public void testPostJsonResource() throws IOException {
-        HttpResponse response =
+        final HttpResponse response =
                 HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/post/entity"),
                         new ByteArrayInputStream(JSON_ENTITY.getBytes(StandardCharsets.UTF_8)),
@@ -122,8 +123,8 @@ public class JaxrsResourceTests {
 
     @Test
     public void testPostFormDataResource() throws IOException {
-        String formParams  = "param1=data1&param2=data2&param3=data3";
-        HttpResponse response =
+        final String formParams  = "param1=data1&param2=data2&param3=data3";
+        final HttpResponse response =
                 HttpUrlConnectionClient.post(HttpUrlConnectionClient.FORM_HEADERS,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/post/formData"),
                         new ByteArrayInputStream(formParams.getBytes(StandardCharsets.UTF_8)),
@@ -135,7 +136,7 @@ public class JaxrsResourceTests {
 
     @Test
     public void testPutEntity() throws IOException {
-        HttpResponse response =
+        final HttpResponse response =
                 HttpUrlConnectionClient.put(HttpUrlConnectionClient.JSON_HEADERS,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/put"),
                         new ByteArrayInputStream(JSON_ENTITY.getBytes(StandardCharsets.UTF_8)),
@@ -146,7 +147,7 @@ public class JaxrsResourceTests {
 
     @Test
     public void testDeleteEntity() throws IOException {
-        HttpResponse response =
+        final HttpResponse response =
                 HttpUrlConnectionClient.delete(HttpUrlConnectionClient.JSON_HEADERS,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/delete"),
                         new ByteArrayInputStream(JSON_ENTITY.getBytes(StandardCharsets.UTF_8)),
@@ -157,7 +158,7 @@ public class JaxrsResourceTests {
 
     @Test
     public void testPathParam() throws IOException {
-        HttpResponse response =
+        final HttpResponse response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/myparam"),
                         CONNECT_TIMEOUT, READ_TIMEOUT);
@@ -167,7 +168,7 @@ public class JaxrsResourceTests {
 
     @Test
     public void testQueryParam() throws IOException {
-        HttpResponse response =
+        final HttpResponse response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/query?param=foo"),
                         CONNECT_TIMEOUT, READ_TIMEOUT);
