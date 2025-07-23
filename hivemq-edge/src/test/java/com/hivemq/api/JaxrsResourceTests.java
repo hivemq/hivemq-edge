@@ -16,16 +16,15 @@
 package com.hivemq.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
+import org.jetbrains.annotations.NotNull;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.RandomPortGenerator;
@@ -48,13 +47,9 @@ public class JaxrsResourceTests {
     static final int CONNECT_TIMEOUT = 1000;
     static final int READ_TIMEOUT = 1000;
     static final String HTTP = "http";
-    static final String HTTPS = "https";
     static final String JSON_ENTITY = "{\"key\":\"value\"}";
 
-    protected static JaxrsHttpServer server;
-
-    @Mock
-    private static Injector injector;
+    protected static @NotNull JaxrsHttpServer server;
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -69,110 +64,121 @@ public class JaxrsResourceTests {
     }
 
     @AfterClass
-    public static void tearDown(){
+    public static void tearDown() {
         server.stopServer();
     }
 
-    protected static String getTestServerAddress(final String protocol, final int port, final String uri){
-        final String url = String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
-        return url;
+    protected static String getTestServerAddress(final @NotNull String uri) {
+        return String.format("%s://%s:%s/%s",
+                JaxrsResourceTests.HTTP,
+                "localhost",
+                JaxrsResourceTests.TEST_HTTP_PORT,
+                uri);
     }
 
     @Test
     public void testGetNotFoundResource() throws IOException {
         final HttpResponse response =
-                HttpUrlConnectionClient.get(null,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "doesnt/exist"), CONNECT_TIMEOUT, READ_TIMEOUT);
+                HttpUrlConnectionClient.get(null, getTestServerAddress("doesnt/exist"), CONNECT_TIMEOUT, READ_TIMEOUT);
         Assert.assertEquals("Resource should not exist", 404, response.getStatusCode());
     }
 
     @Test
     public void testGetResource() throws IOException {
         final HttpResponse response =
-                HttpUrlConnectionClient.get(null,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
+                HttpUrlConnectionClient.get(null, getTestServerAddress("test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
         Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
     }
 
     @Test
     public void testHeadResourceOK() throws IOException {
         final HttpResponse response =
-                HttpUrlConnectionClient.head(null,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/head"), READ_TIMEOUT);
+                HttpUrlConnectionClient.head(null, getTestServerAddress("test/head"), READ_TIMEOUT);
         Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
     }
 
     @Test
     public void testHeadResourceNotFound() throws IOException {
         final HttpResponse response =
-                HttpUrlConnectionClient.head(null,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/head/not/found"), READ_TIMEOUT);
+                HttpUrlConnectionClient.head(null, getTestServerAddress("test/head/not/found"), READ_TIMEOUT);
         Assert.assertEquals("Resource should not exist", 404, response.getStatusCode());
     }
 
     @Test
     public void testPostJsonResource() throws IOException {
-        final HttpResponse response =
-                HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/post/entity"),
-                        new ByteArrayInputStream(JSON_ENTITY.getBytes(StandardCharsets.UTF_8)),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        final HttpResponse response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
+                getTestServerAddress("test/post/entity"),
+                new ByteArrayInputStream(JSON_ENTITY.getBytes(StandardCharsets.UTF_8)),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
-        Assert.assertEquals("Resource should have been echod back and match", JSON_ENTITY, new String(response.getResponseBody()));
+        Assert.assertEquals("Resource should have been echod back and match",
+                JSON_ENTITY,
+                new String(response.getResponseBody()));
     }
 
     @Test
     public void testPostFormDataResource() throws IOException {
-        final String formParams  = "param1=data1&param2=data2&param3=data3";
-        final HttpResponse response =
-                HttpUrlConnectionClient.post(HttpUrlConnectionClient.FORM_HEADERS,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/post/formData"),
-                        new ByteArrayInputStream(formParams.getBytes(StandardCharsets.UTF_8)),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        final String formParams = "param1=data1&param2=data2&param3=data3";
+        final HttpResponse response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.FORM_HEADERS,
+                getTestServerAddress("test/post/formData"),
+                new ByteArrayInputStream(formParams.getBytes(StandardCharsets.UTF_8)),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         System.err.println(new String(response.getResponseBody()));
         Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
-        Assert.assertEquals("Form data should be marshalled back matching expected format", 58, response.getContentLength());
+        Assert.assertEquals("Form data should be marshalled back matching expected format",
+                58,
+                response.getContentLength());
     }
 
     @Test
     public void testPutEntity() throws IOException {
-        final HttpResponse response =
-                HttpUrlConnectionClient.put(HttpUrlConnectionClient.JSON_HEADERS,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/put"),
-                        new ByteArrayInputStream(JSON_ENTITY.getBytes(StandardCharsets.UTF_8)),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        final HttpResponse response = HttpUrlConnectionClient.put(HttpUrlConnectionClient.JSON_HEADERS,
+                getTestServerAddress("test/put"),
+                new ByteArrayInputStream(JSON_ENTITY.getBytes(StandardCharsets.UTF_8)),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
-        Assert.assertEquals("Resource should have been echod back and match", JSON_ENTITY, new String(response.getResponseBody()));
+        Assert.assertEquals("Resource should have been echod back and match",
+                JSON_ENTITY,
+                new String(response.getResponseBody()));
     }
 
     @Test
     public void testDeleteEntity() throws IOException {
-        final HttpResponse response =
-                HttpUrlConnectionClient.delete(HttpUrlConnectionClient.JSON_HEADERS,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/delete"),
-                        new ByteArrayInputStream(JSON_ENTITY.getBytes(StandardCharsets.UTF_8)),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        final HttpResponse response = HttpUrlConnectionClient.delete(HttpUrlConnectionClient.JSON_HEADERS,
+                getTestServerAddress("test/delete"),
+                new ByteArrayInputStream(JSON_ENTITY.getBytes(StandardCharsets.UTF_8)),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
-        Assert.assertEquals("Resource should have been echod back and match", JSON_ENTITY, new String(response.getResponseBody()));
+        Assert.assertEquals("Resource should have been echod back and match",
+                JSON_ENTITY,
+                new String(response.getResponseBody()));
     }
 
     @Test
     public void testPathParam() throws IOException {
-        final HttpResponse response =
-                HttpUrlConnectionClient.get(null,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/myparam"),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        final HttpResponse response = HttpUrlConnectionClient.get(null,
+                getTestServerAddress("test/get/myparam"),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
-        Assert.assertEquals("Resource should have been echod back and match", "myparam", new String(response.getResponseBody()));
+        Assert.assertEquals("Resource should have been echod back and match",
+                "myparam",
+                new String(response.getResponseBody()));
     }
 
     @Test
     public void testQueryParam() throws IOException {
-        final HttpResponse response =
-                HttpUrlConnectionClient.get(null,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/query?param=foo"),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        final HttpResponse response = HttpUrlConnectionClient.get(null,
+                getTestServerAddress("test/get/query?param=foo"),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
-        Assert.assertEquals("Resource should have been echod back and match", "foo", new String(response.getResponseBody()));
+        Assert.assertEquals("Resource should have been echod back and match",
+                "foo",
+                new String(response.getResponseBody()));
     }
 }
