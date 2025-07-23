@@ -1,0 +1,7 @@
+{
+  "id": "test-schema",
+  "schemaDefinition": "ewogICAiJHNjaGVtYSI6Imh0dHBzOi8vanNvbi1zY2hlbWEub3JnL2RyYWZ0LzIwMjAtMTIvc2NoZW1hIiwKICAgInRpdGxlIjoic2NoZW1hIHYxIiwKICAgImRlc2NyaXB0aW9uIjoibXkgbmV3IHNjaGVtYSIsCiAgICJyZXF1aXJlZCI6W10sCiAgICJ0eXBlIjoib2JqZWN0IiwKICAgInByb3BlcnRpZXMiOnt9Cn0K",
+  "type": "JSON",
+  "createdAt": "2025-07-23T13:55:13.083Z",
+  "version": 1
+}

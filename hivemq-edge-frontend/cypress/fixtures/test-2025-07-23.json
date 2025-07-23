@@ -1,0 +1,30 @@
+{
+  "id": "test",
+  "matching": { "topicFilter": "topic/example/1" },
+  "createdAt": "2025-07-23T13:55:13.303Z",
+  "lastUpdatedAt": "2025-07-23T13:55:13.303Z",
+  "onFailure": { "pipeline": [] },
+  "onSuccess": {
+    "pipeline": [
+      {
+        "arguments": { "schemaId": "test-deserialise", "schemaVersion": "latest" },
+        "functionId": "Serdes.deserialize",
+        "id": "node_af815295-6a71-4f4c-8126-d325e7d1f900-deserializer"
+      },
+      { "arguments": {}, "functionId": "fn:test-function:latest", "id": "node_a4fb1667-d922-438b-b099-2c69b196c073" },
+      {
+        "arguments": { "schemaId": "test-serialise", "schemaVersion": "latest" },
+        "functionId": "Serdes.serialize",
+        "id": "node_af815295-6a71-4f4c-8126-d325e7d1f900-serializer"
+      }
+    ]
+  },
+  "validation": {
+    "validators": [
+      {
+        "arguments": { "strategy": "ALL_OF", "schemas": [{ "schemaId": "test-schema", "version": "latest" }] },
+        "type": "SCHEMA"
+      }
+    ]
+  }
+}
