@@ -15,4 +15,5 @@ properties:
       - control-plane-connectivity
       - data-hub
       - mqtt-persistence
+      - pulse-agent
     description: The identifier of this capability
