@@ -3,7 +3,14 @@ import type { PrimaryKey } from '@mswjs/data/lib/primaryKey'
 import { v4 as uuidv4 } from 'uuid'
 
 import { MOCK_PROTOCOL_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
-import type { Bridge, ProtocolAdapter } from '@/api/__generated__'
+import type {
+  BehaviorPolicy,
+  BehaviorPolicyList,
+  Bridge,
+  DataPolicy,
+  DataPolicyList,
+  ProtocolAdapter,
+} from '@/api/__generated__'
 import { mockAuthApi, mockValidCredentials } from '@/api/hooks/usePostAuthentication/__handlers__'
 import { mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__handlers__'
 import { mockAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
@@ -33,6 +40,13 @@ export type EdgeFactory = FactoryAPI<{
   bridge?: PrimaryKeyGetter
   eventLog?: PrimaryKeyGetter
   adapter?: PrimaryKeyGetter
+}>
+
+export type DataHubFactory = FactoryAPI<{
+  dataPolicy: PrimaryKeyGetter
+  behaviourPolicy: PrimaryKeyGetter
+  schema: PrimaryKeyGetter
+  script: PrimaryKeyGetter
 }>
 
 const interceptBridges = (factory: EdgeFactory) => {
@@ -174,4 +188,18 @@ export const cy_interceptWithMockDB = (factory: EdgeFactory) => {
       req.reply(200, { items: allEvents })
     })
   }
+}
+
+export const cy_interceptDataHubWithMockDB = (factory: DataHubFactory) => {
+  cy.intercept<DataPolicyList>('GET', '/api/v1/data-hub/data-validation/policies', (req) => {
+    const dataPolicies = factory.dataPolicy.getAll()
+    const allDataPolicies = dataPolicies.map<DataPolicy>((data) => ({ ...JSON.parse(data.json) }))
+    req.reply(200, { items: allDataPolicies })
+  })
+
+  cy.intercept<BehaviorPolicyList>('GET', '/api/v1/data-hub/behavior-validation/policies', (req) => {
+    const dataPolicies = factory.behaviourPolicy.getAll()
+    const allDataPolicies = dataPolicies.map<BehaviorPolicy>((data) => ({ ...JSON.parse(data.json) }))
+    req.reply(200, { items: allDataPolicies })
+  })
 }
