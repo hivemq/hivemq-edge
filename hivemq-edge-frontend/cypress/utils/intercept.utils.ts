@@ -9,7 +9,11 @@ import type {
   Bridge,
   DataPolicy,
   DataPolicyList,
+  PolicySchema,
   ProtocolAdapter,
+  SchemaList,
+  Script,
+  ScriptList,
 } from '@/api/__generated__'
 import { mockAuthApi, mockValidCredentials } from '@/api/hooks/usePostAuthentication/__handlers__'
 import { mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__handlers__'
@@ -197,9 +201,37 @@ export const cy_interceptDataHubWithMockDB = (factory: DataHubFactory) => {
     req.reply(200, { items: allDataPolicies })
   })
 
+  cy.intercept<DataPolicyList>('GET', '/api/v1/data-hub/data-validation/policies/**', (req) => {
+    const urlParts = req.url.split('/')
+    const policyId = urlParts[urlParts.length - 1]
+
+    const data = factory.dataPolicy.findFirst({
+      where: {
+        id: {
+          equals: policyId,
+        },
+      },
+    })
+
+    const dataPolicy = JSON.parse(data.json)
+    req.reply(200, dataPolicy)
+  })
+
   cy.intercept<BehaviorPolicyList>('GET', '/api/v1/data-hub/behavior-validation/policies', (req) => {
     const dataPolicies = factory.behaviourPolicy.getAll()
     const allDataPolicies = dataPolicies.map<BehaviorPolicy>((data) => ({ ...JSON.parse(data.json) }))
     req.reply(200, { items: allDataPolicies })
+  })
+
+  cy.intercept<SchemaList>('GET', '/api/v1/data-hub/schemas', (req) => {
+    const data = factory.schema.getAll()
+    const allSchemas = data.map<PolicySchema>((data) => ({ ...JSON.parse(data.json) }))
+    req.reply(200, { items: allSchemas })
+  })
+
+  cy.intercept<ScriptList>('GET', '/api/v1/data-hub/scripts', (req) => {
+    const data = factory.script.getAll()
+    const allScripts = data.map<Script>((data) => ({ ...JSON.parse(data.json) }))
+    req.reply(200, { items: allScripts })
   })
 }
