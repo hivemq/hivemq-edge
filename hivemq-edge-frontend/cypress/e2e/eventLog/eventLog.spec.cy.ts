@@ -36,7 +36,7 @@ describe('Event Log', () => {
     eventLogPage.navLink.click()
   })
 
-  it.only('should render landing page and events', () => {
+  it('should render landing page and events', () => {
     cy.location().should((loc) => {
       expect(loc.pathname).to.eq('/app/event-logs')
     })
