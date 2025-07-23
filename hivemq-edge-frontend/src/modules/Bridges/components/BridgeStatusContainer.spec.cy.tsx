@@ -8,7 +8,7 @@ describe('BridgeStatusContainer', () => {
     cy.intercept('api/v1/management/bridges/status', { items: [mockBridgeConnectionStatus] }).as('getStatus')
   })
 
-  it('should render properly an existing adapter', () => {
+  it('should render properly an existing bridge', () => {
     cy.mountWithProviders(<BridgeStatusContainer id={MOCK_BRIDGE_ID} />)
 
     cy.wait('@getStatus')
@@ -23,7 +23,7 @@ describe('BridgeStatusContainer', () => {
     cy.getByTestId('connection-status').should('have.text', 'Unknown')
   })
 
-  it('should render unknown if not an adapter', () => {
+  it('should render unknown if not a bridge', () => {
     cy.mountWithProviders(<BridgeStatusContainer id="not-a-bridge" />)
 
     cy.wait('@getStatus')
