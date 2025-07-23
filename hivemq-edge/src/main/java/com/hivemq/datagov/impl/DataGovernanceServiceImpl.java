@@ -29,13 +29,13 @@ import com.hivemq.datagov.model.DataGovernancePolicy;
 import com.hivemq.datagov.model.DataGovernanceResult;
 import com.hivemq.datagov.model.impl.DataGoveranceResultImpl;
 import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
+import com.hivemq.mqtt.services.PrePublishProcessorService;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
-import com.hivemq.mqtt.services.InternalPublishService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -49,16 +49,16 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
 
     private static final Logger log = LoggerFactory.getLogger(DataGovernanceServiceImpl.class);
 
-    private final @NotNull InternalPublishService internalPublishService;
+    private final @NotNull PrePublishProcessorService prePublishProcessorService;
     private final @NotNull ListeningExecutorService executorService;
     private final @NotNull UnifiedNamespaceDataGovernancePolicy namespaceDataGovernancePolicy;
 
     @Inject
     public DataGovernanceServiceImpl(
-            final @NotNull InternalPublishService internalPublishService,
+            final @NotNull PrePublishProcessorService prePublishProcessorService,
             final @NotNull ExecutorService executorService,
             final @NotNull UnifiedNamespaceDataGovernancePolicy namespaceDataGovernancePolicy) {
-        this.internalPublishService = internalPublishService;
+        this.prePublishProcessorService = prePublishProcessorService;
         this.executorService = MoreExecutors.listeningDecorator(executorService);
         this.namespaceDataGovernancePolicy = namespaceDataGovernancePolicy;
     }
@@ -101,7 +101,7 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
                     context.getResult().getOutput().getPublish().getPayload().length,
                     context.getResult().getOutput().getPublish().getTopic(),
                     context.getResult().getOutput().getPublish().getQoS().getQosNumber());
-            return internalPublishService.publish(
+            return prePublishProcessorService.publish(
                     context.getResult().getOutput().getPublish(), getExecutorForContext(context),
                     context.getResult().getOutput().getClientId());
         } catch(Exception e){
