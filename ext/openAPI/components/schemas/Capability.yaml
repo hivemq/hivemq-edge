@@ -16,4 +16,5 @@ properties:
       - data-hub
       - mqtt-persistence
       - pulse-asset-management
+      - pulse-agent
     description: The identifier of this capability
