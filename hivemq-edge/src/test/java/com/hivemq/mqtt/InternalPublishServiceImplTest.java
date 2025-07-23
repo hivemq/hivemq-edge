@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.api.mqtt.PublishReturnCode;
-import com.hivemq.bootstrap.factories.InternalPublishServiceHandlingProvider;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.services.InternalPublishServiceImpl;
@@ -65,7 +64,6 @@ public class InternalPublishServiceImplTest {
     private final @NotNull RetainedMessagePersistence retainedMessagePersistence = mock();
     private final @NotNull LocalTopicTree topicTree = mock();
     private final @NotNull PublishDistributor publishDistributor = mock();
-    private final @NotNull InternalPublishServiceHandlingProvider internalPublishServiceHandlingProvider = mock();
     private final @NotNull ExecutorService executorService = MoreExecutors.newDirectExecutorService();
 
     private @NotNull InternalPublishServiceImpl publishService;
@@ -80,10 +78,7 @@ public class InternalPublishServiceImplTest {
                 any(PUBLISH.class),
                 eq(executorService))).thenReturn(Futures.immediateFuture(null));
 
-        publishService = new InternalPublishServiceImpl(retainedMessagePersistence,
-                topicTree,
-                publishDistributor,
-                internalPublishServiceHandlingProvider);
+        publishService = new InternalPublishServiceImpl(retainedMessagePersistence, topicTree, publishDistributor);
     }
 
     @Test(timeout = 20000)
@@ -91,10 +86,7 @@ public class InternalPublishServiceImplTest {
 
         when(topicTree.findTopicSubscribers(anyString())).thenReturn(new TopicSubscribers(ImmutableSet.of(),
                 ImmutableSet.of()));
-        publishService = new InternalPublishServiceImpl(retainedMessagePersistence,
-                topicTree,
-                publishDistributor,
-                internalPublishServiceHandlingProvider);
+        publishService = new InternalPublishServiceImpl(retainedMessagePersistence, topicTree, publishDistributor);
 
         final PUBLISH publish =
                 TestMessageUtil.createMqtt3Publish("hivemqId", "subonly", QoS.AT_LEAST_ONCE, new byte[0], true);
@@ -112,10 +104,7 @@ public class InternalPublishServiceImplTest {
 
         when(topicTree.findTopicSubscribers(anyString())).thenReturn(new TopicSubscribers(ImmutableSet.of(),
                 ImmutableSet.of()));
-        publishService = new InternalPublishServiceImpl(retainedMessagePersistence,
-                topicTree,
-                publishDistributor,
-                internalPublishServiceHandlingProvider);
+        publishService = new InternalPublishServiceImpl(retainedMessagePersistence, topicTree, publishDistributor);
 
         final PUBLISH publish =
                 TestMessageUtil.createMqtt3Publish("hivemqId", "subonly", QoS.AT_LEAST_ONCE, new byte[0], true);

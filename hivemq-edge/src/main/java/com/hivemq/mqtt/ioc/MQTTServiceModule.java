@@ -15,20 +15,25 @@
  */
 package com.hivemq.mqtt.ioc;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.limitation.TopicAliasLimiter;
 import com.hivemq.limitation.TopicAliasLimiterImpl;
 import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.mqtt.services.InternalPublishServiceImpl;
+import com.hivemq.mqtt.services.PrePublishProcessorService;
+import com.hivemq.mqtt.services.PrePublishProcessorServiceImpl;
 import com.hivemq.mqtt.services.PublishDistributor;
 import com.hivemq.mqtt.services.PublishDistributorImpl;
 import com.hivemq.mqtt.services.PublishPollService;
 import com.hivemq.mqtt.services.PublishPollServiceImpl;
 import dagger.Binds;
 import dagger.Module;
+import org.jetbrains.annotations.NotNull;
 
 @Module
 public interface MQTTServiceModule {
+
+    @Binds
+    @NotNull PrePublishProcessorService prePublishProcessorService(@NotNull PrePublishProcessorServiceImpl prePublishProcessorService);
 
     @Binds
     @NotNull InternalPublishService internalPublishService(@NotNull InternalPublishServiceImpl internalPublishService);

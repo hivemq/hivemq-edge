@@ -18,14 +18,21 @@ package com.hivemq.extensions.core;
 import com.hivemq.bootstrap.factories.AdapterHandlingFactory;
 import com.hivemq.bootstrap.factories.HandlerFactory;
 import com.hivemq.bootstrap.factories.InternalPublishServiceHandlingFactory;
+import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class HandlerService {
 
     private @Nullable HandlerFactory handlerFactory;
     private @Nullable AdapterHandlingFactory adapterHandlingFactory;
     private @Nullable InternalPublishServiceHandlingFactory internalPublishServiceHandlingFactory;
+    private final @NotNull SortedMap<Integer, PrePublishProcessorHandlingFactory> prePublishProcessorHandlingFactories =
+            new TreeMap<>();
 
 
     public void supplyHandlerFactory(final @NotNull HandlerFactory handlerFactory) {
@@ -38,6 +45,26 @@ public class HandlerService {
 
     public void supplyInternalPublishServiceHandlingFactory(final @NotNull InternalPublishServiceHandlingFactory internalPublishServiceHandlingFactory) {
         this.internalPublishServiceHandlingFactory = internalPublishServiceHandlingFactory;
+    }
+
+    /**
+     * @param prio                               lower prio is executed first, same prio will throw exception
+     * @param prePublishProcessorHandlingFactory the HandlerFactory will only get called once when the first message
+     *                                           is processed
+     */
+    public void supplyPrePublishProcessorHandlingFactory(
+            final int prio,
+            final @NotNull PrePublishProcessorHandlingFactory prePublishProcessorHandlingFactory) {
+        final PrePublishProcessorHandlingFactory prev =
+                prePublishProcessorHandlingFactories.putIfAbsent(prio, prePublishProcessorHandlingFactory);
+        if (prev != null) {
+            throw new IllegalStateException("PrePublishProcessorHandlingFactory with same priority " +
+                    prio +
+                    "already set. existing:  " +
+                    prev.getClass().getCanonicalName() +
+                    ", new: " +
+                    prePublishProcessorHandlingFactory.getClass().getCanonicalName());
+        }
     }
 
 
@@ -55,5 +82,9 @@ public class HandlerService {
 
     public @Nullable InternalPublishServiceHandlingFactory getInternalPublishServiceHandlingFactory() {
         return internalPublishServiceHandlingFactory;
+    }
+
+    public @NotNull List<PrePublishProcessorHandlingFactory> getPrePublishProcessorHandlingFactories() {
+        return List.copyOf(prePublishProcessorHandlingFactories.values());
     }
 }

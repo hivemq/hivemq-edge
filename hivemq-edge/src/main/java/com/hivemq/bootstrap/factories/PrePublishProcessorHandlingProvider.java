@@ -15,22 +15,21 @@
  */
 package com.hivemq.bootstrap.factories;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.dropping.IncomingPublishDropper;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
-import com.hivemq.mqtt.message.publish.PUBLISH;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 @Singleton
-public class InternalPublishServiceHandlingProvider {
+public class PrePublishProcessorHandlingProvider {
 
     private final @NotNull HandlerService handlerService;
     private final @NotNull MqttConnacker mqttConnacker;
@@ -38,10 +37,11 @@ public class InternalPublishServiceHandlingProvider {
     private final @NotNull IncomingPublishDropper incomingPublishDropper;
     private final @NotNull MessageDroppedService messageDroppedService;
     private final @NotNull ConfigurationService configurationService;
-    private final @NotNull InternalPublishServiceHandlingAbsent internalPublishServiceHandlingAbsent;
+    private volatile @NotNull List<PrePublishProcessorHandling> handlers = List.of();
+    private volatile boolean initialized = false;
 
     @Inject
-    public InternalPublishServiceHandlingProvider(
+    public PrePublishProcessorHandlingProvider(
             final @NotNull HandlerService handlerService,
             final @NotNull MqttConnacker mqttConnacker,
             final @NotNull MqttServerDisconnector mqttServerDisconnector,
@@ -54,32 +54,34 @@ public class InternalPublishServiceHandlingProvider {
         this.incomingPublishDropper = incomingPublishDropper;
         this.messageDroppedService = messageDroppedService;
         this.configurationService = configurationService;
-        this.internalPublishServiceHandlingAbsent = new InternalPublishServiceHandlingAbsent();
     }
 
-    public @NotNull InternalPublishServiceHandling get() {
-        final @Nullable InternalPublishServiceHandlingFactory factory =
-                handlerService.getInternalPublishServiceHandlingFactory();
-        if (factory == null) {
-            return internalPublishServiceHandlingAbsent;
+    public @NotNull List<PrePublishProcessorHandling> get() {
+
+        if (initialized) {
+            return handlers;
         }
-        return factory.build(mqttConnacker,
-                mqttServerDisconnector,
-                incomingPublishDropper,
-                configurationService,
-                messageDroppedService);
-    }
 
-    static class InternalPublishServiceHandlingAbsent implements InternalPublishServiceHandling{
+        synchronized (this) {
+            if (!initialized) {
+                final @NotNull List<PrePublishProcessorHandlingFactory> factories =
+                        handlerService.getPrePublishProcessorHandlingFactories();
 
-        @Override
-        public @NotNull ListenableFuture<HandlerResult> apply(
-                final @NotNull PUBLISH originalPublish,
-                final @NotNull String clientId) {
-            final SettableFuture<HandlerResult> settableFuture =
-                    SettableFuture.create();
-            settableFuture.set(new HandlerResult(false, originalPublish));
-            return settableFuture;
+                if (factories.isEmpty()) {
+                    handlers = List.of();
+                }
+                final ImmutableList.Builder<PrePublishProcessorHandling> processorHandlers = ImmutableList.builder();
+                for (final PrePublishProcessorHandlingFactory factory : factories) {
+                    processorHandlers.add(factory.build(mqttConnacker,
+                            mqttServerDisconnector,
+                            incomingPublishDropper,
+                            configurationService,
+                            messageDroppedService));
+                }
+                handlers = processorHandlers.build();
+                initialized = true;
+            }
+            return handlers;
         }
     }
 
