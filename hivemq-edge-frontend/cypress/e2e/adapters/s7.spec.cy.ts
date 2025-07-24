@@ -2,7 +2,7 @@ import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 import { MOCK_ADAPTER_S7, MOCK_PROTOCOL_S7, MOCK_SCHEMA_S7 } from '@/__test-utils__/adapters/s7.ts'
 
 import type { DomainTagList } from '@/api/__generated__'
-import { MOCK_DEVICE_TAGS, mockAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 import { loginPage, adapterPage, rjsf, workspacePage } from 'cypress/pages'
 import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
@@ -12,7 +12,7 @@ describe('S7 adapter', () => {
     cy_interceptCoreE2E()
 
     // TODO[E2E] This is the mock for the S7 protocol adapter
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_S7] }).as('getProtocols')
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_S7] })
 
     // TODO[E2E] This doesn't work: JWT needs mocking
     loginPage.visit('/app/protocol-adapters/catalog/new/s7')
@@ -240,7 +240,7 @@ describe('S7 adapter', () => {
       })
       cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
 
-      cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', mockResponse).as('tags')
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', mockResponse)
       cy.intercept('/api/v1/management/protocol-adapters/tag-schemas/s7', MOCK_SCHEMA_S7)
 
       cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [MOCK_ADAPTER_S7] }).as('getAdapters')
