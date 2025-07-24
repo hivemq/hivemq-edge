@@ -77,7 +77,7 @@ describe('SubscriptionsPanel', () => {
           description: 'This is a topic filter',
         },
       ],
-    }).as('getTopicFilters')
+    })
     cy.mountWithProviders(<TestingComponent onSubmit={cy.stub} defaultValues={mockBridge} />)
     cy.getByTestId('bridge-subscription-add').click()
     // force validation to trigger error messages.
