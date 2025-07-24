@@ -1,0 +1,54 @@
+allOf:
+  - $ref: "../ProblemDetails.yaml"
+  - type: object
+    required:
+      - detail
+      - status
+      - type
+discriminator:
+  propertyName: type
+  mapping:
+    # DataHub
+    https://hivemq.com/edge/api/model/BehaviorPolicyAlreadyPresentError: "./datahub/BehaviorPolicyAlreadyPresentError.yaml"
+    https://hivemq.com/edge/api/model/BehaviorPolicyCreationFailureError: "./datahub/BehaviorPolicyCreationFailureError.yaml"
+    https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: "./datahub/BehaviorPolicyInvalidErrors.yaml"
+    https://hivemq.com/edge/api/model/BehaviorPolicyNotFoundError: "./datahub/BehaviorPolicyNotFoundError.yaml"
+    https://hivemq.com/edge/api/model/BehaviorPolicyRejectedError: "./datahub/BehaviorPolicyRejectedError.yaml"
+    https://hivemq.com/edge/api/model/BehaviorPolicyUpdateFailureError: "./datahub/BehaviorPolicyUpdateFailureError.yaml"
+    https://hivemq.com/edge/api/model/ClientDisconnectedError: "./datahub/ClientDisconnectedError.yaml"
+    https://hivemq.com/edge/api/model/ClientNotFoundError: "./datahub/ClientNotFoundError.yaml"
+    https://hivemq.com/edge/api/model/DataPolicyAlreadyPresentError: "./datahub/DataPolicyAlreadyPresentError.yaml"
+    https://hivemq.com/edge/api/model/DataPolicyCreationFailureError: "./datahub/DataPolicyCreationFailureError.yaml"
+    https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: "./datahub/DataPolicyInvalidErrors.yaml"
+    https://hivemq.com/edge/api/model/DataPolicyNotFoundError: "./datahub/DataPolicyNotFoundError.yaml"
+    https://hivemq.com/edge/api/model/DataPolicyRejectedError: "./datahub/DataPolicyRejectedError.yaml"
+    https://hivemq.com/edge/api/model/DataPolicyUpdateFailureError: "./datahub/DataPolicyUpdateFailureError.yaml"
+    https://hivemq.com/edge/api/model/PolicyIdMismatchError: "./datahub/PolicyIdMismatchError.yaml"
+    https://hivemq.com/edge/api/model/PolicyInsufficientStorageError: "./datahub/PolicyInsufficientStorageError.yaml"
+    https://hivemq.com/edge/api/model/PolicyNotFoundError: "./datahub/PolicyNotFoundError.yaml"
+    https://hivemq.com/edge/api/model/SchemaAlreadyPresentError: "./datahub/SchemaAlreadyPresentError.yaml"
+    https://hivemq.com/edge/api/model/SchemaEtagMismatchError: "./datahub/SchemaEtagMismatchError.yaml"
+    https://hivemq.com/edge/api/model/SchemaInsufficientStorageError: "./datahub/SchemaInsufficientStorageError.yaml"
+    https://hivemq.com/edge/api/model/SchemaInvalidErrors: "./datahub/SchemaInvalidErrors.yaml"
+    https://hivemq.com/edge/api/model/SchemaNotFoundError: "./datahub/SchemaNotFoundError.yaml"
+    https://hivemq.com/edge/api/model/SchemaParsingFailureError: "./datahub/SchemaParsingFailureError.yaml"
+    https://hivemq.com/edge/api/model/SchemaReferencedError: "./datahub/SchemaReferencedError.yaml"
+    https://hivemq.com/edge/api/model/ScriptAlreadyPresentError: "./datahub/ScriptAlreadyPresentError.yaml"
+    https://hivemq.com/edge/api/model/ScriptCreationFailureError: "./datahub/ScriptCreationFailureError.yaml"
+    https://hivemq.com/edge/api/model/ScriptEtagMismatchError: "./datahub/ScriptEtagMismatchError.yaml"
+    https://hivemq.com/edge/api/model/ScriptInsufficientStorageError: "./datahub/ScriptInsufficientStorageError.yaml"
+    https://hivemq.com/edge/api/model/ScriptInvalidErrors: "./datahub/ScriptInvalidErrors.yaml"
+    https://hivemq.com/edge/api/model/ScriptNotFoundError: "./datahub/ScriptNotFoundError.yaml"
+    https://hivemq.com/edge/api/model/ScriptParsingFailureError: "./datahub/ScriptParsingFailureError.yaml"
+    https://hivemq.com/edge/api/model/ScriptReferencedError: "./datahub/ScriptReferencedError.yaml"
+    https://hivemq.com/edge/api/model/ScriptSanitationFailureError: "./datahub/ScriptSanitationFailureError.yaml"
+    https://hivemq.com/edge/api/model/TopicFilterMismatchError: "./datahub/TopicFilterMismatchError.yaml"
+    # HTTP
+    https://hivemq.com/edge/api/model/InsufficientStorageError: "./http/InsufficientStorageError.yaml"
+    https://hivemq.com/edge/api/model/InternalServerError: "./http/InternalServerError.yaml"
+    https://hivemq.com/edge/api/model/InvalidQueryParameterError: "./http/InvalidQueryParameterError.yaml"
+    https://hivemq.com/edge/api/model/PreconditionFailedError: "./http/PreconditionFailedError.yaml"
+    https://hivemq.com/edge/api/model/RequestBodyMissingError: "./http/RequestBodyMissingError.yaml"
+    https://hivemq.com/edge/api/model/RequestBodyParameterMissingError: "./http/RequestBodyParameterMissingError.yaml"
+    https://hivemq.com/edge/api/model/TemporaryNotAvailableError: "./http/TemporaryNotAvailableError.yaml"
+    https://hivemq.com/edge/api/model/UrlParameterMissingError: "./http/UrlParameterMissingError.yaml"
