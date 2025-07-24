@@ -41,6 +41,7 @@ describe('CombinerMappingManager', () => {
     cy.intercept('/api/v1/management/topic-filters', { statusCode: 203, log: false })
     cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 203, log: false })
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', { statusCode: 203, log: false })
   })
 
   it('should render the drawer', () => {

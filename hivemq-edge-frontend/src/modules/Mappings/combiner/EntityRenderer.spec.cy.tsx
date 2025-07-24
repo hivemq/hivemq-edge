@@ -8,6 +8,8 @@ import { NodeTypes } from '@/modules/Workspace/types'
 describe('EntityRenderer', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] })
+    cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] })
   })
 
   it('should render an error', () => {
@@ -20,9 +22,6 @@ describe('EntityRenderer', () => {
   })
 
   it('should render an adapter', () => {
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getProtocols')
-    cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getAdapters')
-
     cy.mountWithProviders(<EntityRenderer reference={mockEntityReference} />)
 
     cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.ADAPTER_NODE)
