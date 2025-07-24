@@ -3,6 +3,7 @@ import { drop, factory, primaryKey } from '@mswjs/data'
 import { cy_interceptCoreE2E, cy_interceptWithMockDB } from 'cypress/utils/intercept.utils.ts'
 import { bridgePage, loginPage, rjsf, workspacePage } from 'cypress/pages'
 import { workspaceBridgePanel } from '../../pages/Workspace/BridgeFormPage.ts'
+import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 
 describe('Bridges', () => {
   // Creating a mock storage for the Bridges
@@ -127,7 +128,26 @@ describe('Bridges', () => {
     })
   })
 
-  context('Bridge in Workspace', () => {
+  context.only('Bridge in Workspace', () => {
+    beforeEach(() => {
+      cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/gateway/listeners', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/management/combiners', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/**/northboundMappings', {
+        statusCode: 202,
+        log: false,
+      })
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/**/southboundMappings', {
+        statusCode: 202,
+        log: false,
+      })
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/management/topic-filters', {
+        items: [MOCK_TOPIC_FILTER],
+      })
+    })
+
     it('should create a bridge also in the Workspace', () => {
       bridgePage.table.status.should('have.text', 'No bridges currently created')
 
