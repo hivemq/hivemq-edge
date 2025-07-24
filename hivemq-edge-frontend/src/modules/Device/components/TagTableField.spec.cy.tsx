@@ -79,9 +79,9 @@ describe('TagTableField', () => {
   })
 
   it('should render properly', () => {
-    const onChange = cy.stub().as('onChange')
-    const onSubmit = cy.stub().as('onSubmit')
-    const onError = cy.stub().as('onError')
+    const onChange = cy.stub()
+    const onSubmit = cy.stub()
+    const onError = cy.stub()
 
     cy.mountWithProviders(
       <CustomFormTesting
@@ -174,8 +174,8 @@ describe('TagTableField', () => {
     cy.get('tbody tr td')
       .eq(2)
       .within(() => {
-        cy.get('button').eq(0).as('actEdit').should('have.attr', 'aria-label', 'Edit the tag')
-        cy.get('button').eq(1).as('actDelete').should('have.attr', 'aria-label', 'Delete the tag')
+        cy.get('button').eq(0).should('have.attr', 'aria-label', 'Edit the tag')
+        cy.get('button').eq(1).should('have.attr', 'aria-label', 'Delete the tag')
         cy.getByAriaLabel('View the WRITE schema').should('not.exist')
       })
   })
