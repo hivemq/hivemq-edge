@@ -16,10 +16,12 @@ describe('DeviceTagList', () => {
       'getProtocols'
     )
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter_OPCUA] }).as('getAdapters')
+    cy.intercept('/api/v1/management/protocol-adapters/tag-schemas/**', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags?*', { statusCode: 203, log: false })
   })
 
   it('should render the errors', () => {
-    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags?*', { statusCode: 404 }).as('getTags')
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags?*', { statusCode: 404 })
 
     cy.mountWithProviders(<DeviceTagList adapter={mockAdapter_OPCUA} />)
     cy.getByTestId('loading-spinner').should('be.visible')

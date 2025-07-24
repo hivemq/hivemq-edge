@@ -7,7 +7,8 @@ import { mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__hand
 describe('SidePanel', () => {
   beforeEach(() => {
     cy.viewport(350, 800)
-    cy.intercept('/api/v1/frontend/notifications', { statusCode: 404 })
+    cy.intercept('/api/v1/frontend/capabilities', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/frontend/notifications', { statusCode: 203, log: false })
     cy.intercept('/api/v1/frontend/configuration', mockGatewayConfiguration)
   })
 

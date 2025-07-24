@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
 
+import { MOCK_DEVICE_TAG_ADDRESS_MODBUS } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import DeviceTagForm from '@/modules/Device/components/DeviceTagForm.tsx'
 import type { ManagerContextType } from '@/modules/Mappings/types.ts'
 import { createSchema } from '@/modules/Device/utils/tags.utils.ts'
@@ -8,6 +9,9 @@ import type { DomainTagList } from '@/api/__generated__'
 describe('DeviceTagForm', () => {
   beforeEach(() => {
     cy.viewport(800, 1000)
+    cy.intercept('/api/v1/management/protocol-adapters/tags', {
+      items: [{ name: 'test/tag1', definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS }],
+    })
   })
 
   it('should render the errors', () => {
