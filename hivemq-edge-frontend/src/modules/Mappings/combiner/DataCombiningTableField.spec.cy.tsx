@@ -86,9 +86,9 @@ describe('DataCombiningTableField', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter_OPCUA] })
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter_OPCUA] })
 
-    const onChange = cy.stub().as('onChange')
-    const onSubmit = cy.stub().as('onSubmit')
-    const onError = cy.stub().as('onError')
+    const onChange = cy.stub()
+    const onSubmit = cy.stub()
+    const onError = cy.stub()
 
     cy.mountWithProviders(
       <CustomFormTesting

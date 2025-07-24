@@ -128,7 +128,7 @@ describe('Bridges', () => {
     })
   })
 
-  context.only('Bridge in Workspace', () => {
+  context('Bridge in Workspace', () => {
     beforeEach(() => {
       cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 202, log: false })
       cy.intercept('/api/v1/gateway/listeners', { statusCode: 202, log: false })
