@@ -1,4 +1,5 @@
 import { WrapperTestRoute } from '@/__test-utils__/hooks/WrapperTestRoute.tsx'
+import { mockBridgeConnectionStatus } from '@/api/hooks/useConnection/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import BridgePage from '@/modules/Bridges/BridgePage.tsx'
 
@@ -6,6 +7,9 @@ describe('BridgePage', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
     cy.intercept('/api/v1/management/bridges', { items: [mockBridge] }).as('getBridges')
+    cy.intercept('api/v1/management/bridges/status', {
+      items: [{ ...mockBridgeConnectionStatus, id: mockBridge.id }],
+    })
   })
 
   it('should render properly', () => {
