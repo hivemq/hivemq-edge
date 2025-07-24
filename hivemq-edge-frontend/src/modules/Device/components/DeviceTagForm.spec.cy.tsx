@@ -20,7 +20,7 @@ describe('DeviceTagForm', () => {
       routerProps: { initialEntries: [`/node/wrong-adapter`] },
     })
 
-    cy.get('[role="alert"')
+    cy.get('[role="alert"]')
       .should('have.attr', 'data-status', 'error')
       .should('contain.text', 'The form cannot be created, due to internal errors')
   })
