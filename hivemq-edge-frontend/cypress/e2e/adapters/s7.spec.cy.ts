@@ -2,7 +2,7 @@ import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 import { MOCK_ADAPTER_S7, MOCK_PROTOCOL_S7, MOCK_SCHEMA_S7 } from '@/__test-utils__/adapters/s7.ts'
 
 import type { DomainTagList } from '@/api/__generated__'
-import { MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { MOCK_DEVICE_TAGS, mockAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 import { loginPage, adapterPage, rjsf, workspacePage } from 'cypress/pages'
 import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
@@ -176,6 +176,8 @@ describe('S7 adapter', () => {
     })
 
     it('should handle error', () => {
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/**', { statusCode: 203, log: false })
+
       adapterPage.config.submitButton.click()
 
       adapterPage.config.errorSummary.should('have.length', 2)
@@ -223,6 +225,20 @@ describe('S7 adapter', () => {
   describe('Workspace', () => {
     beforeEach(() => {
       const mockResponse: DomainTagList = { items: MOCK_DEVICE_TAGS('s7-1', MockAdapterType.SIMULATION) }
+
+      cy.intercept('/api/v1/management/bridges', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/gateway/listeners', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/management/combiners', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/management/topic-filters', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/**/northboundMappings', {
+        statusCode: 202,
+        log: false,
+      })
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/**/southboundMappings', {
+        statusCode: 202,
+        log: false,
+      })
+      cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
 
       cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', mockResponse).as('tags')
       cy.intercept('/api/v1/management/protocol-adapters/tag-schemas/s7', MOCK_SCHEMA_S7)
