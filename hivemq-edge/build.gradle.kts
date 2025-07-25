@@ -203,9 +203,6 @@ dependencies {
     compileOnly("com.hivemq:hivemq-edge-module-databases")
     compileOnly("com.hivemq:hivemq-edge-module-opcua")
     compileOnly("com.hivemq:hivemq-edge-module-file")
-
-    //FIXME: should be in module instead
-    implementation("com.google.protobuf:protobuf-java:4.29.3")
 }
 
 /* ******************** test ******************** */
