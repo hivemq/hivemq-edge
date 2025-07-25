@@ -153,7 +153,7 @@ const interceptAdapters = (factory: EdgeFactory) => {
         json: JSON.stringify({
           identifier: {
             type: 'EVENT',
-            identifier: uuidv4(),
+            identifier: uuid,
           },
           severity: 'INFO',
           message: `Adapter '${newAdapter.id}' started OK.`,
