@@ -22,7 +22,6 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.interceptor.bridge.BridgePublishInboundInterceptor;
@@ -52,12 +51,13 @@ import com.hivemq.extensions.services.interceptor.Interceptors;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
-import com.hivemq.mqtt.services.InternalPublishService;
+import com.hivemq.mqtt.services.PrePublishProcessorService;
 import com.hivemq.util.Exceptions;
+import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.inject.Inject;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -65,7 +65,7 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
 
     private static final Logger log = LoggerFactory.getLogger(BridgeInterceptorHandlerImpl.class);
 
-    private final @NotNull InternalPublishService internalPublishService;
+    private final @NotNull PrePublishProcessorService prePublishProcessorService;
     private final @NotNull Interceptors interceptors;
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull PluginOutPutAsyncer asyncer;
@@ -76,7 +76,7 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
 
     @Inject
     public BridgeInterceptorHandlerImpl(
-            final @NotNull InternalPublishService internalPublishService,
+            final @NotNull PrePublishProcessorService prePublishProcessorService,
             final @NotNull Interceptors interceptors,
             final @NotNull ConfigurationService configurationService,
             final @NotNull PluginOutPutAsyncer asyncer,
@@ -84,7 +84,7 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
             final @NotNull MessageDroppedService messageDroppedService,
             final @NotNull PluginTaskExecutorService pluginTaskExecutorService,
             final @NotNull ServerInformation serverInformation) {
-        this.internalPublishService = internalPublishService;
+        this.prePublishProcessorService = prePublishProcessorService;
         this.interceptors = interceptors;
         this.configurationService = configurationService;
         this.asyncer = asyncer;
@@ -102,7 +102,7 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
         final ImmutableMap<String, BridgePublishInboundInterceptorProvider> providerMap =
                 interceptors.bridgeInboundInterceptorProviders();
         if (providerMap.isEmpty()) {
-            return internalPublishService.publish(publish, executorService, bridge.getClientId());
+            return prePublishProcessorService.publish(publish, executorService, bridge.getClientId());
         }
 
         final SettableFuture<PublishReturnCode> resultFuture = SettableFuture.create();
@@ -264,7 +264,7 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
                 resultFuture.set(PublishReturnCode.FAILED);
             } else {
                 final PUBLISH finalPublish = PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish);
-                resultFuture.setFuture(internalPublishService.publish(finalPublish,
+                resultFuture.setFuture(prePublishProcessorService.publish(finalPublish,
                         executorService,
                         bridge.getClientId()));
             }
