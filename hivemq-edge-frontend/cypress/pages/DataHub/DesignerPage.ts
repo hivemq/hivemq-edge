@@ -17,6 +17,15 @@ export class DesignerPage extends Page {
       return cy.get(`[role="button"][data-testid^="rf__node-${type}_"]`)
     },
 
+    modes() {
+      return cy.get(`[role="button"][data-testid^="rf__node-"]`)
+    },
+
+    edges() {
+      // xy-edge__FUNCTION_8be4812a-59a1-4b27-87e3-99268cc4e3bd-OPERATION_77b42291-6889-43d7-8205-81799c4ae7b7function
+      return cy.get(`[role="button"][data-id^="xy-edge__"]`)
+    },
+
     handle(node: string, type?: string) {
       if (!type) {
         return cy.get(`[data-nodeid^="${node}_"][data-handleid]`)
