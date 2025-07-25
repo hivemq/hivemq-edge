@@ -42,8 +42,8 @@ class DatahubEntityTable {
 class PolicyTable extends DatahubEntityTable {
   cell(row: number, column: number | 'id' | 'type' | 'matching' | 'created' | 'actions') {
     const map = ['id', 'type', 'matching', 'created', 'actions']
-    if (typeof column === 'string') return this.rows.eq(row).get('td').eq(map.indexOf(column))
-    else return this.rows.eq(row).get('td').eq(column)
+    if (typeof column === 'string') return this.rows.eq(row).find('td').eq(map.indexOf(column))
+    else return this.rows.eq(row).find('td').eq(column)
   }
 
   action(row: number, action: 'draft' | 'edit' | 'download' | 'delete') {
