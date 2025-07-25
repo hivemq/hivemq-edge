@@ -1,6 +1,6 @@
 import { datahubDesignerPage } from 'cypress/pages/DataHub/DesignerPage.ts'
 
-const uuidPattern = '\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}'
+const uuidPattern = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
 
 export const nodeDataIdPattern = /^([A-Z_]+)_([a-f0-9-]+)/
 export const nodeDataTestIdPattern = /^(rf__node)-([A-Z_]+)_([a-f0-9-]+)/
