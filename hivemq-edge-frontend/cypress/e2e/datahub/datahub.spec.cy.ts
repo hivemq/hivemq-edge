@@ -1,4 +1,3 @@
-import { MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
 import { drop, factory, primaryKey } from '@mswjs/data'
 import { DateTime } from 'luxon'
 
@@ -12,6 +11,10 @@ import type { DataHubFactory } from 'cypress/utils/intercept.utils.ts'
 import { cy_interceptCoreE2E, cy_interceptDataHubWithMockDB } from 'cypress/utils/intercept.utils.ts'
 import { datahubPage, loginPage } from 'cypress/pages'
 import { datahubDesignerPage } from 'cypress/pages/DataHub/DesignerPage.ts'
+import { cy_checkDataPolicyGraph } from 'cypress/utils/datahub.utils.ts'
+
+import { MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
+import { MOCK_DATAHUB_FUNCTIONS } from '@datahub/api/hooks/DataHubFunctionsService/__handlers__'
 
 describe('Data Hub', () => {
   // Creating a mock storage for the Data Hub
@@ -39,6 +42,12 @@ describe('Data Hub', () => {
 
     cy_interceptCoreE2E()
     cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
+    cy.intercept('/api/v1/data-hub/function-specs', {
+      items: MOCK_DATAHUB_FUNCTIONS.items.map((specs) => {
+        specs.metadata.inLicenseAllowed = true
+        return specs
+      }),
+    })
     cy_interceptDataHubWithMockDB(mswDB)
 
     loginPage.visit('/app/datahub')
@@ -102,7 +111,7 @@ describe('Data Hub', () => {
       })
     })
 
-    it('should load data', () => {
+    it('should load and render a data policy', () => {
       datahubPage.pageHeader.should('have.text', 'Data Hub on Edge')
       datahubPage.policiesTable.rows.should('have.length', 1)
 
@@ -111,6 +120,27 @@ describe('Data Hub', () => {
       datahubPage.policiesTable.cell(0, 'matching').should('have.text', 'topic/example/1')
       datahubPage.policiesTable.cell(0, 'created').should('have.text', '20 minutes ago')
       datahubPage.policiesTable.action(0, 'edit').click()
+
+      cy.url().should('contain', '/datahub/DATA_POLICY/test')
+
+      datahubDesignerPage.designer.modes().then(($elements) => {
+        const dataIds = $elements.toArray().map((el) => el.getAttribute('data-id'))
+
+        expect(dataIds.length).to.equal(8)
+        // IDs must be unique
+        expect(new Set(dataIds).size).to.equal(dataIds.length)
+        cy.wrap(dataIds).as('nodeIds')
+      })
+
+      datahubDesignerPage.designer.edges().then(($elements) => {
+        const dataIds = $elements.toArray().map((el) => el.getAttribute('data-id'))
+
+        expect(dataIds.length).to.equal(7)
+
+        cy.wrap(dataIds).as('edgeIds')
+      })
+
+      cy_checkDataPolicyGraph()
     })
   })
 })
