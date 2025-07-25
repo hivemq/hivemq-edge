@@ -2,6 +2,7 @@ import { CustomFormTesting } from '@/__test-utils__/rjsf/CustomFormTesting'
 import type { DataCombining } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import { mockCombinerMapping } from '@/api/hooks/useCombiners/__handlers__'
+import { mockAdapter_OPCUA, mockProtocolAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { combinerMappingJsonSchema } from '@/api/schemas/combiner-mapping.json-schema'
 import { formatTopicString } from '@/components/MQTT/topic-utils'
 
@@ -82,9 +83,12 @@ describe('DataCombiningTableField', () => {
   })
 
   it('should render properly', () => {
-    const onChange = cy.stub().as('onChange')
-    const onSubmit = cy.stub().as('onSubmit')
-    const onError = cy.stub().as('onError')
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter_OPCUA] })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter_OPCUA] })
+
+    const onChange = cy.stub()
+    const onSubmit = cy.stub()
+    const onError = cy.stub()
 
     cy.mountWithProviders(
       <CustomFormTesting

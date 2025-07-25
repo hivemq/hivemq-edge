@@ -38,6 +38,10 @@ const getWrapperWith = (initialNodes?: Node[]) => {
 describe('CombinerMappingManager', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+    cy.intercept('/api/v1/management/topic-filters', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', { statusCode: 203, log: false })
   })
 
   it('should render the drawer', () => {
@@ -126,10 +130,10 @@ describe('CombinerMappingManager', () => {
   it('should publish properly', () => {
     cy.intercept('/api/v1/management/protocol-adapters/adapters/my-adapter/tags', {
       items: MOCK_DEVICE_TAGS('my-adapter', MockAdapterType.OPC_UA),
-    }).as('getTags1')
+    })
     cy.intercept('/api/v1/management/protocol-adapters/adapters/my-other-adapter/tags', {
       items: MOCK_DEVICE_TAGS('my-other-adapter', MockAdapterType.OPC_UA),
-    }).as('getTags2')
+    })
     cy.intercept('/api/v1/management/topic-filters', {
       items: [
         MOCK_TOPIC_FILTER,
@@ -138,10 +142,8 @@ describe('CombinerMappingManager', () => {
           description: 'This is a topic filter',
         },
       ],
-    }).as('getTopicFilters')
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter_OPCUA] }).as(
-      'getProtocols'
-    )
+    })
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter_OPCUA] })
     cy.intercept('api/v1/management/protocol-adapters/adapters', {
       items: [
         {
@@ -155,7 +157,7 @@ describe('CombinerMappingManager', () => {
           type: 'opcua',
         },
       ],
-    }).as('getAdapters')
+    })
     cy.intercept('PUT', 'api/v1/management/combiners/**', { updated: 'the combiner' }).as('update')
 
     cy.mountWithProviders(<CombinerMappingManager />, {

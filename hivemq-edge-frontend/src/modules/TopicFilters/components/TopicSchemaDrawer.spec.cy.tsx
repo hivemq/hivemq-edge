@@ -10,6 +10,7 @@ describe('TopicSchemaDrawer', () => {
     cy.intercept('/api/v1/management/domain/topics/schema?*', (req) => {
       req.reply(GENERATE_DATA_MODELS(true, req.query.topics as string))
     })
+    cy.intercept('/api/v1/management/topic-filters', { statusCode: 203, log: false })
   })
 
   it('should render properly', () => {
