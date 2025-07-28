@@ -37,8 +37,6 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
     private final @NotNull PrePublishProcessorHandlingProvider processorHandlingProvider;
     private final @NotNull MessageDroppedService messageDroppedService;
 
-    //FIXME: write tests
-
     @Inject
     public PrePublishProcessorServiceImpl(
             final @NotNull InternalPublishService internalPublishService,
