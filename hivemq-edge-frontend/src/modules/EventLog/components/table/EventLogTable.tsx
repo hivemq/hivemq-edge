@@ -149,6 +149,7 @@ const EventLogTable: FC<EventLogTableProps> = ({
             size="sm"
             leftIcon={<Icon as={BiRefresh} fontSize={20} />}
             onClick={() => refetch()}
+            data-testid="eventLog-refetch"
           >
             {t('eventLog.table.cta.refetch')}
           </Button>

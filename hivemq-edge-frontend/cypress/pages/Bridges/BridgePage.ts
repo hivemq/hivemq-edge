@@ -1,8 +1,9 @@
 import { Page } from '../Page.ts'
+import { EDGE_MENU_LINKS } from 'cypress/utils/constants.utils.ts'
 
 export class BridgePage extends Page {
   get navLink() {
-    return cy.get('nav [role="list"]').eq(0).find('li').eq(2)
+    return cy.get('nav [role="list"]').eq(0).find('li').eq(EDGE_MENU_LINKS.BRIDGES)
   }
 
   get addNewBridge() {
@@ -99,9 +100,10 @@ export class BridgePage extends Page {
     },
 
     formTab(index: number) {
-      return this.formTabs.within(() => {
-        return cy.get('button').eq(index)
+      this.formTabs.within(() => {
+        cy.get('button').eq(index).as('nthTab')
       })
+      return cy.get('@nthTab')
     },
 
     get formTabPanel() {

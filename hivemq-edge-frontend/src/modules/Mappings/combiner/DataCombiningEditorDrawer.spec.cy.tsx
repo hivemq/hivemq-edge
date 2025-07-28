@@ -22,6 +22,8 @@ const mockUiSchema: UiSchema = {
 describe('DataCombiningEditorDrawer', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+    cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { statusCode: 203, log: false })
   })
 
   it('should render properly', () => {
