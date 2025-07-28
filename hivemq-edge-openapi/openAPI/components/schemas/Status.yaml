@@ -1,0 +1,35 @@
+type: object
+description: Information associated with the runtime of this adapter
+properties:
+  connection:
+    type: string
+    description: A mandatory connection status field.
+    enum:
+      - CONNECTED
+      - DISCONNECTED
+      - STATELESS
+      - UNKNOWN
+      - ERROR
+  id:
+    type: string
+    description: The identifier of the object
+  lastActivity:
+    type: string
+    format: date-time
+    description: The datetime of the last activity through this connection
+  message:
+    type: string
+    description: A message associated with the state of a connection
+  runtime:
+    type: string
+    description: A object status field.
+    enum:
+      - STARTED
+      - STOPPED
+  startedAt:
+    type: string
+    format: date-time
+    description: The datetime the object was 'started' in the system.
+  type:
+    type: string
+    description: The type of the object

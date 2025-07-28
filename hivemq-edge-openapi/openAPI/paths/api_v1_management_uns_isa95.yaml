@@ -1,0 +1,47 @@
+get:
+  description: Obtain isa95 config.
+  operationId: get-isa95
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            default-configuration:
+              description: An example ISA 95 config.
+              summary: Example configuration
+              value:
+                enabled: true
+                prefixAllTopics: true
+                enterprise: enterprise
+                site: site
+                area: area
+                productionLine: production-line
+                workCell: work-cell
+          schema:
+            $ref: ../components/schemas/ISA95ApiBean.yaml
+      description: Success
+  summary: Obtain isa95 config
+  tags:
+    - UNS
+post:
+  description: Set isa95 config.
+  operationId: set-isa95
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/ISA95ApiBean.yaml
+    description: The updated isa95 configuration.
+    required: true
+  responses:
+    '200':
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: isa95 config failed validation
+  summary: Set isa95 config
+  tags:
+    - UNS

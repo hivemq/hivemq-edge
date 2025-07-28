@@ -1,0 +1,8 @@
+type: object
+description: The matching rules the policy applies.
+properties:
+  topicFilter:
+    type: string
+    description: The topic filter for which the policy is matched.
+required:
+  - topicFilter

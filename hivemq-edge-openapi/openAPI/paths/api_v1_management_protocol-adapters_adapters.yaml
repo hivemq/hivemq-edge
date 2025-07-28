@@ -1,0 +1,36 @@
+get:
+  description: Obtain a list of configured adapters.
+  operationId: getAdapters
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            adapter-list:
+              description: An example adapter list.
+              value:
+                items:
+                  - id: test-simulation-server
+                    type: simulation
+                    config:
+                      id: test-simulation-server
+                      port: 5021
+                      host: 127.0.0.1
+                      pollingIntervalMillis: 1000
+                      subscriptions:
+                        - filter: my-simulation-server/my-simulation-path-100
+                          destination: test
+                          qos: 0
+                    adapterRuntimeInformation:
+                      lastStartedAttemptTime: '2023-06-28T10:57:18.707+01'
+                      numberOfDaemonProcesses: 1
+                      connectionStatus:
+                        status: CONNECTED
+                        id: test-simulation-server
+                        type: adapter
+          schema:
+            $ref: ../components/schemas/AdaptersList.yaml
+      description: Success
+  summary: Obtain a list of configured adapters
+  tags:
+    - Protocol Adapters

@@ -1,0 +1,32 @@
+get:
+  description: Get all bridges configured in the system.
+  operationId: getEvents
+  parameters:
+    - description: Obtain all events since the specified epoch.
+      in: query
+      name: limit
+      schema:
+        type: integer
+        format: int32
+        default: 100
+    - description: Obtain all events since the specified epoch.
+      in: query
+      name: since
+      schema:
+        type: integer
+        format: int64
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            event-list-result:
+              description: Example response with several events.
+              summary: Event List result
+              value: {}
+          schema:
+            $ref: ../components/schemas/EventList.yaml
+      description: Success
+  summary: List most recent events in the system
+  tags:
+    - Events

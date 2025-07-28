@@ -1,0 +1,14 @@
+type: object
+description: A reference to one of the data identifiers (topic filter or tag) in Edge
+required:
+  - id
+  - type
+properties:
+  id:
+    type: string
+    description: The name (segmented) of the tag or topic filter
+  type:
+    type: string
+    enum:
+      - TAG
+      - TOPIC_FILTER

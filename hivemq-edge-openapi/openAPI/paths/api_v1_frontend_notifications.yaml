@@ -1,0 +1,26 @@
+get:
+  description: Obtain gateway notifications.
+  operationId: get-notifications
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            notifications:
+              description: An example notification list.
+              summary: Example notifications
+              value:
+                items:
+                  - level: WARNING
+                    title: Default Credentials Need Changing!
+                    description: >-
+                      Your gateway access is configured to use the default
+                      username/password combination. This is a security risk.
+                      Please ensure you modify your access credentials in your
+                      configuration.xml file.
+          schema:
+            $ref: ../components/schemas/NotificationList.yaml
+      description: Success
+  summary: Obtain Notifications
+  tags:
+    - Frontend

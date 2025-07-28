@@ -1,0 +1,10 @@
+type: object
+description: A map of properties relating to the installation
+nullable: true
+properties:
+  properties:
+    type: object
+    additionalProperties:
+      type: string
+      description: Map of properties that are returned by this endpoint
+    description: Map of properties that are returned by this endpoint

@@ -1,0 +1,50 @@
+type: object
+description: tlsConfiguration associated with the bridge
+nullable: true
+properties:
+  cipherSuites:
+    type: array
+    description: The cipherSuites from the config
+    items:
+      type: string
+      description: The cipherSuites from the config
+  enabled:
+    type: boolean
+    description: If TLS is used
+  handshakeTimeout:
+    type: integer
+    format: int32
+    description: The handshakeTimeout from the config
+  keystorePassword:
+    type: string
+    description: The keystorePassword from the config
+  keystorePath:
+    type: string
+    description: The keystorePath from the config
+    nullable: true
+  keystoreType:
+    type: string
+    description: The keystoreType from the config
+  privateKeyPassword:
+    type: string
+    description: The privateKeyPassword from the config
+  protocols:
+    type: array
+    description: The protocols from the config
+    items:
+      type: string
+      description: The protocols from the config
+  truststorePassword:
+    type: string
+    description: The truststorePassword from the config
+  truststorePath:
+    type: string
+    description: The truststorePath from the config
+    nullable: true
+  truststoreType:
+    type: string
+    description: The truststoreType from the config
+  verifyHostname:
+    type: boolean
+    default: false
+    description: The verifyHostname from the config

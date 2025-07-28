@@ -1,0 +1,19 @@
+type: object
+properties:
+  config:
+    $ref: ./Adapter.yaml
+  northboundMappings:
+    type: array
+    description: The northbound mappings for this adapter
+    items:
+      $ref: ./NorthboundMapping.yaml
+  southboundMappings:
+    type: array
+    description: The southbound mappings for this adapter
+    items:
+      $ref: ./SouthboundMapping.yaml
+  tags:
+    type: array
+    description: The tags defined for this adapter
+    items:
+      $ref: ./DomainTag.yaml
