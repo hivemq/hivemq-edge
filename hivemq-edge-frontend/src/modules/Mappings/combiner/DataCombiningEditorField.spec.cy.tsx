@@ -48,15 +48,12 @@ const mockFormData: DataCombining = {
 describe('DataCombiningEditorField', () => {
   beforeEach(() => {
     cy.viewport(1000, 800)
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter_OPCUA] })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter_OPCUA] })
+    cy.intercept('/api/v1/management/bridges', { statusCode: 404 })
   })
 
   it('should render properly', () => {
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter_OPCUA] }).as(
-      'getProtocols'
-    )
-    cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter_OPCUA] }).as('getAdapters')
-    cy.intercept('/api/v1/management/bridges', { statusCode: 404 })
-
     cy.mountWithProviders(
       <CustomFormTesting
         schema={mockDataCombiningTableSchema}

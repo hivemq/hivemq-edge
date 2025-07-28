@@ -1,3 +1,4 @@
+import { EDGE_MENU_LINKS } from 'cypress/utils/constants.utils.ts'
 import { ShellPage } from '../ShellPage.ts'
 
 export class WorkspacePage extends ShellPage {
@@ -5,7 +6,7 @@ export class WorkspacePage extends ShellPage {
     cy.get('nav [role="list"]')
       .eq(0)
       .within(() => {
-        cy.get('li').eq(1).as('link')
+        cy.get('li').eq(EDGE_MENU_LINKS.WORKSPACE).as('link')
       })
     return cy.get('@link')
   }
@@ -17,6 +18,10 @@ export class WorkspacePage extends ShellPage {
   toolbox = {
     get fit() {
       return cy.getByAriaLabel('Fit to the canvas')
+    },
+
+    get zoomIn() {
+      return cy.getByAriaLabel('Zoom in')
     },
   }
 
@@ -52,6 +57,14 @@ export class WorkspacePage extends ShellPage {
 
   adapterNode(id: string) {
     return cy.get(`[role="button"][data-id="adapter@${id}"]`)
+  }
+
+  bridgeNodes() {
+    return cy.get(`[role="button"][data-id^="bridge@"]`)
+  }
+
+  bridgeNode(id: string) {
+    return cy.get(`[role="button"][data-id="bridge@${id}"]`)
   }
 
   /**

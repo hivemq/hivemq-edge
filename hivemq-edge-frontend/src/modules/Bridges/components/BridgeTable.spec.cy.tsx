@@ -1,5 +1,6 @@
 import { WrapperTestRoute } from '@/__test-utils__/hooks/WrapperTestRoute.tsx'
 import { MOCK_CREATED_AT } from '@/__test-utils__/mocks.ts'
+import { mockBridgeConnectionStatus } from '@/api/hooks/useConnection/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { BridgeTable } from '@/modules/Bridges/components/BridgeTable.tsx'
 import { DateTime } from 'luxon'
@@ -10,6 +11,9 @@ describe('BridgeTable', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
     cy.intercept('/api/v1/management/bridges', { items: [mockBridge] }).as('getBridges')
+    cy.intercept('api/v1/management/bridges/status', {
+      items: [{ ...mockBridgeConnectionStatus, id: mockBridge.id }],
+    })
 
     cy.stub(DateTime, 'now').returns(DateTime.fromISO(MOCK_CREATED_AT).plus({ day: 2 }))
   })

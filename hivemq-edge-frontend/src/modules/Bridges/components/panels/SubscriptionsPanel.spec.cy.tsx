@@ -44,6 +44,7 @@ describe('SubscriptionsPanel', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [] })
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [] })
     cy.intercept('/api/v1/management/bridges', { items: [] })
+    cy.intercept('/api/v1/management/topic-filters', { statusCode: 203, log: false })
   })
 
   it('should be accessible', () => {
@@ -76,7 +77,7 @@ describe('SubscriptionsPanel', () => {
           description: 'This is a topic filter',
         },
       ],
-    }).as('getTopicFilters')
+    })
     cy.mountWithProviders(<TestingComponent onSubmit={cy.stub} defaultValues={mockBridge} />)
     cy.getByTestId('bridge-subscription-add').click()
     // force validation to trigger error messages.

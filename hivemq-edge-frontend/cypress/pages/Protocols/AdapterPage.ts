@@ -1,11 +1,12 @@
 import { Page } from '../Page.ts'
+import { EDGE_MENU_LINKS } from 'cypress/utils/constants.utils.ts'
 
 export class AdapterPage extends Page {
   get navLink() {
     cy.get('nav [role="list"]')
       .eq(0)
       .within(() => {
-        cy.get('li').eq(3).as('link')
+        cy.get('li').eq(EDGE_MENU_LINKS.ADAPTERS).as('link')
       })
     return cy.get('@link')
   }
@@ -15,6 +16,21 @@ export class AdapterPage extends Page {
       cy.get('button').as('button')
     })
     return cy.get('@button')
+  }
+
+  protocols = {
+    get list() {
+      return cy.get('[role="list"][aria-label="List of protocol adapters"]')
+    },
+
+    createNewConnection(index: number) {
+      cy.get('[role="list"][aria-label="List of protocol adapters"] [role="listitem"]')
+        .eq(index)
+        .within(() => {
+          cy.getByTestId('protocol-create-adapter').as('button')
+        })
+      return cy.get('@button')
+    },
   }
 
   config = {

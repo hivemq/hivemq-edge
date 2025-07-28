@@ -12,7 +12,7 @@ describe('S7 adapter', () => {
     cy_interceptCoreE2E()
 
     // TODO[E2E] This is the mock for the S7 protocol adapter
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_S7] }).as('getProtocols')
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_S7] })
 
     // TODO[E2E] This doesn't work: JWT needs mocking
     loginPage.visit('/app/protocol-adapters/catalog/new/s7')
@@ -176,6 +176,8 @@ describe('S7 adapter', () => {
     })
 
     it('should handle error', () => {
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/**', { statusCode: 203, log: false })
+
       adapterPage.config.submitButton.click()
 
       adapterPage.config.errorSummary.should('have.length', 2)
@@ -224,7 +226,21 @@ describe('S7 adapter', () => {
     beforeEach(() => {
       const mockResponse: DomainTagList = { items: MOCK_DEVICE_TAGS('s7-1', MockAdapterType.SIMULATION) }
 
-      cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', mockResponse).as('tags')
+      cy.intercept('/api/v1/management/bridges', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/gateway/listeners', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/management/combiners', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/management/topic-filters', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/**/northboundMappings', {
+        statusCode: 202,
+        log: false,
+      })
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/**/southboundMappings', {
+        statusCode: 202,
+        log: false,
+      })
+      cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
+
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', mockResponse)
       cy.intercept('/api/v1/management/protocol-adapters/tag-schemas/s7', MOCK_SCHEMA_S7)
 
       cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [MOCK_ADAPTER_S7] }).as('getAdapters')
