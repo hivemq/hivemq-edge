@@ -38,8 +38,6 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
 
     //FIXME: write tests
 
-    //FIXME: write tests
-
     @Inject
     public PrePublishProcessorServiceImpl(
             final @NotNull InternalPublishService internalPublishService,
