@@ -68,47 +68,6 @@ export class DatahubPage extends Page {
 
   policiesTable = new PolicyTable('List of policies')
 
-  // policiesTable = {
-  //   get container() {
-  //     return cy.get('table[aria-label="List of policies"]')
-  //   },
-  //
-  //   get status() {
-  //     return cy.get('table[aria-label="List of policies"] tbody tr td[colspan="6"] div[role="alert"]')
-  //   },
-  //
-  //   get rows() {
-  //     return cy.get('table[aria-label="List of policies"] tbody tr')
-  //   },
-  //
-  //   row(index: number) {
-  //     return this.rows.eq(index)
-  //   },
-  //
-  //   cell(
-  //     row: number,
-  //     column: number | 'id' | 'localSubscriptions' | 'remoteSubscriptions' | 'status' | 'lastStarted' | 'actions'
-  //   ) {
-  //     const map = ['id', 'localSubscriptions', 'remoteSubscriptions', 'status', 'lastStarted', 'actions']
-  //     if (typeof column === 'string') return this.rows.eq(row).get('td').eq(map.indexOf(column))
-  //     else return this.rows.eq(row).get('td').eq(column)
-  //   },
-  //
-  //   action(row: number, action: 'stop' | 'start' | 'restart' | 'edit' | 'delete') {
-  //     const map = {
-  //       stop: 'device-action-stop',
-  //       start: 'device-action-start',
-  //       restart: 'device-action-restart',
-  //       edit: 'bridge-action-edit',
-  //       delete: 'bridge-action-delete',
-  //     }
-  //     this.cell(row, 5).within(() => {
-  //       cy.get('button').click()
-  //     })
-  //     return cy.get(`[role="menu"] button[data-testid=${map[action]}]`)
-  //   },
-  // }
-
   confirmDraft = {
     get dialog() {
       return cy.get('[role="alertdialog"]')
