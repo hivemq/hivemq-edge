@@ -4865,7 +4865,7 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/BehaviorPolicy'
-    ApiError:
+    ApiProblemDetails:
       allOf:
         - $ref: '#/components/schemas/ProblemDetails'
         - type: object
@@ -4920,7 +4920,7 @@ components:
           https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
     BehaviorPolicyAlreadyPresentError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -4938,7 +4938,7 @@ components:
           type: https://hivemq.com/edge/api/model/BehaviorPolicyAlreadyPresentError
     BehaviorPolicyCreationFailureError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
       example:
         general:
           status: 400
@@ -5391,7 +5391,7 @@ components:
           https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
     BehaviorPolicyInvalidErrors:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             childErrors:
@@ -5416,7 +5416,7 @@ components:
               type: https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError
     BehaviorPolicyNotFoundError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5434,7 +5434,7 @@ components:
           type: https://hivemq.com/edge/api/model/BehaviorPolicyNotFoundError
     BehaviorPolicyRejectedError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
       example:
         general:
           status: 400
@@ -5443,7 +5443,7 @@ components:
           type: https://hivemq.com/edge/api/model/BehaviorPolicyRejectedError
     BehaviorPolicyUpdateFailureError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5461,7 +5461,7 @@ components:
           type: https://hivemq.com/edge/api/model/BehaviorPolicyUpdateFailureError
     ClientDisconnectedError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5479,7 +5479,7 @@ components:
           type: https://hivemq.com/edge/api/model/ClientDisconnectedError
     ClientNotFoundError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5497,7 +5497,7 @@ components:
           type: https://hivemq.com/edge/api/model/ClientNotFoundError
     DataPolicyAlreadyPresentError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5515,7 +5515,7 @@ components:
           type: https://hivemq.com/edge/api/model/DataPolicyAlreadyPresentError
     DataPolicyCreationFailureError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
       example:
         general:
           status: 400
@@ -5553,7 +5553,7 @@ components:
           https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
     DataPolicyInvalidErrors:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             childErrors:
@@ -5580,7 +5580,7 @@ components:
               type: https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError
     DataPolicyNotFoundError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5598,7 +5598,7 @@ components:
           type: https://hivemq.com/edge/api/model/DataPolicyNotFoundError
     DataPolicyRejectedError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
       example:
         general:
           status: 400
@@ -5607,7 +5607,7 @@ components:
           type: https://hivemq.com/edge/api/model/DataPolicyRejectedError
     DataPolicyUpdateFailureError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5625,7 +5625,7 @@ components:
           type: https://hivemq.com/edge/api/model/DataPolicyUpdateFailureError
     PolicyIdMismatchError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             actualId:
@@ -5648,7 +5648,7 @@ components:
           type: https://hivemq.com/edge/api/model/PolicyIdMismatchError
     PolicyInsufficientStorageError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5666,7 +5666,7 @@ components:
           type: https://hivemq.com/edge/api/model/PolicyInsufficientStorageError
     PolicyNotFoundError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5684,7 +5684,7 @@ components:
           type: https://hivemq.com/edge/api/model/PolicyNotFoundError
     SchemaAlreadyPresentError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5702,7 +5702,7 @@ components:
           type: https://hivemq.com/edge/api/model/SchemaAlreadyPresentError
     SchemaEtagMismatchError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5725,7 +5725,7 @@ components:
           type: https://hivemq.com/edge/api/model/SchemaEtagMismatchError
     SchemaInsufficientStorageError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5762,7 +5762,7 @@ components:
           https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
     SchemaInvalidErrors:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             childErrors:
@@ -5788,7 +5788,7 @@ components:
               type: https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError
     SchemaNotFoundError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5806,7 +5806,7 @@ components:
           type: https://hivemq.com/edge/api/model/SchemaNotFoundError
     SchemaParsingFailureError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             alias:
@@ -5824,7 +5824,7 @@ components:
           type: https://hivemq.com/edge/api/model/SchemaParsingFailureError
     SchemaReferencedError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5842,7 +5842,7 @@ components:
           type: https://hivemq.com/edge/api/model/SchemaReferencedError
     ScriptAlreadyPresentError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5860,7 +5860,7 @@ components:
           type: https://hivemq.com/edge/api/model/ScriptAlreadyPresentError
     ScriptCreationFailureError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
       example:
         general:
           status: 400
@@ -5869,7 +5869,7 @@ components:
           type: https://hivemq.com/edge/api/model/ScriptCreationFailureError
     ScriptEtagMismatchError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5892,7 +5892,7 @@ components:
           type: https://hivemq.com/edge/api/model/ScriptEtagMismatchError
     ScriptInsufficientStorageError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5927,7 +5927,7 @@ components:
           https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
     ScriptInvalidErrors:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             childErrors:
@@ -5953,7 +5953,7 @@ components:
               type: https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError
     ScriptNotFoundError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5971,7 +5971,7 @@ components:
           type: https://hivemq.com/edge/api/model/ScriptNotFoundError
     ScriptParsingFailureError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
       example:
         general:
           status: 400
@@ -5980,7 +5980,7 @@ components:
           type: https://hivemq.com/edge/api/model/ScriptParsingFailureError
     ScriptReferencedError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             id:
@@ -5998,7 +5998,7 @@ components:
           type: https://hivemq.com/edge/api/model/ScriptReferencedError
     ScriptSanitationFailureError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
       example:
         general:
           status: 400
@@ -6007,7 +6007,7 @@ components:
           type: https://hivemq.com/edge/api/model/ScriptSanitationFailureError
     TopicFilterMismatchError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             path:
@@ -6024,7 +6024,7 @@ components:
           type: https://hivemq.com/edge/api/model/TopicFilterMismatchError
     InsufficientStorageError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
       example:
         general:
           status: 507
@@ -6033,7 +6033,7 @@ components:
           type: https://hivemq.com/edge/api/model/InsufficientStorageError
     InternalServerError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
       example:
         general:
           status: 500
@@ -6047,7 +6047,7 @@ components:
           type: https://hivemq.com/edge/api/model/InternalServerError
     InvalidQueryParameterError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             parameter:
@@ -6064,7 +6064,7 @@ components:
           type: https://hivemq.com/edge/api/model/InvalidQueryParameterError
     PreconditionFailedError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
       example:
         general:
           status: 412
@@ -6073,7 +6073,7 @@ components:
           type: https://hivemq.com/edge/api/model/PreconditionFailedError
     RequestBodyMissingError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
       example:
         general:
           status: 400
@@ -6082,7 +6082,7 @@ components:
           type: https://hivemq.com/edge/api/model/RequestBodyMissingError
     RequestBodyParameterMissingError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             parameter:
@@ -6099,7 +6099,7 @@ components:
           type: https://hivemq.com/edge/api/model/RequestBodyParameterMissingError
     TemporaryNotAvailableError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
       example:
         general:
           status: 503
@@ -6108,7 +6108,7 @@ components:
           type: https://hivemq.com/edge/api/model/TemporaryNotAvailableError
     UrlParameterMissingError:
       allOf:
-        - $ref: '#/components/schemas/ApiError'
+        - $ref: '#/components/schemas/ApiProblemDetails'
         - type: object
           properties:
             parameter:
