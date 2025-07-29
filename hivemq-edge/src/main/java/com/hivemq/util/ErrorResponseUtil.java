@@ -17,6 +17,7 @@ package com.hivemq.util;
 
 import com.hivemq.api.error.ApiExceptionMapper;
 import com.hivemq.edge.api.model.ApiError;
+import com.hivemq.edge.api.model.ApiProblemDetails;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.error.ProblemDetails;
 import jakarta.ws.rs.core.Response;
@@ -26,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Christoph Schäbel
  */
 public class ErrorResponseUtil {
-    public static @NotNull Response errorResponse(final @NotNull ApiError error) {
+    public static @NotNull Response errorResponse(final @NotNull ApiProblemDetails error) {
         return Response.status(error.getStatus())
                 .entity(error)
                 .type(HttpConstants.APPLICATION_PROBLEM_JSON_TYPE)
