@@ -15,8 +15,6 @@
  */
 package com.hivemq.util;
 
-import com.hivemq.api.error.ApiExceptionMapper;
-import com.hivemq.edge.api.model.ApiError;
 import com.hivemq.edge.api.model.ApiProblemDetails;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.error.ProblemDetails;
