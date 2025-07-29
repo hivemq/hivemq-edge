@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The behavior policy id.
+        example: "abc"
+    required:
+      - id
+example:
+  general:
+    status: 409
+    title: "Behavior Policy Already Present"
+    detail: "The given behavior policy 'abc' is already present."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/BehaviorPolicyAlreadyPresentError"

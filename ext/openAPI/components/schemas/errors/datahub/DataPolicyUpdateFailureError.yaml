@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The ID of the policy that failed to update.
+        example: "abc"
+    required:
+      - id
+example:
+  general:
+    status: 400
+    title: "Data Policy Update Failed"
+    detail: "Data policy with ID 'abc' update failed."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/DataPolicyUpdateFailureError"
