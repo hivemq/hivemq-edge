@@ -1,5 +1,5 @@
 allOf:
-  - $ref: "../ApiError.yaml"
+  - $ref: "../ApiProblemDetails.yaml"
   - type: object
     properties:
       actualId:
