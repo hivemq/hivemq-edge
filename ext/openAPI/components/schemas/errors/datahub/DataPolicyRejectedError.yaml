@@ -1,5 +1,5 @@
 allOf:
-  - $ref: "../ApiError.yaml"
+  - $ref: "../ApiProblemDetails.yaml"
 example:
   general:
     status: 400
