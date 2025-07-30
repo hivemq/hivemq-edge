@@ -17,3 +17,31 @@ get:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
       description: Pulse Client not found
+post:
+  description: Add a new managed asset to the Pulse Client
+  summary: Add a new managed asset
+  operationId: add-managed-assets
+  tags:
+    - Pulse
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/ManagedAsset.yaml
+    description: The managed asset to add
+    required: true
+  responses:
+    '200':
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Client not found
+    '409':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: The managed asset already exists
