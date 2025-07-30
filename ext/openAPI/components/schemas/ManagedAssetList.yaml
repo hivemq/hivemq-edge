@@ -1,0 +1,9 @@
+type: object
+description: The list of assets defined in the Pulse Broker
+properties:
+  items:
+    type: array
+    items:
+      $ref: ./ManagedAsset.yaml
+required:
+  - items

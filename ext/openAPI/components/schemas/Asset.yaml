@@ -1,0 +1,26 @@
+type: object
+description: A blah blah bleh managed by the Pulse Broker
+properties:
+  id:
+    type: string
+    format: uuid
+    description: The unique id of the asset
+    readOnly: true
+  name:
+    type: string
+    description: The user-facing name of the asset
+    readOnly: true
+  topic:
+    type: string
+    format: mqtt-topic
+    readOnly: true
+  schema:
+    type: string
+    format: data-url
+    description: The json schema for this topic filter in the data uri format.
+    readOnly: true
+required:
+  - id
+  - name
+  - schema
+  - topic
