@@ -32,6 +32,7 @@ export namespace Capability {
         CONTROL_PLANE_CONNECTIVITY = 'control-plane-connectivity',
         DATA_HUB = 'data-hub',
         MQTT_PERSISTENCE = 'mqtt-persistence',
+        PULSE_ASSET_MANAGEMENT = 'pulse-asset-management',
     }
 
 
