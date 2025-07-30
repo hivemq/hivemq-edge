@@ -285,3 +285,5 @@ paths:
     $ref: paths/pulse/activation_token.yaml
   /api/v1/management/pulse/managed-assets:
     $ref: paths/pulse/managed-assets.yaml
+  /api/v1/management/pulse/managed-assets/{assetId}:
+    $ref: paths/pulse/managed-assets_{assetId}.yaml
