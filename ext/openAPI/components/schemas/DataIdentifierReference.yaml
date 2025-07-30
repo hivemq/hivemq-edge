@@ -12,3 +12,4 @@ properties:
     enum:
       - TAG
       - TOPIC_FILTER
+      - PULSE_ASSET
