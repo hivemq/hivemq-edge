@@ -1,7 +1,7 @@
 get:
   description: Get all managed assets from the Pulse Client
   summary: Get all managed assets
-  operationId: get-pulse-managed-assets
+  operationId: get-managed-assets
   tags:
     - Pulse
   responses:
