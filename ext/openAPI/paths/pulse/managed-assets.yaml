@@ -1,7 +1,7 @@
 get:
-  description: Get all Pulse assets
-  summary: Get all assets
-  operationId: get-pulse-assets
+  description: Get all managed assets from the Pulse Client
+  summary: Get all managed assets
+  operationId: get-pulse-managed-assets
   tags:
     - Pulse
   responses:
@@ -16,4 +16,4 @@ get:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Pulse Broker not found
+      description: Pulse Client not found
