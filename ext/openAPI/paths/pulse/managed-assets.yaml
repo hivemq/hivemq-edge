@@ -1,0 +1,19 @@
+get:
+  description: Get all Pulse assets
+  summary: Get all assets
+  operationId: get-pulse-assets
+  tags:
+    - Pulse
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ManagedAssetList.yaml
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Broker not found
