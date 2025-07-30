@@ -19,6 +19,7 @@ export namespace DataIdentifierReference {
     export enum type {
         TAG = 'TAG',
         TOPIC_FILTER = 'TOPIC_FILTER',
+        PULSE_ASSET = 'PULSE_ASSET',
     }
 
 

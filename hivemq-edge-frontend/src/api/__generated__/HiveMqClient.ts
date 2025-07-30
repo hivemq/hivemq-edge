@@ -27,6 +27,7 @@ import { MetricsService } from './services/MetricsService';
 import { MetricsEndpointService } from './services/MetricsEndpointService';
 import { PayloadSamplingService } from './services/PayloadSamplingService';
 import { ProtocolAdaptersService } from './services/ProtocolAdaptersService';
+import { PulseService } from './services/PulseService';
 import { TopicFiltersService } from './services/TopicFiltersService';
 import { UnsService } from './services/UnsService';
 
@@ -55,6 +56,7 @@ export class HiveMqClient {
     public readonly metricsEndpoint: MetricsEndpointService;
     public readonly payloadSampling: PayloadSamplingService;
     public readonly protocolAdapters: ProtocolAdaptersService;
+    public readonly pulse: PulseService;
     public readonly topicFilters: TopicFiltersService;
     public readonly uns: UnsService;
 
@@ -63,7 +65,7 @@ export class HiveMqClient {
     constructor(config?: Partial<OpenAPIConfig>, HttpRequest: HttpRequestConstructor = AxiosHttpRequest) {
         this.request = new HttpRequest({
             BASE: config?.BASE ?? '',
-            VERSION: config?.VERSION ?? '2025.10-SNAPSHOT',
+            VERSION: config?.VERSION ?? '2025.13-SNAPSHOT',
             WITH_CREDENTIALS: config?.WITH_CREDENTIALS ?? false,
             CREDENTIALS: config?.CREDENTIALS ?? 'include',
             TOKEN: config?.TOKEN,
@@ -94,6 +96,7 @@ export class HiveMqClient {
         this.metricsEndpoint = new MetricsEndpointService(this.request);
         this.payloadSampling = new PayloadSamplingService(this.request);
         this.protocolAdapters = new ProtocolAdaptersService(this.request);
+        this.pulse = new PulseService(this.request);
         this.topicFilters = new TopicFiltersService(this.request);
         this.uns = new UnsService(this.request);
     }
