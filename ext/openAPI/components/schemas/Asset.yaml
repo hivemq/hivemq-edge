@@ -1,24 +1,28 @@
 type: object
-description: A blah blah bleh managed by the Pulse Broker
+description: The definition of an asset as sourced from the Pulse Broker
 properties:
   id:
     type: string
     format: uuid
     description: The unique id of the asset
+    example: "123e4567-e89b-12d3-a456-426614174000"
     readOnly: true
   name:
     type: string
     description: The user-facing name of the asset
     readOnly: true
+    example: "The fancy asset"
   topic:
     type: string
     format: mqtt-topic
+    description: The topic associated with the asset
+    example: "a/valid/mqtt/topic"
     readOnly: true
   schema:
     type: string
     format: data-url
-    description: The json schema for this topic filter in the data uri format.
-    readOnly: true
+    description: The schema associated with the asset, in a JSON Schema and data uri format.
+    example: "data:application/schema+json;base64,eyJ0eXBlIjoiT2JqZWN0IiwiaWQiOiJhc3NldC1zY2hlbWEifQ=="
 required:
   - id
   - name

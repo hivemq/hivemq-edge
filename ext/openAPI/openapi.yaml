@@ -156,7 +156,7 @@ tags:
 
     name: Data Hub - State
   - description: >+
-      These endpoints can be used to manage Pulse and its assets
+      These endpoints can be used to manage Pulse and its assets.
     name: Pulse
 paths:
   /:

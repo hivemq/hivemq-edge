@@ -1,5 +1,5 @@
 type: object
-description: The list of assets defined in the Pulse Broker
+description: A list of managed assets, as managed in Edge for the Pulse Client
 properties:
   items:
     type: array

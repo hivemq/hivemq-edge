@@ -1,5 +1,5 @@
 delete:
-  description: Delete the activation token from the Pulse broker
+  description: Delete the activation token from the Pulse Client
   summary: Delete the Pulse activation token
   operationId: delete-pulse-activation-token
   tags:
@@ -12,9 +12,9 @@ delete:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Pulse Broker not found
+      description: Pulse Client not found
 post:
-  description: Send an activation token to the Pulse broker.
+  description: Send an activation token to the Pulse Client
   summary: Update an activation token
   operationId: update-pulse-activation-token
   tags:
@@ -24,7 +24,7 @@ post:
       application/json:
         schema:
           $ref: ../../components/schemas/PulseValidationToken.yaml
-    description: Thr activation token to send to the Pulse broker.
+    description: The activation token to send to the Pulse Client.
     required: true
   responses:
     '200':
@@ -34,4 +34,4 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Pulse Broker not found
+      description: Pulse Client not found
