@@ -1,0 +1,37 @@
+delete:
+  description: Delete the activation token from the Pulse broker
+  summary: Delete the Pulse activation token
+  operationId: delete-pulse-activation-token
+  tags:
+    - Pulse
+  responses:
+    '200':
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Broker not found
+post:
+  description: Send an activation token to the Pulse broker.
+  summary: Update an activation token
+  operationId: update-pulse-activation-token
+  tags:
+    - Pulse
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/PulseValidationToken.yaml
+    description: Thr activation token to send to the Pulse broker.
+    required: true
+  responses:
+    '200':
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Broker not found
