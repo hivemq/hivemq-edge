@@ -1,0 +1,8 @@
+type: object
+properties:
+  # TODO[NVL] Exactly similar to ApiBearerToken schema; can we reuse it?
+  token:
+    type: string
+    description: The token associated with Pulse Broker validation
+required:
+    - token
