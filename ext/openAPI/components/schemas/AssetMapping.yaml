@@ -1,0 +1,28 @@
+type: object
+description: A blah blah bleh managed by the Pulse Broker
+properties:
+  status:
+    type: string
+    description: The status of the asset mapping, e.g., "unmapped", "draft", "streaming"
+    enum:
+      - UNMAPPED
+      - DRAFT
+      - STREAMING
+    default: UNMAPPED
+  sources:
+    type: array
+    description: The list of sources used in the asset mapping
+    items:
+      $ref: ./DataIdentifierReference.yaml
+  primary:
+    $ref: ./DataIdentifierReference.yaml
+  instructions:
+    type: array
+    description: List of instructions to be applied to incoming data
+    items:
+      $ref: ./Instruction.yaml
+required:
+    - status
+    - sources
+    - primary
+    - instructions
