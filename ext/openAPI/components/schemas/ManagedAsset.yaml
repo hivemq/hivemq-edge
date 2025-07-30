@@ -1,0 +1,9 @@
+type: object
+description: A blah blah bleh managed by the Pulse Broker
+allOf:
+  - $ref: ./Asset.yaml
+  - type: object
+    properties:
+      mapping:
+        $ref: ./AssetMapping.yaml
+
