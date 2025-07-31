@@ -4,7 +4,7 @@
 /* eslint-disable */
 import type { ManagedAsset } from '../models/ManagedAsset';
 import type { ManagedAssetList } from '../models/ManagedAssetList';
-import type { PulseValidationToken } from '../models/PulseValidationToken';
+import type { PulseActivationToken } from '../models/PulseActivationToken';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -37,7 +37,7 @@ export class PulseService {
      * @throws ApiError
      */
     public updatePulseActivationToken(
-        requestBody: PulseValidationToken,
+        requestBody: PulseActivationToken,
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'POST',
@@ -105,7 +105,7 @@ export class PulseService {
                 'assetId': assetId,
             },
             errors: {
-                404: `Pulse Client not found`,
+                404: `Managed asset not found`,
             },
         });
     }
@@ -131,7 +131,7 @@ export class PulseService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                404: `Pulse Client not found`,
+                404: `Managed asset not found`,
             },
         });
     }

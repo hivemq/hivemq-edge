@@ -3,7 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export type PulseValidationToken = {
+export type PulseActivationToken = {
     /**
      * The token used to activate the Pulse Client in Edge
      */

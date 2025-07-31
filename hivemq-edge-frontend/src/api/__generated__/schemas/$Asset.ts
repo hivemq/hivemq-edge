@@ -18,6 +18,11 @@ export const $Asset = {
             isReadOnly: true,
             isRequired: true,
         },
+        description: {
+            type: 'string',
+            description: `The user-facing description of the asset`,
+            isReadOnly: true,
+        },
         topic: {
             type: 'string',
             description: `The topic associated with the asset`,

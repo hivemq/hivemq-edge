@@ -16,6 +16,10 @@ export type Asset = {
      */
     readonly name: string;
     /**
+     * The user-facing description of the asset
+     */
+    readonly description?: string;
+    /**
      * The topic associated with the asset
      */
     readonly topic: string;
