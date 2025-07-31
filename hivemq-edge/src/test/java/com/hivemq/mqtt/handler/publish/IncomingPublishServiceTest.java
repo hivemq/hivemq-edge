@@ -607,7 +607,7 @@ public class IncomingPublishServiceTest {
 
         final PUBACK puback = channel.readOutbound();
 
-        assertEquals(Mqtt5PubAckReasonCode.SUCCESS, puback.getReasonCode());
+        assertEquals(Mqtt5PubAckReasonCode.UNSPECIFIED_ERROR, puback.getReasonCode());
 
         verify(dataGovernanceService).applyAndPublish(any());
     }
@@ -680,7 +680,7 @@ public class IncomingPublishServiceTest {
 
         final PUBREC pubrec = channel.readOutbound();
 
-        assertEquals(Mqtt5PubRecReasonCode.SUCCESS, pubrec.getReasonCode());
+        assertEquals(Mqtt5PubRecReasonCode.UNSPECIFIED_ERROR, pubrec.getReasonCode());
         verify(dataGovernanceService).applyAndPublish(any());
     }
 

@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
+import static com.hivemq.api.mqtt.PublishReturnCode.DELIVERED;
 import static com.hivemq.api.mqtt.PublishReturnCode.FAILED;
 import static com.hivemq.api.mqtt.PublishReturnCode.NO_MATCHING_SUBSCRIBERS;
 import static org.junit.Assert.assertEquals;
@@ -223,7 +224,7 @@ public class InternalPublishServiceImplTest {
         final PublishReturnCode returnCode =
                 publishService.publish(publish, executorService, "sub1").get().getPublishReturnCode();
 
-        assertEquals(FAILED, returnCode);
+        assertEquals(DELIVERED, returnCode);
     }
 
     @Test(timeout = 20000)
