@@ -31,17 +31,4 @@ public interface PrePublishProcessorService {
             @NotNull PUBLISH publish,
             @NotNull ExecutorService executorService,
             @Nullable String sender);
-
-
-    /**
-     * Send a message to all clients and shared subscription groups which have an active subscription
-     *
-     * @param publish         the message to send
-     * @param executorService the executor service in which all callbacks are executed
-     * @param sender          client identifier of the client which sent the message
-     */
-    @NotNull ListenableFuture<PublishingResult> applyDataHubAndPublish(
-            final @NotNull PUBLISH publish,
-            final @NotNull ExecutorService executorService,
-            final @NotNull String sender);
 }

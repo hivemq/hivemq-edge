@@ -17,7 +17,6 @@ package com.hivemq.extensions.core;
 
 import com.hivemq.bootstrap.factories.AdapterHandlingFactory;
 import com.hivemq.bootstrap.factories.HandlerFactory;
-import com.hivemq.bootstrap.factories.InternalPublishServiceHandlingFactory;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +29,6 @@ public class HandlerService {
 
     private @Nullable HandlerFactory handlerFactory;
     private @Nullable AdapterHandlingFactory adapterHandlingFactory;
-    private @Nullable InternalPublishServiceHandlingFactory internalPublishServiceHandlingFactory;
     private final @NotNull SortedMap<Integer, PrePublishProcessorHandlingFactory> prePublishProcessorHandlingFactories =
             new TreeMap<>();
 
@@ -41,10 +39,6 @@ public class HandlerService {
 
     public void supplyAdapterHandlingFactory(final @NotNull AdapterHandlingFactory adapterHandlingFactory) {
         this.adapterHandlingFactory = adapterHandlingFactory;
-    }
-
-    public void supplyInternalPublishServiceHandlingFactory(final @NotNull InternalPublishServiceHandlingFactory internalPublishServiceHandlingFactory) {
-        this.internalPublishServiceHandlingFactory = internalPublishServiceHandlingFactory;
     }
 
     /**
@@ -74,14 +68,6 @@ public class HandlerService {
 
     public @Nullable AdapterHandlingFactory getAdapterHandlerFactory() {
         return adapterHandlingFactory;
-    }
-
-    public @Nullable InternalPublishServiceHandlingFactory get() {
-        return internalPublishServiceHandlingFactory;
-    }
-
-    public @Nullable InternalPublishServiceHandlingFactory getInternalPublishServiceHandlingFactory() {
-        return internalPublishServiceHandlingFactory;
     }
 
     public @NotNull List<PrePublishProcessorHandlingFactory> getPrePublishProcessorHandlingFactories() {

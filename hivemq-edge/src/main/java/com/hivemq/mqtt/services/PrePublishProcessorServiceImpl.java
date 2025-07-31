@@ -19,7 +19,6 @@ package com.hivemq.mqtt.services;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.bootstrap.factories.HandlerResult;
-import com.hivemq.bootstrap.factories.InternalPublishServiceHandlingProvider;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandling;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingProvider;
 import com.hivemq.mqtt.handler.publish.PublishingResult;
@@ -36,18 +35,15 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
 
     private final @NotNull InternalPublishService internalPublishService;
     private final @NotNull PrePublishProcessorHandlingProvider processorHandlingProvider;
-    private final @NotNull InternalPublishServiceHandlingProvider internalPublishServiceHandlingProvider;
 
     //FIXME: write tests
 
     @Inject
     public PrePublishProcessorServiceImpl(
             final @NotNull InternalPublishService internalPublishService,
-            final @NotNull PrePublishProcessorHandlingProvider processorHandlingProvider,
-            final @NotNull InternalPublishServiceHandlingProvider internalPublishServiceHandlingProvider) {
+            final @NotNull PrePublishProcessorHandlingProvider processorHandlingProvider) {
         this.internalPublishService = internalPublishService;
         this.processorHandlingProvider = processorHandlingProvider;
-        this.internalPublishServiceHandlingProvider = internalPublishServiceHandlingProvider;
     }
 
     public @NotNull ListenableFuture<PublishingResult> publish(
@@ -85,28 +81,5 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
                 return internalPublishService.publish(modifiedPublish, executorService, sender);
             }
         }, executorService);
-    }
-
-
-    //TODO: remove this method once the DataHub module is migrated to the new PrePublishProcessorService
-    @Override
-    public @NotNull ListenableFuture<PublishingResult> applyDataHubAndPublish(
-            final @NotNull PUBLISH publish,
-            final @NotNull ExecutorService executorService,
-            final @NotNull String sender) {
-
-
-        final ListenableFuture<HandlerResult> handlerFuture =
-                internalPublishServiceHandlingProvider.get().apply(publish, sender);
-        return Futures.transformAsync(handlerFuture, handlerResult -> {
-            final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
-            if (handlerResult.isPreventPublish() || modifiedPublish == null) {
-                return Futures.immediateFuture(PublishingResult.failed(handlerResult.getReasonString(),
-                        handlerResult.getAckReasonCode()));
-            } else {
-                // already merged the original and modified Publish.
-                return publish(modifiedPublish, executorService, sender);
-            }
-        }, Executors.newSingleThreadExecutor());
     }
 }

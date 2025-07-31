@@ -19,7 +19,6 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.bootstrap.factories.HandlerResult;
-import com.hivemq.bootstrap.factories.InternalPublishServiceHandlingProvider;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingProvider;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.jetbrains.annotations.NotNull;
@@ -43,12 +42,10 @@ class PrePublishProcessorServiceImplTest {
 
     private final @NotNull InternalPublishService internalPublishService = mock();
     private final @NotNull PrePublishProcessorHandlingProvider processorHandlingProvider = mock();
-    private final @NotNull InternalPublishServiceHandlingProvider internalPublishServiceHandlingProvider = mock();
 
     private final @NotNull PrePublishProcessorServiceImpl prePublishProcessorService =
             new PrePublishProcessorServiceImpl(internalPublishService,
-                    processorHandlingProvider,
-                    internalPublishServiceHandlingProvider);
+                    processorHandlingProvider);
 
     @BeforeEach
     void setUp() {
