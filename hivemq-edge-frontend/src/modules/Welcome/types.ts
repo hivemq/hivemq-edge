@@ -3,9 +3,10 @@ import type React from 'react'
 export interface OnboardingAction {
   title: string
   label: string
-  to: string
-  leftIcon: React.ReactElement
+  to?: string
   isExternal?: boolean
+  content?: React.ReactElement
+  leftIcon: React.ReactElement
 }
 
 export interface OnboardingTask {
