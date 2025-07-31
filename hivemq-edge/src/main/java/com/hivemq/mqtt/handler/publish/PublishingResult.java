@@ -16,6 +16,7 @@
 package com.hivemq.mqtt.handler.publish;
 
 import com.hivemq.api.mqtt.PublishReturnCode;
+import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,10 +28,19 @@ public class PublishingResult {
 
     private final @NotNull PublishReturnCode publishReturnCode;
     private final @Nullable String reasonString;
+    private final @Nullable AckReasonCode ackReasonCode;
 
     private PublishingResult(final @NotNull PublishReturnCode publishReturnCode, final @Nullable String reasonString) {
+        this(publishReturnCode, reasonString, null);
+    }
+
+    private PublishingResult(
+            final @NotNull PublishReturnCode publishReturnCode,
+            final @Nullable String reasonString,
+            final @Nullable AckReasonCode ackReasonCode) {
         this.publishReturnCode = publishReturnCode;
         this.reasonString = reasonString;
+        this.ackReasonCode = ackReasonCode;
     }
 
     public static @NotNull PublishingResult failed(final @Nullable String reasonString) {
@@ -43,6 +53,10 @@ public class PublishingResult {
 
     public @Nullable String getReasonString() {
         return reasonString;
+    }
+
+    public @Nullable AckReasonCode getAckReasonCode() {
+        return ackReasonCode;
     }
 
     @Override

@@ -18,7 +18,6 @@ package com.hivemq.mqtt.handler.publish;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
@@ -178,7 +177,7 @@ public class IncomingPublishService {
         if (authorizerResult != null &&
                 authorizerResult.isAuthorizerPresent() &&
                 (defaultPermissions == null ||
-                        (defaultPermissions.asList().size() < 1 &&
+                        (defaultPermissions.asList().isEmpty() &&
                                 defaultPermissions.getDefaultBehaviour() == DefaultAuthorizationBehaviour.ALLOW &&
                                 !defaultPermissions.isDefaultAuthorizationBehaviourOverridden()))) {
             finishUnauthorizedPublish(ctx, publish, null, null);
@@ -331,7 +330,11 @@ public class IncomingPublishService {
                                         Mqtt5UserProperties.NO_USER_PROPERTIES));
                     }
                     case FAILED -> {
-                        // TODO
+                        ctx.pipeline()
+                                .writeAndFlush(new PUBACK(publish.getPacketIdentifier(),
+                                        resolveMqtt5PubAckReasonCode(publishingResult),
+                                        publishingResult.getReasonString(),
+                                        Mqtt5UserProperties.NO_USER_PROPERTIES));
                     }
                 }
                 break;
@@ -352,16 +355,32 @@ public class IncomingPublishService {
                                         Mqtt5UserProperties.NO_USER_PROPERTIES));
                     }
                     case FAILED -> {
-                        // TODO
+                        ctx.pipeline()
+                                .writeAndFlush(new PUBREC(publish.getPacketIdentifier(),
+                                        resolveMqtt5PubRecReasonCode(publishingResult),
+                                        publishingResult.getReasonString(),
+                                        Mqtt5UserProperties.NO_USER_PROPERTIES));
                     }
                 }
                 break;
         }
     }
 
+    private @NotNull Mqtt5PubRecReasonCode resolveMqtt5PubRecReasonCode(final @NotNull PublishingResult publishingResult) {
+        if (publishingResult.getAckReasonCode() != null) {
+            return Mqtt5PubRecReasonCode.from(publishingResult.getAckReasonCode());
+        }
+        return Mqtt5PubRecReasonCode.UNSPECIFIED_ERROR;
+    }
+
+    private @NotNull Mqtt5PubAckReasonCode resolveMqtt5PubAckReasonCode(final @NotNull PublishingResult publishingResult) {
+        if (publishingResult.getAckReasonCode() != null) {
+            return Mqtt5PubAckReasonCode.from(publishingResult.getAckReasonCode());
+        }
+        return Mqtt5PubAckReasonCode.UNSPECIFIED_ERROR;
+    }
+
     private boolean isMessageSizeAllowed(final @Nullable Long maxPublishSize, final @NotNull PUBLISH publish) {
         return maxPublishSize == null || publish.getPayload() == null || maxPublishSize >= publish.getPayload().length;
     }
-
-
 }
