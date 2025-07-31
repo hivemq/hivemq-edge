@@ -45,7 +45,8 @@
         "workspace": "Workspace",
         "bridges": "MQTT Bridges",
         "protocolAdapters": "Protocol Adapters",
-        "eventLogs": "Event Logs"
+        "eventLogs": "Event Logs",
+        "assets": "Assets"
       }
     },
     "extensions": {

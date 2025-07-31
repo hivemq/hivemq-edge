@@ -10,7 +10,8 @@
     "topic-filter": "Topic Filter",
     "tag": "Tag",
     "client": "Client",
-    "workspace": "Workspace"
+    "workspace": "Workspace",
+    "pulse": "Pulse Agent"
   },
   "pagination": {
     "ariaLabel": "Pagination",
