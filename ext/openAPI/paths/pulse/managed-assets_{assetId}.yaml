@@ -14,7 +14,7 @@ delete:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Pulse Client not found
+      description: Managed asset not found
 put:
   description: Update a managed asset
   summary: Update a managed asset
@@ -38,4 +38,4 @@ put:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Pulse Client not found
+      description: Managed asset not found
