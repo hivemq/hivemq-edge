@@ -16,13 +16,9 @@
 package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.bootstrap.factories.AdapterHandling;
-import com.hivemq.bootstrap.factories.AdapterHandlingProvider;
-import com.hivemq.bootstrap.factories.HandlerResult;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.datagov.DataGovernanceContext;
 import com.hivemq.datagov.DataGovernanceService;
@@ -61,7 +57,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProtocolAdapterInterceptorHandler {
@@ -80,7 +75,6 @@ public class ProtocolAdapterInterceptorHandler {
     private final @NotNull MessageDroppedService messageDroppedService;
     private final @NotNull PluginTaskExecutorService pluginTaskExecutorService;
     private final @NotNull ServerInformation serverInformation;
-    private final @NotNull AdapterHandlingProvider adapterHandlingProvider;
 
     @Inject
     public ProtocolAdapterInterceptorHandler(
@@ -91,8 +85,7 @@ public class ProtocolAdapterInterceptorHandler {
             final @NotNull HiveMQExtensions hiveMQExtensions,
             final @NotNull MessageDroppedService messageDroppedService,
             final @NotNull PluginTaskExecutorService pluginTaskExecutorService,
-            final @NotNull ServerInformation serverInformation,
-            final @NotNull AdapterHandlingProvider adapterHandlingProvider) {
+            final @NotNull ServerInformation serverInformation) {
         this.dataGovernanceService = dataGovernanceService;
         this.interceptors = interceptors;
         this.configurationService = configurationService;
@@ -101,7 +94,6 @@ public class ProtocolAdapterInterceptorHandler {
         this.messageDroppedService = messageDroppedService;
         this.pluginTaskExecutorService = pluginTaskExecutorService;
         this.serverInformation = serverInformation;
-        this.adapterHandlingProvider = adapterHandlingProvider;
     }
 
     public @NotNull ListenableFuture<PublishingResult> interceptOrDelegateInbound(
@@ -167,29 +159,12 @@ public class ProtocolAdapterInterceptorHandler {
 
 
     private @NotNull ListenableFuture<PublishingResult> processPublish(
-            final @NotNull PUBLISH publish, final @NotNull ProtocolAdapter protocolAdapter) {
-        final AdapterHandling adapterHandling = adapterHandlingProvider.get();
+            final @NotNull PUBLISH publish,
+            final @NotNull ProtocolAdapter protocolAdapter) {
         final DataGovernanceData data =
                 new DataGovernanceDataImpl.Builder().withClientId(protocolAdapter.getId()).withPublish(publish).build();
         final DataGovernanceContext context = new ProtocolAdapterContext(data, protocolAdapter);
-        if (adapterHandling == null) {
-            return dataGovernanceService.applyAndPublish(context);
-        }
-
-        final ListenableFuture<HandlerResult> handlerFuture = adapterHandling.apply(publish, protocolAdapter);
-        return Futures.transformAsync(handlerFuture, handlerResult -> {
-            final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
-            if (handlerResult.isPreventPublish() || modifiedPublish == null) {
-                return Futures.immediateFuture(PublishingResult.failed(null, null));
-            } else {
-                final DataGovernanceData data2 =
-                        new DataGovernanceDataImpl.Builder().withClientId(protocolAdapter.getId())
-                                .withPublish(modifiedPublish)
-                                .build();
-                final DataGovernanceContext context2 = new ProtocolAdapterContext(data2, protocolAdapter);
-                return dataGovernanceService.applyAndPublish(context2);
-            }
-        }, Executors.newSingleThreadExecutor());
+        return dataGovernanceService.applyAndPublish(context);
     }
 
     static class ProtocolAdapterContext extends DataGovernanceContextImpl {

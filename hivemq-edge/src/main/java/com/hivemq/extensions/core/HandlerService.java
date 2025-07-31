@@ -15,7 +15,6 @@
  */
 package com.hivemq.extensions.core;
 
-import com.hivemq.bootstrap.factories.AdapterHandlingFactory;
 import com.hivemq.bootstrap.factories.HandlerFactory;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingFactory;
 import org.jetbrains.annotations.NotNull;
@@ -28,18 +27,13 @@ import java.util.TreeMap;
 public class HandlerService {
 
     private @Nullable HandlerFactory handlerFactory;
-    private @Nullable AdapterHandlingFactory adapterHandlingFactory;
     private final @NotNull SortedMap<Integer, PrePublishProcessorHandlingFactory> prePublishProcessorHandlingFactories =
             new TreeMap<>();
-
 
     public void supplyHandlerFactory(final @NotNull HandlerFactory handlerFactory) {
         this.handlerFactory = handlerFactory;
     }
 
-    public void supplyAdapterHandlingFactory(final @NotNull AdapterHandlingFactory adapterHandlingFactory) {
-        this.adapterHandlingFactory = adapterHandlingFactory;
-    }
 
     /**
      * @param prio                               lower prio is executed first, same prio will throw exception
@@ -64,10 +58,6 @@ public class HandlerService {
 
     public @Nullable HandlerFactory getHandlerFactory() {
         return handlerFactory;
-    }
-
-    public @Nullable AdapterHandlingFactory getAdapterHandlerFactory() {
-        return adapterHandlingFactory;
     }
 
     public @NotNull List<PrePublishProcessorHandlingFactory> getPrePublishProcessorHandlingFactories() {
