@@ -1,30 +1,28 @@
 import { useTranslation } from 'react-i18next'
-import { IoLinkOutline } from 'react-icons/io5'
 import { GoLinkExternal } from 'react-icons/go'
+import { IoLinkOutline } from 'react-icons/io5'
 
-import type { ApiError } from '@/api/__generated__'
+import { Capability } from '@/api/__generated__'
+import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
 import { PulseAgentIcon } from '@/components/Icons/PulseAgentIcon.tsx'
-import type { OnboardingTask } from '@/modules/Welcome/types.ts'
 import { ActivationPanel } from '@/modules/Pulse/components/ActivationPanel.tsx'
+import type { OnboardingTask } from '@/modules/Welcome/types.ts'
 
-export interface OnboardingFetchType {
-  data?: OnboardingTask[]
-  error?: ApiError | null
-}
-
-export const useOnboarding = (): OnboardingFetchType => {
+export const useOnboarding = (): OnboardingTask[] => {
   const { t } = useTranslation()
-  const { data, isLoading, isError, error } = useGetConfiguration()
+  const { data: config, isLoading: isConfigLoading, error: configError } = useGetConfiguration()
+  const { error: pulseError, isLoading: isPulseLoading } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
 
   const cloud: OnboardingTask = {
-    isLoading: isLoading,
+    isLoading: isConfigLoading,
+    error: configError,
     header: t('welcome.onboarding.connectCloud.header'),
     sections: [
       {
         title: t('welcome.onboarding.connectCloud.section.title'),
         label: t('welcome.onboarding.connectCloud.section.label'),
-        to: data?.cloudLink?.url as string,
+        to: config?.cloudLink?.url,
         isExternal: true,
         leftIcon: <GoLinkExternal />,
       },
@@ -32,7 +30,8 @@ export const useOnboarding = (): OnboardingFetchType => {
   }
 
   const pulse: OnboardingTask = {
-    isLoading: isLoading,
+    isLoading: isPulseLoading,
+    error: pulseError,
     header: t('welcome.onboarding.pulse.header'),
     sections: [
       {
@@ -50,7 +49,7 @@ export const useOnboarding = (): OnboardingFetchType => {
     ],
   }
 
-  const tasks: OnboardingTask[] = [
+  return [
     {
       header: t('welcome.onboarding.connectDevice.header'),
       sections: [
@@ -73,12 +72,7 @@ export const useOnboarding = (): OnboardingFetchType => {
         },
       ],
     },
+    cloud,
+    pulse,
   ]
-
-  if (isLoading || !isError) tasks.push(cloud, pulse)
-
-  return {
-    error,
-    data: tasks,
-  }
 }

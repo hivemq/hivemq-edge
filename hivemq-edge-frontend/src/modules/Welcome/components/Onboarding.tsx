@@ -18,21 +18,20 @@ import {
 import { BsClipboardCheck } from 'react-icons/bs'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import type { OnboardingFetchType } from '@/modules/Welcome/hooks/useOnboarding.tsx'
+import type { OnboardingTask } from '@/modules/Welcome/types.ts'
 
 interface OnboardingProps extends BoxProps {
-  tasks: OnboardingFetchType
+  tasks: OnboardingTask[]
 }
 
 const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
   const { t } = useTranslation()
-  const { data, error } = tasks
 
   return (
     <Box mt={6} {...props}>
-      {/*<Heading>{t('welcome.onboarding.title')}</Heading>*/}
+      <Heading>{t('welcome.onboarding.title')}</Heading>
       <SimpleGrid spacing={6} templateColumns="repeat(auto-fill, minmax(33vw, 10fr))">
-        {data?.map((task, index) => (
+        {tasks?.map((task, index) => (
           <Card flex={1} key={task.header} as="aside" aria-labelledby={`heading-task-${index}`}>
             <CardHeader>
               <Skeleton isLoaded={!task.isLoading}>
@@ -44,42 +43,43 @@ const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
 
             <CardBody pt={0}>
               <Stack divider={<StackDivider />} spacing="4">
-                {task.sections.map((section) => (
-                  <Stack as="section" key={`${section.title}-${section.label}`} spacing={8} direction="row" gap={4}>
-                    <Skeleton isLoaded={!task.isLoading}>
-                      <Box>
-                        <BsClipboardCheck />
-                      </Box>
-                    </Skeleton>
-                    <Skeleton isLoaded={!task.isLoading}>
-                      <Box>
-                        <Text>{section.title}</Text>
-                        {!!section.to && (
-                          <Button
-                            variant="link"
-                            as={RouterLink}
-                            to={section.to}
-                            target={section.isExternal ? '_blank' : undefined}
-                            aria-label={section.label}
-                            leftIcon={section.leftIcon}
-                          >
-                            {section.label}
-                          </Button>
-                        )}
-                        {!!section.content && section.content}
-                      </Box>
-                    </Skeleton>
-                  </Stack>
-                ))}
+                {task.error && (
+                  <Card flex={1} m={1}>
+                    <ErrorMessage type={task.error?.message} message={t('welcome.onboarding.errorLoading')} />
+                  </Card>
+                )}
+                {!task.error &&
+                  task.sections.map((section) => (
+                    <Stack as="section" key={`${section.title}-${section.label}`} spacing={8} direction="row" gap={4}>
+                      <Skeleton isLoaded={!task.isLoading}>
+                        <Box>
+                          <BsClipboardCheck />
+                        </Box>
+                      </Skeleton>
+                      <Skeleton isLoaded={!task.isLoading}>
+                        <Box>
+                          <Text>{section.title}</Text>
+                          {!!section.to && (
+                            <Button
+                              variant="link"
+                              as={RouterLink}
+                              to={section.to}
+                              target={section.isExternal ? '_blank' : undefined}
+                              aria-label={section.label}
+                              leftIcon={section.leftIcon}
+                            >
+                              {section.label}
+                            </Button>
+                          )}
+                          {!!section.content && section.content}
+                        </Box>
+                      </Skeleton>
+                    </Stack>
+                  ))}
               </Stack>
             </CardBody>
           </Card>
         ))}
-        {!!error && (
-          <Card flex={1} m={1}>
-            <ErrorMessage type={error?.message} message={t('welcome.onboarding.errorLoading')} />
-          </Card>
-        )}
       </SimpleGrid>
     </Box>
   )
