@@ -21,7 +21,17 @@ describe('useGetCapability', () => {
     const { result } = renderHook(() => useGetCapability(Capability.id.DATA_HUB), { wrapper })
 
     await waitFor(() => {
-      expect(result.current).toBeTruthy()
+      expect(result.current.isSuccess).toBeTruthy()
     })
+    expect(result.current.data?.id).toStrictEqual(Capability.id.DATA_HUB)
+  })
+
+  it("should fail when capability doesn't exist", async () => {
+    const { result } = renderHook(() => useGetCapability(Capability.id.CONTROL_PLANE_CONNECTIVITY), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBeTruthy()
+    })
+    expect(result.current.data).toBeUndefined()
   })
 })
