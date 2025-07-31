@@ -111,6 +111,7 @@ public class PublishServiceImpl implements PublishService {
 
         final DataGovernanceData data = new DataGovernanceDataImpl.Builder()
                 .withPublish(internalPublish)
+                .withClientId("publish service")
                 .build();
         final DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
         governanceContext.setExecutorService(globalManagedExtensionExecutorService);
