@@ -180,7 +180,7 @@ public class ProtocolAdapterInterceptorHandler {
         return Futures.transformAsync(handlerFuture, handlerResult -> {
             final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
             if (handlerResult.isPreventPublish() || modifiedPublish == null) {
-                return Futures.immediateFuture(PublishingResult.failed(null));
+                return Futures.immediateFuture(PublishingResult.failed(null, null));
             } else {
                 final DataGovernanceData data2 =
                         new DataGovernanceDataImpl.Builder().withClientId(protocolAdapter.getId())
@@ -273,7 +273,7 @@ public class ProtocolAdapterInterceptorHandler {
             final ProtocolAdapterPublishInboundOutputImpl output = outputHolder.get();
             if (output.isPreventDelivery()) {
                 dropMessage(output);
-                resultFuture.set(PublishingResult.failed(null));
+                resultFuture.set(PublishingResult.failed(null, null));
             } else {
                 final PUBLISH finalPublish = PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish);
                 resultFuture.setFuture(processPublish(finalPublish, protocolAdapter));

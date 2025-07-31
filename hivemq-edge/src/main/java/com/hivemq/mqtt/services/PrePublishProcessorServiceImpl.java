@@ -18,7 +18,6 @@ package com.hivemq.mqtt.services;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.bootstrap.factories.HandlerResult;
 import com.hivemq.bootstrap.factories.InternalPublishServiceHandlingProvider;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandling;
@@ -79,7 +78,8 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
         return Futures.transformAsync(future, handlerResult -> {
             final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
             if (handlerResult.isPreventPublish() || modifiedPublish == null) {
-                return Futures.immediateFuture(PublishingResult.failed(handlerResult.getReasonString()));
+                return Futures.immediateFuture(PublishingResult.failed(handlerResult.getReasonString(),
+                        handlerResult.getAckReasonCode()));
             } else {
                 // already merged the original and modified Publish.
                 return internalPublishService.publish(modifiedPublish, executorService, sender);
@@ -101,7 +101,8 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
         return Futures.transformAsync(handlerFuture, handlerResult -> {
             final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
             if (handlerResult.isPreventPublish() || modifiedPublish == null) {
-                return Futures.immediateFuture(PublishingResult.failed(handlerResult.getReasonString()));
+                return Futures.immediateFuture(PublishingResult.failed(handlerResult.getReasonString(),
+                        handlerResult.getAckReasonCode()));
             } else {
                 // already merged the original and modified Publish.
                 return publish(modifiedPublish, executorService, sender);

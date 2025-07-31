@@ -298,7 +298,7 @@ public class IncomingPublishService {
             @Override
             public void onFailure(final @NotNull Throwable t) {
                 // TODO think if we wanna set a reason string here.
-                sendAck(ctx, publish, PublishingResult.failed(null));
+                sendAck(ctx, publish, PublishingResult.failed(null, null));
             }
         }, ctx.channel().eventLoop());
     }

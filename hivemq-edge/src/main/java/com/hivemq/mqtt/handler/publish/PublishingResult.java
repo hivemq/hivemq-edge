@@ -43,8 +43,8 @@ public class PublishingResult {
         this.ackReasonCode = ackReasonCode;
     }
 
-    public static @NotNull PublishingResult failed(final @Nullable String reasonString) {
-        return new PublishingResult(PublishReturnCode.FAILED, reasonString);
+    public static @NotNull PublishingResult failed(final @Nullable String reasonString, final @Nullable AckReasonCode ackReasonCode) {
+        return new PublishingResult(PublishReturnCode.FAILED, reasonString, ackReasonCode);
     }
 
     public @NotNull PublishReturnCode getPublishReturnCode() {
