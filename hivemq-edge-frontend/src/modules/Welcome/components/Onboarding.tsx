@@ -30,49 +30,51 @@ const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
 
   return (
     <Box mt={6} {...props}>
-      <Heading>{t('welcome.onboarding.title')}</Heading>
+      {/*<Heading>{t('welcome.onboarding.title')}</Heading>*/}
       <SimpleGrid spacing={6} templateColumns="repeat(auto-fill, minmax(33vw, 10fr))">
-        {data &&
-          data.map((e, i) => (
-            <Card flex={1} key={e.header} as="aside" aria-labelledby={`heading-task-${i}`}>
-              <CardHeader>
-                <Skeleton isLoaded={!e.isLoading}>
-                  <Heading as="h3" size="md" id={`heading-task-${i}`}>
-                    {e.header}
-                  </Heading>
-                </Skeleton>
-              </CardHeader>
+        {data?.map((task, index) => (
+          <Card flex={1} key={task.header} as="aside" aria-labelledby={`heading-task-${index}`}>
+            <CardHeader>
+              <Skeleton isLoaded={!task.isLoading}>
+                <Heading as="h3" size="md" id={`heading-task-${index}`}>
+                  {task.header}
+                </Heading>
+              </Skeleton>
+            </CardHeader>
 
-              <CardBody pt={0}>
-                <Stack divider={<StackDivider />} spacing="4">
-                  {e.sections.map((s) => (
-                    <Stack as="section" key={`${s.title}-${s.label}`} spacing={8} direction="row" gap={4}>
-                      <Skeleton isLoaded={!e.isLoading}>
-                        <Box>
-                          <BsClipboardCheck />
-                        </Box>
-                      </Skeleton>
-                      <Skeleton isLoaded={!e.isLoading}>
-                        <Box>
-                          <Text>{s.title}</Text>
+            <CardBody pt={0}>
+              <Stack divider={<StackDivider />} spacing="4">
+                {task.sections.map((section) => (
+                  <Stack as="section" key={`${section.title}-${section.label}`} spacing={8} direction="row" gap={4}>
+                    <Skeleton isLoaded={!task.isLoading}>
+                      <Box>
+                        <BsClipboardCheck />
+                      </Box>
+                    </Skeleton>
+                    <Skeleton isLoaded={!task.isLoading}>
+                      <Box>
+                        <Text>{section.title}</Text>
+                        {!!section.to && (
                           <Button
                             variant="link"
                             as={RouterLink}
-                            to={s.to}
-                            target={s.isExternal ? '_blank' : undefined}
-                            aria-label={s.label}
-                            leftIcon={s.leftIcon}
+                            to={section.to}
+                            target={section.isExternal ? '_blank' : undefined}
+                            aria-label={section.label}
+                            leftIcon={section.leftIcon}
                           >
-                            {s.label}
+                            {section.label}
                           </Button>
-                        </Box>
-                      </Skeleton>
-                    </Stack>
-                  ))}
-                </Stack>
-              </CardBody>
-            </Card>
-          ))}
+                        )}
+                        {!!section.content && section.content}
+                      </Box>
+                    </Skeleton>
+                  </Stack>
+                ))}
+              </Stack>
+            </CardBody>
+          </Card>
+        ))}
         {!!error && (
           <Card flex={1} m={1}>
             <ErrorMessage type={error?.message} message={t('welcome.onboarding.errorLoading')} />
