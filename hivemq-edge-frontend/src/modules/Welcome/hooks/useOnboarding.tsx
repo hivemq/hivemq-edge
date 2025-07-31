@@ -45,7 +45,7 @@ export const useOnboarding = (): OnboardingFetchType => {
         title: t('welcome.onboarding.pulse.section.assets.title'),
         label: t('welcome.onboarding.pulse.section.assets.label'),
         to: '/pulse-assets',
-        leftIcon: <PulseAgentIcon />,
+        leftIcon: <PulseAgentIcon boxSize={6} />,
       },
     ],
   }
