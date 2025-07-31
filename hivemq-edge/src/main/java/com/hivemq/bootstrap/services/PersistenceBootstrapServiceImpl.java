@@ -21,11 +21,11 @@ import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.core.PersistencesService;
-
+import com.hivemq.persistence.connection.ConnectionPersistence;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class PersistenceBootstrapServiceImpl implements PersistenceBootstrapService {
@@ -33,15 +33,18 @@ public class PersistenceBootstrapServiceImpl implements PersistenceBootstrapServ
     private final @NotNull GeneralBootstrapService delegate;
     private final @NotNull PersistencesService persistencesService;
     private final @NotNull HiveMQCapabilityService capabilityService;
+    private final @NotNull ConnectionPersistence connectionPersistence;
 
     @Inject
     public PersistenceBootstrapServiceImpl(
             final @NotNull GeneralBootstrapService delegate,
             final @NotNull PersistencesService persistencesService,
-            final @NotNull HiveMQCapabilityService capabilityService) {
+            final @NotNull HiveMQCapabilityService capabilityService,
+            final @NotNull ConnectionPersistence connectionPersistence) {
         this.delegate = delegate;
         this.persistencesService = persistencesService;
         this.capabilityService = capabilityService;
+        this.connectionPersistence = connectionPersistence;
     }
 
 
@@ -85,14 +88,8 @@ public class PersistenceBootstrapServiceImpl implements PersistenceBootstrapServ
         return capabilityService;
     }
 
-    public static @NotNull PersistenceBootstrapService decorate(
-            final @NotNull GeneralBootstrapService generalBootstrapService,
-            final @NotNull PersistencesService persistencesService,
-            final @NotNull HiveMQCapabilityService capabilityService) {
-        return new PersistenceBootstrapServiceImpl(generalBootstrapService,
-                persistencesService,
-                capabilityService);
+    @Override
+    public @NotNull ConnectionPersistence connectionPersistence() {
+        return connectionPersistence;
     }
-
-
 }

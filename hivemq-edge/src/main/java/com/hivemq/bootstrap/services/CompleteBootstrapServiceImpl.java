@@ -23,6 +23,7 @@ import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
+import com.hivemq.persistence.connection.ConnectionPersistence;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
@@ -91,6 +92,11 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     @Override
     public @NotNull HiveMQCapabilityService capabilityService() {
         return delegate.capabilityService();
+    }
+
+    @Override
+    public @NotNull ConnectionPersistence connectionPersistence() {
+        return delegate.connectionPersistence();
     }
 
     @Override

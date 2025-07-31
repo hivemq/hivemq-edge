@@ -20,7 +20,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
-import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.datagov.DataGovernanceContext;
@@ -28,9 +27,6 @@ import com.hivemq.datagov.DataGovernanceService;
 import com.hivemq.datagov.impl.DataGovernanceContextImpl;
 import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
-import com.hivemq.mqtt.handler.publish.PublishingResult;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.services.exception.DoNotImplementException;
 import com.hivemq.extension.sdk.api.services.publish.Publish;
 import com.hivemq.extension.sdk.api.services.publish.PublishService;
@@ -39,6 +35,7 @@ import com.hivemq.extensions.ListenableFutureConverter;
 import com.hivemq.extensions.services.PluginServiceRateLimitService;
 import com.hivemq.extensions.services.executor.GlobalManagedExtensionExecutorService;
 import com.hivemq.mqtt.handler.publish.PublishStatus;
+import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -47,9 +44,11 @@ import com.hivemq.mqtt.services.PublishDistributor;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.util.Bytes;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkArgument;
