@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.configuration.HivemqId;
+import com.hivemq.mqtt.handler.publish.PublishingResult;
 import org.jetbrains.annotations.NotNull;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 
@@ -44,7 +45,7 @@ public class ProtocolAdapterPublishServiceImpl implements ProtocolAdapterPublish
     public @NotNull ProtocolAdapterPublishBuilder createPublish() {
         return new ProtocolAdapterPublishBuilderImpl(hiveMqId.get(), (publish, protocolAdapter, dynamicContext) -> {
 
-            final ListenableFuture<PublishReturnCode> publishFuture = interceptorHandler.interceptOrDelegateInbound(
+            final ListenableFuture<PublishingResult> publishFuture = interceptorHandler.interceptOrDelegateInbound(
                     publish,
                     MoreExecutors.newDirectExecutorService(),
                     protocolAdapter,

@@ -78,7 +78,7 @@ public class InternalPublishServiceHandlingProvider {
                 final @NotNull String clientId) {
             final SettableFuture<HandlerResult> settableFuture =
                     SettableFuture.create();
-            settableFuture.set(new HandlerResult(false, originalPublish));
+            settableFuture.set(new HandlerResult(false, originalPublish, null));
             return settableFuture;
         }
     }

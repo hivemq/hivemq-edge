@@ -27,8 +27,6 @@ import com.hivemq.datagov.DataGovernanceService;
 import com.hivemq.datagov.impl.DataGovernanceContextImpl;
 import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.auth.DefaultAuthorizationBehaviour;
 import com.hivemq.extension.sdk.api.packets.auth.ModifiableDefaultPermissions;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
@@ -45,9 +43,10 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubAckReasonCode;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 import com.hivemq.util.ReasonStrings;
 import io.netty.channel.ChannelHandlerContext;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 
 /**
@@ -67,10 +66,11 @@ public class IncomingPublishService {
     private final @NotNull DataGovernanceService dataGovernanceService;
 
     @Inject
-    IncomingPublishService(final @NotNull MqttConfigurationService mqttConfigurationService,
-                           final @NotNull RestrictionsConfigurationService restrictionsConfigurationService,
-                           final @NotNull MqttServerDisconnector mqttServerDisconnector,
-                           final @NotNull  DataGovernanceService dataGovernanceService) {
+    IncomingPublishService(
+            final @NotNull MqttConfigurationService mqttConfigurationService,
+            final @NotNull RestrictionsConfigurationService restrictionsConfigurationService,
+            final @NotNull MqttServerDisconnector mqttServerDisconnector,
+            final @NotNull DataGovernanceService dataGovernanceService) {
 
         this.mqttConfigurationService = mqttConfigurationService;
         this.restrictionsConfigurationService = restrictionsConfigurationService;
@@ -78,9 +78,10 @@ public class IncomingPublishService {
         this.dataGovernanceService = dataGovernanceService;
     }
 
-    public void processPublish(final @NotNull ChannelHandlerContext ctx,
-                               final @NotNull PUBLISH publish,
-                               final @Nullable PublishAuthorizerResult authorizerResult) {
+    public void processPublish(
+            final @NotNull ChannelHandlerContext ctx,
+            final @NotNull PUBLISH publish,
+            final @Nullable PublishAuthorizerResult authorizerResult) {
 
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final ProtocolVersion protocolVersion = clientConnection.getProtocolVersion();
@@ -90,12 +91,17 @@ public class IncomingPublishService {
         if (qos > maxQos) {
             final String clientId = clientConnection.getClientId();
             mqttServerDisconnector.disconnect(ctx.channel(),
-                    "Client '" + clientId + "' (IP: {}) sent a PUBLISH with QoS exceeding the maximum configured QoS." +
-                            " Got QoS " + publish.getQoS() + ", maximum: " + mqttConfigurationService.maximumQos() + ". Disconnecting client.",
+                    "Client '" +
+                            clientId +
+                            "' (IP: {}) sent a PUBLISH with QoS exceeding the maximum configured QoS." +
+                            " Got QoS " +
+                            publish.getQoS() +
+                            ", maximum: " +
+                            mqttConfigurationService.maximumQos() +
+                            ". Disconnecting client.",
                     "Sent PUBLISH with QoS (" + qos + ") higher than the allowed maximum (" + maxQos + ")",
                     Mqtt5DisconnectReasonCode.QOS_NOT_SUPPORTED,
-                    String.format(ReasonStrings.CONNACK_QOS_NOT_SUPPORTED_PUBLISH, qos, maxQos)
-            );
+                    String.format(ReasonStrings.CONNACK_QOS_NOT_SUPPORTED_PUBLISH, qos, maxQos));
             return;
         }
 
@@ -103,7 +109,11 @@ public class IncomingPublishService {
         final int maxTopicLength = restrictionsConfigurationService.maxTopicLength();
         if (topic.length() > maxTopicLength) {
             final String clientId = clientConnection.getClientId();
-            final String logMessage = "Client '" + clientId + "' (IP: {}) sent a PUBLISH with a topic that exceeds the maximum configured length of '" + maxTopicLength + "' . Disconnecting client.";
+            final String logMessage = "Client '" +
+                    clientId +
+                    "' (IP: {}) sent a PUBLISH with a topic that exceeds the maximum configured length of '" +
+                    maxTopicLength +
+                    "' . Disconnecting client.";
             mqttServerDisconnector.disconnect(ctx.channel(),
                     logMessage,
                     "Sent PUBLISH for a topic that exceeds maximum topic length",
@@ -117,7 +127,13 @@ public class IncomingPublishService {
             final Long maxPublishSize = clientConnection.getMaxPacketSizeSend();
             if (!isMessageSizeAllowed(maxPublishSize, publish)) {
                 final String clientId = clientConnection.getClientId();
-                final String logMessage = "Client '" + clientId + "' (IP: {}) sent a PUBLISH with " + publish.getPayload().length + " bytes payload its max allowed size is " + maxPublishSize + " bytes. Disconnecting client.";
+                final String logMessage = "Client '" +
+                        clientId +
+                        "' (IP: {}) sent a PUBLISH with " +
+                        publish.getPayload().length +
+                        " bytes payload its max allowed size is " +
+                        maxPublishSize +
+                        " bytes. Disconnecting client.";
                 final String reason = "Sent PUBLISH with a payload that is bigger than the allowed message size";
                 mqttServerDisconnector.disconnect(ctx.channel(),
                         logMessage,
@@ -131,7 +147,10 @@ public class IncomingPublishService {
         authorizePublish(ctx, publish, authorizerResult);
     }
 
-    private void authorizePublish(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH publish, final @Nullable PublishAuthorizerResult authorizerResult) {
+    private void authorizePublish(
+            final @NotNull ChannelHandlerContext ctx,
+            final @NotNull PUBLISH publish,
+            final @Nullable PublishAuthorizerResult authorizerResult) {
 
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
 
@@ -143,7 +162,10 @@ public class IncomingPublishService {
             } else if (authorizerResult.getAckReasonCode() == AckReasonCode.SUCCESS) {
                 publishMessage(ctx, publish);
             } else {
-                finishUnauthorizedPublish(ctx, publish, authorizerResult.getAckReasonCode(), authorizerResult.getReasonString());
+                finishUnauthorizedPublish(ctx,
+                        publish,
+                        authorizerResult.getAckReasonCode(),
+                        authorizerResult.getReasonString());
             }
             return;
         }
@@ -153,10 +175,12 @@ public class IncomingPublishService {
 
         //if authorizers are present and no permissions are available and the default behaviour has not been changed
         //then we deny the publish
-        if (authorizerResult != null && authorizerResult.isAuthorizerPresent()
-                && (defaultPermissions == null || (defaultPermissions.asList().size() < 1
-                && defaultPermissions.getDefaultBehaviour() == DefaultAuthorizationBehaviour.ALLOW
-                && !defaultPermissions.isDefaultAuthorizationBehaviourOverridden()))) {
+        if (authorizerResult != null &&
+                authorizerResult.isAuthorizerPresent() &&
+                (defaultPermissions == null ||
+                        (defaultPermissions.asList().size() < 1 &&
+                                defaultPermissions.getDefaultBehaviour() == DefaultAuthorizationBehaviour.ALLOW &&
+                                !defaultPermissions.isDefaultAuthorizationBehaviourOverridden()))) {
             finishUnauthorizedPublish(ctx, publish, null, null);
             return;
         }
@@ -168,8 +192,11 @@ public class IncomingPublishService {
         }
     }
 
-    private void finishUnauthorizedPublish(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH publish,
-                                           final @Nullable AckReasonCode reasonCode, final @Nullable String reasonString) {
+    private void finishUnauthorizedPublish(
+            final @NotNull ChannelHandlerContext ctx,
+            final @NotNull PUBLISH publish,
+            final @Nullable AckReasonCode reasonCode,
+            final @Nullable String reasonString) {
 
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
 
@@ -180,21 +207,31 @@ public class IncomingPublishService {
             return;
         }
 
-        final String reason = "Not authorized to publish on topic '" + publish.getTopic() + "' with QoS '"
-                + publish.getQoS().getQosNumber() + "' and retain '" + publish.isRetain() + "'";
+        final String reason = "Not authorized to publish on topic '" +
+                publish.getTopic() +
+                "' with QoS '" +
+                publish.getQoS().getQosNumber() +
+                "' and retain '" +
+                publish.isRetain() +
+                "'";
 
         //MQTT 3.x.x -> disconnect (without publish answer packet)
         if (clientConnection.getProtocolVersion() != ProtocolVersion.MQTTv5) {
 
             final String clientId = clientConnection.getClientId();
             mqttServerDisconnector.disconnect(ctx.channel(),
-                    "Client '" + clientId + "' (IP: {}) is not authorized to publish on topic '" + publish.getTopic()
-                            + "' with QoS '" + publish.getQoS().getQosNumber() + "' and retain '" + publish.isRetain()
-                            + "'. Disconnecting client.",
+                    "Client '" +
+                            clientId +
+                            "' (IP: {}) is not authorized to publish on topic '" +
+                            publish.getTopic() +
+                            "' with QoS '" +
+                            publish.getQoS().getQosNumber() +
+                            "' and retain '" +
+                            publish.isRetain() +
+                            "'. Disconnecting client.",
                     reason,
                     Mqtt5DisconnectReasonCode.NOT_AUTHORIZED,
-                    reason
-            );
+                    reason);
             return;
         }
 
@@ -205,27 +242,38 @@ public class IncomingPublishService {
                 break;
             case AT_LEAST_ONCE:
                 final PUBACK puback = new PUBACK(publish.getPacketIdentifier(),
-                        reasonCode != null ? Mqtt5PubAckReasonCode.from(reasonCode) : Mqtt5PubAckReasonCode.NOT_AUTHORIZED,
-                        reasonString != null ? reasonString : reason, Mqtt5UserProperties.NO_USER_PROPERTIES);
+                        reasonCode != null ?
+                                Mqtt5PubAckReasonCode.from(reasonCode) :
+                                Mqtt5PubAckReasonCode.NOT_AUTHORIZED,
+                        reasonString != null ? reasonString : reason,
+                        Mqtt5UserProperties.NO_USER_PROPERTIES);
                 ctx.pipeline().writeAndFlush(puback);
                 break;
             case EXACTLY_ONCE:
                 final PUBREC pubrec = new PUBREC(publish.getPacketIdentifier(),
-                        reasonCode != null ? Mqtt5PubRecReasonCode.from(reasonCode) : Mqtt5PubRecReasonCode.NOT_AUTHORIZED,
-                        reasonString != null ? reasonString : reason, Mqtt5UserProperties.NO_USER_PROPERTIES);
+                        reasonCode != null ?
+                                Mqtt5PubRecReasonCode.from(reasonCode) :
+                                Mqtt5PubRecReasonCode.NOT_AUTHORIZED,
+                        reasonString != null ? reasonString : reason,
+                        Mqtt5UserProperties.NO_USER_PROPERTIES);
                 ctx.pipeline().writeAndFlush(pubrec);
                 break;
         }
 
         final String clientId = clientConnection.getClientId();
         mqttServerDisconnector.disconnect(ctx.channel(),
-                "Client '" + clientId + "' (IP: {}) is not authorized to publish on topic '" + publish.getTopic()
-                        + "' with QoS '" + publish.getQoS().getQosNumber() + "' and retain '" + publish.isRetain()
-                        + "'. Disconnecting client.",
+                "Client '" +
+                        clientId +
+                        "' (IP: {}) is not authorized to publish on topic '" +
+                        publish.getTopic() +
+                        "' with QoS '" +
+                        publish.getQoS().getQosNumber() +
+                        "' and retain '" +
+                        publish.isRetain() +
+                        "'. Disconnecting client.",
                 reason,
                 Mqtt5DisconnectReasonCode.NOT_AUTHORIZED,
-                reason
-        );
+                reason);
     }
 
     private void publishMessage(final ChannelHandlerContext ctx, final @NotNull PUBLISH publish) {
@@ -233,48 +281,79 @@ public class IncomingPublishService {
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
 
-        final DataGovernanceData data = new DataGovernanceDataImpl.Builder()
-                .withPublish(publish).withClientId(clientId)
-                .build();
+        final DataGovernanceData data =
+                new DataGovernanceDataImpl.Builder().withPublish(publish).withClientId(clientId).build();
 
         final DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
         governanceContext.setExecutorService(ctx.channel().eventLoop());
 
-        final ListenableFuture<PublishReturnCode> publishFinishedFuture = dataGovernanceService.applyAndPublish(governanceContext);
+        final ListenableFuture<PublishingResult> publishFinishedFuture =
+                dataGovernanceService.applyAndPublish(governanceContext);
 //        final ListenableFuture<PublishReturnCode> publishFinishedFuture = publishService.publish(publish, ctx.channel().eventLoop(), clientId);
         Futures.addCallback(publishFinishedFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(final @Nullable PublishReturnCode result) {
+            public void onSuccess(final @Nullable PublishingResult result) {
                 sendAck(ctx, publish, result);
             }
 
             @Override
             public void onFailure(final @NotNull Throwable t) {
-                sendAck(ctx, publish, PublishReturnCode.FAILED);
+                // TODO think if we wanna set a reason string here.
+                sendAck(ctx, publish, PublishingResult.failed(null));
             }
         }, ctx.channel().eventLoop());
     }
 
-    private void sendAck(final @NotNull ChannelHandlerContext ctx, final PUBLISH publish, final @Nullable PublishReturnCode publishReturnCode) {
+    private void sendAck(
+            final @NotNull ChannelHandlerContext ctx,
+            final PUBLISH publish,
+            final @Nullable PublishingResult publishingResult) {
+
 
         switch (publish.getQoS()) {
             case AT_MOST_ONCE:
                 // do nothing
                 break;
             case AT_LEAST_ONCE:
-                if (publishReturnCode == PublishReturnCode.NO_MATCHING_SUBSCRIBERS) {
-                    ctx.pipeline().writeAndFlush(new PUBACK(publish.getPacketIdentifier(), Mqtt5PubAckReasonCode.NO_MATCHING_SUBSCRIBERS,
-                            null, Mqtt5UserProperties.NO_USER_PROPERTIES));
-                } else {
+                if (publishingResult == null) {
                     ctx.pipeline().writeAndFlush(new PUBACK(publish.getPacketIdentifier()));
+                    break;
+                }
+                switch (publishingResult.getPublishReturnCode()) {
+                    case DELIVERED -> {
+                        ctx.pipeline().writeAndFlush(new PUBACK(publish.getPacketIdentifier()));
+                    }
+                    case NO_MATCHING_SUBSCRIBERS -> {
+                        ctx.pipeline()
+                                .writeAndFlush(new PUBACK(publish.getPacketIdentifier(),
+                                        Mqtt5PubAckReasonCode.NO_MATCHING_SUBSCRIBERS,
+                                        null,
+                                        Mqtt5UserProperties.NO_USER_PROPERTIES));
+                    }
+                    case FAILED -> {
+                        // TODO
+                    }
                 }
                 break;
             case EXACTLY_ONCE:
-                if (publishReturnCode == PublishReturnCode.NO_MATCHING_SUBSCRIBERS) {
-                    ctx.pipeline().writeAndFlush(new PUBREC(publish.getPacketIdentifier(), Mqtt5PubRecReasonCode.NO_MATCHING_SUBSCRIBERS,
-                            null, Mqtt5UserProperties.NO_USER_PROPERTIES));
-                } else {
+                if (publishingResult == null) {
                     ctx.pipeline().writeAndFlush(new PUBREC(publish.getPacketIdentifier()));
+                    break;
+                }
+                switch (publishingResult.getPublishReturnCode()) {
+                    case DELIVERED -> {
+                        ctx.pipeline().writeAndFlush(new PUBREC(publish.getPacketIdentifier()));
+                    }
+                    case NO_MATCHING_SUBSCRIBERS -> {
+                        ctx.pipeline()
+                                .writeAndFlush(new PUBREC(publish.getPacketIdentifier(),
+                                        Mqtt5PubRecReasonCode.NO_MATCHING_SUBSCRIBERS,
+                                        null,
+                                        Mqtt5UserProperties.NO_USER_PROPERTIES));
+                    }
+                    case FAILED -> {
+                        // TODO
+                    }
                 }
                 break;
         }

@@ -124,7 +124,8 @@ public class InternalPublishServiceImplTest {
 
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic");
 
-        final PublishReturnCode returnCode = publishService.publish(publish, executorService, "sub1").get();
+        final PublishReturnCode returnCode =
+                publishService.publish(publish, executorService, "sub1").get().getPublishReturnCode();
 
         verify(publishDistributor, never()).distributeToNonSharedSubscribers(anyMap(), any(), any());
 
@@ -219,7 +220,8 @@ public class InternalPublishServiceImplTest {
                 any(),
                 any())).thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
 
-        final PublishReturnCode returnCode = publishService.publish(publish, executorService, "sub1").get();
+        final PublishReturnCode returnCode =
+                publishService.publish(publish, executorService, "sub1").get().getPublishReturnCode();
 
         assertEquals(FAILED, returnCode);
     }

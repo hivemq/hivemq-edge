@@ -20,7 +20,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.bootstrap.factories.AdapterHandling;
 import com.hivemq.bootstrap.factories.AdapterHandlingProvider;
 import com.hivemq.bootstrap.factories.HandlerResult;
@@ -30,7 +29,6 @@ import com.hivemq.datagov.DataGovernanceService;
 import com.hivemq.datagov.impl.DataGovernanceContextImpl;
 import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.ProtocolAdapterPublishInboundInterceptor;
@@ -51,14 +49,16 @@ import com.hivemq.extensions.interceptor.protocoladapter.parameter.ProtocolAdapt
 import com.hivemq.extensions.packets.publish.ModifiablePublishPacketImpl;
 import com.hivemq.extensions.packets.publish.PublishPacketImpl;
 import com.hivemq.extensions.services.interceptor.Interceptors;
+import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.util.Exceptions;
+import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -104,7 +104,7 @@ public class ProtocolAdapterInterceptorHandler {
         this.adapterHandlingProvider = adapterHandlingProvider;
     }
 
-    public @NotNull ListenableFuture<PublishReturnCode> interceptOrDelegateInbound(
+    public @NotNull ListenableFuture<PublishingResult> interceptOrDelegateInbound(
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,
             final @NotNull ProtocolAdapter protocolAdapter,
@@ -116,7 +116,7 @@ public class ProtocolAdapterInterceptorHandler {
             return processPublish(publish, protocolAdapter);
         }
 
-        final SettableFuture<PublishReturnCode> resultFuture = SettableFuture.create();
+        final SettableFuture<PublishingResult> resultFuture = SettableFuture.create();
 
         final PublishPacketImpl packet = new PublishPacketImpl(publish);
         final ProtocolAdapterInformationImpl bridgeInfo = new ProtocolAdapterInformationImpl(protocolAdapter.getId(),
@@ -166,7 +166,7 @@ public class ProtocolAdapterInterceptorHandler {
     }
 
 
-    private @NotNull ListenableFuture<PublishReturnCode> processPublish(
+    private @NotNull ListenableFuture<PublishingResult> processPublish(
             final @NotNull PUBLISH publish, final @NotNull ProtocolAdapter protocolAdapter) {
         final AdapterHandling adapterHandling = adapterHandlingProvider.get();
         final DataGovernanceData data =
@@ -180,7 +180,7 @@ public class ProtocolAdapterInterceptorHandler {
         return Futures.transformAsync(handlerFuture, handlerResult -> {
             final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
             if (handlerResult.isPreventPublish() || modifiedPublish == null) {
-                return Futures.immediateFuture(PublishReturnCode.FAILED);
+                return Futures.immediateFuture(PublishingResult.failed(null));
             } else {
                 final DataGovernanceData data2 =
                         new DataGovernanceDataImpl.Builder().withClientId(protocolAdapter.getId())
@@ -220,7 +220,7 @@ public class ProtocolAdapterInterceptorHandler {
         private final @NotNull PUBLISH publish;
         private final @NotNull ExtensionParameterHolder<ProtocolAdapterPublishInboundInputImpl> inputHolder;
         private final @NotNull ExtensionParameterHolder<ProtocolAdapterPublishInboundOutputImpl> outputHolder;
-        private final @NotNull SettableFuture<PublishReturnCode> resultFuture;
+        private final @NotNull SettableFuture<PublishingResult> resultFuture;
         private final @NotNull ExecutorService executorService;
 
         PublishInboundInterceptorContext(
@@ -229,7 +229,7 @@ public class ProtocolAdapterInterceptorHandler {
                 final @NotNull PUBLISH publish,
                 final @NotNull ExtensionParameterHolder<ProtocolAdapterPublishInboundInputImpl> inputHolder,
                 final @NotNull ExtensionParameterHolder<ProtocolAdapterPublishInboundOutputImpl> outputHolder,
-                final @NotNull SettableFuture<PublishReturnCode> resultFuture,
+                final @NotNull SettableFuture<PublishingResult> resultFuture,
                 final @NotNull ExecutorService executorService) {
 
             super(protocolAdapter.getId());
@@ -273,7 +273,7 @@ public class ProtocolAdapterInterceptorHandler {
             final ProtocolAdapterPublishInboundOutputImpl output = outputHolder.get();
             if (output.isPreventDelivery()) {
                 dropMessage(output);
-                resultFuture.set(PublishReturnCode.FAILED);
+                resultFuture.set(PublishingResult.failed(null));
             } else {
                 final PUBLISH finalPublish = PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish);
                 resultFuture.setFuture(processPublish(finalPublish, protocolAdapter));

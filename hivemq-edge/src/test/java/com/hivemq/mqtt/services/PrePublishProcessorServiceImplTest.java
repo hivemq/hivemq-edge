@@ -73,7 +73,7 @@ class PrePublishProcessorServiceImplTest {
         final ListeningExecutorService executorService = MoreExecutors.newDirectExecutorService();
         when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1) -> {
             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
-            settableFuture.set(new HandlerResult(false, modifiedPublish));
+            settableFuture.set(new HandlerResult(false, modifiedPublish, null));
             return settableFuture;
         }));
 
@@ -92,14 +92,14 @@ class PrePublishProcessorServiceImplTest {
         final ListeningExecutorService executorService = MoreExecutors.newDirectExecutorService();
         when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1) -> {
             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
-            settableFuture.set(new HandlerResult(false, modifiedPublish));
+            settableFuture.set(new HandlerResult(false, modifiedPublish, null));
             return settableFuture;
         }, (originalPublish, sender, executorService2) -> {
             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
             if (originalPublish == modifiedPublish) {
                 correctModifiedPublish.set(true);
             }
-            settableFuture.set(new HandlerResult(false, modifiedPublish2));
+            settableFuture.set(new HandlerResult(false, modifiedPublish2, null));
             return settableFuture;
         }));
 
@@ -117,7 +117,7 @@ class PrePublishProcessorServiceImplTest {
         final ListeningExecutorService executorService = MoreExecutors.newDirectExecutorService();
         when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1) -> {
             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
-            settableFuture.set(new HandlerResult(true, modifiedPublish));
+            settableFuture.set(new HandlerResult(true, modifiedPublish, null));
             return settableFuture;
         }));
 
@@ -137,13 +137,13 @@ class PrePublishProcessorServiceImplTest {
         final ListeningExecutorService executorService = MoreExecutors.newDirectExecutorService();
         when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1) -> {
             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
-            settableFuture.set(new HandlerResult(true, modifiedPublish));
+            settableFuture.set(new HandlerResult(true, modifiedPublish, null));
             return settableFuture;
         }, (originalPublish, sender, executorService2) -> {
             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
             secondCalled.set(true);
 
-            settableFuture.set(new HandlerResult(false, modifiedPublish2));
+            settableFuture.set(new HandlerResult(false, modifiedPublish2, null));
             return settableFuture;
         }));
 

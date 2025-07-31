@@ -27,6 +27,7 @@ import com.hivemq.datagov.DataGovernanceService;
 import com.hivemq.datagov.impl.DataGovernanceContextImpl;
 import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
+import com.hivemq.mqtt.handler.publish.PublishingResult;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.connect.Mqtt5CONNECT;
@@ -162,17 +163,17 @@ public class PendingWillMessages {
 
     private void sendWill(final @NotNull String clientId, final @NotNull PUBLISH willPublish) {
 
-        DataGovernanceData data = new DataGovernanceDataImpl.Builder()
+        final DataGovernanceData data = new DataGovernanceDataImpl.Builder()
                 .withPublish(willPublish)
                 .withClientId(clientId)
                 .build();
-        DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
+        final DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
         governanceContext.setExecutorService(executorService);
-        final ListenableFuture<PublishReturnCode> publishFuture = dataGovernanceService.applyAndPublish(governanceContext);
+        final @NotNull ListenableFuture<PublishingResult> publishFuture = dataGovernanceService.applyAndPublish(governanceContext);
 //        publishService.publish(willPublish, executorService, clientId)
         Futures.addCallback(publishFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(final @NotNull PublishReturnCode result) {
+            public void onSuccess(final @NotNull PublishingResult result) {
                 metricsHolder.getPublishedWillMessagesCount().inc();
             }
 

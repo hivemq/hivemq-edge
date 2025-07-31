@@ -23,6 +23,7 @@ import com.hivemq.bootstrap.factories.HandlerResult;
 import com.hivemq.bootstrap.factories.InternalPublishServiceHandlingProvider;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandling;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingProvider;
+import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import jakarta.inject.Inject;
 import org.jetbrains.annotations.NotNull;
@@ -50,7 +51,7 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
         this.internalPublishServiceHandlingProvider = internalPublishServiceHandlingProvider;
     }
 
-    public @NotNull ListenableFuture<PublishReturnCode> publish(
+    public @NotNull ListenableFuture<PublishingResult> publish(
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,
             final @Nullable String sender) {
@@ -60,7 +61,8 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
             return internalPublishService.publish(publish, executorService, sender);
         }
 
-        ListenableFuture<HandlerResult> future = prePublishProcessorHandling.get(0).apply(publish, sender, executorService);
+        ListenableFuture<HandlerResult> future =
+                prePublishProcessorHandling.get(0).apply(publish, sender, executorService);
         for (int i = 1; i < prePublishProcessorHandling.size(); i++) {
             final PrePublishProcessorHandling handler = prePublishProcessorHandling.get(i);
             future = Futures.transformAsync(future, result -> {
@@ -77,7 +79,7 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
         return Futures.transformAsync(future, handlerResult -> {
             final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
             if (handlerResult.isPreventPublish() || modifiedPublish == null) {
-                return Futures.immediateFuture(PublishReturnCode.FAILED);
+                return Futures.immediateFuture(PublishingResult.failed(handlerResult.getReasonString()));
             } else {
                 // already merged the original and modified Publish.
                 return internalPublishService.publish(modifiedPublish, executorService, sender);
@@ -88,7 +90,7 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
 
     //TODO: remove this method once the DataHub module is migrated to the new PrePublishProcessorService
     @Override
-    public @NotNull ListenableFuture<PublishReturnCode> applyDataHubAndPublish(
+    public @NotNull ListenableFuture<PublishingResult> applyDataHubAndPublish(
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,
             final @NotNull String sender) {
@@ -99,7 +101,7 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
         return Futures.transformAsync(handlerFuture, handlerResult -> {
             final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
             if (handlerResult.isPreventPublish() || modifiedPublish == null) {
-                return Futures.immediateFuture(PublishReturnCode.FAILED);
+                return Futures.immediateFuture(PublishingResult.failed(handlerResult.getReasonString()));
             } else {
                 // already merged the original and modified Publish.
                 return publish(modifiedPublish, executorService, sender);

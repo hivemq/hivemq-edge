@@ -28,6 +28,7 @@ import com.hivemq.datagov.DataGovernanceService;
 import com.hivemq.datagov.impl.DataGovernanceContextImpl;
 import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
+import com.hivemq.mqtt.handler.publish.PublishingResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.services.exception.DoNotImplementException;
@@ -113,9 +114,7 @@ public class PublishServiceImpl implements PublishService {
                 .build();
         final DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
         governanceContext.setExecutorService(globalManagedExtensionExecutorService);
-        final ListenableFuture<PublishReturnCode> publishFuture = dataGovernanceService.applyAndPublish(governanceContext);
-
-
+        final ListenableFuture<PublishingResult> publishFuture = dataGovernanceService.applyAndPublish(governanceContext);
         return ListenableFutureConverter.toVoidCompletable(publishFuture, globalManagedExtensionExecutorService);
     }
 

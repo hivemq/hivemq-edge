@@ -15,17 +15,22 @@
  */
 package com.hivemq.bootstrap.factories;
 
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import org.jetbrains.annotations.Nullable;
 
 public class HandlerResult {
 
     private final boolean preventPublish;
     private final @Nullable PUBLISH modifiedPublish;
+    private final @Nullable String reasonString;
 
-    public HandlerResult(boolean preventPublish, @Nullable PUBLISH modifiedPublish) {
+    public HandlerResult(
+            final boolean preventPublish,
+            final @Nullable PUBLISH modifiedPublish,
+            final @Nullable String reasonString) {
         this.preventPublish = preventPublish;
         this.modifiedPublish = modifiedPublish;
+        this.reasonString = reasonString;
     }
 
     public boolean isPreventPublish() {
@@ -34,5 +39,9 @@ public class HandlerResult {
 
     public @Nullable PUBLISH getModifiedPublish() {
         return modifiedPublish;
+    }
+
+    public @Nullable String getReasonString() {
+        return reasonString;
     }
 }
