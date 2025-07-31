@@ -12,6 +12,10 @@ properties:
     description: The user-facing name of the asset
     readOnly: true
     example: "The fancy asset"
+  description:
+    type: string
+    description: The user-facing description of the asset
+    readOnly: true
   topic:
     type: string
     format: mqtt-topic
