@@ -23,7 +23,7 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../../components/schemas/PulseValidationToken.yaml
+          $ref: ../../components/schemas/PulseActivationToken.yaml
     description: The activation token to send to the Pulse Client.
     required: true
   responses:
