@@ -18,13 +18,14 @@ package com.hivemq.datagov;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.datagov.model.DataGovernanceResult;
+import com.hivemq.mqtt.handler.publish.PublishingResult;
 import org.jetbrains.annotations.NotNull;
 
 public interface DataGovernanceService {
 
     @NotNull ListenableFuture<DataGovernanceResult> apply(@NotNull DataGovernanceContext governanceContext);
 
-    @NotNull ListenableFuture<PublishReturnCode> applyAndPublish(@NotNull DataGovernanceContext governanceContext);
+    @NotNull ListenableFuture<PublishingResult> applyAndPublish(@NotNull DataGovernanceContext governanceContext);
 
 }
 

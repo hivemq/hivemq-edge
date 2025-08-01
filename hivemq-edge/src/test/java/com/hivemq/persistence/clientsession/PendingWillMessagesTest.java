@@ -20,13 +20,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.datagov.DataGovernanceService;
 import com.hivemq.metrics.MetricsHolder;
+import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.connect.MqttWillPublish;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,18 +51,16 @@ public class PendingWillMessagesTest {
     private final ListeningScheduledExecutorService executorService =
             MoreExecutors.listeningDecorator(Executors.newSingleThreadScheduledExecutor());
 
-    private ClientSessionPersistence clientSessionPersistence;
-    private ClientSessionLocalPersistence clientSessionLocalPersistence;
-    private PendingWillMessages pendingWillMessages;
-    private DataGovernanceService dataGovernanceService;
+    private final @NotNull ClientSessionPersistence clientSessionPersistence = mock(ClientSessionPersistence.class);
+    private final @NotNull ClientSessionLocalPersistence clientSessionLocalPersistence =
+            mock(ClientSessionLocalPersistence.class);
+    private @NotNull PendingWillMessages pendingWillMessages;
+    private final @NotNull DataGovernanceService dataGovernanceService = mock(DataGovernanceService.class);
 
     @Before
     public void setUp() throws Exception {
-        clientSessionPersistence = mock(ClientSessionPersistence.class);
-        clientSessionLocalPersistence = mock(ClientSessionLocalPersistence.class);
-        dataGovernanceService = mock(DataGovernanceService.class);
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.DELIVERED));
+        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
 
         final MetricsHolder metricsHolder = mock(MetricsHolder.class);
         when(metricsHolder.getPublishedWillMessagesCount()).thenReturn(mock(Counter.class));
@@ -92,7 +91,7 @@ public class PendingWillMessagesTest {
         pendingWillMessages.sendOrEnqueueWillIfAvailable("client", clientSession);
 
         final PendingWillMessages.PendingWill pendingWill = pendingWillMessages.getPendingWills().get("client");
-        assertEquals(pendingWill.getDelayInterval(), 5);
+        assertEquals(5, pendingWill.getDelayInterval());
     }
 
     @Test
@@ -109,7 +108,7 @@ public class PendingWillMessagesTest {
         pendingWillMessages.sendOrEnqueueWillIfAvailable("client", clientSession);
 
         final PendingWillMessages.PendingWill pendingWill = pendingWillMessages.getPendingWills().get("client");
-        assertEquals(pendingWill.getDelayInterval(), 5);
+        assertEquals(5, pendingWill.getDelayInterval());
     }
 
     @Test

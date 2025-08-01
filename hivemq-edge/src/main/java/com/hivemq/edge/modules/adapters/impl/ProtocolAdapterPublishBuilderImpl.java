@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.api.mqtt.PublishReturnCode;
+import com.hivemq.mqtt.handler.publish.PublishingResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.QoS;
@@ -100,18 +101,15 @@ public class ProtocolAdapterPublishBuilderImpl implements ProtocolAdapterPublish
         final PUBLISH publish = builder.withHivemqId(hivemqId)
                 .withUserProperties(Mqtt5UserProperties.of(userProperties.build()))
                 .build();
-        final CompletableFuture<PublishReturnCode> publishSend =
+        final CompletableFuture<PublishingResult> publishSend =
                 sendCallback.onPublishSend(publish, requireNonNull(adapter), dynamicContext.buildKeepingLast());
-        return publishSend.thenApply(publishReturnCode -> {
-            switch (publishReturnCode) {
-                case DELIVERED:
-                    return ProtocolPublishResult.DELIVERED;
-                case NO_MATCHING_SUBSCRIBERS:
-                    return ProtocolPublishResult.NO_MATCHING_SUBSCRIBERS;
-                case FAILED:
-                    return ProtocolPublishResult.FAILED;
-            }
-            throw new IllegalArgumentException();
+        return publishSend.thenApply(publishingResult -> {
+            final PublishReturnCode publishReturnCode = publishingResult.getPublishReturnCode();
+            return switch (publishReturnCode) {
+                case DELIVERED -> ProtocolPublishResult.DELIVERED;
+                case NO_MATCHING_SUBSCRIBERS -> ProtocolPublishResult.NO_MATCHING_SUBSCRIBERS;
+                case FAILED -> ProtocolPublishResult.FAILED;
+            };
         });
     }
 
@@ -122,7 +120,7 @@ public class ProtocolAdapterPublishBuilderImpl implements ProtocolAdapterPublish
     }
 
     public interface SendCallback {
-        @NotNull CompletableFuture<PublishReturnCode> onPublishSend(
+        @NotNull CompletableFuture<PublishingResult> onPublishSend(
                 final @NotNull PUBLISH publish,
                 final @NotNull ProtocolAdapter protocolAdapter,
                 final @NotNull ImmutableMap<String, String> dynamicContext);

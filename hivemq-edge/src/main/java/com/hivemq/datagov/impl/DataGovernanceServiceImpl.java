@@ -29,6 +29,7 @@ import com.hivemq.datagov.model.DataGovernancePolicy;
 import com.hivemq.datagov.model.DataGovernanceResult;
 import com.hivemq.datagov.model.impl.DataGoveranceResultImpl;
 import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
+import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.services.PrePublishProcessorService;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -70,28 +71,28 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
         Preconditions.checkNotNull(context.getInput(), "Data Governance Input Cannot Be <null>");
 
         //-- Create the initial result object initd to the value of the input
-        DataGovernanceResult result = new DataGoveranceResultImpl(
+        final DataGovernanceResult result = new DataGoveranceResultImpl(
                 new DataGovernanceDataImpl.Builder(context.getInput()).build());
         result.setStatus(DataGovernanceResult.STATUS.SUCCESS);
         context.setResult(result);
 
         //-- If More Than 1 Policy Is Matched, Ensure All Are Run Serially On The Same Thread
-        PolicyExecution policyExecution = new PolicyExecution(context, List.of(namespaceDataGovernancePolicy));
+        final PolicyExecution policyExecution = new PolicyExecution(context, List.of(namespaceDataGovernancePolicy));
         final ExecutorService executorForContext = getExecutorForContext(context);
         final Future<DataGovernanceResult> resultFuture = executorForContext.submit(policyExecution);
         return JdkFutureAdapters.listenInPoolThread(resultFuture, executorForContext);
     }
 
     @Override
-    public @NotNull ListenableFuture<PublishReturnCode> applyAndPublish(final @NotNull DataGovernanceContext context) {
+    public @NotNull ListenableFuture<PublishingResult> applyAndPublish(final @NotNull DataGovernanceContext context) {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(context.getInput(), "Data Governance Input Cannot Be <null>");
-        ListenableFuture<DataGovernanceResult> policyFuture = apply(context);
-        AsyncFunction<DataGovernanceResult, PublishReturnCode> async = result -> publish(context);
+        final ListenableFuture<DataGovernanceResult> policyFuture = apply(context);
+        final AsyncFunction<DataGovernanceResult, PublishingResult> async = result -> publish(context);
         return Futures.transformAsync(policyFuture, async, getExecutorForContext(context));
     }
 
-    protected @NotNull ListenableFuture<PublishReturnCode> publish(final @NotNull DataGovernanceContext context) {
+    protected @NotNull ListenableFuture<PublishingResult> publish(final @NotNull DataGovernanceContext context) {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(context.getResult(), "Data Governance Result Cannot Be <null>");
         Preconditions.checkArgument(context.getResult().getStatus() == DataGovernanceResult.STATUS.SUCCESS,
@@ -104,7 +105,7 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
             return prePublishProcessorService.publish(
                     context.getResult().getOutput().getPublish(), getExecutorForContext(context),
                     context.getResult().getOutput().getClientId());
-        } catch(Exception e){
+        } catch(final Exception e){
             return Futures.immediateFailedFuture(e);
         }
     }
@@ -128,8 +129,8 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
 
         @Override
         public DataGovernanceResult call() {
-            DataGovernanceResult result = context.getResult();
-            for(DataGovernancePolicy policy : policies){
+            final DataGovernanceResult result = context.getResult();
+            for(final DataGovernancePolicy policy : policies){
 //                log.trace("Data-Gov Executing '{}' with Id '{}'", policy.getName(), policy.getId());
                 policy.execute(context, context.getInput());
             }

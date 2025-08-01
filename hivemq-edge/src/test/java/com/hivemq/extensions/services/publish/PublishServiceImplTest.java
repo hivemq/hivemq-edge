@@ -17,11 +17,12 @@ package com.hivemq.extensions.services.publish;
 
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.Futures;
-import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.datagov.DataGovernanceService;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.general.UserProperties;
 import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
@@ -33,6 +34,7 @@ import com.hivemq.extensions.services.PluginServiceRateLimitService;
 import com.hivemq.extensions.services.builder.PublishBuilderImpl;
 import com.hivemq.extensions.services.executor.GlobalManagedExtensionExecutorService;
 import com.hivemq.mqtt.handler.publish.PublishStatus;
+import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.services.PublishDistributor;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
@@ -40,8 +42,6 @@ import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import util.TestConfigurationBootstrap;
 
 import java.nio.ByteBuffer;
@@ -62,37 +62,26 @@ import static org.mockito.Mockito.when;
  */
 public class PublishServiceImplTest {
 
-    @Mock
-    PluginServiceRateLimitService rateLimitService;
-
-
-    @Mock
-    ShutdownHooks shutdownHooks;
-
-    @Mock
-    PublishDistributor publishDistributor;
-
-    @Mock
-    LocalTopicTree topicTree;
-
-    private GlobalManagedExtensionExecutorService managedPluginExecutorService;
+    private final @NotNull PluginServiceRateLimitService rateLimitService = mock();
+    private final @NotNull ShutdownHooks shutdownHooks = mock();
+    private final @NotNull PublishDistributor publishDistributor = mock();
+    private final @NotNull LocalTopicTree topicTree = mock();
 
     private final HivemqId hiveMQId = new HivemqId();
     private final ConfigurationService fullConfigurationService =
             new TestConfigurationBootstrap().getConfigurationService();
-    private PublishServiceImpl publishService;
-    private DataGovernanceService dataGovernanceService;
+    private @NotNull PublishServiceImpl publishService;
+    private @NotNull DataGovernanceService dataGovernanceService;
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         when(rateLimitService.rateLimitExceeded()).thenReturn(false);
-        managedPluginExecutorService = new GlobalManagedExtensionExecutorService(shutdownHooks);
+        @NotNull final GlobalManagedExtensionExecutorService managedPluginExecutorService =
+                new GlobalManagedExtensionExecutorService(shutdownHooks);
         managedPluginExecutorService.postConstruct();
         dataGovernanceService = mock(DataGovernanceService.class);
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.DELIVERED));
-        publishService = new PublishServiceImpl(rateLimitService,
-                managedPluginExecutorService,
+        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
+        publishService = new PublishServiceImpl(rateLimitService, managedPluginExecutorService,
                 publishDistributor,
                 hiveMQId,
                 topicTree,
@@ -148,7 +137,7 @@ public class PublishServiceImplTest {
         final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
                 .payload(ByteBuffer.wrap("message".getBytes()))
                 .build();
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.DELIVERED));
+        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
 
         publishService.publish(publish).get();
         verify(dataGovernanceService).applyAndPublish(any());
@@ -197,37 +186,37 @@ public class PublishServiceImplTest {
         }
 
         @Override
-        public String getTopic() {
+        public @Nullable String getTopic() {
             return null;
         }
 
         @Override
-        public Optional<PayloadFormatIndicator> getPayloadFormatIndicator() {
+        public @NotNull Optional<PayloadFormatIndicator> getPayloadFormatIndicator() {
             return Optional.empty();
         }
 
         @Override
-        public Optional<Long> getMessageExpiryInterval() {
+        public @NotNull Optional<Long> getMessageExpiryInterval() {
             return Optional.empty();
         }
 
         @Override
-        public Optional<String> getResponseTopic() {
+        public @NotNull Optional<String> getResponseTopic() {
             return Optional.empty();
         }
 
         @Override
-        public Optional<ByteBuffer> getCorrelationData() {
+        public @NotNull Optional<ByteBuffer> getCorrelationData() {
             return Optional.empty();
         }
 
         @Override
-        public Optional<String> getContentType() {
+        public @NotNull Optional<String> getContentType() {
             return Optional.empty();
         }
 
         @Override
-        public Optional<ByteBuffer> getPayload() {
+        public @NotNull Optional<ByteBuffer> getPayload() {
             return Optional.empty();
         }
 

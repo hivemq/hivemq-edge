@@ -22,6 +22,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.api.mqtt.PublishReturnCode;
+import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
@@ -68,7 +69,7 @@ public class InternalPublishServiceImpl implements InternalPublishService {
     }
 
     @NotNull
-    public ListenableFuture<PublishReturnCode> publish(
+    public ListenableFuture<PublishingResult> publish(
             @NotNull final PUBLISH publish,
             @NotNull final ExecutorService executorService,
             @Nullable final String sender) {
@@ -79,7 +80,7 @@ public class InternalPublishServiceImpl implements InternalPublishService {
         publish.setDuplicateDelivery(false);
 
         final ListenableFuture<Void> persistFuture = persistRetainedMessage(publish, executorService);
-        final ListenableFuture<PublishReturnCode> publishReturnCodeFuture =
+        final ListenableFuture<PublishingResult> publishReturnCodeFuture =
                 handlePublish(publish, executorService, sender);
 
         return Futures.whenAllComplete(publishReturnCodeFuture, persistFuture)
@@ -137,7 +138,7 @@ public class InternalPublishServiceImpl implements InternalPublishService {
     }
 
     @NotNull
-    private ListenableFuture<PublishReturnCode> handlePublish(
+    private ListenableFuture<PublishingResult> handlePublish(
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,
             final @Nullable String sender) {
@@ -152,16 +153,16 @@ public class InternalPublishServiceImpl implements InternalPublishService {
                 log.trace("No matching normal/shared subscriber found for PUBLISH with topic '{}'", publish.getTopic());
             }
 
-            return Futures.immediateFuture(PublishReturnCode.NO_MATCHING_SUBSCRIBERS);
+            return Futures.immediateFuture(PublishingResult.NO_MATCHING_SUBSCRIBERS);
         }
 
 
         if (!acknowledgeAfterPersist) {
             deliverPublish(topicSubscribers, sender, publish, executorService, null);
-            return Futures.immediateFuture(PublishReturnCode.DELIVERED);
+            return Futures.immediateFuture(PublishingResult.DELIVERED);
         }
 
-        final SettableFuture<PublishReturnCode> returnCodeFuture = SettableFuture.create();
+        final SettableFuture<PublishingResult> returnCodeFuture = SettableFuture.create();
         deliverPublish(topicSubscribers, sender, publish, executorService, returnCodeFuture);
         return returnCodeFuture;
     }
@@ -171,7 +172,7 @@ public class InternalPublishServiceImpl implements InternalPublishService {
             final @Nullable String sender,
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,
-            final @Nullable SettableFuture<PublishReturnCode> returnCodeFuture) {
+            final @Nullable SettableFuture<PublishingResult> returnCodeFuture) {
         final Set<String> sharedSubscriptions = topicSubscribers.getSharedSubscriptions();
         final Map<String, SubscriberWithIdentifiers> notSharedSubscribers =
                 new HashMap<>(topicSubscribers.getSubscribers().size());
@@ -206,7 +207,7 @@ public class InternalPublishServiceImpl implements InternalPublishService {
                     @Override
                     public void onSuccess(final @Nullable List<Void> result) {
                         if (returnCodeFuture != null) {
-                            returnCodeFuture.set(PublishReturnCode.DELIVERED);
+                            returnCodeFuture.set(PublishingResult.DELIVERED);
                         }
                     }
 
@@ -218,7 +219,7 @@ public class InternalPublishServiceImpl implements InternalPublishService {
                                 publish.getUniqueId() +
                                 ".", throwable);
                         if (returnCodeFuture != null) {
-                            returnCodeFuture.set(PublishReturnCode.FAILED);
+                            returnCodeFuture.set(PublishingResult.DELIVERED);
                         }
                     }
                 },

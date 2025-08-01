@@ -17,7 +17,6 @@
 package com.hivemq.mqtt.handler.publish;
 
 import com.google.common.util.concurrent.Futures;
-import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator;
 import com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults;
@@ -26,6 +25,7 @@ import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.datagov.DataGovernanceService;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extensions.handler.tasks.PublishAuthorizerResult;
@@ -47,9 +47,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import util.CheckUserEventTriggeredOnSuper;
 import util.TestConfigurationBootstrap;
 import util.TestException;
@@ -57,6 +55,7 @@ import util.TestMessageUtil;
 
 import static com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties.NO_USER_PROPERTIES;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
@@ -71,25 +70,22 @@ public class IncomingPublishServiceTest {
     @Rule
     public ErrorCollector errorCollector = new ErrorCollector();
 
-    @Mock
-    private MqttServerDisconnectorImpl mqttServerDisconnector;
+    private final @NotNull MqttServerDisconnectorImpl mqttServerDisconnector = mock();
 
-    private MqttConfigurationService mqttConfigurationService;
-    private RestrictionsConfigurationService restrictionsConfigurationService;
+    private final @NotNull MqttConfigurationService mqttConfigurationService =
+            Mockito.spy(new MqttConfigurationServiceImpl());
+    private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService =
+            Mockito.spy(new RestrictionsConfigurationServiceImpl());
     private EmbeddedChannel channel;
     private ChannelHandlerContext ctx;
     private IncomingPublishService incomingPublishService;
     private final ClientConnection clientConnection = new ClientConnection(channel, null);
-    private DataGovernanceService dataGovernanceService;
+    private final @NotNull DataGovernanceService dataGovernanceService = mock(DataGovernanceService.class);
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
 
-        mqttConfigurationService = Mockito.spy(new MqttConfigurationServiceImpl());
-        restrictionsConfigurationService = Mockito.spy(new RestrictionsConfigurationServiceImpl());
-        dataGovernanceService = mock(DataGovernanceService.class);
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.DELIVERED));
+        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
 
         setupHandlerAndChannel();
 
@@ -154,7 +150,7 @@ public class IncomingPublishServiceTest {
 
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
     }
 
     @Test
@@ -163,7 +159,7 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_MOST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         assertEquals(0, channel.outboundMessages().size());
 
@@ -178,7 +174,7 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_MOST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         assertEquals(0, channel.outboundMessages().size());
 
@@ -191,7 +187,7 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_LEAST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         verify(dataGovernanceService).applyAndPublish(any());
     }
@@ -210,11 +206,11 @@ public class IncomingPublishServiceTest {
 
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         verify(dataGovernanceService).applyAndPublish(any());
 
-        while (channel.outboundMessages().size() == 0) {
+        while (channel.outboundMessages().isEmpty()) {
             channel.runScheduledPendingTasks();
             channel.runPendingTasks();
             Thread.sleep(10);
@@ -233,11 +229,11 @@ public class IncomingPublishServiceTest {
         final PublishAuthorizerResult authorizerResult = new PublishAuthorizerResult(AckReasonCode.SUCCESS, null, true);
 
         incomingPublishService.processPublish(ctx, publish, authorizerResult);
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         verify(dataGovernanceService).applyAndPublish(any());
 
-        while (channel.outboundMessages().size() == 0) {
+        while (channel.outboundMessages().isEmpty()) {
             channel.runScheduledPendingTasks();
             channel.runPendingTasks();
             Thread.sleep(10);
@@ -278,7 +274,7 @@ public class IncomingPublishServiceTest {
         final PublishAuthorizerResult authorizerResult = new PublishAuthorizerResult(AckReasonCode.SUCCESS, null, true);
 
         incomingPublishService.processPublish(ctx, publish, authorizerResult);
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         verify(dataGovernanceService).applyAndPublish(any());
     }
@@ -336,11 +332,11 @@ public class IncomingPublishServiceTest {
         final PublishAuthorizerResult authorizerResult = new PublishAuthorizerResult(AckReasonCode.SUCCESS, null, true);
 
         incomingPublishService.processPublish(ctx, publish, authorizerResult);
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         verify(dataGovernanceService).applyAndPublish(any());
 
-        while (channel.outboundMessages().size() == 0) {
+        while (channel.outboundMessages().isEmpty()) {
             channel.runScheduledPendingTasks();
             channel.runPendingTasks();
             Thread.sleep(10);
@@ -388,7 +384,7 @@ public class IncomingPublishServiceTest {
 
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         verify(dataGovernanceService).applyAndPublish(any());
     }
@@ -486,7 +482,7 @@ public class IncomingPublishServiceTest {
 
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         verify(dataGovernanceService).applyAndPublish(any());
     }
@@ -530,7 +526,7 @@ public class IncomingPublishServiceTest {
 
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         verify(dataGovernanceService).applyAndPublish(any());
     }
@@ -569,16 +565,16 @@ public class IncomingPublishServiceTest {
     @Test
     public void test_publish_valid_qos1_no_matching_subs() throws InterruptedException {
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.NO_MATCHING_SUBSCRIBERS));
+        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.NO_MATCHING_SUBSCRIBERS));
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_LEAST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         verify(dataGovernanceService).applyAndPublish(any());
 
-        while (channel.outboundMessages().size() == 0) {
+        while (channel.outboundMessages().isEmpty()) {
             channel.runScheduledPendingTasks();
             channel.runPendingTasks();
             Thread.sleep(10);
@@ -599,11 +595,11 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_LEAST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         verify(dataGovernanceService).applyAndPublish(any());
 
-        while (channel.outboundMessages().size() == 0) {
+        while (channel.outboundMessages().isEmpty()) {
             channel.runScheduledPendingTasks();
             channel.runPendingTasks();
             Thread.sleep(10);
@@ -611,7 +607,7 @@ public class IncomingPublishServiceTest {
 
         final PUBACK puback = channel.readOutbound();
 
-        assertEquals(Mqtt5PubAckReasonCode.SUCCESS, puback.getReasonCode());
+        assertEquals(Mqtt5PubAckReasonCode.UNSPECIFIED_ERROR, puback.getReasonCode());
 
         verify(dataGovernanceService).applyAndPublish(any());
     }
@@ -622,11 +618,11 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.EXACTLY_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         verify(dataGovernanceService).applyAndPublish(any());
 
-        while (channel.outboundMessages().size() == 0) {
+        while (channel.outboundMessages().isEmpty()) {
             channel.runScheduledPendingTasks();
             channel.runPendingTasks();
             Thread.sleep(10);
@@ -644,16 +640,16 @@ public class IncomingPublishServiceTest {
     @Test
     public void test_publish_valid_qos2_no_matching_subs() throws InterruptedException {
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.NO_MATCHING_SUBSCRIBERS));
+        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.NO_MATCHING_SUBSCRIBERS));
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.EXACTLY_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         verify(dataGovernanceService).applyAndPublish(any());
 
-        while (channel.outboundMessages().size() == 0) {
+        while (channel.outboundMessages().isEmpty()) {
             channel.runScheduledPendingTasks();
             channel.runPendingTasks();
             Thread.sleep(10);
@@ -673,10 +669,10 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.EXACTLY_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
         verify(dataGovernanceService).applyAndPublish(any());
 
-        while (channel.outboundMessages().size() == 0) {
+        while (channel.outboundMessages().isEmpty()) {
             channel.runScheduledPendingTasks();
             channel.runPendingTasks();
             Thread.sleep(10);
@@ -684,7 +680,7 @@ public class IncomingPublishServiceTest {
 
         final PUBREC pubrec = channel.readOutbound();
 
-        assertEquals(Mqtt5PubRecReasonCode.SUCCESS, pubrec.getReasonCode());
+        assertEquals(Mqtt5PubRecReasonCode.UNSPECIFIED_ERROR, pubrec.getReasonCode());
         verify(dataGovernanceService).applyAndPublish(any());
     }
 
@@ -694,7 +690,7 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_MOST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
 
         verify(dataGovernanceService).applyAndPublish(any());
     }

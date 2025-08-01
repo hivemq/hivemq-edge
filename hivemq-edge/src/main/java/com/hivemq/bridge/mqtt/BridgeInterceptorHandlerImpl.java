@@ -15,9 +15,11 @@
  */
 package com.hivemq.bridge.mqtt;
 
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.bridge.config.MqttBridge;
@@ -48,6 +50,7 @@ import com.hivemq.extensions.packets.publish.ModifiableOutboundPublishImpl;
 import com.hivemq.extensions.packets.publish.ModifiablePublishPacketImpl;
 import com.hivemq.extensions.packets.publish.PublishPacketImpl;
 import com.hivemq.extensions.services.interceptor.Interceptors;
+import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
@@ -102,7 +105,9 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
         final ImmutableMap<String, BridgePublishInboundInterceptorProvider> providerMap =
                 interceptors.bridgeInboundInterceptorProviders();
         if (providerMap.isEmpty()) {
-            return prePublishProcessorService.publish(publish, executorService, bridge.getClientId());
+            return Futures.transform(prePublishProcessorService.publish(publish, executorService, bridge.getClientId()),
+                    (Function<? super PublishingResult, PublishReturnCode>) PublishingResult::getPublishReturnCode,
+                    MoreExecutors.directExecutor());
         }
 
         final SettableFuture<PublishReturnCode> resultFuture = SettableFuture.create();
@@ -264,9 +269,12 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
                 resultFuture.set(PublishReturnCode.FAILED);
             } else {
                 final PUBLISH finalPublish = PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish);
-                resultFuture.setFuture(prePublishProcessorService.publish(finalPublish,
-                        executorService,
-                        bridge.getClientId()));
+                resultFuture.setFuture(Futures.transform(prePublishProcessorService.publish(finalPublish,
+                                executorService,
+                                bridge.getClientId()),
+                        (Function<? super PublishingResult, PublishReturnCode>) PublishingResult::getPublishReturnCode,
+                        MoreExecutors.directExecutor())
+                );
             }
         }
 

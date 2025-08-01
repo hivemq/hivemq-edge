@@ -15,17 +15,33 @@
  */
 package com.hivemq.bootstrap.factories;
 
-import org.jetbrains.annotations.Nullable;
+import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import org.jetbrains.annotations.Nullable;
 
 public class HandlerResult {
 
     private final boolean preventPublish;
     private final @Nullable PUBLISH modifiedPublish;
+    private final @Nullable String reasonString;
+    private final @Nullable AckReasonCode ackReasonCode;
 
-    public HandlerResult(boolean preventPublish, @Nullable PUBLISH modifiedPublish) {
+    public HandlerResult(
+            final boolean preventPublish,
+            final @Nullable PUBLISH modifiedPublish,
+            final @Nullable String reasonString) {
+        this(preventPublish, modifiedPublish, reasonString, null);
+    }
+
+    public HandlerResult(
+            final boolean preventPublish,
+            final @Nullable PUBLISH modifiedPublish,
+            final @Nullable String reasonString,
+            final @Nullable AckReasonCode ackReasonCode) {
         this.preventPublish = preventPublish;
         this.modifiedPublish = modifiedPublish;
+        this.reasonString = reasonString;
+        this.ackReasonCode = ackReasonCode;
     }
 
     public boolean isPreventPublish() {
@@ -34,5 +50,13 @@ public class HandlerResult {
 
     public @Nullable PUBLISH getModifiedPublish() {
         return modifiedPublish;
+    }
+
+    public @Nullable String getReasonString() {
+        return reasonString;
+    }
+
+    public @Nullable AckReasonCode getAckReasonCode() {
+        return ackReasonCode;
     }
 }
