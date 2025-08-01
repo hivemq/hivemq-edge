@@ -35,6 +35,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.client.Failure;
+import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.client.Success;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
@@ -52,8 +53,10 @@ import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.security.UnrecoverableEntryException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -67,6 +70,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull Map<String, OpcuaTag> tagNameToTag;
     private final  @NotNull List<OpcuaTag> tagList;
     private volatile @Nullable OpcUaClientConnection opcUaClientConnection;
+
     private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull OpcUaSpecificAdapterConfig config;
@@ -95,51 +99,76 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             final @NotNull ProtocolAdapterStartInput input,
             final @NotNull ProtocolAdapterStartOutput output) {
         log.info("Starting OPC UA protocol adapter {}", adapterId);
-
-        OpcUaClientConnection opcUaClientConnection = this.opcUaClientConnection;
-        if(opcUaClientConnection == null) {
-            opcUaClientConnection = new OpcUaClientConnection(
-                    adapterId,
-                    tagList,
-                    protocolAdapterState,
-                    input.moduleServices().protocolAdapterTagStreamingService(),
-                    dataPointFactory,
-                    input.moduleServices().eventService(),
-                    protocolAdapterMetricsService,
-                    config,
-                    lastSubscriptionId);
+        final ParsedConfig parsedConfig;
+        final var result = ParsedConfig.fromConfig(config);
+        if (result instanceof final Failure<ParsedConfig, String> failure) {
+            log.error("Failed to parse configuration for OPC UA client: {}", failure.failure());
+            output.failStart(new IllegalStateException(failure.failure()), "Failed to parse configuration for OPC UA client");
+            return;
+        } else if (result instanceof final Success<ParsedConfig, String> success) {
+            parsedConfig = success.result();
+        } else {
+            output.failStart(new IllegalStateException("Unexpected result type: " + result.getClass().getName()), "Failed to parse configuration for OPC UA client");
+            return;
         }
 
-        final var startResult = opcUaClientConnection.start();
-        if (startResult instanceof final Failure<Void, Throwable> failure) {
-            log.error("Unable to connect and subscribe to the OPC UA server", failure.failure());
-            output.failStart(failure.failure(), "Unable to connect and subscribe to the OPC UA server");
-        } else if (startResult instanceof final Success<Void, Throwable> ignored) {
-            log.info("Successfully started OPC UA protocol adapter {}", adapterId);
-            this.opcUaClientConnection = opcUaClientConnection;
-            output.startedSuccessfully();
-        }
+        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+
+        final var newOpcUaClientConnection = new OpcUaClientConnection(
+                adapterId,
+                tagList,
+                protocolAdapterState,
+                input.moduleServices().protocolAdapterTagStreamingService(),
+                dataPointFactory,
+                input.moduleServices().eventService(),
+                protocolAdapterMetricsService,
+                config,
+                lastSubscriptionId);
+
+        CompletableFuture
+                .supplyAsync(() -> newOpcUaClientConnection.start(parsedConfig))
+                .whenComplete((success, throwable) -> {
+                    if(success) {
+                        this.opcUaClientConnection = newOpcUaClientConnection;
+                    } else {
+                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+                        log.error("Failed to start OPC UA client", throwable);
+                    }
+                });
+
+        log.info("Successfully started OPC UA protocol adapter {}", adapterId);
+        output.startedSuccessfully();
     }
 
     @Override
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         log.info("Stopping OPC UA protocol adapter {}", adapterId);
-        final var client = opcUaClientConnection;
-        if(client != null) {
-            client.stop();
+        final var tempOpcUaClientConnection = opcUaClientConnection;
+        if(tempOpcUaClientConnection != null) {
+            CompletableFuture.runAsync(() -> {
+                tempOpcUaClientConnection.stop();
+                output.stoppedSuccessfully();
+            });
+            log.info("Stopped OPC UA protocol adapter {}", adapterId);
+        } else {
+            log.info("Tried stopping stopped OPC UA protocol adapter {}", adapterId);
+            output.stoppedSuccessfully();
         }
-        log.info("Stopped OPC UA protocol adapter {}", adapterId);
-        output.stoppedSuccessfully();
+
     }
 
     @Override
     public void destroy() {
         log.info("Destroying OPC UA protocol adapter {}", adapterId);
-        final var client = opcUaClientConnection;
-        if(client != null) {
-            client.destroy();
+        final var tempOpcUaClientConnection = opcUaClientConnection;
+        if(tempOpcUaClientConnection != null) {
+            CompletableFuture.runAsync(() -> {
+                tempOpcUaClientConnection.destroy();
+                log.info("Destroyed OPC UA protocol adapter {}", adapterId);
+            });
+        } else {
+            log.info("Tried destroying stopped OPC UA protocol adapter {}", adapterId);
         }
-        log.info("Destroyed OPC UA protocol adapter {}", adapterId);
     }
 
     @Override
@@ -176,10 +205,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                                         output.fail(throwable, "Unable to discover values");
                                     }
                                 }),
-                        () -> {
-                            output.fail("Discovery failed: Client not connected or not initialized");
-                            output.fail("Client not connected or not initialized");
-                        }
+                        () -> output.fail("Discovery failed: Client not connected or not initialized")
                 );
 
     }
@@ -232,8 +258,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                             },
                         () -> output.fail("Discovery failed: Client not connected or not initialized")
                 );
-
-
     }
 
     @Override
