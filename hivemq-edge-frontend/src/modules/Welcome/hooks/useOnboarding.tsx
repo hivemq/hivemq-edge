@@ -6,7 +6,7 @@ import { Capability } from '@/api/__generated__'
 import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
 import { PulseAgentIcon } from '@/components/Icons/PulseAgentIcon.tsx'
-import { ActivationPanel } from '@/modules/Pulse/components/ActivationPanel.tsx'
+import { ActivationPanel } from '@/modules/Pulse/components/activation/ActivationPanel.tsx'
 import type { OnboardingTask } from '@/modules/Welcome/types.ts'
 
 export const useOnboarding = (): OnboardingTask[] => {
