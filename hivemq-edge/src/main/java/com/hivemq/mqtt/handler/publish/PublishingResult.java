@@ -28,7 +28,7 @@ public class PublishingResult {
 
     private final @NotNull PublishReturnCode publishReturnCode;
     private final @Nullable String reasonString;
-    private final @Nullable AckReasonCode ackReasonCode;
+    private final @NotNull AckReasonCode ackReasonCode;
 
     private PublishingResult(final @NotNull PublishReturnCode publishReturnCode, final @Nullable String reasonString) {
         this(publishReturnCode, reasonString, null);
@@ -43,7 +43,7 @@ public class PublishingResult {
         this.ackReasonCode = ackReasonCode;
     }
 
-    public static @NotNull PublishingResult failed(final @Nullable String reasonString, final @Nullable AckReasonCode ackReasonCode) {
+    public static @NotNull PublishingResult failed(final @Nullable String reasonString, final @NotNull AckReasonCode ackReasonCode) {
         return new PublishingResult(PublishReturnCode.FAILED, reasonString, ackReasonCode);
     }
 
@@ -55,7 +55,7 @@ public class PublishingResult {
         return reasonString;
     }
 
-    public @Nullable AckReasonCode getAckReasonCode() {
+    public @NotNull AckReasonCode getAckReasonCode() {
         return ackReasonCode;
     }
 

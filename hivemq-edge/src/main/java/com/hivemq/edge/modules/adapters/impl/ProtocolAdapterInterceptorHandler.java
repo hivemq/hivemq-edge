@@ -30,6 +30,7 @@ import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.ProtocolAdapterPublishInboundInterceptor;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.ProtocolAdapterPublishInboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.parameter.ProtocolAdapterInboundProviderInput;
+import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
@@ -248,7 +249,7 @@ public class ProtocolAdapterInterceptorHandler {
             final ProtocolAdapterPublishInboundOutputImpl output = outputHolder.get();
             if (output.isPreventDelivery()) {
                 dropMessage(output);
-                resultFuture.set(PublishingResult.failed(null, null));
+                resultFuture.set(PublishingResult.failed("adapter interceptor prevented delivery.", AckReasonCode.UNSPECIFIED_ERROR));
             } else {
                 final PUBLISH finalPublish = PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish);
                 resultFuture.setFuture(processPublish(finalPublish, protocolAdapter));

@@ -298,7 +298,7 @@ public class IncomingPublishService {
             @Override
             public void onFailure(final @NotNull Throwable t) {
                 // TODO think if we wanna set a reason string here.
-                sendAck(ctx, publish, PublishingResult.failed(null, null));
+                sendAck(ctx, publish, PublishingResult.failed(null, AckReasonCode.UNSPECIFIED_ERROR));
             }
         }, ctx.channel().eventLoop());
     }
@@ -367,17 +367,11 @@ public class IncomingPublishService {
     }
 
     private @NotNull Mqtt5PubRecReasonCode resolveMqtt5PubRecReasonCode(final @NotNull PublishingResult publishingResult) {
-        if (publishingResult.getAckReasonCode() != null) {
-            return Mqtt5PubRecReasonCode.from(publishingResult.getAckReasonCode());
-        }
-        return Mqtt5PubRecReasonCode.UNSPECIFIED_ERROR;
+        return Mqtt5PubRecReasonCode.from(publishingResult.getAckReasonCode());
     }
 
     private @NotNull Mqtt5PubAckReasonCode resolveMqtt5PubAckReasonCode(final @NotNull PublishingResult publishingResult) {
-        if (publishingResult.getAckReasonCode() != null) {
-            return Mqtt5PubAckReasonCode.from(publishingResult.getAckReasonCode());
-        }
-        return Mqtt5PubAckReasonCode.UNSPECIFIED_ERROR;
+        return Mqtt5PubAckReasonCode.from(publishingResult.getAckReasonCode());
     }
 
     private boolean isMessageSizeAllowed(final @Nullable Long maxPublishSize, final @NotNull PUBLISH publish) {
