@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse, delay } from 'msw'
 
 import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
 import { MOCK_SIMPLE_SCHEMA_URI } from '@/__test-utils__/rjsf/schema.mocks.ts'
@@ -21,12 +21,15 @@ export const MOCK_PULSE_ASSET_LIST: ManagedAssetList = {
 }
 
 export const handlers = [
-  http.delete('**/api/v1/management/pulse/activation-token', () => {
+  http.delete('**/api/v1/management/pulse/activation-token', async () => {
+    await delay(1000)
+
     return HttpResponse.json('Token deleted', { status: 200 })
   }),
 
   http.post<never, PulseActivationToken>('**/api/v1/management/pulse/activation-token', async ({ request }) => {
     const data = await request.json()
+    await delay(1000)
 
     return HttpResponse.json({ created: data.token }, { status: 200 })
   }),
