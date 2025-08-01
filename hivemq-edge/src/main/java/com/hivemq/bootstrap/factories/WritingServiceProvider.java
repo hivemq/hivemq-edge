@@ -19,19 +19,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
-import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.InternalWritingContext;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Singleton
 public class WritingServiceProvider {
@@ -40,20 +38,17 @@ public class WritingServiceProvider {
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull LocalTopicTree localTopicTree;
     private final @NotNull SingleWriterService singleWriterService;
-    private final @NotNull TopicFilterPersistence topicFilterPersistence;
 
     @Inject
     public WritingServiceProvider(
             final @NotNull EdgeCoreFactoryService edgeCoreFactoryService,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull LocalTopicTree localTopicTree,
-            final @NotNull SingleWriterService singleWriterService,
-            final @NotNull TopicFilterPersistence topicFilterPersistence) {
+            final @NotNull SingleWriterService singleWriterService) {
         this.edgeCoreFactoryService = edgeCoreFactoryService;
         this.objectMapper = objectMapper;
         this.localTopicTree = localTopicTree;
         this.singleWriterService = singleWriterService;
-        this.topicFilterPersistence = topicFilterPersistence;
     }
 
     public @NotNull InternalProtocolAdapterWritingService get() {
@@ -83,19 +78,18 @@ public class WritingServiceProvider {
 
 
         @Override
-        public @NotNull CompletableFuture<Void> startWriting(
+        public boolean startWriting(
                 final @NotNull WritingProtocolAdapter writingProtocolAdapter,
                 final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
                 final @NotNull List<InternalWritingContext> southboundMappings) {
             log.warn("No bidirectional module is currently installed. Writing to PLCs is currently not supported.");
-            return CompletableFuture.completedFuture(null);        }
+            return true;        }
 
         @Override
-        public @NotNull CompletableFuture<Void> stopWriting(
+        public void stopWriting(
                 final @NotNull WritingProtocolAdapter writingProtocolAdapter,
                 final @NotNull List<InternalWritingContext> writingContexts) {
             // NOOP as nothing was started.
-            return CompletableFuture.completedFuture(null);
         }
     }
 }

@@ -36,6 +36,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 class OpcUaToJsonConverterTest extends AbstractOpcUaPayloadConverterTest {
 
@@ -89,8 +90,8 @@ class OpcUaToJsonConverterTest extends AbstractOpcUaPayloadConverterTest {
                 opcUaServerExtension.getTestNamespace().addNode("Test" + name + "Node", typeId, () -> value, 999);
 
         final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId);
-        assertThat(ProtocolAdapterState.ConnectionStatus.CONNECTED).isEqualTo(protocolAdapter.getProtocolAdapterState()
-                .getConnectionStatus());
+
+        await().until(() -> ProtocolAdapterState.ConnectionStatus.CONNECTED.equals(protocolAdapter.getProtocolAdapterState().getConnectionStatus()));
 
         final var received = expectAdapterPublish();
         protocolAdapter.stop(new ProtocolAdapterStopInput() {

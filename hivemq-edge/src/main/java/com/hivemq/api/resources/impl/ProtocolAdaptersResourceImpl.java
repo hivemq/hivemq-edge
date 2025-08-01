@@ -386,7 +386,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         } else {
             switch (command.getCommand()) {
-                case START -> protocolAdapterManager.start(adapterId).whenComplete((result, throwable) -> {
+                case START -> protocolAdapterManager.startAsync(adapterId).whenComplete((result, throwable) -> {
                     if (throwable != null) {
                         log.error("Failed to start adapter '{}'.", adapterId, throwable);
                     } else {
@@ -401,7 +401,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     }
                 });
                 case RESTART -> protocolAdapterManager.stop(adapterId, false)
-                        .thenRun(() -> protocolAdapterManager.start(adapterId))
+                        .thenRun(() -> protocolAdapterManager.startAsync(adapterId))
                         .whenComplete((result, throwable) -> {
                             if (throwable != null) {
                                 log.error("Failed to restart adapter '{}'.", adapterId, throwable);

@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
@@ -51,6 +53,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 class OpcUaClientConnection {
@@ -90,18 +93,7 @@ class OpcUaClientConnection {
         this.lastKnownSubscriptionId = lastSubscriptionId;
     }
 
-    @NotNull Result<Void, Throwable> start() {
-        final ParsedConfig parsedConfig;
-        final var result = ParsedConfig.fromConfig(config);
-        if (result instanceof final Failure<ParsedConfig, String> failure) {
-            log.error("Failed to parse configuration for OPC UA client: {}", failure.failure());
-            return Failure.of(new IllegalStateException(failure.failure()));
-        } else if (result instanceof final Success<ParsedConfig, String> success) {
-            parsedConfig = success.result();
-        } else {
-            return Failure.of(new IllegalStateException("Unexpected result type: " + result.getClass().getName()));
-        }
-
+    @NotNull boolean start(final ParsedConfig parsedConfig) {
         final var subscriptionIdOptional = Optional.ofNullable(lastKnownSubscriptionId.get());
         log.debug("Subscribing to OPC UA client with subscriptionId: {}", subscriptionIdOptional.orElse(null));
         final OpcUaClient client;
@@ -123,8 +115,14 @@ class OpcUaClientConnection {
             client.addFaultListener(faultListener);
             client.connect();
         } catch (final UaException e) {
+            log.error("Unable to connect and subscribe to the OPC UA server", e);
+            eventService
+                    .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                    .withMessage("Unable to connect and subscribe to the OPC UA server")
+                    .withSeverity(Event.SEVERITY.ERROR)
+                    .fire();
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-            return Failure.of(e);
+            return false;
         }
 
         final var subscriptionOptional = subscribe(client, subscriptionIdOptional);
@@ -133,7 +131,12 @@ class OpcUaClientConnection {
             log.error("Failed to create or transfer OPC UA subscription. Closing client connection.");
             quietlyCloseClient(client, false,null, null);
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-            return Failure.of(new IllegalStateException("Failed to create or transfer OPC UA subscription"));
+            eventService
+                    .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                    .withMessage("Failed to create or transfer OPC UA subscription. Closing client connection.")
+                    .withSeverity(Event.SEVERITY.ERROR)
+                    .fire();
+            return false;
         }
 
         final var subscription = subscriptionOptional.get();
@@ -142,7 +145,7 @@ class OpcUaClientConnection {
 
         context.set(new ConnectionContext(subscription.getClient(), faultListener, activityListener));
         log.info("Client created and connected successfully");
-        return Success.of(null);
+        return true;
     }
 
     void stop() {
