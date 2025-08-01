@@ -142,6 +142,19 @@
           "title": "Create a single source of truth for all your enterprise-wide data by seamlessly connecting your HiveMQ Edge deployment to a HiveMQ Cloud MQTT broker.",
           "label": "Connect To HiveMQ Cloud"
         }
+      },
+      "pulse": {
+        "header": "Connect to HiveMQ Pulse",
+        "section": {
+          "activate": {
+            "title": "blah blah bleh",
+            "label": "Activate Pulse"
+          },
+          "assets": {
+            "title": "Use HiveMQ Edge Pulse to manage and publish assets to your HiveMQ Edge",
+            "label": "Manage Pulse Assets"
+          }
+        }
       }
     }
   },
@@ -1443,6 +1456,67 @@
           "output": {
             "description": "This is generated from the Edge data combiner"
           }
+        }
+      }
+    }
+  },
+  "pulse": {
+    "title": "Assets",
+    "description": "Manage Assets and their data mappings to stream live data from Edge to Pulse and other external infrastructure.",
+    "error": {
+      "notActivated": "The Pulse Client is not connected to this Edge instance."
+    },
+    "activation": {
+      "action": {
+        "activate": "Activate Pulse",
+        "revoke": "Revoke",
+        "submit": "Activate"
+      },
+      "heading": {
+        "title": "Pulse Client Activation"
+      },
+      "error": {
+        "noCapabilityLoaded": "Cannot check the Pulse capability. Please try again later"
+      },
+      "form": {
+        "activated": {
+          "title": "Pulse is activated",
+          "description": "You can revoke the activation or activate a different instance with a new token."
+        },
+        "notActivated": {
+          "title": "Pulse is not activated",
+          "description": "To activate Pulse, you need to submit the activation token."
+        },
+        "token": {
+          "title": "Activation Token",
+          "description": "Enter the activation token you received from the Pulse team.",
+          "placeholder": "Paste or drop the activation token here"
+        }
+      },
+      "activate": {
+        "title": "Pulse Client Activation",
+        "success": "The Pulse Client has been successfully activated",
+        "error": "The Pulse Client could not be activated: {{error}}. Please check the activation token and try again",
+        "loading": "Processing the request. Please wait ..."
+      },
+      "revoke": {
+        "title": "Pulse Client Deactivation",
+        "confirmation": "Do you really want to deactivate the Pulse Client? The operation cannot be reversed.",
+        "success": "The Pulse Client has been successfully deactivated",
+        "error": "The Pulse Client could not be deactivated: {{error}}. Please try again.",
+        "loading": "Processing the request. Please wait ..."
+      }
+    },
+    "assets": {
+      "listing": {
+        "aria-label": "List of Pulse assets",
+        "noDataText": "No assets found",
+        "column": {
+          "name": "Name",
+          "topic": "Type",
+          "status": "Status",
+          "lastChanged": "Last changed",
+          "actions": "Actions"
         }
       }
     }
