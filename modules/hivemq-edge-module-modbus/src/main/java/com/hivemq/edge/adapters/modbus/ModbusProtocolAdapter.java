@@ -184,7 +184,10 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                     if (throwable != null) {
                         protocolAdapterState.setConnectionStatus(ERROR);
                         pollingOutput.fail(throwable, "Unable to read tags from modbus");
+                        return;
                     }
+
+                    protocolAdapterState.setConnectionStatus(CONNECTED);
 
                     for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
                         final ResulTuple entry = readRegisterFuture.join();
