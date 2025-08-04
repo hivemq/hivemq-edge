@@ -393,14 +393,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         log.trace("Adapter '{}' was started successfully.", adapterId);
                     }
                 });
-                case STOP -> protocolAdapterManager.stop(adapterId, false).whenComplete((result, throwable) -> {
+                case STOP -> protocolAdapterManager.stopAsync(adapterId, false).whenComplete((result, throwable) -> {
                     if (throwable != null) {
                         log.error("Failed to stop adapter '{}'.", adapterId, throwable);
                     } else {
                         log.trace("Adapter '{}' was stopped successfully.", adapterId);
                     }
                 });
-                case RESTART -> protocolAdapterManager.stop(adapterId, false)
+                case RESTART -> protocolAdapterManager.stopAsync(adapterId, false)
                         .thenRun(() -> protocolAdapterManager.startAsync(adapterId))
                         .whenComplete((result, throwable) -> {
                             if (throwable != null) {

@@ -152,7 +152,7 @@ public class ProtocolAdapterManager {
             adaptersToBeDeleted.forEach(name -> {
                 try {
                     log.debug("Deleting adapter '{}'", name);
-                    stop(name, true).whenComplete((ignored, t) -> {
+                    stopAsync(name, true).whenComplete((ignored, t) -> {
                         deleteAdapterInternal(name);
                     }).get();
                 } catch (final InterruptedException | ExecutionException e) {
@@ -175,7 +175,7 @@ public class ProtocolAdapterManager {
                 try {
                     if(!protocolAdapterConfigs.get(name).equals(knownConfigs.get(name))) {
                         log.debug("Updating adapter '{}'", name);
-                        stop(name, true)
+                        stopAsync(name, true)
                                 .thenApply(v -> {
                                     deleteAdapterInternal(name);
                                     return null;
@@ -223,7 +223,7 @@ public class ProtocolAdapterManager {
                         "'not found.")));
     }
 
-    public @NotNull CompletableFuture<Void> stop(final @NotNull String protocolAdapterId, final boolean destroy) {
+    public @NotNull CompletableFuture<Void> stopAsync(final @NotNull String protocolAdapterId, final boolean destroy) {
         Preconditions.checkNotNull(protocolAdapterId);
         return getProtocolAdapterWrapperByAdapterId(protocolAdapterId)
                 .map(wrapper -> stopAsync(wrapper, destroy))
