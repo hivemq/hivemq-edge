@@ -55,7 +55,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     @Override
     public T get(final long timeout, final @NotNull TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return null;
         }
         return future.get(timeout, unit);
@@ -63,7 +64,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public boolean cancel(final boolean mayInterruptIfRunning) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return false;
         }
         return future.cancel(mayInterruptIfRunning);
@@ -71,7 +73,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public boolean isCancelled() {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return false;
         }
         return future.isCancelled();
@@ -79,7 +82,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public boolean isDone() {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return false;
         }
         return future.isDone();
@@ -87,7 +91,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @Nullable T join() {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return null;
         }
         return future.join();
@@ -95,7 +100,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @Nullable T get() throws InterruptedException, ExecutionException {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return null;
         }
         return future.get();
@@ -103,7 +109,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull <U> CompletableFuture<U> thenApply(@NotNull final Function<? super T, ? extends U> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return super.thenApply(fn);
@@ -111,7 +118,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull <U> CompletableFuture<U> thenApplyAsync(@NotNull final Function<? super T, ? extends U> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenApplyAsync(fn);
@@ -120,8 +128,9 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     @Override
     public @NotNull <U> CompletableFuture<U> thenApplyAsync(
             @NotNull final Function<? super T, ? extends U> fn,
-            final Executor executor) {
-        if (isEmpty()) {
+            final @NotNull Executor executor) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenApplyAsync(fn, executor);
@@ -129,7 +138,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletableFuture<Void> thenAccept(@NotNull final Consumer<? super T> action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenAccept(action);
@@ -137,7 +147,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletableFuture<Void> thenAcceptAsync(@NotNull final Consumer<? super T> action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenAcceptAsync(action);
@@ -147,7 +158,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull CompletableFuture<Void> thenAcceptAsync(
             @NotNull final Consumer<? super T> action,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenAcceptAsync(action, executor);
@@ -155,7 +167,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletableFuture<Void> thenRun(@NotNull final Runnable action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenRun(action);
@@ -163,7 +176,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletableFuture<Void> thenRunAsync(@NotNull final Runnable action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenRunAsync(action);
@@ -173,7 +187,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull CompletableFuture<Void> thenRunAsync(
             @NotNull final Runnable action,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenRunAsync(action, executor);
@@ -183,7 +198,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull <U, V> CompletableFuture<V> thenCombine(
             @NotNull final CompletionStage<? extends U> other,
             @NotNull final BiFunction<? super T, ? super U, ? extends V> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenCombine(other, fn);
@@ -193,7 +209,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull <U, V> CompletableFuture<V> thenCombineAsync(
             @NotNull final CompletionStage<? extends U> other,
             @NotNull final BiFunction<? super T, ? super U, ? extends V> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenCombineAsync(other, fn);
@@ -204,7 +221,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
             @NotNull final CompletionStage<? extends U> other,
             @NotNull final BiFunction<? super T, ? super U, ? extends V> fn,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenCombineAsync(other, fn, executor);
@@ -214,7 +232,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull <U> CompletableFuture<Void> thenAcceptBoth(
             @NotNull final CompletionStage<? extends U> other,
             @NotNull final BiConsumer<? super T, ? super U> action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenAcceptBoth(other, action);
@@ -224,7 +243,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull <U> CompletableFuture<Void> thenAcceptBothAsync(
             @NotNull final CompletionStage<? extends U> other,
             @NotNull final BiConsumer<? super T, ? super U> action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenAcceptBothAsync(other, action);
@@ -235,7 +255,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
             @NotNull final CompletionStage<? extends U> other,
             @NotNull final BiConsumer<? super T, ? super U> action,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenAcceptBothAsync(other, action, executor);
@@ -245,7 +266,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull CompletableFuture<Void> runAfterBoth(
             @NotNull final CompletionStage<?> other,
             @NotNull final Runnable action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.runAfterBoth(other, action);
@@ -255,7 +277,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull CompletableFuture<Void> runAfterBothAsync(
             @NotNull final CompletionStage<?> other,
             @NotNull final Runnable action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.runAfterBothAsync(other, action);
@@ -266,7 +289,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
             @NotNull final CompletionStage<?> other,
             @NotNull final Runnable action,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.runAfterBothAsync(other, action, executor);
@@ -276,7 +300,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull <U> CompletableFuture<U> applyToEither(
             @NotNull final CompletionStage<? extends T> other,
             @NotNull final Function<? super T, U> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.applyToEither(other, fn);
@@ -286,7 +311,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull <U> CompletableFuture<U> applyToEitherAsync(
             @NotNull final CompletionStage<? extends T> other,
             @NotNull final Function<? super T, U> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.applyToEitherAsync(other, fn);
@@ -297,7 +323,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
             @NotNull final CompletionStage<? extends T> other,
             @NotNull final Function<? super T, U> fn,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.applyToEitherAsync(other, fn, executor);
@@ -307,7 +334,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull CompletableFuture<Void> acceptEither(
             @NotNull final CompletionStage<? extends T> other,
             @NotNull final Consumer<? super T> action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.acceptEither(other, action);
@@ -317,7 +345,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull CompletableFuture<Void> acceptEitherAsync(
             @NotNull final CompletionStage<? extends T> other,
             @NotNull final Consumer<? super T> action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.acceptEitherAsync(other, action);
@@ -328,7 +357,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
             @NotNull final CompletionStage<? extends T> other,
             @NotNull final Consumer<? super T> action,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.acceptEitherAsync(other, action, executor);
@@ -338,7 +368,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull CompletableFuture<Void> runAfterEither(
             @NotNull final CompletionStage<?> other,
             @NotNull final Runnable action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.runAfterEither(other, action);
@@ -348,7 +379,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull CompletableFuture<Void> runAfterEitherAsync(
             @NotNull final CompletionStage<?> other,
             @NotNull final Runnable action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.runAfterEitherAsync(other, action);
@@ -359,7 +391,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
             @NotNull final CompletionStage<?> other,
             @NotNull final Runnable action,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.runAfterEitherAsync(other, action, executor);
@@ -367,7 +400,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull <U> CompletableFuture<U> thenCompose(@NotNull final Function<? super T, ? extends CompletionStage<U>> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenCompose(fn);
@@ -375,7 +409,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull <U> CompletableFuture<U> thenComposeAsync(@NotNull final Function<? super T, ? extends CompletionStage<U>> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenComposeAsync(fn);
@@ -385,7 +420,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull <U> CompletableFuture<U> thenComposeAsync(
             @NotNull final Function<? super T, ? extends CompletionStage<U>> fn,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.thenComposeAsync(fn, executor);
@@ -393,7 +429,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletableFuture<T> whenComplete(@NotNull final BiConsumer<? super @UnknownNullability T, ? super @UnknownNullability Throwable> action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.whenComplete(action);
@@ -401,7 +438,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletableFuture<T> whenCompleteAsync(@NotNull final BiConsumer<? super @UnknownNullability T, ? super @UnknownNullability Throwable> action) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.whenCompleteAsync(action);
@@ -411,7 +449,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull CompletableFuture<T> whenCompleteAsync(
             @NotNull final BiConsumer<? super @UnknownNullability T, ? super @UnknownNullability Throwable> action,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.whenCompleteAsync(action, executor);
@@ -419,7 +458,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull <U> CompletableFuture<U> handle(@NotNull final BiFunction<? super T, Throwable, ? extends U> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.handle(fn);
@@ -427,7 +467,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull <U> CompletableFuture<U> handleAsync(@NotNull final BiFunction<? super T, Throwable, ? extends U> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.handleAsync(fn);
@@ -437,7 +478,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull <U> CompletableFuture<U> handleAsync(
             @NotNull final BiFunction<? super T, Throwable, ? extends U> fn,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.handleAsync(fn, executor);
@@ -445,7 +487,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public CompletableFuture<T> toCompletableFuture() {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.toCompletableFuture();
@@ -453,7 +496,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletableFuture<T> exceptionally(@NotNull final Function<Throwable, ? extends T> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.exceptionally(fn);
@@ -461,7 +505,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletableFuture<T> exceptionallyAsync(@NotNull final Function<Throwable, ? extends T> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.exceptionallyAsync(fn);
@@ -471,7 +516,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull CompletableFuture<T> exceptionallyAsync(
             @NotNull final Function<Throwable, ? extends T> fn,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.exceptionallyAsync(fn, executor);
@@ -479,7 +525,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletableFuture<T> exceptionallyCompose(@NotNull final Function<Throwable, ? extends CompletionStage<T>> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.exceptionallyCompose(fn);
@@ -487,7 +534,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletableFuture<T> exceptionallyComposeAsync(@NotNull final Function<Throwable, ? extends CompletionStage<T>> fn) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.exceptionallyComposeAsync(fn);
@@ -497,7 +545,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull CompletableFuture<T> exceptionallyComposeAsync(
             @NotNull final Function<Throwable, ? extends CompletionStage<T>> fn,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.exceptionallyComposeAsync(fn, executor);
@@ -505,7 +554,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public boolean isCompletedExceptionally() {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return false;
         }
         return future.isCompletedExceptionally();
@@ -527,7 +577,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public int getNumberOfDependents() {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return 0;
         }
         return future.getNumberOfDependents();
@@ -535,7 +586,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @Nullable String toString() {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return super.toString();
         }
         return future.toString();
@@ -543,7 +595,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public <U> CompletableFuture<U> newIncompleteFuture() {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.newIncompleteFuture();
@@ -551,7 +604,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull Executor defaultExecutor() {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.delayedExecutor(0, TimeUnit.MILLISECONDS);
         }
         return future.defaultExecutor();
@@ -559,7 +613,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletableFuture<T> copy() {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.copy();
@@ -567,7 +622,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletionStage<T> minimalCompletionStage() {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.minimalCompletionStage();
@@ -577,7 +633,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
     public @NotNull CompletableFuture<T> completeAsync(
             @NotNull final Supplier<? extends T> supplier,
             final @NotNull Executor executor) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.completeAsync(supplier, executor);
@@ -585,7 +642,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletableFuture<T> completeAsync(@NotNull final Supplier<? extends T> supplier) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.completeAsync(supplier);
@@ -593,7 +651,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public @NotNull CompletableFuture<T> orTimeout(final long timeout, @NotNull final TimeUnit unit) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.orTimeout(timeout, unit);
@@ -604,7 +663,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
             final @Nullable T value,
             final long timeout,
             @NotNull final TimeUnit unit) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return CompletableFuture.completedFuture(null);
         }
         return future.completeOnTimeout(value, timeout, unit);
@@ -612,7 +672,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public T getNow(final @Nullable T valueIfAbsent) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return null;
         }
         return future.getNow(valueIfAbsent);
@@ -620,7 +681,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public boolean complete(final @Nullable T value) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return false;
         }
         return future.complete(value);
@@ -628,7 +690,8 @@ public final class DelegatingCompletableFuture<T> extends CompletableFuture<T> {
 
     @Override
     public boolean completeExceptionally(final @Nullable Throwable ex) {
-        if (isEmpty()) {
+        final CompletableFuture<T> future = this.future;
+        if (future == null) {
             return false;
         }
         return future.completeExceptionally(ex);
