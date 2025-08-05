@@ -1464,6 +1464,7 @@
     "title": "Assets",
     "description": "Manage Assets and their data mappings to stream live data from Edge to Pulse and other external infrastructure.",
     "error": {
+      "notYetAvailable": "Pulse Assets are not yet available for HiveMQ Edge. <1>Please contact us for more information.</1",
       "notActivated": "The Pulse Client is not connected to this Edge instance."
     },
     "activation": {
