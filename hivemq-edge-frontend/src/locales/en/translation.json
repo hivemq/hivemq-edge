@@ -147,7 +147,7 @@
         "header": "Connect to HiveMQ Pulse",
         "section": {
           "activate": {
-            "title": "blah blah bleh",
+            "title": "To access the features of HiveMQ Edge Pulse, you need to activate it first.",
             "label": "Activate Pulse"
           },
           "assets": {
