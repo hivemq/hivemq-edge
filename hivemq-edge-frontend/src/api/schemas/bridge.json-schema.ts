@@ -36,7 +36,8 @@ export const bridgeSchema: JSONSchema7 = {
         destination: {
           type: 'string',
           description: `The destination topic for this filter set.`,
-          format: 'mqtt-topic',
+          // TODO[NVL] Topic validation removed because of need for interpolation; implement the custom validation
+          // format: 'mqtt-topic',
         },
         excludes: {
           type: 'array',
@@ -77,7 +78,8 @@ export const bridgeSchema: JSONSchema7 = {
         destination: {
           type: 'string',
           description: `The destination topic for this filter set.`,
-          format: 'mqtt-topic',
+          // TODO[NVL] Topic validation removed because of need for interpolation; implement the custom validation
+          // format: 'mqtt-topic',
         },
         filters: {
           type: 'array',
