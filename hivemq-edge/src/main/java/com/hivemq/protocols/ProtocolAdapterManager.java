@@ -331,9 +331,8 @@ public class ProtocolAdapterManager {
     @NotNull
     CompletableFuture<Void> startAsync(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
-
         log.info("Starting protocol-adapter '{}'.", protocolAdapterWrapper.getId());
-
+        // Calling startAsync() N times simultaneously will get only 1 event fired when the start is completed.
         return protocolAdapterWrapper
                 .startAsync(writingEnabled(), moduleServices)
                 .whenComplete((result, throwable) -> {
@@ -372,7 +371,7 @@ public class ProtocolAdapterManager {
     @NotNull CompletableFuture<Void> stopAsync(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper, final boolean destroy) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
         log.info("Stopping protocol-adapter '{}'.", protocolAdapterWrapper.getId());
-
+        // Calling stopAsync() N times simultaneously will get only 1 event fired when the stop is completed.
         return protocolAdapterWrapper
                 .stopAsync(destroy)
                 .whenComplete((result, throwable) -> {
