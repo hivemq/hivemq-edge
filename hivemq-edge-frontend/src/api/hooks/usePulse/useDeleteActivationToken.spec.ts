@@ -14,15 +14,15 @@ describe('useDeleteActivationToken', () => {
   it('should execute the mutation', async () => {
     server.use(...handlers)
 
-    const { result } = renderHook(() => useDeleteActivationToken(), { wrapper })
+    const { result } = renderHook(useDeleteActivationToken, { wrapper })
 
     expect(result.current.isSuccess).toBeFalsy()
-    act(() => {
-      result.current.mutateAsync()
+    await act(async () => {
+      await result.current.mutateAsync()
     })
     await waitFor(() => {
       expect(result.current.isSuccess).toBeTruthy()
-      expect(result.current.data).toStrictEqual('Token deleted')
     })
+    expect(result.current.data).toStrictEqual('Token deleted')
   })
 })

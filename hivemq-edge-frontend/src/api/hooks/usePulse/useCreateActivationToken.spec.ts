@@ -19,14 +19,15 @@ describe('useCreateActivationToken', () => {
     const { result } = renderHook(() => useCreateActivationToken(), { wrapper })
 
     expect(result.current.isSuccess).toBeFalsy()
-    act(() => {
-      result.current.mutateAsync(MOCK_PULSE_ACTIVATION_TOKEN)
+    await act(async () => {
+      await result.current.mutateAsync(MOCK_PULSE_ACTIVATION_TOKEN)
     })
     await waitFor(() => {
       expect(result.current.isSuccess).toBeTruthy()
-      expect(result.current.data).toStrictEqual({
-        created: MOCK_PULSE_ACTIVATION_TOKEN.token,
-      })
+    })
+
+    expect(result.current.data).toStrictEqual({
+      created: MOCK_PULSE_ACTIVATION_TOKEN.token,
     })
   })
 })
