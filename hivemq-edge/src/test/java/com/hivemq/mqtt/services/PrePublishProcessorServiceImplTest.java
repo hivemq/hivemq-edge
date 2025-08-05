@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.bootstrap.factories.HandlerResult;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingProvider;
+import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,10 +43,13 @@ class PrePublishProcessorServiceImplTest {
 
     private final @NotNull InternalPublishService internalPublishService = mock();
     private final @NotNull PrePublishProcessorHandlingProvider processorHandlingProvider = mock();
+    private final @NotNull MessageDroppedService messageDroppedService = mock();
 
     private final @NotNull PrePublishProcessorServiceImpl prePublishProcessorService =
-            new PrePublishProcessorServiceImpl(internalPublishService,
-                    processorHandlingProvider);
+            new PrePublishProcessorServiceImpl(
+                    internalPublishService,
+                    processorHandlingProvider,
+                    messageDroppedService);
 
     @BeforeEach
     void setUp() {
@@ -68,7 +72,7 @@ class PrePublishProcessorServiceImplTest {
         final PUBLISH modifiedPublish = mock(PUBLISH.class);
 
         final ListeningExecutorService executorService = MoreExecutors.newDirectExecutorService();
-        when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1) -> {
+        when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1, messageDroppedService) -> {
             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
             settableFuture.set(new HandlerResult(false, modifiedPublish, null));
             return settableFuture;
@@ -87,11 +91,11 @@ class PrePublishProcessorServiceImplTest {
         final AtomicBoolean correctModifiedPublish = new AtomicBoolean(false);
 
         final ListeningExecutorService executorService = MoreExecutors.newDirectExecutorService();
-        when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1) -> {
+        when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1, messageDroppedService) -> {
             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
             settableFuture.set(new HandlerResult(false, modifiedPublish, null));
             return settableFuture;
-        }, (originalPublish, sender, executorService2) -> {
+        }, (originalPublish, sender, executorService2, messageDroppedService) -> {
             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
             if (originalPublish == modifiedPublish) {
                 correctModifiedPublish.set(true);
@@ -112,7 +116,7 @@ class PrePublishProcessorServiceImplTest {
         final PUBLISH modifiedPublish = mock(PUBLISH.class);
 
         final ListeningExecutorService executorService = MoreExecutors.newDirectExecutorService();
-        when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1) -> {
+        when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1, messageDroppedService) -> {
             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
             settableFuture.set(new HandlerResult(true, modifiedPublish, null));
             return settableFuture;
@@ -132,11 +136,11 @@ class PrePublishProcessorServiceImplTest {
         final AtomicBoolean secondCalled = new AtomicBoolean(false);
 
         final ListeningExecutorService executorService = MoreExecutors.newDirectExecutorService();
-        when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1) -> {
+        when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1, messageDroppedService) -> {
             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
             settableFuture.set(new HandlerResult(true, modifiedPublish, null));
             return settableFuture;
-        }, (originalPublish, sender, executorService2) -> {
+        }, (originalPublish, sender, executorService2, messageDroppedService) -> {
             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
             secondCalled.set(true);
 
