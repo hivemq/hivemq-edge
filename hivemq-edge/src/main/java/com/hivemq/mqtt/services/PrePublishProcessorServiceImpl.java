@@ -22,6 +22,7 @@ import com.hivemq.bootstrap.factories.HandlerResult;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandling;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingProvider;
 import com.hivemq.mqtt.handler.publish.PublishingResult;
+import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import jakarta.inject.Inject;
 import org.jetbrains.annotations.NotNull;
@@ -29,21 +30,21 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class PrePublishProcessorServiceImpl implements PrePublishProcessorService {
 
     private final @NotNull InternalPublishService internalPublishService;
     private final @NotNull PrePublishProcessorHandlingProvider processorHandlingProvider;
-
-    //FIXME: write tests
+    private final @NotNull MessageDroppedService messageDroppedService;
 
     @Inject
     public PrePublishProcessorServiceImpl(
             final @NotNull InternalPublishService internalPublishService,
-            final @NotNull PrePublishProcessorHandlingProvider processorHandlingProvider) {
+            final @NotNull PrePublishProcessorHandlingProvider processorHandlingProvider,
+            final @NotNull MessageDroppedService messageDroppedService) {
         this.internalPublishService = internalPublishService;
         this.processorHandlingProvider = processorHandlingProvider;
+        this.messageDroppedService = messageDroppedService;
     }
 
     public @NotNull ListenableFuture<PublishingResult> publish(
@@ -57,7 +58,7 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
         }
 
         ListenableFuture<HandlerResult> future =
-                prePublishProcessorHandling.get(0).apply(publish, sender, executorService);
+                prePublishProcessorHandling.get(0).apply(publish, sender, executorService, messageDroppedService);
         for (int i = 1; i < prePublishProcessorHandling.size(); i++) {
             final PrePublishProcessorHandling handler = prePublishProcessorHandling.get(i);
             future = Futures.transformAsync(future, result -> {
@@ -66,7 +67,7 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
                     //skip further processing and return the previous result
                     return Futures.immediateFuture(result);
                 } else {
-                    return handler.apply(result.getModifiedPublish(), sender, executorService);
+                    return handler.apply(result.getModifiedPublish(), sender, executorService, messageDroppedService);
                 }
             }, executorService);
         }
