@@ -108,4 +108,56 @@ describe('BridgeEditorDrawer', () => {
       cy_bridgeShouldBeDefinedProperly()
     })
   })
+
+  describe('RJSF Editor', () => {
+    it('should support interpolation for destinations', () => {
+      cy.mountWithProviders(<BridgeEditorDrawer isNew={true} />, {
+        wrapper: getWrapperWith('/mqtt-bridges/new'),
+        routerProps: { initialEntries: [`/mqtt-bridges/new`] },
+      })
+      cy.wait('@getBridges')
+
+      cy.getByTestId('root_id').within(() => {
+        cy.get('input').type('123')
+      })
+
+      cy.getByTestId('root_host').within(() => {
+        cy.get('input').type('abc')
+      })
+
+      cy.get('[role="tablist"] button').eq(2).click()
+
+      cy.getByTestId('root_localSubscriptions').within(() => {
+        cy.getByTestId('array-item-add').click()
+      })
+
+      cy.getByTestId('root_localSubscriptions_0_destination').within(() => {
+        cy.get('input').type('topic/{{}#{}}{enter}')
+      })
+
+      cy.getByTestId('root_localSubscriptions_0_destination').should('not.have.attr', 'data-invalid')
+      cy.get('#root_localSubscriptions_0_destination__error').should('not.exist')
+
+      cy.getByTestId('root_remoteSubscriptions').within(() => {
+        cy.getByTestId('array-item-add').click()
+      })
+
+      cy.getByTestId('root_remoteSubscriptions_0_destination').within(() => {
+        cy.get('input').type('topic/remote/{{}#{}}{enter}')
+      })
+
+      cy.getByTestId('root_remoteSubscriptions_0_destination').should('not.have.attr', 'data-invalid')
+      cy.get('#root_remoteSubscriptions_0_destination__error').should('not.exist')
+    })
+  })
+
+  it('should be accessible', () => {
+    cy.injectAxe()
+    cy.mountWithProviders(<BridgeEditorDrawer isNew={true} />, {
+      wrapper: getWrapperWith('/mqtt-bridges/new'),
+      routerProps: { initialEntries: [`/mqtt-bridges/new`] },
+    })
+    cy.wait('@getBridges')
+    cy.checkAccessibility()
+  })
 })
