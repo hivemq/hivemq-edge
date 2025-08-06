@@ -38,7 +38,7 @@
   "modules" : [
     {
       "id" : "modbus",
-      "version" : "2025.12",
+      "version" : "2025.13",
       "name" : "Modbus to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing Modbus devices, bringing data from coils & registers into MQTT.",
       "author" : "HiveMQ",
@@ -57,7 +57,7 @@
     },
     {
       "id" : "opcua",
-      "version" : "2025.12",
+      "version" : "2025.13",
       "name" : "OPC-UA to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing OPC-UA services as a client and enables a seamless exchange of data between MQTT and OPC-UA.",
       "author" : "HiveMQ",
@@ -76,7 +76,7 @@
     },
     {
       "id" : "http",
-      "version" : "2025.12",
+      "version" : "2025.13",
       "name" : "HTTP(s) to MQTT Protocol Adapter",
       "description" : "Polls data from one or more web endpoint URLs and converts the consumed structured HTTP bodies (XML, JSON, text, CSV) into an MQTT message.",
       "author" : "HiveMQ",
@@ -95,7 +95,7 @@
     },
     {
       "id" : "s7",
-      "version" : "2025.12",
+      "version" : "2025.13",
       "name" : "S7 to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to S7-300, S7-400, S7-1200 & S7-1500 devices, reading data from the PLC into MQTT.",
       "author" : "HiveMQ",
@@ -114,7 +114,7 @@
     },
     {
       "id" : "ads",
-      "version" : "2025.12",
+      "version" : "2025.13",
       "name" : "ADS to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to devices supporting ADS, reading data from the PLC into MQTT.",
       "author" : "HiveMQ",
@@ -133,7 +133,7 @@
     },
     {
       "id" : "eip",
-      "version" : "2025.12",
+      "version" : "2025.13",
       "name" : "Ethernet IP to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to Rockwell / Allen-Bradley ControlLogix and CompactLogix devices supporting Ethernet IP, reading data from the PLC into MQTT.",
       "author" : "HiveMQ",
@@ -152,7 +152,7 @@
     },
     {
       "id" : "file",
-      "version" : "2025.12",
+      "version" : "2025.13",
       "name" : "File Adapter",
       "description" : "This adapter polls and publishes the content of files on regular basis.",
       "author" : "HiveMQ",
@@ -171,7 +171,7 @@
     },
     {
       "id" : "bacnetip",
-      "version" : "2025.12",
+      "version" : "2025.13",
       "name" : "BACnet/IP Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing BACnet/IP devices.",
       "author" : "HiveMQ",
@@ -190,7 +190,7 @@
     },
     {
       "id" : "mtconnect",
-      "version" : "2025.12",
+      "version" : "2025.13",
       "name" : "MTConnect Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing MTConnect devices.",
       "author" : "HiveMQ",
@@ -209,7 +209,7 @@
     },
     {
       "id" : "databases",
-      "version" : "2025.12",
+      "version" : "2025.13",
       "name" : "Databases Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing databases (MySQL, PostgresSQL or MS SQL).",
       "author" : "HiveMQ",
