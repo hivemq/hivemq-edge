@@ -1,0 +1,10 @@
+type: object
+description: Defines how incoming data should be transformed before being sent out.
+properties:
+  instructions:
+    type: array
+    description: List of instructions to be applied to incoming data
+    items:
+      $ref: ./Instruction.yaml
+required:
+  - instructions

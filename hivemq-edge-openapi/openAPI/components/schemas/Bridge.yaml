@@ -1,0 +1,103 @@
+type: object
+properties:
+  cleanStart:
+    type: boolean
+    format: boolean
+    default: true
+    description: The cleanStart value associated the the MQTT connection.
+  clientId:
+    type: string
+    format: string
+    description: The client identifier associated the the MQTT connection.
+    example: my-example-client-id
+    maxLength: 65535
+    nullable: true
+  host:
+    type: string
+    description: >-
+      The host the bridge connects to - a well formed hostname, ipv4 or ipv6
+      value.
+    maxLength: 255
+  id:
+    type: string
+    format: string
+    description: >-
+      The bridge id, must be unique and only contain alpha numeric characters
+      with spaces and hyphens.
+    maxLength: 500
+    minLength: 1
+    pattern: ^([a-zA-Z_0-9-_])*$
+  keepAlive:
+    type: integer
+    format: int32
+    default: 240
+    description: The keepAlive associated the the MQTT connection.
+    maximum: 65535
+    minimum: 0
+  localSubscriptions:
+    type: array
+    description: localSubscriptions associated with the bridge
+    items:
+      $ref: ./LocalBridgeSubscription.yaml
+  loopPreventionEnabled:
+    type: boolean
+    format: boolean
+    default: true
+    description: Is loop prevention enabled on the connection
+  loopPreventionHopCount:
+    type: integer
+    format: int32
+    default: 1
+    description: Loop prevention hop count
+    maximum: 100
+    minimum: 0
+  password:
+    type: string
+    format: string
+    description: The password value associated the the MQTT connection.
+    maxLength: 65535
+    nullable: true
+  persist:
+    type: boolean
+    description: >-
+      If this flag is set to true, any outgoing mqtt messages with QoS-1 or
+      QoS-2 will be persisted on disc in case disc persistence is active.If this
+      flag is set to false, the QoS of any outgoing mqtt messages will be set to
+      QoS-0 and no traffic will be persisted on disc.
+    nullable: true
+  port:
+    type: integer
+    format: int32
+    description: The port number to connect to
+    maximum: 65535
+    minimum: 1
+  remoteSubscriptions:
+    type: array
+    description: remoteSubscriptions associated with the bridge
+    items:
+      $ref: ./BridgeSubscription.yaml
+  sessionExpiry:
+    type: integer
+    format: int64
+    default: 3600
+    description: The sessionExpiry associated the the MQTT connection.
+    minimum: 0
+  status:
+    $ref: ./Status.yaml
+  tlsConfiguration:
+    $ref: ./TlsConfiguration.yaml
+  username:
+    type: string
+    format: string
+    description: The username value associated the the MQTT connection.
+    maxLength: 65535
+    nullable: true
+  websocketConfiguration:
+    $ref: ./WebsocketConfiguration.yaml
+required:
+  - cleanStart
+  - host
+  - id
+  - keepAlive
+  - port
+  - sessionExpiry

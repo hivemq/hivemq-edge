@@ -1,0 +1,430 @@
+get:
+  description: |-
+    Get all data policies. 
+
+     This endpoint returns the content of the policies with the content-type `application/json`. 
+
+     
+  operationId: getAllDataPolicies
+  parameters:
+    - description: >-
+        Comma-separated list of fields to include in the response. Allowed
+        values are: id, createdAt, lastUpdatedAt, matching, validation,
+        onSuccess, onFailure
+      example: id,createdAt
+      in: query
+      name: fields
+      schema:
+        type: string
+    - description: >-
+        Comma-separated list of policy IDs used for filtering. Multiple filters
+        can be applied together.
+      example: policy1,policy2
+      in: query
+      name: policyIds
+      schema:
+        type: string
+    - description: >-
+        Comma-separated list of schema IDs used for filtering. Multiple filters
+        can be applied together.
+      example: schema1,schema2
+      in: query
+      name: schemaIds
+      schema:
+        type: string
+    - description: >-
+        MQTT topic string that the retrieved policies must match. Returned
+        policies are sorted in the same way as they are applied to matching
+        publishes. 'topic' filtering does not support pagination
+      example: topic/my-topic
+      in: query
+      name: topic
+      schema:
+        type: string
+    - description: >-
+        Specifies the page size for the returned results. The value must be
+        between 10 and 500. The default page size is 50. The limit is ignored if
+        the 'topic' query parameter is set.
+      example: 100
+      in: query
+      name: limit
+      schema:
+        type: integer
+        format: int32
+    - description: >-
+        The cursor that has been returned by the previous result page. Do not
+        pass this parameter if you want to fetch the first page.
+      in: query
+      name: cursor
+      schema:
+        type: string
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            list-response-a:
+              description: Example response with multiple policies. No more pages left
+              summary: Multiple results, last page
+              value:
+                items:
+                  - id: policy1
+                    createdAt: '2023-04-26T13:32:47.032Z'
+                    lastUpdatedAt: '2023-04-26T13:32:47.032Z'
+                    matching:
+                      topicFilter: topic1
+                    validation:
+                      validators:
+                        - type: schema
+                          arguments:
+                            strategy: ALL_OF
+                            schemas:
+                              - schemaId: schema
+                                version: '1'
+                    onSuccess:
+                      pipeline:
+                        - id: logSuccessOperation
+                          functionId: System.log
+                          arguments:
+                            level: DEBUG
+                            message: >-
+                              ${clientId} sent a publish on topic '${topic}'
+                              with result '${validationResult}'
+                    onFailure:
+                      pipeline:
+                        - id: logFailureOperation
+                          functionId: System.log
+                          arguments:
+                            level: WARN
+                            message: >-
+                              ${clientId} sent an invalid publish on topic
+                              '${topic}' with result '${validationResult}'
+                  - id: policy2
+                    createdAt: '2023-04-26T13:32:47.049Z'
+                    lastUpdatedAt: '2023-04-26T13:32:47.049Z'
+                    matching:
+                      topicFilter: topic2
+                    validation:
+                      validators:
+                        - type: schema
+                          arguments:
+                            strategy: ALL_OF
+                            schemas:
+                              - schemaId: schema
+                                version: '1'
+                    onSuccess:
+                      pipeline:
+                        - id: logSuccessOperation
+                          functionId: System.log
+                          arguments:
+                            level: DEBUG
+                            message: >-
+                              ${clientId} sent a publish on topic '${topic}'
+                              with result '${validationResult}'
+                    onFailure:
+                      pipeline:
+                        - id: logSuccessOperation
+                          functionId: System.log
+                          arguments:
+                            level: WARN
+                            message: >-
+                              ${clientId} sent an invalid publish on topic
+                              '${topic}' with result '${validationResult}'
+            list-response-b:
+              description: Example response with multiple policies. More pages left
+              summary: Multiple results, more pages left
+              value:
+                items:
+                  - id: policy1
+                    createdAt: '2023-04-26T13:32:47.032Z'
+                    lastUpdatedAt: '2023-04-26T13:32:47.032Z'
+                    matching:
+                      topicFilter: topic1
+                    validation:
+                      validators:
+                        - type: schema
+                          arguments:
+                            strategy: ALL_OF
+                            schemas:
+                              - schemaId: schema
+                                version: '1'
+                    onSuccess:
+                      pipeline:
+                        - id: logSuccessOperation
+                          functionId: System.log
+                          arguments:
+                            level: DEBUG
+                            message: >-
+                              $clientId sent a publish on topic '$topic' with
+                              result '$validationResult'
+                    onFailure:
+                      pipeline:
+                        - id: logFailureOperation
+                          functionId: System.log
+                          arguments:
+                            level: WARN
+                            message: >-
+                              $clientId sent an invalid publish on topic
+                              '$topic' with result '$validationResult'
+                  - id: policy2
+                    createdAt: '2023-04-26T13:32:47.049Z'
+                    lastUpdatedAt: '2023-04-26T13:32:47.049Z'
+                    matching:
+                      topicFilter: topic2
+                    validation:
+                      validators:
+                        - type: schema
+                          arguments:
+                            strategy: ALL_OF
+                            schemas:
+                              - schemaId: schema
+                                version: '1'
+                    onSuccess:
+                      pipeline:
+                        - id: logSuccessOperation
+                          functionId: System.log
+                          arguments:
+                            level: DEBUG
+                            message: >-
+                              $clientId sent a publish on topic '$topic' with
+                              result '$validationResult'
+                    onFailure:
+                      pipeline:
+                        - id: logSuccessOperation
+                          functionId: System.log
+                          arguments:
+                            level: WARN
+                            message: >-
+                              $clientId sent an invalid publish on topic
+                              '$topic' with result '$validationResult'
+                  - id: policy3
+                    createdAt: '2023-04-26T13:32:47.049Z'
+                    lastUpdatedAt: '2023-04-26T13:32:47.049Z'
+                    matching:
+                      topicFilter: topic3
+                    validation:
+                      validators:
+                        - type: schema
+                          arguments:
+                            strategy: ALL_OF
+                            schemas:
+                              - schemaId: schema
+                                version: '1'
+                    onSuccess:
+                      pipeline:
+                        - id: logSuccessOperation
+                          functionId: System.log
+                          arguments:
+                            level: DEBUG
+                            message: >-
+                              $clientId sent a publish on topic '$topic' with
+                              result '$validationResult'
+                    onFailure:
+                      pipeline:
+                        - id: logSuccessOperation
+                          functionId: System.log
+                          arguments:
+                            level: WARN
+                            message: >-
+                              $clientId sent an invalid publish on topic
+                              '$topic' with result '$validationResult'
+                _links:
+                  next: >-
+                    /api/v1/data-validation/policies?cursor=a-eqj-GE9B5DkV-nhwVBk-nTL807ty&limit=3
+            list-response-c:
+              description: >-
+                Example response with requested fields and multiple policies.
+                More pages left
+              summary: Multiple results, requested 'id' field
+              value:
+                items:
+                  - id: policy1
+                  - id: policy2
+                  - id: policy3
+                _links:
+                  next: >-
+                    /api/v1/data-validation/policies?cursor=a-eqj-GE9B5DkV-nhwVBk-nTL807ty&limit=3&fields=id
+            list-response-d:
+              description: Example response with a single policy
+              summary: Single Result
+              value:
+                items:
+                  - id: policy1
+                    createdAt: '2023-04-26T13:32:47.032Z'
+                    lastUpdatedAt: '2023-04-26T13:32:47.032Z'
+                    matching:
+                      topicFilter: topic1
+                    validation:
+                      validators:
+                        - type: schema
+                          arguments:
+                            strategy: ALL_OF
+                            schemas:
+                              - schemaId: schema
+                                version: '1'
+                    onSuccess:
+                      pipeline:
+                        - id: logSuccessOperation
+                          functionId: System.log
+                          arguments:
+                            level: DEBUG
+                            message: >-
+                              $clientId sent a publish on topic '$topic' with
+                              result '$validationResult'
+                    onFailure:
+                      pipeline:
+                        - id: logFailureOperation
+                          functionId: System.log
+                          arguments:
+                            level: WARN
+                            message: >-
+                              $clientId sent an invalid publish on topic
+                              '$topic' with result '$validationResult'
+          schema:
+            $ref: ../components/schemas/DataPolicyList.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: URL parameter missing
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: DataPolicy not found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal server error
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Request resource temporary unavailable
+  summary: Get all data policies
+  tags:
+    - Data Hub - Data Policies
+post:
+  description: |+
+    Create a data policy
+
+  operationId: createDataPolicy
+  requestBody:
+    content:
+      application/json:
+        example:
+          id: policy1
+          matching:
+            topicFilter: topic/+
+          validation:
+            validators:
+              - type: schema
+                arguments:
+                  strategy: ALL_OF
+                  schemas:
+                    - schemaId: schema
+                      version: '1'
+          onSuccess:
+            pipeline:
+              - id: logOperationSuccess
+                functionId: System.log
+                arguments:
+                  level: DEBUG
+                  message: >-
+                    ${clientId} sent a publish on topic '${topic}' with result
+                    '${validationResult}'
+          onFailure:
+            pipeline:
+              - id: logOperationFailure
+                functionId: System.log
+                arguments:
+                  level: WARN
+                  message: >-
+                    ${clientId} sent an invalid publish on topic '${topic}' with
+                    result '${validationResult}'
+        schema:
+          $ref: ../components/schemas/DataPolicy.yaml
+    description: The data policy to create.
+    required: true
+  responses:
+    '201':
+      content:
+        application/json:
+          examples:
+            response-example:
+              description: Example response.
+              summary: Policy was created successfully
+              value:
+                id: policy1
+                createdAt: '2023-04-19T13:35:00.930Z'
+                lastUpdatedAt: '2023-04-19T13:35:00.930Z'
+                matching:
+                  topicFilter: topic/+
+                validation:
+                  validators:
+                    - type: schema
+                      arguments:
+                        strategy: ALL_OF
+                        schemas:
+                          - schemaId: schema1
+                            version: '1'
+                onSuccess:
+                  pipeline:
+                    - id: logOperationSuccess
+                      functionId: System.log
+                      arguments:
+                        level: DEBUG
+                        message: >-
+                          ${clientId} sent a publish on topic '${topic}' with
+                          result '${validationResult}'
+                onFailure:
+                  pipeline:
+                    - id: logOperationFailure
+                      functionId: System.log
+                      arguments:
+                        level: WARN
+                        message: >-
+                          ${clientId} sent an invalid publish on topic
+                          '${topic}' with result '${validationResult}'
+          schema:
+            $ref: ../components/schemas/DataPolicy.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: DataPolicy creation failed
+    '409':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: DataPolicy already present
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal server error
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Request resource temporary unavailable
+    '507':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Insufficient storage
+  summary: Create a new data policy
+  tags:
+    - Data Hub - Data Policies

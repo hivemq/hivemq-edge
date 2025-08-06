@@ -1,0 +1,7 @@
+type: object
+properties:
+  configSchema:
+    $ref: ./JsonNode.yaml
+  protocolId:
+    type: string
+    description: The id assigned to the protocol adapter type

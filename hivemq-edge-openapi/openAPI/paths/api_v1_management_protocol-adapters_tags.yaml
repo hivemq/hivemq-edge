@@ -1,0 +1,25 @@
+get:
+  description: Get the list of all domain tags created in this Edge instance
+  operationId: get-domain-tags
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            opc ua domain tags example:
+              description: An example for domain tags in opc ua
+              summary: 'Example for domain tags for opc ua '
+              value:
+                items:
+                  - definition:
+                      node: ns=2;i=test
+                    name: tag1
+                  - definition:
+                      node: ns=2;i=test2
+                    name: tag2
+          schema:
+            $ref: ../components/schemas/DomainTagList.yaml
+      description: Success
+  summary: Get the list of all domain tags created in this Edge instance
+  tags:
+    - Protocol Adapters

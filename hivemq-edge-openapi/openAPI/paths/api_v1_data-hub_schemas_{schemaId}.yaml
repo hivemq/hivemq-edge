@@ -1,0 +1,119 @@
+delete:
+  description: |-
+    Deletes the selected schema and all associated versions of the schema. 
+
+     
+  operationId: deleteSchema
+  parameters:
+    - description: The schema identifier of the schema versions to delete.
+      example: schema1
+      in: path
+      name: schemaId
+      required: true
+      schema:
+        type: string
+    - description: The entity tag
+      in: header
+      name: If-Match
+      required: false
+      schema:
+        type: string
+  responses:
+    '204':
+      description: Success, no response body
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Schema referenced
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Schema not found
+    '412':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Mismatch between schema and etag
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal server error
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Request resource temporary unavailable
+  summary: Delete all versions of the schema
+  tags:
+    - Data Hub - Schemas
+get:
+  description: |-
+    Get a specific schema. 
+
+     This endpoint returns the content of the latest version of the schema with the content-type `application/json`. 
+
+     
+  operationId: getSchema
+  parameters:
+    - description: The identifier of the schema.
+      example: schema1
+      in: path
+      name: schemaId
+      required: true
+      schema:
+        type: string
+    - description: >-
+        Comma-separated list of fields to include in the response. Allowed
+        values are: id, type, schemaDefinition, createdAt
+      example: id,type
+      in: query
+      name: fields
+      schema:
+        type: string
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            get-response:
+              description: Get schema
+              summary: Get schema
+              value:
+                id: schema
+                version: 1
+                type: JSON
+                schemaDefinition: >-
+                  ewogICIkaWQiOiAiaHR0cHM6Ly9leGFtcGxlLmNvbS9hZGRyZXNzLmpzb24iLAogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogICAgInN0cmVldF9hZGRyZXNzIjogeyAidHlwZSI6ICJzdHJpbmciIH0sCiAgICAiY2l0eSI6IHsgInR5cGUiOiAic3RyaW5nIiB9LAogICAgInN0YXRlIjogeyAidHlwZSI6ICJzdHJpbmciIH0KICB9LAogICJyZXF1aXJlZCI6IFsic3RyZWV0X2FkZHJlc3MiLCAiY2l0eSIsICJzdGF0ZSJdCn0=
+                createdAt: '2023-03-01T13:28:35.164Z'
+          schema:
+            $ref: ../components/schemas/PolicySchema.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: A url parameter is missing
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Schema not found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal server error
+  summary: Get a schema
+  tags:
+    - Data Hub - Schemas

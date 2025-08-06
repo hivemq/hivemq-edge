@@ -1,0 +1,33 @@
+type: object
+properties:
+  area:
+    type: string
+    description: The area
+    nullable: true
+    pattern: ^[a-zA-Z0-9 -_]*$
+  enabled:
+    type: boolean
+    description: Should UNS be available
+  enterprise:
+    type: string
+    description: The enterprise
+    nullable: true
+    pattern: ^[a-zA-Z0-9 -_]*
+  prefixAllTopics:
+    type: boolean
+    description: Should all topics be prefixed with UNS placeholders
+  productionLine:
+    type: string
+    description: The productionLine
+    nullable: true
+    pattern: ^[a-zA-Z0-9 -_]*$
+  site:
+    type: string
+    description: The site
+    nullable: true
+    pattern: ^[a-zA-Z0-9 -_]*$
+  workCell:
+    type: string
+    description: The workCell
+    nullable: true
+    pattern: ^[a-zA-Z0-9 -_]*$

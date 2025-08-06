@@ -1,0 +1,38 @@
+type: object
+description: List of result items that are returned by this endpoint
+properties:
+  associatedObject:
+    $ref: ./TypeIdentifier.yaml
+  created:
+    type: string
+    format: date-time
+    description: Time the event was in date format
+  identifier:
+    $ref: ./TypeIdentifier.yaml
+  message:
+    type: string
+    description: >-
+      The message associated with the event. A message will be no more than 1024
+      characters in length
+  payload:
+    $ref: ./Payload.yaml
+  severity:
+    type: string
+    description: The severity that this log is considered to be
+    enum:
+      - INFO
+      - WARN
+      - ERROR
+      - CRITICAL
+  source:
+    $ref: ./TypeIdentifier.yaml
+  timestamp:
+    type: integer
+    format: int64
+    description: Time the event was generated in epoch format
+required:
+  - created
+  - identifier
+  - message
+  - severity
+  - timestamp

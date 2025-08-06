@@ -1,0 +1,16 @@
+type: object
+description: List of result items that are returned by this endpoint
+properties:
+  description:
+    type: string
+    description: The name for this topic filter.
+  schema:
+    type: string
+    format: data-url
+    description: The optional json schema for this topic filter in the data uri format.
+  topicFilter:
+    type: string
+    format: mqtt-topic-filter
+    description: The topic filter according to the MQTT specification.
+required:
+  - topicFilter
