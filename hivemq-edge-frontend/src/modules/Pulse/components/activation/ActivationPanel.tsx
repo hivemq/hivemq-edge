@@ -40,12 +40,6 @@ export const ActivationPanel: FC = () => {
   const [hasErrors, setHasErrors] = useState(false)
   const toast = useToast(BASE_TOAST_OPTION)
 
-  // const extraErrors = useMemo(() => {
-  //   return {
-  //     // __errors: ['An error occurred while fetching capabilities'],
-  //   }
-  // }, [])
-
   const onSubmitToken = (token: string) => {
     const promise = createToken.mutateAsync({ token })
     toast.closeAll()

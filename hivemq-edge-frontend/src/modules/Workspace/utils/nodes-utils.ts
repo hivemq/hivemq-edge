@@ -13,8 +13,6 @@ import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { discoverAdapterTopics, getBridgeTopics } from './topics-utils'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 
-import connection = Status.connection
-
 export const CONFIG_ADAPTER_WIDTH = 245
 
 const POS_SEPARATOR = 80
@@ -305,7 +303,7 @@ export const createCombinerNode = (
 export const createPulseNode = (theme: Partial<WithCSSVar<Dict>>, positionStorage?: Record<string, XYPosition>) => {
   const idPulseAssets = 'idPulseAssets'
   const idPulse = 'idPulse'
-  const pulseStatus = { connection: connection.UNKNOWN, runtime: Status.runtime.STOPPED }
+  const pulseStatus = { connection: Status.connection.UNKNOWN, runtime: Status.runtime.STOPPED }
 
   const nodeAssets: NodeAssetsType = {
     id: idPulseAssets,
