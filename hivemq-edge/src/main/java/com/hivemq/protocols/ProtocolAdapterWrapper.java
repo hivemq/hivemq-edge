@@ -135,53 +135,53 @@ public class ProtocolAdapterWrapper {
             return startAsync(writingEnabled, moduleServices);
         }
         initStartAttempt();
-        final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
-        final ProtocolAdapterStartInputImpl input = new ProtocolAdapterStartInputImpl(moduleServices);
-        final CompletableFuture<Void> startFuture = CompletableFuture
-                    .supplyAsync(() -> {
-                        try {
-                            adapter.start(input, output);
-                        } catch (final Throwable throwable) {
-                            output.getStartFuture().completeExceptionally(throwable);
-                        }
-                        return output.getStartFuture();
-                    })
-                    .thenCompose(Function.identity())
-                    .handle((ignored, error) -> {
-                        if(error != null) {
-                            stopAfterFailedStart();
-                            protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-                            //we still return the initial error since that's the most significant information
-                            return CompletableFuture.failedFuture(error);
-                        } else {
-                            return attemptStartingConsumers(writingEnabled, moduleServices.eventService())
-                                .map(startException -> {
-                                    log.error("Failed to start adapter with id {}", adapter.getId(), startException);
-                                    stopAfterFailedStart();
-                                    protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-                                    //we still return the initial error since that's the most significant information
-                                    return CompletableFuture.failedFuture(startException);
-                                })
-                                .orElseGet(() -> {
-                                    protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
-                                    return CompletableFuture.completedFuture(null);
-                                });
-                        }
-                    })
-                    .thenApply(ignored -> (Void)null)
-                    .whenComplete((result, throwable) -> {
-                        //always clean up state
-                        startFutureRef.set(null);
-                        operationState.set(OperationState.IDLE);
-                    });
+        final var output = new ProtocolAdapterStartOutputImpl();
+        final var input = new ProtocolAdapterStartInputImpl(moduleServices);
+        final var startFuture = CompletableFuture
+                .supplyAsync(() -> {
+                    try {
+                        adapter.start(input, output);
+                    } catch (final Throwable throwable) {
+                        output.getStartFuture().completeExceptionally(throwable);
+                    }
+                    return output.getStartFuture();
+                })
+                .thenCompose(Function.identity())
+                .handle((ignored, error) -> {
+                    if(error != null) {
+                        stopAfterFailedStart();
+                        protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+                        //we still return the initial error since that's the most significant information
+                        return CompletableFuture.failedFuture(error);
+                    } else {
+                        return attemptStartingConsumers(writingEnabled, moduleServices.eventService())
+                            .map(startException -> {
+                                log.error("Failed to start adapter with id {}", adapter.getId(), startException);
+                                stopAfterFailedStart();
+                                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+                                //we still return the initial error since that's the most significant information
+                                return CompletableFuture.failedFuture(startException);
+                            })
+                            .orElseGet(() -> {
+                                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
+                                return CompletableFuture.completedFuture(null);
+                            });
+                    }
+                })
+                .thenApply(ignored -> (Void)null)
+                .whenComplete((result, throwable) -> {
+                    //always clean up state
+                    startFutureRef.set(null);
+                    operationState.set(OperationState.IDLE);
+                });
 
         startFutureRef.set(startFuture);
         return startFuture;
     }
 
     private void stopAfterFailedStart() {
-        final ProtocolAdapterStopInputImpl stopInput = new ProtocolAdapterStopInputImpl();
-        final ProtocolAdapterStopOutputImpl stopOutput = new ProtocolAdapterStopOutputImpl();
+        final var stopInput = new ProtocolAdapterStopInputImpl();
+        final var stopOutput = new ProtocolAdapterStopOutputImpl();
         stopPolling(protocolAdapterPollingService);
         stopWriting(protocolAdapterWritingService);
         try {
@@ -233,10 +233,10 @@ public class ProtocolAdapterWrapper {
         }
 
         consumers.forEach(tagManager::removeConsumer);
-        final ProtocolAdapterStopInputImpl input = new ProtocolAdapterStopInputImpl();
-        final ProtocolAdapterStopOutputImpl output = new ProtocolAdapterStopOutputImpl();
+        final var input = new ProtocolAdapterStopInputImpl();
+        final var output = new ProtocolAdapterStopOutputImpl();
 
-        final CompletableFuture<Void> stopFuture = CompletableFuture
+        final var stopFuture = CompletableFuture
                 .supplyAsync(() -> {
                     stopPolling(protocolAdapterPollingService);
                     stopWriting(protocolAdapterWritingService);
@@ -438,9 +438,10 @@ public class ProtocolAdapterWrapper {
         if (writingEnabled && isWriting()) {
             log.debug("Start writing for protocol adapter with id '{}'", getId());
 
-            final List<SouthboundMapping> southboundMappings = getSouthboundMappings();
-            final List<InternalWritingContext> writingContexts =
-                    southboundMappings.stream().map(InternalWritingContextImpl::new).collect(Collectors.toList());
+            final var southboundMappings = getSouthboundMappings();
+            final var writingContexts = southboundMappings.stream()
+                            .map(InternalWritingContextImpl::new)
+                            .collect(Collectors.<InternalWritingContext>toList());
 
             return protocolAdapterWritingService
                     .startWriting(
