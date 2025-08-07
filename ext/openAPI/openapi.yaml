@@ -283,6 +283,8 @@ paths:
     $ref: paths/api_v1_management_combiners_{combinerId}_mappings_{mappingId}_instructions.yaml
   /api/v1/management/pulse/activation-token:
     $ref: paths/pulse/activation_token.yaml
+  /api/v1/management/pulse/status:
+    $ref: paths/pulse/pulse_status.yaml
   /api/v1/management/pulse/managed-assets:
     $ref: paths/pulse/managed-assets.yaml
   /api/v1/management/pulse/managed-assets/{assetId}:
