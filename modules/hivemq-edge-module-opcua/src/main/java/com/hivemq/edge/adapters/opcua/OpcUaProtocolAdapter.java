@@ -150,11 +150,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         log.info("Stopping OPC UA protocol adapter {}", adapterId);
         final var tempOpcUaClientConnection = opcUaClientConnection;
         if(tempOpcUaClientConnection != null) {
-            CompletableFuture.runAsync(() -> {
-                tempOpcUaClientConnection.stop();
-                output.stoppedSuccessfully();
-            });
-            log.info("Stopped OPC UA protocol adapter {}", adapterId);
+            CompletableFuture.runAsync(() -> tempOpcUaClientConnection.stop())
+                    .whenComplete((result, throwable) -> {
+                        if(throwable != null) {
+                            log.error("Unable to stop OPC UA protocol adapter {}", adapterId);
+                            output.failStop(throwable, "Unable to stop OPC UA protocol adapter");
+                        } else {
+                            log.info("Stopped OPC UA protocol adapter {}", adapterId);
+                            output.stoppedSuccessfully();
+                        }
+                    });
         } else {
             log.info("Tried stopping stopped OPC UA protocol adapter {}", adapterId);
             output.stoppedSuccessfully();
