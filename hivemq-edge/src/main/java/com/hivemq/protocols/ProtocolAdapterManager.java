@@ -372,7 +372,7 @@ public class ProtocolAdapterManager {
         return protocolAdapterWrapper
                 .stopAsync(destroy)
                 .whenComplete((result, throwable) -> {
-                    if(throwable != null) {
+                    if(throwable == null) {
                         log.info("Protocol-adapter '{}' stopped successfully.", protocolAdapterWrapper.getId());
                         protocolAdapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
                         eventService.createAdapterEvent(protocolAdapterWrapper.getId(),
