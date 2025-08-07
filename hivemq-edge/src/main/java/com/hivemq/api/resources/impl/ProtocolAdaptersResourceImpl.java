@@ -210,7 +210,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getAdapter(final @NotNull String adapterId) {
-        final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
+        final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager
+                .getProtocolAdapterWrapperByAdapterId(adapterId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'",
                     adapterId)));
@@ -239,7 +240,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response discoverDataPoints(
             final @NotNull String adapterId, final @Nullable String rootNode, final @Nullable Integer depth) {
 
-        final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
+        final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager
+                .getProtocolAdapterWrapperByAdapterId(adapterId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'",
                     adapterId)));
@@ -439,7 +441,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     protected @NotNull Status getStatusInternal(final @NotNull String adapterId) {
         final Optional<ProtocolAdapterWrapper> optionalAdapterInstance =
-                protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
+                protocolAdapterManager
+                        .getProtocolAdapterWrapperByAdapterId(adapterId);
         return optionalAdapterInstance.map(AdapterStatusModelConversionUtils::getAdapterStatus)
                 .orElseGet(() -> unknown(Status.RuntimeEnum.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId));
     }
@@ -722,7 +725,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
 
         final Optional<ProtocolAdapterWrapper> optionalProtocolAdapterWrapper =
-                protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
+                protocolAdapterManager
+                        .getProtocolAdapterWrapperByAdapterId(adapterId);
         if (optionalProtocolAdapterWrapper.isEmpty()) {
             log.warn("The Json Schema for an adapter '{}' was requested, but the adapter does not exist.", adapterId);
             return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'",

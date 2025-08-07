@@ -340,6 +340,10 @@ public class ProtocolAdapterWrapper {
         return config.getAdapterConfig();
     }
 
+    public @NotNull ProtocolAdapterConfig getConfig() {
+        return config;
+    }
+
     public @NotNull List<? extends Tag> getTags() {
         return config.getTags();
     }

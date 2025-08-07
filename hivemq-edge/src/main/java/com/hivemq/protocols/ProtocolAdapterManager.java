@@ -69,7 +69,6 @@ public class ProtocolAdapterManager {
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
 
     private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters = new ConcurrentHashMap<>();
-    private final @NotNull Map<String, ProtocolAdapterConfig> knownConfigs = new ConcurrentHashMap<>();
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull ModuleServicesImpl moduleServices;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
@@ -152,9 +151,9 @@ public class ProtocolAdapterManager {
             adaptersToBeDeleted.forEach(name -> {
                 try {
                     log.debug("Deleting adapter '{}'", name);
-                    stopAsync(name, true).whenComplete((ignored, t) -> {
-                        deleteAdapterInternal(name);
-                    }).get();
+                    stopAsync(name, true)
+                            .whenComplete((ignored, t) -> deleteAdapterInternal(name))
+                            .get();
                 } catch (final InterruptedException | ExecutionException e) {
                     failedAdapters.add(name);
                     log.error("Failed deleting adapter {}", name, e);
@@ -173,7 +172,7 @@ public class ProtocolAdapterManager {
 
             adaptersToBeUpdated.forEach(name -> {
                 try {
-                    if(!protocolAdapterConfigs.get(name).equals(knownConfigs.get(name))) {
+                    if(!protocolAdapterConfigs.get(name).equals(protocolAdapters.get(name).getConfig())) {
                         log.debug("Updating adapter '{}'", name);
                         stopAsync(name, true)
                                 .thenApply(v -> {
@@ -303,22 +302,19 @@ public class ProtocolAdapterManager {
                         tagManager);
 
                 protocolAdapterMetrics.increaseProtocolAdapterMetric(config.getProtocolId());
-                knownConfigs.put(wrapper.getId(), config);
                 return wrapper;
 
             } finally {
                 Thread.currentThread().setContextClassLoader(contextClassLoader);
             }
         });
-
-
     }
 
     private void deleteAdapterInternal(final @NotNull String adapterId) {
-        final ProtocolAdapterWrapper adapterWrapper = protocolAdapters.remove(adapterId);
-        if(adapterWrapper != null) {
-            protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapterWrapper.getAdapterInformation().getProtocolId());
-            eventService.createAdapterEvent(adapterId, adapterWrapper.getProtocolAdapterInformation().getProtocolId())
+        final ProtocolAdapterWrapper wrapper = protocolAdapters.remove(adapterId);
+        if(wrapper != null) {
+            protocolAdapterMetrics.decreaseProtocolAdapterMetric(wrapper.getAdapterInformation().getProtocolId());
+            eventService.createAdapterEvent(adapterId, wrapper.getProtocolAdapterInformation().getProtocolId())
                     .withSeverity(Event.SEVERITY.WARN)
                     .withMessage(String.format("Adapter '%s' was deleted from the system permanently.", adapterId))
                     .fire();
@@ -404,14 +400,15 @@ public class ProtocolAdapterManager {
     private boolean updateAdapterTags(final @NotNull String adapterId, final @NotNull List<? extends Tag> tags) {
         Preconditions.checkNotNull(adapterId);
         return getProtocolAdapterWrapperByAdapterId(adapterId)
-                .map(oldInstance -> {
-                    final String protocolId = oldInstance.getAdapterInformation().getProtocolId();
-                    final ProtocolAdapterConfig protocolAdapterConfig = new ProtocolAdapterConfig(oldInstance.getId(),
+                .map(wrapper -> {
+                    final var protocolId = wrapper.getAdapterInformation().getProtocolId();
+                    final var protocolAdapterConfig = new ProtocolAdapterConfig(
+                            wrapper.getId(),
                             protocolId,
-                            oldInstance.getAdapterInformation().getCurrentConfigVersion(),
-                            oldInstance.getConfigObject(),
-                            oldInstance.getSouthboundMappings(),
-                            oldInstance.getNorthboundMappings(),
+                            wrapper.getAdapterInformation().getCurrentConfigVersion(),
+                            wrapper.getConfigObject(),
+                            wrapper.getSouthboundMappings(),
+                            wrapper.getNorthboundMappings(),
                             tags);
                     updateAdapter(protocolAdapterConfig);
                     return true;
@@ -447,11 +444,11 @@ public class ProtocolAdapterManager {
     public @NotNull DomainTagAddResult addDomainTag(
             final @NotNull String adapterId, final @NotNull DomainTag domainTag) {
         return getProtocolAdapterWrapperByAdapterId(adapterId)
-                .map(adapter -> {
-                    final List<? extends Tag> tags = new ArrayList<>(adapter.getTags());
+                .map(wrapper -> {
+                    final var tags = new ArrayList<>(wrapper.getTags());
                     final boolean alreadyExists = tags.stream().anyMatch(t -> t.getName().equals(domainTag.getTagName()));
                     if (!alreadyExists) {
-                        tags.add(configConverter.domaintTagToTag(adapter.getProtocolAdapterInformation().getProtocolId(),
+                        tags.add(configConverter.domaintTagToTag(wrapper.getProtocolAdapterInformation().getProtocolId(),
                                 domainTag));
 
                         updateAdapterTags(adapterId, tags);
@@ -466,10 +463,10 @@ public class ProtocolAdapterManager {
     public @NotNull List<DomainTag> getDomainTags() {
         return protocolAdapters.values()
                 .stream()
-                .flatMap(adapter -> adapter.getTags()
+                .flatMap(wrapper -> wrapper.getTags()
                         .stream()
                         .map(tag -> new DomainTag(tag.getName(),
-                                adapter.getId(),
+                                wrapper.getId(),
                                 tag.getDescription(),
                                 configConverter.convertTagDefinitionToJsonNode(tag.getDefinition()))))
                 .collect(Collectors.toList());
@@ -478,21 +475,22 @@ public class ProtocolAdapterManager {
     public @NotNull Optional<DomainTag> getDomainTagByName(final @NotNull String tagName) {
         return protocolAdapters.values()
                 .stream()
-                .flatMap(adapter -> adapter.getTags()
+                .flatMap(wrapper -> wrapper.getTags()
                         .stream()
                         .filter(t -> t.getName().equals(tagName))
                         .map(tag -> new DomainTag(tag.getName(),
-                                adapter.getId(),
+                                wrapper.getId(),
                                 tag.getDescription(),
                                 configConverter.convertTagDefinitionToJsonNode(tag.getDefinition()))))
                 .findFirst();
     }
 
     public @NotNull Optional<List<DomainTag>> getTagsForAdapter(final @NotNull String adapterId) {
-        return getProtocolAdapterWrapperByAdapterId(adapterId).map(adapter -> adapter.getTags()
+        return getProtocolAdapterWrapperByAdapterId(adapterId).map(adapterToConfig ->
+                adapterToConfig.getTags()
                 .stream()
                 .map(tag -> new DomainTag(tag.getName(),
-                        adapter.getId(),
+                        adapterToConfig.getId(),
                         tag.getDescription(),
                         configConverter.convertTagDefinitionToJsonNode(tag.getDefinition())))
                 .collect(Collectors.toList()));
@@ -517,4 +515,5 @@ public class ProtocolAdapterManager {
             default -> key;
         };
     }
+
 }
