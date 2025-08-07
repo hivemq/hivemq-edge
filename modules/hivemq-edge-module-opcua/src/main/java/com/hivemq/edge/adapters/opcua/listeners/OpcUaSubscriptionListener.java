@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua.listeners;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
@@ -31,11 +33,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,8 +44,6 @@ import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 
 public class OpcUaSubscriptionListener implements OpcUaSubscription.SubscriptionListener {
 
-    private static final Logger log = LoggerFactory.getLogger(OpcUaSubscriptionListener.class);
-
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ProtocolAdapterTagStreamingService tagStreamingService;
     private final @NotNull EventService eventService;
@@ -56,6 +52,7 @@ public class OpcUaSubscriptionListener implements OpcUaSubscription.Subscription
     private final @NotNull Map<NodeId, OpcuaTag> nodeIdToTag;
     private final @NotNull OpcUaClient client;
     private final @NotNull DataPointFactory dataPointFactory;
+    private final @NotNull Gson gson;
 
     public OpcUaSubscriptionListener(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -64,16 +61,19 @@ public class OpcUaSubscriptionListener implements OpcUaSubscription.Subscription
             final @NotNull String adapterId,
             final @NotNull List<OpcuaTag> tags,
             final @NotNull OpcUaClient client,
-            final @NotNull DataPointFactory dataPointFactory) {
+            final @NotNull DataPointFactory dataPointFactory,
+            final @NotNull Gson gson) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.tagStreamingService = tagStreamingService;
         this.eventService = eventService;
         this.adapterId = adapterId;
         this.client = client;
         this.dataPointFactory = dataPointFactory;
+        this.gson = gson;
         nodeIdToTag = tags.stream()
                 .collect(Collectors.toMap(tag -> NodeId.parse(tag.getDefinition().getNode()), Function.identity()));
     }
+
     @Override
     public void onKeepAliveReceived(final @NotNull OpcUaSubscription subscription) {
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_KEEPALIVE_COUNT);
@@ -106,7 +106,8 @@ public class OpcUaSubscriptionListener implements OpcUaSubscription.Subscription
             }
             try {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
-                final String payload = extractPayload(client, values.get(i));
+                final var currentValue = values.get(i);
+                final String payload = extractPayload(client, currentValue, gson, tag.getDefinition().isCollectAllProperties());
                 tagStreamingService.feed(tn, List.of(dataPointFactory.createJsonDataPoint(tn, payload)));
             } catch (final Throwable e) {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
@@ -115,15 +116,47 @@ public class OpcUaSubscriptionListener implements OpcUaSubscription.Subscription
         }
     }
 
-    private static @NotNull String extractPayload(final @NotNull OpcUaClient client, final @NotNull DataValue value)
-            throws UaException {
+    private static @NotNull String extractPayload(
+            final @NotNull OpcUaClient client,
+            final @NotNull DataValue value,
+            final @NotNull Gson gson,
+            final boolean collectAllProperties) throws UaException {
+
         if (value.getValue().getValue() == null) {
             return "";
         }
+        final var jsonObject = OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(), value, gson);
 
-        final ByteBuffer byteBuffer = OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(), value);
-        final byte[] buffer = new byte[byteBuffer.remaining()];
-        byteBuffer.get(buffer);
-        return new String(buffer, StandardCharsets.UTF_8);
+        return jsonObject
+                .map(json -> {
+                    final var ret = new JsonObject();
+                    ret.add("value", json);
+                    if(collectAllProperties) {
+                        if(value.getServerPicoseconds() != null) {
+                            ret.addProperty("serverPicoseconds", value.getServerPicoseconds().longValue());
+                        } else {
+                            ret.addProperty("serverPicoseconds", 0);
+                        }
+                        if(value.getSourcePicoseconds() != null) {
+                            ret.addProperty("sourcePicoseconds", value.getSourcePicoseconds().longValue());
+                        } else {
+                            ret.addProperty("sourcePicoseconds", 0);
+                        }
+                        if(value.getSourceTime() != null) {
+                            ret.addProperty("sourceTime", value.getSourceTime().getUtcTime());
+                        } else {
+                            ret.addProperty("sourceTime", 0);
+                        }
+                        if(value.getServerTime() != null) {
+                            ret.addProperty("serverTime", value.getServerTime().getUtcTime());
+                        } else {
+                            ret.addProperty("serverTime", 0);
+                        }
+                    }
+                    return ret;
+                })
+                .map(gson::toJson)
+                .orElseGet(() -> gson.toJson(new JsonObject()));
+
     }
 }
