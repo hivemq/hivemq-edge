@@ -35,3 +35,8 @@ post:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
       description: Pulse Client not found
+    '422':
+      application/json:
+        schema:
+          $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Activation token is invalid

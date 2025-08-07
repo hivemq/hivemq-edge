@@ -1,0 +1,17 @@
+type: object
+description: Information on the activation status of the pulse agent and its connection to the platform.
+properties:
+  activation:
+    type: string
+    description: Status of the pulse activation
+    enum:
+      - ACTIVATED
+      - DEACTIVATED
+      - ERROR
+  runtime:
+    type: string
+    description: Connection status of the pulse agent to the platform.
+    enum:
+      - CONNECTED
+      - DISCONNECTED
+      - ERROR
