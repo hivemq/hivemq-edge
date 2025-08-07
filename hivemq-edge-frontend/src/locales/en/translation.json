@@ -1527,8 +1527,13 @@
     "mapper": {
       "title": "Asset Mapper"
     },
-    "client": {
-      "title": "Pulse Client"
+
+    "workspace": {
+      "nodeClient": {
+        "status_ACTIVATED": "Activated",
+        "status_DEACTIVATED": "Not Activated",
+        "title": "Pulse Client"
+      }
     }
   }
 }
