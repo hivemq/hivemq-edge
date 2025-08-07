@@ -172,7 +172,11 @@ public class ProtocolAdapterManager {
 
             adaptersToBeUpdated.forEach(name -> {
                 try {
-                    if(!protocolAdapterConfigs.get(name).equals(protocolAdapters.get(name).getConfig())) {
+                    final var wrapper = protocolAdapters.get(name);
+                    if(wrapper == null) {
+                        log.error("Existing adapters were modified while a refresh was ongoing, adapter with name '{}' was deleted and could not be updated", name);
+                    }
+                    if(wrapper != null && !protocolAdapterConfigs.get(name).equals(wrapper.getConfig())) {
                         log.debug("Updating adapter '{}'", name);
                         stopAsync(name, true)
                                 .thenApply(v -> {
