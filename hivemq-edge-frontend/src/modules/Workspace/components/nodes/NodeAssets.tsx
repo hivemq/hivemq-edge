@@ -47,7 +47,7 @@ const NodeAssets: FC<NodeProps<NodeAssetsType>> = ({ id, data, selected, draggin
           <Icon as={HqAssets} boxSize={10} />
         </VStack>
         <VStack p={2} h="100%" justifyContent="space-evenly">
-          <Text data-testid="combiner-description" noOfLines={1}>
+          <Text data-testid="assets-description" noOfLines={1}>
             {t('pulse.mapper.title')}
           </Text>
           <MappingBadge destinations={[]} type={SelectEntityType.TOPIC} />
