@@ -1,7 +1,7 @@
-import { Page } from '../Page.ts'
+import { ShellPage } from '../ShellPage.ts'
 import { EDGE_MENU_LINKS } from 'cypress/utils/constants.utils.ts'
 
-export class HomePage extends Page {
+export class HomePage extends ShellPage {
   get navLink() {
     return cy.get('nav [role="list"]').eq(0).find('li').eq(EDGE_MENU_LINKS.HOME)
   }
