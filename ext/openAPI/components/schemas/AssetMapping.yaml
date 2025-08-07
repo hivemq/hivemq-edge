@@ -8,6 +8,7 @@ properties:
       - UNMAPPED
       - DRAFT
       - STREAMING
+      - REQUIRES_REMAPPING
     default: UNMAPPED
   sources:
     type: array
