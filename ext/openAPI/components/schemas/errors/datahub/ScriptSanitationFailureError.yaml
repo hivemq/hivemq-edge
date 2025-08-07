@@ -1,0 +1,8 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+example:
+  general:
+    status: 400
+    title: "Script Sanitation Failure"
+    detail: "The given script could not be sanitized."
+    type: "https://hivemq.com/edge/api/model/ScriptSanitationFailureError"
