@@ -12,6 +12,10 @@ export class ActivationFormPage extends RJSFomField {
   get status() {
     return this.form.find('[role="alert"][data-status="info"]')
   }
+
+  get submitButton() {
+    return this.form.find('footer button[type="submit"]')
+  }
 }
 
 export const pulseActivationPanel = new ActivationFormPage()
