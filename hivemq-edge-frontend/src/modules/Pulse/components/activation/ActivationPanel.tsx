@@ -117,7 +117,7 @@ export const ActivationPanel: FC = () => {
       </Button>
       <Drawer isOpen={isOpen} size="md" placement="right" onClose={onClose} finalFocusRef={btnRef}>
         <DrawerOverlay />
-        <DrawerContent>
+        <DrawerContent aria-label={t('pulse.activation.heading.title')}>
           <DrawerCloseButton />
           <DrawerHeader>{t('pulse.activation.heading.title')}</DrawerHeader>
 
