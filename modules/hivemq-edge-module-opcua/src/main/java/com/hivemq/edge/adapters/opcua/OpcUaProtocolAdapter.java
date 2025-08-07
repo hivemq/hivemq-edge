@@ -128,6 +128,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         CompletableFuture
                 .supplyAsync(() -> newOpcUaClientConnection.start(parsedConfig))
                 .whenComplete((success, throwable) -> {
+                    if(throwable != null) {
+                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                        log.error("Failed to start OPC UA client", throwable);
+                        return;
+                    }
                     if(success) {
                         this.opcUaClientConnection = newOpcUaClientConnection;
                     } else {
