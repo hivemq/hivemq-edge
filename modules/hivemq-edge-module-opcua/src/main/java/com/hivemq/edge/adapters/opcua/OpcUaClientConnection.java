@@ -115,10 +115,10 @@ class OpcUaClientConnection {
             client.addFaultListener(faultListener);
             client.connect();
         } catch (final UaException e) {
-            log.error("Unable to connect and subscribe to the OPC UA server", e);
+            log.error("Unable to connect and subscribe to the OPC UA server for adapter '{}'", adapterId, e);
             eventService
                     .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                    .withMessage("Unable to connect and subscribe to the OPC UA server")
+                    .withMessage("Unable to connect and subscribe to the OPC UA server for adapter '" + adapterId + "'")
                     .withSeverity(Event.SEVERITY.ERROR)
                     .fire();
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);

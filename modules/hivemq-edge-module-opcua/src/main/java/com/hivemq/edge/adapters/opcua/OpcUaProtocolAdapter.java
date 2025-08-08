@@ -136,7 +136,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                     if(success) {
                         this.opcUaClientConnection = newOpcUaClientConnection;
                     } else {
-                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
                         log.error("Failed to start OPC UA client", throwable);
                     }
                 });
