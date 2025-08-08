@@ -111,7 +111,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                                         .collect(Collectors.groupingBy(DataPoint::getTagName,
                                                 Collectors.mapping(Function.identity(), Collectors.toList())));
                                 tagsToValueList.forEach((tagName,tagValues) -> {
-                                    if (lastSamples.areValuesNew(tagName, tagValues)) {
+                                    if (lastSamples.checkIfValuesHaveChangedSinceLastInvocation(tagName, tagValues)) {
                                         tagValues.forEach(pollingOutput::addDataPoint);
                                     }
                                 });

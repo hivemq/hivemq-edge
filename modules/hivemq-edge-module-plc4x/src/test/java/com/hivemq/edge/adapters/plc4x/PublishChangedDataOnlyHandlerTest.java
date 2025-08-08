@@ -14,8 +14,8 @@ public class PublishChangedDataOnlyHandlerTest {
         final var factory = new AdapterFactoriesImpl();
         final var dataPointFactory = factory.dataPointFactory();
         final var toTest = new PublishChangedDataOnlyHandler();
-        final var initial = toTest.areValuesNew("tag1", List.of(dataPointFactory.create("tag1", "value1")));
-        final var secondTry = toTest.areValuesNew("tag1", List.of(dataPointFactory.create("tag1", "value1")));
+        final var initial = toTest.checkIfValuesHaveChangedSinceLastInvocation("tag1", List.of(dataPointFactory.create("tag1", "value1")));
+        final var secondTry = toTest.checkIfValuesHaveChangedSinceLastInvocation("tag1", List.of(dataPointFactory.create("tag1", "value1")));
 
         assertThat(initial).isTrue();
         assertThat(secondTry).isFalse();
