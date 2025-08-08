@@ -7,12 +7,12 @@ delete:
   responses:
     '200':
       description: Success
-    '404':
+    '503':
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Pulse Client not found
+      description: Pulse Agent not connected
 post:
   description: Send an activation token to the Pulse Client
   summary: Update an activation token
@@ -29,14 +29,15 @@ post:
   responses:
     '200':
       description: Success
-    '404':
+    '422':
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Pulse Client not found
-    '422':
-      application/json:
-        schema:
-          $ref: ../../components/schemas/ProblemDetails.yaml
       description: Activation token is invalid
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Agent not connected

@@ -11,12 +11,18 @@ get:
           schema:
             $ref: ../../components/schemas/ManagedAssetList.yaml
       description: Success
-    '404':
+    '400':
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Pulse Client not found
+      description: Pulse not activated
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Agent not connected
 post:
   description: Add a new managed asset to the Pulse Client
   summary: Add a new managed asset
@@ -33,15 +39,21 @@ post:
   responses:
     '200':
       description: Success
-    '404':
+    '400':
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Pulse Client not found
+      description: Pulse not activated
     '409':
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
       description: The managed asset already exists
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Agent not connected
