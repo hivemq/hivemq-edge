@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class is here TEMPORARY, the functionality will be moved into NorthboundMappings
@@ -28,18 +29,21 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PublishChangedDataOnlyHandler {
     private final @NotNull Map<String, List<DataPoint>> lastSamples = new ConcurrentHashMap<>();
 
-    public boolean replaceIfValueIsNew(final @NotNull String tagName, final @NotNull List<DataPoint> newValue) {
-        final var computedValue = lastSamples.compute(tagName, (key,value) -> {
+    public boolean areValuesNew(final @NotNull String tagName, final @NotNull List<DataPoint> newValue) {
+        final var replaced = new AtomicBoolean(false);
+        lastSamples.compute(tagName, (key,value) -> {
             if (value == null) {
+                replaced.set(true);
                 return newValue;
             } else if (value.equals(newValue)) {
                 return value;
             } else {
+                replaced.set(true);
                 return newValue;
             }
         });
 
-        return newValue != computedValue;
+        return replaced.get();
     }
 
     public void clear() {

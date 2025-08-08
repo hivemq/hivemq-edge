@@ -82,7 +82,7 @@ public class PollingTask implements Runnable {
                     }
                 }
             });
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             // the sampler shouldn't throw a exception, but better safe than sorry as we might to miss rescheduling the task otherwise.
             handleExceptionDuringPolling(t);
         }
@@ -96,10 +96,10 @@ public class PollingTask implements Runnable {
         //-- Job was killed by the framework as it took too long
         //-- Do not call back to the job here (notify) since it will
         //-- Not respond and we dont want to block other polls
-        int errorCountTotal = watchdogErrorCount.incrementAndGet();
-        boolean stopBecauseOfTooManyErrors =
+        final var errorCountTotal = watchdogErrorCount.incrementAndGet();
+        final var stopBecauseOfTooManyErrors =
                 errorCountTotal > InternalConfigurations.ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT.get();
-        final long milliSecondsSinceLastPoll = TimeUnit.NANOSECONDS.toMillis(nanoTimeProvider.nanoTime() - nanosOfLastPolling);
+        final var milliSecondsSinceLastPoll = TimeUnit.NANOSECONDS.toMillis(nanoTimeProvider.nanoTime() - nanosOfLastPolling);
         if (stopBecauseOfTooManyErrors) {
             log.warn(
                     "Detected bad system process {} in sampler {} - terminating process to maintain health ({}ms runtime)",
@@ -123,7 +123,7 @@ public class PollingTask implements Runnable {
 
 
     private void handleExceptionDuringPolling(final @NotNull Throwable throwable) {
-        int errorCountTotal = applicationErrorCount.incrementAndGet();
+        final int errorCountTotal = applicationErrorCount.incrementAndGet();
         final int maxErrorsBeforeRemoval = sampler.getMaxErrorsBeforeRemoval();
         // case 1: Unlimited retry (maxErrorsBeforeRemoval < 0) or less errors than the limit
         if (maxErrorsBeforeRemoval < 0 || errorCountTotal <= maxErrorsBeforeRemoval) {
@@ -149,18 +149,18 @@ public class PollingTask implements Runnable {
     }
 
     private void notifyOnError(
-            final @NotNull ProtocolAdapterPollingSampler sampler, final @NotNull Throwable t, boolean continuing) {
+            final @NotNull ProtocolAdapterPollingSampler sampler, final @NotNull Throwable t, final boolean continuing) {
         try {
             sampler.error(t, continuing);
-        } catch (Throwable samplerError) {
+        } catch (final Throwable samplerError) {
             if (log.isInfoEnabled()) {
                 log.info("Sampler Encountered Error In Notification", samplerError);
             }
         }
     }
 
-    private void reschedule(int errorCountTotal) {
-        long pollDuration = TimeUnit.NANOSECONDS.toMillis(nanoTimeProvider.nanoTime() - nanosOfLastPolling);
+    private void reschedule(final int errorCountTotal) {
+        final long pollDuration = TimeUnit.NANOSECONDS.toMillis(nanoTimeProvider.nanoTime() - nanosOfLastPolling);
         final long delayInMillis = sampler.getPeriod() - pollDuration;
         // a negative delay means that the last polling attempt took longer to be processed than the specified delay between polls
         if (delayInMillis < 0) {
@@ -177,24 +177,24 @@ public class PollingTask implements Runnable {
                     .fire();
         }
 
-        long nonNegativeDelay = Math.max(0, delayInMillis);
+        final long nonNegativeDelay = Math.max(0, delayInMillis);
 
         if (errorCountTotal == 0) {
             schedule(nonNegativeDelay);
         } else {
-            long backoff = getBackoff(errorCountTotal,
+            final long backoff = getBackoff(errorCountTotal,
                     InternalConfigurations.ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF.get());
-            long effectiveDelay = Math.max(nonNegativeDelay, backoff);
+            final long effectiveDelay = Math.max(nonNegativeDelay, backoff);
             schedule(effectiveDelay);
         }
     }
 
     @VisibleForTesting
-    void schedule(long nonNegativeDelay) {
+    void schedule(final long nonNegativeDelay) {
         if (continueScheduling.get()) {
             try {
                 scheduledExecutorService.schedule(this, nonNegativeDelay, TimeUnit.MILLISECONDS);
-            } catch (RejectedExecutionException rejectedExecutionException) {
+            } catch (final RejectedExecutionException rejectedExecutionException) {
                 // ignore. This is fine during shutdown.
             }
         }
@@ -205,7 +205,7 @@ public class PollingTask implements Runnable {
         watchdogErrorCount.set(0);
     }
 
-    private static long getBackoff(int errorCount, long max) {
+    private static long getBackoff(final int errorCount, final long max) {
         //-- This will backoff up to a max of about a day (unless the max provided is less)
         long f = (long) (Math.pow(2, Math.min(errorCount, 20)) * 100);
         f += ThreadLocalRandom.current().nextInt(0, errorCount * 100);
