@@ -5,6 +5,8 @@ import { useEdgesState, useNodesState } from '@xyflow/react'
 import { useTheme } from '@chakra-ui/react'
 
 import type { ProtocolAdapter } from '@/api/__generated__'
+import { Capability } from '@/api/__generated__'
+import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { useGetListeners } from '@/api/hooks/useGateway/useGetListeners.ts'
@@ -17,6 +19,7 @@ import {
   createAdapterNode,
   createListenerNode,
   createCombinerNode,
+  createPulseNode,
 } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { applyLayout } from '@/modules/Workspace/utils/layout-utils.ts'
 import { useEdgeFlowContext } from './useEdgeFlowContext.ts'
@@ -32,6 +35,7 @@ const useGetFlowElements = () => {
   const { data: combinerList, isLoading: isCombinerLoading } = useListCombiners()
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  const { data: hasPulse } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
 
   const { items: listeners } = listenerList || {}
 
@@ -106,6 +110,13 @@ const useGetFlowElements = () => {
       edges.push(edgeConnector, ...sourceConnectors)
     })
 
+    if (hasPulse) {
+      const { nodePulse, edgeConnector, nodeAssets, pulseConnector } = createPulseNode(theme)
+
+      nodes.push(nodePulse, nodeAssets)
+      edges.push(edgeConnector, pulseConnector)
+    }
+
     setNodes([nodeEdge, ...applyLayout(nodes, groups)])
     setEdges([...edges])
   }, [
@@ -121,6 +132,7 @@ const useGetFlowElements = () => {
     adapterTypes?.items,
     isLoading,
     combinerList,
+    hasPulse,
   ])
 
   return { nodes, edges, onNodesChange, onEdgesChange, isLoading }

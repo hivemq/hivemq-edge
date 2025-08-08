@@ -30,26 +30,10 @@ describe('useGetCapabilities', () => {
         displayName: 'Data Hub for HiveMQ Edge',
         id: 'data-hub',
       }),
-    ])
-  })
-
-  it('should load the data', async () => {
-    server.use(...handlers)
-
-    const { result } = renderHook(useGetCapabilities, { wrapper })
-    await waitFor(() => {
-      expect(result.current.isLoading).toBeFalsy()
-      expect(result.current.isSuccess).toBeTruthy()
-    })
-    expect(result.current.data?.items).toStrictEqual([
-      expect.objectContaining({
-        displayName: 'Persistent Data for MQTT traffic',
-        id: 'mqtt-persistence',
-      }),
 
       expect.objectContaining({
-        displayName: 'Data Hub for HiveMQ Edge',
-        id: 'data-hub',
+        displayName: 'Pulse Asset Management',
+        id: 'pulse-asset-management',
       }),
     ])
   })

@@ -17,8 +17,14 @@ export class RJSFomField {
     return cy.get(`[role="group"][data-testid]`)
   }
 
-  field(id: string | string[]) {
-    const safeId = 'root_' + (typeof id === 'string' ? id : id.join('_'))
+  field(id: string | string[] | undefined) {
+    const getSafeId = () => {
+      if (!id) return 'root'
+      if (typeof id === 'string') return 'root_' + id
+      return 'root_' + id.join('_')
+    }
+
+    const safeId = getSafeId()
     const rootSelector = `[role="group"][data-testid="${safeId}"]`
 
     return {
@@ -39,6 +45,10 @@ export class RJSFomField {
 
       get requiredLabel() {
         return cy.get(`${rootSelector} label#${safeId}-label:has([role="presentation"])`)
+      },
+
+      get textarea() {
+        return cy.get(`${rootSelector} textarea#${safeId}`)
       },
 
       get input() {

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
+
+import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
 import type { ErrorObject } from '@/components/rjsf/Form/validation.utils.ts'
+import { validationJWT } from '@/components/rjsf/Form/validation.utils.ts'
 import {
   customFormatsValidator,
   customLocalizer,
@@ -18,6 +21,7 @@ enum Messages {
   noMultiLevelString = 'Wildcard # must not be followed or preceded by any character',
   noSingleLevelString = 'Wildcard + must not be followed or preceded by any character',
   noSingleLevelFinal = 'Wildcard + must be followed by the end-of-segment `/`',
+  noJWTFormat = 'The token is not a completely valid JSON object conforming to JWT format',
 }
 
 interface ValidationTestSuite {
@@ -72,6 +76,15 @@ describe('validationRules', () => {
       { entity: 'real/topic/#', expected: undefined },
     ])('should return $expected  with $entity', ({ entity, expected }) => {
       expect(validationTopicFilter(entity)).toBe(expected)
+    })
+  })
+
+  describe('validationJWT', () => {
+    test.each<ValidationTestSuite>([
+      { entity: '', expected: Messages.noJWTFormat },
+      { entity: MOCK_JWT, expected: undefined },
+    ])('should return $expected  with $entity', ({ entity, expected }) => {
+      expect(validationJWT(entity)).toBe(expected)
     })
   })
 })

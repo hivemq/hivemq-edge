@@ -6,7 +6,7 @@ import type { JSONPatchAdd, JSONPatchDocument } from 'immutable-json-patch'
 import { immutableJSONPatch } from 'immutable-json-patch'
 import Form from '@rjsf/chakra-ui'
 import type { FormProps, IChangeEvent } from '@rjsf/core'
-import type { IdSchema } from '@rjsf/utils'
+import type { IdSchema, RJSFValidationError } from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
 
 import { FieldTemplate } from '@/components/rjsf/FieldTemplate.tsx'
@@ -28,7 +28,16 @@ import UpDownWidget from '@/components/rjsf/Widgets/UpDownWidget'
 interface CustomFormProps<T>
   extends Pick<
     FormProps<T>,
-    'id' | 'schema' | 'uiSchema' | 'formData' | 'formContext' | 'customValidate' | 'readonly' | 'onChange'
+    | 'id'
+    | 'schema'
+    | 'uiSchema'
+    | 'formData'
+    | 'formContext'
+    | 'customValidate'
+    | 'readonly'
+    | 'onChange'
+    | 'onError'
+    | 'extraErrors'
   > {
   onSubmit: (data: IChangeEvent) => void
   showNativeWidgets?: boolean
@@ -47,6 +56,8 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
   formContext,
   customValidate,
   readonly,
+  onError,
+  extraErrors,
   showNativeWidgets = false,
 }) => {
   const { t } = useTranslation()
@@ -95,6 +106,8 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
   }
 
   const rjsfLog = debug(`RJSF:${id}`)
+  const onErrorDefault = (errors: RJSFValidationError[]) => rjsfLog(t('error.rjsf.validation'), errors)
+
   // TODO[27657] Problem with the $schema property again; removing from the UI
   //   https://hivemq.kanbanize.com/ctrl_board/57/cards/27041/details/
   const { $schema, ...unspecifiedSchema } = schema
@@ -133,7 +146,9 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
       noHtml5Validate
       validator={customFormatsValidator}
       customValidate={customValidate}
-      onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
+      extraErrors={extraErrors}
+      // onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
+      onError={onError || onErrorDefault}
       showErrorList="bottom"
       focusOnFirstError={context.focusOnError}
       onChange={onChange}

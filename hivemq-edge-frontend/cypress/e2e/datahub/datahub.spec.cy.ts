@@ -9,8 +9,7 @@ import mockFunction from 'cypress/fixtures/test-function-2025-07-23.json'
 
 import type { DataHubFactory } from 'cypress/utils/intercept.utils.ts'
 import { cy_interceptCoreE2E, cy_interceptDataHubWithMockDB } from 'cypress/utils/intercept.utils.ts'
-import { datahubPage, loginPage } from 'cypress/pages'
-import { datahubDesignerPage } from 'cypress/pages/DataHub/DesignerPage.ts'
+import { datahubPage, loginPage, datahubDesignerPage } from 'cypress/pages'
 import { cy_checkDataPolicyGraph } from 'cypress/utils/datahub.utils.ts'
 
 import { MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'

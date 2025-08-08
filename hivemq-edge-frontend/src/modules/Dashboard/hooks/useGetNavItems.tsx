@@ -8,7 +8,7 @@ import { GoLinkExternal } from 'react-icons/go'
 import { MdOutlineEventNote, MdPolicy } from 'react-icons/md'
 
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
-import { WorkspaceIcon } from '@/components/Icons/TopicIcon.tsx'
+import { PulseAgentIcon, WorkspaceIcon } from '@/components/Icons'
 
 import type { NavLinksBlockType } from '../types.ts'
 
@@ -49,6 +49,11 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
           icon: <Icon as={MdPolicy} fontSize="16px" />,
           href: '/datahub',
           label: t('datahub:navigation.mainPage'),
+        },
+        {
+          icon: <PulseAgentIcon boxSize={6} />,
+          href: '/pulse-assets',
+          label: t('translation:navigation.gateway.routes.assets'),
         },
         {
           icon: <BsIntersect />,

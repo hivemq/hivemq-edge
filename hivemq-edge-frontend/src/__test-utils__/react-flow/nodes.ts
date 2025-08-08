@@ -8,12 +8,14 @@ import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
 import { mockCombiner } from '@/api/hooks/useCombiners/__handlers__'
 import type {
   NodeAdapterType,
+  NodeAssetsType,
   NodeBridgeType,
   NodeCombinerType,
   NodeDeviceType,
   NodeEdgeType,
   NodeGroupType,
   NodeListenerType,
+  NodePulseType,
 } from '@/modules/Workspace/types.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
@@ -80,5 +82,21 @@ export const MOCK_NODE_COMBINER: NodeProps<NodeCombinerType> = {
   id: 'idCombiner',
   type: NodeTypes.COMBINER_NODE,
   data: mockCombiner,
+  ...MOCK_DEFAULT_NODE,
+}
+
+export const MOCK_NODE_ASSETS: NodeProps<NodeAssetsType> = {
+  id: 'idAssets',
+  type: NodeTypes.ASSETS_NODE,
+  sourcePosition: Position.Bottom,
+  data: { label: 'my assets' },
+  ...MOCK_DEFAULT_NODE,
+}
+
+export const MOCK_NODE_PULSE: NodeProps<NodePulseType> = {
+  id: 'idPulseClient',
+  type: NodeTypes.PULSE_NODE,
+  sourcePosition: Position.Bottom,
+  data: { label: 'my pulse client' },
   ...MOCK_DEFAULT_NODE,
 }

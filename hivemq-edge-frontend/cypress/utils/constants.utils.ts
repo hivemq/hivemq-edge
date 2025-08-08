@@ -5,5 +5,13 @@ export enum EDGE_MENU_LINKS {
   ADAPTERS,
   EVENT_LOG,
   DATAHUB,
+  ASSETS,
   UNS_PREFIX,
+}
+
+export enum ONBOARDING {
+  TASK_ADAPTER = 0,
+  TASK_BRIDGE,
+  TASK_CLOUD,
+  TASK_PULSE,
 }

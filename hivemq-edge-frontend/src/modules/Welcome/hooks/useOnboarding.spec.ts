@@ -23,11 +23,11 @@ describe('useOnboarding()', () => {
     const { result } = renderHook(() => useOnboarding(), { wrapper })
 
     await waitFor(() => {
-      const { data } = result.current
+      const data = result.current
       expect(data?.[2].isLoading).toEqual(false)
     })
 
-    const { data } = result.current
+    const data = result.current
     expect(data?.[0].sections).toHaveLength(1)
     expect(data?.[1].sections).toHaveLength(1)
     expect(data?.[0].sections).toEqual(expect.arrayContaining([expect.objectContaining({ to: '/protocol-adapters' })]))
