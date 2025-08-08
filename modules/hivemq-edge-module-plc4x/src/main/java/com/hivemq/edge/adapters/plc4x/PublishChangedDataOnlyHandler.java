@@ -18,28 +18,37 @@ package com.hivemq.edge.adapters.plc4x;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class is here TEMPORARY, the functionality will be moved into NorthboundMappings
  */
 public class PublishChangedDataOnlyHandler {
-    private final @NotNull Map<String, List<DataPoint>> lastSamples = new ConcurrentHashMap<>();
+    private final @NotNull Map<String, Set<DataPoint>> lastSamples = new ConcurrentHashMap<>();
 
-    public boolean replaceIfValueIsNew(final @NotNull String tagName, final @NotNull List<DataPoint> newValue) {
-        final var computedValue = lastSamples.compute(tagName, (key,value) -> {
+    public boolean checkIfValuesHaveChangedSinceLastInvocation(final @NotNull String tagName, final @NotNull List<DataPoint> newValue) {
+        final var replaced = new AtomicBoolean(false);
+        lastSamples.compute(tagName, (key,value) -> {
             if (value == null) {
-                return newValue;
-            } else if (value.equals(newValue)) {
-                return value;
+                replaced.set(true);
+                return new HashSet<>(newValue);
             } else {
-                return newValue;
+                final var newSet = new HashSet<>(newValue);
+                if(!newSet.equals(value)) {
+                    replaced.set(true);
+                    return new HashSet<>(newValue);
+                } else {
+                    return value;
+                }
             }
         });
 
-        return newValue != computedValue;
+        return replaced.get();
     }
 
     public void clear() {
