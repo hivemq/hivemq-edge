@@ -1,0 +1,65 @@
+delete:
+  description: Delete the specified managed asset
+  summary: Delete a managed asset
+  operationId: delete-managed-assets
+  tags:
+    - Pulse
+  parameters:
+    - $ref: ../../components/parameters/AssetId.yaml
+  responses:
+    '200':
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse not activated
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Managed asset not found
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Agent not connected
+put:
+  description: Update a managed asset
+  summary: Update a managed asset
+  operationId: update-managed-assets
+  tags:
+    - Pulse
+  parameters:
+    - $ref: ../../components/parameters/AssetId.yaml
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/ManagedAsset.yaml
+    description: The new content of the managed asset
+    required: true
+  responses:
+    '200':
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse not activated
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Managed asset not found
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Agent not connected

@@ -1,0 +1,9 @@
+type: object
+description: A list of managed assets, as managed in Edge for the Pulse Client
+properties:
+  items:
+    type: array
+    items:
+      $ref: ./ManagedAsset.yaml
+required:
+  - items

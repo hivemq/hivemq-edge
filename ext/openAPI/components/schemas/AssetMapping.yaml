@@ -1,0 +1,31 @@
+type: object
+description: The definition of the mapping for a managed asset in Edge
+properties:
+  status:
+    type: string
+    description: The status of the asset mapping
+    enum:
+      - UNMAPPED
+      - DRAFT
+      - STREAMING
+      - REQUIRES_REMAPPING
+    default: UNMAPPED
+  sources:
+    type: array
+    description: The list of sources used in the asset mapping
+    items:
+      $ref: ./DataIdentifierReference.yaml
+    uniqueItems: true
+  primary:
+    description: The primary source used for triggering the streaming of the asset. It must be one of the sources.
+    $ref: ./DataIdentifierReference.yaml
+  instructions:
+    type: array
+    description: List of mapping instructions to be applied between the sources and the asset schema
+    items:
+      $ref: ./Instruction.yaml
+required:
+    - status
+    - sources
+    - primary
+    - instructions
