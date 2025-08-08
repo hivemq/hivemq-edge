@@ -1,0 +1,59 @@
+get:
+  description: Get all managed assets from the Pulse Client
+  summary: Get all managed assets
+  operationId: get-managed-assets
+  tags:
+    - Pulse
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ManagedAssetList.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse not activated
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Agent not connected
+post:
+  description: Add a new managed asset to the Pulse Client
+  summary: Add a new managed asset
+  operationId: add-managed-assets
+  tags:
+    - Pulse
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/ManagedAsset.yaml
+    description: The managed asset to add
+    required: true
+  responses:
+    '200':
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse not activated
+    '409':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: The managed asset already exists
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Agent not connected

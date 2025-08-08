@@ -1,0 +1,8 @@
+type: object
+properties:
+  token:
+    type: string
+    format: jwt
+    description: The token used to activate the Pulse Client in Edge
+required:
+    - token
