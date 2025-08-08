@@ -97,19 +97,6 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
         configFileReaderWriter.writeConfigWithSync();
     }
 
-    private void notifyConsumer() {
-        final var consumer = bridgeEntitiesConsumer;
-        if(consumer != null) {
-            consumer.accept(bridgeEntities);
-        }
-    }
-
-
-    @Override
-    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
-        return false;
-    }
-
     @Override
     public synchronized Configurator.ConfigResult updateConfig(final HiveMQConfigEntity config) {
         final var bridgeEntities = convertBridgeConfigs(config);
@@ -127,6 +114,11 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
         this.bridgeEntities = bridgeEntities;
         notifyConsumer();
         return Configurator.ConfigResult.SUCCESS;
+    }
+
+    @Override
+    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+        return false;
     }
 
     @Override
@@ -501,5 +493,12 @@ public class BridgeExtractor implements ReloadableExtractor<List<@NotNull MqttBr
         }
 
         return remoteBrokerEntity;
+    }
+
+    private void notifyConsumer() {
+        final var consumer = bridgeEntitiesConsumer;
+        if(consumer != null) {
+            consumer.accept(bridgeEntities);
+        }
     }
 }
