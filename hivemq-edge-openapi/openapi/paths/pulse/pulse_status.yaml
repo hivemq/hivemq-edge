@@ -1,0 +1,13 @@
+get:
+  description: Get the status of the pulse agent
+  summary: Get the status of the integrated pulse agent.
+  operationId: get-pulse-status
+  tags:
+    - Pulse
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/PulseStatus.yaml
+      description: Success
