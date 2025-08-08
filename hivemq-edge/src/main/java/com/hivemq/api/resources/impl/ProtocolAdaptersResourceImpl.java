@@ -210,7 +210,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getAdapter(final @NotNull String adapterId) {
-        final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
+        final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager
+                .getProtocolAdapterWrapperByAdapterId(adapterId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'",
                     adapterId)));
@@ -239,7 +240,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response discoverDataPoints(
             final @NotNull String adapterId, final @Nullable String rootNode, final @Nullable Integer depth) {
 
-        final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
+        final Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager
+                .getProtocolAdapterWrapperByAdapterId(adapterId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'",
                     adapterId)));
@@ -386,22 +388,22 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ErrorResponseUtil.errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         } else {
             switch (command.getCommand()) {
-                case START -> protocolAdapterManager.start(adapterId).whenComplete((result, throwable) -> {
+                case START -> protocolAdapterManager.startAsync(adapterId).whenComplete((result, throwable) -> {
                     if (throwable != null) {
                         log.error("Failed to start adapter '{}'.", adapterId, throwable);
                     } else {
                         log.trace("Adapter '{}' was started successfully.", adapterId);
                     }
                 });
-                case STOP -> protocolAdapterManager.stop(adapterId, false).whenComplete((result, throwable) -> {
+                case STOP -> protocolAdapterManager.stopAsync(adapterId, false).whenComplete((result, throwable) -> {
                     if (throwable != null) {
                         log.error("Failed to stop adapter '{}'.", adapterId, throwable);
                     } else {
                         log.trace("Adapter '{}' was stopped successfully.", adapterId);
                     }
                 });
-                case RESTART -> protocolAdapterManager.stop(adapterId, false)
-                        .thenRun(() -> protocolAdapterManager.start(adapterId))
+                case RESTART -> protocolAdapterManager.stopAsync(adapterId, false)
+                        .thenRun(() -> protocolAdapterManager.startAsync(adapterId))
                         .whenComplete((result, throwable) -> {
                             if (throwable != null) {
                                 log.error("Failed to restart adapter '{}'.", adapterId, throwable);
@@ -439,7 +441,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     protected @NotNull Status getStatusInternal(final @NotNull String adapterId) {
         final Optional<ProtocolAdapterWrapper> optionalAdapterInstance =
-                protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
+                protocolAdapterManager
+                        .getProtocolAdapterWrapperByAdapterId(adapterId);
         return optionalAdapterInstance.map(AdapterStatusModelConversionUtils::getAdapterStatus)
                 .orElseGet(() -> unknown(Status.RuntimeEnum.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId));
     }
@@ -722,7 +725,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
 
         final Optional<ProtocolAdapterWrapper> optionalProtocolAdapterWrapper =
-                protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
+                protocolAdapterManager
+                        .getProtocolAdapterWrapperByAdapterId(adapterId);
         if (optionalProtocolAdapterWrapper.isEmpty()) {
             log.warn("The Json Schema for an adapter '{}' was requested, but the adapter does not exist.", adapterId);
             return ErrorResponseUtil.errorResponse(new AdapterNotFoundError(String.format("Adapter not found '%s'",

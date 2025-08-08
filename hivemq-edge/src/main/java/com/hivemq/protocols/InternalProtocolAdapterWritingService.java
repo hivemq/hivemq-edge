@@ -27,14 +27,12 @@ import java.util.concurrent.CompletableFuture;
 public interface InternalProtocolAdapterWritingService extends ProtocolAdapterWritingService {
 
 
-    @NotNull
-    CompletableFuture<Void> startWriting(
+    boolean startWriting(
             @NotNull WritingProtocolAdapter writingProtocolAdapter,
             @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             @NotNull List<InternalWritingContext> writingContexts);
 
-    @NotNull
-    CompletableFuture<Void> stopWriting(@NotNull WritingProtocolAdapter writingProtocolAdapter, final @NotNull List<InternalWritingContext> writingContexts);
+    void stopWriting(@NotNull WritingProtocolAdapter writingProtocolAdapter, final @NotNull List<InternalWritingContext> writingContexts);
 
     void addWritingChangedCallback(@NotNull WritingChangedCallback callback);
 
