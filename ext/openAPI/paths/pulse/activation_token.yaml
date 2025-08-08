@@ -1,0 +1,43 @@
+delete:
+  description: Delete the activation token from the Pulse Client
+  summary: Delete the Pulse activation token
+  operationId: delete-pulse-activation-token
+  tags:
+    - Pulse
+  responses:
+    '200':
+      description: Success
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Agent not connected
+post:
+  description: Send an activation token to the Pulse Client
+  summary: Update an activation token
+  operationId: update-pulse-activation-token
+  tags:
+    - Pulse
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/PulseActivationToken.yaml
+    description: The activation token to send to the Pulse Client.
+    required: true
+  responses:
+    '200':
+      description: Success
+    '422':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Activation token is invalid
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Agent not connected
