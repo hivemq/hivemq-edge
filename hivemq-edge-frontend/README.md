@@ -126,7 +126,7 @@ Two frontend-specific workflows have been added to the repository
 - `.github/workflows/frontend-cli.yml` for the main CI/CD pipeline
 - `.github/workflows/frontend-visual.yml` for visual testing (Percy)
 
-Together. they contain - and enforce - parts of the testing pyramid for frontend applications:
+Together. they contain — and enforce — parts of the testing pyramid for frontend applications:
 
 - Code quality checks (ESLint, Prettier)
 - Interaction testing (Cypress - Component)
