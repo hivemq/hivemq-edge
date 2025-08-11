@@ -46,6 +46,7 @@ interface PaginatedTableProps<T> {
   enablePagination?: boolean
   enablePaginationSizes?: boolean
   enablePaginationGoTo?: boolean
+  enableGlobalFilter?: boolean
   isError?: boolean
   'aria-label': string
   /**
@@ -65,6 +66,7 @@ const PaginatedTable = <T,>({
   noDataText,
   getRowStyles,
   enableColumnFilters = false,
+  enableGlobalFilter = false,
   enablePagination = true,
   enablePaginationSizes = true,
   enablePaginationGoTo = true,
@@ -116,7 +118,21 @@ const PaginatedTable = <T,>({
   return (
     <>
       <TableContainer overflowY="auto" overflowX="auto" whiteSpace="normal">
-        <TableToolBar rightControls={customControls} />
+        <TableToolBar
+          leftControls={
+            (enableGlobalFilter || enableColumnFilters) && (
+              <SearchBar
+                setGlobalFilter={(value) => table.setGlobalFilter(value)}
+                resetColumnFilters={table.resetColumnFilters}
+                globalFilter={table.getState().globalFilter}
+                columnFilters={table.getState().columnFilters}
+                enableGlobalFilter={enableGlobalFilter}
+                enableColumnFilters={enableColumnFilters}
+              />
+            )
+          }
+          rightControls={customControls}
+        />
 
         <Table variant="simple" size="sm" aria-label={ariaLabel}>
           <Thead>
