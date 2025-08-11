@@ -117,7 +117,7 @@ const PaginatedTable = <T,>({
 
   return (
     <>
-      <TableContainer overflowY="auto" overflowX="auto" whiteSpace="normal">
+      <TableContainer overflowY="auto" overflowX="auto" whiteSpace="normal" data-testid="table-container">
         <TableToolBar
           leftControls={
             (enableGlobalFilter || enableColumnFilters) && (
