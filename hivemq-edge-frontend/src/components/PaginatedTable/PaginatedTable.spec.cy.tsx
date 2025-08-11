@@ -1,3 +1,4 @@
+import { Text } from '@chakra-ui/react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { type SortDirection } from '@tanstack/react-table'
 import PaginatedTable from './PaginatedTable.tsx'
@@ -137,8 +138,36 @@ describe('PaginatedTable', () => {
     cy.getByAriaLabel('Clear selected options').click()
     cy.get('tbody').find('tr').should('have.length', 4)
     cy.get('th').eq(0).find('div#react-select-2-placeholder').should('have.text', 'Search... (4)')
+  })
 
-    // TODO[NVL] Cannot test for datalist updates
+  it('should render the global search', () => {
+    cy.mountWithProviders(
+      <PaginatedTable<MOCK_TYPE>
+        data={MOCK_DATA(4)}
+        columns={MOCK_COLUMN}
+        pageSizes={[5, 10, 20]}
+        enableGlobalFilter={true}
+        aria-label="table"
+      />
+    )
+
+    cy.getByTestId('table-container').within(() => {
+      cy.get('[role="toolbar"] input').should('have.attr', 'placeholder', 'Search for ...')
+    })
+  })
+
+  it('should render the toolbar', () => {
+    cy.mountWithProviders(
+      <PaginatedTable<MOCK_TYPE>
+        data={MOCK_DATA(4)}
+        columns={MOCK_COLUMN}
+        pageSizes={[5, 10, 20]}
+        customControls={<Text>This is a toolbar</Text>}
+        aria-label="table"
+      />
+    )
+
+    cy.getByTestId('table-container').find('[role="group"]').should('have.text', 'This is a toolbar')
   })
 
   it('should be accessible', () => {
