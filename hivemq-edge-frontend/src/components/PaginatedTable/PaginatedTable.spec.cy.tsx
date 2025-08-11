@@ -127,9 +127,9 @@ describe('PaginatedTable', () => {
 
     cy.getByAriaLabel('Clear selected options').should('not.exist')
 
-    cy.get('th').eq(0).find('div#react-select-2-placeholder').should('have.text', 'Search... (4)')
+    cy.get('th').eq(0).find('div#react-select-column1-placeholder').should('have.text', 'Search... (4)')
     cy.get('th').eq(0).click()
-    cy.get('div#react-select-2-listbox').find("[role='option']").should('have.length', 4)
+    cy.get('div#react-select-column1-listbox').find("[role='option']").should('have.length', 4)
     cy.get('th').eq(0).find('input').type('item 0{Enter}')
 
     // wait for Debounce (should be covered by timeout
@@ -137,7 +137,7 @@ describe('PaginatedTable', () => {
     cy.getByAriaLabel('Clear selected options').should('be.visible')
     cy.getByAriaLabel('Clear selected options').click()
     cy.get('tbody').find('tr').should('have.length', 4)
-    cy.get('th').eq(0).find('div#react-select-2-placeholder').should('have.text', 'Search... (4)')
+    cy.get('th').eq(0).find('div#react-select-column1-placeholder').should('have.text', 'Search... (4)')
   })
 
   it('should render the global search', () => {
