@@ -36,7 +36,7 @@ const SearchBar: FC<SearchBarProps> = ({
   return (
     <HStack role="toolbar" aria-label={t('SearchBar.aria-label')} gap={8} flex={1} m={1}>
       {enableGlobalFilter && (
-        <FormControl display="flex" maxW={250}>
+        <FormControl display="flex" maxW={250} data-testid="table-search-control">
           <InputGroup size="sm">
             <InputLeftAddon aria-hidden={true}>
               <Icon as={SearchIcon} boxSize="3" />
@@ -50,6 +50,7 @@ const SearchBar: FC<SearchBarProps> = ({
             <InputRightElement width="2rem">
               {globalFilter && (
                 <IconButton
+                  data-testid="table-search-clear"
                   icon={<Icon as={CloseIcon} />}
                   variant="ghost"
                   size="xs"
@@ -64,6 +65,7 @@ const SearchBar: FC<SearchBarProps> = ({
       {enableColumnFilters && (
         <Button
           isDisabled={!globalFilter && columnFilters.length === 0}
+          data-testid="table-filters-clearAll"
           size="sm"
           onClick={() => {
             resetColumnFilters?.()
