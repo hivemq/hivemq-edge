@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Column } from '@tanstack/react-table'
-import { CreatableSelect } from 'chakra-react-select'
+import { CreatableSelect, Select } from 'chakra-react-select'
 import { Box } from '@chakra-ui/react'
 import { DateTime } from 'luxon'
 
 import DateTimeRangeSelector from '@/components/DateTime/DateTimeRangeSelector.tsx'
+import type { FilterMetadata } from '@/components/PaginatedTable/types.ts'
 
 export interface FilterProps<T>
   extends Pick<
@@ -17,7 +18,7 @@ export interface FilterProps<T>
 
 export const Filter = <T,>({
   id,
-  // getFilterValue,
+  getFilterValue,
   getFacetedUniqueValues,
   getFacetedMinMaxValues,
   setFilterValue,
@@ -26,24 +27,50 @@ export const Filter = <T,>({
 }: FilterProps<T>) => {
   const { t } = useTranslation()
 
+  const filterOptions = (columnDef.meta as FilterMetadata)?.filterOptions
+
+  const canCreateOptions = filterOptions?.canCreate ?? true
+  const filterType = filterOptions?.filterType ?? 'text'
+  const placeholder =
+    filterOptions?.placeholder ?? t('components:pagination.filter.placeholder', { size: getFacetedUniqueValues().size })
+  const noOptionsMessage = (obj: { inputValue: string }) =>
+    filterOptions?.noOptionsMessage?.(obj) ?? t('components:pagination.filter.noOptions')
+  const formatCreateLabel = (inputValue: string) =>
+    filterOptions?.formatCreateLabel?.(inputValue) ?? t('components:pagination.filter.create', { topic: inputValue })
+  const ariaLabel = filterOptions?.['aria-label'] ?? t('components:pagination.filter.label')
+
+  const columnValue = getFilterValue()
   const facetedUniqueValues = getFacetedUniqueValues()
-  const sortedUniqueValues = useMemo(
-    () => (typeof firstValue === 'number' ? [] : Array.from(facetedUniqueValues.keys()).sort()),
-    [facetedUniqueValues, firstValue]
-  )
+  const sortedUniqueValues = useMemo(() => {
+    if (typeof firstValue === 'number') return []
+    const keys = Array.from(facetedUniqueValues.keys())
+    const isNotString = Array.from(keys).some((e) => Array.isArray(e))
 
-  // @ts-ignore Find a better to fix this
-  const { sortType } = columnDef
+    if (isNotString) {
+      // TODO[35496] Assumed to be arrays; will need fine-tuning
+      return Array.from(
+        new Set(
+          keys
+            .flat()
+            // TODO This is a hack. Need to pass a key extractor to the filter
+            .map((e) => e?.id)
+        )
+      ).sort()
+    }
 
-  if (typeof firstValue === 'number' && sortType === 'datetime') {
+    return keys.sort()
+  }, [facetedUniqueValues, firstValue])
+
+  if (typeof firstValue === 'number' && filterType === 'datetime') {
     // TODO[NVL] This is a weird typing, as the function doesn't match the type
     const [a, b] = getFacetedMinMaxValues() || [undefined, undefined]
     const min = Number(a)
     const max = Number(b)
 
     return (
-      <Box w="100%" textTransform="none" fontWeight="initial">
+      <Box w="100%" textTransform="none" fontWeight="initial" data-testid="filter-wrapper">
         <DateTimeRangeSelector
+          id={id}
           min={DateTime.fromMillis(min)}
           max={DateTime.fromMillis(max)}
           setFilterValue={(v) => {
@@ -58,19 +85,24 @@ export const Filter = <T,>({
   // we are not supporting numbers yet
   if (typeof firstValue === 'number') return null
 
+  const SelectComponent = canCreateOptions ? CreatableSelect : Select
+
   return (
-    <Box w="100%" textTransform="none" fontWeight="initial">
-      <CreatableSelect
+    <Box w="100%" textTransform="none" fontWeight="initial" data-testid="filter-wrapper">
+      <SelectComponent
         size="sm"
         inputId={id}
+        instanceId={id}
+        // menuIsOpen
         menuPortalTarget={document.body}
-        // value={{ value: columnFilterValue, label: columnFilterValue }}
+        value={columnValue ? { value: columnValue, label: columnValue } : null}
         onChange={(item) => setFilterValue(item?.value)}
+        // TODO[35494] The label/renderer for the options need customisation per column
         options={sortedUniqueValues.map((value: string) => ({ value: value, label: value, group: 'DDD' }))}
-        placeholder={t('components:pagination.filter.placeholder', { size: getFacetedUniqueValues().size })}
-        noOptionsMessage={() => t('components:pagination.filter.noOptions')}
-        formatCreateLabel={(e) => t('components:pagination.filter.create', { topic: e })}
-        aria-label={t('components:pagination.filter.label')}
+        placeholder={placeholder}
+        noOptionsMessage={noOptionsMessage}
+        formatCreateLabel={formatCreateLabel}
+        aria-label={ariaLabel}
         isClearable={true}
         isMulti={false}
         components={{
