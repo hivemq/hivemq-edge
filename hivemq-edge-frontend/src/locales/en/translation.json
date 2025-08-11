@@ -1464,9 +1464,15 @@
     }
   },
   "pulse": {
+    "status_ERROR": "Error",
+    "status_DEACTIVATED": "Deactivated",
+    "status_ACTIVATED": "Activated",
+    "status_CONNECTED": "Connected",
+    "status_DISCONNECTED": "Disconnected",
     "title": "Assets",
     "description": "Manage Assets and their data mappings to stream live data from Edge to Pulse and other external infrastructure.",
     "error": {
+      "loading": "We cannot load the assets at this time. Please try again later",
       "notYetAvailable": "Pulse Assets are not yet available for HiveMQ Edge. <1>Please contact us for more information.</1",
       "notActivated": "The Pulse Client is not connected to this Edge instance."
     },
@@ -1512,16 +1518,31 @@
       }
     },
     "assets": {
+      "status_REQUIRES_REMAPPING": "Requires Remapping",
+      "status_UNMAPPED": "Unmapped",
+      "status_DRAFT": "Draft",
+      "status_STREAMING": "Streaming",
       "listing": {
         "aria-label": "List of Pulse assets",
         "noDataText": "No assets found",
         "column": {
           "name": "Name",
-          "topic": "Type",
+          "description": "Description",
+          "topic": "Topic",
           "status": "Status",
           "lastChanged": "Last changed",
+          "sources": "Sources",
           "actions": "Actions"
+        },
+        "sources": {
+          "unset": "< unset >",
+          "more": "+{{ count }} more"
         }
+      },
+      "actions": {
+        "aria-label": "Actions",
+        "edit": "Edit",
+        "delete": "Delete"
       }
     },
     "mapper": {
