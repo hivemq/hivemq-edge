@@ -46,9 +46,23 @@ describe('useListManagedAssets', () => {
                 id: 'test',
                 type: 'TOPIC_FILTER',
               },
+              {
+                id: 'test/2',
+                type: 'TAG',
+              },
+              {
+                id: 'test/3',
+                type: 'PULSE_ASSET',
+              },
             ],
             status: 'STREAMING',
           },
+        }),
+        expect.objectContaining({
+          description: 'The short name of the mapped asset',
+          id: '3b028f58-f949-4de1-9b8b-c1a35b1643a9',
+          name: 'Test other asset',
+          topic: 'test/topic/2',
         }),
       ],
     })
