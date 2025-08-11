@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next'
 
 import type { ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
-import { MOCK_PULSE_ASSET } from '@/api/hooks/usePulse/__handlers__'
 import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
 import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
@@ -20,12 +19,20 @@ import FilteredCell from '@/modules/Pulse/components/assets/FilteredCell.tsx'
 import SourcesCell from '@/modules/Pulse/components/assets/SourcesCell.tsx'
 import { compareStatus } from '@/modules/Pulse/utils/pagination-utils.ts'
 
+const skeletonTemplate: ManagedAsset = {
+  id: ' ',
+  name: ' ',
+  description: ' ',
+  topic: ' ',
+  schema: ' ',
+}
+
 const AssetsTable: FC = () => {
   const { t } = useTranslation()
   const { data, isLoading, error } = useListManagedAssets()
 
   const safeData = useMemo(() => {
-    if (!data || !data?.items) return [MOCK_PULSE_ASSET]
+    if (!data || !data?.items) return [skeletonTemplate, skeletonTemplate, skeletonTemplate]
 
     return data.items
   }, [data])

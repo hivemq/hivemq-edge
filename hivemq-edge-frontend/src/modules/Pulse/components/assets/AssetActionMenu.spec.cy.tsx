@@ -14,7 +14,7 @@ describe('AssetActionMenu', () => {
     cy.getByTestId('assets-action-delete').should('be.visible')
 
     cy.get('body').click(0, 0)
-    cy.getByTestId('device-action-start').should('not.exist')
+    cy.getByTestId('assets-action-edit').should('not.exist')
   })
 
   it('should trigger edit action', () => {
@@ -26,7 +26,7 @@ describe('AssetActionMenu', () => {
     cy.getByAriaLabel('Actions').click()
     cy.getByTestId('assets-action-edit').click()
     cy.get('@onEdit').should('have.been.calledWith', '3b028f58-f949-4de1-9b8b-c1a35b1643a4')
-    cy.getByTestId('assets-action-start').should('not.exist')
+    cy.getByTestId('assets-action-edit').should('not.exist')
   })
 
   it('should trigger delete action', () => {
@@ -38,7 +38,7 @@ describe('AssetActionMenu', () => {
     cy.getByAriaLabel('Actions').click()
     cy.getByTestId('assets-action-delete').click()
     cy.get('@onDelete').should('have.been.calledWith', '3b028f58-f949-4de1-9b8b-c1a35b1643a4')
-    cy.getByTestId('assets-action-start').should('not.exist')
+    cy.getByTestId('assets-action-delete').should('not.exist')
   })
 
   it('should be accessible', () => {

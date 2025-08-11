@@ -93,7 +93,6 @@ export const Filter = <T,>({
         size="sm"
         inputId={id}
         instanceId={id}
-        // menuIsOpen
         menuPortalTarget={document.body}
         value={columnValue ? { value: columnValue, label: columnValue } : null}
         onChange={(item) => setFilterValue(item?.value)}
