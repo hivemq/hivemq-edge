@@ -64,6 +64,12 @@ describe('useListManagedAssets', () => {
           name: 'Test other asset',
           topic: 'test/topic/2',
         }),
+        expect.objectContaining({
+          id: '3b028f58-f949-4de1-9b8b-c1a35b1643a7',
+          name: 'Almost the same asset',
+          description: 'Not sure how to describe that re-mapped asset',
+          topic: 'test/topic/4',
+        }),
       ],
     })
   })

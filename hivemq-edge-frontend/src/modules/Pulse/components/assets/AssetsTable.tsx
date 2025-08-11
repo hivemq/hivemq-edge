@@ -1,8 +1,8 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { Box, Skeleton } from '@chakra-ui/react'
-import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
+import { useTranslation } from 'react-i18next'
 
 import type { ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
@@ -11,9 +11,9 @@ import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.
 import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import type { FilterMetadata } from '@/components/PaginatedTable/types.ts'
 import { Topic } from '@/components/MQTT/EntityTag.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
+import type { FilterMetadata } from '@/components/PaginatedTable/types.ts'
 import { AssetActionMenu } from '@/modules/Pulse/components/assets/AssetActionMenu.tsx'
 import AssetStatusBadge from '@/modules/Pulse/components/assets/AssetStatusBadge.tsx'
 import FilteredCell from '@/modules/Pulse/components/assets/FilteredCell.tsx'
@@ -92,11 +92,15 @@ const AssetsTable: FC = () => {
         } as FilterMetadata,
       },
       {
+        // accessorFn: (row) => row.mapping?.sources ?? [{ id: 'fake', type: type.TAG }],
         accessorKey: 'mapping.sources',
         enableGlobalFilter: false,
         enableColumnFilter: true,
         enableSorting: false,
         sortingFn: undefined,
+        filterFn: (row, _, filterValue) => {
+          return !!row.original.mapping?.sources.some((e) => e.id === filterValue)
+        },
         header: t('pulse.assets.listing.column.sources'),
         cell: (info) => {
           const { sources, primary } = info.row.original.mapping || {}

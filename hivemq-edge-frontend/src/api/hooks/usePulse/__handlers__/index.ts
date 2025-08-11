@@ -36,7 +36,7 @@ export const MOCK_PULSE_ASSET_MAPPED: ManagedAsset = {
   },
 }
 
-export const MOCK_PULSE_ASSET_MAPPED_XX: ManagedAsset = {
+export const MOCK_PULSE_ASSET_MAPPED_DUPLICATE: ManagedAsset = {
   id: '3b028f58-f949-4de1-9b8b-c1a35b1643a9',
   name: 'Test other asset',
   description: 'The short name of the mapped asset',
@@ -53,8 +53,25 @@ export const MOCK_PULSE_ASSET_MAPPED_XX: ManagedAsset = {
   },
 }
 
+export const MOCK_PULSE_ASSET_MAPPED_UNIQUE: ManagedAsset = {
+  id: '3b028f58-f949-4de1-9b8b-c1a35b1643a7',
+  name: 'Almost the same asset',
+  description: 'Not sure how to describe that re-mapped asset',
+  topic: 'test/topic/4',
+  schema: MOCK_SIMPLE_SCHEMA_URI,
+  mapping: {
+    status: status.REQUIRES_REMAPPING,
+    sources: [
+      { id: 'test/2', type: type.TAG },
+      { id: 'test/4', type: type.PULSE_ASSET },
+    ],
+    primary: { id: 'test/2', type: type.TAG },
+    instructions: [],
+  },
+}
+
 export const MOCK_PULSE_ASSET_LIST: ManagedAssetList = {
-  items: [MOCK_PULSE_ASSET, MOCK_PULSE_ASSET_MAPPED, MOCK_PULSE_ASSET_MAPPED_XX],
+  items: [MOCK_PULSE_ASSET, MOCK_PULSE_ASSET_MAPPED, MOCK_PULSE_ASSET_MAPPED_DUPLICATE, MOCK_PULSE_ASSET_MAPPED_UNIQUE],
 }
 
 export const handlers = [
