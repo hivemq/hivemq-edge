@@ -13,7 +13,7 @@ import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesSer
 
 //TODO[NVL] return isLoading, isError and maybe error?
 export const useGetPoliciesMatching = (id: string) => {
-  const hasDataHub = useGetCapability(Capability.id.DATA_HUB)
+  const { data: hasDataHub } = useGetCapability(Capability.id.DATA_HUB)
   const { isLoading: isDataLoading, data: dataPolicies, isError: isDataError } = useGetAllDataPolicies()
   const { nodes: workspaceNodes } = useWorkspaceStore()
   const { data: protocols } = useGetAdapterTypes()

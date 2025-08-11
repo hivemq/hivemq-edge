@@ -133,8 +133,15 @@ export const MOCK_CAPABILITY_WRITEABLE_CONFIG: Capability = {
   description: 'Changes to the configuration made via the REST API are persisted back into the config.xml.',
 }
 
+export const MOCK_CAPABILITY_PULSE_ASSETS: Capability = {
+  id: Capability.id.PULSE_ASSET_MANAGEMENT,
+  displayName: 'Pulse Asset Management',
+  description:
+    'This enables HiveMQ Edge to make use of a Pulse Client, including the ability to create, update and map Pulse Assets.',
+}
+
 export const MOCK_CAPABILITIES: CapabilityList = {
-  items: [MOCK_CAPABILITY_PERSISTENCE, MOCK_CAPABILITY_DATAHUB],
+  items: [MOCK_CAPABILITY_PERSISTENCE, MOCK_CAPABILITY_DATAHUB, MOCK_CAPABILITY_PULSE_ASSETS],
 }
 
 export const handlers = [

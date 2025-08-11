@@ -16,7 +16,7 @@ const WelcomePage: FC = () => {
   return (
     <PageContainer title={t('welcome.title')} subtitle={t('welcome.description')}>
       <Flex flexDirection="column">
-        <Flex flexDirection={{ base: 'column', lg: 'row' }}>
+        <Flex flexDirection={{ base: 'column', '2xl': 'row' }}>
           <Onboarding tasks={content} flex={1} />
           <Center flex={1} m={4}>
             <Image
