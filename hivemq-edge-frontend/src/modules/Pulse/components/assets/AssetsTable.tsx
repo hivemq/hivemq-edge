@@ -4,16 +4,21 @@ import { Box, Skeleton } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
 
+import type { ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
-import { type ManagedAsset } from '@/api/__generated__'
 import { MOCK_PULSE_ASSET } from '@/api/hooks/usePulse/__handlers__'
 import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
 import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import type { FilterMetadata } from '@/components/PaginatedTable/types.ts'
 import { Topic } from '@/components/MQTT/EntityTag.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import { AssetActionMenu } from '@/modules/Pulse/components/assets/AssetActionMenu.tsx'
+import AssetStatusBadge from '@/modules/Pulse/components/assets/AssetStatusBadge.tsx'
+import FilteredCell from '@/modules/Pulse/components/assets/FilteredCell.tsx'
+import SourcesCell from '@/modules/Pulse/components/assets/SourcesCell.tsx'
+import { compareStatus } from '@/modules/Pulse/utils/pagination-utils.ts'
 
 const AssetsTable: FC = () => {
   const { t } = useTranslation()
@@ -29,20 +34,35 @@ const AssetsTable: FC = () => {
     return [
       {
         accessorKey: 'name',
+        enableGlobalFilter: true,
+        enableColumnFilter: false,
         header: t('pulse.assets.listing.column.name'),
-        cell: (info) => {
-          return <Skeleton isLoaded={!isLoading}>{info.getValue<string>()}</Skeleton>
-        },
+        cell: (info) => (
+          <FilteredCell
+            isLoading={isLoading}
+            value={info.getValue<string>()}
+            canGlobalFilter={info.column.getCanGlobalFilter()}
+            globalFilter={info.table.getState().globalFilter}
+          />
+        ),
       },
       {
         accessorKey: 'description',
-        header: t('pulse.assets.listing.column.name'),
-        cell: (info) => {
-          return <Skeleton isLoaded={!isLoading}>{info.getValue<string>()}</Skeleton>
-        },
+        enableGlobalFilter: true,
+        enableColumnFilter: false,
+        header: t('pulse.assets.listing.column.description'),
+        cell: (info) => (
+          <FilteredCell
+            isLoading={isLoading}
+            value={info.getValue<string>()}
+            canGlobalFilter={info.column.getCanGlobalFilter()}
+            globalFilter={info.table.getState().globalFilter}
+          />
+        ),
       },
       {
         accessorKey: 'topic',
+        enableGlobalFilter: false,
         header: t('pulse.assets.listing.column.topic'),
         cell: (info) => {
           return (
@@ -54,13 +74,42 @@ const AssetsTable: FC = () => {
       },
       {
         accessorFn: (row) => row.mapping?.status ?? AssetMapping.status.UNMAPPED,
+        // accessorKey: 'mapping.status',
+        enableGlobalFilter: false,
         header: t('pulse.assets.listing.column.status'),
+        sortingFn: (rowA, rowB) => compareStatus(rowA.original.mapping?.status, rowB.original.mapping?.status),
         cell: (info) => {
-          return <Skeleton isLoaded={!isLoading}>{info.getValue<AssetMapping.status>()}</Skeleton>
+          return (
+            <Skeleton isLoaded={!isLoading}>
+              <AssetStatusBadge status={info.getValue<AssetMapping.status>()} />
+            </Skeleton>
+          )
+        },
+        meta: {
+          filterOptions: {
+            canCreate: false,
+          },
+        } as FilterMetadata,
+      },
+      {
+        accessorKey: 'mapping.sources',
+        enableGlobalFilter: false,
+        enableColumnFilter: true,
+        enableSorting: false,
+        sortingFn: undefined,
+        header: t('pulse.assets.listing.column.sources'),
+        cell: (info) => {
+          const { sources, primary } = info.row.original.mapping || {}
+          return (
+            <Skeleton isLoaded={!isLoading}>
+              <SourcesCell sources={sources} primary={primary} />{' '}
+            </Skeleton>
+          )
         },
       },
       {
         id: 'actions',
+        enableGlobalFilter: false,
         header: t('pulse.assets.listing.column.actions'),
         sortingFn: undefined,
 
@@ -94,7 +143,9 @@ const AssetsTable: FC = () => {
       noDataText={t('pulse.assets.listing.noDataText')}
       data={safeData}
       columns={columns}
-      enablePagination={true}
+      enablePagination
+      enableColumnFilters
+      enableGlobalFilter
     />
   )
 }
