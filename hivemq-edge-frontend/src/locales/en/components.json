@@ -10,7 +10,8 @@
     "topic-filter": "Topic Filter",
     "tag": "Tag",
     "client": "Client",
-    "workspace": "Workspace"
+    "workspace": "Workspace",
+    "pulse": "Pulse Agent"
   },
   "pagination": {
     "ariaLabel": "Pagination",
@@ -105,7 +106,8 @@
         "noEmptySharedName": "Shared name cannot be empty",
         "noMultiLevelString": "Wildcard # must not be followed or preceded by any character",
         "noSingleLevelString": "Wildcard + must not be followed or preceded by any character",
-        "noSingleLevelFinal": "Wildcard + must be followed by the end-of-segment `/`"
+        "noSingleLevelFinal": "Wildcard + must be followed by the end-of-segment `/`",
+        "noJWTFormat": "The token is not a completely valid JSON object conforming to JWT format"
       }
     },
     "actions": {

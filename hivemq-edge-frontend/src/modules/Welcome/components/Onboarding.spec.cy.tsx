@@ -1,41 +1,39 @@
 /// <reference types="cypress" />
+import type { OnboardingTask } from '@/modules/Welcome/types.ts'
 import { IoLinkOutline } from 'react-icons/io5'
 
 import Onboarding from './Onboarding.tsx'
-import type { OnboardingFetchType } from '@/modules/Welcome/hooks/useOnboarding.tsx'
 
-const MOCK_ONBOARDING: OnboardingFetchType = {
-  data: [
-    {
-      header: 'Heading 1',
-      sections: [
-        {
-          title: 'Task 1',
-          label: 'Get Started',
-          to: '/link1',
-          leftIcon: <IoLinkOutline />,
-        },
-        {
-          title: 'Task  2',
-          label: 'Get Started',
-          to: '/link2',
-          leftIcon: <IoLinkOutline />,
-        },
-      ],
-    },
-    {
-      header: 'Heading 2',
-      sections: [
-        {
-          title: 'Task 3',
-          label: 'Get Started',
-          to: '/link3',
-          leftIcon: <IoLinkOutline />,
-        },
-      ],
-    },
-  ],
-}
+const MOCK_ONBOARDING: OnboardingTask[] = [
+  {
+    header: 'Heading 1',
+    sections: [
+      {
+        title: 'Task 1',
+        label: 'Get Started',
+        to: '/link1',
+        leftIcon: <IoLinkOutline />,
+      },
+      {
+        title: 'Task  2',
+        label: 'Get Started',
+        to: '/link2',
+        leftIcon: <IoLinkOutline />,
+      },
+    ],
+  },
+  {
+    header: 'Heading 2',
+    sections: [
+      {
+        title: 'Task 3',
+        label: 'Get Started',
+        to: '/link3',
+        leftIcon: <IoLinkOutline />,
+      },
+    ],
+  },
+]
 
 describe('Onboarding', () => {
   beforeEach(() => {
