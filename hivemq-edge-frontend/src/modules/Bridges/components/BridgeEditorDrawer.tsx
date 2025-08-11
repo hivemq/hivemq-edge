@@ -37,7 +37,7 @@ interface BridgeEditorDrawerProps {
 const BridgeEditorDrawer: FC<BridgeEditorDrawerProps> = ({ isNew }) => {
   const { t } = useTranslation()
   const { onClose, onOpen, isOpen } = useDisclosure()
-  const hasPersistence = useGetCapability(Capability.id.MQTT_PERSISTENCE)
+  const { data: hasPersistence } = useGetCapability(Capability.id.MQTT_PERSISTENCE)
   const { data: allBridges } = useListBridges()
   const { bridgeId } = useParams()
   const navigate = useNavigate()
