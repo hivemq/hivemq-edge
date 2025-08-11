@@ -12,7 +12,7 @@ import DraftCTA from '@datahub/components/helpers/DraftCTA.tsx'
 
 const DataHubPage: FC = () => {
   const { t } = useTranslation('datahub')
-  const hasDataHub = useGetCapability(Capability.id.DATA_HUB)
+  const { data: hasDataHub } = useGetCapability(Capability.id.DATA_HUB)
   const { pathname } = useLocation()
 
   const isMainPage = pathname === '/datahub'

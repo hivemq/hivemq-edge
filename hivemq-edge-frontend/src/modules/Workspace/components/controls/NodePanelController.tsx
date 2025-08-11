@@ -9,7 +9,7 @@ import type { Adapter, Bridge, Combiner } from '@/api/__generated__'
 import { SuspenseFallback } from '@/components/SuspenseOutlet.tsx'
 import type { AdapterNavigateState } from '@/modules/ProtocolAdapters/types.ts'
 import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
-import type { DeviceMetadata, Group } from '@/modules/Workspace/types.ts'
+import type { DeviceMetadata, Group, NodeAssetsType } from '@/modules/Workspace/types.ts'
 import { EdgeTypes, NodeTypes } from '@/modules/Workspace/types.ts'
 
 const DevicePropertyDrawer = lazy(() => import('../drawers/DevicePropertyDrawer.tsx'))
@@ -17,6 +17,7 @@ const NodePropertyDrawer = lazy(() => import('../drawers/NodePropertyDrawer.tsx'
 const LinkPropertyDrawer = lazy(() => import('../drawers/LinkPropertyDrawer.tsx'))
 const GroupPropertyDrawer = lazy(() => import('../drawers/GroupPropertyDrawer.tsx'))
 const EdgePropertyDrawer = lazy(() => import('../drawers/EdgePropertyDrawer.tsx'))
+const PulsePropertyDrawer = lazy(() => import('../drawers/PulsePropertyDrawer.tsx'))
 
 const NodePanelController: FC = () => {
   const navigate = useNavigate()
@@ -44,6 +45,10 @@ const NodePanelController: FC = () => {
 
   const selectedGroup = nodes.find((node) => node.id === nodeId && node.type === NodeTypes.CLUSTER_NODE) as
     | Node<Group>
+    | undefined
+
+  const selectedAssets = nodes.find((node) => node.id === nodeId && node.type === NodeTypes.ASSETS_NODE) as
+    | NodeAssetsType
     | undefined
 
   useEffect(() => {
@@ -129,6 +134,15 @@ const NodePanelController: FC = () => {
           nodeId={nodeId}
           nodes={nodes}
           selectedNode={selectedGroup}
+          isOpen={isOpen}
+          onClose={handleClose}
+          onEditEntity={handleEditEntity}
+        />
+      )}
+      {selectedAssets && (
+        <PulsePropertyDrawer
+          nodeId={nodeId}
+          selectedNode={selectedAssets}
           isOpen={isOpen}
           onClose={handleClose}
           onEditEntity={handleEditEntity}
