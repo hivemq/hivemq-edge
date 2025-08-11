@@ -4,8 +4,7 @@ import { MOCK_CAPABILITY_PERSISTENCE, MOCK_CAPABILITY_PULSE_ASSETS } from '@/api
 import { drop, factory, primaryKey } from '@mswjs/data'
 
 import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
-import { loginPage, homePage, pulseActivationPanel, workspacePage } from 'cypress/pages'
-import { workspaceCombinerPanel } from '../../pages/Workspace/CombinerFormPage.ts'
+import { loginPage, homePage, pulseActivationPanel } from 'cypress/pages'
 import { ONBOARDING } from '../../utils/constants.utils.ts'
 
 describe('Pulse Client Activation', () => {
@@ -57,7 +56,8 @@ describe('Pulse Client Activation', () => {
       req.reply(200)
     }).as('activatePulse')
 
-    loginPage.visit('/app')
+    // There seems to be a bug in the CI without something in the path
+    loginPage.visit('/app/workspace')
     loginPage.loginButton.click()
     homePage.navLink.click()
   })
