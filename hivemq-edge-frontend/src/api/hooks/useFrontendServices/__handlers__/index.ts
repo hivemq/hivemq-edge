@@ -152,10 +152,6 @@ export const handlers = [
   http.get('**/frontend/notifications', () => {
     return HttpResponse.json<NotificationList>({ items: MOCK_NOTIFICATIONS }, { status: 200 })
   }),
-
-  http.get('**/frontend/capabilities', () => {
-    return HttpResponse.json<CapabilityList>(MOCK_CAPABILITIES, { status: 200 })
-  }),
 ]
 
 export const handlerCapabilities = (source: CapabilityList) => [
