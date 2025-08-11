@@ -21,7 +21,7 @@ const FilteredCell: FC<FilteredCellProps> = ({
           <Highlight
             data-testid="cell-content"
             query={globalFilter}
-            styles={{ px: '2', py: '1', rounded: 'full', bg: 'teal.50' }}
+            styles={{ px: '2', py: '1', rounded: 'full', bg: 'yellow.50' }}
           >
             {value}
           </Highlight>
