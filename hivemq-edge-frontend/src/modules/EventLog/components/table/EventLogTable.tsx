@@ -12,6 +12,7 @@ import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import { mockEdgeEvent } from '@/api/hooks/useEvents/__handlers__'
 import { useGetEvents } from '@/api/hooks/useEvents/useGetEvents.ts'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
+import type { FilterMetadata } from '@/components/PaginatedTable/types.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 
@@ -76,8 +77,12 @@ const EventLogTable: FC<EventLogTableProps> = ({
       },
       {
         accessorKey: 'created',
-        sortType: 'datetime',
         accessorFn: (row) => DateTime.fromISO(row.created).toMillis(),
+        meta: {
+          filterOptions: {
+            filterType: 'datetime',
+          },
+        } as FilterMetadata,
         cell: (info) => (
           <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">
             <DateTimeRenderer date={DateTime.fromMillis(info.getValue() as number)} isApprox />
@@ -97,7 +102,7 @@ const EventLogTable: FC<EventLogTableProps> = ({
       },
       {
         accessorKey: 'source.identifier',
-        sortType: 'alphanumeric',
+        accessorFn: (row) => row.source?.identifier || '',
         header: t('eventLog.table.header.source'),
         cell: (info) => (
           <Skeleton isLoaded={!isLoading}>
