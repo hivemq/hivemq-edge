@@ -1,3 +1,4 @@
+import { handlers } from '@/api/hooks/useFrontendServices/__handlers__'
 import { renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, beforeEach, afterEach, vi } from 'vitest'
 import type { WithCSSVar } from '@chakra-ui/react'
@@ -28,7 +29,7 @@ vi.mock('@chakra-ui/react', async () => {
 describe('useGetFlowElements', () => {
   beforeEach(() => {
     // window.localStorage.clear()
-    server.use(...BridgeHandlers, ...ProtocolAdapterHandlers, ...ListenerHandlers, ...combinerHandlers)
+    server.use(...BridgeHandlers, ...ProtocolAdapterHandlers, ...ListenerHandlers, ...combinerHandlers, ...handlers)
   })
 
   afterEach(() => {
@@ -37,9 +38,9 @@ describe('useGetFlowElements', () => {
   })
 
   it.each<[Partial<EdgeFlowOptions>, number, number]>([
-    [{}, 8, 8],
-    [{ showGateway: true }, 9, 9],
-    [{ showGateway: false }, 8, 8],
+    [{}, 10, 10],
+    [{ showGateway: true }, 11, 11],
+    [{ showGateway: false }, 10, 10],
   ])('should consider %s for %s nodes and %s edges', async (defaults, countNode, countEdge) => {
     const { result } = renderHook(() => useGetFlowElements(), { wrapper: getWrapperEdgeProvider(defaults) })
 

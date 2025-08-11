@@ -23,6 +23,7 @@ const ProtocolIntegrationStore = lazy(
   () => import('@/modules/ProtocolAdapters/components/panels/ProtocolIntegrationStore.tsx')
 )
 const ProtocolAdapters = lazy(() => import('@/modules/ProtocolAdapters/components/panels/ProtocolAdapters.tsx'))
+const PulsePage = lazy(() => import('@/modules/Pulse/PulsePage.tsx'))
 
 import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
 import { MappingType } from '@/modules/Mappings/types.ts'
@@ -142,6 +143,10 @@ export const routes = createBrowserRouter(
               element: <UnifiedNamespaceEditor />,
             },
           ],
+        },
+        {
+          path: 'pulse-assets/',
+          element: <PulsePage />,
         },
         { ...dataHubRoutes },
       ],
