@@ -21,5 +21,11 @@ export class ShellPage extends Page {
     get error() {
       return cy.get('[role="region"][aria-label="Notifications-top-right"] [role="status"] [data-status="error"]')
     },
+
+    close() {
+      cy.get('[role="status"]').within(() => {
+        cy.getByAriaLabel('Close').click()
+      })
+    },
   }
 }
