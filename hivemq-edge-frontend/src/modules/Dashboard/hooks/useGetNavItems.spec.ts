@@ -9,7 +9,7 @@ import '@/config/i18n.config.ts'
 
 import useGetNavItems from './useGetNavItems.tsx'
 
-describe('useSpringClient', () => {
+describe('useGetNavItems', () => {
   beforeEach(() => {
     server.resetHandlers()
   })
@@ -23,7 +23,7 @@ describe('useSpringClient', () => {
     })
 
     expect(result.current.data.map((e) => e.title)).toStrictEqual(['HiveMQ Edge', 'External resources'])
-    expect(result.current.data[0].items).toHaveLength(7)
+    expect(result.current.data[0].items).toHaveLength(8)
     expect(result.current.data[1].items.map((e) => e.href)).toStrictEqual([
       'https://www.hivemq.com/articles/power-of-iot-data-management-in-smart-manufacturing/',
       'https://github.com/hivemq/hivemq-edge',

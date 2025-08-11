@@ -1,15 +1,16 @@
-import type { Edge, Node, XYPosition } from '@xyflow/react'
-import { MarkerType, Position } from '@xyflow/react'
 import type { WithCSSVar } from '@chakra-ui/react'
 import type { Dict } from '@chakra-ui/utils'
 import type { GenericObjectType } from '@rjsf/utils'
+import type { Edge, Node, XYPosition } from '@xyflow/react'
+import { MarkerType, Position } from '@xyflow/react'
 
 import type { Adapter, Bridge, Combiner, Listener, ProtocolAdapter } from '@/api/__generated__'
 import { Status } from '@/api/__generated__'
 
-import type { DeviceMetadata, NodeEdgeType } from '../types.ts'
+import type { DeviceMetadata, NodeAssetsType, NodeEdgeType } from '../types.ts'
+import type { NodePulseType } from '../types.ts'
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
-import { getBridgeTopics, discoverAdapterTopics } from './topics-utils'
+import { discoverAdapterTopics, getBridgeTopics } from './topics-utils'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 
 export const CONFIG_ADAPTER_WIDTH = 245
@@ -297,6 +298,75 @@ export const createCombinerNode = (
   }
 
   return { nodeCombiner, edgeConnector, sourceConnectors }
+}
+
+export const createPulseNode = (theme: Partial<WithCSSVar<Dict>>, positionStorage?: Record<string, XYPosition>) => {
+  const idPulseAssets = 'idPulseAssets'
+  const idPulse = 'idPulse'
+  const pulseStatus = { connection: Status.connection.UNKNOWN, runtime: Status.runtime.STOPPED }
+
+  const nodeAssets: NodeAssetsType = {
+    id: idPulseAssets,
+    type: NodeTypes.ASSETS_NODE,
+    sourcePosition: Position.Bottom,
+    data: { label: 'Assets' },
+    position: positionStorage?.[idPulseAssets] ?? {
+      x: POS_EDGE.x + POS_NODE_INC.x,
+      y: POS_EDGE.y - POS_NODE_INC.y,
+    },
+  }
+
+  const edgeConnector: Edge = {
+    id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${idPulseAssets}`,
+    target: IdStubs.EDGE_NODE,
+    targetHandle: 'Top',
+    source: idPulseAssets,
+    focusable: false,
+    type: EdgeTypes.DYNAMIC_EDGE,
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: getThemeForStatus(theme, pulseStatus),
+    },
+    animated: false,
+    style: {
+      strokeWidth: 1.5,
+      stroke: getThemeForStatus(theme, pulseStatus),
+    },
+  }
+
+  const nodePulse: NodePulseType = {
+    id: idPulse,
+    type: NodeTypes.PULSE_NODE,
+    data: { label: 'Pulse Client' },
+    position: positionStorage?.[idPulse] ?? {
+      x: POS_EDGE.x + POS_NODE_INC.x,
+      y: POS_EDGE.y - POS_NODE_INC.y - GLUE_SEPARATOR,
+    },
+  }
+
+  const pulseConnector: Edge = {
+    id: `${IdStubs.CONNECTOR}-${idPulseAssets}-${idPulse}`,
+    target: idPulse,
+    sourceHandle: 'Top',
+    source: idPulseAssets,
+    type: EdgeTypes.DYNAMIC_EDGE,
+    focusable: false,
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: getThemeForStatus(theme, pulseStatus),
+    },
+    animated: false,
+    style: {
+      strokeWidth: 1.5,
+      stroke: getThemeForStatus(theme, pulseStatus),
+    },
+  }
+
+  return { nodeAssets, edgeConnector, nodePulse, pulseConnector }
 }
 
 export const getDefaultMetricsFor = (node: Node): string[] => {

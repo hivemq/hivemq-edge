@@ -26,6 +26,7 @@ export const QUERY_KEYS = {
   METRICS_SAMPLE: 'sample',
   EVENTS: 'events',
   GITHUB_RELEASES: 'github.releases',
+  PULSE_TOKEN: 'pulse.token',
 }
 
 export const parseJWT = (token: string): JWTPayload | null => {

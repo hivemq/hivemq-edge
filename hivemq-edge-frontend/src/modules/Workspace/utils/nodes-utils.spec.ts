@@ -24,6 +24,7 @@ import {
   createCombinerNode,
   createEdgeNode,
   createListenerNode,
+  createPulseNode,
   getDefaultMetricsFor,
   getGluedPosition,
   LAYOUT_GLUE_TYPE,
@@ -288,6 +289,58 @@ describe('createCombinerNode', () => {
         }),
       ],
     })
+  })
+})
+
+describe('createPulseNode', () => {
+  it('should create the default nodes', async () => {
+    const actual = createPulseNode(MOCK_THEME)
+
+    expect(actual).toStrictEqual(
+      expect.objectContaining({
+        nodeAssets: expect.objectContaining({
+          data: {
+            label: 'Assets',
+          },
+          id: 'idPulseAssets',
+          type: NodeTypes.ASSETS_NODE,
+        }),
+        nodePulse: expect.objectContaining({
+          data: {
+            label: 'Pulse Client',
+          },
+          id: 'idPulse',
+          type: NodeTypes.PULSE_NODE,
+        }),
+      })
+    )
+  })
+
+  it('should create links to nodes', async () => {
+    const actual = createPulseNode(MOCK_THEME)
+
+    expect(actual).toStrictEqual(
+      expect.objectContaining({
+        edgeConnector: expect.objectContaining({
+          id: 'connect-edge-idPulseAssets',
+          source: 'idPulseAssets',
+          target: 'edge',
+          targetHandle: 'Top',
+          type: 'DYNAMIC_EDGE',
+          animated: false,
+          focusable: false,
+        }),
+        pulseConnector: expect.objectContaining({
+          id: 'connect-idPulseAssets-idPulse',
+          source: 'idPulseAssets',
+          sourceHandle: 'Top',
+          target: 'idPulse',
+          type: 'DYNAMIC_EDGE',
+          animated: false,
+          focusable: false,
+        }),
+      })
+    )
   })
 })
 
