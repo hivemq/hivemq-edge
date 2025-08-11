@@ -139,34 +139,34 @@ const EventLogTable: FC<EventLogTableProps> = ({
   }
 
   return (
-    <>
-      {variant === 'full' && (
-        <Flex justifyContent="flex-end">
-          <Button
-            isLoading={isFetching}
-            loadingText={t('eventLog.table.cta.refetch')}
-            variant="outline"
-            size="sm"
-            leftIcon={<Icon as={BiRefresh} fontSize={20} />}
-            onClick={() => refetch()}
-            data-testid="eventLog-refetch"
-          >
-            {t('eventLog.table.cta.refetch')}
-          </Button>
-        </Flex>
-      )}
-      <PaginatedTable<Event>
-        aria-label={t('eventLog.title')}
-        data={safeData}
-        columns={displayColumns}
-        enablePaginationGoTo={variant === 'full'}
-        enablePaginationSizes={variant === 'full'}
-        enableColumnFilters={variant === 'full'}
-        // getRowStyles={(row) => {
-        //   return { backgroundColor: theme.colors.blue[50] }
-        // }}
-      />
-    </>
+    <PaginatedTable<Event>
+      aria-label={t('eventLog.title')}
+      data={safeData}
+      columns={displayColumns}
+      enablePaginationGoTo={variant === 'full'}
+      enablePaginationSizes={variant === 'full'}
+      enableColumnFilters={variant === 'full'}
+      // getRowStyles={(row) => {
+      //   return { backgroundColor: theme.colors.blue[50] }
+      // }}
+      customControls={
+        variant === 'full' && (
+          <Flex justifyContent="flex-end">
+            <Button
+              isLoading={isFetching}
+              loadingText={t('eventLog.table.cta.refetch')}
+              variant="outline"
+              size="sm"
+              leftIcon={<Icon as={BiRefresh} fontSize={20} />}
+              onClick={() => refetch()}
+              data-testid="eventLog-refetch"
+            >
+              {t('eventLog.table.cta.refetch')}
+            </Button>
+          </Flex>
+        )
+      }
+    />
   )
 }
 
