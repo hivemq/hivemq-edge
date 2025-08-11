@@ -74,7 +74,7 @@ const AssetsTable: FC = () => {
       },
       {
         accessorFn: (row) => row.mapping?.status ?? AssetMapping.status.UNMAPPED,
-        // accessorKey: 'mapping.status',
+        accessorKey: 'mapping.status',
         enableGlobalFilter: false,
         header: t('pulse.assets.listing.column.status'),
         sortingFn: (rowA, rowB) => compareStatus(rowA.original.mapping?.status, rowB.original.mapping?.status),
@@ -92,7 +92,7 @@ const AssetsTable: FC = () => {
         } as FilterMetadata,
       },
       {
-        // accessorFn: (row) => row.mapping?.sources ?? [{ id: 'fake', type: type.TAG }],
+        accessorFn: (row) => row.mapping?.sources ?? [],
         accessorKey: 'mapping.sources',
         enableGlobalFilter: false,
         enableColumnFilter: true,
