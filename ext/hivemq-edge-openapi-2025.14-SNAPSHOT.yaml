@@ -14,7 +14,7 @@ info:
     ## OpenAPI
     HiveMQ's REST API provides an OpenAPI 3.0 schema definition that can imported into popular API tooling (e.g. Postman) or can be used to generate client-code for multiple programming languages.
   title: HiveMQ Edge REST API
-  version: "2025.13"
+  version: 2025.14-SNAPSHOT
   x-logo:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
@@ -94,6 +94,9 @@ tags:
       These endpoints can be used to retrieve states of clients for the Data Hub.
 
     name: Data Hub - State
+  - description: |
+      These endpoints can be used to manage Pulse and its assets.
+    name: Pulse
 paths:
   /:
     get:
@@ -4473,6 +4476,190 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Combiner not found
+  /api/v1/management/pulse/activation-token:
+    delete:
+      description: Delete the activation token from the Pulse Client
+      summary: Delete the Pulse activation token
+      operationId: delete-pulse-activation-token
+      tags:
+        - Pulse
+      responses:
+        '200':
+          description: Success
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Pulse Agent not connected
+    post:
+      description: Send an activation token to the Pulse Client
+      summary: Update an activation token
+      operationId: update-pulse-activation-token
+      tags:
+        - Pulse
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PulseActivationToken'
+        description: The activation token to send to the Pulse Client.
+        required: true
+      responses:
+        '200':
+          description: Success
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Activation token is invalid
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Pulse Agent not connected
+  /api/v1/management/pulse/status:
+    get:
+      description: Get the status of the pulse agent
+      summary: Get the status of the integrated pulse agent.
+      operationId: get-pulse-status
+      tags:
+        - Pulse
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PulseStatus'
+          description: Success
+  /api/v1/management/pulse/managed-assets:
+    get:
+      description: Get all managed assets from the Pulse Client
+      summary: Get all managed assets
+      operationId: get-managed-assets
+      tags:
+        - Pulse
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedAssetList'
+          description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Pulse not activated
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Pulse Agent not connected
+    post:
+      description: Add a new managed asset to the Pulse Client
+      summary: Add a new managed asset
+      operationId: add-managed-assets
+      tags:
+        - Pulse
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManagedAsset'
+        description: The managed asset to add
+        required: true
+      responses:
+        '200':
+          description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Pulse not activated
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: The managed asset already exists
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Pulse Agent not connected
+  /api/v1/management/pulse/managed-assets/{assetId}:
+    delete:
+      description: Delete the specified managed asset
+      summary: Delete a managed asset
+      operationId: delete-managed-assets
+      tags:
+        - Pulse
+      parameters:
+        - $ref: '#/components/parameters/AssetId'
+      responses:
+        '200':
+          description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Pulse not activated
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Managed asset not found
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Pulse Agent not connected
+    put:
+      description: Update a managed asset
+      summary: Update a managed asset
+      operationId: update-managed-assets
+      tags:
+        - Pulse
+      parameters:
+        - $ref: '#/components/parameters/AssetId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManagedAsset'
+        description: The new content of the managed asset
+        required: true
+      responses:
+        '200':
+          description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Pulse not activated
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Managed asset not found
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Pulse Agent not connected
 components:
   schemas:
     UsernamePasswordCredentials:
@@ -5052,6 +5239,7 @@ components:
             - control-plane-connectivity
             - data-hub
             - mqtt-persistence
+            - pulse-asset-management
           description: The identifier of this capability
     CapabilityList:
       type: object
@@ -5867,6 +6055,7 @@ components:
           enum:
             - TAG
             - TOPIC_FILTER
+            - PULSE_ASSET
     Instruction:
       type: object
       description: List of instructions to be applied to incoming data
@@ -6347,6 +6536,152 @@ components:
             $ref: '#/components/schemas/Combiner'
       required:
         - items
+    PulseActivationToken:
+      type: object
+      properties:
+        token:
+          type: string
+          format: jwt
+          description: The token used to activate the Pulse Client in Edge
+      required:
+        - token
+    PulseStatus:
+      type: object
+      description: Information on the activation status of the pulse agent and its connection to the platform.
+      required:
+        - activation
+        - runtime
+      properties:
+        activation:
+          type: object
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              description: Status of the pulse activation
+              enum:
+                - ACTIVATED
+                - DEACTIVATED
+                - ERROR
+            message:
+              $ref: '#/components/schemas/ProblemDetails'
+        runtime:
+          type: object
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              description: Connection status of the pulse agent to the platform.
+              enum:
+                - CONNECTED
+                - DISCONNECTED
+                - ERROR
+            message:
+              $ref: '#/components/schemas/ProblemDetails'
+    Asset:
+      type: object
+      description: The definition of an asset as sourced from the Pulse Broker
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique id of the asset
+          example: 123e4567-e89b-12d3-a456-426614174000
+          readOnly: true
+        name:
+          type: string
+          description: The user-facing name of the asset
+          readOnly: true
+          example: The fancy asset
+        description:
+          type: string
+          description: The user-facing description of the asset
+          readOnly: true
+        topic:
+          type: string
+          format: mqtt-topic
+          description: The topic associated with the asset
+          example: a/valid/mqtt/topic
+          readOnly: true
+        schema:
+          type: string
+          format: data-url
+          description: The schema associated with the asset, in a JSON Schema and data uri format.
+          example: data:application/schema+json;base64,eyJ0eXBlIjoiT2JqZWN0IiwiaWQiOiJhc3NldC1zY2hlbWEifQ==
+      required:
+        - id
+        - name
+        - schema
+        - topic
+    AssetMapping:
+      type: object
+      description: The definition of the mapping for a managed asset in Edge
+      properties:
+        status:
+          type: string
+          description: The status of the asset mapping
+          enum:
+            - UNMAPPED
+            - DRAFT
+            - STREAMING
+            - REQUIRES_REMAPPING
+          default: UNMAPPED
+        sources:
+          type: array
+          description: The list of sources used in the asset mapping
+          items:
+            $ref: '#/components/schemas/DataIdentifierReference'
+          uniqueItems: true
+        primary:
+          description: The primary source used for triggering the streaming of the asset. It must be one of the sources.
+          $ref: '#/components/schemas/DataIdentifierReference'
+        instructions:
+          type: array
+          description: List of mapping instructions to be applied between the sources and the asset schema
+          items:
+            $ref: '#/components/schemas/Instruction'
+      required:
+        - status
+        - sources
+        - primary
+        - instructions
+    ManagedAsset:
+      type: object
+      description: The definition of an extended asset, as managed in Edge for the Pulse Client
+      allOf:
+        - $ref: '#/components/schemas/Asset'
+        - type: object
+          properties:
+            mapping:
+              $ref: '#/components/schemas/AssetMapping'
+      example:
+        id: 123e4567-e89b-12d3-a456-426614174000
+        name: The fancy asset
+        topic: a/valid/mqtt/topic
+        schema: data:application/schema+json;base64,eyJ0eXBlIjoiT2JqZWN0IiwiaWQiOiJhc3NldC1zY2hlbWEifQ==
+        mapping:
+          status: STREAMING
+          sources:
+            - id: my source 1
+              type: TAG
+            - id: my source 2
+              type: TOPIC_FILTER
+            - id: my source 3
+              type: PULSE_ASSET
+          primary: {}
+          instructions: []
+    ManagedAssetList:
+      type: object
+      description: A list of managed assets, as managed in Edge for the Pulse Client
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ManagedAsset'
+      required:
+        - items
   parameters:
     TopicFilterId:
       name: filter
@@ -6367,6 +6702,14 @@ components:
     MappingId:
       name: mappingId
       description: The unique id of the mapping to retrieve.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AssetId:
+      name: assetId
+      description: The unique id of the managed asset to retrieve.
       in: path
       required: true
       schema:
