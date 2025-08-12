@@ -1,10 +1,14 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Capability } from '@/api/__generated__'
+import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
+
 import ExpandableDrawer from '@/components/ExpandableDrawer/ExpandableDrawer.tsx'
 import type { NodeAssetsType, NodeTypes } from '@/modules/Workspace/types.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 import LicenseWarning from '@/modules/Pulse/components/activation/LicenseWarning.tsx'
+import AssetsTable from '@/modules/Pulse/components/assets/AssetsTable.tsx'
 
 interface PulsePropertyDrawerProps {
   nodeId: string
@@ -16,6 +20,7 @@ interface PulsePropertyDrawerProps {
 
 const PulsePropertyDrawer: FC<PulsePropertyDrawerProps> = ({ isOpen, selectedNode, onClose }) => {
   const { t } = useTranslation()
+  const { data: hasPulseCapability } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
 
   return (
     <ExpandableDrawer
@@ -25,7 +30,8 @@ const PulsePropertyDrawer: FC<PulsePropertyDrawerProps> = ({ isOpen, selectedNod
       onClose={onClose}
       closeOnOverlayClick={false}
     >
-      <LicenseWarning />
+      {!hasPulseCapability && <LicenseWarning />}
+      {hasPulseCapability && <AssetsTable variant="summary" />}
     </ExpandableDrawer>
   )
 }
