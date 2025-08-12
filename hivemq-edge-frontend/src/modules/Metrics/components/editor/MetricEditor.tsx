@@ -102,7 +102,7 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filters, selectedMetric
                     option: (provided) => ({ ...provided, paddingLeft: '24px' }),
                   }}
                   styles={{
-                    menuPortal: (provided) => ({ ...provided, zIndex: 1401 }),
+                    menuPortal: (provided) => ({ ...provided, zIndex: 'var(--chakra-zIndices-popover)' }),
                   }}
                   id="metrics-select-container"
                   inputId="metrics-select"
@@ -137,7 +137,7 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filters, selectedMetric
                     {...rest}
                     menuPortalTarget={document.body}
                     styles={{
-                      menuPortal: (provided) => ({ ...provided, zIndex: 1401 }),
+                      menuPortal: (provided) => ({ ...provided, zIndex: 'var(--chakra-zIndices-popover)' }),
                     }}
                     id="chart-select-container"
                     inputId="chart-select"
