@@ -27,7 +27,11 @@ const skeletonTemplate: ManagedAsset = {
   schema: ' ',
 }
 
-const AssetsTable: FC = () => {
+interface AssetTableProps {
+  variant?: 'full' | 'summary'
+}
+
+const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   const { t } = useTranslation()
   const { data, isLoading, error } = useListManagedAssets()
 
@@ -137,6 +141,14 @@ const AssetsTable: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading])
 
+  // TODO[NVL] Tanstack table has a column-visibility as a state; manage it  through it?
+  const dynamicColumns = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [name, _description, topic, status, _sources, actions] = columns
+
+    return variant === 'full' ? columns : [name, topic, status, actions]
+  }, [columns, variant])
+
   if (error) {
     return (
       <Box mt="20%" mx="20%" alignItems="center">
@@ -153,7 +165,7 @@ const AssetsTable: FC = () => {
       aria-label={t('pulse.assets.listing.aria-label')}
       noDataText={t('pulse.assets.listing.noDataText')}
       data={safeData}
-      columns={columns}
+      columns={dynamicColumns}
       enablePagination
       enableColumnFilters
       enableGlobalFilter
