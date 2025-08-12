@@ -1,9 +1,15 @@
 import type { FC } from 'react'
+import { useMemo } from 'react'
 import type { NodeProps } from '@xyflow/react'
 import { Handle, Position } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Icon, Text, useColorModeValue, VStack } from '@chakra-ui/react'
 
+import type { ManagedAsset } from '@/api/__generated__'
+import { AssetMapping } from '@/api/__generated__'
+import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
+
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { HqAssets } from '@/components/Icons'
 import { SelectEntityType } from '@/components/MQTT/types.ts'
 import MappingBadge from '@/modules/Workspace/components/parts/MappingBadge.tsx'
@@ -16,6 +22,12 @@ import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 const NodeAssets: FC<NodeProps<NodeAssetsType>> = ({ id, data, selected, dragging }) => {
   const { t } = useTranslation()
   const bgColour = useColorModeValue('gray.300', 'gray.900')
+  const { data: allAssets, isLoading } = useListManagedAssets()
+
+  const mappedAssets = useMemo<ManagedAsset[]>(() => {
+    if (!allAssets?.items) return []
+    return allAssets.items.filter((asset) => asset.mapping?.status === AssetMapping.status.STREAMING)
+  }, [allAssets])
 
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/node/pulse-assets`)
 
@@ -50,7 +62,8 @@ const NodeAssets: FC<NodeProps<NodeAssetsType>> = ({ id, data, selected, draggin
           <Text data-testid="assets-description" noOfLines={1}>
             {t('pulse.mapper.title')}
           </Text>
-          <MappingBadge destinations={[]} type={SelectEntityType.TOPIC} />
+          {isLoading && <LoaderSpinner />}
+          {!isLoading && <MappingBadge destinations={mappedAssets.map((e) => e.topic)} type={SelectEntityType.TOPIC} />}
         </VStack>
       </NodeWrapper>
       <Handle type="source" position={Position.Bottom} id="Bottom" isConnectable={false} />
