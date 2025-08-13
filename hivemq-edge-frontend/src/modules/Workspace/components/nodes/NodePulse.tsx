@@ -26,7 +26,7 @@ const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging 
   const unmappedAssets = useMemo<ManagedAsset[]>(() => {
     if (!allAssets?.items) return []
     return allAssets.items.filter(
-      (asset) => asset.mapping === undefined || asset.mapping?.status === AssetMapping.status.REQUIRES_REMAPPING
+      (asset) => asset.mapping === undefined || asset.mapping?.status === AssetMapping.status.UNMAPPED
     )
   }, [allAssets])
 
