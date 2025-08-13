@@ -21,6 +21,9 @@ const POS_EDGE: XYPosition = { x: 300, y: 200 }
 const POS_NODE_INC: XYPosition = { x: CONFIG_ADAPTER_WIDTH + POS_SEPARATOR, y: 400 }
 const MAX_ADAPTERS = 10
 
+export const NODE_ASSET_DEFAULT_ID = 'idPulseAssets'
+export const NODE_PULSE_CLIENT_DEFAULT_ID = 'idPulse'
+
 export const gluedNodeDefinition: Record<string, [NodeTypes, number, 'target' | 'source']> = {
   [NodeTypes.BRIDGE_NODE]: [NodeTypes.HOST_NODE, -GLUE_SEPARATOR, 'target'],
   [NodeTypes.ADAPTER_NODE]: [NodeTypes.DEVICE_NODE, -GLUE_SEPARATOR, 'target'],
@@ -301,23 +304,21 @@ export const createCombinerNode = (
 }
 
 export const createPulseNode = (theme: Partial<WithCSSVar<Dict>>, positionStorage?: Record<string, XYPosition>) => {
-  const idPulseAssets = 'idPulseAssets'
-  const idPulse = 'idPulse'
   const pulseStatus = { connection: Status.connection.UNKNOWN, runtime: Status.runtime.STOPPED }
 
   const nodeAssets: NodeAssetsType = {
-    id: idPulseAssets,
+    id: NODE_ASSET_DEFAULT_ID,
     type: NodeTypes.ASSETS_NODE,
-    data: { label: 'Assets' },
-    position: positionStorage?.[idPulseAssets] ?? {
+    data: { label: 'Assets', id: NODE_ASSET_DEFAULT_ID },
+    position: positionStorage?.[NODE_ASSET_DEFAULT_ID] ?? {
       x: POS_EDGE.x + POS_NODE_INC.x,
       y: POS_EDGE.y - POS_NODE_INC.y,
     },
   }
 
   const edgeConnector: Edge = {
-    id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${idPulseAssets}`,
-    source: idPulseAssets,
+    id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${NODE_ASSET_DEFAULT_ID}`,
+    source: NODE_ASSET_DEFAULT_ID,
     target: IdStubs.EDGE_NODE,
     focusable: false,
     type: EdgeTypes.DYNAMIC_EDGE,
@@ -335,19 +336,19 @@ export const createPulseNode = (theme: Partial<WithCSSVar<Dict>>, positionStorag
   }
 
   const nodePulse: NodePulseType = {
-    id: idPulse,
+    id: NODE_PULSE_CLIENT_DEFAULT_ID,
     type: NodeTypes.PULSE_NODE,
-    data: { label: 'Pulse Client' },
-    position: positionStorage?.[idPulse] ?? {
+    data: { label: 'Pulse Client', id: NODE_PULSE_CLIENT_DEFAULT_ID },
+    position: positionStorage?.[NODE_PULSE_CLIENT_DEFAULT_ID] ?? {
       x: POS_EDGE.x + POS_NODE_INC.x,
       y: POS_EDGE.y - POS_NODE_INC.y - GLUE_SEPARATOR,
     },
   }
 
   const pulseConnector: Edge = {
-    id: `${IdStubs.CONNECTOR}-${idPulseAssets}-${idPulse}`,
-    source: idPulse,
-    target: idPulseAssets,
+    id: `${IdStubs.CONNECTOR}-${NODE_ASSET_DEFAULT_ID}-${NODE_PULSE_CLIENT_DEFAULT_ID}`,
+    source: NODE_PULSE_CLIENT_DEFAULT_ID,
+    target: NODE_ASSET_DEFAULT_ID,
     type: EdgeTypes.DYNAMIC_EDGE,
     focusable: false,
     markerEnd: {
