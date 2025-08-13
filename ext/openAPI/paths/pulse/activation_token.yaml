@@ -13,18 +13,18 @@ delete:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
       description: Activation token is already deleted.
-    '422':
-      content:
-        application/json:
-          schema:
-            $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Activation token is not deleted successfully.
     '500':
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
       description: Internal server error.
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Activation token is not deleted successfully.
 post:
   description: Send an activation token to the Pulse Client
   summary: Update an activation token
