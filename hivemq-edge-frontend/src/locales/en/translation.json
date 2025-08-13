@@ -1540,9 +1540,15 @@
         }
       },
       "actions": {
+        "group": {
+          "workspace": "Manage from Workspace"
+        },
         "aria-label": "Actions",
         "edit": "Edit",
-        "delete": "Delete"
+        "view": "View details",
+        "map": "Map the asset",
+        "delete": "Delete mapping",
+        "mapper": "Open asset mapper"
       }
     },
     "mapper": {
