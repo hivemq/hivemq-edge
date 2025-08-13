@@ -67,7 +67,7 @@ const NodeAssets: FC<NodeProps<NodeAssetsType>> = ({ id, data, selected, draggin
         </VStack>
       </NodeWrapper>
       <Handle type="source" position={Position.Bottom} id="Bottom" isConnectable={false} />
-      <Handle type="source" position={Position.Top} id="Top" isConnectable={false} />
+      <Handle type="target" position={Position.Top} id="Top" isConnectable={false} />
     </>
   )
 }

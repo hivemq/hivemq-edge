@@ -75,6 +75,7 @@ const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging 
         </VStack>
       </NodeWrapper>
       <Handle type="target" position={Position.Bottom} isConnectable={false} />
+      <Handle type="source" position={Position.Bottom} isConnectable={false} />
     </>
   )
 }
