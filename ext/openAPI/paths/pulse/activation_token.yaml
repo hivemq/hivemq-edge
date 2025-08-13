@@ -7,12 +7,24 @@ delete:
   responses:
     '200':
       description: Success
+    '409':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Activation token is already deleted.
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Internal server error.
     '503':
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Pulse Agent not connected
+      description: Activation token is not deleted successfully.
 post:
   description: Send an activation token to the Pulse Client
   summary: Update an activation token
@@ -29,15 +41,21 @@ post:
   responses:
     '200':
       description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Pulse Agent is deactivated.
     '422':
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Activation token is invalid
-    '503':
+      description: Activation token is invalid.
+    '500':
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Pulse Agent not connected
+      description: Internal server error.
