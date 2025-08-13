@@ -1,4 +1,4 @@
-import { MOCK_PULSE_ASSET } from '@/api/hooks/usePulse/__handlers__'
+import { MOCK_PULSE_ASSET, MOCK_PULSE_ASSET_MAPPED } from '@/api/hooks/usePulse/__handlers__'
 import { AssetActionMenu } from '@/modules/Pulse/components/assets/AssetActionMenu.tsx'
 
 describe('AssetActionMenu', () => {
@@ -10,8 +10,10 @@ describe('AssetActionMenu', () => {
     cy.mountWithProviders(<AssetActionMenu asset={MOCK_PULSE_ASSET} />)
 
     cy.getByAriaLabel('Actions').click()
-    cy.getByTestId('assets-action-edit').should('be.visible')
-    cy.getByTestId('assets-action-delete').should('be.visible')
+    cy.getByTestId('assets-action-edit').should('have.text', 'View details')
+    cy.getByTestId('assets-action-map').should('have.text', 'Map the asset')
+    cy.getByTestId('assets-action-delete').should('have.text', 'Delete mapping')
+    cy.getByTestId('assets-action-mapper').should('have.text', 'Open asset mapper')
 
     cy.get('body').click(0, 0)
     cy.getByTestId('assets-action-edit').should('not.exist')
@@ -32,12 +34,12 @@ describe('AssetActionMenu', () => {
   it('should trigger delete action', () => {
     const onDelete = cy.stub().as('onDelete')
 
-    cy.mountWithProviders(<AssetActionMenu asset={MOCK_PULSE_ASSET} onDelete={onDelete} />)
+    cy.mountWithProviders(<AssetActionMenu asset={MOCK_PULSE_ASSET_MAPPED} onDelete={onDelete} />)
 
     cy.get('@onDelete').should('not.have.been.called')
     cy.getByAriaLabel('Actions').click()
     cy.getByTestId('assets-action-delete').click()
-    cy.get('@onDelete').should('have.been.calledWith', '3b028f58-f949-4de1-9b8b-c1a35b1643a4')
+    cy.get('@onDelete').should('have.been.calledWith', '3b028f58-f949-4de1-9b8b-c1a35b1643a5')
     cy.getByTestId('assets-action-delete').should('not.exist')
   })
 
