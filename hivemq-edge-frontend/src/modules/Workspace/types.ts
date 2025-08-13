@@ -100,3 +100,11 @@ export interface TopicTreeMetadata {
 export type DeviceMetadata = ProtocolAdapter & {
   sourceAdapterId: string
 }
+
+export enum WorkspaceNavigationCommand {
+  VIEW = 'VIEW',
+  TAGS = 'TAGS',
+  TOPIC_FILTERS = 'TOPIC_FILTERS',
+  MAPPINGS = 'MAPPINGS',
+  ASSET_MAPPER = 'ASSET_MAPPER',
+}
