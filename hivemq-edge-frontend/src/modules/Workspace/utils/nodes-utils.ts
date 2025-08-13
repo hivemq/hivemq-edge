@@ -308,7 +308,6 @@ export const createPulseNode = (theme: Partial<WithCSSVar<Dict>>, positionStorag
   const nodeAssets: NodeAssetsType = {
     id: idPulseAssets,
     type: NodeTypes.ASSETS_NODE,
-    sourcePosition: Position.Bottom,
     data: { label: 'Assets' },
     position: positionStorage?.[idPulseAssets] ?? {
       x: POS_EDGE.x + POS_NODE_INC.x,
@@ -318,9 +317,8 @@ export const createPulseNode = (theme: Partial<WithCSSVar<Dict>>, positionStorag
 
   const edgeConnector: Edge = {
     id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${idPulseAssets}`,
-    target: IdStubs.EDGE_NODE,
-    targetHandle: 'Top',
     source: idPulseAssets,
+    target: IdStubs.EDGE_NODE,
     focusable: false,
     type: EdgeTypes.DYNAMIC_EDGE,
     markerEnd: {
@@ -348,9 +346,8 @@ export const createPulseNode = (theme: Partial<WithCSSVar<Dict>>, positionStorag
 
   const pulseConnector: Edge = {
     id: `${IdStubs.CONNECTOR}-${idPulseAssets}-${idPulse}`,
-    target: idPulse,
-    sourceHandle: 'Top',
-    source: idPulseAssets,
+    source: idPulse,
+    target: idPulseAssets,
     type: EdgeTypes.DYNAMIC_EDGE,
     focusable: false,
     markerEnd: {
