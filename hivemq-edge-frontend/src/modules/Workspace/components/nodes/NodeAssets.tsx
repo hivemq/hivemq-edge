@@ -14,7 +14,6 @@ import { HqAssets } from '@/components/Icons'
 import { SelectEntityType } from '@/components/MQTT/types.ts'
 import MappingBadge from '@/modules/Workspace/components/parts/MappingBadge.tsx'
 import type { NodeAssetsType } from '@/modules/Workspace/types.ts'
-import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
@@ -29,15 +28,11 @@ const NodeAssets: FC<NodeProps<NodeAssetsType>> = ({ id, data, selected, draggin
     return allAssets.items.filter((asset) => asset.mapping?.status === AssetMapping.status.STREAMING)
   }, [allAssets])
 
-  const { onContextMenu } = useContextMenu(id, selected, `/workspace/node/pulse-assets`)
-
   return (
     <>
-      <ContextualToolbar id={id} title={data.label} dragging={dragging} onOpenPanel={onContextMenu}></ContextualToolbar>
+      <ContextualToolbar id={id} title={data.label} dragging={dragging} hasNoOverview />
       <NodeWrapper
         isSelected={selected}
-        onDoubleClick={onContextMenu}
-        onContextMenu={onContextMenu}
         wordBreak="break-word"
         textAlign="center"
         borderTopRadius={30}

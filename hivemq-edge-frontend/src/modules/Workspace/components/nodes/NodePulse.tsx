@@ -1,3 +1,4 @@
+import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { Badge, HStack, Icon, Text, VStack } from '@chakra-ui/react'
@@ -36,17 +37,19 @@ const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging 
     return { mapped: allAssets.items.length - unmappedAssets.length, unmapped: unmappedAssets.length }
   }, [allAssets?.items, unmappedAssets])
 
+  const { onContextMenu } = useContextMenu(id, selected, `/workspace/node/pulse-assets`)
+
   const pulseStatus: PulseStatus.activationStatus = hasPulseCapability
     ? PulseStatus.activationStatus.ACTIVATED
     : PulseStatus.activationStatus.DEACTIVATED
 
   return (
     <>
-      <ContextualToolbar id={id} title={data.label} dragging={dragging} hasNoOverview />
+      <ContextualToolbar id={id} title={data.label} dragging={dragging} onOpenPanel={onContextMenu} />
       <NodeWrapper
         isSelected={selected}
-        // onDoubleClick={onContextMenu}
-        // onContextMenu={onContextMenu}
+        onDoubleClick={onContextMenu}
+        onContextMenu={onContextMenu}
         p={3}
         w={CONFIG_ADAPTER_WIDTH}
         borderTopRadius={30}
