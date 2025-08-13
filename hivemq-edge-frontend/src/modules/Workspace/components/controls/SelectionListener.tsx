@@ -54,6 +54,16 @@ const SelectionListener = () => {
         }
         return
       }
+      case WorkspaceNavigationCommand.ASSET_MAPPER: {
+        const found = nodes.filter(
+          (e) => e.type === NodeTypes.PULSE_NODE || (e.type === NodeTypes.ASSETS_NODE && e.data.id === adapterId)
+        )
+        console.log(adapterId, type, command, found)
+        if (found.length > 0) {
+          focusOnNodes(found.map((e) => e.id))
+        }
+        return
+      }
       default: {
         // For all other navigation commands, just select adapter + device nodes
         const found = nodes.find((e) => adapterId === e.data.id)
@@ -74,7 +84,8 @@ const SelectionListener = () => {
         return
       }
     }
-  }, [addSelectedNodes, fitView, navigate, nodes, pathname, state?.selectedAdapter])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, state?.selectedAdapter])
 
   return null
 }

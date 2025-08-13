@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { Box, Skeleton } from '@chakra-ui/react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 import type { ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
@@ -18,6 +19,7 @@ import AssetStatusBadge from '@/modules/Pulse/components/assets/AssetStatusBadge
 import FilteredCell from '@/modules/Pulse/components/assets/FilteredCell.tsx'
 import SourcesCell from '@/modules/Pulse/components/assets/SourcesCell.tsx'
 import { compareStatus } from '@/modules/Pulse/utils/pagination-utils.ts'
+import type { WorkspaceNavigationCommand } from '@/modules/Workspace/types.ts'
 
 const skeletonTemplate: ManagedAsset = {
   id: ' ',
@@ -34,12 +36,17 @@ interface AssetTableProps {
 const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   const { t } = useTranslation()
   const { data, isLoading, error } = useListManagedAssets()
+  const navigate = useNavigate()
 
   const safeData = useMemo(() => {
     if (!data || !data?.items) return [skeletonTemplate, skeletonTemplate, skeletonTemplate]
 
     return data.items
   }, [data])
+
+  const handleViewWorkspace = (adapterId: string, type: string, command: WorkspaceNavigationCommand) => {
+    if (adapterId) navigate(`/workspace`, { state: { selectedAdapter: { adapterId, type, command } } })
+  }
 
   const columns = useMemo<ColumnDef<ManagedAsset>[]>(() => {
     return [
@@ -129,10 +136,10 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
         sortingFn: undefined,
 
         cell: (info) => {
-          const bridge = info.row.original
+          const asset = info.row.original
           return (
             <Skeleton isLoaded={!isLoading}>
-              <AssetActionMenu asset={bridge} />
+              <AssetActionMenu asset={asset} onViewWorkspace={handleViewWorkspace} />
             </Skeleton>
           )
         },
