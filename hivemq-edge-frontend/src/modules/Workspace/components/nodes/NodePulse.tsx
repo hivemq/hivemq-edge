@@ -55,8 +55,12 @@ const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging 
         borderTopRadius={30}
       >
         <HStack w="100%" justifyContent="flex-end" gap={1} data-testid="pulse-client-capabilities">
-          <Badge colorScheme="teal">{assetStats.unmapped}</Badge>
-          <Badge colorScheme="gray">{assetStats.mapped}</Badge>
+          <Badge data-testid="pulse-client-unmapped" colorScheme="teal">
+            {assetStats.unmapped}
+          </Badge>
+          <Badge data-testid="pulse-client-mapped" colorScheme="gray">
+            {assetStats.mapped}
+          </Badge>
           {isSuccess && (
             <Icon
               boxSize={4}

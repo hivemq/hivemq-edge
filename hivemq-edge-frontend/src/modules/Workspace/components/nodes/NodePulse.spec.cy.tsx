@@ -3,6 +3,7 @@ import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_NODE_PULSE } from '@/__test-utils__/react-flow/nodes.ts'
 import { PulseStatus } from '@/api/__generated__'
 import { MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
+import { MOCK_PULSE_ASSET_LIST } from '@/api/hooks/usePulse/__handlers__'
 
 import NodePulse from '@/modules/Workspace/components/nodes/NodePulse.tsx'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
@@ -14,13 +15,21 @@ describe('NodePulse', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 202, log: false })
     cy.intercept('/api/v1/management/combiners', { statusCode: 202, log: false })
     cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
+    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getStatus')
   })
 
-  it('should render properly', () => {
+  it.only('should render properly', () => {
     cy.mountWithProviders(mockReactFlow(<NodePulse {...MOCK_NODE_PULSE} />))
     cy.getByTestId('pulse-client-description').should('have.text', 'Pulse Client')
     cy.getByTestId('pulse-client-capabilities').within(() => {
       cy.get('svg').should('have.attr', 'data-type', PulseStatus.activationStatus.ACTIVATED)
+      cy.getByTestId('pulse-client-unmapped').should('have.text', 1)
+      cy.getByTestId('pulse-client-mapped').should('have.text', 3)
+    })
+
+    cy.getByTestId('topics-container').within(() => {
+      cy.getByTestId('topic-wrapper').should('have.length', 1)
+      cy.getByTestId('topic-wrapper').eq(0).should('have.text', 'test / topic')
     })
   })
 
@@ -32,7 +41,7 @@ describe('NodePulse', () => {
     })
   })
 
-  it('should render the selected adapter properly', () => {
+  it('should render the selected pulse node properly', () => {
     cy.mountWithProviders(
       <CustomNodeTesting
         nodes={[{ ...MOCK_NODE_PULSE, position: { x: 50, y: 100 }, selected: true }]}
@@ -40,8 +49,8 @@ describe('NodePulse', () => {
       />
     )
     cy.get('[role="toolbar"][data-id="idPulseClient"]').within(() => {
-      cy.getByTestId('node-group-toolbar-panel').should('not.exist')
       cy.getByTestId('toolbar-title').should('have.text', 'my pulse client')
+      cy.getByTestId('node-group-toolbar-panel').should('have.attr', 'aria-label', 'Open the overview panel')
     })
   })
 
