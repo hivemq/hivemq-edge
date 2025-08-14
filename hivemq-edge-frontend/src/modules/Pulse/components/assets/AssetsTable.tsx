@@ -124,7 +124,7 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
           const { sources, primary } = info.row.original.mapping || {}
           return (
             <Skeleton isLoaded={!isLoading}>
-              <SourcesCell sources={sources} primary={primary} />{' '}
+              <SourcesCell sources={sources} primary={primary} />
             </Skeleton>
           )
         },
