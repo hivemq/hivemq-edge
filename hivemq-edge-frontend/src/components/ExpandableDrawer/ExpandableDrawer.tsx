@@ -25,7 +25,7 @@ const ExpandableDrawer: FC<ExpandableDrawerProps> = ({ header, subHeader, initia
   return (
     <Drawer placement="right" size={isExpanded ? 'full' : 'lg'} {...props} variant="hivemq">
       {!props.closeOnOverlayClick && <DrawerOverlay />}
-      <DrawerContent>
+      <DrawerContent aria-label={header}>
         <DrawerCloseButton />
         <DrawerExpandButton isExpanded={isExpanded} toggle={setExpanded.toggle} />
         <DrawerHeader>
