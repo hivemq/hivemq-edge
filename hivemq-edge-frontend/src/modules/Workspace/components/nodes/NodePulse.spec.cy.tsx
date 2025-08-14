@@ -18,7 +18,7 @@ describe('NodePulse', () => {
     cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getStatus')
   })
 
-  it.only('should render properly', () => {
+  it('should render properly', () => {
     cy.mountWithProviders(mockReactFlow(<NodePulse {...MOCK_NODE_PULSE} />))
     cy.getByTestId('pulse-client-description').should('have.text', 'Pulse Client')
     cy.getByTestId('pulse-client-capabilities').within(() => {
@@ -30,6 +30,7 @@ describe('NodePulse', () => {
     cy.getByTestId('topics-container').within(() => {
       cy.getByTestId('topic-wrapper').should('have.length', 1)
       cy.getByTestId('topic-wrapper').eq(0).should('have.text', 'test / topic')
+      cy.getByTestId('topic-wrapper').eq(0).find('svg').should('have.attr', 'aria-label', 'Asset')
     })
   })
 
