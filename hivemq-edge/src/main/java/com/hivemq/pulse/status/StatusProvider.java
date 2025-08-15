@@ -29,4 +29,8 @@ public interface StatusProvider {
      */
     boolean activatePulse(final @NotNull String connectionString);
 
+    /**
+     * Deactivate pulse.
+     */
+    void deactivatePulse();
 }
