@@ -98,12 +98,12 @@ public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformat
                 .getClassLoader()
                 .getResourceAsStream("modbus-adapter-ui-schema.json")) {
             if (is == null) {
-                log.warn("The UISchema for the Simulation Adapter could not be loaded from resources: Not found.");
+                log.warn("The UISchema for the Modbus Adapter could not be loaded from resources: Not found.");
                 return null;
             }
             return IOUtils.toString(is, StandardCharsets.UTF_8);
         } catch (final Exception e) {
-            log.warn("The UISchema for the Simulation Adapter could not be loaded from resources:", e);
+            log.warn("The UISchema for the Modbus Adapter could not be loaded from resources:", e);
             return null;
         }
     }

@@ -29,6 +29,17 @@ import java.util.Objects;
 public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
     public static final int PORT_MIN = 1;
     public static final int PORT_MAX = 65535;
+    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+
+    @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
+    @ModuleConfigField(title = "Identifier",
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
+    private @Nullable String id;
 
     @JsonProperty(value = "host", required = true)
     @ModuleConfigField(title = "Host",
