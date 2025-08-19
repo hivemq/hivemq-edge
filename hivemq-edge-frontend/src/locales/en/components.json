@@ -39,7 +39,10 @@
     "perPage": "Items per page"
   },
   "SearchBar": {
-    "aria-label": "Search Toolbar"
+    "aria-label": "Search Toolbar",
+    "filter": {
+      "placeholder": "Search for ..."
+    }
   },
   "EntityCreatableSelect": {
     "aria-label_TAG": "Add a tag",

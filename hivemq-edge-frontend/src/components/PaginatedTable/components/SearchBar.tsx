@@ -42,7 +42,7 @@ const SearchBar: FC<SearchBarProps> = ({
               <Icon as={SearchIcon} boxSize="3" />
             </InputLeftAddon>
             <Input
-              placeholder="Search for ..."
+              placeholder={t('SearchBar.filter.placeholder')}
               onChange={(evt) => setGlobalFilter?.(evt.target.value)}
               value={globalFilter}
               pr="1.8rem"
