@@ -25,7 +25,7 @@ export type PulseStatus = {
     };
 };
 
-// TODO There is a bug with the generation of the enums (because of the same "status" property; replace manually
+// TODO[35484] There is a bug with the generation of the enums (because of the same "status" property; replace manually
 export namespace PulseStatus {
 
     /**
