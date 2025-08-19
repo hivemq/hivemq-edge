@@ -14,68 +14,37 @@
  * limitations under the License.
  */
 {
-  "ui:tabs" : [
+  "ui:tabs": [
     {
-      "id" : "coreFields",
-      "title" : "Connection",
-      "properties" : [
-        "id",
-        "port",
-        "host",
-        "timeoutMillis"
-      ]
+      "id": "coreFields",
+      "title": "Connection",
+      "properties": ["id", "port", "host", "timeoutMillis"]
     },
     {
-      "id" : "subFields",
-      "title" : "Modbus To MQTT",
-      "properties" : [
-        "modbusToMqtt"
-      ]
+      "id": "modbusToMqtt",
+      "title": "Modbus To MQTT",
+      "properties": ["modbusToMqtt"]
     }
   ],
-  "id" : {
-    "ui:disabled" : false
+  "id": {
+    "ui:disabled": true
   },
-  "port" : {
-    "ui:widget" : "updown"
+  "port": {
+    "ui:widget": "updown"
   },
-  "ui:order" : [
+  "ui:order": [
     "id",
     "host",
     "port",
     "*"
   ],
-  "modbusToMqtt" : {
-    "ui:batchMode" : true,
-    "ui:order" : [
-      "modbusToMqttMappings",
+  "modbusToMqtt": {
+    "ui:batchMode": true,
+    "ui:order": [
       "maxPollingErrorsBeforeRemoval",
       "pollingIntervalMillis",
       "publishChangedDataOnly",
       "*"
-    ],
-    "modbusToMqttMappings" : {
-      "ui:batchMode" : true,
-      "items": {
-        "ui:order" : [
-          "mqttTopic",
-          "mqttQos",
-          "addressRange",
-          "*",
-          "mqttUserProperties"
-        ],
-        "ui:collapsable" : {
-          "titleKey" : "mqttTopic"
-        },
-        "addressRange" : {
-          "endIdx" : {
-            "ui:widget" : "discovery:tagBrowser"
-          },
-          "startIdx" : {
-            "ui:widget" : "discovery:tagBrowser"
-          }
-        }
-      }
-    }
+    ]
   }
 }
