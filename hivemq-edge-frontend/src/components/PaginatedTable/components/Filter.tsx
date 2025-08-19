@@ -44,7 +44,7 @@ export const Filter = <T,>({
   const sortedUniqueValues = useMemo(() => {
     if (typeof firstValue === 'number') return []
     const keys = Array.from(facetedUniqueValues.keys())
-    const isNotString = Array.from(keys).some((e) => Array.isArray(e))
+    const isNotString = keys.some((e) => Array.isArray(e))
 
     if (isNotString) {
       // TODO[35496] Assumed to be arrays; will need fine-tuning

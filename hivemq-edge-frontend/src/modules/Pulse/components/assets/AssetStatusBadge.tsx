@@ -4,12 +4,12 @@ import { Badge, SkeletonCircle } from '@chakra-ui/react'
 
 import { AssetMapping } from '@/api/__generated__'
 
-const statusMapping: Record<AssetMapping.status, { text: string; color: string }> = {
+const statusMapping = {
   [AssetMapping.status.UNMAPPED]: { text: 'UNMAPPED', color: 'status.unknown' },
   [AssetMapping.status.DRAFT]: { text: 'DRAFT', color: 'status.disconnected' },
   [AssetMapping.status.STREAMING]: { text: 'STREAMING', color: 'status.connected' },
   [AssetMapping.status.REQUIRES_REMAPPING]: { text: 'REQUIRES_REMAPPING', color: 'status.error' },
-}
+} as const
 
 interface AssetStatusBadgeProps {
   status: AssetMapping.status

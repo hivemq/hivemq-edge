@@ -16,7 +16,7 @@ const statusMapping = {
     text: PulseStatus.runtimeStatus.DISCONNECTED,
     color: 'status.disconnected',
   },
-}
+} as const
 
 interface ConnectionStatusBadgeProps {
   status: PulseStatus

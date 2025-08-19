@@ -11,7 +11,7 @@ const statusMapping = {
   [Status.connection.CONNECTED]: { text: 'CONNECTED', color: 'status.connected' },
   [Status.connection.DISCONNECTED]: { text: 'DISCONNECTED', color: 'status.disconnected' },
   [Status.connection.STATELESS]: { text: 'STATELESS', color: 'status.stateless' },
-}
+} as const
 
 interface ConnectionStatusBadgeProps {
   status?: Status

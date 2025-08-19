@@ -25,7 +25,7 @@ const SourcesCell: FC<SourcesCellProps> = ({ sources, primary }) => {
   return (
     <HStack flexWrap="wrap">
       {sources?.slice(0, MAX_SOURCES_PER_ROW).map((tag) => (
-        <PrimaryWrapper key={tag.id} isPrimary={Boolean(isPrimary(tag.type, tag.id))}>
+        <PrimaryWrapper key={tag.id} isPrimary={isPrimary(tag.type, tag.id)}>
           <>
             {tag.type === DataIdentifierReference.type.TOPIC_FILTER && <TopicFilter tagTitle={tag.id} />}
             {tag.type === DataIdentifierReference.type.TAG && <PLCTag tagTitle={tag.id} />}
