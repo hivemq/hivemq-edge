@@ -1,11 +1,12 @@
-import { Box } from '@chakra-ui/react'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Box } from '@chakra-ui/react'
 
 import { Capability } from '@/api/__generated__'
 import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 import PageContainer from '@/components/PageContainer.tsx'
 import LicenseWarning from '@/modules/Pulse/components/activation/LicenseWarning.tsx'
+import AssetsTable from '@/modules/Pulse/components/assets/AssetsTable.tsx'
 
 const PulsePage: FC = () => {
   const { t } = useTranslation()
@@ -18,6 +19,7 @@ const PulsePage: FC = () => {
           <LicenseWarning />
         </Box>
       )}
+      {hasPulse && <AssetsTable />}
     </PageContainer>
   )
 }
