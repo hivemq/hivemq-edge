@@ -58,7 +58,6 @@ const SelectionListener = () => {
         const found = nodes.filter(
           (e) => e.type === NodeTypes.PULSE_NODE || (e.type === NodeTypes.ASSETS_NODE && e.data.id === adapterId)
         )
-        console.log(adapterId, type, command, found)
         if (found.length > 0) {
           focusOnNodes(found.map((e) => e.id))
         }
