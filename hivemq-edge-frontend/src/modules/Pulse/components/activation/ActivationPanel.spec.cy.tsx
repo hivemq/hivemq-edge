@@ -57,7 +57,7 @@ describe('ActivationPanel', () => {
     )
   }
 
-  it.only('should handle activation', () => {
+  it('should handle activation', () => {
     cy.intercept('/api/v1/frontend/capabilities', {
       items: [MOCK_CAPABILITY_PERSISTENCE],
     }).as('capabilities')
@@ -98,6 +98,9 @@ describe('ActivationPanel', () => {
   })
 
   it('should be accessible', () => {
+    cy.intercept('/api/v1/frontend/capabilities', {
+      items: [MOCK_CAPABILITY_PULSE_ASSETS],
+    })
     cy.injectAxe()
 
     cy.mountWithProviders(<ActivationPanel />)
