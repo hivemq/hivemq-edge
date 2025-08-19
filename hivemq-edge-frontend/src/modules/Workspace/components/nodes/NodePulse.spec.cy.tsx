@@ -1,9 +1,9 @@
 import { CustomNodeTesting } from '@/__test-utils__/react-flow/CustomNodeTesting.tsx'
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_NODE_PULSE } from '@/__test-utils__/react-flow/nodes.ts'
+import { PulseStatus } from '@/api/__generated__'
 import { MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
 
-import { PulseStatus } from '@/modules/Pulse/types.ts'
 import NodePulse from '@/modules/Workspace/components/nodes/NodePulse.tsx'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
@@ -20,7 +20,7 @@ describe('NodePulse', () => {
     cy.mountWithProviders(mockReactFlow(<NodePulse {...MOCK_NODE_PULSE} />))
     cy.getByTestId('pulse-client-description').should('have.text', 'Pulse Client')
     cy.getByTestId('pulse-client-capabilities').within(() => {
-      cy.get('svg').should('have.attr', 'data-type', PulseStatus.ACTIVATED)
+      cy.get('svg').should('have.attr', 'data-type', PulseStatus.activationStatus.ACTIVATED)
     })
   })
 
@@ -28,7 +28,7 @@ describe('NodePulse', () => {
     cy.intercept('/api/v1/frontend/capabilities', { items: [] })
     cy.mountWithProviders(mockReactFlow(<NodePulse {...MOCK_NODE_PULSE} />))
     cy.getByTestId('pulse-client-capabilities').within(() => {
-      cy.get('svg').should('have.attr', 'data-type', PulseStatus.DEACTIVATED)
+      cy.get('svg').should('have.attr', 'data-type', PulseStatus.activationStatus.DEACTIVATED)
     })
   })
 

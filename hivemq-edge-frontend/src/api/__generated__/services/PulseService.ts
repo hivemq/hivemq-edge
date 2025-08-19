@@ -5,6 +5,7 @@
 import type { ManagedAsset } from '../models/ManagedAsset';
 import type { ManagedAssetList } from '../models/ManagedAssetList';
 import type { PulseActivationToken } from '../models/PulseActivationToken';
+import type { PulseStatus } from '../models/PulseStatus';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -24,7 +25,7 @@ export class PulseService {
             method: 'DELETE',
             url: '/api/v1/management/pulse/activation-token',
             errors: {
-                404: `Pulse Client not found`,
+                503: `Pulse Agent not connected`,
             },
         });
     }
@@ -45,8 +46,22 @@ export class PulseService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                404: `Pulse Client not found`,
+                422: `Activation token is invalid`,
+                503: `Pulse Agent not connected`,
             },
+        });
+    }
+
+    /**
+     * Get the status of the integrated pulse agent.
+     * Get the status of the pulse agent
+     * @returns PulseStatus Success
+     * @throws ApiError
+     */
+    public getPulseStatus(): CancelablePromise<PulseStatus> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/management/pulse/status',
         });
     }
 
@@ -61,7 +76,8 @@ export class PulseService {
             method: 'GET',
             url: '/api/v1/management/pulse/managed-assets',
             errors: {
-                404: `Pulse Client not found`,
+                400: `Pulse not activated`,
+                503: `Pulse Agent not connected`,
             },
         });
     }
@@ -82,8 +98,9 @@ export class PulseService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                404: `Pulse Client not found`,
+                400: `Pulse not activated`,
                 409: `The managed asset already exists`,
+                503: `Pulse Agent not connected`,
             },
         });
     }
@@ -105,7 +122,9 @@ export class PulseService {
                 'assetId': assetId,
             },
             errors: {
+                400: `Pulse not activated`,
                 404: `Managed asset not found`,
+                503: `Pulse Agent not connected`,
             },
         });
     }
@@ -131,7 +150,9 @@ export class PulseService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
+                400: `Pulse not activated`,
                 404: `Managed asset not found`,
+                503: `Pulse Agent not connected`,
             },
         });
     }
