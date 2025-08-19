@@ -1,45 +1,21 @@
-import type { FC, ReactElement } from 'react'
-import { useState } from 'react'
-import { useMemo } from 'react'
+import type { FC } from 'react'
+import { useState, useMemo } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ButtonGroup, HStack, Tag, TagLeftIcon, Text } from '@chakra-ui/react'
+import { ButtonGroup, HStack, Text } from '@chakra-ui/react'
 import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
-import { FaKey } from 'react-icons/fa'
 
 import type { DataCombining } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import IconButton from '@/components/Chakra/IconButton'
-import { ConditionalWrapper } from '@/components/ConditonalWrapper'
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
-import DataCombiningEditorDrawer from './DataCombiningEditorDrawer'
-import type { CombinerContext } from '../types'
 
-interface PrimaryWrapperProps {
-  isPrimary: boolean
-  children: ReactElement
-}
-
-const PrimaryWrapper: FC<PrimaryWrapperProps> = ({ children, isPrimary }) => {
-  const { t } = useTranslation()
-
-  return (
-    <ConditionalWrapper
-      condition={isPrimary}
-      wrapper={(children) => (
-        <Tag data-testid="primary-wrapper" role="group" p={1} variant="outline">
-          <TagLeftIcon boxSize="12px" as={FaKey} ml={1} aria-label={t('combiner.schema.mapping.primary.aria-label')} />
-          {children}
-        </Tag>
-      )}
-    >
-      {children}
-    </ConditionalWrapper>
-  )
-}
+import { PrimaryWrapper } from '@/modules/Mappings/combiner/components/PrimaryWrapper.tsx'
+import DataCombiningEditorDrawer from '@/modules/Mappings/combiner/DataCombiningEditorDrawer.tsx'
+import type { CombinerContext } from '@/modules/Mappings/types.ts'
 
 export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()

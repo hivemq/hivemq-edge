@@ -31,7 +31,7 @@ const MOCK_ENTITY_PROPS: WidgetProps<WidgetProps<Array<EntityReference>, RJSFSch
   onChange: () => undefined,
 }
 
-describe('EntityReferenceTable', () => {
+describe('EntityReferenceTableWidget', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
     cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 404 })
@@ -49,7 +49,7 @@ describe('EntityReferenceTable', () => {
 
     cy.get('table tbody tr').should('have.length', 2)
 
-    cy.get('nav').should('be.visible').should('have.attr', 'aria-label', 'Pagination')
+    cy.get('nav').should('be.visible').should('have.attr', 'aria-label', 'Pagination Toolbar')
     cy.get('nav').find('[role="group"]').should('have.length', 2)
   })
 

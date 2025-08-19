@@ -1,4 +1,3 @@
-import { handlers } from '@/api/hooks/useFrontendServices/__handlers__'
 import { renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, beforeEach, afterEach, vi } from 'vitest'
 import type { WithCSSVar } from '@chakra-ui/react'
@@ -17,6 +16,11 @@ import { handlers as BridgeHandlers } from '@/api/hooks/useGetBridges/__handlers
 import { handlers as ProtocolAdapterHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { handlers as ListenerHandlers } from '@/api/hooks/useGateway/__handlers__'
 import { handlers as combinerHandlers } from '@/api/hooks/useCombiners/__handlers__'
+import {
+  handlerCapabilities,
+  handlers as FrontendHandlers,
+  MOCK_CAPABILITIES,
+} from '@/api/hooks/useFrontendServices/__handlers__'
 
 // [Vitest] Mocking hooks
 vi.mock('@chakra-ui/react', async () => {
@@ -29,7 +33,14 @@ vi.mock('@chakra-ui/react', async () => {
 describe('useGetFlowElements', () => {
   beforeEach(() => {
     // window.localStorage.clear()
-    server.use(...BridgeHandlers, ...ProtocolAdapterHandlers, ...ListenerHandlers, ...combinerHandlers, ...handlers)
+    server.use(
+      ...BridgeHandlers,
+      ...ProtocolAdapterHandlers,
+      ...ListenerHandlers,
+      ...combinerHandlers,
+      ...FrontendHandlers,
+      ...handlerCapabilities(MOCK_CAPABILITIES)
+    )
   })
 
   afterEach(() => {
