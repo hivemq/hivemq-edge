@@ -122,7 +122,7 @@ describe('Filter', () => {
     })
   })
 
-  it.only('should handle configurations', () => {
+  it('should handle configurations', () => {
     const columnDefText = (create: boolean): ColumnDef<unknown> => ({
       header: 'My Column',
       meta: {
