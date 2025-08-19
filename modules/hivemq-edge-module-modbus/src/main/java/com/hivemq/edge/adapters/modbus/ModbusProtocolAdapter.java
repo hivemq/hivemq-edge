@@ -129,6 +129,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                     } finally {
                         startRequested.set(false);
                         log.error("Unable to connect to the Modbus device", throwable);
+                        protocolAdapterState.setConnectionStatus(ERROR);
                     }
                 }
             });
