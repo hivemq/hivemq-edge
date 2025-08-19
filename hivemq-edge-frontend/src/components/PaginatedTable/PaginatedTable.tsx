@@ -29,11 +29,13 @@ import {
   Icon,
   Tfoot,
 } from '@chakra-ui/react'
-
-import PaginationBar from './components/PaginationBar.tsx'
-import { Filter } from './components/Filter.tsx'
 import { BiSortDown, BiSortUp } from 'react-icons/bi'
+
 import { getAriaSort } from '@/components/PaginatedTable/utils/table-utils.ts'
+import SearchBar from '@/components/PaginatedTable/components/SearchBar.tsx'
+import PaginationBar from '@/components/PaginatedTable/components/PaginationBar.tsx'
+import { Filter } from '@/components/PaginatedTable/components/Filter.tsx'
+import TableToolBar from '@/components/PaginatedTable/components/TableToolBar.tsx'
 
 interface PaginatedTableProps<T> {
   data: Array<T>
@@ -44,6 +46,7 @@ interface PaginatedTableProps<T> {
   enablePagination?: boolean
   enablePaginationSizes?: boolean
   enablePaginationGoTo?: boolean
+  enableGlobalFilter?: boolean
   isError?: boolean
   'aria-label': string
   /**
@@ -51,6 +54,7 @@ interface PaginatedTableProps<T> {
    */
   getRowStyles?: (row: Row<T>) => CSSProperties
   getSubRows?: (originalRow: T, index: number) => undefined | T[]
+  customControls?: React.ReactNode
 }
 
 const DEFAULT_PAGE_SIZES = [5, 10, 20, 30, 40, 50]
@@ -62,12 +66,14 @@ const PaginatedTable = <T,>({
   noDataText,
   getRowStyles,
   enableColumnFilters = false,
+  enableGlobalFilter = false,
   enablePagination = true,
   enablePaginationSizes = true,
   enablePaginationGoTo = true,
   isError = false,
   getSubRows = undefined,
   'aria-label': ariaLabel,
+  customControls = undefined,
 }: PaginatedTableProps<T>) => {
   const { t } = useTranslation()
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -111,7 +117,23 @@ const PaginatedTable = <T,>({
 
   return (
     <>
-      <TableContainer overflowY="auto" overflowX="auto" whiteSpace="normal">
+      <TableContainer overflowY="auto" overflowX="auto" whiteSpace="normal" data-testid="table-container">
+        <TableToolBar
+          leftControls={
+            (enableGlobalFilter || enableColumnFilters) && (
+              <SearchBar
+                setGlobalFilter={(value) => table.setGlobalFilter(value)}
+                resetColumnFilters={table.resetColumnFilters}
+                globalFilter={table.getState().globalFilter}
+                columnFilters={table.getState().columnFilters}
+                enableGlobalFilter={enableGlobalFilter}
+                enableColumnFilters={enableColumnFilters}
+              />
+            )
+          }
+          rightControls={customControls}
+        />
+
         <Table variant="simple" size="sm" aria-label={ariaLabel}>
           <Thead>
             {table.getHeaderGroups().map((headerGroup) => (

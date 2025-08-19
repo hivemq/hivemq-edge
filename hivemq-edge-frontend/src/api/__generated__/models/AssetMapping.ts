@@ -37,6 +37,7 @@ export namespace AssetMapping {
         UNMAPPED = 'UNMAPPED',
         DRAFT = 'DRAFT',
         STREAMING = 'STREAMING',
+        REQUIRES_REMAPPING = 'REQUIRES_REMAPPING',
     }
 
 

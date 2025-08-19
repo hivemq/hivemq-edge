@@ -11,16 +11,21 @@
     "tag": "Tag",
     "client": "Client",
     "workspace": "Workspace",
-    "pulse": "Pulse Agent"
+    "pulse": "Pulse Agent",
+    "asset": "Asset"
+  },
+  "TableToolBar": {
+    "aria-label": "Table Toolbar"
   },
   "pagination": {
-    "ariaLabel": "Pagination",
+    "ariaLabel": "Pagination Toolbar",
     "filter": {
       "label": "Filter column",
       "placeholder": "Search... ({{ size }})",
       "noOptions": "No options available",
       "create": "Add filter... {{ topic }}",
-      "clear": "Clear filter"
+      "clear": "Clear filter",
+      "clearAll": "Clear all filters"
     },
     "noDataText": "No data received yet.",
     "noDataLoadError": "There was an error loading the data.",
@@ -32,6 +37,12 @@
     "pageOf": "Page {{ page }} of {{ max }}",
     "goPage": "Go to page",
     "perPage": "Items per page"
+  },
+  "SearchBar": {
+    "aria-label": "Search Toolbar",
+    "filter": {
+      "placeholder": "Search for ..."
+    }
   },
   "EntityCreatableSelect": {
     "aria-label_TAG": "Add a tag",
