@@ -24,6 +24,7 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.client.Failure;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
+import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.client.Result;
 import com.hivemq.edge.adapters.opcua.client.Success;
@@ -99,16 +100,12 @@ class OpcUaClientConnection {
         final OpcUaClient client;
         final var faultListener = new OpcUaServiceFaultListener(protocolAdapterMetricsService, eventService, adapterId);
         final var activityListener = new OpcUaSessionActivityListener(protocolAdapterMetricsService, eventService, adapterId, protocolAdapterState);
+        final var endpointFilter = new OpcUaEndpointFilter(adapterId, config.getSecurity().policy().getSecurityPolicy().getUri(), config);
         try {
             client = OpcUaClient
-                .create(config.getUri(),
-                        endpoints ->
-                                endpoints.stream()
-                                    .filter(e -> {
-                                        final var requiredPolicy = config.getSecurity().policy().getSecurityPolicy().getUri();
-                                        return requiredPolicy.equals(e.getSecurityPolicyUri());
-                                    })
-                                    .findFirst(),
+                .create(
+                        config.getUri(),
+                        endpointFilter,
                         ignore -> {},
                         new OpcUaClientConfigurator(adapterId, parsedConfig));
             client.addSessionActivityListener(activityListener);
