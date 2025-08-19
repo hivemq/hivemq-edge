@@ -25,4 +25,5 @@ public interface HiveMQCapabilityService {
 
     void addCapability(@NotNull Capability capability);
 
+    void removeCapability(@NotNull Capability capability);
 }

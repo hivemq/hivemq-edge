@@ -32,6 +32,7 @@ public class HttpStatus {
     public static final int PRECONDITION_FAILED_412 = 412;
     public static final int UNSUPPORTED_MEDIA_TYPE_415 = 415;
 
+    public static final int UNPROCESSABLE_CONTENT_422 = 422;
 
     public static final int INTERNAL_SERVER_ERROR_500 = 500;
     public static final int SERVICE_UNAVAILABLE_503 = 503;
