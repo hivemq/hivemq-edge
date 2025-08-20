@@ -17,15 +17,14 @@ rules:
   no-invalid-media-type-examples: off
   no-identical-paths: off
 openapi:
-  htmlTemplate: ./docs/index.html
-  theme:
-    colors:
-      primary:
-        main: "#32329f"
-  generateCodeSamples:
-    languages:  # Array of language config objects; indicates in which languages to generate code samples.
-      - lang: curl
-      - lang: Node.js
-      - lang: JavaScript
-      - lang: PHP
-      - lang: Python
+  codeSamples:
+    skipOptionalParameters: true
+    languages:
+      - lang: 'curl'
+      - lang: 'JavaScript'
+feedback:
+  hide: true
+logo:
+  image: https://docs.hivemq.com/_/img/hivemq_logo.svg
+  altText: HiveMQ Edge
+  link: https://docs.hivemq.com/hivemq-edge/index.html
