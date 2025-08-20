@@ -199,8 +199,8 @@ paths:
         Get all policies. 
 
          This endpoint returns the content of the policies with the content-type `application/json`. 
-
-         
+      
+      
       operationId: getAllBehaviorPolicies
       parameters:
         - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, createdAt, lastUpdatedAt, deserialization, matching, behavior, onTransitions'
@@ -482,8 +482,8 @@ paths:
     delete:
       description: |-
         Deletes an existing policy. 
-
-         
+      
+      
       operationId: deleteBehaviorPolicy
       parameters:
         - description: The identifier of the policy to delete.
@@ -540,8 +540,8 @@ paths:
         Get a specific policy. 
 
          This endpoint returns the content of the policy with the content-type `application/json`. 
-
-         
+      
+      
       operationId: getBehaviorPolicy
       parameters:
         - description: The identifier of the policy.
@@ -617,7 +617,7 @@ paths:
         Update a behavior policy
 
         The path parameter 'policyId' must match the 'id' of the policy in the request body.
-         
+      
       operationId: updateBehaviorPolicy
       parameters:
         - description: The identifier of the policy.
@@ -812,8 +812,8 @@ paths:
         Get all data policies. 
 
          This endpoint returns the content of the policies with the content-type `application/json`. 
-
-         
+      
+      
       operationId: getAllDataPolicies
       parameters:
         - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, createdAt, lastUpdatedAt, matching, validation, onSuccess, onFailure'
@@ -1190,8 +1190,8 @@ paths:
     delete:
       description: |-
         Deletes an existing data policy. 
-
-         
+      
+      
       operationId: deleteDataPolicy
       parameters:
         - description: The identifier of the data policy to delete.
@@ -1242,8 +1242,8 @@ paths:
         Get a specific data policy. 
 
          This endpoint returns the content of the policy with the content-type `application/json`. 
-
-         
+      
+      
       operationId: getDataPolicy
       parameters:
         - description: The identifier of the policy.
@@ -1335,7 +1335,7 @@ paths:
 
         The path parameter 'policyId' must match the 'id' of the policy in the request body.
          The matching part of policies cannot be changed with an update.
-         
+      
       operationId: updateDataPolicy
       parameters:
         - description: The identifier of the policy.
@@ -1752,8 +1752,8 @@ paths:
         Get all schemas. 
 
          This endpoint returns the content of the schemas with the content-type `application/json`. 
-
-         
+      
+      
       operationId: getAllSchemas
       parameters:
         - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, type, schemaDefinition, createdAt'
@@ -1962,8 +1962,8 @@ paths:
     delete:
       description: |-
         Deletes the selected schema and all associated versions of the schema. 
-
-         
+      
+      
       operationId: deleteSchema
       parameters:
         - description: The schema identifier of the schema versions to delete.
@@ -2020,8 +2020,8 @@ paths:
         Get a specific schema. 
 
          This endpoint returns the content of the latest version of the schema with the content-type `application/json`. 
-
-         
+      
+      
       operationId: getSchema
       parameters:
         - description: The identifier of the schema.
@@ -6571,33 +6571,21 @@ components:
         - runtime
       properties:
         activation:
-          type: object
-          required:
-            - status
-          properties:
-            status:
-              type: string
-              description: Status of the pulse activation
-              enum:
-                - ACTIVATED
-                - DEACTIVATED
-                - ERROR
-            message:
-              $ref: '#/components/schemas/ProblemDetails'
+          type: string
+          description: Status of the pulse activation
+          enum:
+            - ACTIVATED
+            - DEACTIVATED
+            - ERROR
         runtime:
-          type: object
-          required:
-            - status
-          properties:
-            status:
-              type: string
-              description: Connection status of the pulse agent to the platform.
-              enum:
-                - CONNECTED
-                - DISCONNECTED
-                - ERROR
-            message:
-              $ref: '#/components/schemas/ProblemDetails'
+          type: string
+          description: Connection status of the pulse agent to the platform.
+          enum:
+            - CONNECTED
+            - DISCONNECTED
+            - ERROR
+        message:
+          $ref: '#/components/schemas/ProblemDetails'
     Asset:
       type: object
       description: The definition of an asset as sourced from the Pulse Broker
