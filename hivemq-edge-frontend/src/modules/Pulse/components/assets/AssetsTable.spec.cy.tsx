@@ -131,6 +131,31 @@ describe('AssetsTable', () => {
     cy.get('table tbody tr').should('have.length', 1)
   })
 
+  it.only('should render the summary version properly', () => {
+    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getStatus')
+
+    cy.mountWithProviders(<AssetsTable variant="summary" />)
+
+    cy.get('.chakra-skeleton').should('have.length', 16)
+
+    cy.wait('@getStatus')
+
+    cy.get('table').should('have.attr', 'aria-label', 'List of Pulse assets')
+    cy.get('table thead tr th').should('have.length', 4)
+    cy.get('table thead tr th button').eq(0).should('have.text', 'Name')
+    cy.get('table thead tr th button').eq(1).should('contain.text', 'Topic')
+    cy.get('table thead tr th button').eq(2).should('contain.text', 'Status')
+    cy.get('table thead tr th').eq(3).should('have.text', 'Actions')
+
+    cy_getCell(1, 3).find('button').click()
+    // This is not a great discriminator
+    cy.get("[role='menu']")
+      .eq(1)
+      .within(() => {
+        cy.get('button').should('have.length', 3)
+      })
+  })
+
   it('should handle commands', () => {
     cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getStatus')
 

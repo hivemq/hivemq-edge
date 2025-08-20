@@ -31,7 +31,7 @@ export const AssetActionMenu: FC<AssetActionMenuProps> = ({
   const isUnmapped = asset.mapping === undefined || asset.mapping?.status === AssetMapping.status.UNMAPPED
 
   return (
-    <Menu isLazy>
+    <Menu isLazy id="asset-actions">
       <MenuButton
         variant="outline"
         size="sm"
