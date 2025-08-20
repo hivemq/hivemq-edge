@@ -5,7 +5,8 @@ import { Capability } from '@/api/__generated__'
 import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 
 import ExpandableDrawer from '@/components/ExpandableDrawer/ExpandableDrawer.tsx'
-import type { NodePulseType, NodeTypes } from '@/modules/Workspace/types.ts'
+import type { NodePulseType } from '@/modules/Workspace/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 import LicenseWarning from '@/modules/Pulse/components/activation/LicenseWarning.tsx'
 import AssetsTable from '@/modules/Pulse/components/assets/AssetsTable.tsx'
@@ -15,7 +16,6 @@ interface PulsePropertyDrawerProps {
   selectedNode: NodePulseType
   isOpen: boolean
   onClose: () => void
-  onEditEntity: () => void
 }
 
 const PulsePropertyDrawer: FC<PulsePropertyDrawerProps> = ({ isOpen, selectedNode, onClose }) => {
@@ -24,7 +24,7 @@ const PulsePropertyDrawer: FC<PulsePropertyDrawerProps> = ({ isOpen, selectedNod
 
   return (
     <ExpandableDrawer
-      header={t('topicFilter.manager.header')}
+      header={t('workspace.property.header', { context: NodeTypes.PULSE_NODE })}
       subHeader={<NodeNameCard name={selectedNode.data.label} type={selectedNode.type as NodeTypes} />}
       isOpen={isOpen}
       onClose={onClose}
