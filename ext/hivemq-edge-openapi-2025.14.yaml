@@ -6600,33 +6600,21 @@ components:
         - runtime
       properties:
         activation:
-          type: object
-          required:
-            - status
-          properties:
-            status:
-              type: string
-              description: Status of the pulse activation
-              enum:
-                - ACTIVATED
-                - DEACTIVATED
-                - ERROR
-            message:
-              $ref: '#/components/schemas/ProblemDetails'
+          type: string
+          description: Status of the pulse activation
+          enum:
+            - ACTIVATED
+            - DEACTIVATED
+            - ERROR
         runtime:
-          type: object
-          required:
-            - status
-          properties:
-            status:
-              type: string
-              description: Connection status of the pulse agent to the platform.
-              enum:
-                - CONNECTED
-                - DISCONNECTED
-                - ERROR
-            message:
-              $ref: '#/components/schemas/ProblemDetails'
+          type: string
+          description: Connection status of the pulse agent to the platform.
+          enum:
+            - CONNECTED
+            - DISCONNECTED
+            - ERROR
+        message:
+          $ref: '#/components/schemas/ProblemDetails'
     Asset:
       type: object
       description: The definition of an asset as sourced from the Pulse Broker
