@@ -30,7 +30,7 @@ Bundles the definition to the `./ext` folder of the Hive Edge repository. Ensure
 
 #### Other commands
 
-#### `redocly split  <source to file>/openAPI.yaml --outDir <destination folter>/`
+#### `redocly split  <source to file>/openAPI.yaml --outDir <destination folder>/`
 
 
 ## Contribution Guide
