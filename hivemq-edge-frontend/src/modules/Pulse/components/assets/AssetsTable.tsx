@@ -139,7 +139,11 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
           const asset = info.row.original
           return (
             <Skeleton isLoaded={!isLoading}>
-              <AssetActionMenu asset={asset} onViewWorkspace={handleViewWorkspace} />
+              <AssetActionMenu
+                asset={asset}
+                onViewWorkspace={handleViewWorkspace}
+                isInWorkspace={variant === 'summary'}
+              />
             </Skeleton>
           )
         },

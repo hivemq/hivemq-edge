@@ -12,13 +12,20 @@ import { NODE_ASSET_DEFAULT_ID } from '@/modules/Workspace/utils/nodes-utils.ts'
 
 interface AssetActionMenuProps {
   asset: ManagedAsset
+  isInWorkspace?: boolean
   onCreate?: (id: string) => void
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
   onViewWorkspace?: (id: string, type: string, command: WorkspaceNavigationCommand) => void
 }
 
-export const AssetActionMenu: FC<AssetActionMenuProps> = ({ asset, onEdit, onDelete, onViewWorkspace }) => {
+export const AssetActionMenu: FC<AssetActionMenuProps> = ({
+  asset,
+  onEdit,
+  onDelete,
+  onViewWorkspace,
+  isInWorkspace = false,
+}) => {
   const { t } = useTranslation()
 
   const isUnmapped = asset.mapping === undefined || asset.mapping?.status === AssetMapping.status.UNMAPPED
@@ -54,20 +61,28 @@ export const AssetActionMenu: FC<AssetActionMenuProps> = ({ asset, onEdit, onDel
             <Text>{t('pulse.assets.actions.delete')}</Text>
           </MenuItem>
         </MenuGroup>
-        <MenuDivider />
 
-        <MenuGroup title={t('pulse.assets.actions.group.workspace')}>
-          <MenuItem
-            data-testid="assets-action-mapper"
-            onClick={() =>
-              onViewWorkspace?.(NODE_ASSET_DEFAULT_ID, NodeTypes.ASSETS_NODE, WorkspaceNavigationCommand.ASSET_MAPPER)
-            }
-            icon={<Icon as={HqAssets} boxSize={4} />}
-            isDisabled={isUnmapped}
-          >
-            {t('pulse.assets.actions.mapper')}
-          </MenuItem>
-        </MenuGroup>
+        {!isInWorkspace && (
+          <>
+            <MenuDivider />
+            <MenuGroup title={t('pulse.assets.actions.group.workspace')}>
+              <MenuItem
+                data-testid="assets-action-mapper"
+                onClick={() =>
+                  onViewWorkspace?.(
+                    NODE_ASSET_DEFAULT_ID,
+                    NodeTypes.ASSETS_NODE,
+                    WorkspaceNavigationCommand.ASSET_MAPPER
+                  )
+                }
+                icon={<Icon as={HqAssets} boxSize={4} />}
+                isDisabled={isUnmapped}
+              >
+                {t('pulse.assets.actions.mapper')}
+              </MenuItem>
+            </MenuGroup>
+          </>
+        )}
       </MenuList>
     </Menu>
   )
