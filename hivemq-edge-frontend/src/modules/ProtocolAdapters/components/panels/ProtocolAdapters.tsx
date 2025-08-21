@@ -97,8 +97,8 @@ const ProtocolAdapters: FC = () => {
       onConfirmDeleteOpen()
     }
 
-    const handleViewWorkspace = (adapterId: string, type: string, command: WorkspaceNavigationCommand) => {
-      if (adapterId) navigate(`/workspace`, { state: { selectedAdapter: { adapterId, type, command } } })
+    const handleViewWorkspace = (adapterId: string, type: string | undefined, command: WorkspaceNavigationCommand) => {
+      if (adapterId) navigate('/workspace', { state: { selectedAdapter: { adapterId, type, command } } })
     }
 
     const handleExport = (adapterId: string, type: string) => {
@@ -168,7 +168,7 @@ const ProtocolAdapters: FC = () => {
                 <IconButton
                   size="sm"
                   ml={2}
-                  onClick={() => handleViewWorkspace(id, type as string, WorkspaceNavigationCommand.VIEW)}
+                  onClick={() => handleViewWorkspace(id, type, WorkspaceNavigationCommand.VIEW)}
                   aria-label={t('protocolAdapter.table.actions.workspace.view')}
                   icon={<WorkspaceIcon />}
                 />
