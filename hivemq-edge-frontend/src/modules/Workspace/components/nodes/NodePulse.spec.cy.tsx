@@ -22,7 +22,7 @@ describe('NodePulse', () => {
     cy.mountWithProviders(mockReactFlow(<NodePulse {...MOCK_NODE_PULSE} />))
     cy.getByTestId('pulse-client-description').should('have.text', 'Pulse Client')
     cy.getByTestId('pulse-client-capabilities').within(() => {
-      cy.get('svg').should('have.attr', 'data-type', PulseStatus.activationStatus.ACTIVATED)
+      cy.get('svg').should('have.attr', 'data-type', PulseStatus.activation.ACTIVATED)
       cy.getByTestId('pulse-client-unmapped').should('have.text', 1)
       cy.getByTestId('pulse-client-mapped').should('have.text', 3)
     })
@@ -38,7 +38,7 @@ describe('NodePulse', () => {
     cy.intercept('/api/v1/frontend/capabilities', { items: [] })
     cy.mountWithProviders(mockReactFlow(<NodePulse {...MOCK_NODE_PULSE} />))
     cy.getByTestId('pulse-client-capabilities').within(() => {
-      cy.get('svg').should('have.attr', 'data-type', PulseStatus.activationStatus.DEACTIVATED)
+      cy.get('svg').should('have.attr', 'data-type', PulseStatus.activation.DEACTIVATED)
     })
   })
 

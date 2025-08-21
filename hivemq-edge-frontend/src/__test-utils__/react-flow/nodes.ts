@@ -89,7 +89,7 @@ export const MOCK_NODE_ASSETS: NodeProps<NodeAssetsType> = {
   id: 'idAssets',
   type: NodeTypes.ASSETS_NODE,
   sourcePosition: Position.Bottom,
-  data: { label: 'my assets' },
+  data: { label: 'my assets', id: 'idAssets' },
   ...MOCK_DEFAULT_NODE,
 }
 
@@ -97,6 +97,6 @@ export const MOCK_NODE_PULSE: NodeProps<NodePulseType> = {
   id: 'idPulseClient',
   type: NodeTypes.PULSE_NODE,
   sourcePosition: Position.Bottom,
-  data: { label: 'my pulse client' },
+  data: { label: 'my pulse client', id: 'idPulseClient' },
   ...MOCK_DEFAULT_NODE,
 }
