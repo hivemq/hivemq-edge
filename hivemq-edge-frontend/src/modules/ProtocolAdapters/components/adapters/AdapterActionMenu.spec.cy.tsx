@@ -4,7 +4,7 @@ import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapter
 import type { Adapter } from '@/api/__generated__'
 import { Status } from '@/api/__generated__'
 import AdapterActionMenu from '@/modules/ProtocolAdapters/components/adapters/AdapterActionMenu.tsx'
-import { WorkspaceAdapterCommand } from '@/modules/ProtocolAdapters/types.ts'
+import { WorkspaceNavigationCommand } from '@/modules/Workspace/types.ts'
 
 describe('AdapterActionMenu', () => {
   beforeEach(() => {
@@ -149,7 +149,7 @@ describe('AdapterActionMenu', () => {
         'not.have.been.calledWith',
         'my-adapter',
         'simulation',
-        WorkspaceAdapterCommand.VIEW
+        WorkspaceNavigationCommand.VIEW
       )
       cy.getByAriaLabel('Actions').click()
       cy.getByTestId('adapter-action-workspace').click()
@@ -157,7 +157,7 @@ describe('AdapterActionMenu', () => {
         'have.been.calledWith',
         'my-adapter',
         'simulation',
-        WorkspaceAdapterCommand.VIEW
+        WorkspaceNavigationCommand.VIEW
       )
       cy.getByTestId('adapter-action-workspace').should('not.be.visible')
 
@@ -165,7 +165,7 @@ describe('AdapterActionMenu', () => {
         'not.have.been.calledWith',
         'my-adapter',
         'simulation',
-        WorkspaceAdapterCommand.TAGS
+        WorkspaceNavigationCommand.TAGS
       )
       cy.getByAriaLabel('Actions').click()
       cy.getByTestId('adapter-action-tags').click()
@@ -173,7 +173,7 @@ describe('AdapterActionMenu', () => {
         'have.been.calledWith',
         'my-adapter',
         'simulation',
-        WorkspaceAdapterCommand.TAGS
+        WorkspaceNavigationCommand.TAGS
       )
       cy.getByTestId('adapter-action-workspace').should('not.be.visible')
 
@@ -181,7 +181,7 @@ describe('AdapterActionMenu', () => {
         'not.have.been.calledWith',
         'my-adapter',
         'simulation',
-        WorkspaceAdapterCommand.TOPIC_FILTERS
+        WorkspaceNavigationCommand.TOPIC_FILTERS
       )
       cy.getByAriaLabel('Actions').click()
       cy.getByTestId('adapter-action-filters').click()
@@ -189,7 +189,7 @@ describe('AdapterActionMenu', () => {
         'have.been.calledWith',
         'my-adapter',
         'simulation',
-        WorkspaceAdapterCommand.TOPIC_FILTERS
+        WorkspaceNavigationCommand.TOPIC_FILTERS
       )
       cy.getByTestId('adapter-action-workspace').should('not.be.visible')
 
@@ -197,7 +197,7 @@ describe('AdapterActionMenu', () => {
         'not.have.been.calledWith',
         'my-adapter',
         'simulation',
-        WorkspaceAdapterCommand.MAPPINGS
+        WorkspaceNavigationCommand.MAPPINGS
       )
       cy.getByAriaLabel('Actions').click()
       cy.getByTestId('adapter-action-mappings-northbound').click()
@@ -205,7 +205,7 @@ describe('AdapterActionMenu', () => {
         'have.been.calledWith',
         'my-adapter',
         'simulation',
-        WorkspaceAdapterCommand.MAPPINGS
+        WorkspaceNavigationCommand.MAPPINGS
       )
       cy.getByTestId('adapter-action-workspace').should('not.be.visible')
     })
