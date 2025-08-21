@@ -9,7 +9,7 @@ import type { Adapter, Bridge, Combiner } from '@/api/__generated__'
 import { SuspenseFallback } from '@/components/SuspenseOutlet.tsx'
 import type { AdapterNavigateState } from '@/modules/ProtocolAdapters/types.ts'
 import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
-import type { DeviceMetadata, Group, NodeAssetsType } from '@/modules/Workspace/types.ts'
+import type { DeviceMetadata, Group, NodePulseType } from '@/modules/Workspace/types.ts'
 import { EdgeTypes, NodeTypes } from '@/modules/Workspace/types.ts'
 
 const DevicePropertyDrawer = lazy(() => import('../drawers/DevicePropertyDrawer.tsx'))
@@ -47,8 +47,8 @@ const NodePanelController: FC = () => {
     | Node<Group>
     | undefined
 
-  const selectedAssets = nodes.find((node) => node.id === nodeId && node.type === NodeTypes.ASSETS_NODE) as
-    | NodeAssetsType
+  const selectedAssets = nodes.find((node) => node.id === nodeId && node.type === NodeTypes.PULSE_NODE) as
+    | NodePulseType
     | undefined
 
   useEffect(() => {
