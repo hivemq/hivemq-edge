@@ -353,9 +353,9 @@ tasks.javadoc {
     include("com/hivemq/embedded/*")
 
     doLast {
-        javaexec {
+        providers.javaexec {
             classpath("gradle/tools/javadoc-cleaner-1.0.jar")
-        }
+        }.result.get()
     }
 
     doLast { // javadoc search fix for jdk 11 https://bugs.openjdk.java.net/browse/JDK-8215291
