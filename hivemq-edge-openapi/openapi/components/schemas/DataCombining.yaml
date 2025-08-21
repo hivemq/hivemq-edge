@@ -27,9 +27,14 @@ properties:
   destination:
     type: object
     properties:
+      assetId:
+        type: string
+        format: uuid
+        description: The id of a mapped asset containing the topic and schema used for destination of the mapping
       topic:
         type: string
         format: mqtt-topic
+        description: The MQTT topic used for destination of the mapping
       schema:
         type: string
         format: data-url
