@@ -13,10 +13,4 @@ example:
   schema: "data:application/schema+json;base64,eyJ0eXBlIjoiT2JqZWN0IiwiaWQiOiJhc3NldC1zY2hlbWEifQ=="
   mapping:
     status: "STREAMING"
-    sources: [
-      { id: "my source 1", type: "TAG" },
-      { id: "my source 2", type: "TOPIC_FILTER" },
-      { id: "my source 3", type: "PULSE_ASSET" },
-    ]
-    primary: {}
-    instructions: []
+    mappingId: "64a64c9a-1cd6-47b8-bec9-5a869ee824d4"
