@@ -25,7 +25,9 @@ export class PulseService {
             method: 'DELETE',
             url: '/api/v1/management/pulse/activation-token',
             errors: {
-                503: `Pulse Agent not connected`,
+                409: `Activation token is already deleted.`,
+                500: `Internal server error.`,
+                503: `Activation token is not deleted successfully.`,
             },
         });
     }
@@ -46,8 +48,9 @@ export class PulseService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                422: `Activation token is invalid`,
-                503: `Pulse Agent not connected`,
+                400: `Pulse Agent is deactivated.`,
+                422: `Activation token is invalid.`,
+                500: `Internal server error.`,
             },
         });
     }

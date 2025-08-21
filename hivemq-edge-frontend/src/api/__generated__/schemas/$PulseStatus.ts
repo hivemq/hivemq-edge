@@ -6,28 +6,15 @@ export const $PulseStatus = {
     description: `Information on the activation status of the pulse agent and its connection to the platform.`,
     properties: {
         activation: {
-            properties: {
-                status: {
-                    type: 'Enum',
-                    isRequired: true,
-                },
-                message: {
-                    type: 'ProblemDetails',
-                },
-            },
+            type: 'Enum',
             isRequired: true,
         },
         runtime: {
-            properties: {
-                status: {
-                    type: 'Enum',
-                    isRequired: true,
-                },
-                message: {
-                    type: 'ProblemDetails',
-                },
-            },
+            type: 'Enum',
             isRequired: true,
+        },
+        message: {
+            type: 'ProblemDetails',
         },
     },
 } as const;
