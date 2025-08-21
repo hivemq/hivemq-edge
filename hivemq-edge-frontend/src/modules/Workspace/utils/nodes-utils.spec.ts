@@ -301,6 +301,7 @@ describe('createPulseNode', () => {
         nodeAssets: expect.objectContaining({
           data: {
             label: 'Assets',
+            id: 'idPulseAssets',
           },
           id: 'idPulseAssets',
           type: NodeTypes.ASSETS_NODE,
@@ -308,6 +309,7 @@ describe('createPulseNode', () => {
         nodePulse: expect.objectContaining({
           data: {
             label: 'Pulse Client',
+            id: 'idPulse',
           },
           id: 'idPulse',
           type: NodeTypes.PULSE_NODE,
@@ -325,16 +327,14 @@ describe('createPulseNode', () => {
           id: 'connect-edge-idPulseAssets',
           source: 'idPulseAssets',
           target: 'edge',
-          targetHandle: 'Top',
           type: 'DYNAMIC_EDGE',
           animated: false,
           focusable: false,
         }),
         pulseConnector: expect.objectContaining({
           id: 'connect-idPulseAssets-idPulse',
-          source: 'idPulseAssets',
-          sourceHandle: 'Top',
-          target: 'idPulse',
+          source: 'idPulse',
+          target: 'idPulseAssets',
           type: 'DYNAMIC_EDGE',
           animated: false,
           focusable: false,

@@ -276,7 +276,7 @@
       },
       "preserveRetain": {
         "label": "Preserve Retain",
-        "helper": "Description of the Preserve Retain"
+        "helper": "Defines whether the retained message flags of retained messages in the selected data stream are kept."
       },
       "customUserProperties": {
         "label": "Custom Properties",
@@ -964,6 +964,7 @@
       "header_CLUSTER_NODE": "Group Overview",
       "header_EDGE_NODE": "Edge Overview",
       "header_DEVICE_NODE": "Device Overview",
+      "header_PULSE_NODE": "Pulse Client Overview",
       "header_ASSETS_NODE": "Assets Overview",
       "modify_ADAPTER_NODE": "Modify the adapter",
       "modify_BRIDGE_NODE": "Modify the bridge",
@@ -1540,9 +1541,15 @@
         }
       },
       "actions": {
+        "group": {
+          "workspace": "Manage from Workspace"
+        },
         "aria-label": "Actions",
         "edit": "Edit",
-        "delete": "Delete"
+        "view": "View details",
+        "map": "Map the asset",
+        "delete": "Delete mapping",
+        "mapper": "Open asset mapper"
       }
     },
     "mapper": {

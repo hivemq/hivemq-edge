@@ -15,16 +15,17 @@ import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
 interface ExpandableDrawerProps extends DrawerProps {
   header: string
   subHeader?: JSX.Element
+  initiallyExpanded?: boolean
 }
 
-const ExpandableDrawer: FC<ExpandableDrawerProps> = ({ header, subHeader, ...props }) => {
+const ExpandableDrawer: FC<ExpandableDrawerProps> = ({ header, subHeader, initiallyExpanded = false, ...props }) => {
   // TODO[NVL] use  local storage
-  const [isExpanded, setExpanded] = useBoolean(true)
+  const [isExpanded, setExpanded] = useBoolean(initiallyExpanded)
 
   return (
     <Drawer placement="right" size={isExpanded ? 'full' : 'lg'} {...props} variant="hivemq">
       {!props.closeOnOverlayClick && <DrawerOverlay />}
-      <DrawerContent>
+      <DrawerContent aria-label={header}>
         <DrawerCloseButton />
         <DrawerExpandButton isExpanded={isExpanded} toggle={setExpanded.toggle} />
         <DrawerHeader>
