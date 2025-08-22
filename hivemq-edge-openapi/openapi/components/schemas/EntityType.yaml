@@ -1,0 +1,8 @@
+type: string
+description: These are the prime entities owning integration points such as tags and topic filters
+enum:
+  - ADAPTER
+  - DEVICE
+  - BRIDGE
+  - EDGE_BROKER
+  - PULSE_AGENT

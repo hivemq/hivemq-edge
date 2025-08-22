@@ -1,0 +1,19 @@
+type: object
+description: The definition of the mapping for a managed asset in Edge
+properties:
+  status:
+    type: string
+    description: The status of the asset mapping
+    enum:
+      - UNMAPPED
+      - DRAFT
+      - STREAMING
+      - REQUIRES_REMAPPING
+    default: UNMAPPED
+  mappingId:
+    type: string
+    format: uuid
+    description: The id of a DataCombining payload that describes the mapping of that particular asset
+required:
+    - status
+    - mappingId
