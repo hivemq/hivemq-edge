@@ -90,13 +90,20 @@ const useGetFlowElements = () => {
     const nbCombiners = combinerList?.items?.length || 1
     const deltaPosition = Math.floor((nbCombiners - 1) / 2)
 
+    if (hasPulse) {
+      const { nodePulse, edgeConnector, nodeAssets, pulseConnector } = createPulseNode(theme)
+
+      nodes.push(nodePulse, nodeAssets)
+      edges.push(edgeConnector, pulseConnector)
+    }
+
     combinerList?.items?.forEach((combiner, index) => {
       const sources =
         combiner.sources?.items
           ?.map((entity) => {
             return nodes.find((node) => node.data.id === entity.id)
           })
-          // TODO[] Error message for missing references
+          // TODO[xxxxxx] Error message for missing references
           .filter((node) => node) || []
 
       const { nodeCombiner, edgeConnector, sourceConnectors } = createCombinerNode(
@@ -109,13 +116,6 @@ const useGetFlowElements = () => {
       nodes.push(nodeCombiner)
       edges.push(edgeConnector, ...sourceConnectors)
     })
-
-    if (hasPulse) {
-      const { nodePulse, edgeConnector, nodeAssets, pulseConnector } = createPulseNode(theme)
-
-      nodes.push(nodePulse, nodeAssets)
-      edges.push(edgeConnector, pulseConnector)
-    }
 
     setNodes([nodeEdge, ...applyLayout(nodes, groups)])
     setEdges([...edges])
