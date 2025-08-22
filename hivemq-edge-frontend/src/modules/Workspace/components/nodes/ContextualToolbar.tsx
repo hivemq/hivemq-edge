@@ -62,7 +62,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   }, [nodes])
 
   const topSelectedNode = useMemo(() => {
-    const [firstNode] = selectedNodes.sort((a, b) => {
+    const [firstNode] = selectedNodes.toSorted((a, b) => {
       return a.position.y - b.position.y < 0 ? -1 : 1
     })
 
