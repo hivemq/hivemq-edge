@@ -91,10 +91,10 @@ const useGetFlowElements = () => {
     const deltaPosition = Math.floor((nbCombiners - 1) / 2)
 
     if (hasPulse) {
-      const { nodePulse, edgeConnector, nodeAssets, pulseConnector } = createPulseNode(theme)
+      const { nodePulse, pulseConnector } = createPulseNode(theme)
 
-      nodes.push(nodePulse, nodeAssets)
-      edges.push(edgeConnector, pulseConnector)
+      nodes.push(nodePulse)
+      edges.push(pulseConnector)
     }
 
     combinerList?.items?.forEach((combiner, index) => {

@@ -7,7 +7,7 @@ import { MarkerType, Position } from '@xyflow/react'
 import type { Adapter, Bridge, Combiner, Listener, ProtocolAdapter } from '@/api/__generated__'
 import { Status } from '@/api/__generated__'
 
-import type { DeviceMetadata, NodeAssetsType, NodeEdgeType } from '../types.ts'
+import type { DeviceMetadata, NodeEdgeType } from '../types.ts'
 import type { NodePulseType } from '../types.ts'
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { discoverAdapterTopics, getBridgeTopics } from './topics-utils'
@@ -306,49 +306,21 @@ export const createCombinerNode = (
 export const createPulseNode = (theme: Partial<WithCSSVar<Dict>>, positionStorage?: Record<string, XYPosition>) => {
   const pulseStatus = { connection: Status.connection.UNKNOWN, runtime: Status.runtime.STOPPED }
 
-  const nodeAssets: NodeAssetsType = {
-    id: NODE_ASSET_DEFAULT_ID,
-    type: NodeTypes.ASSETS_NODE,
-    data: { label: 'Assets', id: NODE_ASSET_DEFAULT_ID },
-    position: positionStorage?.[NODE_ASSET_DEFAULT_ID] ?? {
-      x: POS_EDGE.x + POS_NODE_INC.x,
-      y: POS_EDGE.y - POS_NODE_INC.y,
-    },
-  }
-
-  const edgeConnector: Edge = {
-    id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${NODE_ASSET_DEFAULT_ID}`,
-    source: NODE_ASSET_DEFAULT_ID,
-    target: IdStubs.EDGE_NODE,
-    focusable: false,
-    type: EdgeTypes.DYNAMIC_EDGE,
-    markerEnd: {
-      type: MarkerType.ArrowClosed,
-      width: 20,
-      height: 20,
-      color: getThemeForStatus(theme, pulseStatus),
-    },
-    animated: false,
-    style: {
-      strokeWidth: 1.5,
-      stroke: getThemeForStatus(theme, pulseStatus),
-    },
-  }
-
   const nodePulse: NodePulseType = {
-    id: NODE_PULSE_CLIENT_DEFAULT_ID,
+    id: NODE_PULSE_AGENT_DEFAULT_ID,
     type: NodeTypes.PULSE_NODE,
-    data: { label: 'Pulse Client', id: NODE_PULSE_CLIENT_DEFAULT_ID },
-    position: positionStorage?.[NODE_PULSE_CLIENT_DEFAULT_ID] ?? {
+    data: { label: 'Pulse Agent', id: NODE_PULSE_AGENT_DEFAULT_ID },
+    position: positionStorage?.[NODE_PULSE_AGENT_DEFAULT_ID] ?? {
       x: POS_EDGE.x + POS_NODE_INC.x,
       y: POS_EDGE.y - POS_NODE_INC.y - GLUE_SEPARATOR,
     },
   }
 
+  // TODO[NVL] This connector should only be created if there is no asset mappers created yet
   const pulseConnector: Edge = {
-    id: `${IdStubs.CONNECTOR}-${NODE_ASSET_DEFAULT_ID}-${NODE_PULSE_CLIENT_DEFAULT_ID}`,
-    source: NODE_PULSE_CLIENT_DEFAULT_ID,
-    target: NODE_ASSET_DEFAULT_ID,
+    id: `${IdStubs.CONNECTOR}-${NODE_PULSE_AGENT_DEFAULT_ID}-${IdStubs.EDGE_NODE}`,
+    source: NODE_PULSE_AGENT_DEFAULT_ID,
+    target: IdStubs.EDGE_NODE,
     type: EdgeTypes.DYNAMIC_EDGE,
     focusable: false,
     markerEnd: {
@@ -364,7 +336,7 @@ export const createPulseNode = (theme: Partial<WithCSSVar<Dict>>, positionStorag
     },
   }
 
-  return { nodeAssets, edgeConnector, nodePulse, pulseConnector }
+  return { nodePulse, pulseConnector }
 }
 
 export const getDefaultMetricsFor = (node: Node): string[] => {
