@@ -7,6 +7,7 @@ import { MOCK_PULSE_ASSET_LIST } from '@/api/hooks/usePulse/__handlers__'
 
 import NodePulse from '@/modules/Workspace/components/nodes/NodePulse.tsx'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
+import { NODE_PULSE_AGENT_DEFAULT_ID } from '@/modules/Workspace/utils/nodes-utils.ts'
 
 describe('NodePulse', () => {
   beforeEach(() => {
@@ -20,7 +21,7 @@ describe('NodePulse', () => {
 
   it('should render properly', () => {
     cy.mountWithProviders(mockReactFlow(<NodePulse {...MOCK_NODE_PULSE} />))
-    cy.getByTestId('pulse-client-description').should('have.text', 'Pulse Client')
+    cy.getByTestId('pulse-client-description').should('have.text', 'Pulse Agent')
     cy.getByTestId('pulse-client-capabilities').within(() => {
       cy.get('svg').should('have.attr', 'data-type', PulseStatus.activation.ACTIVATED)
       cy.getByTestId('pulse-client-unmapped').should('have.text', 1)
@@ -49,7 +50,9 @@ describe('NodePulse', () => {
         nodeTypes={{ [NodeTypes.PULSE_NODE]: NodePulse }}
       />
     )
-    cy.get('[role="toolbar"][data-id="idPulseClient"]').within(() => {
+
+    cy.get('[role="toolbar"]').should('have.attr', 'data-id', NODE_PULSE_AGENT_DEFAULT_ID)
+    cy.get('[role="toolbar"]').within(() => {
       cy.getByTestId('toolbar-title').should('have.text', 'my pulse client')
       cy.getByTestId('node-group-toolbar-panel').should('have.attr', 'aria-label', 'Open the overview panel')
     })
