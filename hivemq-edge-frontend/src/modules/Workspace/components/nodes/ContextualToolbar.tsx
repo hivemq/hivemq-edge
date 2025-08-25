@@ -15,13 +15,13 @@ import { EntityType } from '@/api/__generated__'
 import { useCreateCombiner, useListCombiners } from '@/api/hooks/useCombiners'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes'
 
-import { HqCombiner } from '@/components/Icons'
+import { HqCombiner, HqAssets } from '@/components/Icons'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import { ANIMATION } from '@/modules/Theme/utils.ts'
-import type { NodeAdapterType, NodeDeviceType } from '@/modules/Workspace/types.ts'
+import type { NodeAdapterType, NodeDeviceType, NodePulseType } from '@/modules/Workspace/types.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { createGroup, getGroupBounds } from '@/modules/Workspace/utils/group.utils.ts'
@@ -29,7 +29,7 @@ import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { arrayWithSameObjects } from '@/modules/Workspace/utils/combiner.utils'
 
 // TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
-type CombinerEligibleNode = Node<Adapter, NodeTypes.ADAPTER_NODE> | Node<Bridge, NodeTypes.BRIDGE_NODE>
+type CombinerEligibleNode = Node<Adapter, NodeTypes.ADAPTER_NODE> | Node<Bridge, NodeTypes.BRIDGE_NODE> | NodePulseType
 
 type SelectedNodeProps = Pick<NodeProps, 'id' | `dragging`> & Pick<NodeToolbarProps, 'position'>
 interface ContextualToolbarProps extends SelectedNodeProps {
@@ -95,10 +95,14 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
         return protocol?.capabilities?.includes('COMBINE')
       }
 
-      return node.type === NodeTypes.BRIDGE_NODE
+      return node.type === NodeTypes.BRIDGE_NODE || node.type === NodeTypes.PULSE_NODE
     }) as CombinerEligibleNode[]
     return result.length ? result : undefined
   }, [data?.items, selectedNodes])
+
+  const isAssetManager = useMemo(() => {
+    return selectedCombinerCandidates?.find((e) => e.type === NodeTypes.PULSE_NODE)
+  }, [selectedCombinerCandidates])
 
   const onCreateGroup = () => {
     if (!selectedGroupCandidates) return
@@ -116,8 +120,16 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
     const newOrchestratorNodeId = uuidv4()
     const links = selectedCombinerCandidates.map<EntityReference>((node) => {
+      const getType = () => {
+        if (node.type === NodeTypes.ADAPTER_NODE) return EntityType.ADAPTER
+        if (node.type === NodeTypes.BRIDGE_NODE) return EntityType.BRIDGE
+
+        // TODO[35769] This is a hack; PULSE_AGENT needs to be supported as a valid EntityType
+        return EntityType.DEVICE
+      }
+
       const entity: EntityReference = {
-        type: node.type === NodeTypes.ADAPTER_NODE ? EntityType.ADAPTER : EntityType.BRIDGE,
+        type: getType(),
         id: node.data.id,
       }
 
@@ -186,8 +198,12 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
         <IconButton
           isDisabled={!selectedCombinerCandidates}
           data-testid="node-group-toolbar-combiner"
-          icon={<HqCombiner />}
-          aria-label={t('workspace.toolbar.command.combiner.create')}
+          icon={isAssetManager ? <HqAssets /> : <HqCombiner />}
+          aria-label={
+            isAssetManager
+              ? t('workspace.toolbar.command.assets.create')
+              : t('workspace.toolbar.command.combiner.create')
+          }
           onClick={onManageCombiners}
         />
       </ToolbarButtonGroup>
