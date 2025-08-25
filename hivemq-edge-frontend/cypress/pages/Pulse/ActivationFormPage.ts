@@ -6,7 +6,7 @@ export class ActivationFormPage extends RJSFomField {
   }
 
   get form() {
-    return cy.get('[role="dialog"][aria-label="Pulse Client Activation"]')
+    return cy.get('[role="dialog"][aria-label="Pulse Agent Activation"]')
   }
 
   get status() {

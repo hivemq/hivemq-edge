@@ -7,7 +7,7 @@ import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
 import { loginPage, homePage, pulseActivationPanel } from 'cypress/pages'
 import { ONBOARDING } from '../../utils/constants.utils.ts'
 
-describe('Pulse Client Activation', () => {
+describe('Pulse Agent Activation', () => {
   const mswDB = factory({
     capabilities: {
       id: primaryKey(String),
@@ -92,7 +92,7 @@ describe('Pulse Client Activation', () => {
       pulseActivationPanel.status.should('contain.text', 'Pulse is not activated')
     })
 
-    it('should activate the pulse client', () => {
+    it('should activate the Pulse Agent', () => {
       cy.location().should((loc) => {
         expect(loc.pathname).to.eq('/app')
       })
@@ -122,7 +122,7 @@ describe('Pulse Client Activation', () => {
       pulseActivationPanel.submitButton.should('not.be.disabled')
       pulseActivationPanel.submitButton.click()
 
-      homePage.toast.success.should('contain.text', 'The Pulse Client has been successfully activated')
+      homePage.toast.success.should('contain.text', 'The Pulse Agent has been successfully activated')
       homePage.toast.close()
 
       homePage.taskSection(ONBOARDING.TASK_PULSE, 0).within(() => {
