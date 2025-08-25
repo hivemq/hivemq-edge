@@ -904,6 +904,9 @@
         "combiner": {
           "create": "Create a data combiner from selection"
         },
+        "assets": {
+          "create": "Create a new Asset Mapper from the selection"
+        },
         "edge": {
           "topicFilter": "Manage topic filters"
         }
@@ -1368,7 +1371,8 @@
       "tabs": {
         "combinerTab": "Configuration",
         "sourcesTab": "Sources",
-        "mappingsTab": "Mappings"
+        "mappingsTab": "Mappings",
+        "assetTabs": "Asset mappings"
       },
       "description": "A data combiner brings tags (adapters) and topic filters (bridges) together for further northbound data mapping",
       "config": {
@@ -1383,6 +1387,10 @@
         },
         "edge": {
           "description": "Always added as the owner of the topic filters"
+        },
+        "pulse": {
+          "name": "Pulse Agent",
+          "description": "Assets managed by the Pulse Agent"
         }
       },
       "mappings": {
@@ -1550,10 +1558,18 @@
         "map": "Map the asset",
         "delete": "Delete mapping",
         "mapper": "Open asset mapper"
+      },
+      "selector": {
+        "aria-label": "List of assets",
+        "placeholder": "Select an asset to map...",
+        "loading": "Loading the assets...",
+        "noAssetsFound": "No assets found",
+        "add": "Add the asset to the mappings"
       }
     },
     "mapper": {
-      "title": "Asset Mapper"
+      "title": "Asset Mapper",
+      "unnamed": "< unnamed asset mapper >"
     },
 
     "workspace": {

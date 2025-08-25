@@ -55,8 +55,8 @@ const PulseAgentEntityRenderer: FC<EntityRendererProps> = () => {
   return (
     <NodeNameCard
       type={NodeTypes.PULSE_NODE}
-      name={t('Pulse Client')}
-      description={t('Assets managed by the Pu;se Client')}
+      name={t('combiner.schema.sources.pulse.name')}
+      description={t('combiner.schema.sources.pulse.description')}
     />
   )
 }
