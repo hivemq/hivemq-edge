@@ -1,0 +1,28 @@
+name: OpenAPI validation
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+defaults:
+  run:
+    working-directory: ./hivemq-edge-openapi/
+
+jobs:
+  linting:
+    name: OpenAPI specs linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge-openapi/
+
+      - name: Install Redocly CLI
+        run: npm install -g @redocly/cli@latest
+
+      - name: Run linting
+        run: redocly lint openapi/openapi.yaml --format=github-actions
