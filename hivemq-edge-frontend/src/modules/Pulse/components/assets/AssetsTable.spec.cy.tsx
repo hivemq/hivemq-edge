@@ -131,7 +131,7 @@ describe('AssetsTable', () => {
     cy.get('table tbody tr').should('have.length', 1)
   })
 
-  it.only('should render the summary version properly', () => {
+  it('should render the summary version properly', () => {
     cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getStatus')
 
     cy.mountWithProviders(<AssetsTable variant="summary" />)
