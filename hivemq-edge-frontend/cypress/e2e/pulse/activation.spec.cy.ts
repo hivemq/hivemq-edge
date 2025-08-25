@@ -54,7 +54,7 @@ describe('Pulse Agent Activation', () => {
         },
       })
       req.reply(200)
-    }).as('activatePulse')
+    })
 
     // There seems to be a bug in the CI without something in the path
     loginPage.visit('/app/workspace')

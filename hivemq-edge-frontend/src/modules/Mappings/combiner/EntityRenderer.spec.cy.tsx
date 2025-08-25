@@ -33,7 +33,7 @@ describe('EntityRenderer', () => {
   })
 
   it('should render an bridge', () => {
-    cy.intercept('/api/v1/management/bridges/*', mockBridge).as('getBridges')
+    cy.intercept('/api/v1/management/bridges/*', mockBridge)
     const mockBridgeEntityReference: EntityReference = {
       type: EntityType.BRIDGE,
       id: mockBridgeId,

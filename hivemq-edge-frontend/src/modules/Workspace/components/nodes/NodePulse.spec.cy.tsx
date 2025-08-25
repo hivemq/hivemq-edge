@@ -16,7 +16,7 @@ describe('NodePulse', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 202, log: false })
     cy.intercept('/api/v1/management/combiners', { statusCode: 202, log: false })
     cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
-    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getStatus')
+    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST)
   })
 
   it('should render properly', () => {
