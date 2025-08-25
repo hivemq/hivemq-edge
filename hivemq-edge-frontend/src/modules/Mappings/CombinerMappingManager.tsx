@@ -54,14 +54,16 @@ const CombinerMappingManager: FC = () => {
     return nodes.find((node) => node.id === combinerId) as Node<Combiner> | undefined
   }, [combinerId, nodes])
 
+  if (!selectedNode) throw new Error('No combiner node found')
+
   const entities = useMemo(() => {
-    const entities = selectedNode?.data?.sources?.items || []
+    const entities = selectedNode.data.sources.items || []
     const isBridgeIn = Boolean(
       entities.find((entity) => entity.id === IdStubs.EDGE_NODE && entity.type === EntityType.EDGE_BROKER)
     )
     if (!isBridgeIn) entities.push({ id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER })
     return entities
-  }, [selectedNode?.data?.sources?.items])
+  }, [selectedNode.data.sources.items])
 
   const sources = useGetCombinedEntities(entities)
   const validator = useValidateCombiner(sources, entities)
@@ -80,7 +82,7 @@ const CombinerMappingManager: FC = () => {
 
     toast.promise(
       promise.then(() => {
-        if (selectedNode) onUpdateNode<Combiner>(selectedNode.id, data.formData)
+        onUpdateNode<Combiner>(selectedNode.id, data.formData)
         handleClose()
       }),
       {
@@ -96,7 +98,7 @@ const CombinerMappingManager: FC = () => {
     const promise = deleteCombiner.mutateAsync({ combinerId })
     toast.promise(
       promise.then(() => {
-        if (selectedNode) onNodesChange([{ id: selectedNode.id, type: 'remove' } as NodeRemoveChange])
+        onNodesChange([{ id: selectedNode.id, type: 'remove' } as NodeRemoveChange])
         handleClose()
       }),
       {
@@ -127,19 +129,16 @@ const CombinerMappingManager: FC = () => {
           />
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
-          {!selectedNode && <ErrorMessage message={t('combiner.error.noDataUri')} status="error" />}
-          {selectedNode && (
-            <ChakraRJSForm
-              showNativeWidgets={showNativeWidgets}
-              id="combiner-main-form"
-              schema={combinerMappingJsonSchema}
-              uiSchema={combinerMappingUiSchema}
-              formData={selectedNode.data}
-              onSubmit={handleOnSubmit}
-              formContext={{ queries: sources, entities } as CombinerContext}
-              customValidate={validator?.validateCombiner}
-            />
-          )}
+          <ChakraRJSForm
+            showNativeWidgets={showNativeWidgets}
+            id="combiner-main-form"
+            schema={combinerMappingJsonSchema}
+            uiSchema={combinerMappingUiSchema}
+            formData={selectedNode.data}
+            onSubmit={handleOnSubmit}
+            formContext={{ queries: sources, entities } as CombinerContext}
+            customValidate={validator?.validateCombiner}
+          />
         </DrawerBody>
         <DrawerFooter justifyContent="space-between">
           <ButtonGroup>
@@ -151,13 +150,11 @@ const CombinerMappingManager: FC = () => {
                 <Switch id="email-alerts" isChecked={showNativeWidgets} onChange={setShowNativeWidgets.toggle} />
               </FormControl>
             )}
-            {selectedNode && <DangerZone onSubmit={handleOnDelete} />}
+            <DangerZone onSubmit={handleOnDelete} />
           </ButtonGroup>
-          {selectedNode && (
-            <Button variant="primary" type="submit" form="combiner-main-form" isLoading={updateCombiner.isPending}>
-              {t('combiner.actions.submit')}
-            </Button>
-          )}
+          <Button variant="primary" type="submit" form="combiner-main-form" isLoading={updateCombiner.isPending}>
+            {t('combiner.actions.submit')}
+          </Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
