@@ -22,7 +22,7 @@ const POS_NODE_INC: XYPosition = { x: CONFIG_ADAPTER_WIDTH + POS_SEPARATOR, y: 4
 const MAX_ADAPTERS = 10
 
 export const NODE_ASSET_DEFAULT_ID = 'idPulseAssets'
-export const NODE_PULSE_CLIENT_DEFAULT_ID = 'idPulse'
+export const NODE_PULSE_AGENT_DEFAULT_ID = 'idPulse'
 
 export const gluedNodeDefinition: Record<string, [NodeTypes, number, 'target' | 'source']> = {
   [NodeTypes.BRIDGE_NODE]: [NodeTypes.HOST_NODE, -GLUE_SEPARATOR, 'target'],
