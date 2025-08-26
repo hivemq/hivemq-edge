@@ -16,7 +16,7 @@ post:
   summary: Add a new asset mapper
   operationId: add-asset-mapper
   tags:
-    - Combiners
+    - Pulse
   requestBody:
     content:
       application/json:
