@@ -28,6 +28,7 @@ import org.apache.plc4x.java.api.messages.PlcSubscriptionRequest;
 import org.apache.plc4x.java.api.messages.PlcSubscriptionResponse;
 import org.apache.plc4x.java.api.model.PlcSubscriptionHandle;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     protected final @NotNull PlcDriverManager plcDriverManager;
     protected final @NotNull T config;
     protected final @NotNull Plc4xConnectionQueryStringProvider<T> connectionQueryStringProvider;
-    protected volatile @NotNull PlcConnection plcConnection;
+    protected volatile @Nullable PlcConnection plcConnection;
 
     public Plc4xConnection(
             final @NotNull PlcDriverManager plcDriverManager,
@@ -63,7 +64,6 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
             }
             throw new Plc4xException("invalid connection configuration, unable to initialize");
         }
-        initConnection();
     }
 
     protected @NotNull String createConnectionString(final @NotNull T config) {
@@ -79,7 +79,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
         }
     }
 
-    protected void initConnection() throws Plc4xException {
+    void startConnection() throws Plc4xException {
         if (plcConnection == null) {
             synchronized (lock) {
                 if (plcConnection == null) {

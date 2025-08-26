@@ -17,17 +17,13 @@ package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
-import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
-import com.hivemq.edge.adapters.opcua.client.Failure;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
-import com.hivemq.edge.adapters.opcua.client.Result;
-import com.hivemq.edge.adapters.opcua.client.Success;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
@@ -137,10 +133,10 @@ class OpcUaClientConnection {
         }
 
         final var subscription = subscriptionOptional.get();
-        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         log.trace("Creating Subscription for OPC UA client");
 
         context.set(new ConnectionContext(subscription.getClient(), faultListener, activityListener));
+        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         log.info("Client created and connected successfully");
         return true;
     }
@@ -149,8 +145,8 @@ class OpcUaClientConnection {
         log.info("Stopping OPC UA client");
         final ConnectionContext ctx = context.get();
         if(ctx != null) {
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             quietlyCloseClient(ctx.client(),true,  ctx.faultListener(), ctx.activityListener());
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         }
     }
 
@@ -158,8 +154,8 @@ class OpcUaClientConnection {
         log.info("Destroying OPC UA client");
         final ConnectionContext ctx = context.get();
         if(ctx != null) {
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             quietlyCloseClient(ctx.client(), false, ctx.faultListener(), ctx.activityListener());
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         }
     }
 
@@ -186,6 +182,8 @@ class OpcUaClientConnection {
                     .flatMap(subscriptionId -> transferSubscription(client, subscriptionId))
                     .or(() -> createNewSubscription(client))
                     .flatMap(subscription -> {
+                        subscription.setPublishingInterval((double) config.getOpcuaToMqttConfig().publishingInterval());
+                        subscription.setSubscriptionListener(new OpcUaSubscriptionListener(protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, dataPointFactory));
                         if(syncTagsAndMonitoredItems(subscription, tags, config)) {
                             return Optional.of(subscription);
                         } else {
@@ -205,8 +203,6 @@ class OpcUaClientConnection {
     private @NotNull Optional<OpcUaSubscription> createNewSubscription(final @NotNull OpcUaClient client) {
         log.debug("Creating new OPC UA subscription");
         final OpcUaSubscription subscription = new OpcUaSubscription(client);
-        subscription.setPublishingInterval((double) config.getOpcuaToMqttConfig().publishingInterval());
-        subscription.setSubscriptionListener(new OpcUaSubscriptionListener(protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, dataPointFactory));
         try {
             subscription.create();
             return subscription
@@ -342,9 +338,14 @@ class OpcUaClientConnection {
             final @Nullable ServiceFaultListener faultListener,
             final @Nullable SessionActivityListener activityListener) {
 
-        if(!keepSubscription) {
-            client.getSubscriptions().forEach(subscription -> quietlyDeleteSubscription(client, subscription));
-        }
+        client
+            .getSubscriptions()
+            .forEach(subscription -> {
+                subscription.setSubscriptionListener(null);
+                if(!keepSubscription) {
+                    quietlyDeleteSubscription(client, subscription);
+                }
+            });
         if (faultListener != null) {
             try {
                 client.removeFaultListener(faultListener);

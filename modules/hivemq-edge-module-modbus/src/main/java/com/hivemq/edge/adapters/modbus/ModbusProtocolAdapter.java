@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
@@ -141,22 +142,30 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
         if (startRequested.get() && stopRequested.compareAndSet(false, true)) {
             log.info("Stopping Modbus protocol adapter {}", adapterId);
             publishChangedDataOnlyHandler.clear();
-            client.disconnect().whenComplete((unused, throwable) -> {
-                try {
-                    if (throwable == null) {
-                        protocolAdapterState.setConnectionStatus(DISCONNECTED);
-                        output.stoppedSuccessfully();
-                        log.info("Successfully stopped Modbus protocol adapter {}", adapterId);
-                    } else {
-                        protocolAdapterState.setConnectionStatus(ERROR);
-                        output.failStop(throwable, "Error encountered closing connection to Modbus server.");
-                        log.error("Unable to stop the connection to the Modbus server", throwable);
-                    }
-                } finally {
-                    startRequested.set(false);
-                    stopRequested.set(false);
-                }
-            });
+            try {
+                client
+                    .disconnect()
+                    .whenComplete((unused, throwable) -> {
+                        try {
+                            if (throwable == null) {
+                                protocolAdapterState.setConnectionStatus(DISCONNECTED);
+                                output.stoppedSuccessfully();
+                                log.info("Successfully stopped Modbus protocol adapter {}", adapterId);
+                            } else {
+                                protocolAdapterState.setConnectionStatus(ERROR);
+                                output.failStop(throwable, "Error encountered closing connection to Modbus server.");
+                                log.error("Unable to stop the connection to the Modbus server", throwable);
+                            }
+                        } finally {
+                            startRequested.set(false);
+                            stopRequested.set(false);
+                        }
+                    })
+                    .toCompletableFuture()
+                    .get();
+            } catch (final InterruptedException | ExecutionException e) {
+                log.error("Unable to stop the connection to the Modbus server", e);
+            }
         }
     }
 

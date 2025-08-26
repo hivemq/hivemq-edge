@@ -48,10 +48,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 
 /**
@@ -138,8 +140,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     }
 
     @Override
-    public void start(
-            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+    public void start(final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
             if (connection == null) {
                 synchronized (lock) {
@@ -148,16 +149,18 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                         if (log.isTraceEnabled()) {
                             log.trace("Creating new instance of Plc4x connector with {}.", adapterConfig);
                         }
-                        final Plc4xConnection<T> connection = createConnection();
-                        if(connection.isConnected()) {
-                            protocolAdapterState.setConnectionStatus(CONNECTED);
-                            this.connection = connection;
-                            output.startedSuccessfully();
-                        } else {
-                            protocolAdapterState.setConnectionStatus(ERROR);
-                            output.failStart(new Plc4xException("Unable to connect to device"), "Unable to connect to device");
-                        }
-
+                        final Plc4xConnection<T> tempConnection = createConnection();
+                        this.connection = tempConnection;
+                        output.startedSuccessfully();
+                        CompletableFuture.runAsync(() -> {
+                            try {
+                                tempConnection.startConnection();
+                                protocolAdapterState.setConnectionStatus(CONNECTED);
+                            } catch (final Plc4xException e) {
+                                log.error("Plc4x connection failed to start", e);
+                                protocolAdapterState.setConnectionStatus(ERROR);
+                            }
+                        });
                     }
                 }
             } else {
@@ -176,6 +179,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             try {
                 //-- Disconnect client
                 tempConnection.disconnect();
+                protocolAdapterState.setConnectionStatus(DISCONNECTED);
             } catch (final Exception e) {
                 protocolAdapterState.setErrorConnectionStatus(e, null);
                 output.failStop(e, "Error disconnecting from PLC4X client");
