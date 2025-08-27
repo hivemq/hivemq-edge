@@ -110,15 +110,15 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
         } as FilterMetadata,
       },
       {
-        accessorFn: (row) => row.mapping?.sources ?? [],
-        accessorKey: 'mapping.sources',
+        // accessorFn: (row) => row.mapping?.sources ?? [],
+        accessorKey: 'combiner.sources',
         enableGlobalFilter: false,
-        enableColumnFilter: true,
+        enableColumnFilter: false,
         enableSorting: false,
         sortingFn: undefined,
-        filterFn: (row, _, filterValue) => {
-          return !!row.original.mapping?.sources.some((e) => e.id === filterValue)
-        },
+        // filterFn: (row, _, filterValue) => {
+        //   return !!row.original.mapping?.sources.some((e) => e.id === filterValue)
+        // },
         header: t('pulse.assets.listing.column.sources'),
         cell: (info) => {
           const mappingId = info.row.original.mapping?.mappingId
