@@ -6,18 +6,19 @@ import { Text, VStack } from '@chakra-ui/react'
 import type { Combiner, EntityReference } from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
 import { useListCombiners } from '@/api/hooks/useCombiners'
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
 import { MAX_SOURCES_PER_ROW } from '@/modules/Pulse/utils/pagination-utils.ts'
 import { EntityRenderer } from '@/modules/Mappings/combiner/EntityRenderer.tsx'
 
 interface SourcesCellProps {
   mappingId: string
-  isLoading: boolean
+  isLoading?: boolean
 }
 
 const SourcesCell: FC<SourcesCellProps> = ({ mappingId }) => {
   const { t } = useTranslation()
-  const { data } = useListCombiners()
+  const { data, isLoading: isCombinersLoading } = useListCombiners()
 
   const sources = useMemo<EntityReference[] | undefined>(() => {
     const combinersList: Combiner[] = data?.items ?? []
@@ -32,12 +33,18 @@ const SourcesCell: FC<SourcesCellProps> = ({ mappingId }) => {
     return ownerCombiner.sources.items.filter((e) => e.type !== EntityType.PULSE_AGENT)
   }, [data?.items, mappingId])
 
-  if (!sources) return <Text whiteSpace="nowrap">{t('pulse.assets.listing.sources.norFound')}</Text>
+  if (isCombinersLoading) return <LoaderSpinner />
+  if (!sources)
+    return (
+      <Text data-testid="sources-error" whiteSpace="nowrap">
+        {t('pulse.assets.listing.sources.norFound')}
+      </Text>
+    )
 
   const extraItems = Math.max(sources.length - MAX_SOURCES_PER_ROW, 0)
 
   return (
-    <VStack>
+    <VStack data-testid="sources-container">
       {sources.slice(0, MAX_SOURCES_PER_ROW).map((reference) => (
         <EntityRenderer key={reference.id} reference={reference} />
       ))}
