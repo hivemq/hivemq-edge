@@ -1,0 +1,62 @@
+get:
+  description: Get an asset mapper by its unique Id.
+  summary: Get an asset mapper
+  operationId: get-asset-mapper
+  tags:
+    - Pulse
+  parameters:
+    - $ref: ../../components/parameters/CombinerId.yaml
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/Combiner.yaml
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Combiner not found
+delete:
+  description: Delete the specified asset mapper.
+  summary: Delete an asset mapper
+  operationId: delete-asset-mapper
+  tags:
+    - Pulse
+  parameters:
+    - $ref: ../../components/parameters/CombinerId.yaml
+  responses:
+    '200':
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Combiner not found
+put:
+  description: Update an asset mapper.
+  summary: Update an asset mapper
+  operationId: update-asset-mapper
+  tags:
+    - Pulse
+  parameters:
+    - $ref: ../../components/parameters/CombinerId.yaml
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/Combiner.yaml
+    description: The new content of the asset mapper
+    required: true
+  responses:
+    '200':
+      description: Success
+    '409':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Combiner already exists
