@@ -19,9 +19,10 @@ describe('SourcesCell', () => {
 
     cy.getByTestId('loading-spinner').should('be.visible')
     cy.wait('@getCombiner')
+    cy.getByTestId('sources-container').children().should('have.length', 1)
     cy.getByTestId('sources-container').within(() => {
       cy.getByTestId('node-name').should('have.text', 'my-adapter')
-      cy.getByTestId('node-name').should('have.text', 'Pulse Agent')
+      cy.getByTestId('node-description').should('have.text', 'Simulated Edge Device')
     })
   })
 })
