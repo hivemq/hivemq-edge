@@ -9,6 +9,7 @@ properties:
       - DRAFT
       - STREAMING
       - REQUIRES_REMAPPING
+      - MISSING
     default: UNMAPPED
   mappingId:
     type: string
