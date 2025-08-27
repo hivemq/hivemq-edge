@@ -150,6 +150,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
           )
         },
         footer: () => {
+          if (isAssetManager) return null
           return (
             <ButtonGroup isAttached size="sm">
               <IconButton
