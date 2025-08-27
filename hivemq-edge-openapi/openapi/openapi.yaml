@@ -289,3 +289,11 @@ paths:
     $ref: paths/pulse/managed-assets.yaml
   /api/v1/management/pulse/managed-assets/{assetId}:
     $ref: paths/pulse/managed-assets_{assetId}.yaml
+  /api/v1/management/pulse/asset-mappers:
+    $ref: paths/pulse/asset-mappers.yaml
+  /api/v1/management/pulse/asset-mappers/{combinerId}:
+    $ref: paths/pulse/asset-mappers_{combinerId}.yaml
+  /api/v1/management/pulse/asset-mappers/{combinerId}/mappings:
+    $ref: paths/pulse/asset-mappers_{combinerId}_mappings.yaml
+  /api/v1/management/pulse/asset-mappers/{combinerId}/mappings/{mappingId}/instructions:
+    $ref: paths/pulse/asset-mappers_{combinerId}_mappings_{mappingId}_instructions.yaml
