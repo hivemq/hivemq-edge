@@ -9,6 +9,7 @@ properties:
       - DRAFT
       - STREAMING
       - REQUIRES_REMAPPING
+      - MISSING
     default: UNMAPPED
   mappingId:
     type: string
@@ -16,4 +17,3 @@ properties:
     description: The id of a DataCombining payload that describes the mapping of that particular asset
 required:
     - status
-    - mappingId
