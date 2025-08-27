@@ -1545,7 +1545,7 @@
         },
         "sources": {
           "unset": "< unset >",
-          "norFound": "< notFound >",
+          "norFound": "< not found >",
           "more": "+{{ count }} more"
         }
       },
