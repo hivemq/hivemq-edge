@@ -27,7 +27,6 @@ export const useCombinedAssetsAndCombiners = (): PartialUseQueryResult => {
     const combinersList: Combiner[] = combiners.data?.items ?? []
 
     const allMappings: DataCombining[] = combinersList.flatMap((combiner) => combiner.mappings.items ?? [])
-    console.log('XXXXXX', allMappings)
 
     return assets.map<ManagedAssetExtended>((asset) => {
       const mapping = asset.mapping?.mappingId ? allMappings.find((m) => m.id === asset.mapping?.mappingId) : undefined
