@@ -51,9 +51,7 @@ const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, ...boxProps
           isClearable
           placeholder={t('pulse.assets.selector.placeholder')}
           isOptionDisabled={(e) =>
-            e.mapping?.status === AssetMapping.status.STREAMING ||
-            // TODO[Rubish] DO NOT MERGE
-            e.mapping?.mappingId === 'ff02efff-7b4c-4f8c-8bf6-74d0756283fb'
+            e.mapping?.status === AssetMapping.status.STREAMING
           }
           filterOption={createFilter({
             stringify: (option) => {
