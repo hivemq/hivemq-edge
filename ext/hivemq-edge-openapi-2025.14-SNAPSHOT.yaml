@@ -6786,6 +6786,7 @@ components:
             - DRAFT
             - STREAMING
             - REQUIRES_REMAPPING
+            - MISSING
           default: UNMAPPED
         mappingId:
           type: string
@@ -6793,7 +6794,6 @@ components:
           description: The id of a DataCombining payload that describes the mapping of that particular asset
       required:
         - status
-        - mappingId
     ManagedAsset:
       type: object
       description: The definition of an extended asset, as managed in Edge for the Pulse Client
@@ -6803,6 +6803,8 @@ components:
           properties:
             mapping:
               $ref: '#/components/schemas/AssetMapping'
+          required:
+            - mapping
       example:
         id: 123e4567-e89b-12d3-a456-426614174000
         name: The fancy asset
