@@ -27,7 +27,7 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
       description: 'A reference to one of the main entities in Edge (e.g. device, adapter, edge broker, bridge host)',
       properties: {
         type: {
-          enum: [EntityType.ADAPTER, EntityType.BRIDGE, EntityType.EDGE_BROKER],
+          enum: [EntityType.ADAPTER, EntityType.BRIDGE, EntityType.EDGE_BROKER, EntityType.PULSE_AGENT],
         },
         id: {
           type: 'string',
@@ -77,6 +77,9 @@ export const combinerMappingJsonSchema: JSONSchema7 = {
         destination: {
           type: 'object',
           properties: {
+            assetId: {
+              type: 'string',
+            },
             topic: {
               type: 'string',
               format: 'mqtt-topic',

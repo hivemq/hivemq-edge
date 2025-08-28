@@ -9,42 +9,37 @@ import type { ProblemDetails } from './ProblemDetails';
  * Information on the activation status of the pulse agent and its connection to the platform.
  */
 export type PulseStatus = {
-    activation: {
-        /**
-         * Status of the pulse activation
-         */
-        status: PulseStatus.activationStatus;
-        message?: ProblemDetails;
-    };
-    runtime: {
-        /**
-         * Connection status of the pulse agent to the platform.
-         */
-        status: PulseStatus.runtimeStatus;
-        message?: ProblemDetails;
-    };
+    /**
+     * Status of the pulse activation
+     */
+    activation: PulseStatus.activation;
+    /**
+     * Connection status of the pulse agent to the platform.
+     */
+    runtime: PulseStatus.runtime;
+    message?: ProblemDetails;
 };
 
-// TODO[35484] There is a bug with the generation of the enums (because of the same "status" property; replace manually
 export namespace PulseStatus {
 
     /**
      * Status of the pulse activation
      */
-    export enum activationStatus {
+    export enum activation {
         ACTIVATED = 'ACTIVATED',
         DEACTIVATED = 'DEACTIVATED',
         ERROR = 'ERROR',
     }
 
     /**
-     * Status of the pulse runtime
+     * Connection status of the pulse agent to the platform.
      */
-    export enum runtimeStatus {
-      CONNECTED = 'CONNECTED',
-      DISCONNECTED = 'DISCONNECTED',
-      ERROR = 'ERROR',
+    export enum runtime {
+        CONNECTED = 'CONNECTED',
+        DISCONNECTED = 'DISCONNECTED',
+        ERROR = 'ERROR',
     }
+
 
 }
 

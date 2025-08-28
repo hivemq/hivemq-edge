@@ -5,7 +5,7 @@ import { EntityReferenceTableWidget } from '@/modules/Mappings/combiner/EntityRe
 import { DataCombiningEditorField } from '@/modules/Mappings/combiner/DataCombiningEditorField'
 
 /* istanbul ignore next -- @preserve */
-export const combinerMappingUiSchema: UiSchema = {
+export const combinerMappingUiSchema = (isAssetManager = false): UiSchema => ({
   'ui:submitButtonOptions': {
     norender: true,
   },
@@ -22,7 +22,9 @@ export const combinerMappingUiSchema: UiSchema = {
     },
     {
       id: 'mappingsTab',
-      title: i18nConfig.t('combiner.schema.tabs.mappingsTab'),
+      title: isAssetManager
+        ? i18nConfig.t('combiner.schema.tabs.assetTabs')
+        : i18nConfig.t('combiner.schema.tabs.mappingsTab'),
       properties: ['mappings'],
     },
   ],
@@ -75,4 +77,4 @@ export const combinerMappingUiSchema: UiSchema = {
       },
     },
   },
-}
+})

@@ -15,94 +15,94 @@ describe('PulseStatusBadge', () => {
   const testCases: TestStatus[] = [
     {
       status: {
-        activation: { status: PulseStatus.activationStatus.ERROR },
-        runtime: { status: PulseStatus.runtimeStatus.ERROR },
+        activation: PulseStatus.activation.ERROR,
+        runtime: PulseStatus.runtime.ERROR,
       },
       expected: 'Error',
     },
     {
       status: {
-        activation: { status: PulseStatus.activationStatus.ERROR },
-        runtime: { status: PulseStatus.runtimeStatus.CONNECTED },
+        activation: PulseStatus.activation.ERROR,
+        runtime: PulseStatus.runtime.CONNECTED,
       },
       expected: 'Error',
     },
     {
       status: {
-        activation: { status: PulseStatus.activationStatus.ERROR },
-        runtime: { status: PulseStatus.runtimeStatus.DISCONNECTED },
+        activation: PulseStatus.activation.ERROR,
+        runtime: PulseStatus.runtime.DISCONNECTED,
       },
       expected: 'Error',
     },
     {
       status: {
-        activation: { status: PulseStatus.activationStatus.ERROR },
-        runtime: { status: PulseStatus.runtimeStatus.ERROR },
+        activation: PulseStatus.activation.ERROR,
+        runtime: PulseStatus.runtime.ERROR,
       },
       expected: 'Error',
     },
 
     {
       status: {
-        activation: { status: PulseStatus.activationStatus.ACTIVATED },
-        runtime: { status: PulseStatus.runtimeStatus.ERROR },
+        activation: PulseStatus.activation.ACTIVATED,
+        runtime: PulseStatus.runtime.ERROR,
       },
       expected: 'Error',
     },
     {
       status: {
-        activation: { status: PulseStatus.activationStatus.ACTIVATED },
-        runtime: { status: PulseStatus.runtimeStatus.CONNECTED },
+        activation: PulseStatus.activation.ACTIVATED,
+        runtime: PulseStatus.runtime.CONNECTED,
       },
       expected: 'Connected',
     },
     {
       status: {
-        activation: { status: PulseStatus.activationStatus.ACTIVATED },
-        runtime: { status: PulseStatus.runtimeStatus.DISCONNECTED },
+        activation: PulseStatus.activation.ACTIVATED,
+        runtime: PulseStatus.runtime.DISCONNECTED,
       },
       expected: 'Disconnected',
     },
     {
       status: {
-        activation: { status: PulseStatus.activationStatus.ACTIVATED },
-        runtime: { status: PulseStatus.runtimeStatus.ERROR },
+        activation: PulseStatus.activation.ACTIVATED,
+        runtime: PulseStatus.runtime.ERROR,
       },
       expected: 'Error',
     },
 
     {
       status: {
-        activation: { status: PulseStatus.activationStatus.DEACTIVATED },
-        runtime: { status: PulseStatus.runtimeStatus.ERROR },
+        activation: PulseStatus.activation.DEACTIVATED,
+        runtime: PulseStatus.runtime.ERROR,
       },
       expected: 'Deactivated',
     },
     {
       status: {
-        activation: { status: PulseStatus.activationStatus.DEACTIVATED },
-        runtime: { status: PulseStatus.runtimeStatus.CONNECTED },
+        activation: PulseStatus.activation.DEACTIVATED,
+        runtime: PulseStatus.runtime.CONNECTED,
       },
       expected: 'Deactivated',
     },
     {
       status: {
-        activation: { status: PulseStatus.activationStatus.DEACTIVATED },
-        runtime: { status: PulseStatus.runtimeStatus.DISCONNECTED },
+        activation: PulseStatus.activation.DEACTIVATED,
+        runtime: PulseStatus.runtime.DISCONNECTED,
       },
       expected: 'Deactivated',
     },
     {
       status: {
-        activation: { status: PulseStatus.activationStatus.DEACTIVATED },
-        runtime: { status: PulseStatus.runtimeStatus.ERROR },
+        activation: PulseStatus.activation.DEACTIVATED,
+        runtime: PulseStatus.runtime.ERROR,
       },
       expected: 'Deactivated',
     },
   ]
 
   it.each(testCases)(
-    ({ status }) => `should render  ${status.activation.status} / ${status.runtime.status}`,
+    ({ status }) => `should render  ${status.activation} / ${status.runtime}`,
     ({ status, expected }) => {
       cy.injectAxe()
       cy.mountWithProviders(
@@ -115,11 +115,11 @@ describe('PulseStatusBadge', () => {
       cy.getByTestId('pulse-status').then((w) => {
         cy.wrap(w[0])
           .should('have.text', expected)
-          .should('have.attr', 'data-activation', status.activation.status)
-          .should('have.attr', 'data-runtime', status.runtime.status)
+          .should('have.attr', 'data-activation', status.activation)
+          .should('have.attr', 'data-runtime', status.runtime)
         cy.wrap(w[1])
-          .should('have.attr', 'data-activation', status.activation.status)
-          .should('have.attr', 'data-runtime', status.runtime.status)
+          .should('have.attr', 'data-activation', status.activation)
+          .should('have.attr', 'data-runtime', status.runtime)
       })
     }
   )
