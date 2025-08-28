@@ -9,7 +9,7 @@ export type NodeCombinerType = Node<Combiner, NodeTypes.COMBINER_NODE>
 export type NodeListenerType = Node<Listener, NodeTypes.LISTENER_NODE>
 export type NodeEdgeType = Node<{ label: string }, NodeTypes.EDGE_NODE>
 export type NodeHostType = Node<{ label: string }, NodeTypes.HOST_NODE>
-export type NodePulseType = Node<{ label: string; id: string, status?: PulseStatus }, NodeTypes.PULSE_NODE>
+export type NodePulseType = Node<{ label: string; id: string; status?: PulseStatus }, NodeTypes.PULSE_NODE>
 export type NodeAssetsType = Node<{ label: string; id: string }, NodeTypes.ASSETS_NODE>
 
 export interface EdgeFlowOptions {
