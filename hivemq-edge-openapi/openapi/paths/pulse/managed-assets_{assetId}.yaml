@@ -1,7 +1,7 @@
 delete:
   description: Delete the specified managed asset
   summary: Delete a managed asset
-  operationId: delete-managed-assets
+  operationId: delete-managed-asset
   tags:
     - Pulse
   parameters:
@@ -30,7 +30,7 @@ delete:
 put:
   description: Update a managed asset
   summary: Update a managed asset
-  operationId: update-managed-assets
+  operationId: update-managed-asset
   tags:
     - Pulse
   parameters:
