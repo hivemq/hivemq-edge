@@ -35,18 +35,30 @@ public record Asset(@NotNull String id, @NotNull String topic, @NotNull String n
     }
 
     public @NotNull Asset withId(final @NotNull String id) {
+        if (Objects.equals(this.id, id)) {
+            return this;
+        }
         return new Asset(id, topic, name, jsonSchema);
     }
 
     public @NotNull Asset withName(final @NotNull String name) {
+        if (Objects.equals(this.name, name)) {
+            return this;
+        }
         return new Asset(id, topic, name, jsonSchema);
     }
 
     public @NotNull Asset withTopic(final @NotNull String topic) {
+        if (Objects.equals(this.topic, topic)) {
+            return this;
+        }
         return new Asset(id, topic, name, jsonSchema);
     }
 
     public @NotNull Asset withJsonSchema(final @NotNull String jsonSchema) {
+        if (Objects.equals(this.jsonSchema, jsonSchema)) {
+            return this;
+        }
         return new Asset(id, topic, name, jsonSchema);
     }
 
