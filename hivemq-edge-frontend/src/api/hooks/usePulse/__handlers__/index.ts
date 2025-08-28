@@ -3,7 +3,7 @@ import { delay, http, HttpResponse } from 'msw'
 import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
 import { MOCK_SIMPLE_SCHEMA_URI } from '@/__test-utils__/rjsf/schema.mocks.ts'
 import type { ManagedAsset, ManagedAssetList, PulseActivationToken } from '@/api/__generated__'
-import { AssetMapping } from '@/api/__generated__'
+import { AssetMapping, PulseStatus } from '@/api/__generated__'
 
 export const MOCK_PULSE_ACTIVATION_TOKEN: PulseActivationToken = {
   token: MOCK_JWT,
@@ -57,6 +57,19 @@ export const MOCK_PULSE_ASSET_LIST: ManagedAssetList = {
   items: [MOCK_PULSE_ASSET, MOCK_PULSE_ASSET_MAPPED, MOCK_PULSE_ASSET_MAPPED_DUPLICATE, MOCK_PULSE_ASSET_MAPPED_UNIQUE],
 }
 
+export const MOCK_PULSE_STATUS_CONNECTED: PulseStatus = {
+  activation: PulseStatus.activation.ACTIVATED,
+  runtime: PulseStatus.runtime.CONNECTED,
+}
+
+export const MOCK_PULSE_STATUS_ERROR: PulseStatus = {
+  activation: PulseStatus.activation.ACTIVATED,
+  runtime: PulseStatus.runtime.ERROR,
+  message: {
+    title: 'Cannot connect to Pulse',
+  },
+}
+
 export const handlers = [
   http.delete('**/api/v1/management/pulse/activation-token', async () => {
     await delay(1000)
@@ -73,6 +86,10 @@ export const handlers = [
 
   http.get('**/management/pulse/managed-assets', () => {
     return HttpResponse.json<ManagedAssetList>(MOCK_PULSE_ASSET_LIST, { status: 200 })
+  }),
+
+  http.get('**/management/pulse/status', () => {
+    return HttpResponse.json<PulseStatus>(MOCK_PULSE_STATUS_CONNECTED, { status: 200 })
   }),
 
   http.post<never, ManagedAsset>('**/management/pulse/managed-assets', async ({ request }) => {
