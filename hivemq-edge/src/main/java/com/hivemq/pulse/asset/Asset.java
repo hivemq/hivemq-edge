@@ -17,7 +17,73 @@
 package com.hivemq.pulse.asset;
 
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
+/**
+ * Represents an asset with an id, topic, name, and JSON schema.
+ */
 public record Asset(@NotNull String id, @NotNull String topic, @NotNull String name, @NotNull String jsonSchema) {
+
+    /**
+     * Returns a new builder for Asset.
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public @NotNull Asset withId(final @NotNull String id) {
+        return new Asset(id, topic, name, jsonSchema);
+    }
+
+    public @NotNull Asset withName(final @NotNull String name) {
+        return new Asset(id, topic, name, jsonSchema);
+    }
+
+    public @NotNull Asset withTopic(final @NotNull String topic) {
+        return new Asset(id, topic, name, jsonSchema);
+    }
+
+    public @NotNull Asset withJsonSchema(final @NotNull String jsonSchema) {
+        return new Asset(id, topic, name, jsonSchema);
+    }
+
+    /**
+     * Builder for {@link Asset}.
+     */
+    public static class Builder {
+        private @Nullable String id;
+        private @Nullable String topic;
+        private @Nullable String name;
+        private @Nullable String jsonSchema;
+
+        public @NotNull Builder id(final @NotNull String id) {
+            this.id = id;
+            return this;
+        }
+
+        public @NotNull Builder topic(final @NotNull String topic) {
+            this.topic = topic;
+            return this;
+        }
+
+        public @NotNull Builder name(final @NotNull String name) {
+            this.name = name;
+            return this;
+        }
+
+        public @NotNull Builder jsonSchema(final @NotNull String jsonSchema) {
+            this.jsonSchema = jsonSchema;
+            return this;
+        }
+
+        public @NotNull Asset build() {
+            return new Asset(Objects.requireNonNull(id),
+                    Objects.requireNonNull(topic),
+                    Objects.requireNonNull(name),
+                    Objects.requireNonNull(jsonSchema));
+        }
+    }
 }

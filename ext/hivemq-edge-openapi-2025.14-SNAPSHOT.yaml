@@ -4678,6 +4678,153 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Pulse Agent not connected
+  /api/v1/management/pulse/asset-mappers:
+    get:
+      description: Get all asset mappers
+      summary: Get all asset mappers
+      operationId: get-asset-mappers
+      tags:
+        - Pulse
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CombinerList'
+          description: Success
+    post:
+      description: Add a new asset mapper.
+      summary: Add a new asset mapper
+      operationId: add-asset-mapper
+      tags:
+        - Pulse
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Combiner'
+        description: The combiner to add
+        required: true
+      responses:
+        '200':
+          description: Success
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Combiner already exists
+  /api/v1/management/pulse/asset-mappers/{combinerId}:
+    get:
+      description: Get an asset mapper by its unique Id.
+      summary: Get an asset mapper
+      operationId: get-asset-mapper
+      tags:
+        - Pulse
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Combiner'
+          description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Combiner not found
+    delete:
+      description: Delete the specified asset mapper.
+      summary: Delete an asset mapper
+      operationId: delete-asset-mapper
+      tags:
+        - Pulse
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+      responses:
+        '200':
+          description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Combiner not found
+    put:
+      description: Update an asset mapper.
+      summary: Update an asset mapper
+      operationId: update-asset-mapper
+      tags:
+        - Pulse
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Combiner'
+        description: The new content of the asset mapper
+        required: true
+      responses:
+        '200':
+          description: Success
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Combiner already exists
+  /api/v1/management/pulse/asset-mappers/{combinerId}/mappings:
+    get:
+      description: Get all data combining mappings for the given combiner
+      summary: Get all mappings
+      operationId: get-asset-mapper-mappings
+      tags:
+        - Pulse
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataCombiningList'
+          description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Combiner not found
+  /api/v1/management/pulse/asset-mappers/{combinerId}/mappings/{mappingId}/instructions:
+    get:
+      description: Get all the instructions for a designated mapping
+      summary: Get all instructions
+      operationId: get-asset-mapper-instructions
+      tags:
+        - Pulse
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+        - $ref: '#/components/parameters/MappingId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                description: List of instructions to be applied to incoming data
+                items:
+                  $ref: '#/components/schemas/Instruction'
+          description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Combiner not found
 components:
   schemas:
     UsernamePasswordCredentials:
