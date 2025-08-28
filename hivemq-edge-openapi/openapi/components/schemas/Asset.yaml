@@ -26,6 +26,7 @@ properties:
     type: string
     format: data-url
     description: The schema associated with the asset, in a JSON Schema and data uri format.
+    readOnly: true
     example: "data:application/schema+json;base64,eyJ0eXBlIjoiT2JqZWN0IiwiaWQiOiJhc3NldC1zY2hlbWEifQ=="
 required:
   - id
