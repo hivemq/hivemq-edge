@@ -4581,7 +4581,7 @@ paths:
     post:
       description: Add a new managed asset to the Pulse Client
       summary: Add a new managed asset
-      operationId: add-managed-assets
+      operationId: add-managed-asset
       tags:
         - Pulse
       requestBody:
@@ -4600,6 +4600,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Pulse not activated
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Managed asset not found
         '409':
           content:
             application/json:
@@ -4616,7 +4622,7 @@ paths:
     delete:
       description: Delete the specified managed asset
       summary: Delete a managed asset
-      operationId: delete-managed-assets
+      operationId: delete-managed-asset
       tags:
         - Pulse
       parameters:
@@ -4645,7 +4651,7 @@ paths:
     put:
       description: Update a managed asset
       summary: Update a managed asset
-      operationId: update-managed-assets
+      operationId: update-managed-asset
       tags:
         - Pulse
       parameters:
@@ -6768,6 +6774,7 @@ components:
           type: string
           format: data-url
           description: The schema associated with the asset, in a JSON Schema and data uri format.
+          readOnly: true
           example: data:application/schema+json;base64,eyJ0eXBlIjoiT2JqZWN0IiwiaWQiOiJhc3NldC1zY2hlbWEifQ==
       required:
         - id
