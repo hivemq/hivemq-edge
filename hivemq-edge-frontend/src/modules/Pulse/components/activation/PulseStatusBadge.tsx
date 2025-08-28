@@ -5,15 +5,15 @@ import { Badge, SkeletonCircle } from '@chakra-ui/react'
 import { PulseStatus } from '@/api/__generated__'
 
 const statusMapping = {
-  [PulseStatus.activationStatus.ERROR]: { text: PulseStatus.activationStatus.ERROR, color: 'status.error' },
-  [PulseStatus.activationStatus.DEACTIVATED]: {
-    text: PulseStatus.activationStatus.DEACTIVATED,
+  [PulseStatus.activation.ERROR]: { text: PulseStatus.activation.ERROR, color: 'status.error' },
+  [PulseStatus.activation.DEACTIVATED]: {
+    text: PulseStatus.activation.DEACTIVATED,
     color: 'status.unknown',
   },
-  [PulseStatus.activationStatus.ACTIVATED]: { text: PulseStatus.activationStatus.ACTIVATED, color: 'status.connected' },
-  [PulseStatus.runtimeStatus.CONNECTED]: { text: PulseStatus.runtimeStatus.CONNECTED, color: 'status.connected' },
-  [PulseStatus.runtimeStatus.DISCONNECTED]: {
-    text: PulseStatus.runtimeStatus.DISCONNECTED,
+  [PulseStatus.activation.ACTIVATED]: { text: PulseStatus.activation.ACTIVATED, color: 'status.connected' },
+  [PulseStatus.runtime.CONNECTED]: { text: PulseStatus.runtime.CONNECTED, color: 'status.connected' },
+  [PulseStatus.runtime.DISCONNECTED]: {
+    text: PulseStatus.runtime.DISCONNECTED,
     color: 'status.disconnected',
   },
 } as const
@@ -27,11 +27,7 @@ const PulseStatusBadge: FC<ConnectionStatusBadgeProps> = ({ status, skeleton = f
   const { t } = useTranslation()
 
   const mapping =
-    statusMapping[
-      status.activation.status === PulseStatus.activationStatus.ACTIVATED
-        ? status.runtime.status
-        : status.activation.status
-    ]
+    statusMapping[status.activation === PulseStatus.activation.ACTIVATED ? status.runtime : status.activation]
 
   if (skeleton)
     return (
@@ -39,8 +35,8 @@ const PulseStatusBadge: FC<ConnectionStatusBadgeProps> = ({ status, skeleton = f
         size="8"
         startColor={`${mapping.color}.300`}
         endColor={`${mapping.color}.500`}
-        data-activation={status.activation.status}
-        data-runtime={status.runtime.status}
+        data-activation={status.activation}
+        data-runtime={status.runtime}
         data-testid="pulse-status"
       />
     )
@@ -51,8 +47,8 @@ const PulseStatusBadge: FC<ConnectionStatusBadgeProps> = ({ status, skeleton = f
       colorScheme={mapping.color}
       borderRadius={15}
       data-testid="pulse-status"
-      data-activation={status.activation.status}
-      data-runtime={status.runtime.status}
+      data-activation={status.activation}
+      data-runtime={status.runtime}
     >
       {t('pulse.status', { context: mapping.text })}
     </Badge>

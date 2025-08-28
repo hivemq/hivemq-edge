@@ -26,6 +26,13 @@ export type DataCombining = {
         topicFilters?: Array<string>;
     };
     destination: {
+        /**
+         * The id of a mapped asset containing the topic and schema used for destination of the mapping
+         */
+        assetId?: string;
+        /**
+         * The MQTT topic used for destination of the mapping
+         */
         topic?: string;
         /**
          * The optional json schema for this topic filter in the data uri format.

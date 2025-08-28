@@ -46,6 +46,7 @@ interface DestinationSchemaLoaderProps {
   title?: string
   description?: string
   isInvalid?: boolean
+  isEditable?: boolean
   formData?: DataCombining
   formContext?: CombinerContext
   onChange: (schema: string, v?: Instruction[]) => void
@@ -65,6 +66,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
   title,
   description,
   isInvalid = false,
+  isEditable = false,
 }) => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -123,20 +125,24 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
           {title}
         </FormLabel>
         <ButtonGroup isAttached size="sm" variant="outline" justifyContent="flex-end" flexWrap="wrap" rowGap={2} mb={1}>
-          <IconButton
-            icon={<Icon as={RiAiGenerate} />}
-            data-testid="combiner-destination-infer"
-            isDisabled={!isTopicDefined}
-            onClick={() => handleSchemaEditor(EDITOR_MODE.INFERRER)}
-            aria-label={t('combiner.schema.schemaManager.action.infer')}
-          />
-          <IconButton
-            icon={<Icon as={LuUpload} />}
-            data-testid="combiner-destination-upload"
-            isDisabled={!isTopicDefined}
-            onClick={() => handleSchemaEditor(EDITOR_MODE.UPLOADER)}
-            aria-label={t('combiner.schema.schemaManager.action.upload')}
-          />
+          {isEditable && (
+            <IconButton
+              icon={<Icon as={RiAiGenerate} />}
+              data-testid="combiner-destination-infer"
+              isDisabled={!isTopicDefined}
+              onClick={() => handleSchemaEditor(EDITOR_MODE.INFERRER)}
+              aria-label={t('combiner.schema.schemaManager.action.infer')}
+            />
+          )}
+          {isEditable && (
+            <IconButton
+              icon={<Icon as={LuUpload} />}
+              data-testid="combiner-destination-upload"
+              isDisabled={!isTopicDefined}
+              onClick={() => handleSchemaEditor(EDITOR_MODE.UPLOADER)}
+              aria-label={t('combiner.schema.schemaManager.action.upload')}
+            />
+          )}
 
           <IconButton
             icon={<Icon as={LuDownload} />}

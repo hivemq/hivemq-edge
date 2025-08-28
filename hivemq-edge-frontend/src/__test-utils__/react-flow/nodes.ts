@@ -18,6 +18,7 @@ import type {
   NodePulseType,
 } from '@/modules/Workspace/types.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
+import { NODE_ASSET_DEFAULT_ID, NODE_PULSE_AGENT_DEFAULT_ID } from '@/modules/Workspace/utils/nodes-utils.ts'
 
 export const MOCK_DEFAULT_NODE = {
   selected: false,
@@ -86,17 +87,17 @@ export const MOCK_NODE_COMBINER: NodeProps<NodeCombinerType> = {
 }
 
 export const MOCK_NODE_ASSETS: NodeProps<NodeAssetsType> = {
-  id: 'idAssets',
+  id: NODE_ASSET_DEFAULT_ID,
   type: NodeTypes.ASSETS_NODE,
   sourcePosition: Position.Bottom,
-  data: { label: 'my assets' },
+  data: { label: 'my assets', id: NODE_ASSET_DEFAULT_ID },
   ...MOCK_DEFAULT_NODE,
 }
 
 export const MOCK_NODE_PULSE: NodeProps<NodePulseType> = {
-  id: 'idPulseClient',
+  id: NODE_PULSE_AGENT_DEFAULT_ID,
   type: NodeTypes.PULSE_NODE,
   sourcePosition: Position.Bottom,
-  data: { label: 'my pulse client' },
+  data: { label: 'my pulse client', id: NODE_PULSE_AGENT_DEFAULT_ID },
   ...MOCK_DEFAULT_NODE,
 }

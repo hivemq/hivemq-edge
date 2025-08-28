@@ -36,25 +36,7 @@ describe('useListManagedAssets', () => {
           name: 'Test mapped asset',
           topic: 'test/topic/2',
           mapping: {
-            instructions: [],
-            primary: {
-              id: 'test',
-              type: 'TOPIC_FILTER',
-            },
-            sources: [
-              {
-                id: 'test',
-                type: 'TOPIC_FILTER',
-              },
-              {
-                id: 'test/2',
-                type: 'TAG',
-              },
-              {
-                id: 'test/3',
-                type: 'PULSE_ASSET',
-              },
-            ],
+            mappingId: 'ff02efff-7b4c-4f8c-8bf6-74d0756283fb',
             status: 'STREAMING',
           },
         }),

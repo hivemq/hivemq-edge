@@ -1,8 +1,8 @@
 import { type FC, useEffect, useMemo } from 'react'
-import type { Node, NodeRemoveChange } from '@xyflow/react'
-import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useNavigate, useParams } from 'react-router-dom'
 import type { IChangeEvent } from '@rjsf/core'
+import type { Node, NodeRemoveChange } from '@xyflow/react'
 import {
   Button,
   ButtonGroup,
@@ -22,25 +22,23 @@ import {
   useToast,
 } from '@chakra-ui/react'
 
-import config from '@/config'
-
-import type { CombinerContext } from './types'
-import { MappingType } from './types'
 import type { Combiner } from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
+import { useDeleteCombiner, useUpdateCombiner } from '@/api/hooks/useCombiners/'
+import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombinedEntities'
 import { combinerMappingJsonSchema } from '@/api/schemas/combiner-mapping.json-schema'
 import { combinerMappingUiSchema } from '@/api/schemas/combiner-mapping.ui-schema'
-import { useUpdateCombiner, useDeleteCombiner } from '@/api/hooks/useCombiners/'
-import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombinedEntities'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
-import ErrorMessage from '@/components/ErrorMessage'
+import DangerZone from '@/modules/Mappings/components/DangerZone.tsx'
 import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
-import type { NodeTypes } from '@/modules/Workspace/types.ts'
-import { IdStubs } from '@/modules/Workspace/types.ts'
-import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import type { CombinerContext } from '@/modules/Mappings/types.ts'
+import { useValidateCombiner } from '@/modules/Mappings/hooks/useValidateCombiner.ts'
+import { MappingType } from '@/modules/Mappings/types.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
-import DangerZone from './components/DangerZone'
-import { useValidateCombiner } from './hooks/useValidateCombiner'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import { IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
+
+import config from '@/config'
 
 const CombinerMappingManager: FC = () => {
   const { t } = useTranslation()
@@ -54,14 +52,21 @@ const CombinerMappingManager: FC = () => {
     return nodes.find((node) => node.id === combinerId) as Node<Combiner> | undefined
   }, [combinerId, nodes])
 
+  if (!selectedNode) throw new Error('No combiner node found')
+
   const entities = useMemo(() => {
-    const entities = selectedNode?.data?.sources?.items || []
+    const entities = selectedNode.data.sources.items || []
     const isBridgeIn = Boolean(
       entities.find((entity) => entity.id === IdStubs.EDGE_NODE && entity.type === EntityType.EDGE_BROKER)
     )
     if (!isBridgeIn) entities.push({ id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER })
     return entities
-  }, [selectedNode?.data?.sources?.items])
+  }, [selectedNode.data.sources.items])
+
+  const isAssetManager = useMemo(() => {
+    // TODO[35769] This is a hack; PULSE_AGENT needs to be supported as a valid EntityType
+    return entities?.some((e) => e.type === EntityType.DEVICE)
+  }, [entities])
 
   const sources = useGetCombinedEntities(entities)
   const validator = useValidateCombiner(sources, entities)
@@ -80,7 +85,7 @@ const CombinerMappingManager: FC = () => {
 
     toast.promise(
       promise.then(() => {
-        if (selectedNode) onUpdateNode<Combiner>(selectedNode.id, data.formData)
+        onUpdateNode<Combiner>(selectedNode.id, data.formData)
         handleClose()
       }),
       {
@@ -96,7 +101,7 @@ const CombinerMappingManager: FC = () => {
     const promise = deleteCombiner.mutateAsync({ combinerId })
     toast.promise(
       promise.then(() => {
-        if (selectedNode) onNodesChange([{ id: selectedNode.id, type: 'remove' } as NodeRemoveChange])
+        onNodesChange([{ id: selectedNode.id, type: 'remove' } as NodeRemoveChange])
         handleClose()
       }),
       {
@@ -121,25 +126,22 @@ const CombinerMappingManager: FC = () => {
         <DrawerHeader>
           <Text>{t('protocolAdapter.mapping.manager.header', { context: MappingType.COMBINING })}</Text>
           <NodeNameCard
-            name={selectedNode?.data.name}
-            type={selectedNode?.type as NodeTypes}
+            name={selectedNode.data.name}
+            type={isAssetManager ? NodeTypes.ASSETS_NODE : NodeTypes.COMBINER_NODE}
             description={t('combiner.type')}
           />
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
-          {!selectedNode && <ErrorMessage message={t('combiner.error.noDataUri')} status="error" />}
-          {selectedNode && (
-            <ChakraRJSForm
-              showNativeWidgets={showNativeWidgets}
-              id="combiner-main-form"
-              schema={combinerMappingJsonSchema}
-              uiSchema={combinerMappingUiSchema}
-              formData={selectedNode.data}
-              onSubmit={handleOnSubmit}
-              formContext={{ queries: sources, entities } as CombinerContext}
-              customValidate={validator?.validateCombiner}
-            />
-          )}
+          <ChakraRJSForm
+            showNativeWidgets={showNativeWidgets}
+            id="combiner-main-form"
+            schema={combinerMappingJsonSchema}
+            uiSchema={combinerMappingUiSchema(isAssetManager)}
+            formData={selectedNode.data}
+            onSubmit={handleOnSubmit}
+            formContext={{ queries: sources, entities } as CombinerContext}
+            customValidate={validator?.validateCombiner}
+          />
         </DrawerBody>
         <DrawerFooter justifyContent="space-between">
           <ButtonGroup>
@@ -151,13 +153,11 @@ const CombinerMappingManager: FC = () => {
                 <Switch id="email-alerts" isChecked={showNativeWidgets} onChange={setShowNativeWidgets.toggle} />
               </FormControl>
             )}
-            {selectedNode && <DangerZone onSubmit={handleOnDelete} />}
+            <DangerZone onSubmit={handleOnDelete} />
           </ButtonGroup>
-          {selectedNode && (
-            <Button variant="primary" type="submit" form="combiner-main-form" isLoading={updateCombiner.isPending}>
-              {t('combiner.actions.submit')}
-            </Button>
-          )}
+          <Button variant="primary" type="submit" form="combiner-main-form" isLoading={updateCombiner.isPending}>
+            {t('combiner.actions.submit')}
+          </Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
