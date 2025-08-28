@@ -26,7 +26,7 @@ get:
 post:
   description: Add a new managed asset to the Pulse Client
   summary: Add a new managed asset
-  operationId: add-managed-assets
+  operationId: add-managed-asset
   tags:
     - Pulse
   requestBody:
@@ -45,6 +45,12 @@ post:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
       description: Pulse not activated
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Managed asset not found
     '409':
       content:
         application/json:
