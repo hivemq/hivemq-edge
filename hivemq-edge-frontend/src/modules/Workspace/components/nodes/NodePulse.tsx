@@ -1,7 +1,6 @@
-import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import type { FC } from 'react'
 import { useMemo } from 'react'
-import { Badge, HStack, Icon, Text, VStack } from '@chakra-ui/react'
+import { HStack, Text, VStack } from '@chakra-ui/react'
 import type { NodeProps } from '@xyflow/react'
 import { Handle, Position } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
@@ -10,14 +9,18 @@ import { AssetMapping, Capability, type ManagedAsset, PulseStatus } from '@/api/
 import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
 
-import { HqPulseActivated, HqPulseNotActivated, PulseAgentIcon } from '@/components/Icons'
+import TooltipBadge from '@/components/Chakra/TooltipBadge.tsx'
+import TooltipIcon from '@/components/Chakra/TooltipIcon.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
+import { HqPulseActivated, HqPulseNotActivated, PulseAgentIcon } from '@/components/Icons'
 import { SelectEntityType } from '@/components/MQTT/types.ts'
+import PulseStatusBadge from '@/modules/Pulse/components/activation/PulseStatusBadge.tsx'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
+import MappingBadge from '@/modules/Workspace/components/parts/MappingBadge.tsx'
+import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import type { NodePulseType } from '@/modules/Workspace/types'
-import MappingBadge from '@/modules/Workspace/components/parts/MappingBadge.tsx'
 
 const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging }) => {
   const { t } = useTranslation()
@@ -75,6 +78,7 @@ const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging 
             <PulseAgentIcon boxSize={10} />
             <Text>{t('pulse.workspace.nodeClient.title')}</Text>
           </HStack>
+          {data.status && <PulseStatusBadge status={data.status} />}
           {isLoading && <LoaderSpinner />}
           {!isLoading && (
             <MappingBadge destinations={unmappedAssets.map((e) => e.topic)} type={SelectEntityType.PULSE_ASSET} />
