@@ -298,17 +298,9 @@ describe('createPulseNode', () => {
 
     expect(actual).toStrictEqual(
       expect.objectContaining({
-        nodeAssets: expect.objectContaining({
-          data: {
-            label: 'Assets',
-            id: 'idPulseAssets',
-          },
-          id: 'idPulseAssets',
-          type: NodeTypes.ASSETS_NODE,
-        }),
         nodePulse: expect.objectContaining({
           data: {
-            label: 'Pulse Client',
+            label: 'Pulse Agent',
             id: 'idPulse',
           },
           id: 'idPulse',
@@ -323,18 +315,10 @@ describe('createPulseNode', () => {
 
     expect(actual).toStrictEqual(
       expect.objectContaining({
-        edgeConnector: expect.objectContaining({
-          id: 'connect-edge-idPulseAssets',
-          source: 'idPulseAssets',
-          target: 'edge',
-          type: 'DYNAMIC_EDGE',
-          animated: false,
-          focusable: false,
-        }),
         pulseConnector: expect.objectContaining({
-          id: 'connect-idPulseAssets-idPulse',
+          id: 'connect-idPulse-edge',
           source: 'idPulse',
-          target: 'idPulseAssets',
+          target: 'edge',
           type: 'DYNAMIC_EDGE',
           animated: false,
           focusable: false,

@@ -49,9 +49,9 @@ describe('useGetFlowElements', () => {
   })
 
   it.each<[Partial<EdgeFlowOptions>, number, number]>([
-    [{}, 10, 10],
-    [{ showGateway: true }, 11, 11],
-    [{ showGateway: false }, 10, 10],
+    [{}, 9, 9],
+    [{ showGateway: true }, 10, 10],
+    [{ showGateway: false }, 9, 9],
   ])('should consider %s for %s nodes and %s edges', async (defaults, countNode, countEdge) => {
     const { result } = renderHook(() => useGetFlowElements(), { wrapper: getWrapperEdgeProvider(defaults) })
 

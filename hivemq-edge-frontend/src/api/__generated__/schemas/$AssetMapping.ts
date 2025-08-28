@@ -9,24 +9,11 @@ export const $AssetMapping = {
             type: 'Enum',
             isRequired: true,
         },
-        sources: {
-            type: 'array',
-            contains: {
-                type: 'DataIdentifierReference',
-            },
+        mappingId: {
+            type: 'string',
+            description: `The id of a DataCombining payload that describes the mapping of that particular asset`,
             isRequired: true,
-        },
-        primary: {
-            type: 'DataIdentifierReference',
-            description: `The primary source used for triggering the streaming of the asset. It must be one of the sources.`,
-            isRequired: true,
-        },
-        instructions: {
-            type: 'array',
-            contains: {
-                type: 'Instruction',
-            },
-            isRequired: true,
+            format: 'uuid',
         },
     },
 } as const;

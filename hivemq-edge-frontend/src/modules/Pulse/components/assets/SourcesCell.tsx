@@ -1,40 +1,55 @@
 import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HStack, Text } from '@chakra-ui/react'
+import { Text, VStack } from '@chakra-ui/react'
 
-import { DataIdentifierReference } from '@/api/__generated__'
-import { AssetTag, PLCTag, TopicFilter } from '@/components/MQTT/EntityTag.tsx'
-import { PrimaryWrapper } from '@/modules/Mappings/combiner/components/PrimaryWrapper.tsx'
+import type { Combiner, EntityReference } from '@/api/__generated__'
+import { EntityType } from '@/api/__generated__'
+import { useListCombiners } from '@/api/hooks/useCombiners'
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
+
 import { MAX_SOURCES_PER_ROW } from '@/modules/Pulse/utils/pagination-utils.ts'
+import { EntityRenderer } from '@/modules/Mappings/combiner/EntityRenderer.tsx'
 
 interface SourcesCellProps {
-  sources?: DataIdentifierReference[]
-  primary?: DataIdentifierReference
+  mappingId: string
+  isLoading?: boolean
 }
 
-const SourcesCell: FC<SourcesCellProps> = ({ sources, primary }) => {
+const SourcesCell: FC<SourcesCellProps> = ({ mappingId }) => {
   const { t } = useTranslation()
+  const { data, isLoading: isCombinersLoading } = useListCombiners()
 
-  const isPrimary = (type: DataIdentifierReference.type, id: string): boolean => {
-    return primary?.type === type && primary?.id === id
-  }
+  const sources = useMemo<EntityReference[] | undefined>(() => {
+    const combinersList: Combiner[] = data?.items ?? []
 
-  if (!sources?.length) return <Text>{t('pulse.assets.listing.sources.unset')}</Text>
+    const ownerCombiner = combinersList.find((combiner) =>
+      combiner.mappings?.items.some((mapping) => {
+        return mapping.id === mappingId
+      })
+    )
+
+    if (!ownerCombiner?.sources.items.length) return undefined
+    return ownerCombiner.sources.items.filter((e) => e.type !== EntityType.PULSE_AGENT)
+  }, [data?.items, mappingId])
+
+  if (isCombinersLoading) return <LoaderSpinner />
+  if (!sources)
+    return (
+      <Text data-testid="sources-error" whiteSpace="nowrap">
+        {t('pulse.assets.listing.sources.norFound')}
+      </Text>
+    )
+
   const extraItems = Math.max(sources.length - MAX_SOURCES_PER_ROW, 0)
 
   return (
-    <HStack flexWrap="wrap">
-      {sources?.slice(0, MAX_SOURCES_PER_ROW).map((tag) => (
-        <PrimaryWrapper key={tag.id} isPrimary={isPrimary(tag.type, tag.id)}>
-          <>
-            {tag.type === DataIdentifierReference.type.TOPIC_FILTER && <TopicFilter tagTitle={tag.id} />}
-            {tag.type === DataIdentifierReference.type.TAG && <PLCTag tagTitle={tag.id} />}
-            {tag.type === DataIdentifierReference.type.PULSE_ASSET && <AssetTag tagTitle={tag.id} />}
-          </>
-        </PrimaryWrapper>
+    <VStack data-testid="sources-container">
+      {sources.slice(0, MAX_SOURCES_PER_ROW).map((reference) => (
+        <EntityRenderer key={reference.id} reference={reference} />
       ))}
       {extraItems > 0 && <Text>{t('pulse.assets.listing.sources.more', { count: extraItems })}</Text>}
-    </HStack>
+    </VStack>
   )
 }
 
