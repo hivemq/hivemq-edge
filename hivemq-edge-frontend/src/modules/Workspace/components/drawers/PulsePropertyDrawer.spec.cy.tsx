@@ -26,7 +26,7 @@ describe('PulsePropertyDrawer', () => {
       <PulsePropertyDrawer nodeId="pulseId" selectedNode={mockNode} isOpen={true} onClose={onClose} />
     )
 
-    cy.get('header').should('contain.text', 'Pulse Client Overview')
+    cy.get('header').should('contain.text', 'Pulse Agent Overview')
     cy.get('h2').should('contain.text', 'Pulse Assets are not yet available for HiveMQ Edge.')
   })
 
@@ -45,7 +45,7 @@ describe('PulsePropertyDrawer', () => {
     cy.getByAriaLabel('Close').click()
     cy.get('@onClose').should('have.been.calledOnce')
 
-    cy.get('header').should('contain.text', 'Pulse Client Overview')
+    cy.get('header').should('contain.text', 'Pulse Agent Overview')
     cy.getByTestId('table-container').within(() => {
       // check the table is in "summary" mode
       cy.get('table thead tr th').should('have.length', 4)

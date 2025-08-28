@@ -3,23 +3,30 @@ import { useState, useMemo } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
+import type { SingleValue } from 'chakra-react-select'
 import { ButtonGroup, HStack, Text } from '@chakra-ui/react'
 import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
 
-import type { DataCombining } from '@/api/__generated__'
-import { DataIdentifierReference } from '@/api/__generated__'
+import type { DataCombining, ManagedAsset } from '@/api/__generated__'
+import { EntityType, DataIdentifierReference } from '@/api/__generated__'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import IconButton from '@/components/Chakra/IconButton'
-import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
+import { AssetTag, PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
 
 import { PrimaryWrapper } from '@/modules/Mappings/combiner/components/PrimaryWrapper.tsx'
 import DataCombiningEditorDrawer from '@/modules/Mappings/combiner/DataCombiningEditorDrawer.tsx'
 import type { CombinerContext } from '@/modules/Mappings/types.ts'
+import ManagedAssetSelect from '@/modules/Pulse/components/assets/ManagedAssetSelect.tsx'
 
 export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
   const [selectedItem, setSelectedItem] = useState<number | undefined>(undefined)
+
+  const isAssetManager = useMemo(() => {
+    // TODO[35769] This is a hack; PULSE_AGENT needs to be supported as a valid EntityType
+    return props.formContext?.entities?.some((e) => e.type === EntityType.DEVICE)
+  }, [props.formContext?.entities])
 
   const handleOnSubmit = (data: DataCombining | undefined) => {
     if (selectedItem === undefined) return
@@ -32,6 +39,21 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
       props.onChange(newValues)
     }
     setSelectedItem(undefined)
+  }
+
+  const handleAddAsset = (asset: SingleValue<ManagedAsset>) => {
+    if (!asset) return
+    const newMapping: DataCombining = {
+      id: uuidv4(),
+      sources: {
+        primary: { id: '', type: DataIdentifierReference.type.TAG },
+        tags: [],
+        topicFilters: [],
+      },
+      destination: { topic: asset.topic, assetId: asset.id, schema: asset.schema },
+      instructions: [],
+    }
+    props.onChange([...(props.formData || []), newMapping])
   }
 
   const displayColumns = useMemo<ColumnDef<DataCombining>[]>(() => {
@@ -55,7 +77,16 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
       props.onChange(newValues)
     }
 
+    const assetColumn: ColumnDef<DataCombining> = {
+      accessorKey: 'destination.assetId',
+      cell: (info) => {
+        if (info.row.original.destination.assetId) return <AssetTag tagTitle={info.row.original.destination.topic} />
+        return <Text>{t('combiner.unset')}</Text>
+      },
+    }
+
     return [
+      ...(isAssetManager ? [assetColumn] : []),
       {
         accessorKey: 'destination',
         cell: (info) => {
@@ -119,6 +150,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
           )
         },
         footer: () => {
+          if (isAssetManager) return null
           return (
             <ButtonGroup isAttached size="sm">
               <IconButton
@@ -132,7 +164,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
         },
       },
     ]
-  }, [props, t])
+  }, [isAssetManager, props, t])
 
   return (
     <>
@@ -144,6 +176,8 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
         enablePaginationSizes={false}
         enableColumnFilters={false}
       />
+      {isAssetManager && <ManagedAssetSelect onChange={handleAddAsset} />}
+
       {selectedItem != undefined && props.formData?.[selectedItem] && (
         <DataCombiningEditorDrawer
           onClose={() => setSelectedItem(undefined)}
