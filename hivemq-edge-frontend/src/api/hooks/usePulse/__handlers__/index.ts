@@ -70,6 +70,28 @@ export const MOCK_PULSE_STATUS_ERROR: PulseStatus = {
   },
 }
 
+export const MOCK_PULSE_STATUS_DISCONNECTED: PulseStatus = {
+  activation: PulseStatus.activation.ACTIVATED,
+  runtime: PulseStatus.runtime.DISCONNECTED,
+}
+
+export const MOCK_PULSE_STATUS_DEACTIVATED: PulseStatus = {
+  activation: PulseStatus.activation.DEACTIVATED,
+  runtime: PulseStatus.runtime.DISCONNECTED,
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const getRandomStatus = () => {
+  const elements = [
+    MOCK_PULSE_STATUS_CONNECTED,
+    MOCK_PULSE_STATUS_CONNECTED,
+    MOCK_PULSE_STATUS_ERROR,
+    MOCK_PULSE_STATUS_DISCONNECTED,
+    MOCK_PULSE_STATUS_DEACTIVATED,
+  ]
+  return elements[Math.floor(Math.random() * elements.length)]
+}
+
 export const handlers = [
   http.delete('**/api/v1/management/pulse/activation-token', async () => {
     await delay(1000)
