@@ -4,7 +4,7 @@ import { Card, CardBody, HStack, Icon, Image, StackDivider, Text, VStack } from 
 import { PiBridgeThin } from 'react-icons/pi'
 import { GrStatusUnknown } from 'react-icons/gr'
 import { ImMakeGroup } from 'react-icons/im'
-import { HqCombiner } from '@/components/Icons'
+import { HqCombiner, PulseAgentIcon, HqAssets } from '@/components/Icons'
 
 import edgeLogo from '@/assets/edge/05-icon-industrial-hivemq-edge.svg'
 
@@ -43,6 +43,10 @@ const NodeNameCard: FC<NodeNameCardProps> = ({ name, type, description, icon }) 
         )
       case NodeTypes.COMBINER_NODE:
         return <Icon data-testid="node-type-icon" data-nodeicon={type} as={HqCombiner} fontSize="24px" />
+      case NodeTypes.ASSETS_NODE:
+        return <Icon data-testid="node-type-icon" data-nodeicon={type} as={HqAssets} fontSize="24px" />
+      case NodeTypes.PULSE_NODE:
+        return <Icon data-testid="node-type-icon" data-nodeicon={type} as={PulseAgentIcon} fontSize="24px" />
 
       case NodeTypes.DEVICE_NODE:
         return (

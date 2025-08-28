@@ -3,9 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import type { DataIdentifierReference } from './DataIdentifierReference';
-import type { Instruction } from './Instruction';
-
 /**
  * The definition of the mapping for a managed asset in Edge
  */
@@ -15,17 +12,9 @@ export type AssetMapping = {
      */
     status: AssetMapping.status;
     /**
-     * The list of sources used in the asset mapping
+     * The id of a DataCombining payload that describes the mapping of that particular asset
      */
-    sources: Array<DataIdentifierReference>;
-    /**
-     * The primary source used for triggering the streaming of the asset. It must be one of the sources.
-     */
-    primary: DataIdentifierReference;
-    /**
-     * List of mapping instructions to be applied between the sources and the asset schema
-     */
-    instructions: Array<Instruction>;
+    mappingId: string;
 };
 
 export namespace AssetMapping {

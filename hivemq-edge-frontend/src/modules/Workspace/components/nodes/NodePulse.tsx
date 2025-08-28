@@ -39,9 +39,9 @@ const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging 
 
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/node/pulse-assets`)
 
-  const pulseStatus: PulseStatus.activationStatus = hasPulseCapability
-    ? PulseStatus.activationStatus.ACTIVATED
-    : PulseStatus.activationStatus.DEACTIVATED
+  const pulseStatus: PulseStatus.activation = hasPulseCapability
+    ? PulseStatus.activation.ACTIVATED
+    : PulseStatus.activation.DEACTIVATED
 
   return (
     <>
