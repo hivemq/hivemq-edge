@@ -57,19 +57,23 @@ const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging 
         w={CONFIG_ADAPTER_WIDTH}
         borderTopRadius={30}
       >
-        <HStack w="100%" justifyContent="flex-end" gap={1} data-testid="pulse-client-capabilities">
-          <Badge data-testid="pulse-client-unmapped" colorScheme="teal">
+        <HStack w="100%" justifyContent="flex-end" gap={1} data-testid="pulse-client-capabilities" role="status">
+          <TooltipBadge
+            aria-label={t('pulse.coverage.unmapped')}
+            data-testid="pulse-client-unmapped"
+            colorScheme="teal"
+          >
             {assetStats.unmapped}
-          </Badge>
-          <Badge data-testid="pulse-client-mapped" colorScheme="gray">
+          </TooltipBadge>
+          <TooltipBadge data-testid="pulse-client-mapped" colorScheme="gray" aria-label={t('pulse.coverage.mapped')}>
             {assetStats.mapped}
-          </Badge>
+          </TooltipBadge>
           {isSuccess && (
-            <Icon
-              boxSize={4}
+            <TooltipIcon
+              data-testid="pulse-client-mapped"
+              aria-label={t('pulse.workspace.nodeClient.status', { context: pulseStatus })}
               as={hasPulseCapability ? HqPulseActivated : HqPulseNotActivated}
               data-type={pulseStatus}
-              aria-label={t('pulse.workspace.nodeClient.status', { context: pulseStatus })}
             />
           )}
         </HStack>

@@ -6,9 +6,11 @@ import { Handle, Position, useStore } from '@xyflow/react'
 import { HStack, Icon, Text, VStack } from '@chakra-ui/react'
 
 import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.ts'
-import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import TooltipIcon from '@/components/Chakra/TooltipIcon.tsx'
 import { PLCTagIcon } from '@/components/Icons/TopicIcon.tsx'
+import { SelectEntityType } from '@/components/MQTT/types'
+import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import type { NodeDeviceType } from '@/modules/Workspace/types.ts'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import {
@@ -21,7 +23,6 @@ import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualTo
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
 import MappingBadge from '@/modules/Workspace/components/parts/MappingBadge.tsx'
-import { SelectEntityType } from '@/components/MQTT/types'
 
 const NodeDevice: FC<NodeProps<NodeDeviceType>> = ({ id, selected, data, dragging }) => {
   const { t } = useTranslation()
@@ -59,7 +60,13 @@ const NodeDevice: FC<NodeProps<NodeDeviceType>> = ({ id, selected, data, draggin
             <>
               <HStack w="100%" justifyContent="flex-end" gap={1} data-testid="device-capabilities">
                 {capabilities?.map((capability) => (
-                  <Icon key={capability} boxSize={4} as={deviceCapabilityIcon[capability]} data-type={capability} />
+                  <TooltipIcon
+                    key={capability}
+                    boxSize={4}
+                    as={deviceCapabilityIcon[capability]}
+                    data-type={capability}
+                    aria-label={t('device.capability.description', { context: capability })}
+                  />
                 ))}
               </HStack>
               <HStack w="100%" data-testid="device-description">
