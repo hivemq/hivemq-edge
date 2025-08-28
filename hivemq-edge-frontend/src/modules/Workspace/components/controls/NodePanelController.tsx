@@ -140,13 +140,7 @@ const NodePanelController: FC = () => {
         />
       )}
       {selectedAssets && (
-        <PulsePropertyDrawer
-          nodeId={nodeId}
-          selectedNode={selectedAssets}
-          isOpen={isOpen}
-          onClose={handleClose}
-          onEditEntity={handleEditEntity}
-        />
+        <PulsePropertyDrawer nodeId={nodeId} selectedNode={selectedAssets} isOpen={isOpen} onClose={handleClose} />
       )}
     </Suspense>
   )

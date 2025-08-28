@@ -84,6 +84,37 @@ export const mockCombinerMapping: DataCombining = {
   instructions: [],
 }
 
+export const MOCK_COMBINER_ASSET: Combiner = {
+  id: 'e9af7f82-bec1-4d07-8c0f-e4591148af19',
+  name: 'my-combiner-for-asset',
+  sources: {
+    items: [
+      {
+        type: EntityType.ADAPTER,
+        id: 'my-adapter',
+      },
+      {
+        type: EntityType.PULSE_AGENT,
+        id: 'the Pulse Agent',
+      },
+    ],
+  },
+  mappings: {
+    items: [
+      {
+        id: 'ff02efff-7b4c-4f8c-8bf6-74d0756283fb',
+        sources: {
+          primary: { id: '', type: DataIdentifierReference.type.TAG },
+          tags: ['my/tag/t1', 'my/tag/t3'],
+          topicFilters: ['my/topic/+/temp'],
+        },
+        destination: { topic: 'my/first/topic' },
+        instructions: [],
+      },
+    ],
+  },
+}
+
 export const handlers = [
   http.get('*/management/combiners', () => {
     return HttpResponse.json<CombinerList>(
@@ -145,5 +176,16 @@ export const handlers = [
 
   http.get<MappingParams>('*/management/combiners/:combinerId/mappings/:mappingId/instructions', () => {
     return HttpResponse.json<Array<Instruction>>([], { status: 200 })
+  }),
+]
+
+export const handlerCombinerAssets = [
+  http.get('*/management/combiners', () => {
+    return HttpResponse.json<CombinerList>(
+      {
+        items: [MOCK_COMBINER_ASSET],
+      },
+      { status: 200 }
+    )
   }),
 ]

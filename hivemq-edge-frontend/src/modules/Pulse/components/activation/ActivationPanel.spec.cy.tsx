@@ -25,7 +25,7 @@ describe('ActivationPanel', () => {
     cy.getByTestId('pulse-activation-trigger').click()
     cy.get("[role='dialog']").should('be.visible')
     cy.get("[role='dialog']").within(() => {
-      cy.get('header').should('have.text', 'Pulse Client Activation')
+      cy.get('header').should('have.text', 'Pulse Agent Activation')
 
       cy.get('[role="alert"]')
         .should('have.attr', 'data-status', 'info')

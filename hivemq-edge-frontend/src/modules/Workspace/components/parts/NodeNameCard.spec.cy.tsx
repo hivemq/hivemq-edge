@@ -59,4 +59,22 @@ describe('NodeNameCard', () => {
     cy.getByTestId('node-name').should('not.exist')
     cy.getByTestId('node-description').should('not.exist')
   })
+
+  it('should render the pulse agent properly', () => {
+    cy.mountWithProviders(<NodeNameCard type={NodeTypes.PULSE_NODE} name="Pulse Agent" description="the description" />)
+
+    cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.PULSE_NODE)
+    cy.getByTestId('node-name').should('have.text', 'Pulse Agent')
+    cy.getByTestId('node-description').should('have.text', 'the description')
+  })
+
+  it('should render the assets properly', () => {
+    cy.mountWithProviders(
+      <NodeNameCard type={NodeTypes.ASSETS_NODE} name="Asset Mapper" description="the description" />
+    )
+
+    cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.ASSETS_NODE)
+    cy.getByTestId('node-name').should('have.text', 'Asset Mapper')
+    cy.getByTestId('node-description').should('have.text', 'the description')
+  })
 })

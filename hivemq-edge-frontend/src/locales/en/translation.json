@@ -912,6 +912,9 @@
         "combiner": {
           "create": "Create a data combiner from selection"
         },
+        "assets": {
+          "create": "Create a new Asset Mapper from the selection"
+        },
         "edge": {
           "topicFilter": "Manage topic filters"
         }
@@ -972,7 +975,7 @@
       "header_CLUSTER_NODE": "Group Overview",
       "header_EDGE_NODE": "Edge Overview",
       "header_DEVICE_NODE": "Device Overview",
-      "header_PULSE_NODE": "Pulse Client Overview",
+      "header_PULSE_NODE": "Pulse Agent Overview",
       "header_ASSETS_NODE": "Assets Overview",
       "modify_ADAPTER_NODE": "Modify the adapter",
       "modify_BRIDGE_NODE": "Modify the bridge",
@@ -987,7 +990,7 @@
       "header_BRIDGE_NODE": "Bridge Observability",
       "header_CLUSTER_NODE": "Group Observability",
       "header_COMBINER_NODE": "Combiner Observability",
-      "header_PULSE_NODE": "Pulse Client Observability",
+      "header_PULSE_NODE": "Pulse Agent Observability",
       "header_ASSETS_NODE": "Pulse Assets Observability"
     },
     "datahub": {
@@ -1376,7 +1379,8 @@
       "tabs": {
         "combinerTab": "Configuration",
         "sourcesTab": "Sources",
-        "mappingsTab": "Mappings"
+        "mappingsTab": "Mappings",
+        "assetTabs": "Asset mappings"
       },
       "description": "A data combiner brings tags (adapters) and topic filters (bridges) together for further northbound data mapping",
       "config": {
@@ -1391,6 +1395,10 @@
         },
         "edge": {
           "description": "Always added as the owner of the topic filters"
+        },
+        "pulse": {
+          "name": "Pulse Agent",
+          "description": "Assets managed by the Pulse Agent"
         }
       },
       "mappings": {
@@ -1483,7 +1491,7 @@
     "error": {
       "loading": "We cannot load the assets at this time. Please try again later",
       "notYetAvailable": "Pulse Assets are not yet available for HiveMQ Edge. <1>Please contact us for more information.</1",
-      "notActivated": "The Pulse Client is not connected to this Edge instance."
+      "notActivated": "The Pulse Agent is not connected to this Edge instance."
     },
     "activation": {
       "action": {
@@ -1492,7 +1500,7 @@
         "submit": "Activate"
       },
       "heading": {
-        "title": "Pulse Client Activation"
+        "title": "Pulse Agent Activation"
       },
       "error": {
         "noCapabilityLoaded": "Cannot check the Pulse capability. Please try again later"
@@ -1513,16 +1521,16 @@
         }
       },
       "activate": {
-        "title": "Pulse Client Activation",
-        "success": "The Pulse Client has been successfully activated",
-        "error": "The Pulse Client could not be activated: {{error}}. Please check the activation token and try again",
+        "title": "Pulse Agent Activation",
+        "success": "The Pulse Agent has been successfully activated",
+        "error": "The Pulse Agent could not be activated: {{error}}. Please check the activation token and try again",
         "loading": "Processing the request. Please wait ..."
       },
       "revoke": {
-        "title": "Pulse Client Deactivation",
-        "confirmation": "Do you really want to deactivate the Pulse Client? The operation cannot be reversed.",
-        "success": "The Pulse Client has been successfully deactivated",
-        "error": "The Pulse Client could not be deactivated: {{error}}. Please try again.",
+        "title": "Pulse Agent Deactivation",
+        "confirmation": "Do you really want to deactivate the Pulse Agent? The operation cannot be reversed.",
+        "success": "The Pulse Agent has been successfully deactivated",
+        "error": "The Pulse Agent could not be deactivated: {{error}}. Please try again.",
         "loading": "Processing the request. Please wait ..."
       }
     },
@@ -1545,6 +1553,7 @@
         },
         "sources": {
           "unset": "< unset >",
+          "norFound": "< not found >",
           "more": "+{{ count }} more"
         }
       },
@@ -1558,17 +1567,25 @@
         "map": "Map the asset",
         "delete": "Delete mapping",
         "mapper": "Open asset mapper"
+      },
+      "selector": {
+        "aria-label": "List of assets",
+        "placeholder": "Select an asset to map...",
+        "loading": "Loading the assets...",
+        "noAssetsFound": "No assets found",
+        "add": "Add the asset to the mappings"
       }
     },
     "mapper": {
-      "title": "Asset Mapper"
+      "title": "Asset Mapper",
+      "unnamed": "< unnamed asset mapper >"
     },
 
     "workspace": {
       "nodeClient": {
         "status_ACTIVATED": "Activated",
         "status_DEACTIVATED": "Not Activated",
-        "title": "Pulse Client"
+        "title": "Pulse Agent"
       }
     }
   }

@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
-import { Box, Skeleton } from '@chakra-ui/react'
+import { Box, Skeleton, Text } from '@chakra-ui/react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -110,21 +110,22 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
         } as FilterMetadata,
       },
       {
-        accessorFn: (row) => row.mapping?.sources ?? [],
-        accessorKey: 'mapping.sources',
+        // accessorFn: (row) => row.mapping?.sources ?? [],
+        accessorKey: 'combiner.sources',
         enableGlobalFilter: false,
-        enableColumnFilter: true,
+        enableColumnFilter: false,
         enableSorting: false,
         sortingFn: undefined,
-        filterFn: (row, _, filterValue) => {
-          return !!row.original.mapping?.sources.some((e) => e.id === filterValue)
-        },
+        // filterFn: (row, _, filterValue) => {
+        //   return !!row.original.mapping?.sources.some((e) => e.id === filterValue)
+        // },
         header: t('pulse.assets.listing.column.sources'),
         cell: (info) => {
-          const { sources, primary } = info.row.original.mapping || {}
+          const mappingId = info.row.original.mapping?.mappingId
           return (
             <Skeleton isLoaded={!isLoading}>
-              <SourcesCell sources={sources} primary={primary} />
+              {!mappingId && <Text whiteSpace="nowrap">{t('pulse.assets.listing.sources.unset')}</Text>}
+              {mappingId && <SourcesCell mappingId={mappingId} isLoading={isLoading} />}
             </Skeleton>
           )
         },

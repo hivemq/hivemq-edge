@@ -152,7 +152,7 @@ export const MOCK_CAPABILITY_PULSE_ASSETS: Capability = {
   id: Capability.id.PULSE_ASSET_MANAGEMENT,
   displayName: 'Pulse Asset Management',
   description:
-    'This enables HiveMQ Edge to make use of a Pulse Client, including the ability to create, update and map Pulse Assets.',
+    'This enables HiveMQ Edge to make use of a Pulse Agent, including the ability to create, update and map Pulse Assets.',
 }
 
 export const MOCK_CAPABILITIES: CapabilityList = {
