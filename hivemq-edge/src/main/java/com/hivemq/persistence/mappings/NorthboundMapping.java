@@ -19,122 +19,135 @@ import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.api.model.JavaScriptConstants;
+import com.hivemq.mqtt.message.QoS;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class NorthboundMapping implements PollingContext {
 
-    private static final int DEFAULT_QOS = 2;
-    private static final long DEFAULT_MESSAGE_EXPIRY = JavaScriptConstants.JS_MAX_SAFE_INTEGER;
+    private static final int DEFAULT_QOS = QoS.EXACTLY_ONCE.ordinal();
+    private static final @NotNull Long DEFAULT_MESSAGE_EXPIRY = JavaScriptConstants.JS_MAX_SAFE_INTEGER;
 
     private final @NotNull String topic;
     private final @NotNull String tagName;
-    private final @NotNull MessageHandlingOptions messageHandlingOptions;
-    private final Boolean includeTagNames;
-    private final Boolean includeTimestamp;
-    private final @NotNull List<MqttUserProperty> userProperties;
     private final int maxQoS;
-    private final long messageExpiryInterval;
+    private final @NotNull MessageHandlingOptions messageHandlingOptions;
+    private final @NotNull Boolean includeTagNames;
+    private final @NotNull Boolean includeTimestamp;
+    private final @NotNull List<MqttUserProperty> userProperties;
+    private final @Nullable Long messageExpiryInterval;
 
     public NorthboundMapping(
             final @NotNull String tagName,
             final @NotNull String topic,
             final int maxQoS,
-            final long messageExpiryInterval,
-            final @NotNull MessageHandlingOptions messageHandlingOptions,
-            final Boolean includeTagNames,
-            final Boolean includeTimestamp,
-            final @NotNull List<MqttUserProperty> userProperties) {
+            final @Nullable MessageHandlingOptions messageHandlingOptions,
+            final @Nullable Boolean includeTagNames,
+            final @Nullable Boolean includeTimestamp,
+            final @Nullable List<MqttUserProperty> userProperties,
+            final @Nullable Long messageExpiryInterval) {
         this.tagName = tagName;
         this.topic = topic;
-        this.messageHandlingOptions = messageHandlingOptions;
-        this.messageExpiryInterval = messageExpiryInterval;
-        this.includeTagNames = includeTagNames;
-        this.includeTimestamp = includeTimestamp;
-        this.userProperties = userProperties;
         this.maxQoS = maxQoS;
+        this.messageHandlingOptions =
+                messageHandlingOptions != null ? messageHandlingOptions : MessageHandlingOptions.MQTTMessagePerTag;
+        this.includeTagNames = includeTagNames != null && includeTagNames;
+        this.includeTimestamp = includeTimestamp == null || includeTimestamp; // default is true
+        this.userProperties = userProperties != null ? userProperties : new ArrayList<>();
+        this.messageExpiryInterval = messageExpiryInterval != null ? messageExpiryInterval : DEFAULT_MESSAGE_EXPIRY;
     }
 
+    private static @NotNull MqttUserProperty userProp(final @NotNull com.hivemq.edge.api.model.MqttUserProperty u) {
+        return new MqttUserProperty(u.getName(), u.getValue());
+    }
+
+    public static @NotNull NorthboundMapping fromModel(final @NotNull com.hivemq.edge.api.model.NorthboundMapping model) {
+        return new NorthboundMapping(model.getTagName(),
+                model.getTopic(),
+                model.getMaxQoS() == null ? DEFAULT_QOS : model.getMaxQoS().ordinal(),
+                MessageHandlingOptions.MQTTMessagePerTag,
+                model.getIncludeTagNames() != null && model.getIncludeTagNames(),
+                model.getIncludeTimestamp() == null || model.getIncludeTimestamp(),
+                model.getUserProperties() != null ?
+                        model.getUserProperties().stream().map(NorthboundMapping::userProp).toList() :
+                        List.of(),
+                model.getMessageExpiryInterval() != null ? model.getMessageExpiryInterval() : DEFAULT_MESSAGE_EXPIRY);
+    }
+
+    @Override
     public @NotNull String getMqttTopic() {
         return topic;
     }
 
+    @Override
     public @NotNull String getTagName() {
         return tagName;
     }
 
+    @Override
     public int getMqttQos() {
         return maxQoS;
     }
 
+    @Override
     public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
         return messageHandlingOptions;
     }
 
+    @Override
     public @NotNull Boolean getIncludeTimestamp() {
         return includeTimestamp;
     }
 
+    @Override
     public @NotNull Boolean getIncludeTagNames() {
         return includeTagNames;
     }
 
+    @Override
     public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
     }
 
+    @Override
     public @Nullable Long getMessageExpiryInterval() {
-        return this.messageExpiryInterval;
-    }
-
-    public static NorthboundMapping fromModel(final com.hivemq.edge.api.model.NorthboundMapping model) {
-        return new NorthboundMapping(model.getTagName(),
-                model.getTopic(),
-                model.getMaxQoS() == null ? DEFAULT_QOS : model.getMaxQoS().ordinal(),
-                model.getMessageExpiryInterval() == null ? DEFAULT_MESSAGE_EXPIRY : model.getMessageExpiryInterval(),
-                MessageHandlingOptions.MQTTMessagePerTag,
-                model.getIncludeTagNames() != null && model.getIncludeTagNames(),
-                model.getIncludeTimestamp() != null && model.getIncludeTimestamp(),
-                model.getUserProperties() == null ?
-                        List.of() :
-                        model.getUserProperties()
-                                .stream()
-                                .map(u -> new MqttUserProperty(u.getName(), u.getValue()))
-                                .collect(Collectors.toList()));
+        return messageExpiryInterval;
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final NorthboundMapping that = (NorthboundMapping) o;
-        return Objects.equals(getIncludeTagNames(), that.getIncludeTagNames()) &&
-                Objects.equals(getIncludeTimestamp(), that.getIncludeTimestamp()) &&
-                maxQoS == that.maxQoS &&
-                Objects.equals(getMessageExpiryInterval(),that.getMessageExpiryInterval()) &&
-                Objects.equals(topic, that.topic) &&
-                Objects.equals(getTagName(), that.getTagName()) &&
-                getMessageHandlingOptions() == that.getMessageHandlingOptions() &&
-                Objects.equals(getUserProperties(), that.getUserProperties());
+    public boolean equals(final @Nullable Object o) {
+        if (o instanceof final NorthboundMapping that) {
+            return Objects.equals(tagName, that.tagName) &&
+                    Objects.equals(topic, that.topic) &&
+                    maxQoS == that.maxQoS &&
+                    messageHandlingOptions == that.messageHandlingOptions &&
+                    Objects.equals(includeTagNames, that.includeTagNames) &&
+                    Objects.equals(includeTimestamp, that.includeTimestamp) &&
+                    Objects.equals(userProperties, that.userProperties) &&
+                    Objects.equals(messageExpiryInterval, that.messageExpiryInterval);
+        }
+        return false;
+
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(topic,
-                getTagName(),
-                getMessageHandlingOptions(),
-                getIncludeTagNames(),
-                getIncludeTimestamp(),
-                getUserProperties(),
+        return Objects.hash(tagName,
+                topic,
                 maxQoS,
-                getMessageExpiryInterval());
+                messageHandlingOptions,
+                includeTagNames,
+                includeTimestamp,
+                userProperties,
+                messageExpiryInterval);
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return "NorthboundMapping{" +
                 "topic='" +
                 topic +

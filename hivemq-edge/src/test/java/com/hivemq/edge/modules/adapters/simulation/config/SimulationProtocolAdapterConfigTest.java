@@ -97,7 +97,7 @@ class SimulationProtocolAdapterConfigTest {
         assertThat(config.getMinDelay()).isEqualTo(0);
         assertThat(config.getMaxDelay()).isEqualTo(1000);
         assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
-        assertThat(protocolAdapterEntity.getNorthboundMappingEntities()).satisfiesExactly(subscription -> {
+        assertThat(protocolAdapterEntity.getNorthboundMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getTopic()).isEqualTo("my/topic");
             assertThat(subscription.getMaxQoS()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
@@ -145,7 +145,7 @@ class SimulationProtocolAdapterConfigTest {
 
         assertThat(protocolAdapterEntity.getAdapterId()).isEqualTo("my-simulation-protocol-adapter");
         assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
-        assertThat(protocolAdapterEntity.getNorthboundMappingEntities()).satisfiesExactly(subscription -> {
+        assertThat(protocolAdapterEntity.getNorthboundMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getTopic()).isEqualTo("my/topic");
             assertThat(subscription.getMaxQoS()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);

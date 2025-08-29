@@ -31,8 +31,8 @@ class NorthboundMappingModelTest {
     @Test
     void test_constructor_whenInputExpiryIsMaxLong_thenStoredExpiryIsMaxSafeJSValue() {
 
-        final NorthboundMappingModel northboundMappingModel = new NorthboundMappingModel("topic",
-                "tag",
+        final NorthboundMappingModel northboundMappingModel = new NorthboundMappingModel("tag",
+                "topic",
                 MessageHandlingOptions.MQTTMessagePerSubscription,
                 false,
                 false,
@@ -45,9 +45,8 @@ class NorthboundMappingModelTest {
 
     @Test
     void test_to_whenMessageExpiryMaxSafeValue_thenParsedValueIsMaxLong() {
-
-        final NorthboundMappingModel northboundMappingModel = new NorthboundMappingModel("topic",
-                "tag",
+        final NorthboundMappingModel northboundMappingModel = new NorthboundMappingModel("tag",
+                "topic",
                 MessageHandlingOptions.MQTTMessagePerSubscription,
                 false,
                 false,
@@ -57,7 +56,7 @@ class NorthboundMappingModelTest {
 
         assertEquals(JavaScriptConstants.JS_MAX_SAFE_INTEGER, northboundMappingModel.getMessageExpiryInterval());
 
-        final NorthboundMapping northboundMapping = northboundMappingModel.toPersitence();
+        final NorthboundMapping northboundMapping = northboundMappingModel.toPersistence();
         assertEquals(Long.MAX_VALUE, northboundMapping.getMessageExpiryInterval());
 
     }
