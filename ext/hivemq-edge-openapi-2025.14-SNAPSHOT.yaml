@@ -4581,7 +4581,7 @@ paths:
     post:
       description: Add a new managed asset to the Pulse Client
       summary: Add a new managed asset
-      operationId: add-managed-assets
+      operationId: add-managed-asset
       tags:
         - Pulse
       requestBody:
@@ -4600,6 +4600,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Pulse not activated
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Managed asset not found
         '409':
           content:
             application/json:
@@ -4616,7 +4622,7 @@ paths:
     delete:
       description: Delete the specified managed asset
       summary: Delete a managed asset
-      operationId: delete-managed-assets
+      operationId: delete-managed-asset
       tags:
         - Pulse
       parameters:
@@ -4645,7 +4651,7 @@ paths:
     put:
       description: Update a managed asset
       summary: Update a managed asset
-      operationId: update-managed-assets
+      operationId: update-managed-asset
       tags:
         - Pulse
       parameters:
@@ -4678,6 +4684,153 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Pulse Agent not connected
+  /api/v1/management/pulse/asset-mappers:
+    get:
+      description: Get all asset mappers
+      summary: Get all asset mappers
+      operationId: get-asset-mappers
+      tags:
+        - Pulse
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CombinerList'
+          description: Success
+    post:
+      description: Add a new asset mapper.
+      summary: Add a new asset mapper
+      operationId: add-asset-mapper
+      tags:
+        - Pulse
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Combiner'
+        description: The combiner to add
+        required: true
+      responses:
+        '200':
+          description: Success
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Combiner already exists
+  /api/v1/management/pulse/asset-mappers/{combinerId}:
+    get:
+      description: Get an asset mapper by its unique Id.
+      summary: Get an asset mapper
+      operationId: get-asset-mapper
+      tags:
+        - Pulse
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Combiner'
+          description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Combiner not found
+    delete:
+      description: Delete the specified asset mapper.
+      summary: Delete an asset mapper
+      operationId: delete-asset-mapper
+      tags:
+        - Pulse
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+      responses:
+        '200':
+          description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Combiner not found
+    put:
+      description: Update an asset mapper.
+      summary: Update an asset mapper
+      operationId: update-asset-mapper
+      tags:
+        - Pulse
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Combiner'
+        description: The new content of the asset mapper
+        required: true
+      responses:
+        '200':
+          description: Success
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Combiner already exists
+  /api/v1/management/pulse/asset-mappers/{combinerId}/mappings:
+    get:
+      description: Get all data combining mappings for the given combiner
+      summary: Get all mappings
+      operationId: get-asset-mapper-mappings
+      tags:
+        - Pulse
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataCombiningList'
+          description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Combiner not found
+  /api/v1/management/pulse/asset-mappers/{combinerId}/mappings/{mappingId}/instructions:
+    get:
+      description: Get all the instructions for a designated mapping
+      summary: Get all instructions
+      operationId: get-asset-mapper-instructions
+      tags:
+        - Pulse
+      parameters:
+        - $ref: '#/components/parameters/CombinerId'
+        - $ref: '#/components/parameters/MappingId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                description: List of instructions to be applied to incoming data
+                items:
+                  $ref: '#/components/schemas/Instruction'
+          description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Combiner not found
 components:
   schemas:
     UsernamePasswordCredentials:
@@ -6440,12 +6593,13 @@ components:
           description: The value of the data point
     EntityType:
       type: string
-      description: These are the prime entities owning tags and topic filters
+      description: These are the prime entities owning integration points such as tags and topic filters
       enum:
         - ADAPTER
         - DEVICE
         - BRIDGE
         - EDGE_BROKER
+        - PULSE_AGENT
     EntityReference:
       type: object
       description: A reference to one of the main entities in Edge (e.g. device, adapter, edge broker, bridge host)
@@ -6495,9 +6649,14 @@ components:
         destination:
           type: object
           properties:
+            assetId:
+              type: string
+              format: uuid
+              description: The id of a mapped asset containing the topic and schema used for destination of the mapping
             topic:
               type: string
               format: mqtt-topic
+              description: The MQTT topic used for destination of the mapping
             schema:
               type: string
               format: data-url
@@ -6615,6 +6774,7 @@ components:
           type: string
           format: data-url
           description: The schema associated with the asset, in a JSON Schema and data uri format.
+          readOnly: true
           example: data:application/schema+json;base64,eyJ0eXBlIjoiT2JqZWN0IiwiaWQiOiJhc3NldC1zY2hlbWEifQ==
       required:
         - id
@@ -6633,26 +6793,14 @@ components:
             - DRAFT
             - STREAMING
             - REQUIRES_REMAPPING
+            - MISSING
           default: UNMAPPED
-        sources:
-          type: array
-          description: The list of sources used in the asset mapping
-          items:
-            $ref: '#/components/schemas/DataIdentifierReference'
-          uniqueItems: true
-        primary:
-          description: The primary source used for triggering the streaming of the asset. It must be one of the sources.
-          $ref: '#/components/schemas/DataIdentifierReference'
-        instructions:
-          type: array
-          description: List of mapping instructions to be applied between the sources and the asset schema
-          items:
-            $ref: '#/components/schemas/Instruction'
+        mappingId:
+          type: string
+          format: uuid
+          description: The id of a DataCombining payload that describes the mapping of that particular asset
       required:
         - status
-        - sources
-        - primary
-        - instructions
     ManagedAsset:
       type: object
       description: The definition of an extended asset, as managed in Edge for the Pulse Client
@@ -6662,6 +6810,8 @@ components:
           properties:
             mapping:
               $ref: '#/components/schemas/AssetMapping'
+          required:
+            - mapping
       example:
         id: 123e4567-e89b-12d3-a456-426614174000
         name: The fancy asset
@@ -6669,15 +6819,7 @@ components:
         schema: data:application/schema+json;base64,eyJ0eXBlIjoiT2JqZWN0IiwiaWQiOiJhc3NldC1zY2hlbWEifQ==
         mapping:
           status: STREAMING
-          sources:
-            - id: my source 1
-              type: TAG
-            - id: my source 2
-              type: TOPIC_FILTER
-            - id: my source 3
-              type: PULSE_ASSET
-          primary: {}
-          instructions: []
+          mappingId: 64a64c9a-1cd6-47b8-bec9-5a869ee824d4
     ManagedAssetList:
       type: object
       description: A list of managed assets, as managed in Edge for the Pulse Client
