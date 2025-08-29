@@ -22,7 +22,7 @@ describe('ReactFlowRenderer', () => {
   it('should render the Mermaid diagram of the FSM', () => {
     cy.mountWithProviders(<ReactFlowRenderer {...MOCK_FSM.metadata} />, { wrapper })
 
-    cy.get('.react-flow__nodes').find('[role="button"]').as('node+Edges')
+    cy.get('.react-flow__nodes').find('[role="group"]').as('node+Edges')
     cy.get('@node+Edges').eq(0).should('contain.text', 'Connected')
   })
 })
