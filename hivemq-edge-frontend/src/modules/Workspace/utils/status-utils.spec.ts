@@ -9,10 +9,12 @@ import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
 
 import type { Adapter, Bridge } from '@/api/__generated__'
+import { PulseStatus } from '@/api/__generated__'
 import { Status } from '@/api/__generated__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 
 import type { EdgeStyle } from './status-utils.ts'
+import { getThemeForPulseStatus } from './status-utils.ts'
 import { getEdgeStatus, getThemeForStatus, updateEdgesStatus, updateNodeStatus } from './status-utils.ts'
 import { type EdgeStatus, NodeTypes } from '../types.ts'
 
@@ -126,6 +128,47 @@ describe('getThemeForStatus', () => {
     { status: { connection: Status.connection.STATELESS }, expected: '#38A169' },
   ])('should return $expected for $status', ({ status, expected }) => {
     const color = getThemeForStatus(MOCK_THEME, status)
+    expect(color).toBe(expected)
+  })
+})
+
+interface PulseStatusSuite {
+  status?: PulseStatus
+  expected: Token<CSS.Property.Color, 'colors'>
+}
+
+describe('getThemeForPulseStatus', () => {
+  it.each<PulseStatusSuite>([
+    { status: undefined, expected: '#E53E3E' },
+    {
+      status: { activation: PulseStatus.activation.ERROR, runtime: PulseStatus.runtime.CONNECTED },
+      expected: '#E53E3E',
+    },
+    {
+      status: { activation: PulseStatus.activation.ACTIVATED, runtime: PulseStatus.runtime.ERROR },
+      expected: '#E53E3E',
+    },
+    {
+      status: { activation: PulseStatus.activation.DEACTIVATED, runtime: PulseStatus.runtime.CONNECTED },
+      expected: '#718096',
+    },
+    {
+      status: { activation: PulseStatus.activation.ACTIVATED, runtime: PulseStatus.runtime.CONNECTED },
+      expected: '#38A169',
+    },
+    {
+      status: { activation: PulseStatus.activation.ACTIVATED, runtime: PulseStatus.runtime.DISCONNECTED },
+      expected: '#718096',
+    },
+
+    // { status: { runtime: Status.runtime.STOPPED }, expected: '#E53E3E' },
+    // { status: { connection: Status.connection.CONNECTED }, expected: '#38A169' },
+    // { status: { connection: Status.connection.DISCONNECTED }, expected: '#718096' },
+    // { status: { connection: Status.connection.ERROR }, expected: '#E53E3E' },
+    // { status: { connection: Status.connection.UNKNOWN }, expected: '#E53E3E' },
+    // { status: { connection: Status.connection.STATELESS }, expected: '#38A169' },
+  ])('should return $expected for $status', ({ status, expected }) => {
+    const color = getThemeForPulseStatus(MOCK_THEME, status)
     expect(color).toBe(expected)
   })
 })
