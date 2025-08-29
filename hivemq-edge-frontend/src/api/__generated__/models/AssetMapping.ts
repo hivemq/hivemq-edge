@@ -14,7 +14,7 @@ export type AssetMapping = {
     /**
      * The id of a DataCombining payload that describes the mapping of that particular asset
      */
-    mappingId: string;
+    mappingId?: string;
 };
 
 export namespace AssetMapping {
@@ -27,6 +27,7 @@ export namespace AssetMapping {
         DRAFT = 'DRAFT',
         STREAMING = 'STREAMING',
         REQUIRES_REMAPPING = 'REQUIRES_REMAPPING',
+        MISSING = 'MISSING',
     }
 
 
