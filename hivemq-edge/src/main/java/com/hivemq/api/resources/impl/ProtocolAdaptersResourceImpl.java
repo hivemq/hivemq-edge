@@ -112,6 +112,7 @@ import static com.hivemq.api.utils.ApiErrorUtils.hasRequestErrors;
 import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredEntity;
 import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredField;
 import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredFieldRegex;
+import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static com.hivemq.util.ErrorResponseUtil.errorResponse;
 
 @Singleton
@@ -148,9 +149,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.protocolAdapterWritingService = protocolAdapterWritingService;
-        // TODO
-//        this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
-        this.objectMapper = objectMapper;
+        this.objectMapper = createProtocolAdapterMapper(objectMapper);
         this.versionProvider = versionProvider;
         this.topicFilterPersistence = topicFilterPersistence;
         this.systemInformation = systemInformation;

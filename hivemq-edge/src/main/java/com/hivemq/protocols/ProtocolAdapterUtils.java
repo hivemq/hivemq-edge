@@ -25,12 +25,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.type.LogicalType;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @author Simon L Johnson
- */
 public class ProtocolAdapterUtils {
-
-    // TODO was removed!!
 
     public static @NotNull ObjectMapper createProtocolAdapterMapper(final @NotNull ObjectMapper objectMapper) {
         final ObjectMapper copy = objectMapper.copy();

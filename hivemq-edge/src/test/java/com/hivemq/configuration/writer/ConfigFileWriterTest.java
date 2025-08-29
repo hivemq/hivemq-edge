@@ -55,6 +55,5 @@ public class ConfigFileWriterTest extends AbstractConfigWriterTest {
             System.err.println(copiedFileContent);
         }
         Assert.assertTrue("XML Content Should Match", diff.similar());
-
     }
 }
