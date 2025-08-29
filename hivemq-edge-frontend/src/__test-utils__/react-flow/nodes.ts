@@ -1,11 +1,11 @@
 import type { NodeProps } from '@xyflow/react'
 import { Position } from '@xyflow/react'
-
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
-import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
-import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
-import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
+import { PulseStatus } from '@/api/__generated__'
 import { mockCombiner } from '@/api/hooks/useCombiners/__handlers__'
+import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
+import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import type {
   NodeAdapterType,
   NodeAssetsType,
@@ -98,6 +98,10 @@ export const MOCK_NODE_PULSE: NodeProps<NodePulseType> = {
   id: NODE_PULSE_AGENT_DEFAULT_ID,
   type: NodeTypes.PULSE_NODE,
   sourcePosition: Position.Bottom,
-  data: { label: 'my pulse client', id: NODE_PULSE_AGENT_DEFAULT_ID },
+  data: {
+    label: 'my pulse client',
+    id: NODE_PULSE_AGENT_DEFAULT_ID,
+    status: { activation: PulseStatus.activation.ACTIVATED, runtime: PulseStatus.runtime.CONNECTED },
+  },
   ...MOCK_DEFAULT_NODE,
 }
