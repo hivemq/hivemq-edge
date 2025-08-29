@@ -52,19 +52,19 @@ export class WorkspacePage extends ShellPage {
   }
 
   get edgeNode() {
-    return cy.get('[data-testid="rf__wrapper"] [role="button"][data-id="edge"]')
+    return cy.get('[data-testid="rf__wrapper"] [role="group"][data-id="edge"]')
   }
 
   adapterNode(id: string) {
-    return cy.get(`[role="button"][data-id="adapter@${id}"]`)
+    return cy.get(`[role="group"][data-id="adapter@${id}"]`)
   }
 
   bridgeNodes() {
-    return cy.get(`[role="button"][data-id^="bridge@"]`)
+    return cy.get(`[role="group"][data-id^="bridge@"]`)
   }
 
   bridgeNode(id: string) {
-    return cy.get(`[role="button"][data-id="bridge@${id}"]`)
+    return cy.get(`[role="group"][data-id="bridge@${id}"]`)
   }
 
   /**
@@ -72,11 +72,11 @@ export class WorkspacePage extends ShellPage {
    * @param id The unique id of the device
    */
   deviceNode(id: string) {
-    return cy.get(`[role="button"][data-id="device@adapter@${id}"]`)
+    return cy.get(`[role="group"][data-id="device@adapter@${id}"]`)
   }
 
   combinerNode(id: string) {
-    return cy.get(`[role="button"][data-id="${id}"]`)
+    return cy.get(`[role="group"][data-id="${id}"]`)
   }
 
   act = {

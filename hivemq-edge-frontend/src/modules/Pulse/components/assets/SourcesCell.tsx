@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Text, VStack } from '@chakra-ui/react'
 
-import type { Combiner, EntityReference } from '@/api/__generated__'
+import type { EntityReference } from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
 import { useListCombiners } from '@/api/hooks/useCombiners'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
@@ -21,19 +21,21 @@ const SourcesCell: FC<SourcesCellProps> = ({ mappingId }) => {
   const { data, isLoading: isCombinersLoading } = useListCombiners()
 
   const sources = useMemo<EntityReference[] | undefined>(() => {
-    const combinersList: Combiner[] = data?.items ?? []
+    if (!data?.items) return undefined
 
-    const ownerCombiner = combinersList.find((combiner) =>
+    const ownerCombiner = data.items.find((combiner) =>
       combiner.mappings?.items.some((mapping) => {
         return mapping.id === mappingId
       })
     )
 
     if (!ownerCombiner?.sources.items.length) return undefined
+
     return ownerCombiner.sources.items.filter((e) => e.type !== EntityType.PULSE_AGENT)
   }, [data?.items, mappingId])
 
   if (isCombinersLoading) return <LoaderSpinner />
+
   if (!sources)
     return (
       <Text data-testid="sources-error" whiteSpace="nowrap">

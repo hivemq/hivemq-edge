@@ -1486,6 +1486,11 @@
     "status_ACTIVATED": "Activated",
     "status_CONNECTED": "Connected",
     "status_DISCONNECTED": "Disconnected",
+    "coverage": {
+      "unmapped": "Unmapped assets",
+      "mapped": "Mapped assets",
+      "attention": "Assets requiring attention"
+    },
     "title": "Assets",
     "description": "Manage Assets and their data mappings to stream live data from Edge to Pulse and other external infrastructure.",
     "error": {
