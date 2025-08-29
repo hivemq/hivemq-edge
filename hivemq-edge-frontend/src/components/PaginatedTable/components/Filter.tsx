@@ -53,12 +53,12 @@ export const Filter = <T,>({
           keys
             .flat()
             // TODO This is a hack. Need to pass a key extractor to the filter
-            .map((e) => e?.id)
+            .map<string>((e) => e?.id)
         )
-      ).sort()
+      ).sort((a, b) => a.localeCompare(b))
     }
 
-    return keys.sort()
+    return (keys satisfies string[]).sort((a, b) => a.localeCompare(b))
   }, [facetedUniqueValues, firstValue])
 
   if (typeof firstValue === 'number' && filterType === 'datetime') {

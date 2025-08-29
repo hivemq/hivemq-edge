@@ -62,11 +62,11 @@ describe('Data Hub', () => {
 
     datahubDesignerPage.toolbox.trigger.click()
 
-    datahubDesignerPage.toolbox.dataPolicy.drag('[role="region"][data-testid="rf__wrapper"]')
+    datahubDesignerPage.toolbox.dataPolicy.drag('[role="application"][data-testid="rf__wrapper"]')
     datahubDesignerPage.controls.fit.click()
 
     datahubDesignerPage.toolbox.trigger.click()
-    datahubDesignerPage.toolbox.topicFilter.drag('[role="region"][data-testid="rf__wrapper"]')
+    datahubDesignerPage.toolbox.topicFilter.drag('[role="application"][data-testid="rf__wrapper"]')
     datahubDesignerPage.controls.fit.click()
 
     datahubDesignerPage.designer.connectNodes('TOPIC_FILTER', 'topic-0', 'DATA_POLICY', 'topicFilter')
