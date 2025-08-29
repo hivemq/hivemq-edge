@@ -1,10 +1,15 @@
 import { expect } from 'vitest'
-import type { Edge, Node, NodeProps } from '@xyflow/react'
+import type { Edge, EdgeChange, Node, NodeProps } from '@xyflow/react'
 import { MarkerType } from '@xyflow/react'
 import type * as CSS from 'csstype'
 import type { ResponsiveValue, ThemeTypings } from '@chakra-ui/react'
 
-import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_LISTENER } from '@/__test-utils__/react-flow/nodes.ts'
+import {
+  MOCK_NODE_ADAPTER,
+  MOCK_NODE_BRIDGE,
+  MOCK_NODE_LISTENER,
+  MOCK_NODE_PULSE,
+} from '@/__test-utils__/react-flow/nodes.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
 
@@ -12,11 +17,13 @@ import type { Adapter, Bridge } from '@/api/__generated__'
 import { PulseStatus } from '@/api/__generated__'
 import { Status } from '@/api/__generated__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
+import { MOCK_PULSE_STATUS_ERROR } from '@/api/hooks/usePulse/__handlers__'
 
 import type { EdgeStyle } from './status-utils.ts'
+import { updatePulseStatus } from './status-utils.ts'
 import { getThemeForPulseStatus } from './status-utils.ts'
 import { getEdgeStatus, getThemeForStatus, updateEdgesStatus, updateNodeStatus } from './status-utils.ts'
-import { type EdgeStatus, NodeTypes } from '../types.ts'
+import { type EdgeStatus, EdgeTypes, type NodePulseType, NodeTypes } from '../types.ts'
 
 const disconnectedBridge: NodeProps<Node<Bridge>> = {
   ...MOCK_NODE_BRIDGE,
@@ -285,5 +292,90 @@ describe('getEdgeStatus', () => {
   ])('should return the correct style for $isConnected and $hasTopics', ({ isConnected, hasTopics, expected }) => {
     const edgeStyle = getEdgeStatus(isConnected, hasTopics, true, color)
     expect(edgeStyle).toStrictEqual(expected)
+  })
+})
+
+describe('updatePulseStatus', () => {
+  const expectedNode: NodePulseType['data'] = {
+    id: 'idPulse',
+    label: 'my pulse client',
+    status: {
+      activation: PulseStatus.activation.ACTIVATED,
+      message: {
+        title: 'Cannot connect to Pulse',
+      },
+      runtime: PulseStatus.runtime.ERROR,
+    },
+  }
+
+  it('should update the Pulse node', async () => {
+    expect(
+      updatePulseStatus({ ...MOCK_NODE_PULSE, position: { x: 0, y: 0 } }, MOCK_PULSE_STATUS_ERROR, [], MOCK_THEME)
+    ).toStrictEqual<{ nodes: NodePulseType['data']; edges: Partial<Edge>[] }>({
+      edges: [],
+      nodes: expectedNode,
+    })
+  })
+
+  it('should update the connectors', async () => {
+    const MOCK_EDGE: Edge[] = [
+      {
+        id: 'edge-test1',
+        source: 'idAdapter',
+        target: 'idAdapter2',
+        type: EdgeTypes.REPORT_EDGE,
+      },
+      {
+        id: 'edge-test2',
+        source: 'idPulse',
+        target: 'idAdapter3',
+        type: EdgeTypes.REPORT_EDGE,
+      },
+      {
+        id: 'edge-test3',
+        source: 'idPulse',
+        target: 'idAdapter4',
+        type: EdgeTypes.REPORT_EDGE,
+      },
+    ]
+
+    expect(
+      updatePulseStatus(
+        { ...MOCK_NODE_PULSE, position: { x: 0, y: 0 } },
+        MOCK_PULSE_STATUS_ERROR,
+        MOCK_EDGE,
+        MOCK_THEME
+      )
+    ).toStrictEqual<{ nodes: NodePulseType['data']; edges: EdgeChange[] }>({
+      nodes: expectedNode,
+      edges: [
+        {
+          id: 'edge-test2',
+          type: 'replace',
+          item: expect.objectContaining({
+            id: 'edge-test2',
+            markerEnd: {
+              color: '#E53E3E',
+              height: 20,
+              type: 'arrowclosed',
+              width: 20,
+            },
+          }),
+        },
+        {
+          id: 'edge-test3',
+          type: 'replace',
+          item: expect.objectContaining({
+            id: 'edge-test3',
+            markerEnd: {
+              color: '#E53E3E',
+              height: 20,
+              type: 'arrowclosed',
+              width: 20,
+            },
+          }),
+        },
+      ],
+    })
   })
 })
