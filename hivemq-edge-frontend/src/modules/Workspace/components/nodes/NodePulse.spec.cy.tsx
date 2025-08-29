@@ -33,6 +33,10 @@ describe('NodePulse', () => {
       cy.getByTestId('topic-wrapper').eq(0).should('have.text', 'test / topic')
       cy.getByTestId('topic-wrapper').eq(0).find('svg').should('have.attr', 'aria-label', 'Asset')
     })
+
+    cy.getByTestId('pulse-status')
+      .should('have.attr', 'data-activation', 'ACTIVATED')
+      .should('have.attr', 'data-runtime', 'CONNECTED')
   })
 
   it('should render properly when deactivated', () => {
