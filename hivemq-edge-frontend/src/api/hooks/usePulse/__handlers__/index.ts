@@ -15,6 +15,9 @@ export const MOCK_PULSE_ASSET: ManagedAsset = {
   description: 'The short description of the asset',
   topic: 'test/topic',
   schema: MOCK_SIMPLE_SCHEMA_URI,
+  mapping: {
+    status: AssetMapping.status.UNMAPPED,
+  },
 }
 
 export const MOCK_PULSE_ASSET_MAPPED: ManagedAsset = {
@@ -80,6 +83,7 @@ export const MOCK_PULSE_STATUS_DEACTIVATED: PulseStatus = {
   runtime: PulseStatus.runtime.DISCONNECTED,
 }
 
+// @ts-ignore
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getRandomStatus = () => {
   const elements = [
