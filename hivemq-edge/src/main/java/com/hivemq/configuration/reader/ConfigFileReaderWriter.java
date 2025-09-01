@@ -106,6 +106,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull BridgeExtractor bridgeExtractor;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
     private final @NotNull DataCombiningExtractor dataCombiningExtractor;
+    private final @NotNull PulseExtractor pulseExtractor;
     private final @NotNull UnsExtractor unsExtractor;
     private final @NotNull List<ReloadableExtractor> reloadableExtractors;
     private final @NotNull SystemInformation systemInformation;
@@ -121,6 +122,7 @@ public class ConfigFileReaderWriter {
         this.bridgeExtractor = new BridgeExtractor(this);
         this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this);
         this.dataCombiningExtractor = new DataCombiningExtractor(this);
+        this.pulseExtractor = new PulseExtractor(this);
         this.unsExtractor = new UnsExtractor(this);
         this.systemInformation = systemInformation;
         reloadableExtractors = List.of(
@@ -149,6 +151,10 @@ public class ConfigFileReaderWriter {
 
     public @NotNull DataCombiningExtractor getDataCombiningExtractor() {
         return dataCombiningExtractor;
+    }
+
+    public @NotNull PulseExtractor getPulseExtractor() {
+        return pulseExtractor;
     }
 
     public @NotNull BridgeExtractor getBridgeExtractor() {

@@ -20,10 +20,9 @@ import com.hivemq.configuration.entity.api.AdminApiEntity;
 import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
 import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import com.hivemq.configuration.entity.listener.ListenerEntity;
+import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -31,6 +30,8 @@ import jakarta.xml.bind.annotation.XmlElementRef;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,63 +48,48 @@ import java.util.Objects;
 public class HiveMQConfigEntity {
 
     public static final int CURRENT_CONFIG_VERSION = 1;
-
+    @XmlElementRef(required = false)
+    private final @NotNull InternalConfigEntity internal = new InternalConfigEntity();
     @XmlElement(name = "config-version", defaultValue = "" + CURRENT_CONFIG_VERSION)
     private int version = CURRENT_CONFIG_VERSION;
-
     @XmlElementWrapper(name = "mqtt-listeners", required = true)
     @XmlElementRef(required = false)
     private @NotNull List<ListenerEntity> mqttListeners = new ArrayList<>();
-
     @XmlElementWrapper(name = "mqtt-sn-listeners", required = true)
     @XmlElementRef(required = false)
     private @NotNull List<ListenerEntity> mqttsnListeners = new ArrayList<>();
-
     @XmlElementRef(required = false)
     private @NotNull MqttConfigEntity mqtt = new MqttConfigEntity();
-
     @XmlElementRef(required = false)
     private @NotNull MqttSnConfigEntity mqttsn = new MqttSnConfigEntity();
-
     @XmlElementRef(required = false)
     private @NotNull RestrictionsEntity restrictions = new RestrictionsEntity();
-
     @XmlElementRef(required = false)
     private @NotNull SecurityConfigEntity security = new SecurityConfigEntity();
-
     @XmlElementRef(required = false)
     private @NotNull PersistenceEntity persistence = new PersistenceEntity();
-
     @XmlElementWrapper(name = "mqtt-bridges", required = true)
     @XmlElementRef(required = false)
     private @NotNull List<MqttBridgeEntity> mqttBridges = new ArrayList<>();
-
     @XmlElementRef(required = false)
     private @NotNull AdminApiEntity api = new AdminApiEntity();
-
     @XmlElementRef(required = false)
     private @NotNull UnsConfigEntity uns = new UnsConfigEntity();
-
     @XmlElementRef(required = false)
     private @NotNull DynamicConfigEntity gateway = new DynamicConfigEntity();
-
     @XmlElementRef(required = false)
     private @NotNull UsageTrackingConfigEntity usageTracking = new UsageTrackingConfigEntity();
-
     @XmlElementWrapper(name = "protocol-adapters")
     @XmlElement(name = "protocol-adapter")
     private @NotNull List<ProtocolAdapterEntity> protocolAdapterConfig = new ArrayList<>();
-
     @XmlElementWrapper(name = "data-combiners")
     @XmlElement(name = "data-combiner")
     private @NotNull List<DataCombinerEntity> dataCombinerEntities = new ArrayList<>();
-
+    @XmlElementRef(name = "pulse", required = false)
+    private @NotNull PulseEntity pulseEntity = new PulseEntity();
     @XmlElement(name = "modules")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
     private @NotNull Map<String, Object> moduleConfigs = new HashMap<>();
-
-    @XmlElementRef(required = false)
-    private final @NotNull InternalConfigEntity internal = new InternalConfigEntity();
 
     // no-arg constructor as JaxB does need one
     public HiveMQConfigEntity() {
@@ -126,7 +112,8 @@ public class HiveMQConfigEntity {
             final @NotNull SecurityConfigEntity security,
             final @NotNull UnsConfigEntity uns,
             final @NotNull UsageTrackingConfigEntity usageTracking,
-            final @NotNull List<DataCombinerEntity> dataCombinerEntities) {
+            final @NotNull List<DataCombinerEntity> dataCombinerEntities,
+            final @NotNull PulseEntity pulseEntity) {
         this.version = Objects.requireNonNullElse(version, CURRENT_CONFIG_VERSION);
         this.api = api;
         this.gateway = gateway;
@@ -143,6 +130,7 @@ public class HiveMQConfigEntity {
         this.uns = uns;
         this.usageTracking = usageTracking;
         this.dataCombinerEntities = dataCombinerEntities;
+        this.pulseEntity = pulseEntity;
     }
 
     public @NotNull List<ListenerEntity> getMqttListenerConfig() {
@@ -209,14 +197,22 @@ public class HiveMQConfigEntity {
         return dataCombinerEntities;
     }
 
+    public @NotNull PulseEntity getPulseEntity() {
+        return pulseEntity;
+    }
+
     public int getVersion() {
         return version;
     }
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final HiveMQConfigEntity that = (HiveMQConfigEntity) o;
         return getVersion() == that.getVersion() &&
                 Objects.equals(mqttListeners, that.mqttListeners) &&
@@ -233,6 +229,7 @@ public class HiveMQConfigEntity {
                 Objects.equals(getUsageTracking(), that.getUsageTracking()) &&
                 Objects.equals(getProtocolAdapterConfig(), that.getProtocolAdapterConfig()) &&
                 Objects.equals(getDataCombinerEntities(), that.getDataCombinerEntities()) &&
+                Objects.equals(getPulseEntity(), that.getPulseEntity()) &&
                 Objects.equals(getModuleConfigs(), that.getModuleConfigs()) &&
                 Objects.equals(getInternal(), that.getInternal());
     }
@@ -254,6 +251,7 @@ public class HiveMQConfigEntity {
                 getUsageTracking(),
                 getProtocolAdapterConfig(),
                 getDataCombinerEntities(),
+                getPulseEntity(),
                 getModuleConfigs(),
                 getInternal());
     }
