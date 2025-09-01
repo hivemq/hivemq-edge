@@ -9,6 +9,7 @@ import { managedAssetJsonSchema } from '@/api/schemas/managed-asset.json-schema.
 import { managedAssetUISchema } from '@/api/schemas/managed-asset.ui-schema.ts'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
 import ExpandableDrawer from '@/components/ExpandableDrawer/ExpandableDrawer.tsx'
+import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 const ManagedAssetDrawer: FC = () => {
@@ -16,17 +17,32 @@ const ManagedAssetDrawer: FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
   const { assetId } = useParams()
-  const { data: listAssets } = useListManagedAssets()
+  const { data: listAssets, isLoading, error } = useListManagedAssets()
+  const { errorToast } = useEdgeToast()
 
   const selectedAsset = useMemo(() => {
     return listAssets?.items.find((asset) => asset.id === assetId)
   }, [assetId, listAssets?.items])
 
-  if (!selectedAsset) throw new Error('No asset found')
+  useEffect(() => {
+    if (assetId && selectedAsset) return
+    if (error || (!error && listAssets && !selectedAsset)) {
+      errorToast(
+        {
+          id: assetId,
+          title: t('Asset information'),
+          description: t('There was a problem loading the asset: '),
+        },
+        error || new Error(`Asset ${assetId} cannot be found`)
+      )
+      navigate('/pulse-assets')
+    }
+  }, [isLoading, error, listAssets, selectedAsset, assetId, errorToast, t, navigate])
 
   useEffect(() => {
+    if (!assetId || !selectedAsset) return
     onOpen()
-  }, [onOpen])
+  }, [assetId, onOpen, selectedAsset])
 
   const handleClose = () => {
     onClose()
