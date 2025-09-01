@@ -19,14 +19,14 @@ package com.hivemq.configuration.entity.pulse;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "pulse")
+@XmlRootElement(name = "pulse")
+@XmlAccessorType(XmlAccessType.NONE)
 public class PulseEntity {
     private final Object lock = new Object();
 
