@@ -35,26 +35,24 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
 
-    private static final Logger log = LoggerFactory.getLogger(Plc4xConnection.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(Plc4xConnection.class);
     private static final int MAX_UINT16 = 65535;
-
-    private final Object lock = new Object();
     protected final @NotNull PlcDriverManager plcDriverManager;
     protected final @NotNull T config;
     protected final @NotNull Plc4xConnectionQueryStringProvider<T> connectionQueryStringProvider;
+    private final Object lock = new Object();
     protected volatile @Nullable PlcConnection plcConnection;
 
     public Plc4xConnection(
             final @NotNull PlcDriverManager plcDriverManager,
             final @NotNull T config,
-            final @NotNull Plc4xConnectionQueryStringProvider<T> connectionQueryStringProvider) throws Plc4xException {
+            final @NotNull Plc4xConnectionQueryStringProvider<T> connectionQueryStringProvider)
+            throws Plc4xException {
         this.plcDriverManager = plcDriverManager;
         this.config = config;
         this.connectionQueryStringProvider = connectionQueryStringProvider;
@@ -89,15 +87,16 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                     }
                     try {
                         plcConnection = CompletableFuture.supplyAsync(() -> {
-                                try {
-                                    return Optional.of(plcDriverManager.getConnectionManager().getConnection(connectionString));
-                                } catch (final Throwable e) {
-                                    log.info("Error encountered connecting to external device", e);
-                                }
-                                return Optional.<PlcConnection>empty();
-                        })
-                        .get(2_000, TimeUnit.MILLISECONDS)
-                        .orElseThrow(() -> new Plc4xException("Error encountered connecting to external device"));
+                                    try {
+                                        return Optional.of(plcDriverManager.getConnectionManager()
+                                                .getConnection(connectionString));
+                                    } catch (final Throwable e) {
+                                        log.info("Error encountered connecting to external device", e);
+                                    }
+                                    return Optional.<PlcConnection>empty();
+                                })
+                                .get(2_000, TimeUnit.MILLISECONDS)
+                                .orElseThrow(() -> new Plc4xException("Error encountered connecting to external device"));
                     } catch (final Throwable e) {
                         log.error("Error encountered connecting to external device", e);
                         throw new Plc4xException("Error encountered connecting to external device");
@@ -187,7 +186,6 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
         return future;
     }
 
-
     protected boolean validConfiguration(final @NotNull T config) {
         return config.getHost() != null && config.getPort() > 0 && config.getPort() < MAX_UINT16;
     }
@@ -200,5 +198,5 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     /**
      * Each adapter type will have its own address format. The implementation should provide the defaults
      */
-    protected abstract @NotNull String getTagAddressForSubscription(@NotNull Plc4xTag tag);
+    protected abstract @NotNull String getTagAddressForSubscription(final @NotNull Plc4xTag tag);
 }
