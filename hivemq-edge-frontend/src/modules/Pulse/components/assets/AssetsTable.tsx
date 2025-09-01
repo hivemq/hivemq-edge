@@ -145,6 +145,7 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
                 asset={asset}
                 onViewWorkspace={handleViewWorkspace}
                 isInWorkspace={variant === 'summary'}
+                onEdit={(id) => navigate(`/pulse-assets/${id}`)}
               />
             </Skeleton>
           )

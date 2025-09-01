@@ -24,6 +24,7 @@ const ProtocolIntegrationStore = lazy(
 )
 const ProtocolAdapters = lazy(() => import('@/modules/ProtocolAdapters/components/panels/ProtocolAdapters.tsx'))
 const PulsePage = lazy(() => import('@/modules/Pulse/PulsePage.tsx'))
+const ManagedAssetDrawer = lazy(() => import('@/modules/Pulse/components/assets/ManagedAssetDrawer.tsx'))
 
 import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
 import { MappingType } from '@/modules/Mappings/types.ts'
@@ -147,6 +148,12 @@ export const routes = createBrowserRouter(
         {
           path: 'pulse-assets/',
           element: <PulsePage />,
+          children: [
+            {
+              path: ':assetId',
+              element: <ManagedAssetDrawer />,
+            },
+          ],
         },
         { ...dataHubRoutes },
       ],

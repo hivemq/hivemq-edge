@@ -5,6 +5,7 @@ import { Box } from '@chakra-ui/react'
 import { Capability } from '@/api/__generated__'
 import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 import PageContainer from '@/components/PageContainer.tsx'
+import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import LicenseWarning from '@/modules/Pulse/components/activation/LicenseWarning.tsx'
 import AssetsTable from '@/modules/Pulse/components/assets/AssetsTable.tsx'
 
@@ -20,6 +21,7 @@ const PulsePage: FC = () => {
         </Box>
       )}
       {hasPulse && <AssetsTable />}
+      <SuspenseOutlet />
     </PageContainer>
   )
 }
