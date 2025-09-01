@@ -19,15 +19,18 @@ package com.hivemq.configuration.reader;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
 public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEntity> {
     private final @NotNull ConfigFileReaderWriter configFileReaderWriter;
+    private @Nullable Consumer<PulseEntity> consumer;
 
     private @NotNull PulseEntity pulseEntity;
 
     public PulseExtractor(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
+        consumer = null;
         this.configFileReaderWriter = configFileReaderWriter;
         this.pulseEntity = new PulseEntity();
     }
@@ -37,19 +40,31 @@ public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEnt
     }
 
     public synchronized void setPulseEntity(final @NotNull PulseEntity pulseEntity) {
-        this.pulseEntity = pulseEntity;
-        // TODO notify consumers.
+        final boolean needsUpdate = !this.pulseEntity.equals(pulseEntity);
+        if (needsUpdate) {
+            this.pulseEntity = pulseEntity;
+            notifyConsumer();
+            configFileReaderWriter.writeConfigWithSync();
+        }
     }
 
     @Override
     public @NotNull Configurator.ConfigResult updateConfig(final @NotNull HiveMQConfigEntity config) {
-        // TODO
+        pulseEntity = config.getPulseEntity();
+        notifyConsumer();
         return Configurator.ConfigResult.SUCCESS;
     }
 
     @Override
     public void sync(final @NotNull HiveMQConfigEntity entity) {
-        // TODO
+        entity.getPulseEntity().setPulseAssetsEntity(pulseEntity.getPulseAssetsEntity());
+    }
+
+    private void notifyConsumer() {
+        final Consumer<PulseEntity> consumer = this.consumer;
+        if (consumer != null) {
+            consumer.accept(pulseEntity);
+        }
     }
 
     @Override
@@ -58,7 +73,8 @@ public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEnt
     }
 
     @Override
-    public void registerConsumer(final @NotNull Consumer<PulseEntity> consumer) {
-        // TODO
+    public void registerConsumer(final @Nullable Consumer<PulseEntity> consumer) {
+        this.consumer = consumer;
+        notifyConsumer();
     }
 }
