@@ -10,6 +10,7 @@ import { managedAssetUISchema } from '@/api/schemas/managed-asset.ui-schema.ts'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
 import ExpandableDrawer from '@/components/ExpandableDrawer/ExpandableDrawer.tsx'
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
+import { customSchemaValidator } from '@/modules/Pulse/utils/validation-utils.ts'
 
 const ManagedAssetDrawer: FC = () => {
   const { t } = useTranslation()
@@ -63,7 +64,8 @@ const ManagedAssetDrawer: FC = () => {
         uiSchema={managedAssetUISchema}
         formData={selectedAsset}
         onSubmit={() => undefined}
-        // customValidate={validator?.validateCombiner}
+        // @ts-ignore Need to fix the type
+        customValidate={customSchemaValidator}
       />
     </ExpandableDrawer>
   )
