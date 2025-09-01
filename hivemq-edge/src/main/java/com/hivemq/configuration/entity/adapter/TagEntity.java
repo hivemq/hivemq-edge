@@ -15,24 +15,22 @@
  */
 package com.hivemq.configuration.entity.adapter;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class TagEntity implements EntityValidatable {
+import static java.util.Objects.requireNonNull;
 
+public class TagEntity implements EntityValidatable {
 
     @XmlElement(name = "name", required = true)
     private final @NotNull String name;
@@ -46,18 +44,16 @@ public class TagEntity implements EntityValidatable {
 
     // no-arg constructor for JaxB
     public TagEntity() {
-        name = "";
-        description = "";
-        definition = new HashMap<>();
+        this("", "", new HashMap<>());
     }
 
     public TagEntity(
             final @NotNull String name,
             final @Nullable String description,
             final @NotNull Map<String, Object> definition) {
-        this.name = name;
-        this.description = description;
-        this.definition = definition;
+        this.name = requireNonNull(name);
+        this.definition = requireNonNull(definition);
+        this.description = Objects.requireNonNullElse(description, "");
     }
 
     public @NotNull Map<String, Object> getDefinition() {
@@ -72,36 +68,24 @@ public class TagEntity implements EntityValidatable {
         return name;
     }
 
-    public static TagEntity fromAdapterTag(final @NotNull Tag tag, final @NotNull ObjectMapper objectMapper) {
-        final Map<String, Object> definitionAsMap =
-                objectMapper.convertValue(tag.getDefinition(), new TypeReference<>() {
-                });
-        return new TagEntity(tag.getName(), tag.getDescription(), definitionAsMap);
-    }
-
-
-    // this is very bad. This means that the field MUST be named name, description and definition
     public @NotNull Map<String, Object> toMap() {
-        final HashMap<String, Object> map = new HashMap<>();
-        map.put("name", name);
-        map.put("description", description);
-        map.put("definition", definition);
-        return map;
+        // this is very bad. This means that the field MUST be named name, description and definition
+        return Map.of("name", name, "description", description != null ? description : "", "definition", definition);
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final TagEntity tagEntity = (TagEntity) o;
-        return Objects.equals(getName(), tagEntity.getName()) &&
-                Objects.equals(getDescription(), tagEntity.getDescription()) &&
-                Objects.equals(getDefinition(), tagEntity.getDefinition());
+    public boolean equals(final @Nullable Object o) {
+        if (o instanceof final TagEntity that) {
+            return Objects.equals(name, that.name) &&
+                    Objects.equals(definition, that.definition) &&
+                    Objects.equals(description, that.description);
+        }
+        return false;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getName(), getDescription(), getDefinition());
+        return Objects.hash(name, description, definition);
     }
 
     @Override

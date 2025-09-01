@@ -35,57 +35,48 @@ import static java.util.Objects.requireNonNullElse;
 @Schema(name = "NorthboundMapping")
 public class NorthboundMappingModel {
 
-    private static final @NotNull String TAG_NAME = "tagName";
-    private static final @NotNull String TOPIC = "topic";
-    private static final @NotNull String MAX_QoS = "maxQoS";
-    private static final @NotNull String MESSAGE_HANDLING_OPTIONS = "messageHandlingOptions";
-    private static final @NotNull String INCLUDE_TAG_NAMES = "includeTagNames";
-    private static final @NotNull String INCLUDE_TIMESTAMP = "includeTimestamp";
-    private static final @NotNull String USER_PROPERTIES = "userProperties";
-    private static final @NotNull String MESSAGE_EXPIRY_INTERVAL = "messageExpiryInterval";
-
-    @JsonProperty(value = TAG_NAME, required = true)
+    @JsonProperty(value = "tagName", required = true)
     @Schema(description = "The tag for which values should be collected and sent out.", format = "mqtt-tag")
     private final @NotNull String tagName;
 
-    @JsonProperty(value = TOPIC, required = true)
+    @JsonProperty(value = "topic", required = true)
     @Schema(description = "The target mqtt topic where received tags should be sent to.")
     private final @NotNull String topic;
 
-    @JsonProperty(value = MESSAGE_HANDLING_OPTIONS, required = true)
+    @JsonProperty(value = "messageHandlingOptions", required = true)
     @Schema(description = "How collected tags should or shouldn't be aggregated.")
     private final @NotNull MessageHandlingOptions messageHandlingOptions;
 
-    @JsonProperty(value = INCLUDE_TAG_NAMES, required = true)
+    @JsonProperty(value = "includeTagNames", required = true)
     @Schema(description = "Should tag names be included when sent out.")
     private final boolean includeTagNames;
 
-    @JsonProperty(value = INCLUDE_TIMESTAMP, required = true)
+    @JsonProperty(value = "includeTimestamp", required = true)
     @Schema(description = "Should the timestamp be included when sent out.")
     private final boolean includeTimestamp;
 
-    @JsonProperty(value = USER_PROPERTIES)
+    @JsonProperty(value = "userProperties")
     @Schema(description = "User properties to be added to each outgoing mqtt message.")
     private final @NotNull List<MqttUserPropertyModel> userProperties;
 
-    @JsonProperty(value = MAX_QoS, required = true)
+    @JsonProperty(value = "maxQoS", required = true)
     @Schema(description = "The maximum MQTT-QoS for the outgoing messages.")
     private final @NotNull QoSModel maxQoS;
 
-    @JsonProperty(value = MESSAGE_EXPIRY_INTERVAL, required = true)
+    @JsonProperty(value = "messageExpiryInterval", required = true)
     @Schema(description = "The message expiry interval.")
     private final long messageExpiryInterval;
 
     @JsonCreator
     public NorthboundMappingModel(
-            @JsonProperty(value = TAG_NAME, required = true) final @NotNull String tagName,
-            @JsonProperty(value = TOPIC, required = true) final @NotNull String topic,
-            @JsonProperty(value = MESSAGE_HANDLING_OPTIONS) final @Nullable MessageHandlingOptions messageHandlingOptions,
-            @JsonProperty(value = INCLUDE_TAG_NAMES) final @Nullable Boolean includeTagNames,
-            @JsonProperty(value = INCLUDE_TIMESTAMP) final @Nullable Boolean includeTimestamp,
-            @JsonProperty(value = USER_PROPERTIES) final @Nullable List<MqttUserPropertyModel> userProperties,
-            @JsonProperty(value = MAX_QoS) final @Nullable QoSModel maxQoS,
-            @JsonProperty(value = MESSAGE_EXPIRY_INTERVAL) final @Nullable Long messageExpiryInterval) {
+            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
+            @JsonProperty(value = "topic", required = true) final @NotNull String topic,
+            @JsonProperty(value = "messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
+            @JsonProperty(value = "includeTagNames") final @Nullable Boolean includeTagNames,
+            @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
+            @JsonProperty(value = "userProperties") final @Nullable List<MqttUserPropertyModel> userProperties,
+            @JsonProperty(value = "maxQoS") final @Nullable QoSModel maxQoS,
+            @JsonProperty(value = "messageExpiryInterval") final @Nullable Long messageExpiryInterval) {
         this.tagName = tagName;
         this.topic = topic;
         this.messageHandlingOptions =

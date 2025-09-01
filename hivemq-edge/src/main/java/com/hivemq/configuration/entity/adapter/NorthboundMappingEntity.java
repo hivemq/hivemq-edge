@@ -32,39 +32,29 @@ import java.util.Objects;
 
 public class NorthboundMappingEntity implements EntityValidatable {
 
-    private static final @NotNull String TAG_NAME = "tagName";
-    private static final @NotNull String TOPIC = "topic";
-    private static final @NotNull String MAX_QoS = "maxQos";
-    private static final @NotNull String MESSAGE_HANDLING_OPTIONS = "messageHandlingOptions";
-    private static final @NotNull String INCLUDE_TAG_NAMES = "includeTagNames";
-    private static final @NotNull String INCLUDE_TIMESTAMP = "includeTimestamp";
-    private static final @NotNull String MQTT_USER_PROPERTIES = "mqttUserProperties";
-    private static final @NotNull String MQTT_USER_PROPERTY = "mqttUserProperty";
-    private static final @NotNull String MESSAGE_EXPIRY_INTERVAL = "messageExpiryInterval";
-
-    @XmlElement(name = TAG_NAME, required = true)
+    @XmlElement(name = "tagName", required = true)
     private final @NotNull String tagName;
 
-    @XmlElement(name = TOPIC, required = true)
+    @XmlElement(name = "topic", required = true)
     private final @NotNull String topic;
 
-    @XmlElement(name = MAX_QoS, required = true)
+    @XmlElement(name = "maxQos", required = true)
     private final int maxQoS;
 
-    @XmlElement(name = MESSAGE_HANDLING_OPTIONS, required = true)
+    @XmlElement(name = "messageHandlingOptions", required = true)
     private final @NotNull MessageHandlingOptions messageHandlingOptions;
 
-    @XmlElement(name = INCLUDE_TAG_NAMES, required = true)
+    @XmlElement(name = "includeTagNames", required = true)
     private final @Nullable Boolean includeTagNames;
 
-    @XmlElement(name = INCLUDE_TIMESTAMP, required = true)
+    @XmlElement(name = "includeTimestamp", required = true)
     private final @Nullable Boolean includeTimestamp;
 
-    @XmlElementWrapper(name = MQTT_USER_PROPERTIES, required = true)
-    @XmlElement(name = MQTT_USER_PROPERTY)
+    @XmlElementWrapper(name = "mqttUserProperties", required = true)
+    @XmlElement(name = "mqttUserProperty")
     private final @NotNull List<MqttUserPropertyEntity> userProperties;
 
-    @XmlElement(name = MESSAGE_EXPIRY_INTERVAL, required = true)
+    @XmlElement(name = "messageExpiryInterval", required = true)
     private final @NotNull Long messageExpiryInterval;
 
     // no-arg constructor for JaxB
@@ -166,18 +156,18 @@ public class NorthboundMappingEntity implements EntityValidatable {
 
     @Override
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
-        EntityValidatable.notEmpty(validationEvents, topic, TOPIC);
-        EntityValidatable.notEmpty(validationEvents, tagName, TAG_NAME);
+        EntityValidatable.notEmpty(validationEvents, topic, "topic");
+        EntityValidatable.notEmpty(validationEvents, tagName, "tagName");
         EntityValidatable.notMatch(validationEvents,
                 () -> QoS.valueOf(maxQoS) != null,
-                () -> MAX_QoS + ' ' + maxQoS + " is invalid");
-        EntityValidatable.notNull(validationEvents, messageHandlingOptions, MESSAGE_HANDLING_OPTIONS);
-        EntityValidatable.notNull(validationEvents, includeTagNames, INCLUDE_TAG_NAMES);
-        EntityValidatable.notNull(validationEvents, includeTimestamp, INCLUDE_TIMESTAMP);
-        if (EntityValidatable.notNull(validationEvents, messageExpiryInterval, MESSAGE_EXPIRY_INTERVAL)) {
+                () -> "maxQos" + ' ' + maxQoS + " is invalid");
+        EntityValidatable.notNull(validationEvents, messageHandlingOptions, "messageHandlingOptions");
+        EntityValidatable.notNull(validationEvents, includeTagNames, "includeTagNames");
+        EntityValidatable.notNull(validationEvents, includeTimestamp, "includeTimestamp");
+        if (EntityValidatable.notNull(validationEvents, messageExpiryInterval, "messageExpiryInterval")) {
             EntityValidatable.notMatch(validationEvents,
                     () -> messageExpiryInterval > 0,
-                    () -> MESSAGE_EXPIRY_INTERVAL + ' ' + messageExpiryInterval + " is not greater than 0");
+                    () -> "messageExpiryInterval " + messageExpiryInterval + " is not greater than 0");
         }
     }
 
