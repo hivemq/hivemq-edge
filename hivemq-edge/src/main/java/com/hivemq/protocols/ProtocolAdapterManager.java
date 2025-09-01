@@ -452,7 +452,7 @@ public class ProtocolAdapterManager {
                     final var tags = new ArrayList<>(wrapper.getTags());
                     final boolean alreadyExists = tags.stream().anyMatch(t -> t.getName().equals(domainTag.getTagName()));
                     if (!alreadyExists) {
-                        tags.add(configConverter.domaintTagToTag(wrapper.getProtocolAdapterInformation().getProtocolId(),
+                        tags.add(configConverter.domainTagToTag(wrapper.getProtocolAdapterInformation().getProtocolId(),
                                 domainTag));
 
                         updateAdapterTags(adapterId, tags);

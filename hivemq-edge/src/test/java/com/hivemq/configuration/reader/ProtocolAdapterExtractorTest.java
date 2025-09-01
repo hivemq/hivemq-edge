@@ -421,7 +421,7 @@ public class ProtocolAdapterExtractorTest {
                 false,
                 true,
                 List.of(),
-                100);
+                100L);
         final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
                 "protocolId",
                 1,
@@ -445,7 +445,7 @@ public class ProtocolAdapterExtractorTest {
                 false,
                 true,
                 List.of(),
-                100);
+                100L);
         final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
                 "protocolId",
                 1,
@@ -473,7 +473,7 @@ public class ProtocolAdapterExtractorTest {
                 false,
                 true,
                 List.of(),
-                100);
+                100L);
         final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
                 "protocolId",
                 1,

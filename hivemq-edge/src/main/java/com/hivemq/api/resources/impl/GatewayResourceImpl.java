@@ -22,12 +22,14 @@ import com.hivemq.api.model.components.Listener;
 import com.hivemq.api.model.components.ListenerList;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.api.GatewayEndpointApi;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.OutputStreamWriter;
+
+import static java.util.Objects.requireNonNullElse;
 
 /**
  * @author Simon L Johnson
@@ -44,9 +46,8 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
 
     @Override
     public @NotNull Response getXmlConfiguration() {
-        return Response.ok((StreamingOutput) output ->
-                configurationService.writeConfiguration(new OutputStreamWriter(
-                    output))).build();
+        return Response.ok((StreamingOutput) output -> configurationService.writeConfiguration(new OutputStreamWriter(
+                output))).build();
     }
 
     @Override
@@ -81,23 +82,23 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
     }
 
     private Listener convertApiListener(final ApiListener listener) {
-
-        final String protocol = getProtocolForPort(listener.getPort());
-        final String listenerName = String.format("%s-listener-%s", protocol, listener.getPort());
-
-        return new Listener(listenerName,
+        final String protocol = requireNonNullElse(getProtocolForPort(listener.getPort()), "unknown").toLowerCase();
+        final String name = protocol + "-listener-" + listener.getPort();
+        final String description = "Api " + protocol + " Listener";
+        return new Listener(name,
                 listener.getBindAddress(),
                 listener.getPort(),
-                String.format("Api %s Listener", protocol.toLowerCase()), null,
-                getTransportForPort(listener.getPort()),
-                getProtocolForPort(listener.getPort()));
+                description,
+                null,
+                requireNonNullElse(getTransportForPort(listener.getPort()), Listener.TRANSPORT.TCP),
+                requireNonNullElse(getProtocolForPort(listener.getPort()), "mqtt"));
     }
 
 
     private String getProtocolForPort(final int port) {
         //-- Uses IANA ports to map, otherwise its unknown
         //-- TODO Add element to config for protocol
-        switch(port){
+        switch (port) {
             case 8080:
             case 80:
             case 3000:
@@ -119,7 +120,7 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
     private Listener.TRANSPORT getTransportForPort(final int port) {
         //-- Uses IANA ports to map, otherwise its unknown
         //-- TODO Add element to config for protocol
-        switch(port){
+        switch (port) {
             case 8080:
             case 80:
             case 3000:

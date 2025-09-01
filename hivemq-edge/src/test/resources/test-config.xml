@@ -213,6 +213,7 @@
         <protocol-adapter>
             <adapterId>simulation-server-2</adapterId>
             <protocolId>opcua</protocolId>
+            <configVersion>1</configVersion>
             <config>
                 <auth>
                     <basic>
@@ -231,11 +232,10 @@
                     </definition>
                 </tag>
             </tags>
-            <southboundMappings/>
             <northboundMappings>
                 <northboundMapping>
-                    <topic>test/blubb/#</topic>
                     <tagName>tag1</tagName>
+                    <topic>test/blubb/#</topic>
                     <maxQos>1</maxQos>
                     <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
@@ -244,10 +244,12 @@
                     <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
             </northboundMappings>
+            <southboundMappings/>
         </protocol-adapter>
         <protocol-adapter>
             <adapterId>modbus-1</adapterId>
             <protocolId>modbus</protocolId>
+            <configVersion>1</configVersion>
             <config>
                 <modbusToMqtt>
                     <publishChangedDataOnly>true</publishChangedDataOnly>
@@ -266,11 +268,10 @@
                     </definition>
                 </tag>
             </tags>
-            <southboundMappings/>
             <northboundMappings>
                 <northboundMapping>
-                    <topic>test</topic>
                     <tagName>tag2</tagName>
+                    <topic>test</topic>
                     <maxQos>1</maxQos>
                     <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
@@ -279,10 +280,12 @@
                     <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
             </northboundMappings>
+            <southboundMappings/>
         </protocol-adapter>
         <protocol-adapter>
             <adapterId>modbus-2</adapterId>
             <protocolId>modbus</protocolId>
+            <configVersion>1</configVersion>
             <config>
                 <modbusToMqtt>
                     <publishChangedDataOnly>true</publishChangedDataOnly>
@@ -308,11 +311,10 @@
                     </definition>
                 </tag>
             </tags>
-            <southboundMappings/>
             <northboundMappings>
                 <northboundMapping>
-                    <topic>test</topic>
                     <tagName>tag-modbus-2</tagName>
+                    <topic>test</topic>
                     <maxQos>1</maxQos>
                     <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
@@ -321,8 +323,8 @@
                     <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
                 <northboundMapping>
-                    <topic>test</topic>
                     <tagName>tag-modbus-2</tagName>
+                    <topic>test</topic>
                     <maxQos>1</maxQos>
                     <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
@@ -331,8 +333,8 @@
                     <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
                 <northboundMapping>
-                    <topic>test</topic>
                     <tagName>tag-modbus-2</tagName>
+                    <topic>test</topic>
                     <maxQos>1</maxQos>
                     <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
@@ -341,6 +343,7 @@
                     <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
             </northboundMappings>
+            <southboundMappings/>
         </protocol-adapter>
     </protocol-adapters>
     <data-combiners/>

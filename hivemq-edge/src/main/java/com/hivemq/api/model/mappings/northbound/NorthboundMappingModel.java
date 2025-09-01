@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
-import com.hivemq.api.model.JavaScriptConstants;
 import com.hivemq.api.model.QoSModel;
+import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,19 +28,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+
+import static com.hivemq.api.model.JavaScriptConstants.JS_MAX_SAFE_INTEGER;
+import static java.util.Objects.requireNonNullElse;
 
 @Schema(name = "NorthboundMapping")
 public class NorthboundMappingModel {
 
+    @JsonProperty(value = "tagName", required = true)
+    @Schema(description = "The tag for which values should be collected and sent out.", format = "mqtt-tag")
+    private final @NotNull String tagName;
+
     @JsonProperty(value = "topic", required = true)
     @Schema(description = "The target mqtt topic where received tags should be sent to.")
     private final @NotNull String topic;
-
-    @JsonProperty(value = "tagName", required = true)
-    @Schema(description = "The tag for which values hould be collected and sent out.", format = "mqtt-tag")
-    private final @NotNull String tagName;
 
     @JsonProperty(value = "messageHandlingOptions", required = true)
     @Schema(description = "How collected tags should or shouldn't be aggregated.")
@@ -68,33 +69,81 @@ public class NorthboundMappingModel {
 
     @JsonCreator
     public NorthboundMappingModel(
-            @JsonProperty(value = "topic", required = true) final @NotNull String topic,
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
+            @JsonProperty(value = "topic", required = true) final @NotNull String topic,
             @JsonProperty(value = "messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty(value = "includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = "userProperties") final @Nullable List<MqttUserPropertyModel> userProperties,
             @JsonProperty(value = "maxQoS") final @Nullable QoSModel maxQoS,
             @JsonProperty(value = "messageExpiryInterval") final @Nullable Long messageExpiryInterval) {
-        this.topic = topic;
         this.tagName = tagName;
+        this.topic = topic;
         this.messageHandlingOptions =
-                Objects.requireNonNullElse(messageHandlingOptions, MessageHandlingOptions.MQTTMessagePerTag);
-        this.includeTagNames = Objects.requireNonNullElse(includeTagNames, false);
-        this.includeTimestamp = Objects.requireNonNullElse(includeTimestamp, false);
-        this.userProperties = Objects.requireNonNullElse(userProperties, List.of());
-        this.maxQoS = Objects.requireNonNullElse(maxQoS, QoSModel.AT_LEAST_ONCE);
-        // we must set a upper limit for the expiry interval as JS otherwise will wrongly round it which leads to an exception when sending it back to the backend
-        this.messageExpiryInterval = Math.min(Objects.requireNonNullElse(messageExpiryInterval, Long.MAX_VALUE),
-                JavaScriptConstants.JS_MAX_SAFE_INTEGER);
+                requireNonNullElse(messageHandlingOptions, MessageHandlingOptions.MQTTMessagePerTag);
+        this.includeTagNames = requireNonNullElse(includeTagNames, false);
+        this.includeTimestamp = requireNonNullElse(includeTimestamp, false);
+        this.userProperties = requireNonNullElse(userProperties, List.of());
+        this.maxQoS = requireNonNullElse(maxQoS, QoSModel.AT_LEAST_ONCE);
+        // we must set a upper limit for the expiry interval as JS otherwise will wrongly 
+        // round it which leads to an exception when sending it back to the backend.
+        this.messageExpiryInterval =
+                Math.min(requireNonNullElse(messageExpiryInterval, Long.MAX_VALUE), JS_MAX_SAFE_INTEGER);
     }
 
-    public @NotNull String getTopic() {
-        return topic;
+    public static NorthboundMappingModel fromPersistence(final @NotNull NorthboundMapping mapping) {
+        return new NorthboundMappingModel(mapping.getTagName(),
+                mapping.getMqttTopic(),
+                mapping.getMessageHandlingOptions(),
+                mapping.getIncludeTagNames(),
+                mapping.getIncludeTimestamp(),
+                mapping.getUserProperties().stream().map(NorthboundMappingModel::userProp).toList(),
+                QoSModel.fromNumber(mapping.getMqttQos()),
+                mapping.getMessageExpiryInterval());
+    }
+
+    public static NorthboundMappingModel fromEntity(final @NotNull NorthboundMappingEntity northboundMapping) {
+        return new NorthboundMappingModel(northboundMapping.getTagName(),
+                northboundMapping.getTopic(),
+                northboundMapping.getMessageHandlingOptions(),
+                northboundMapping.isIncludeTagNames(),
+                northboundMapping.isIncludeTimestamp(),
+                northboundMapping.getUserProperties().stream().map(NorthboundMappingModel::userProp).toList(),
+                QoSModel.fromNumber(northboundMapping.getMaxQoS()),
+                northboundMapping.getMessageExpiryInterval());
+    }
+
+    private static @NotNull MqttUserProperty userProp(final @NotNull MqttUserPropertyModel p) {
+        return new MqttUserProperty(p.getName(), p.getValue());
+    }
+
+    private static @NotNull MqttUserPropertyModel userProp(final @NotNull MqttUserPropertyEntity p) {
+        return new MqttUserPropertyModel(p.getName(), p.getValue());
+    }
+
+    private static @NotNull MqttUserPropertyModel userProp(final @NotNull MqttUserProperty p) {
+        return new MqttUserPropertyModel(p.getName(), p.getValue());
+
+    }
+
+    public @NotNull NorthboundMapping toPersistence() {
+        // re-translate the max safe js value to the max java value.
+        return new NorthboundMapping(tagName,
+                topic,
+                maxQoS.getQosNumber(),
+                messageHandlingOptions,
+                includeTagNames,
+                includeTimestamp,
+                userProperties.stream().map(NorthboundMappingModel::userProp).toList(),
+                messageExpiryInterval == JS_MAX_SAFE_INTEGER ? Long.MAX_VALUE : messageExpiryInterval);
     }
 
     public @NotNull String getTagName() {
         return tagName;
+    }
+
+    public @NotNull String getTopic() {
+        return topic;
     }
 
     public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
@@ -115,51 +164,5 @@ public class NorthboundMappingModel {
 
     public long getMessageExpiryInterval() {
         return messageExpiryInterval;
-    }
-
-    public @NotNull NorthboundMapping toPersitence() {
-        // re-translate the max safe js value to the max java value.
-        final long messageExpiry = messageExpiryInterval == JavaScriptConstants.JS_MAX_SAFE_INTEGER ?
-                Long.MAX_VALUE :
-                messageExpiryInterval;
-
-        return new NorthboundMapping(this.tagName,
-                this.topic,
-                this.maxQoS.getQosNumber(),
-                messageExpiry,
-                this.messageHandlingOptions,
-                this.includeTagNames,
-                this.includeTimestamp,
-                userProperties.stream()
-                        .map(prop -> new MqttUserProperty(prop.getName(), prop.getValue()))
-                        .collect(Collectors.toList()));
-    }
-
-    public static NorthboundMappingModel fromPersistence(final @NotNull NorthboundMapping northboundMapping) {
-        return new NorthboundMappingModel(northboundMapping.getMqttTopic(),
-                northboundMapping.getTagName(),
-                northboundMapping.getMessageHandlingOptions(),
-                northboundMapping.getIncludeTagNames(),
-                northboundMapping.getIncludeTimestamp(),
-                northboundMapping.getUserProperties()
-                        .stream()
-                        .map(prop -> new MqttUserPropertyModel(prop.getName(), prop.getValue()))
-                        .collect(Collectors.toList()),
-                QoSModel.fromNumber(northboundMapping.getMqttQos()),
-                northboundMapping.getMessageExpiryInterval());
-    }
-
-    public static NorthboundMappingModel fromEntity(final @NotNull NorthboundMappingEntity northboundMapping) {
-        return new NorthboundMappingModel(northboundMapping.getTopic(),
-                northboundMapping.getTagName(),
-                northboundMapping.getMessageHandlingOptions(),
-                northboundMapping.isIncludeTagNames(),
-                northboundMapping.isIncludeTimestamp(),
-                northboundMapping.getUserProperties()
-                        .stream()
-                        .map(prop -> new MqttUserPropertyModel(prop.getName(), prop.getValue()))
-                        .collect(Collectors.toList()),
-                QoSModel.fromNumber(northboundMapping.getMaxQoS()),
-                northboundMapping.getMessageExpiryInterval());
     }
 }

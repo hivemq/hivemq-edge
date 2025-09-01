@@ -17,16 +17,17 @@ package com.hivemq.configuration.entity.adapter;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import com.hivemq.protocols.ProtocolAdapterConfig;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,8 +36,15 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNullElse;
+
 @SuppressWarnings({"FieldMayBeFinal", "unused"})
 public class ProtocolAdapterEntity implements EntityValidatable {
+
+    private static final @NotNull TypeReference<Map<String, Object>> AS_MAP_TYPE_REF = new TypeReference<>() {
+        // no-op
+    };
+    private static final @NotNull Integer DEFAULT_CONFIG_VERSION = 1;
 
     @XmlElement(name = "adapterId", required = true)
     private @NotNull String adapterId;
@@ -49,57 +57,60 @@ public class ProtocolAdapterEntity implements EntityValidatable {
 
     @XmlElement(name = "config")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
-    private @NotNull Map<String, Object> config = new HashMap<>();
+    private @NotNull Map<String, Object> config;
 
     @XmlElementWrapper(name = "tags")
     @XmlElement(name = "tag")
-    private @NotNull List<TagEntity> tags = new ArrayList<>();
-
-    @XmlElementWrapper(name = "southboundMappings")
-    @XmlElement(name = "southboundMapping")
-    private @NotNull List<SouthboundMappingEntity> southboundMappingEntities = new ArrayList<>();
+    private @NotNull List<TagEntity> tags;
 
     @XmlElementWrapper(name = "northboundMappings")
     @XmlElement(name = "northboundMapping")
-    private @NotNull List<NorthboundMappingEntity> northboundMappingEntities = new ArrayList<>();
+    private @NotNull List<NorthboundMappingEntity> northboundMappings;
 
+    @XmlElementWrapper(name = "southboundMappings")
+    @XmlElement(name = "southboundMapping")
+    private @NotNull List<SouthboundMappingEntity> southboundMappings;
 
     // no-arg constructor for JaxB
     public ProtocolAdapterEntity() {
+        this("", "", DEFAULT_CONFIG_VERSION, new HashMap<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }
 
     public ProtocolAdapterEntity(
             final @NotNull String adapterId,
             final @NotNull String protocolId,
             final @Nullable Integer configVersion,
-            final @NotNull Map<String, Object> config,
-            final @NotNull List<NorthboundMappingEntity> northboundMappingEntities,
-            final @NotNull List<SouthboundMappingEntity> southboundMappingEntities,
-            final @NotNull List<TagEntity> tags) {
+            final @Nullable Map<String, Object> config,
+            final @Nullable List<NorthboundMappingEntity> northbound,
+            final @Nullable List<SouthboundMappingEntity> southbound,
+            final @Nullable List<TagEntity> tags) {
         this.adapterId = adapterId;
-        this.config = config;
-        // if no config version is present, we assume it is the oldest possible version
-        this.configVersion = configVersion;
-        this.northboundMappingEntities = northboundMappingEntities;
         this.protocolId = protocolId;
-        this.tags = tags;
-        this.southboundMappingEntities = southboundMappingEntities;
+        this.configVersion = configVersion != null ?
+                configVersion :
+                DEFAULT_CONFIG_VERSION; // if no config version is present, we assume it is the oldest possible version
+        this.config = config != null ? config : new HashMap<>();
+        this.northboundMappings = northbound != null ? northbound : new ArrayList<>();
+        this.southboundMappings = southbound != null ? southbound : new ArrayList<>();
+        this.tags = tags != null ? tags : new ArrayList<>();
     }
 
-    public @NotNull Map<String, Object> getConfig() {
-        return config;
+    public static @NotNull ProtocolAdapterEntity from(
+            final @NotNull ProtocolAdapterConfig config,
+            final @NotNull ObjectMapper mapper) {
+        return new ProtocolAdapterEntity(config.getAdapterId(),
+                config.getProtocolId(),
+                config.getConfigVersion(),
+                mapper.convertValue(config.getAdapterConfig(), AS_MAP_TYPE_REF),
+                config.getNorthboundMappings().stream().map(NorthboundMappingEntity::fromPersistence).toList(),
+                config.getSouthboundMappings().stream().map(SouthboundMappingEntity::fromPersistence).toList(),
+                config.getTags().stream().map(tag -> fromAdapterTag(tag, mapper)).toList());
     }
 
-    public @NotNull List<NorthboundMappingEntity> getNorthboundMappingEntities() {
-        return northboundMappingEntities;
-    }
-
-    public @NotNull List<TagEntity> getTags() {
-        return tags;
-    }
-
-    public @NotNull List<SouthboundMappingEntity> getSouthboundMappingEntities() {
-        return southboundMappingEntities;
+    private static TagEntity fromAdapterTag(final @NotNull Tag tag, final @NotNull ObjectMapper mapper) {
+        return new TagEntity(tag.getName(),
+                tag.getDescription(),
+                mapper.convertValue(tag.getDefinition(), AS_MAP_TYPE_REF));
     }
 
     public @NotNull String getProtocolId() {
@@ -111,98 +122,75 @@ public class ProtocolAdapterEntity implements EntityValidatable {
     }
 
     public @NotNull Integer getConfigVersion() {
-        return Objects.requireNonNullElse(configVersion, 1);
+        return requireNonNullElse(configVersion, DEFAULT_CONFIG_VERSION);
+    }
+
+    public @NotNull Map<String, Object> getConfig() {
+        return config;
+    }
+
+    public @NotNull List<NorthboundMappingEntity> getNorthboundMappings() {
+        return northboundMappings;
+    }
+
+    public @NotNull List<SouthboundMappingEntity> getSouthboundMappings() {
+        return southboundMappings;
+    }
+
+    public @NotNull List<TagEntity> getTags() {
+        return tags;
     }
 
     @Override
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
-        final boolean northboundMappingMissing =
-                northboundMappingEntities == null || northboundMappingEntities.isEmpty();
-        final boolean southboundMappingMissing =
-                southboundMappingEntities == null || southboundMappingEntities.isEmpty();
         EntityValidatable.notEmpty(validationEvents, adapterId, "adapterId");
         EntityValidatable.notEmpty(validationEvents, protocolId, "protocolId");
-        if (tags != null) {
-            tags.forEach(entity-> entity.validate(validationEvents));
-        }
-        if ((!northboundMappingMissing || !southboundMappingMissing) &&
+        tags.forEach(entity -> entity.validate(validationEvents));
+
+        final boolean northboundAvailable = !northboundMappings.isEmpty();
+        final boolean southboundAvailable = !southboundMappings.isEmpty();
+        if ((northboundAvailable || southboundAvailable) &&
                 EntityValidatable.notEmpty(validationEvents, tags, "tags")) {
-            final Set<String> tagNameSet = tags.stream()
-                    .map(TagEntity::getName)
-                    .filter(tagName -> tagName != null && !tagName.isEmpty())
-                    .collect(Collectors.toSet());
-            if (!northboundMappingMissing) {
-                northboundMappingEntities.forEach(from -> from.validate(validationEvents));
-                northboundMappingEntities.stream().map(NorthboundMappingEntity::getTagName).forEach(tagName -> {
-                    EntityValidatable.notMatch(validationEvents,
-                            () -> tagNameSet.contains(tagName),
-                            () -> "Tag name [" + tagName + "] in northbound mapping is not found");
-                });
+
+            final Set<String> tagNames =
+                    tags.stream().map(TagEntity::getName).filter(name -> !name.isBlank()).collect(Collectors.toSet());
+
+            if (northboundAvailable) {
+                northboundMappings.forEach(from -> from.validate(validationEvents));
+                northboundMappings.stream()
+                        .map(NorthboundMappingEntity::getTagName)
+                        .forEach(tagName -> EntityValidatable.notMatch(validationEvents,
+                                () -> tagNames.contains(tagName),
+                                () -> "Tag name [" + tagName + "] in northbound mapping is not found"));
             }
-            if (!southboundMappingMissing) {
-                southboundMappingEntities.forEach(to -> to.validate(validationEvents));
-                southboundMappingEntities.stream().map(SouthboundMappingEntity::getTagName).forEach(tagName -> {
-                    EntityValidatable.notMatch(validationEvents,
-                            () -> tagNameSet.contains(tagName),
-                            () -> "Tag name [" + tagName + "] in southbound mapping is not found");
-                });
+
+            if (southboundAvailable) {
+                southboundMappings.forEach(to -> to.validate(validationEvents));
+                southboundMappings.stream()
+                        .map(SouthboundMappingEntity::getTagName)
+                        .forEach(tagName -> EntityValidatable.notMatch(validationEvents,
+                                () -> tagNames.contains(tagName),
+                                () -> "Tag name [" + tagName + "] in southbound mapping is not found"));
             }
         }
-    }
-
-    public static @NotNull ProtocolAdapterEntity from(
-            final @NotNull ProtocolAdapterConfig protocolAdapterConfig, final @NotNull ObjectMapper objectMapper) {
-
-        final List<NorthboundMappingEntity> northboundMappings = protocolAdapterConfig.getNorthboundMappings()
-                .stream()
-                .map(NorthboundMappingEntity::fromPersistence)
-                .collect(Collectors.toList());
-
-        final List<SouthboundMappingEntity> southboundMappings = protocolAdapterConfig.getSouthboundMappings()
-                .stream()
-                .map(SouthboundMappingEntity::fromPersistence)
-                .collect(Collectors.toList());
-
-        final List<TagEntity> tagEntities = protocolAdapterConfig.getTags()
-                .stream()
-                .map(tag -> TagEntity.fromAdapterTag(tag, objectMapper))
-                .collect(Collectors.toList());
-
-        final Map<String, Object> configAsMaps =
-                objectMapper.convertValue(protocolAdapterConfig.getAdapterConfig(), new TypeReference<>() {
-                });
-
-        return new ProtocolAdapterEntity(protocolAdapterConfig.getAdapterId(),
-                protocolAdapterConfig.getProtocolId(),
-                protocolAdapterConfig.getConfigVersion(),
-                configAsMaps,
-                northboundMappings,
-                southboundMappings,
-                tagEntities);
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final ProtocolAdapterEntity that = (ProtocolAdapterEntity) o;
-        return Objects.equals(getAdapterId(), that.getAdapterId()) &&
-                Objects.equals(getProtocolId(), that.getProtocolId()) &&
-                Objects.equals(getConfigVersion(), that.getConfigVersion()) &&
-                Objects.equals(getConfig(), that.getConfig()) &&
-                Objects.equals(getTags(), that.getTags()) &&
-                Objects.equals(getSouthboundMappingEntities(), that.getSouthboundMappingEntities()) &&
-                Objects.equals(getNorthboundMappingEntities(), that.getNorthboundMappingEntities());
+    public boolean equals(final @Nullable Object o) {
+        if (o instanceof final ProtocolAdapterEntity that) {
+            return Objects.equals(adapterId, that.adapterId) &&
+                    Objects.equals(protocolId, that.protocolId) &&
+                    Objects.equals(configVersion, that.configVersion) &&
+                    Objects.equals(config, that.config) &&
+                    Objects.equals(tags, that.tags) &&
+                    Objects.equals(northboundMappings, that.northboundMappings) &&
+                    Objects.equals(southboundMappings, that.southboundMappings);
+        }
+        return false;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getAdapterId(),
-                getProtocolId(),
-                getConfigVersion(),
-                getConfig(),
-                getTags(),
-                getSouthboundMappingEntities(),
-                getNorthboundMappingEntities());
+        return Objects.hash(adapterId, protocolId, configVersion, config, tags, northboundMappings, southboundMappings);
     }
 }

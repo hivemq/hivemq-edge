@@ -107,7 +107,7 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
 
-        final NorthboundMappingEntity httpToMqttMapping = adapter.getNorthboundMappingEntities().get(0);
+        final NorthboundMappingEntity httpToMqttMapping = adapter.getNorthboundMappings().get(0);
         assertThat(httpToMqttMapping.getTagName()).isEqualTo("tag1");
         assertThat(httpToMqttMapping.getTopic()).isEqualTo("my/destination");
         assertThat(httpToMqttMapping.getMaxQoS()).isEqualTo(1);
@@ -128,7 +128,7 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(tag2.getDefinition().getHttpHeaders()).isEmpty();
         assertThat(tag2.getDefinition().getHttpRequestTimeoutSeconds()).isEqualTo(5);
 
-        final SouthboundMappingEntity mqttToHttpMapping = adapter.getSouthboundMappingEntities().get(0);
+        final SouthboundMappingEntity mqttToHttpMapping = adapter.getSouthboundMappings().get(0);
         assertThat(mqttToHttpMapping.getTagName()).isEqualTo("tag2");
         assertThat(mqttToHttpMapping.getTopicFilter()).isEqualTo("my/#");
     }
