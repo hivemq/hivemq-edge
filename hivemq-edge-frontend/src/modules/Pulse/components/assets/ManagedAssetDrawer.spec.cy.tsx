@@ -33,8 +33,8 @@ describe('ManagedAssetDrawer', () => {
     cy.wait('@getStatus')
     cy.getByTestId('test-pathname').should('have.text', '/pulse-assets')
     cy.get("[role='status'] > [data-status='error']").within(() => {
-      cy.get(`#toast-${assetId}-title`).should('have.text', 'Asset information')
-      cy.get(`#toast-${assetId}-description`).should('have.text', 'There was a problem loading the asset: Not Found')
+      cy.get(`#toast-${assetId}-title`).should('have.text', 'Loading Asset')
+      cy.get(`#toast-${assetId}-description`).should('have.text', 'There was an error loading the asset: Not Found')
     })
   })
 
@@ -50,10 +50,10 @@ describe('ManagedAssetDrawer', () => {
     cy.wait('@getStatus')
     cy.getByTestId('test-pathname').should('have.text', '/pulse-assets')
     cy.get("[role='status'] > [data-status='error']").within(() => {
-      cy.get(`#toast-${assetId}-title`).should('have.text', 'Asset information')
+      cy.get(`#toast-${assetId}-title`).should('have.text', 'Loading Asset')
       cy.get(`#toast-${assetId}-description`).should(
         'have.text',
-        `There was a problem loading the asset: Asset ${assetId} cannot be found`
+        `There was an error loading the asset: Asset ${assetId} cannot be found`
       )
     })
   })
@@ -70,7 +70,7 @@ describe('ManagedAssetDrawer', () => {
     cy.wait('@getStatus')
     cy.get("[role='dialog']").should('be.visible')
     cy.get("[role='dialog']").within(() => {
-      cy.get('header').should('have.text', 'Pulse Agent Overview')
+      cy.get('header').should('have.text', 'Asset Overview')
       cy.getByAriaLabel('Expand').should('be.visible').should('have.attr', 'data-expanded', 'false')
       cy.get('#asset-editor').within(() => {
         cy.get('[role="tablist"] [role="tab"]').should('have.length', 3)

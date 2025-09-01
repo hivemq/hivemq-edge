@@ -10,7 +10,6 @@ import { managedAssetUISchema } from '@/api/schemas/managed-asset.ui-schema.ts'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
 import ExpandableDrawer from '@/components/ExpandableDrawer/ExpandableDrawer.tsx'
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
-import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 const ManagedAssetDrawer: FC = () => {
   const { t } = useTranslation()
@@ -29,11 +28,12 @@ const ManagedAssetDrawer: FC = () => {
     if (error || (!error && listAssets && !selectedAsset)) {
       errorToast(
         {
+          duration: 60000,
           id: assetId,
-          title: t('Asset information'),
-          description: t('There was a problem loading the asset: '),
+          title: t('pulse.error.asset.title'),
+          description: t('pulse.error.asset.loading'),
         },
-        error || new Error(`Asset ${assetId} cannot be found`)
+        error || new Error(t('pulse.error.asset.notFound', { assetId }))
       )
       navigate('/pulse-assets')
     }
@@ -51,7 +51,7 @@ const ManagedAssetDrawer: FC = () => {
 
   return (
     <ExpandableDrawer
-      header={t('workspace.property.header', { context: NodeTypes.PULSE_NODE })}
+      header={t('pulse.assets.viewer.aria-label')}
       // subHeader={<NodeNameCard name={selectedNode.data.label} type={selectedNode.type as NodeTypes} />}
       isOpen={isOpen}
       onClose={handleClose}

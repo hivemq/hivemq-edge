@@ -14,6 +14,18 @@ export const managedAssetUISchema: UiSchema = {
 
   mapping: {
     'ui:readonly': true,
+    'ui:title': i18nConfig.t('pulse.assets.viewer.mapping.title'),
+    'ui:description': i18nConfig.t('pulse.assets.viewer.mapping.description'),
+
+    status: {
+      'ui:title': i18nConfig.t('pulse.assets.viewer.mapping.status.title'),
+      'ui:description': i18nConfig.t('pulse.assets.viewer.mapping.status.description'),
+    },
+
+    mappingId: {
+      'ui:title': i18nConfig.t('pulse.assets.viewer.mapping.mappingId.title'),
+      'ui:description': i18nConfig.t('pulse.assets.viewer.mapping.mappingId.description'),
+    },
   },
 
   schema: {
@@ -30,17 +42,17 @@ export const managedAssetUISchema: UiSchema = {
   'ui:tabs': [
     {
       id: 'assetTab',
-      title: i18nConfig.t('Configuration'),
+      title: i18nConfig.t('pulse.assets.viewer.tabs.config'),
       properties: ['id', 'name', 'description'],
     },
     {
       id: 'destinationTab',
-      title: i18nConfig.t('Destination'),
+      title: i18nConfig.t('pulse.assets.viewer.tabs.destination'),
       properties: ['topic', 'schema'],
     },
     {
       id: 'mappingsTab',
-      title: i18nConfig.t('Mappings'),
+      title: i18nConfig.t('pulse.assets.viewer.tabs.mapping'),
       properties: ['mapping'],
     },
   ],
