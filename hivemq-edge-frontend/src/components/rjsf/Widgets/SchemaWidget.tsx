@@ -16,7 +16,7 @@ const SchemaWidget: React.FC<WidgetProps> = ({ id, value, required, disabled, re
         {label}
       </FormLabel>
       <Box borderWidth={1} p={2}>
-        {!schemaHandler.schema && <Text>{t('unset')}</Text>}
+        {!schemaHandler.schema && <Text>{t('rjsf.MqttTransformationField.unset')}</Text>}
         {schemaHandler.schema && <JsonSchemaBrowser schema={schemaHandler.schema} />}
       </Box>
     </FormControl>
