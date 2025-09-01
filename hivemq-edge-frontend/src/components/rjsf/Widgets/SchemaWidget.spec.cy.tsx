@@ -1,6 +1,7 @@
 import type { JSONSchema7 } from 'json-schema'
 import type { IChangeEvent } from '@rjsf/core'
 import type { UiSchema } from '@rjsf/utils'
+import { customSchemaValidator } from '@/modules/Pulse/utils/validation-utils.ts'
 
 import { CustomFormTesting } from '@/__test-utils__/rjsf/CustomFormTesting'
 import {
@@ -41,6 +42,8 @@ const generateSchemaWidgetComponent = (initialState: string | undefined, onSubmi
         schema: initialState,
       }}
       onSubmit={onSubmit}
+      // @ts-ignore Need to fix the types
+      customValidate={customSchemaValidator}
     />
   </>
 )

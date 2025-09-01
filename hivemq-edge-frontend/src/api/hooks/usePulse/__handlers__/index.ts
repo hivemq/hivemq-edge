@@ -1,7 +1,7 @@
 import { delay, http, HttpResponse } from 'msw'
 
 import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
-import { MOCK_SIMPLE_SCHEMA_URI } from '@/__test-utils__/rjsf/schema.mocks.ts'
+import { MOCK_EMPTY_SCHEMA_URI, MOCK_SIMPLE_SCHEMA_URI } from '@/__test-utils__/rjsf/schema.mocks.ts'
 import type { ManagedAsset, ManagedAssetList, PulseActivationToken } from '@/api/__generated__'
 import { AssetMapping, PulseStatus } from '@/api/__generated__'
 
@@ -49,7 +49,7 @@ export const MOCK_PULSE_ASSET_MAPPED_UNIQUE: ManagedAsset = {
   name: 'Almost the same asset',
   description: 'Not sure how to describe that re-mapped asset',
   topic: 'test/topic/4',
-  schema: MOCK_SIMPLE_SCHEMA_URI,
+  schema: MOCK_EMPTY_SCHEMA_URI,
   mapping: {
     status: AssetMapping.status.REQUIRES_REMAPPING,
     mappingId: '3009a8c5-dba5-40a5-857c-2d0a9cd71637',
