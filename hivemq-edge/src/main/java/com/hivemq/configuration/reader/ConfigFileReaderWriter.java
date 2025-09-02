@@ -462,40 +462,41 @@ public class ConfigFileReaderWriter {
                 configFileContent = IfUtil.replaceIfPlaceHolders(configFileContent);
                 configFileContent = EnvVarUtil.replaceEnvironmentVariablePlaceholders(configFileContent);
 
-                final ByteArrayInputStream is =
-                        new ByteArrayInputStream(configFileContent.getBytes(StandardCharsets.UTF_8));
-                final StreamSource streamSource = new StreamSource(is);
+                try(final ByteArrayInputStream is =
+                        new ByteArrayInputStream(configFileContent.getBytes(StandardCharsets.UTF_8))) {
 
-                unmarshaller.setEventHandler(e -> {
-                    if (e.getSeverity() >= ValidationEvent.ERROR) {
-                        validationErrors.add(e);
+                    final StreamSource streamSource = new StreamSource(is);
+
+                    unmarshaller.setEventHandler(e -> {
+                        if (e.getSeverity() >= ValidationEvent.ERROR) {
+                            validationErrors.add(e);
+                        }
+                        return true;
+
+                    });
+                    final JAXBElement<? extends HiveMQConfigEntity> result =
+                            unmarshaller.unmarshal(streamSource, getConfigEntityClass());
+
+                    if (!validationErrors.isEmpty()) {
+                        throw new JAXBException("Parsing failed");
                     }
-                    return true;
 
-                });
-                final JAXBElement<? extends HiveMQConfigEntity> result =
-                        unmarshaller.unmarshal(streamSource, getConfigEntityClass());
+                    final HiveMQConfigEntity configEntity = result.getValue();
 
-                if (!validationErrors.isEmpty()) {
-                    throw new JAXBException("Parsing failed");
+                    if (configEntity == null) {
+                        throw new JAXBException("Result is null");
+                    }
+
+                    configEntity.getProtocolAdapterConfig().forEach(e -> e.validate(validationErrors));
+
+                    configEntity.getDataCombinerEntities().forEach(e -> e.validate(validationErrors));
+
+
+                    if (!validationErrors.isEmpty()) {
+                        throw new JAXBException("Parsing failed");
+                    }
+                    return configEntity;
                 }
-
-                final HiveMQConfigEntity configEntity = result.getValue();
-
-                if (configEntity == null) {
-                    throw new JAXBException("Result is null");
-                }
-
-                configEntity.getProtocolAdapterConfig().forEach(e -> e.validate(validationErrors));
-
-                configEntity.getDataCombinerEntities().forEach(e -> e.validate(validationErrors));
-
-
-                if (!validationErrors.isEmpty()) {
-                    throw new JAXBException("Parsing failed");
-                }
-                return configEntity;
-
             } catch (final JAXBException | IOException e) {
                 final StringBuilder messageBuilder = new StringBuilder();
 
