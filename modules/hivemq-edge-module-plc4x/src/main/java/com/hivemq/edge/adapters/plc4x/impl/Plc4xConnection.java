@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.adapters.plc4x.impl;
 
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
@@ -36,6 +38,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
@@ -77,7 +80,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
         }
     }
 
-    void startConnection() throws Plc4xException {
+    void startConnection(final @NotNull EventService eventService, final @NotNull String adpaterId, final @NotNull String protocolId) throws Plc4xException {
         if (plcConnection == null) {
             synchronized (lock) {
                 if (plcConnection == null) {
@@ -88,6 +91,9 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                     try {
                         plcConnection = CompletableFuture.supplyAsync(() -> {
                                     try {
+                                        //This is not working in all cases. An exception is thrown if PLC4X actually catches
+                                        //the connection probllem. In many cases this call will simply get stuck. Afterwards
+                                        // a new connection CANNOT be opened.
                                         return Optional.of(plcDriverManager.getConnectionManager()
                                                 .getConnection(connectionString));
                                     } catch (final Throwable e) {
@@ -97,6 +103,17 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                                 })
                                 .get(2_000, TimeUnit.MILLISECONDS)
                                 .orElseThrow(() -> new Plc4xException("Error encountered connecting to external device"));
+                    } catch (final TimeoutException te) {
+                        //PLC4X is stuck, no way to recover from this than to restart edge
+
+                        eventService
+                                .createAdapterEvent(adpaterId, protocolId)
+                                .withSeverity(Event.SEVERITY.ERROR)
+                                .withMessage("Due to a connection error a restart if edge is required.")
+                                .fire();
+
+                        log.error("Error encountered connecting to external device, restart of edge required", te);
+                        throw new Plc4xException("Error encountered connecting to external device, restart of edge required");
                     } catch (final Throwable e) {
                         log.error("Error encountered connecting to external device", e);
                         throw new Plc4xException("Error encountered connecting to external device");
