@@ -41,6 +41,7 @@ const generateSchemaWidgetComponent = (initialState: string | undefined, onSubmi
       uiSchema={mockSchemaWidgetUISchema}
       formData={{
         schema: initialState,
+        mapping: {},
       }}
       onSubmit={onSubmit}
       // @ts-ignore Need to fix the types
