@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
@@ -88,6 +89,9 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                     try {
                         plcConnection = CompletableFuture.supplyAsync(() -> {
                                     try {
+                                        //This is not working in all cases. An exception is thrown if PLC4X actually catches
+                                        //the connection probllem. In many cases this call will simply get stuck. Afterwards
+                                        // a new connection CANNOT be opened.
                                         return Optional.of(plcDriverManager.getConnectionManager()
                                                 .getConnection(connectionString));
                                     } catch (final Throwable e) {
@@ -97,6 +101,10 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                                 })
                                 .get(2_000, TimeUnit.MILLISECONDS)
                                 .orElseThrow(() -> new Plc4xException("Error encountered connecting to external device"));
+                    } catch (final TimeoutException te) {
+                        //PLC4X is stuck, no way to recover from this than to restart edge
+                        log.error("Error encountered connecting to external device, restart of edge required", te);
+                        throw new Plc4xException("Error encountered connecting to external device, restart of edge required");
                     } catch (final Throwable e) {
                         log.error("Error encountered connecting to external device", e);
                         throw new Plc4xException("Error encountered connecting to external device");
