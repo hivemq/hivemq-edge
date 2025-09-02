@@ -15,12 +15,8 @@
  */
 package com.hivemq.edge.adapters.plc4x.impl;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,8 +26,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * A protocol adapter sample, is a sampled measurement taken at a point in time. It can encapsulate more than one
  * tag and value pair, and will result in dataPointValues#size being published to the MQTT system.
- *
- * @author Simon L Johnson
  */
 public class Plc4xDataSample {
 
@@ -52,5 +46,4 @@ public class Plc4xDataSample {
     public @NotNull List<DataPoint> getDataPoints() {
         return dataPoints;
     }
-
 }
