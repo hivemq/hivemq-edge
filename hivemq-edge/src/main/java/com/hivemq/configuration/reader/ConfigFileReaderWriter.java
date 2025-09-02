@@ -379,12 +379,14 @@ public class ConfigFileReaderWriter {
                 if (rollConfig) {
                     backupConfig(configFile, 5);
                 }
-                final FileWriter fileWriter = new FileWriter(outputFile.file().get(), StandardCharsets.UTF_8);
-                writeConfigToXML(fileWriter);
+                try (final FileWriter fileWriter = new FileWriter(outputFile.file().get(), StandardCharsets.UTF_8)) {
+                    writeConfigToXML(fileWriter);
+                }
             } catch (final IOException e) {
                 log.error("Error writing file:", e);
                 throw new UnrecoverableException(false);
             }
+
         }
     }
 
