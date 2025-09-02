@@ -8,7 +8,7 @@ import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers_
 describe('NodeNameCard', () => {
   beforeEach(() => {
     cy.viewport(400, 400)
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getConfig')
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] })
   })
 
   it('should render adapter properly', () => {

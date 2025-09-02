@@ -82,7 +82,7 @@ describe('MappingTargetWidget', () => {
   })
 
   it('should render properly', () => {
-    cy.intercept('GET', '/api/v1/management/combiners', { items: [MOCK_COMBINER_ASSET] }).as('getCombiner')
+    cy.intercept('GET', '/api/v1/management/combiners', { items: [MOCK_COMBINER_ASSET] })
 
     cy.mountWithProviders(generateMappingWidgetWrapper(MOCK_PULSE_ASSET_MAPPED.mapping.mappingId))
 
