@@ -129,6 +129,7 @@ public class ConfigFileReaderWriter {
                 bridgeExtractor,
                 protocolAdapterExtractor,
                 dataCombiningExtractor,
+                pulseExtractor,
                 unsExtractor);
     }
 
