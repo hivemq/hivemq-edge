@@ -1,14 +1,24 @@
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { WidgetProps } from '@rjsf/utils'
 import { Box, FormControl, FormLabel, Text } from '@chakra-ui/react'
 
+import type { ManagedAsset } from '@/api/__generated__'
 import { SelectEntityType } from '@/components/MQTT/types.ts'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
 import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
 
-const SchemaWidget: React.FC<WidgetProps> = ({ id, value, required, disabled, readonly, label, rawErrors }) => {
+const SchemaWidget: FC<WidgetProps<ManagedAsset['schema']>> = ({
+  id,
+  value,
+  required,
+  disabled,
+  readonly,
+  label,
+  rawErrors,
+}) => {
   const { t } = useTranslation('components')
-  const schemaHandler = validateSchemaFromDataURI(value, SelectEntityType.TOPIC)
+  const schemaHandler = validateSchemaFromDataURI(value as ManagedAsset['schema'], SelectEntityType.TOPIC)
   const isInvalid = rawErrors && rawErrors.length > 0
 
   return (
