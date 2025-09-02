@@ -17,9 +17,11 @@
 package com.hivemq.configuration.entity.pulse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.entity.UUIDAdapter;
 import com.hivemq.pulse.asset.Asset;
 import com.hivemq.util.ObjectMapperUtil;
+import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
@@ -29,12 +31,13 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "managed-asset", propOrder = {"id", "name", "description", "topic", "schema", "mapping"})
-public class PulseAssetEntity {
+public class PulseAssetEntity implements EntityValidatable {
 
     @XmlAttribute(name = "id", required = true)
     @XmlJavaTypeAdapter(UUIDAdapter.class)
@@ -207,6 +210,21 @@ public class PulseAssetEntity {
             return this;
         }
         return new PulseAssetEntity(id, name, description, topic, schema, mapping);
+    }
+
+    @Override
+    public void validate(final @NotNull List<ValidationEvent> validationEvents) {
+        EntityValidatable.notNull(validationEvents, id, "id");
+        EntityValidatable.notEmpty(validationEvents, name, "name");
+        EntityValidatable.notEmpty(validationEvents, topic, "topic");
+        EntityValidatable.notEmpty(validationEvents, schema, "schema");
+        EntityValidatable.notNull(validationEvents, mapping, "mapping");
+        mapping.validate(validationEvents);
+        if (mapping.getId() != null) {
+            EntityValidatable.notMatch(validationEvents,
+                    () -> Objects.equals(id, mapping.getId()),
+                    () -> "id and mapping.id must be equal");
+        }
     }
 
     public static class Builder {

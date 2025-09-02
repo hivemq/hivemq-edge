@@ -16,6 +16,8 @@
 
 package com.hivemq.configuration.entity.pulse;
 
+import com.hivemq.configuration.entity.EntityValidatable;
+import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -29,7 +31,7 @@ import java.util.Objects;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "managed-assets")
-public class PulseAssetsEntity {
+public class PulseAssetsEntity implements EntityValidatable {
 
     @XmlElement(name = "managed-asset")
     private @NotNull List<PulseAssetEntity> pulseAssetEntities;
@@ -61,5 +63,10 @@ public class PulseAssetsEntity {
 
     public void setPulseAssetEntities(final @NotNull List<PulseAssetEntity> pulseAssetEntities) {
         this.pulseAssetEntities = pulseAssetEntities;
+    }
+
+    @Override
+    public void validate(final @NotNull List<ValidationEvent> validationEvents) {
+        pulseAssetEntities.forEach(entity -> entity.validate(validationEvents));
     }
 }

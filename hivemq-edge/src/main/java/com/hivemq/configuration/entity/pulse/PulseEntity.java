@@ -16,6 +16,8 @@
 
 package com.hivemq.configuration.entity.pulse;
 
+import com.hivemq.configuration.entity.EntityValidatable;
+import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -23,11 +25,12 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 
 @XmlRootElement(name = "pulse")
 @XmlAccessorType(XmlAccessType.NONE)
-public class PulseEntity {
+public class PulseEntity implements EntityValidatable {
     private final Object lock = new Object();
 
     @XmlElement(name = "managed-assets", required = true)
@@ -64,5 +67,10 @@ public class PulseEntity {
 
     public void setPulseAssetsEntity(@NotNull final PulseAssetsEntity pulseAssetsEntity) {
         this.pulseAssetsEntity = pulseAssetsEntity;
+    }
+
+    @Override
+    public void validate(final @NotNull List<ValidationEvent> validationEvents) {
+        pulseAssetsEntity.validate(validationEvents);
     }
 }

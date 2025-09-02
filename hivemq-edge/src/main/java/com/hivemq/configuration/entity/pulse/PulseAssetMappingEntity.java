@@ -16,7 +16,9 @@
 
 package com.hivemq.configuration.entity.pulse;
 
+import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.entity.UUIDAdapter;
+import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
@@ -25,12 +27,13 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "mapping")
-public class PulseAssetMappingEntity {
+public class PulseAssetMappingEntity implements EntityValidatable {
 
     @XmlAttribute(name = "id")
     @XmlJavaTypeAdapter(UUIDAdapter.class)
@@ -93,6 +96,11 @@ public class PulseAssetMappingEntity {
             return this;
         }
         return new PulseAssetMappingEntity(id, status);
+    }
+
+    @Override
+    public void validate(final @NotNull List<ValidationEvent> validationEvents) {
+        EntityValidatable.notNull(validationEvents, status, "status");
     }
 
     public static class Builder {

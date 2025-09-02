@@ -18,19 +18,24 @@ package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
+import jakarta.xml.bind.ValidationEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEntity> {
+    private final static Consumer<PulseEntity> DEFUALT_CONSUMER =
+            pulseEntity -> log.debug("No consumer registered for Pulse configuration changes.");
     private final @NotNull ConfigFileReaderWriter configFileReaderWriter;
-    private @Nullable Consumer<PulseEntity> consumer;
+    private @NotNull Consumer<PulseEntity> consumer;
 
     private @NotNull PulseEntity pulseEntity;
 
     public PulseExtractor(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
-        consumer = null;
+        consumer = DEFUALT_CONSUMER;
         this.configFileReaderWriter = configFileReaderWriter;
         this.pulseEntity = new PulseEntity();
     }
@@ -50,7 +55,18 @@ public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEnt
 
     @Override
     public @NotNull Configurator.ConfigResult updateConfig(final @NotNull HiveMQConfigEntity config) {
-        pulseEntity = config.getPulseEntity();
+        final PulseEntity newPulseEntity = config.getPulseEntity();
+        final List<ValidationEvent> validationEvents = new ArrayList<>();
+        newPulseEntity.validate(validationEvents);
+        final List<ValidationEvent> errorEvents = validationEvents.stream()
+                .filter(event -> event.getSeverity() == ValidationEvent.FATAL_ERROR ||
+                        event.getSeverity() == ValidationEvent.ERROR)
+                .toList();
+        if (!errorEvents.isEmpty()) {
+            errorEvents.forEach(event -> log.error("Pulse config error: {}", event.getMessage()));
+            return Configurator.ConfigResult.ERROR;
+        }
+        pulseEntity = newPulseEntity;
         notifyConsumer();
         return Configurator.ConfigResult.SUCCESS;
     }
@@ -61,10 +77,7 @@ public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEnt
     }
 
     private void notifyConsumer() {
-        final Consumer<PulseEntity> consumer = this.consumer;
-        if (consumer != null) {
-            consumer.accept(pulseEntity);
-        }
+        consumer.accept(pulseEntity);
     }
 
     @Override
@@ -74,7 +87,7 @@ public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEnt
 
     @Override
     public void registerConsumer(final @Nullable Consumer<PulseEntity> consumer) {
-        this.consumer = consumer;
+        this.consumer = consumer == null ? DEFUALT_CONSUMER : consumer;
         notifyConsumer();
     }
 }
