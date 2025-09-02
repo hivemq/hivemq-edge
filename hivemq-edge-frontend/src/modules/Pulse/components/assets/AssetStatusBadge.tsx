@@ -9,6 +9,7 @@ const statusMapping = {
   [AssetMapping.status.DRAFT]: { text: 'DRAFT', color: 'status.disconnected' },
   [AssetMapping.status.STREAMING]: { text: 'STREAMING', color: 'status.connected' },
   [AssetMapping.status.REQUIRES_REMAPPING]: { text: 'REQUIRES_REMAPPING', color: 'status.error' },
+  [AssetMapping.status.MISSING]: { text: 'REQUIRES_REMAPPING', color: 'status.error' },
 } as const
 
 interface AssetStatusBadgeProps {
@@ -19,7 +20,7 @@ interface AssetStatusBadgeProps {
 const AssetStatusBadge: FC<AssetStatusBadgeProps> = ({ status, skeleton = false }) => {
   const { t } = useTranslation()
 
-  const mapping = statusMapping[status || AssetMapping.status.UNMAPPED]
+  const mapping = statusMapping[status]
 
   if (skeleton)
     return (

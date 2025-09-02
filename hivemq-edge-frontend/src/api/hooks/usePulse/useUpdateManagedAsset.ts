@@ -14,7 +14,7 @@ export const useUpdateManagedAsset = () => {
   const queryClient = useQueryClient()
 
   const updateManagedAsset = ({ assetId, requestBody }: UpdateManagedAssetProps) => {
-    return appClient.pulse.updateManagedAssets(assetId, requestBody)
+    return appClient.pulse.updateManagedAsset(assetId, requestBody)
   }
 
   return useMutation<UpdateManagedAssetProps, ApiError, UpdateManagedAssetProps>({

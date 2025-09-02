@@ -1,0 +1,39 @@
+import { useTranslation } from 'react-i18next'
+import type { WidgetProps } from '@rjsf/utils'
+import { Box, FormControl, FormLabel, Text } from '@chakra-ui/react'
+
+import { SelectEntityType } from '@/components/MQTT/types.ts'
+import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
+import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema.ts'
+
+const SchemaWidget: React.FC<WidgetProps> = ({ id, value, required, disabled, readonly, label, rawErrors }) => {
+  const { t } = useTranslation('components')
+  const schemaHandler = validateSchemaFromDataURI(value, SelectEntityType.TOPIC)
+  const isInvalid = rawErrors && rawErrors.length > 0
+
+  return (
+    <FormControl alignItems="center" isRequired={required} isDisabled={disabled || readonly} isInvalid={isInvalid}>
+      <FormLabel htmlFor={id} mb="0">
+        {label}
+      </FormLabel>
+      <Box
+        borderWidth={1}
+        p={2}
+        borderRadius="var(--chakra-radii-md)"
+        sx={
+          isInvalid
+            ? {
+                borderColor: 'var(--chakra-colors-status-error-500)',
+                boxShadow: '0 0 0 1px var(--chakra-colors-status-error-500);',
+              }
+            : undefined
+        }
+      >
+        {!schemaHandler.schema && <Text>{t('rjsf.MqttTransformationField.unset')}</Text>}
+        {schemaHandler.schema && <JsonSchemaBrowser schema={schemaHandler.schema} />}
+      </Box>
+    </FormControl>
+  )
+}
+
+export default SchemaWidget

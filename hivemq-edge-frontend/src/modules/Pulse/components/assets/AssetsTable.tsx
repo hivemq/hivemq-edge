@@ -1,9 +1,9 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
-import { Box, Skeleton, Text } from '@chakra-ui/react'
-import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { Box, Skeleton, Text } from '@chakra-ui/react'
+import type { ColumnDef } from '@tanstack/react-table'
 
 import type { ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
@@ -27,6 +27,7 @@ const skeletonTemplate: ManagedAsset = {
   description: ' ',
   topic: ' ',
   schema: ' ',
+  mapping: { status: AssetMapping.status.UNMAPPED },
 }
 
 interface AssetTableProps {
@@ -91,11 +92,11 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
         },
       },
       {
-        accessorFn: (row) => row.mapping?.status ?? AssetMapping.status.UNMAPPED,
+        accessorFn: (row) => row.mapping.status,
         accessorKey: 'mapping.status',
         enableGlobalFilter: false,
         header: t('pulse.assets.listing.column.status'),
-        sortingFn: (rowA, rowB) => compareStatus(rowA.original.mapping?.status, rowB.original.mapping?.status),
+        sortingFn: (rowA, rowB) => compareStatus(rowA.original.mapping.status, rowB.original.mapping.status),
         cell: (info) => {
           return (
             <Skeleton isLoaded={!isLoading}>
@@ -110,18 +111,18 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
         } as FilterMetadata,
       },
       {
-        // accessorFn: (row) => row.mapping?.sources ?? [],
+        // accessorFn: (row) => row.mapping.sources ?? [],
         accessorKey: 'combiner.sources',
         enableGlobalFilter: false,
         enableColumnFilter: false,
         enableSorting: false,
         sortingFn: undefined,
         // filterFn: (row, _, filterValue) => {
-        //   return !!row.original.mapping?.sources.some((e) => e.id === filterValue)
+        //   return !!row.original.mapping.sources.some((e) => e.id === filterValue)
         // },
         header: t('pulse.assets.listing.column.sources'),
         cell: (info) => {
-          const mappingId = info.row.original.mapping?.mappingId
+          const mappingId = info.row.original.mapping.mappingId
           return (
             <Skeleton isLoaded={!isLoading}>
               {!mappingId && <Text whiteSpace="nowrap">{t('pulse.assets.listing.sources.unset')}</Text>}
@@ -144,6 +145,7 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
                 asset={asset}
                 onViewWorkspace={handleViewWorkspace}
                 isInWorkspace={variant === 'summary'}
+                onEdit={(id) => navigate(`/pulse-assets/${id}`)}
               />
             </Skeleton>
           )
