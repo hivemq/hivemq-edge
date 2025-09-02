@@ -153,7 +153,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                         output.startedSuccessfully();
                         CompletableFuture.runAsync(() -> {
                             try {
-                                tempConnection.startConnection();
+                                tempConnection.startConnection(input.moduleServices().eventService(), adapterId, getProtocolAdapterInformation().getProtocolId());
                                 protocolAdapterState.setConnectionStatus(CONNECTED);
                             } catch (final Plc4xException e) {
                                 log.error("Plc4x connection failed to start", e);
