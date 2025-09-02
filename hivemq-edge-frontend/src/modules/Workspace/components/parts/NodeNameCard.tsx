@@ -80,7 +80,7 @@ const NodeNameCard: FC<NodeNameCardProps> = ({ name, type, description, icon, ri
               </Text>
             )}
           </VStack>
-          {rightElement && rightElement}
+          {rightElement}
         </HStack>
       </CardBody>
     </Card>
