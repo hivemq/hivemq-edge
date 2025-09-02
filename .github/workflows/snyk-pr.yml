@@ -24,6 +24,11 @@ jobs:
           java-version: |
             17
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4
+        with:
+          gradle-version: '8.13'
+
       - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
         with:
           path: hivemq-edge
