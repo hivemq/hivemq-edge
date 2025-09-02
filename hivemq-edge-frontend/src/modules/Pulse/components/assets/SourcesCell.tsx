@@ -39,7 +39,7 @@ const SourcesCell: FC<SourcesCellProps> = ({ mappingId }) => {
   if (!sources)
     return (
       <Text data-testid="sources-error" whiteSpace="nowrap">
-        {t('pulse.assets.listing.sources.norFound')}
+        {t('pulse.assets.listing.sources.notFound')}
       </Text>
     )
 

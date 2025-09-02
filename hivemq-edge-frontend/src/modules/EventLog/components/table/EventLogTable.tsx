@@ -41,7 +41,7 @@ const EventLogTable: FC<EventLogTableProps> = ({
   const { data, isLoading, isFetching, error, refetch } = useGetEvents()
 
   const safeData = useMemo<Event[]>(() => {
-    if (!data || !data?.items) return [...mockEdgeEvent(5)]
+    if (!data?.items) return [...mockEdgeEvent(5)]
     if (globalSourceFilter) {
       return data.items
         .filter((e: Event) => globalSourceFilter.includes(e.source?.identifier || ''))
