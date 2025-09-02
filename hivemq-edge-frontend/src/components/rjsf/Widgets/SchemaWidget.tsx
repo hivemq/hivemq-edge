@@ -19,7 +19,7 @@ const SchemaWidget: FC<WidgetProps<ManagedAsset['schema']>> = ({
 }) => {
   const { t } = useTranslation('components')
   const schemaHandler = validateSchemaFromDataURI(value as ManagedAsset['schema'], SelectEntityType.TOPIC)
-  const isInvalid = rawErrors && rawErrors.length > 0
+  const isInvalid = Boolean(rawErrors?.length)
 
   return (
     <FormControl alignItems="center" isRequired={required} isDisabled={disabled || readonly} isInvalid={isInvalid}>

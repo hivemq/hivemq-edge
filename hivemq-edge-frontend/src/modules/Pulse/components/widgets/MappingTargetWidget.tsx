@@ -15,7 +15,7 @@ const MappingTargetWidget: FC<WidgetProps<ManagedAsset['mapping']['mappingId']>>
   const mappingId = value as ManagedAsset['mapping']['mappingId']
   const { data, isLoading, error } = useSelectCombinerFromMapping(mappingId)
 
-  const isInvalid = rawErrors && rawErrors.length > 0
+  const isInvalid = Boolean(rawErrors?.length)
 
   return (
     <FormControl alignItems="center" isRequired={required} isDisabled={disabled || readonly} isInvalid={isInvalid}>
