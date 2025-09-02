@@ -45,7 +45,7 @@ const generateMappingWidgetWrapper = (initialState: string | undefined, onSubmit
       }}
       onSubmit={onSubmit}
       // @ts-ignore Need to fix the types
-      customValidate={customSchemaValidator}
+      customValidate={customSchemaValidator(MOCK_COMBINER_ASSET)}
     />
   </>
 )
