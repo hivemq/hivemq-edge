@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEntity> {
-    private final static Consumer<PulseEntity> DEFUALT_CONSUMER =
+    private final static Consumer<PulseEntity> DEFAULT_CONSUMER =
             pulseEntity -> log.debug("No consumer registered for Pulse configuration changes.");
     private final @NotNull ConfigFileReaderWriter configFileReaderWriter;
     private @NotNull Consumer<PulseEntity> consumer;
@@ -35,7 +35,7 @@ public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEnt
     private @NotNull PulseEntity pulseEntity;
 
     public PulseExtractor(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
-        consumer = DEFUALT_CONSUMER;
+        consumer = DEFAULT_CONSUMER;
         this.configFileReaderWriter = configFileReaderWriter;
         this.pulseEntity = new PulseEntity();
     }
@@ -87,7 +87,7 @@ public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEnt
 
     @Override
     public void registerConsumer(final @Nullable Consumer<PulseEntity> consumer) {
-        this.consumer = consumer == null ? DEFUALT_CONSUMER : consumer;
+        this.consumer = consumer == null ? DEFAULT_CONSUMER : consumer;
         notifyConsumer();
     }
 }
