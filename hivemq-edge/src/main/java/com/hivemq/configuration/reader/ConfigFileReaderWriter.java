@@ -56,7 +56,6 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -76,7 +75,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -84,8 +82,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import java.util.zip.DataFormatException;
-import java.util.zip.Inflater;
 
 import static java.util.Objects.requireNonNullElse;
 
@@ -107,7 +103,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
     private final @NotNull DataCombiningExtractor dataCombiningExtractor;
     private final @NotNull UnsExtractor unsExtractor;
-    private final @NotNull List<ReloadableExtractor> reloadableExtractors;
+    private final @NotNull List<ReloadableExtractor<?, ?>> reloadableExtractors;
     private final @NotNull SystemInformation systemInformation;
 
     private final @NotNull AtomicLong lastWrite = new AtomicLong(0L);
@@ -379,12 +375,14 @@ public class ConfigFileReaderWriter {
                 if (rollConfig) {
                     backupConfig(configFile, 5);
                 }
-                final FileWriter fileWriter = new FileWriter(outputFile.file().get(), StandardCharsets.UTF_8);
-                writeConfigToXML(fileWriter);
+                try (final FileWriter fileWriter = new FileWriter(outputFile.file().get(), StandardCharsets.UTF_8)) {
+                    writeConfigToXML(fileWriter);
+                }
             } catch (final IOException e) {
                 log.error("Error writing file:", e);
                 throw new UnrecoverableException(false);
             }
+
         }
     }
 
@@ -402,11 +400,12 @@ public class ConfigFileReaderWriter {
         } while(idx < maxBackFiles && copyFile.exists());
 
         if(copyFile.exists()){
-
             //-- use the oldest available backup index
-            final File[] backupFiles = new File(copyPath).listFiles(child -> child.isFile() &&
-                    child.getName().startsWith(fileNameExclExt) &&
-                    child.getName().endsWith(fileExtension));
+            final File[] backupFiles = new File(copyPath)
+                    .listFiles(child ->
+                            child.isFile() &&
+                            child.getName().startsWith(fileNameExclExt) &&
+                            child.getName().endsWith(fileExtension));
             Arrays.sort(backupFiles, Comparator.comparingLong(File::lastModified));
             copyFile = backupFiles[0];
         }
@@ -463,40 +462,41 @@ public class ConfigFileReaderWriter {
                 configFileContent = IfUtil.replaceIfPlaceHolders(configFileContent);
                 configFileContent = EnvVarUtil.replaceEnvironmentVariablePlaceholders(configFileContent);
 
-                final ByteArrayInputStream is =
-                        new ByteArrayInputStream(configFileContent.getBytes(StandardCharsets.UTF_8));
-                final StreamSource streamSource = new StreamSource(is);
+                try(final ByteArrayInputStream is =
+                        new ByteArrayInputStream(configFileContent.getBytes(StandardCharsets.UTF_8))) {
 
-                unmarshaller.setEventHandler(e -> {
-                    if (e.getSeverity() >= ValidationEvent.ERROR) {
-                        validationErrors.add(e);
+                    final StreamSource streamSource = new StreamSource(is);
+
+                    unmarshaller.setEventHandler(e -> {
+                        if (e.getSeverity() >= ValidationEvent.ERROR) {
+                            validationErrors.add(e);
+                        }
+                        return true;
+
+                    });
+                    final JAXBElement<? extends HiveMQConfigEntity> result =
+                            unmarshaller.unmarshal(streamSource, getConfigEntityClass());
+
+                    if (!validationErrors.isEmpty()) {
+                        throw new JAXBException("Parsing failed");
                     }
-                    return true;
 
-                });
-                final JAXBElement<? extends HiveMQConfigEntity> result =
-                        unmarshaller.unmarshal(streamSource, getConfigEntityClass());
+                    final HiveMQConfigEntity configEntity = result.getValue();
 
-                if (!validationErrors.isEmpty()) {
-                    throw new JAXBException("Parsing failed");
+                    if (configEntity == null) {
+                        throw new JAXBException("Result is null");
+                    }
+
+                    configEntity.getProtocolAdapterConfig().forEach(e -> e.validate(validationErrors));
+
+                    configEntity.getDataCombinerEntities().forEach(e -> e.validate(validationErrors));
+
+
+                    if (!validationErrors.isEmpty()) {
+                        throw new JAXBException("Parsing failed");
+                    }
+                    return configEntity;
                 }
-
-                final HiveMQConfigEntity configEntity = result.getValue();
-
-                if (configEntity == null) {
-                    throw new JAXBException("Result is null");
-                }
-
-                configEntity.getProtocolAdapterConfig().forEach(e -> e.validate(validationErrors));
-
-                configEntity.getDataCombinerEntities().forEach(e -> e.validate(validationErrors));
-
-
-                if (!validationErrors.isEmpty()) {
-                    throw new JAXBException("Parsing failed");
-                }
-                return configEntity;
-
             } catch (final JAXBException | IOException e) {
                 final StringBuilder messageBuilder = new StringBuilder();
 
@@ -590,7 +590,7 @@ public class ConfigFileReaderWriter {
         Preconditions.checkNotNull(configEntity, "Configuration must be loaded to be synchronized");
         configurators.stream()
                 .filter(c -> c instanceof Syncable)
-                .forEach(c -> ((Syncable)c).sync(configEntity));
+                .forEach(c -> ((Syncable<?>)c).sync(configEntity));
         reloadableExtractors.forEach(reloadableExtractor -> reloadableExtractor.sync(configEntity));
     }
 
