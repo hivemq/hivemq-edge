@@ -344,6 +344,9 @@
         </protocol-adapter>
     </protocol-adapters>
     <data-combiners/>
+    <pulse>
+        <managed-assets/>
+    </pulse>
     <modules/>
     <internal/>
 </hivemq>

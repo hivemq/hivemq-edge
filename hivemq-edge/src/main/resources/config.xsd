@@ -1112,7 +1112,7 @@
 
     <xs:complexType name="pulseAssetMappingEntity">
         <xs:attribute name="id" type="uuidType" use="optional"/>
-        <xs:attribute name="status" type="xs:string" use="required">
+        <xs:attribute name="status" use="required">
             <xs:simpleType>
                 <xs:restriction base="xs:string">
                     <xs:enumeration value="DRAFT"/>
