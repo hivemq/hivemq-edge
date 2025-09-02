@@ -5,6 +5,7 @@ import i18nConfig from '@/config/i18n.config.ts'
 import { CustomFormat } from '@/api/types/json-schema.ts'
 import { registerEntitySelectWidget } from '@/components/rjsf/Widgets/EntitySelectWidget.tsx'
 import SchemaWidget from '@/components/rjsf/Widgets/SchemaWidget.tsx'
+import MappingTargetWidget from '@/modules/Pulse/components/widgets/MappingTargetWidget.tsx'
 
 /* istanbul ignore next -- @preserve */
 export const managedAssetUISchema: UiSchema = {
@@ -18,11 +19,14 @@ export const managedAssetUISchema: UiSchema = {
     'ui:description': i18nConfig.t('pulse.assets.viewer.mapping.description'),
 
     status: {
+      'ui:readonly': true,
       'ui:title': i18nConfig.t('pulse.assets.viewer.mapping.status.title'),
       'ui:description': i18nConfig.t('pulse.assets.viewer.mapping.status.description'),
     },
 
     mappingId: {
+      'ui:readonly': true,
+      'ui:widget': MappingTargetWidget,
       'ui:title': i18nConfig.t('pulse.assets.viewer.mapping.mappingId.title'),
       'ui:description': i18nConfig.t('pulse.assets.viewer.mapping.mappingId.description'),
     },

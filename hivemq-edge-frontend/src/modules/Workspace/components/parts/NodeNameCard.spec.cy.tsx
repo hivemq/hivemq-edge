@@ -1,5 +1,6 @@
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import anyLogo from '@/assets/edge/05-icon-industrial-hivemq-edge.svg'
+import { Button } from '@chakra-ui/react'
 
 import NodeNameCard from './NodeNameCard.tsx'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
@@ -7,7 +8,7 @@ import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers_
 describe('NodeNameCard', () => {
   beforeEach(() => {
     cy.viewport(400, 400)
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getConfig')
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] })
   })
 
   it('should render adapter properly', () => {
@@ -76,5 +77,26 @@ describe('NodeNameCard', () => {
     cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.ASSETS_NODE)
     cy.getByTestId('node-name').should('have.text', 'Asset Mapper')
     cy.getByTestId('node-description').should('have.text', 'the description')
+  })
+
+  it('should render the right addon', () => {
+    const onClick = cy.stub().as('onClick')
+    cy.mountWithProviders(
+      <NodeNameCard
+        type={NodeTypes.ASSETS_NODE}
+        name="Asset Mapper"
+        description="the description"
+        rightElement={
+          <Button data-testid="right-element" onClick={onClick}>
+            Click me
+          </Button>
+        }
+      />
+    )
+
+    cy.get('@onClick').should('not.have.been.called')
+    cy.getByTestId('right-element').should('have.text', 'Click me')
+    cy.getByTestId('right-element').click()
+    cy.get('@onClick').should('have.been.called')
   })
 })

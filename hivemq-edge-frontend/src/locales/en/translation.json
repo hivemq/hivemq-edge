@@ -1501,6 +1501,9 @@
         "title": "Loading Asset",
         "loading": "There was an error loading the asset: ",
         "notFound": "Asset {{ assetId }} cannot be found"
+      },
+      "mapping": {
+        "notFound": "The specified mapping cannot be found"
       }
     },
     "activation": {
@@ -1563,7 +1566,7 @@
         },
         "sources": {
           "unset": "< unset >",
-          "norFound": "< not found >",
+          "notFound": "< not found >",
           "more": "+{{ count }} more"
         }
       },
