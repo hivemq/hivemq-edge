@@ -16,9 +16,10 @@ interface NodeNameCardProps {
   name?: string
   description?: string
   icon?: string
+  rightElement?: React.ReactNode
 }
 
-const NodeNameCard: FC<NodeNameCardProps> = ({ name, type, description, icon }) => {
+const NodeNameCard: FC<NodeNameCardProps> = ({ name, type, description, icon, rightElement }) => {
   const EntityIcon = useMemo(() => {
     switch (type) {
       case NodeTypes.ADAPTER_NODE:
@@ -67,7 +68,7 @@ const NodeNameCard: FC<NodeNameCardProps> = ({ name, type, description, icon }) 
       <CardBody>
         <HStack divider={<StackDivider />}>
           {EntityIcon}
-          <VStack alignItems="flex-start" gap={0}>
+          <VStack alignItems="flex-start" gap={0} flex={1}>
             {name && (
               <Text data-testid="node-name" noOfLines={1}>
                 {name}
@@ -79,6 +80,7 @@ const NodeNameCard: FC<NodeNameCardProps> = ({ name, type, description, icon }) 
               </Text>
             )}
           </VStack>
+          {rightElement && rightElement}
         </HStack>
       </CardBody>
     </Card>
