@@ -11,6 +11,7 @@ export const $ManagedAsset = {
         properties: {
             mapping: {
                 type: 'AssetMapping',
+                isRequired: true,
             },
         },
     }],

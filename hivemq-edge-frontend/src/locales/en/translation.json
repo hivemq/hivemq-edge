@@ -1496,7 +1496,12 @@
     "error": {
       "loading": "We cannot load the assets at this time. Please try again later",
       "notYetAvailable": "Pulse Assets are not yet available for HiveMQ Edge. <1>Please contact us for more information.</1",
-      "notActivated": "The Pulse Agent is not connected to this Edge instance."
+      "notActivated": "The Pulse Agent is not connected to this Edge instance.",
+      "asset": {
+        "title": "Loading Asset",
+        "loading": "There was an error loading the asset: ",
+        "notFound": "Asset {{ assetId }} cannot be found"
+      }
     },
     "activation": {
       "action": {
@@ -1579,6 +1584,26 @@
         "loading": "Loading the assets...",
         "noAssetsFound": "No assets found",
         "add": "Add the asset to the mappings"
+      },
+      "viewer": {
+        "aria-label": "Asset Overview",
+        "tabs": {
+          "config": "Configuration",
+          "destination": "Destination",
+          "mapping": "Mapping"
+        },
+        "mapping": {
+          "title": "Mapping",
+          "description": "The mapping instructions of the asset",
+          "status": {
+            "title": "Mapping status",
+            "description": "The state of the current mapping"
+          },
+          "mappingId": {
+            "title": "Mapping ID",
+            "description": "The reference to the set of mapping instructions in a combiner"
+          }
+        }
       }
     },
     "mapper": {
