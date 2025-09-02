@@ -16,6 +16,8 @@
 
 package com.hivemq.configuration.entity.pulse;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.entity.UUIDAdapter;
@@ -39,22 +41,28 @@ import java.util.UUID;
 @XmlType(name = "managed-asset", propOrder = {"id", "name", "description", "topic", "schema", "mapping"})
 public class PulseAssetEntity implements EntityValidatable {
 
+    @JsonProperty(value = "id", required = true)
     @XmlAttribute(name = "id", required = true)
     @XmlJavaTypeAdapter(UUIDAdapter.class)
     private @NotNull UUID id;
 
+    @JsonProperty(value = "name", required = true)
     @XmlAttribute(name = "name", required = true)
     private @NotNull String name;
 
+    @JsonProperty(value = "description")
     @XmlAttribute(name = "description")
     private @Nullable String description;
 
+    @JsonProperty(value = "topic", required = true)
     @XmlAttribute(name = "topic", required = true)
     private @NotNull String topic;
 
+    @JsonProperty(value = "schema", required = true)
     @XmlElement(name = "schema", required = true)
     private @NotNull String schema;
 
+    @JsonProperty(value = "mapping", required = true)
     @XmlElement(name = "mapping", required = true)
     private @NotNull PulseAssetMappingEntity mapping;
 
@@ -62,13 +70,14 @@ public class PulseAssetEntity implements EntityValidatable {
         this(UUID.randomUUID(), "", null, "", "{}", new PulseAssetMappingEntity());
     }
 
+    @JsonCreator
     public PulseAssetEntity(
-            @NotNull final UUID id,
-            @NotNull final String name,
-            @Nullable final String description,
-            @NotNull final String topic,
-            @NotNull final String schema,
-            @NotNull final PulseAssetMappingEntity mapping) {
+            final @JsonProperty("id") @NotNull UUID id,
+            final @JsonProperty("name") @NotNull String name,
+            final @JsonProperty("description") @Nullable String description,
+            final @JsonProperty("topic") @NotNull String topic,
+            final @JsonProperty("schema") @NotNull String schema,
+            final @JsonProperty("mapping") @NotNull PulseAssetMappingEntity mapping) {
         this.name = name;
         this.id = id;
         this.description = description;

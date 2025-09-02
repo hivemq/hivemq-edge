@@ -16,6 +16,7 @@
 
 package com.hivemq.configuration.entity.pulse;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.configuration.entity.EntityValidatable;
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlAccessType;
@@ -33,6 +34,7 @@ import java.util.Objects;
 public class PulseEntity implements EntityValidatable {
     private final Object lock = new Object();
 
+    @JsonProperty(value = "managedAssets", required = true)
     @XmlElement(name = "managed-assets", required = true)
     private @NotNull PulseAssetsEntity pulseAssetsEntity;
 

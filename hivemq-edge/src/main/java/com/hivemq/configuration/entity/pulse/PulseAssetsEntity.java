@@ -16,6 +16,7 @@
 
 package com.hivemq.configuration.entity.pulse;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.configuration.entity.EntityValidatable;
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlAccessType;
@@ -33,6 +34,7 @@ import java.util.Objects;
 @XmlType(name = "managed-assets")
 public class PulseAssetsEntity implements EntityValidatable {
 
+    @JsonProperty(value = "managedAsset")
     @XmlElement(name = "managed-asset")
     private @NotNull List<PulseAssetEntity> pulseAssetEntities;
 
@@ -42,6 +44,10 @@ public class PulseAssetsEntity implements EntityValidatable {
 
     public PulseAssetsEntity(final @NotNull List<PulseAssetEntity> pulseAssetEntities) {
         this.pulseAssetEntities = pulseAssetEntities;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -68,5 +74,23 @@ public class PulseAssetsEntity implements EntityValidatable {
     @Override
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
         pulseAssetEntities.forEach(entity -> entity.validate(validationEvents));
+    }
+
+    public static class Builder {
+        private final List<PulseAssetEntity> pulseAssetEntities = new ArrayList<>();
+
+        public @NotNull Builder addPulseAssetEntity(final @NotNull PulseAssetEntity entity) {
+            this.pulseAssetEntities.add(entity);
+            return this;
+        }
+
+        public @NotNull Builder addPulseAssetEntities(final @NotNull List<PulseAssetEntity> entities) {
+            this.pulseAssetEntities.addAll(entities);
+            return this;
+        }
+
+        public @NotNull PulseAssetsEntity build() {
+            return new PulseAssetsEntity(pulseAssetEntities);
+        }
     }
 }

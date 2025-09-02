@@ -21,7 +21,9 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
+import com.hivemq.configuration.entity.pulse.PulseAssetMappingEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingStatus;
+import com.hivemq.configuration.entity.pulse.PulseAssetsEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.exceptions.UnrecoverableException;
 import org.jetbrains.annotations.NotNull;
@@ -84,10 +86,7 @@ public class PulseExtractorTest {
 
     @Test
     public void whenPulseIsAbsent_thenApplyConfigPasses() throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
-                <hivemq>
-                </hivemq>
-                """);
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity configEntity = configFileReader.applyConfig();
         extractPulseAssetEntities(configEntity, 0);
     }
@@ -113,6 +112,14 @@ public class PulseExtractorTest {
                 """);
         final HiveMQConfigEntity configEntity = configFileReader.applyConfig();
         extractPulseAssetEntities(configEntity, 0);
+    }
+
+    @Test
+    public void whenPulseExistsAndManagedAssetsIsEmpty_thenSetConfigurationPasses() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final HiveMQConfigEntity configEntity = configFileReader.applyConfig();
+        configEntity.getPulseEntity().setPulseAssetsEntity(new PulseAssetsEntity());
+        assertThat(configFileReader.setConfiguration(configEntity)).isTrue();
     }
 
     @Test
@@ -155,6 +162,38 @@ public class PulseExtractorTest {
             assertThat(entity.getMapping().getId()).isEqualTo(UUID.fromString("123e4567-e89b-12d3-a456-426614174001"));
             assertThat(entity.getMapping().getStatus()).isEqualTo(PulseAssetMappingStatus.STREAMING);
         }
+    }
+
+    @Test
+    public void whenAllElementsAreCorrect_thenSetConfigurationPasses() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final HiveMQConfigEntity configEntity = configFileReader.applyConfig();
+        configEntity.getPulseEntity()
+                .setPulseAssetsEntity(PulseAssetsEntity.builder()
+                        .addPulseAssetEntities(List.of(PulseAssetEntity.builder()
+                                        .id(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
+                                        .name("asset1")
+                                        .description("description1")
+                                        .topic("topic1")
+                                        .schema("{}")
+                                        .mapping(PulseAssetMappingEntity.builder()
+                                                .id(null)
+                                                .status(PulseAssetMappingStatus.UNMAPPED)
+                                                .build())
+                                        .build(),
+                                PulseAssetEntity.builder()
+                                        .id(UUID.fromString("123e4567-e89b-12d3-a456-426614174001"))
+                                        .name("asset2")
+                                        .description("description2")
+                                        .topic("topic2")
+                                        .schema("{}")
+                                        .mapping(PulseAssetMappingEntity.builder()
+                                                .id(UUID.fromString("123e4567-e89b-12d3-a456-426614174001"))
+                                                .status(PulseAssetMappingStatus.UNMAPPED)
+                                                .build())
+                                        .build()))
+                        .build());
+        assertThat(configFileReader.setConfiguration(configEntity)).isTrue();
     }
 
     @Test
@@ -422,6 +461,56 @@ public class PulseExtractorTest {
                 "The value '%s' of attribute 'id' on element 'mapping' is not valid with respect to its type, 'uuidType'.".formatted(
                         idString));
         assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains("Invalid UUID string");
+    }
+
+    @Test
+    public void whenMappingIdDoesNotMatch_thenApplyConfigFails() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                    <pulse>
+                        <managed-assets>
+                            <managed-asset id="123e4567-e89b-12d3-a456-426614174000" name="asset1" topic="topic1">
+                                <schema>{}</schema>
+                                <mapping id="123e4567-e89b-12d3-a456-426614174001" status="UNMAPPED"/>
+                            </managed-asset>
+                        </managed-assets>
+                    </pulse>
+                </hivemq>
+                """);
+        assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+        assertThat(logCapture.isLogCaptured()).isTrue();
+        assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
+        assertThat(logCapture.getCapturedLogs()
+                .stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .collect(Collectors.joining("\n"))).contains("Pulse config error: id and mapping.id must be equal");
+    }
+
+    @Test
+    public void whenMappingIdIsInvalid_thenSetConfigurationFails() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final HiveMQConfigEntity configEntity = configFileReader.applyConfig();
+        configEntity.getPulseEntity()
+                .setPulseAssetsEntity(PulseAssetsEntity.builder()
+                        .addPulseAssetEntity(PulseAssetEntity.builder()
+                                .id(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
+                                .name("asset1")
+                                .description("description1")
+                                .topic("topic1")
+                                .schema("{}")
+                                .mapping(PulseAssetMappingEntity.builder()
+                                        .id(UUID.fromString("123e4567-e89b-12d3-a456-426614174001"))
+                                        .status(PulseAssetMappingStatus.UNMAPPED)
+                                        .build())
+                                .build())
+                        .build());
+        assertThat(configFileReader.setConfiguration(configEntity)).isFalse();
+        assertThat(logCapture.isLogCaptured()).isTrue();
+        assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
+        assertThat(logCapture.getCapturedLogs()
+                .stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .collect(Collectors.joining("\n"))).contains("Pulse config error: id and mapping.id must be equal");
     }
 
     protected @NotNull List<PulseAssetEntity> extractPulseAssetEntities(
