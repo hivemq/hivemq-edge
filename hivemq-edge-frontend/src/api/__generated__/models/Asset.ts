@@ -26,6 +26,6 @@ export type Asset = {
     /**
      * The schema associated with the asset, in a JSON Schema and data uri format.
      */
-    schema: string;
+    readonly schema: string;
 };
 
