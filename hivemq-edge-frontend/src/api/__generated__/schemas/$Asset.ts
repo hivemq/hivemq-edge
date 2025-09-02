@@ -33,6 +33,7 @@ export const $Asset = {
         schema: {
             type: 'string',
             description: `The schema associated with the asset, in a JSON Schema and data uri format.`,
+            isReadOnly: true,
             isRequired: true,
             format: 'data-url',
         },

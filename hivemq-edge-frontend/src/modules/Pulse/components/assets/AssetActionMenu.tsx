@@ -28,7 +28,7 @@ export const AssetActionMenu: FC<AssetActionMenuProps> = ({
 }) => {
   const { t } = useTranslation()
 
-  const isUnmapped = asset.mapping === undefined || asset.mapping?.status === AssetMapping.status.UNMAPPED
+  const isUnmapped = asset.mapping.status === AssetMapping.status.UNMAPPED
 
   return (
     <Menu isLazy id="asset-actions">

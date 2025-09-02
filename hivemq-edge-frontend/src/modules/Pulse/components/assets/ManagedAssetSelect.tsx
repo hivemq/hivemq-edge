@@ -50,7 +50,7 @@ const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, ...boxProps
           }}
           isClearable
           placeholder={t('pulse.assets.selector.placeholder')}
-          isOptionDisabled={(e) => e.mapping?.status === AssetMapping.status.STREAMING}
+          isOptionDisabled={(asset) => asset.mapping.status === AssetMapping.status.STREAMING}
           filterOption={createFilter({
             stringify: (option) => {
               return `${option.data.name || ''}${option.data.description || ''}`

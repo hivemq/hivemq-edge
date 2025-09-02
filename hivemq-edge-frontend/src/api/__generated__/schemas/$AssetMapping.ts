@@ -12,7 +12,6 @@ export const $AssetMapping = {
         mappingId: {
             type: 'string',
             description: `The id of a DataCombining payload that describes the mapping of that particular asset`,
-            isRequired: true,
             format: 'uuid',
         },
     },
