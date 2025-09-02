@@ -8,7 +8,7 @@ export const useSelectCombinerFromMapping = (mappingId: string | undefined) => {
   const appClient = useHttpClient()
 
   return useQuery<CombinerList, ApiError, Combiner>({
-    queryKey: [QUERY_KEYS.ADAPTERS, 'all', mappingId],
+    queryKey: [QUERY_KEYS.COMBINER, 'all', mappingId],
     queryFn: () => appClient.combiners.getCombiners(),
     enabled: mappingId !== undefined,
     select: (combiners) => {
