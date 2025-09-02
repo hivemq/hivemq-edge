@@ -18,11 +18,16 @@ package com.hivemq.tools;
 import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.channels.OverlappingFileLockException;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Enumeration;
@@ -67,56 +72,59 @@ public class CreateAdapterBlueprint {
             outputDirectory.mkdirs();
         }
 
-        ZipFile zipFile = new ZipFile(this.zipFile);
-        for (Enumeration e = zipFile.entries(); e.hasMoreElements();) {
-            ZipEntry entryIn = (ZipEntry) e.nextElement();
-            File newFile = newFile(outputDirectory, entryIn, replacements);
-            if (entryIn.isDirectory()) {
-                if (!newFile.isDirectory() && !newFile.mkdirs()) {
-                    throw new IOException("Failed to create directory " + newFile);
-                }
-            } else {
-                try(InputStream is = zipFile.getInputStream(entryIn)){
-                    byte[] arr = readZipEntry(is);
-                    String outputName = entryIn.getName();
-                    String resultName = PropertyReplacer.replaceProperties(outputName, replacements);
-                    File file = new File(outputDirectory, resultName);
-                    if(processFile(resultName)){
-                        String result = PropertyReplacer.replaceProperties(new String(arr, StandardCharsets.UTF_8), replacements);
-                        Files.write(file.toPath(), result.getBytes(StandardCharsets.UTF_8));
-                    } else {
-                        //binary files
-                        Files.write(file.toPath(), arr);
+        try(final var zipFile = new ZipFile(this.zipFile)) {
+            for (final Enumeration<?> e = zipFile.entries(); e.hasMoreElements();) {
+                final var entryIn = (ZipEntry) e.nextElement();
+                final var newFile = newFile(outputDirectory, entryIn, replacements);
+                if (entryIn.isDirectory()) {
+                    if (!newFile.isDirectory() && !newFile.mkdirs()) {
+                        throw new IOException("Failed to create directory " + newFile);
+                    }
+                } else {
+                    try(final var is = zipFile.getInputStream(entryIn)){
+                        final var arr = readZipEntry(is);
+                        final var outputName = entryIn.getName();
+                        final var resultName = PropertyReplacer.replaceProperties(outputName, replacements);
+                        final var file = new File(outputDirectory, resultName);
+                        if(processFile(resultName)){
+                            final var result = PropertyReplacer.replaceProperties(new String(arr, StandardCharsets.UTF_8), replacements);
+                            Files.writeString(file.toPath(), result);
+                        } else {
+                            //binary files
+                            Files.write(file.toPath(), arr);
+                        }
                     }
                 }
             }
         }
     }
 
-    protected boolean processFile(String fileName){
+    protected boolean processFile(final @NotNull String fileName){
         return !fileName.endsWith("png") &&
                 !fileName.endsWith("jpg") &&
                 !fileName.endsWith("gif") &&
                 !fileName.endsWith("bat");
     }
 
-    public static File newFile(File destinationDir, ZipEntry zipEntry, Map<String, String> replacements) throws IOException {
-        String outputName = zipEntry.getName();
-        String resultName = PropertyReplacer.replaceProperties(outputName, replacements);
-        File destFile = new File(destinationDir, resultName);
-        String destDirPath = destinationDir.getCanonicalPath();
-        String destFilePath = destFile.getCanonicalPath();
+    public static File newFile(
+            final @NotNull File destinationDir,
+            final @NotNull ZipEntry zipEntry,
+            final @NotNull Map<String, String> replacements) throws IOException {
+        final var outputName = zipEntry.getName();
+        final var resultName = PropertyReplacer.replaceProperties(outputName, replacements);
+        final var destFile = new File(destinationDir, resultName);
+        final var destDirPath = destinationDir.getCanonicalPath();
+        final var destFilePath = destFile.getCanonicalPath();
         if (!destFilePath.startsWith(destDirPath + java.io.File.separator)) {
             throw new IOException("Entry is outside of the target dir: " + zipEntry.getName());
         }
         return destFile;
     }
 
-    public static byte[] readZipEntry(InputStream zis) throws IOException {
-        try(InputStream is = new BufferedInputStream(zis)){
-            ByteArrayOutputStream baos
-                    = new ByteArrayOutputStream();
-            byte[] buf = new byte[1024];
+    public static byte[] readZipEntry(final @NotNull InputStream zis) throws IOException {
+        try(final var is = new BufferedInputStream(zis)){
+            final var baos = new ByteArrayOutputStream();
+            final var buf = new byte[1024];
             int length;
             while ((length = is.read(buf)) != -1) {
                 baos.write(buf, 0, length);
@@ -125,7 +133,7 @@ public class CreateAdapterBlueprint {
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(final @NotNull String[] args) throws IOException {
 
         String templateFile = null;
         String moduleDirectory = null;
@@ -133,8 +141,8 @@ public class CreateAdapterBlueprint {
 
         File edgeHome = detectEdgeHomeDir();
 
-        try (Scanner input = new Scanner(System.in)) {
-            PrintStream output = System.out;
+        try (final var input = new Scanner(System.in)) {
+            final var output = System.out;
             if(edgeHome == null){
                 edgeHome = new File(captureMandatoryFilePath(input, output, "Please specify path to hivemq-edge project"));
             }
@@ -147,9 +155,8 @@ public class CreateAdapterBlueprint {
                 throw new FileNotFoundException("Unable to locate HIVEMQ_EDGE development home");
             }
             adapterName = captureMandatoryString(input, output, "Please specify the name of your adapter (alpha-numeric)");
-//            adapterName = captureMandatoryChoice(input, output, "Please specify the name of your adapter (alpha-numeric)");
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             System.err.println("A fatal error was encountered: " + e.getMessage());
             e.printStackTrace(System.err);
             System.exit(1);
@@ -160,13 +167,13 @@ public class CreateAdapterBlueprint {
             System.exit(1);
         }
 
-        String adapterModuleName = adapterName.toLowerCase();
-        Map<String, String> map = new HashMap<>();
+        final var adapterModuleName = adapterName.toLowerCase();
+        final Map<String, String> map = new HashMap<>();
         map.put("nameUC", upperCaseFirst(adapterName.toLowerCase()));
         map.put("nameLC", adapterModuleName);
-        File zipFile = new File(templateFile);
-        File outputDirectory = new File(moduleDirectory);
-        CreateAdapterBlueprint blueprint = new CreateAdapterBlueprint(map, zipFile, outputDirectory);
+        final var zipFile = new File(templateFile);
+        final var outputDirectory = new File(moduleDirectory);
+        final var blueprint = new CreateAdapterBlueprint(map, zipFile, outputDirectory);
         blueprint.run();
 
         //-- add gradle configuration
@@ -178,7 +185,7 @@ public class CreateAdapterBlueprint {
 
     protected static File detectEdgeHomeDir(){
         File edgeHome = null;
-        File file = new File(System.getProperty("user.dir"));
+        final var file = new File(System.getProperty("user.dir"));
         if(file.exists() && file.isDirectory()){
             if("hivemq-edge-composite".equals(file.getName())){
                 edgeHome = new File(com.hivemq.util.Files.getFilePathExcludingFile(file.getAbsolutePath()), "hivemq-edge");
@@ -197,46 +204,56 @@ public class CreateAdapterBlueprint {
         return edgeHome;
     }
 
-    protected static String captureMandatoryString(Scanner input, PrintStream output, String question){
+    protected static String captureMandatoryString(
+            final @NotNull Scanner input,
+            final @NotNull PrintStream output,
+            final @NotNull String question){
         String value = null;
         while(value == null){
-            output.print(String.format("%s : ", question));
+            output.printf("%s : ", question);
             value = input.nextLine();
             value = value.trim();
-            if(value.length() == 0) {
+            if(value.isEmpty()) {
                 value = null;
             }
         }
         return value;
     }
 
-    protected static String captureMandatoryChoice(Scanner input, PrintStream output, String question, String[] choices){
+    protected static String captureMandatoryChoice(
+            final @NotNull Scanner input,
+            final @NotNull PrintStream output,
+            final @NotNull String question,
+            final @NotNull String[] choices){
         String value = null;
         while(value == null){
-            output.println(String.format("%s (Please select one) : ", question));
+            output.printf("%s (Please select one) : %n", question);
             for (int i=0; i<choices.length;i++){
                 output.print(String.format("%d : ", i+1, choices[i]));
             }
             value = input.nextLine();
             value = value.trim();
-            if(value.length() == 0) {
+            if(value.isEmpty()) {
                 value = null;
             }
         }
         return value;
     }
 
-    protected static String captureMandatoryFilePath(Scanner input, PrintStream output, String question){
+    protected static String captureMandatoryFilePath(
+            final @NotNull Scanner input,
+            final @NotNull PrintStream output,
+            final @NotNull String question){
         String value = null;
         while(value == null){
-            output.print(String.format("%s : ", question));
+            output.printf("%s : ", question);
             value = input.nextLine();
             value = value.trim();
-            if(value.length() == 0 || value == null) {
+            if(value.isEmpty()) {
                 value = null;
                 continue;
             }
-            File f = new File(value);
+            final var f = new File(value);
             if(!f.exists()){
                 value = null;
             }
@@ -244,22 +261,21 @@ public class CreateAdapterBlueprint {
         return value;
     }
 
-    public static String upperCaseFirst(String str){
-        if(str == null) return null;
-        char[] chars = str.toCharArray();
+    public static String upperCaseFirst(final @NotNull String str){
+        final var chars = str.toCharArray();
         chars[0] = Character.toUpperCase(chars[0]);
         return new String(chars);
     }
 
-    public static void insertTextAtLocation(final @NotNull File textFile, final @NotNull String text, int lineNumber) throws IOException {
+    public static void insertTextAtLocation(final @NotNull File textFile, final @NotNull String text, final int lineNumber) throws IOException {
         Preconditions.checkNotNull(textFile);
         Preconditions.checkNotNull(text);
         if(!textFile.canRead()){
             throw new FileNotFoundException("file not found " + textFile.getAbsolutePath());
         }
-        File tmpFile = new File(textFile.getParentFile(), textFile.getName() + ".tmp");
-        try(BufferedReader reader = new BufferedReader(new FileReader(textFile))){
-            try(FileWriter writer = new FileWriter(tmpFile)){
+        final var tmpFile = new File(textFile.getParentFile(), textFile.getName() + ".tmp");
+        try(final var reader = new BufferedReader(new FileReader(textFile))){
+            try(final var writer = new FileWriter(tmpFile)){
                 int line = 0;
                 String textLine = reader.readLine();
                 while(textLine != null){
