@@ -7,6 +7,7 @@ import { useDisclosure } from '@chakra-ui/react'
 import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
 import { managedAssetJsonSchema } from '@/api/schemas/managed-asset.json-schema.ts'
 import { managedAssetUISchema } from '@/api/schemas/managed-asset.ui-schema.ts'
+import { useSelectCombinerFromMapping } from '@/api/hooks/useCombiners/useSelectCombinerFromMapping.ts'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
 import ExpandableDrawer from '@/components/ExpandableDrawer/ExpandableDrawer.tsx'
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
@@ -23,6 +24,8 @@ const ManagedAssetDrawer: FC = () => {
   const selectedAsset = useMemo(() => {
     return listAssets?.items.find((asset) => asset.id === assetId)
   }, [assetId, listAssets?.items])
+
+  const { data: sourceCombiner } = useSelectCombinerFromMapping(selectedAsset?.mapping.mappingId)
 
   useEffect(() => {
     if (assetId && selectedAsset) return
@@ -65,7 +68,7 @@ const ManagedAssetDrawer: FC = () => {
         formData={selectedAsset}
         onSubmit={() => undefined}
         // @ts-ignore Need to fix the type
-        customValidate={customSchemaValidator}
+        customValidate={customSchemaValidator(sourceCombiner)}
       />
     </ExpandableDrawer>
   )

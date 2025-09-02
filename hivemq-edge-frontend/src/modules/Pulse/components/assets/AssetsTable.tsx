@@ -40,7 +40,7 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   const navigate = useNavigate()
 
   const safeData = useMemo(() => {
-    if (!data || !data?.items) return [skeletonTemplate, skeletonTemplate, skeletonTemplate]
+    if (!data?.items) return [skeletonTemplate, skeletonTemplate, skeletonTemplate]
 
     return data.items
   }, [data])
