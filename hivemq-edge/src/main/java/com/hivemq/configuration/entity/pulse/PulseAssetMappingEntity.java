@@ -16,6 +16,8 @@
 
 package com.hivemq.configuration.entity.pulse;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.entity.UUIDAdapter;
 import jakarta.xml.bind.ValidationEvent;
@@ -35,10 +37,12 @@ import java.util.UUID;
 @XmlType(name = "mapping")
 public class PulseAssetMappingEntity implements EntityValidatable {
 
+    @JsonProperty(value = "id")
     @XmlAttribute(name = "id")
     @XmlJavaTypeAdapter(UUIDAdapter.class)
     private @Nullable UUID id;
 
+    @JsonProperty(value = "status", required = true)
     @XmlAttribute(name = "status", required = true)
     private @NotNull PulseAssetMappingStatus status;
 
@@ -46,7 +50,10 @@ public class PulseAssetMappingEntity implements EntityValidatable {
         this(null, PulseAssetMappingStatus.UNMAPPED);
     }
 
-    public PulseAssetMappingEntity(final @Nullable UUID id, final @NotNull PulseAssetMappingStatus status) {
+    @JsonCreator
+    public PulseAssetMappingEntity(
+            final @JsonProperty("id") @Nullable UUID id,
+            final @JsonProperty("status") @NotNull PulseAssetMappingStatus status) {
         this.id = id;
         this.status = status;
     }
