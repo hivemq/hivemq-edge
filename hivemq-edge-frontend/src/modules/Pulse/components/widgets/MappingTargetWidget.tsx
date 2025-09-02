@@ -27,7 +27,7 @@ const MappingTargetWidget: FC<WidgetProps<ManagedAsset['mapping']['mappingId']>>
         <Input
           id={id}
           name={id}
-          defaultValue={t('pulse.assets.listing.sources.norFound')}
+          defaultValue={t('pulse.assets.listing.sources.notFound')}
           borderRadius="var(--chakra-radii-md)"
           sx={{
             borderColor: 'var(--chakra-colors-status-error-500)',
