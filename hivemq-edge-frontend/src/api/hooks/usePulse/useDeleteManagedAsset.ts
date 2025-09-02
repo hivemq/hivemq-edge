@@ -9,7 +9,7 @@ export const useDeleteManagedAsset = () => {
   const queryClient = useQueryClient()
 
   const deleteManagedAsset = (assetId: string) => {
-    return appClient.pulse.deleteManagedAssets(assetId)
+    return appClient.pulse.deleteManagedAsset(assetId)
   }
 
   return useMutation<string, ApiError, string>({

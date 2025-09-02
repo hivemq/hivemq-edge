@@ -13,7 +13,7 @@ export const useCreateManagedAsset = () => {
   const queryClient = useQueryClient()
 
   const createManagedAsset = ({ requestBody }: CreateManagedAssetProps) => {
-    return appClient.pulse.addManagedAssets(requestBody)
+    return appClient.pulse.addManagedAsset(requestBody)
   }
 
   return useMutation<CreateManagedAssetProps, ApiError, CreateManagedAssetProps>({

@@ -25,7 +25,7 @@ const NodeAssets: FC<NodeProps<NodeAssetsType>> = ({ id, data, selected, draggin
 
   const mappedAssets = useMemo<ManagedAsset[]>(() => {
     if (!allAssets?.items) return []
-    return allAssets.items.filter((asset) => asset.mapping?.status === AssetMapping.status.STREAMING)
+    return allAssets.items.filter((asset) => asset.mapping.status === AssetMapping.status.STREAMING)
   }, [allAssets])
 
   return (
