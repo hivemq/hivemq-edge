@@ -8,6 +8,7 @@ import {
   MOCK_TOPIC_FILTER_SCHEMA_INVALID,
   MOCK_TOPIC_FILTER_SCHEMA_VALID,
 } from '@/api/hooks/useTopicFilters/__handlers__'
+import { MOCK_COMBINER_ASSET } from '@/api/hooks/useCombiners/__handlers__'
 import SchemaWidget from '@/components/rjsf/Widgets/SchemaWidget.tsx'
 
 const mockSchemaWidgetSchema: JSONSchema7 = {
@@ -40,10 +41,11 @@ const generateSchemaWidgetComponent = (initialState: string | undefined, onSubmi
       uiSchema={mockSchemaWidgetUISchema}
       formData={{
         schema: initialState,
+        mapping: {},
       }}
       onSubmit={onSubmit}
       // @ts-ignore Need to fix the types
-      customValidate={customSchemaValidator}
+      customValidate={customSchemaValidator(MOCK_COMBINER_ASSET)}
     />
   </>
 )
