@@ -19,7 +19,7 @@ describe('PreLoginNoticeForm', () => {
     cy.getByTestId('prelogin-notice-form-consent')
       .should('have.text', MOCK_PRE_LOGIN_NOTICE.consent)
       .should('not.have.attr', 'data-checked')
-    cy.getByTestId('prelogin-notice-form-submit').should('be.disabled').should('have.text', 'Proceed to login')
+    cy.getByTestId('prelogin-notice-form-submit').should('be.disabled').should('have.text', 'Proceed to sign in')
 
     cy.getByTestId('prelogin-notice-form-consent').click()
     cy.getByTestId('prelogin-notice-form-consent').should('have.attr', 'data-checked')

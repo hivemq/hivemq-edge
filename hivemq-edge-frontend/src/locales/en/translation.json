@@ -84,7 +84,7 @@
     },
     "preLogin": {
       "forceReading": "Please read the notice fully before continuing",
-      "submit": "Proceed tp sign in"
+      "submit": "Proceed to sign in"
     },
     "title": "Sign in",
     "username": {
