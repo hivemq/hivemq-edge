@@ -2,11 +2,10 @@ rootProject.name = "hivemq-edge-build"
 
 pluginManagement {
     plugins {
-        id("com.gradle.enterprise") version "3.12.3"
-        id("com.gradle.common-custom-user-data-gradle-plugin") version "1.8.2"
         includeBuild("./edge-plugins")
     }
 }
+
 includeBuild("./hivemq-edge")
 includeBuild("./hivemq-edge-frontend")
 

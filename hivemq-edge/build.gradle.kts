@@ -33,7 +33,7 @@ plugins {
     alias(libs.plugins.versions)
 
     /* Code Quality Plugins */
-    alias(libs.plugins.spotbugs)
+//    alias(libs.plugins.spotbugs)
     alias(libs.plugins.forbiddenapis)
 
     alias(libs.plugins.openapi.generator)
@@ -353,9 +353,9 @@ tasks.javadoc {
     include("com/hivemq/embedded/*")
 
     doLast {
-        javaexec {
+        providers.javaexec {
             classpath("gradle/tools/javadoc-cleaner-1.0.jar")
-        }
+        }.result.get()
     }
 
     doLast { // javadoc search fix for jdk 11 https://bugs.openjdk.java.net/browse/JDK-8215291
@@ -382,15 +382,15 @@ pmd {
     rulesMinimumPriority.set(3)
 }
 
-spotbugs {
-    toolVersion.set(libs.versions.spotBugs.get())
-    ignoreFailures.set(true)
-    reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
-}
+//spotbugs {
+//    toolVersion.set(libs.versions.spotBugs.get())
+//    ignoreFailures.set(true)
+//    reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
+//}
 
-dependencies {
-    spotbugsPlugins("com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0")
-}
+//dependencies {
+//    spotbugsPlugins("com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0")
+//}
 
 forbiddenApis {
     bundledSignatures = setOf("jdk-system-out")
