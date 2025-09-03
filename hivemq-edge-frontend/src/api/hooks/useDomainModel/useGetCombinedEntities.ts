@@ -24,6 +24,7 @@ export const useGetCombinedEntities = (entities: EntityReference[]) => {
           queryFn: () => appClient.topicFilters.getTopicFilters(),
         })
       }
+      // PULSE_AGENT doesn't provide any integration points; ignore
       return acc
     },
     [] as Array<{ queryKey: QueryKey; queryFn: QueryFunction }>
