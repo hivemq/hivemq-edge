@@ -23,7 +23,7 @@ describe('LoginPage', () => {
     const mockError = { title: 'This is an error message', code: 404 }
     cy.intercept('/api/v1/frontend/configuration', (req: CyHttpMessages.IncomingHttpRequest) => {
       req.reply({ statusCode: 404, status: 404, body: mockError })
-    }).as('getConfig')
+    })
 
     cy.mountWithProviders(<LoginPage />)
     cy.getByTestId('loading-spinner').should('be.visible')
@@ -37,9 +37,6 @@ describe('LoginPage', () => {
 
     cy.mountWithProviders(<LoginPage />)
 
-    // cy.wait('@getConfig')
-    // cy.wait('@getConfig')
-    // cy.wait('@getConfig')
     cy.wait('@getConfig').then((e) => {
       expect(e.response?.body).to.deep.equal(mockError)
     })
