@@ -17,10 +17,14 @@ const mockMappingWidgetSchema: JSONSchema7 = {
   definitions: {
     Asset: {
       properties: {
-        mappingId: {
-          type: 'string',
-          description: `The id of a DataCombining payload that describes the mapping of that particular asset`,
-          format: 'uuid',
+        mapping: {
+          properties: {
+            mappingId: {
+              type: 'string',
+              description: `The id of a DataCombining payload that describes the mapping of that particular asset`,
+              format: 'uuid',
+            },
+          },
         },
       },
     },
@@ -28,9 +32,11 @@ const mockMappingWidgetSchema: JSONSchema7 = {
 }
 
 const mockMappingWidgetUISchema: UiSchema = {
-  mappingId: {
-    'ui:widget': MappingTargetWidget,
-    'ui:readonly': true,
+  mapping: {
+    mappingId: {
+      'ui:widget': MappingTargetWidget,
+      'ui:readonly': true,
+    },
   },
 }
 
@@ -41,7 +47,9 @@ const generateMappingWidgetWrapper = (initialState: string | undefined, onSubmit
       schema={mockMappingWidgetSchema}
       uiSchema={mockMappingWidgetUISchema}
       formData={{
-        mappingId: initialState,
+        mapping: {
+          mappingId: initialState,
+        },
       }}
       onSubmit={onSubmit}
       // @ts-ignore Need to fix the types
@@ -58,26 +66,26 @@ describe('MappingTargetWidget', () => {
   it('should render properly when unset', () => {
     cy.mountWithProviders(generateMappingWidgetWrapper(MOCK_PULSE_ASSET.mapping.mappingId))
 
-    cy.getByTestId('root_mappingId').within(() => {
-      cy.get('label[for="root_mappingId"]').should('have.attr', 'data-disabled')
-      cy.get('#root_mappingId-helptext').should(
+    cy.getByTestId('root_mapping_mappingId').within(() => {
+      cy.get('label[for="root_mapping_mappingId"]').should('have.attr', 'data-disabled')
+      cy.get('#root_mapping_mappingId-helptext').should(
         'have.text',
         'The id of a DataCombining payload that describes the mapping of that particular asset'
       )
-      cy.get('input[name="root_mappingId"]').should('have.value', '< unset >')
+      cy.get('input[name="root_mapping_mappingId"]').should('have.value', '< unset >')
     })
   })
 
   it('should render properly when not found', () => {
     cy.mountWithProviders(generateMappingWidgetWrapper(MOCK_PULSE_ASSET_MAPPED_UNIQUE.mapping.mappingId))
 
-    cy.getByTestId('root_mappingId').within(() => {
-      cy.get('label[for="root_mappingId"]').should('have.attr', 'data-disabled')
-      cy.get('#root_mappingId-helptext').should(
+    cy.getByTestId('root_mapping_mappingId').within(() => {
+      cy.get('label[for="root_mapping_mappingId"]').should('have.attr', 'data-disabled')
+      cy.get('#root_mapping_mappingId-helptext').should(
         'have.text',
         'The id of a DataCombining payload that describes the mapping of that particular asset'
       )
-      cy.get('input[name="root_mappingId"]').should('have.value', '< not found >')
+      cy.get('input[name="root_mapping_mappingId"]').should('have.value', '< not found >')
     })
   })
 
@@ -86,9 +94,9 @@ describe('MappingTargetWidget', () => {
 
     cy.mountWithProviders(generateMappingWidgetWrapper(MOCK_PULSE_ASSET_MAPPED.mapping.mappingId))
 
-    cy.getByTestId('root_mappingId').within(() => {
-      cy.get('label[for="root_mappingId"]').should('have.attr', 'data-disabled')
-      cy.get('#root_mappingId-helptext').should(
+    cy.getByTestId('root_mapping_mappingId').within(() => {
+      cy.get('label[for="root_mapping_mappingId"]').should('have.attr', 'data-disabled')
+      cy.get('#root_mapping_mappingId-helptext').should(
         'have.text',
         'The id of a DataCombining payload that describes the mapping of that particular asset'
       )
