@@ -167,7 +167,7 @@ describe('PaginatedTable', () => {
       />
     )
 
-    cy.getByTestId('table-container').find('[role="group"]').should('have.text', 'This is a toolbar')
+    cy.getByTestId('table-container').find('section').should('have.text', 'This is a toolbar')
   })
 
   it('should be accessible', () => {
