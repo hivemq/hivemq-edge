@@ -90,7 +90,7 @@ class OpcUaClientConnection {
         this.lastKnownSubscriptionId = lastSubscriptionId;
     }
 
-    @NotNull boolean start(final ParsedConfig parsedConfig) {
+    @NotNull synchronized boolean start(final ParsedConfig parsedConfig) {
         final var subscriptionIdOptional = Optional.ofNullable(lastKnownSubscriptionId.get());
         log.debug("Subscribing to OPC UA client with subscriptionId: {}", subscriptionIdOptional.orElse(null));
         final OpcUaClient client;
@@ -141,7 +141,7 @@ class OpcUaClientConnection {
         return true;
     }
 
-    void stop() {
+    synchronized void stop() {
         log.info("Stopping OPC UA client");
         final ConnectionContext ctx = context.get();
         if(ctx != null) {

@@ -107,6 +107,7 @@ public class OpcUaSubscriptionListener implements OpcUaSubscription.Subscription
             try {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
                 final String payload = extractPayload(client, values.get(i));
+                log.error("RECEIVED " + payload.replace("\n","") + " " + this.hashCode());
                 tagStreamingService.feed(tn, List.of(dataPointFactory.createJsonDataPoint(tn, payload)));
             } catch (final Throwable e) {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);

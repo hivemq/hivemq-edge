@@ -95,7 +95,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     }
 
     @Override
-    public void start(
+    public synchronized void start(
             final @NotNull ProtocolAdapterStartInput input,
             final @NotNull ProtocolAdapterStartOutput output) {
         log.info("Starting OPC UA protocol adapter {}", adapterId);
@@ -112,9 +112,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
 
+        if (opcUaClientConnection != null) {
+            log.warn("Tried starting already started OPC UA protocol adapter {}", adapterId);
+            output.startedSuccessfully();
+            return;
+        }
+
         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
 
-        final var newOpcUaClientConnection = new OpcUaClientConnection(
+        opcUaClientConnection = new OpcUaClientConnection(
                 adapterId,
                 tagList,
                 protocolAdapterState,
@@ -126,18 +132,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 lastSubscriptionId);
 
         CompletableFuture
-                .supplyAsync(() -> newOpcUaClientConnection.start(parsedConfig))
+                .supplyAsync(() -> opcUaClientConnection.start(parsedConfig))
                 .whenComplete((success, throwable) -> {
-                    if(throwable != null) {
+                    if(!success || throwable != null) {
+                        this.opcUaClientConnection = null;
                         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
                         log.error("Failed to start OPC UA client", throwable);
                         return;
-                    }
-                    if(success) {
-                        this.opcUaClientConnection = newOpcUaClientConnection;
-                    } else {
-                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                        log.error("Failed to start OPC UA client", throwable);
                     }
                 });
 
@@ -146,17 +147,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     }
 
     @Override
-    public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
+    public synchronized void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         log.info("Stopping OPC UA protocol adapter {}", adapterId);
         final var tempOpcUaClientConnection = opcUaClientConnection;
         if(tempOpcUaClientConnection != null) {
+            opcUaClientConnection = null;
             tempOpcUaClientConnection.stop();
             output.stoppedSuccessfully();
         } else {
             log.info("Tried stopping stopped OPC UA protocol adapter {}", adapterId);
             output.stoppedSuccessfully();
         }
-
     }
 
     @Override
