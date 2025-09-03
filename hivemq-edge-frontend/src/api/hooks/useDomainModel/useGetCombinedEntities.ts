@@ -18,7 +18,7 @@ export const useGetCombinedEntities = (entities: EntityReference[]) => {
           queryFn: () => appClient.protocolAdapters.getAdapterDomainTags(entity.id),
         })
       } else if (entity.type === EntityType.BRIDGE || entity.type === EntityType.EDGE_BROKER) {
-        // TODO[NVL] Certainly s hack: Bridges are not supported yet
+        // TODO[NVL] Certainly a hack: Bridges are not supported yet
         acc.push({
           queryKey: [QUERY_KEYS.DISCOVERY_TOPIC_FILTERS],
           queryFn: () => appClient.topicFilters.getTopicFilters(),
