@@ -1,7 +1,7 @@
 import { MOCK_PRE_LOGIN_NOTICE, mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__handlers__'
 import PreLoginNoticeForm from '@/modules/Login/components/PreLoginNoticeForm.tsx'
 
-describe('ConfidentialityForm', () => {
+describe('PreLoginNoticeForm', () => {
   beforeEach(() => {
     cy.viewport(800, 900)
   })
