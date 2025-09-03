@@ -11,7 +11,7 @@ const TableToolBar = ({ leftControls, rightControls }: TableToolBarProps) => {
 
   if (!leftControls && !rightControls) return null
   return (
-    <HStack role="group" aria-label={t('TableToolBar.aria-label')} gap={8} mb={4} justifyContent="space-between">
+    <HStack as="section" aria-label={t('TableToolBar.aria-label')} gap={8} mb={4} justifyContent="space-between">
       {leftControls}
       {rightControls}
     </HStack>

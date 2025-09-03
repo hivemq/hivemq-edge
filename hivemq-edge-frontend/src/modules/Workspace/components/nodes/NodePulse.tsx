@@ -55,7 +55,7 @@ const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging 
         w={CONFIG_ADAPTER_WIDTH}
         borderTopRadius={30}
       >
-        <HStack w="100%" justifyContent="flex-end" gap={1} data-testid="pulse-client-capabilities" role="status">
+        <HStack as="output" w="100%" justifyContent="flex-end" gap={1} data-testid="pulse-client-capabilities">
           <TooltipBadge
             aria-label={t('pulse.coverage.unmapped')}
             data-testid="pulse-client-unmapped"
