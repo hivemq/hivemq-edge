@@ -26,7 +26,7 @@ const PreLoginNoticeForm: FC<PreLoginNoticeFormProps> = ({ notice, onAccept, for
 
   return (
     <Flex align="center" flexDirection="column">
-      <Box width="100%" maxWidth="450px" p={3} id="confidentiality">
+      <Box width="100%" maxWidth="450px" p={3} id="prelogin-notice">
         <Heading as="h1" mb={6}>
           {notice.title}
         </Heading>
@@ -35,8 +35,8 @@ const PreLoginNoticeForm: FC<PreLoginNoticeFormProps> = ({ notice, onAccept, for
       <Box p={4} width="100%" maxWidth="450px">
         <form>
           <Textarea
-            data-testid="confidentiality-form-content"
-            aria-labelledby="confidentiality"
+            data-testid="prelogin-notice-form-message"
+            aria-labelledby="prelogin-notice"
             onScroll={onScroll}
             textAlign="justify"
             fontWeight="larger"
@@ -54,7 +54,7 @@ const PreLoginNoticeForm: FC<PreLoginNoticeFormProps> = ({ notice, onAccept, for
                 isDisabled={forceReading && !isStatementRead}
                 onChange={() => setIsConsentChecked(!isConsentChecked)}
                 isRequired
-                data-testid="confidentiality-form-agreement"
+                data-testid="prelogin-notice-form-consent"
               >
                 {notice.consent}
               </Checkbox>
@@ -66,13 +66,13 @@ const PreLoginNoticeForm: FC<PreLoginNoticeFormProps> = ({ notice, onAccept, for
 
           <HStack width="100%" spacing={4} mt="7em" justifyContent="flex-end">
             <Button
-              data-testid="confidentiality-form-submit"
+              data-testid="prelogin-notice-form-submit"
               width="50%"
               variant="primary"
               isDisabled={!isConsentChecked}
               onClick={onAccept}
             >
-              {t('Proceed to login')}
+              {t('login.preLogin.submit')}
             </Button>
           </HStack>
         </form>

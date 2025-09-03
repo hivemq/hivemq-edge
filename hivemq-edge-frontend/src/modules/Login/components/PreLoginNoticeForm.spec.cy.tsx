@@ -15,18 +15,18 @@ describe('ConfidentialityForm', () => {
     cy.get('@onAccept').should('not.have.been.called')
 
     cy.get('h1').eq(1).should('have.text', 'Notice: Entering a Protected System')
-    cy.getByTestId('confidentiality-form-content').should('have.text', MOCK_PRE_LOGIN_NOTICE.message)
-    cy.getByTestId('confidentiality-form-agreement')
+    cy.getByTestId('prelogin-notice-form-message').should('have.text', MOCK_PRE_LOGIN_NOTICE.message)
+    cy.getByTestId('prelogin-notice-form-consent')
       .should('have.text', MOCK_PRE_LOGIN_NOTICE.consent)
       .should('not.have.attr', 'data-checked')
-    cy.getByTestId('confidentiality-form-submit').should('be.disabled').should('have.text', 'Proceed to login')
+    cy.getByTestId('prelogin-notice-form-submit').should('be.disabled').should('have.text', 'Proceed to login')
 
-    cy.getByTestId('confidentiality-form-agreement').click()
-    cy.getByTestId('confidentiality-form-agreement').should('have.attr', 'data-checked')
+    cy.getByTestId('prelogin-notice-form-consent').click()
+    cy.getByTestId('prelogin-notice-form-consent').should('have.attr', 'data-checked')
 
-    cy.getByTestId('confidentiality-form-submit').should('not.be.disabled')
+    cy.getByTestId('prelogin-notice-form-submit').should('not.be.disabled')
 
-    cy.getByTestId('confidentiality-form-submit').click()
+    cy.getByTestId('prelogin-notice-form-submit').click()
     cy.get('@onAccept').should('have.been.called')
   })
 
@@ -35,15 +35,15 @@ describe('ConfidentialityForm', () => {
     cy.mountWithProviders(<PreLoginNoticeForm notice={MOCK_PRE_LOGIN_NOTICE} onAccept={onAccept} forceReading />)
 
     cy.get('@onAccept').should('not.have.been.called')
-    cy.getByTestId('confidentiality-form-agreement').find('input').should('be.disabled')
-    cy.getByTestId('confidentiality-form-content').scrollTo('bottom')
-    cy.getByTestId('confidentiality-form-agreement').find('input').should('not.be.disabled')
-    cy.getByTestId('confidentiality-form-agreement').click()
-    cy.getByTestId('confidentiality-form-agreement').should('have.attr', 'data-checked')
+    cy.getByTestId('prelogin-notice-form-consent').find('input').should('be.disabled')
+    cy.getByTestId('prelogin-notice-form-message').scrollTo('bottom')
+    cy.getByTestId('prelogin-notice-form-consent').find('input').should('not.be.disabled')
+    cy.getByTestId('prelogin-notice-form-consent').click()
+    cy.getByTestId('prelogin-notice-form-consent').should('have.attr', 'data-checked')
 
-    cy.getByTestId('confidentiality-form-submit').should('not.be.disabled')
+    cy.getByTestId('prelogin-notice-form-submit').should('not.be.disabled')
 
-    cy.getByTestId('confidentiality-form-submit').click()
+    cy.getByTestId('prelogin-notice-form-submit').click()
     cy.get('@onAccept').should('have.been.called')
   })
 
@@ -54,11 +54,11 @@ describe('ConfidentialityForm', () => {
     )
 
     cy.get('@onAccept').should('not.have.been.called')
-    cy.getByTestId('confidentiality-form-agreement').should('not.exist')
+    cy.getByTestId('prelogin-notice-form-consent').should('not.exist')
 
-    cy.getByTestId('confidentiality-form-submit').should('not.be.disabled')
+    cy.getByTestId('prelogin-notice-form-submit').should('not.be.disabled')
 
-    cy.getByTestId('confidentiality-form-submit').click()
+    cy.getByTestId('prelogin-notice-form-submit').click()
     cy.get('@onAccept').should('have.been.called')
   })
 
