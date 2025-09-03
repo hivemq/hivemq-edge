@@ -1,9 +1,23 @@
-import type { CapabilityList, GatewayConfiguration, NotificationList } from '@/api/__generated__'
+import type { CapabilityList, PreLoginNotice, GatewayConfiguration, NotificationList } from '@/api/__generated__'
 import { Notification, Capability } from '@/api/__generated__'
 import { http, HttpResponse } from 'msw'
 
 const lorem =
   'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,'
+
+export const MOCK_PRE_LOGIN_NOTICE: PreLoginNotice = {
+  consent: 'I understand and agree to comply',
+  title: 'Notice: Entering a Protected System',
+  message:
+    'I acknowledge that I am bound by confidentiality obligations imposed through my employment or contractual ' +
+    'agreement with MY COMPANY in connection with my access to confidential information, including EDGE and' +
+    'its contents.\n\n' +
+    'By entering EDGE, I confirm that I understand that my activities within EDGE may be monitored consistent ' +
+    'with local law, and all contents and passwords are confidential information, and that unauthorized ' +
+    'disclosure or use of such confidential information may result in disciplinary action including termination ' +
+    'of my employment or services and/or legal action based on local law.',
+  enabled: true,
+}
 
 export const mockGatewayConfiguration: GatewayConfiguration = {
   environment: {
@@ -103,6 +117,7 @@ export const mockGatewayConfiguration: GatewayConfiguration = {
   },
   hivemqId: 'my-current-installation-id',
   trackingAllowed: true,
+  preLoginNotice: MOCK_PRE_LOGIN_NOTICE,
 }
 
 export const MOCK_NOTIFICATIONS: Array<Notification> = [
