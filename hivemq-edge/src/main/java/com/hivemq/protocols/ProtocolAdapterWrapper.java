@@ -31,6 +31,7 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
@@ -48,6 +49,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -69,7 +71,7 @@ public class ProtocolAdapterWrapper {
     private final @NotNull ProtocolAdapter adapter;
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
-    private final @NotNull ProtocolAdapterState protocolAdapterState;
+    private final @NotNull ProtocolAdapterStateImpl protocolAdapterState;
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
     private final @NotNull ProtocolAdapterConfig config;
@@ -109,7 +111,7 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolAdapter adapter,
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterState protocolAdapterState,
+            final @NotNull ProtocolAdapterStateImpl protocolAdapterState,
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
             final @NotNull TagManager tagManager) {
         this.protocolAdapterWritingService = protocolAdapterWritingService;
@@ -202,12 +204,20 @@ public class ProtocolAdapterWrapper {
             //Adapter started successfully, now start the consumers
             createAndSubscribeTagConsumer();
             startPolling(protocolAdapterPollingService, eventService);
-            if(startWriting(writingEnabled, protocolAdapterWritingService)) {
-                log.info("Successfully started adapter with id {}", adapter.getId());
-            } else {
-                log.error("Protocol adapter start failed as data hub is not available.");
-                return Optional.of(new RuntimeException(
-                        "Protocol adapter start failed as data hub is not available."));
+
+            if(writingEnabled && isWriting()) {
+                final var started = new AtomicBoolean(false);
+                protocolAdapterState.setConnectionStatusListener(status -> {
+                    if(status == ProtocolAdapterState.ConnectionStatus.CONNECTED) {
+                        if(started.compareAndSet(false, true)) {
+                            if(startWriting(protocolAdapterWritingService)) {
+                                log.info("Successfully started adapter with id {}", adapter.getId());
+                            } else {
+                                log.error("Protocol adapter start failed as data hub is not available.");
+                            }
+                        }
+                    }
+                });
             }
         } catch (final Throwable e) {
             log.error("Protocol adapter start failed");
@@ -432,25 +442,19 @@ public class ProtocolAdapterWrapper {
         }
     }
 
-    private @NotNull boolean startWriting(
-            final boolean writingEnabled,
-            final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
-        if (writingEnabled && isWriting()) {
-            log.debug("Start writing for protocol adapter with id '{}'", getId());
+    private @NotNull boolean startWriting(final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
+        log.debug("Start writing for protocol adapter with id '{}'", getId());
 
-            final var southboundMappings = getSouthboundMappings();
-            final var writingContexts = southboundMappings.stream()
-                            .map(InternalWritingContextImpl::new)
-                            .collect(Collectors.<InternalWritingContext>toList());
+        final var southboundMappings = getSouthboundMappings();
+        final var writingContexts = southboundMappings.stream()
+                        .map(InternalWritingContextImpl::new)
+                        .collect(Collectors.<InternalWritingContext>toList());
 
-            return protocolAdapterWritingService
-                    .startWriting(
-                        (WritingProtocolAdapter) getAdapter(),
-                        getProtocolAdapterMetricsService(),
-                        writingContexts);
-        } else {
-            return true;
-        }
+        return protocolAdapterWritingService
+                .startWriting(
+                    (WritingProtocolAdapter) getAdapter(),
+                    getProtocolAdapterMetricsService(),
+                    writingContexts);
     }
 
     private void stopWriting(final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
