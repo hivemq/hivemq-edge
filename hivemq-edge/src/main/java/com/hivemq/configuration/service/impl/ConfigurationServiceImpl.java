@@ -20,6 +20,7 @@ import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
+import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -174,6 +175,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     @Override
     public @NotNull DataCombiningExtractor dataCombiningExtractor() {
         return configFileReaderWriter.getDataCombiningExtractor();
+    }
+
+    @Override
+    public @NotNull PulseExtractor pulseExtractor() {
+        return configFileReaderWriter.getPulseExtractor();
     }
 
     public <T> @NotNull T proxy(

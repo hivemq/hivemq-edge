@@ -68,6 +68,7 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="pulse" type="pulseEntity" minOccurs="0"/>
             <xs:element name="modules" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
@@ -1085,6 +1086,46 @@
         </xs:all>
     </xs:complexType>
 
+    <!-- Pulse Start -->
+    <xs:complexType name="pulseEntity">
+        <xs:sequence>
+            <xs:element name="managed-assets" type="pulseAssetsEntity"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="pulseAssetsEntity">
+        <xs:sequence>
+            <xs:element name="managed-asset" type="pulseAssetEntity" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="pulseAssetEntity">
+        <xs:sequence>
+            <xs:element name="schema" type="xs:string"/>
+            <xs:element name="mapping" type="pulseAssetMappingEntity"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="id" type="uuidType" use="required"/>
+        <xs:attribute name="description" type="xs:string" use="optional"/>
+        <xs:attribute name="topic" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="pulseAssetMappingEntity">
+        <xs:attribute name="id" type="uuidType" use="optional"/>
+        <xs:attribute name="status" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="DRAFT"/>
+                    <xs:enumeration value="MISSING"/>
+                    <xs:enumeration value="REQUIRES_REMAPPING"/>
+                    <xs:enumeration value="STREAMING"/>
+                    <xs:enumeration value="UNMAPPED"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <!-- Pulse End -->
+
     <!-- Internal -->
     <xs:complexType name="internalConfigEntity">
         <xs:sequence>
@@ -1136,6 +1177,12 @@
         <xs:restriction base="xs:string">
             <xs:minLength value="1"/>
             <xs:whiteSpace value="collapse"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="uuidType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}"/>
         </xs:restriction>
     </xs:simpleType>
 
