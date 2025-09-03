@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     private final @NotNull EventService eventService;
@@ -34,6 +35,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     protected @NotNull AtomicReference<ConnectionStatus> connectionStatus =
             new AtomicReference<>(ConnectionStatus.DISCONNECTED);
     protected @Nullable String lastErrorMessage;
+    private AtomicReference<Consumer<ConnectionStatus>> connectionStatusListener = new AtomicReference<>();
 
     public ProtocolAdapterStateImpl(final @NotNull EventService eventService,
                                     final @NotNull String adapterId,
@@ -46,7 +48,14 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     @Override
     public boolean setConnectionStatus(final @NotNull ConnectionStatus connectionStatus) {
         Preconditions.checkNotNull(connectionStatus);
-        return this.connectionStatus.getAndSet(connectionStatus) != connectionStatus;
+        final var changed = this.connectionStatus.getAndSet(connectionStatus) != connectionStatus;
+        if(changed) {
+            final var listener = connectionStatusListener.get();
+            if(listener != null) {
+                listener.accept(connectionStatus);
+            }
+        }
+        return changed;
     }
 
     @Override
@@ -100,6 +109,11 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     @Override
     public @Nullable String getLastErrorMessage() {
         return lastErrorMessage;
+    }
+
+    public void setConnectionStatusListener(Consumer<ConnectionStatus> connectionStatusListener) {
+        this.connectionStatusListener.set(connectionStatusListener);
+        connectionStatusListener.accept(connectionStatus.get());
     }
 
 }
