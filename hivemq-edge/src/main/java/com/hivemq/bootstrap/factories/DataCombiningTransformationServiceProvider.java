@@ -18,6 +18,7 @@ package com.hivemq.bootstrap.factories;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
 import com.hivemq.combining.mapping.DataCombiningTransformationService;
+import com.hivemq.combining.runtime.VanillaDataCombiningTransformationService;
 import com.hivemq.mqtt.services.PrePublishProcessorService;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -45,7 +46,7 @@ public class DataCombiningTransformationServiceProvider {
         final @Nullable DataCombiningTransformationServiceFactory serviceFactory =
                 edgeCoreFactoryService.getDataCombiningTransformationServiceFactory();
         if (serviceFactory == null) {
-            return new DataCombiningTransformationServiceNoop();
+            return new VanillaDataCombiningTransformationService(prePublishProcessorService);
         }
         return serviceFactory.build(prePublishProcessorService, metricRegistry);
     }
