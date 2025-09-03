@@ -64,7 +64,6 @@ const LoginPage: FC = () => {
                 onAccept={() => {
                   setAcceptNotice(true)
                 }}
-                forceReading={Boolean(showNotice?.consent)}
               />
             )}
             {!showNotice && data && <Login first={data?.firstUseInformation} preLoadError={error} />}
