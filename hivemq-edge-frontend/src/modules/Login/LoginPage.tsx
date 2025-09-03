@@ -8,6 +8,7 @@ import logoDark from '@/assets/edge/02-hivemq-industrial-edge-neg.svg'
 import bgImage from '@/assets/app/background-sidepanel.svg'
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 import PreLoginNoticeForm from '@/modules/Login/components/PreLoginNoticeForm.tsx'
 import EdgeAside from '@/modules/Login/components/EdgeAside.tsx'
 import Login from '@/modules/Login/components/Login.tsx'
@@ -50,7 +51,13 @@ const LoginPage: FC = () => {
           </Box>
           <div>
             {isLoading && <LoaderSpinner />}
-            {error && <p>{error.message}</p>}
+            {error && (
+              <ErrorMessage
+                type={t('login.error.noConfiguration.title')}
+                message={t('login.error.noConfiguration.description')}
+                stack={error}
+              />
+            )}
             {showNotice && (
               <PreLoginNoticeForm
                 notice={showNotice}
