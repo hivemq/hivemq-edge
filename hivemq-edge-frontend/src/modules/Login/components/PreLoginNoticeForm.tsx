@@ -39,7 +39,6 @@ const PreLoginNoticeForm: FC<PreLoginNoticeFormProps> = ({ notice, onAccept, for
             aria-labelledby="prelogin-notice"
             onScroll={onScroll}
             textAlign="justify"
-            fontWeight="larger"
             resize="none"
             isReadOnly
             h="25vh"
