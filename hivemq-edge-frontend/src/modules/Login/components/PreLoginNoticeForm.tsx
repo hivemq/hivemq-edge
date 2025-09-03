@@ -59,7 +59,7 @@ const PreLoginNoticeForm: FC<PreLoginNoticeFormProps> = ({ notice, onAccept, for
                 {notice.consent}
               </Checkbox>
               {forceReading && !isStatementRead && (
-                <FormErrorMessage>{t('Please read the notice fully before continuing')}</FormErrorMessage>
+                <FormErrorMessage>{t('login.preLogin.forceReading')}</FormErrorMessage>
               )}
             </FormControl>
           )}
