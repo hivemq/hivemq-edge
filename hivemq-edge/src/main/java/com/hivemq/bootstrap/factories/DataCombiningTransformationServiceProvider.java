@@ -18,7 +18,7 @@ package com.hivemq.bootstrap.factories;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
 import com.hivemq.combining.mapping.DataCombiningTransformationService;
-import com.hivemq.combining.runtime.VanillaDataCombiningTransformationService;
+import com.hivemq.combining.vanilla.VanillaDataCombiningTransformationService;
 import com.hivemq.mqtt.services.PrePublishProcessorService;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
