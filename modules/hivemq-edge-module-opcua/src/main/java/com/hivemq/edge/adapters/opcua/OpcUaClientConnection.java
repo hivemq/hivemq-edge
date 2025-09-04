@@ -122,13 +122,13 @@ class OpcUaClientConnection {
 
         if(subscriptionOptional.isEmpty()) {
             log.error("Failed to create or transfer OPC UA subscription. Closing client connection.");
-            quietlyCloseClient(client, false,null, null);
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
             eventService
                     .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                     .withMessage("Failed to create or transfer OPC UA subscription. Closing client connection.")
                     .withSeverity(Event.SEVERITY.ERROR)
                     .fire();
+            quietlyCloseClient(client, false,null, null);
             return false;
         }
 
