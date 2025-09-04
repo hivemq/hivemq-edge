@@ -194,6 +194,9 @@ dependencies {
     implementation(libs.victools.jsonschema.jackson)
     implementation(libs.json.schema.inferrer)
 
+    // json path
+    implementation(libs.json.path)
+
     // Edge modules
     compileOnly("com.hivemq:hivemq-edge-module-etherip")
     compileOnly("com.hivemq:hivemq-edge-module-plc4x")

@@ -16,8 +16,11 @@
 package com.hivemq.persistence.mappings.fieldmapping;
 
 import com.hivemq.combining.model.DataIdentifierReference;
+import com.jayway.jsonpath.internal.Utils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Optional;
 
 
 public record Instruction(@NotNull String sourceFieldName, @NotNull String destinationFieldName,
@@ -38,4 +41,39 @@ public record Instruction(@NotNull String sourceFieldName, @NotNull String desti
         return instruction;
     }
 
+    /**
+     * To source json path string.
+     * <p>
+     * It supports both dot and bracket notation, e.g. $.store.book[0].title and $.store['book'][0]['title']
+     *
+     * @return the json path
+     */
+    public @NotNull String toSourceJsonPath() {
+        final Optional<DataIdentifierReference> optionalDataIdentifierReference =
+                Optional.ofNullable(dataIdentifierReference());
+        final String rootFieldName =
+                optionalDataIdentifierReference.map(DataIdentifierReference::type).map(Enum::name).orElse("") +
+                        ":" +
+                        optionalDataIdentifierReference.map(DataIdentifierReference::id).orElse("");
+        // We need to escape the root field name, because it can contain single quotes.
+        final String escapedRootFieldName = Utils.escape(rootFieldName, true);
+        final String sourceFieldName = sourceFieldName().trim();
+        if (sourceFieldName.startsWith("$.")) {
+            return "$['" + escapedRootFieldName + "']" + sourceFieldName.substring(1);
+        } else if (sourceFieldName.startsWith("$")) {
+            return "$['" + escapedRootFieldName + "']." + sourceFieldName.substring(1);
+        } else {
+            return "$['" + escapedRootFieldName + "']." + sourceFieldName;
+        }
+    }
+
+    public @NotNull String toDestinationJsonPath() {
+        final String destinationJsonPath = destinationFieldName();
+        if (destinationJsonPath.startsWith("$.")) {
+            return destinationJsonPath.substring(2);
+        } else if (destinationJsonPath.startsWith("$")) {
+            return destinationJsonPath.substring(1);
+        }
+        return destinationJsonPath;
+    }
 }
