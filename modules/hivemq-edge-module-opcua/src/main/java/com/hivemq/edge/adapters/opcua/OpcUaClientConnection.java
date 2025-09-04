@@ -104,7 +104,6 @@ class OpcUaClientConnection {
                         endpointFilter,
                         ignore -> {},
                         new OpcUaClientConfigurator(adapterId, parsedConfig));
-            client.addSessionActivityListener(activityListener);
             client.addFaultListener(faultListener);
             client.connect();
         } catch (final UaException e) {
@@ -137,6 +136,7 @@ class OpcUaClientConnection {
 
         context.set(new ConnectionContext(subscription.getClient(), faultListener, activityListener));
         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        client.addSessionActivityListener(activityListener);
         log.info("Client created and connected successfully");
         return true;
     }
