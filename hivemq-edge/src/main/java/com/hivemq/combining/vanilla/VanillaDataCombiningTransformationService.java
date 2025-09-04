@@ -60,22 +60,37 @@ public final class VanillaDataCombiningTransformationService implements DataComb
         final DocumentContext sourceDocumentContext = optionalDocumentContext.get();
         final ObjectMapper objectMapper = JsonUtils.NO_PRETTY_PRINT_WITH_JAVA_TIME;
         final ObjectNode destinationObjectNode = objectMapper.createObjectNode();
-        dataCombining.instructions().stream()
+        dataCombining.instructions()
+                .stream()
                 // Should we skip instructions without a data identifier reference?
-                .filter(instruction -> Objects.nonNull(instruction.dataIdentifierReference())).forEach(instruction -> {
-                    final String sourceJsonPath = instruction.toSourceJsonPath();
+                .filter(instruction -> Objects.nonNull(instruction.dataIdentifierReference()))
+                .filter(instruction -> Objects.nonNull(instruction.dataIdentifierReference().type()))
+                .forEach(instruction -> {
                     Object value = null;
-                    Exception parsingException = null;
-                    try {
-                        value = sourceDocumentContext.read(sourceJsonPath, Object.class);
-                    } catch (final Exception e) {
-                        parsingException = e;
+                    switch (instruction.dataIdentifierReference().type()) {
+                        case PULSE_ASSET -> {
+                            // TODO
+                        }
+                        case TAG -> {
+                            // Source json path is ignored for TAG type.
+                            value = instruction.dataIdentifierReference().id();
+                        }
+                        case TOPIC_FILTER -> {
+                            final String sourceJsonPath = instruction.toSourceJsonPath();
+                            Exception parsingException = null;
+                            try {
+                                value = sourceDocumentContext.read(sourceJsonPath, Object.class);
+                            } catch (final Exception e) {
+                                parsingException = e;
+                            }
+                            if (parsingException != null) {
+                                LOGGER.warn("Source json path {} does not exist", sourceJsonPath, parsingException);
+                            } else if (value == null) {
+                                LOGGER.warn("No data found for source json path {}", sourceJsonPath);
+                            }
+                        }
                     }
-                    if (parsingException != null) {
-                        LOGGER.warn("Source json path {} does not exist", sourceJsonPath, parsingException);
-                    } else if (value == null) {
-                        LOGGER.warn("No data found for source json path {}", sourceJsonPath);
-                    } else {
+                    if (value != null) {
                         final String destinationJsonPath = instruction.toDestinationJsonPath();
                         final String[] fieldNames = destinationJsonPath.split("\\.+");
                         if (fieldNames.length == 0) {
