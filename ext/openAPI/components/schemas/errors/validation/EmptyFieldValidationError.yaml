@@ -1,0 +1,16 @@
+allOf:
+  - $ref: "./ValidationError.yaml"
+  - type: object
+    properties:
+      path:
+        type: string
+        format: json-path
+        description: The missing field.
+        example: "$.field"
+    required:
+      - path
+example:
+  general:
+    detail: "Required field '$.field' is empty."
+    path: "$.field"
+    type: "https://hivemq.com/edge/api/model/EmptyFieldValidationError"

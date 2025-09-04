@@ -1,0 +1,45 @@
+allOf:
+  - $ref: "./ValidationError.yaml"
+  - type: object
+    properties:
+      actualLength:
+        type: integer
+        format: int32
+        description: The actual length of the field value.
+        example: 10
+      expectedMinimumLength:
+        type: integer
+        format: int32
+        description: The minimum length expected for the field value.
+        minimum: 0
+        example: 5
+      expectedMaximumLength:
+        type: integer
+        format: int32
+        description: The maximum length expected for the field value.
+        minimum: 0
+        example: 20
+      path:
+        type: string
+        format: json-path
+        description: The invalid json path.
+        example: "$.field"
+      value:
+        type: string
+        description: The invalid value.
+        example: "function transform() { return 'Hello, World!'; }"
+    required:
+      - actualLength
+      - expectedMinimumLength
+      - expectedMaximumLength
+      - path
+      - value
+example:
+  general:
+    detail: "The length of script field '$.transform' 48 must be between 0 and 20."
+    actualLength: 48
+    minimumLength: 0
+    maximumLength: 20
+    path: "$.transform"
+    value: "function transform() { return 'Hello, World!'; }"
+    type: "https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError"

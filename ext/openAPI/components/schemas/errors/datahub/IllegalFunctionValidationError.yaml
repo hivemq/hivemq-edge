@@ -1,0 +1,28 @@
+allOf:
+  - $ref: "../validation/ValidationError.yaml"
+  - type: object
+    properties:
+      event:
+        type: string
+        description: The event name.
+        example: "event1"
+      id:
+        type: string
+        description: The function id.
+        example: "abc"
+      path:
+        type: string
+        format: json-path
+        description: The json path.
+        example: "$.event"
+    required:
+      - event
+      - id
+      - path
+example:
+  general:
+    detail: "The function 'abc' is not allowed for event 'event1' in '$.event'."
+    event: "event1"
+    id: "abc"
+    path: "$.event"
+    type: "https://hivemq.com/edge/api/model/IllegalFunctionValidationError"
