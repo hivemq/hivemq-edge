@@ -63,29 +63,21 @@ public final class VanillaDataCombiningTransformationService implements DataComb
         dataCombining.instructions().stream()
                 // Should we skip instructions without a data identifier reference?
                 .filter(instruction -> Objects.nonNull(instruction.dataIdentifierReference())).forEach(instruction -> {
-                    // TODO Proper escaping is required.
-                    final String sourceRootPath = instruction.dataIdentifierReference().type().name() +
-                            ":" +
-                            instruction.dataIdentifierReference().id();
-                    String sourceJsonPath = instruction.sourceFieldName().trim();
-                    if (sourceJsonPath.startsWith("$.")) {
-                        sourceJsonPath = "$['" + sourceRootPath + "']" + sourceJsonPath.substring(1);
-                    } else if (sourceJsonPath.startsWith("$")) {
-                        sourceJsonPath = "$['" + sourceRootPath + "']." + sourceJsonPath.substring(1);
-                    } else {
-                        sourceJsonPath = "$['" + sourceRootPath + "']." + sourceJsonPath;
+                    final String sourceJsonPath = instruction.toSourceJsonPath();
+                    Object value = null;
+                    Exception parsingException = null;
+                    try {
+                        value = sourceDocumentContext.read(sourceJsonPath, Object.class);
+                    } catch (final Exception e) {
+                        parsingException = e;
                     }
-                    final Object value = sourceDocumentContext.read(sourceJsonPath, Object.class);
-                    if (value == null) {
+                    if (parsingException != null) {
+                        LOGGER.warn("Source json path {} does not exist", sourceJsonPath, parsingException);
+                    } else if (value == null) {
                         LOGGER.warn("No data found for source json path {}", sourceJsonPath);
                     } else {
-                        String destinationFieldNames = instruction.destinationFieldName();
-                        if (destinationFieldNames.startsWith("$.")) {
-                            destinationFieldNames = destinationFieldNames.substring(2);
-                        } else if (destinationFieldNames.startsWith("$")) {
-                            destinationFieldNames = destinationFieldNames.substring(1);
-                        }
-                        final String[] fieldNames = destinationFieldNames.split("\\.+");
+                        final String destinationJsonPath = instruction.toDestinationJsonPath();
+                        final String[] fieldNames = destinationJsonPath.split("\\.+");
                         if (fieldNames.length == 0) {
                             LOGGER.warn("No destination field name specified in instruction {}", instruction);
                         } else {

@@ -19,6 +19,8 @@ import com.hivemq.combining.model.DataIdentifierReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
+
 
 public record Instruction(@NotNull String sourceFieldName, @NotNull String destinationFieldName,
                           @Nullable DataIdentifierReference dataIdentifierReference) {
@@ -38,4 +40,31 @@ public record Instruction(@NotNull String sourceFieldName, @NotNull String desti
         return instruction;
     }
 
+    public @NotNull String toSourceJsonPath() {
+        // TODO Proper escaping is required.
+        final Optional<DataIdentifierReference> optionalDataIdentifierReference =
+                Optional.ofNullable(dataIdentifierReference());
+        final String rootFieldName =
+                optionalDataIdentifierReference.map(DataIdentifierReference::type).map(Enum::name).orElse("") +
+                        ":" +
+                        optionalDataIdentifierReference.map(DataIdentifierReference::id).orElse("");
+        final String sourceFieldName = sourceFieldName().trim();
+        if (sourceFieldName.startsWith("$.")) {
+            return "$['" + rootFieldName + "']" + sourceFieldName.substring(1);
+        } else if (sourceFieldName.startsWith("$")) {
+            return "$['" + rootFieldName + "']." + sourceFieldName.substring(1);
+        } else {
+            return "$['" + rootFieldName + "']." + sourceFieldName;
+        }
+    }
+
+    public @NotNull String toDestinationJsonPath() {
+        final String destinationJsonPath = destinationFieldName();
+        if (destinationJsonPath.startsWith("$.")) {
+            return destinationJsonPath.substring(2);
+        } else if (destinationJsonPath.startsWith("$")) {
+            return destinationJsonPath.substring(1);
+        }
+        return destinationJsonPath;
+    }
 }
