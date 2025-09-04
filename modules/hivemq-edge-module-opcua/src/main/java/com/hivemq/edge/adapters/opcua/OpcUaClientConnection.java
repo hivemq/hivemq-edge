@@ -128,7 +128,7 @@ class OpcUaClientConnection {
                     .withMessage("Failed to create or transfer OPC UA subscription. Closing client connection.")
                     .withSeverity(Event.SEVERITY.ERROR)
                     .fire();
-            quietlyCloseClient(client, false,null, null);
+            quietlyCloseClient(client, false, faultListener, activityListener);
             return false;
         }
 
