@@ -104,7 +104,6 @@ class OpcUaClientConnection {
                         endpointFilter,
                         ignore -> {},
                         new OpcUaClientConfigurator(adapterId, parsedConfig));
-            client.addSessionActivityListener(activityListener);
             client.addFaultListener(faultListener);
             client.connect();
         } catch (final UaException e) {
@@ -122,13 +121,13 @@ class OpcUaClientConnection {
 
         if(subscriptionOptional.isEmpty()) {
             log.error("Failed to create or transfer OPC UA subscription. Closing client connection.");
-            quietlyCloseClient(client, false,null, null);
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
             eventService
                     .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                     .withMessage("Failed to create or transfer OPC UA subscription. Closing client connection.")
                     .withSeverity(Event.SEVERITY.ERROR)
                     .fire();
+            quietlyCloseClient(client, false, faultListener, activityListener);
             return false;
         }
 
@@ -137,6 +136,7 @@ class OpcUaClientConnection {
 
         context.set(new ConnectionContext(subscription.getClient(), faultListener, activityListener));
         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        client.addSessionActivityListener(activityListener);
         log.info("Client created and connected successfully");
         return true;
     }
