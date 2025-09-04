@@ -9,13 +9,13 @@ export const MOCK_PRE_LOGIN_NOTICE: PreLoginNotice = {
   consent: 'I understand and agree to comply',
   title: 'Notice: Entering a Protected System',
   message:
-    'I acknowledge that I am bound by confidentiality obligations imposed through my employment or contractual ' +
-    'agreement with MY COMPANY in connection with my access to confidential information, including EDGE and' +
+    'I acknowledge that I am bound by the confidentiality obligations imposed through my employment or contractual ' +
+    'agreement with MY COMPANY in connection with my access to confidential information, including EDGE and ' +
     'its contents.\n\n' +
-    'By entering EDGE, I confirm that I understand that my activities within EDGE may be monitored consistent ' +
-    'with local law, and all contents and passwords are confidential information, and that unauthorized ' +
-    'disclosure or use of such confidential information may result in disciplinary action including termination ' +
-    'of my employment or services and/or legal action based on local law.',
+    'By entering EDGE, I confirm that I understand my activities within EDGE may be monitored consistent with ' +
+    'local law. I also understand that all contents and passwords are confidential information, and that any ' +
+    'unauthorized disclosure or use of such confidential information may result in disciplinary action, including ' +
+    'termination of my employment or services, and/or legal action based on local law.',
   enabled: true,
 }
 
