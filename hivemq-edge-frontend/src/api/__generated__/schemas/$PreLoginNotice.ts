@@ -1,0 +1,28 @@
+/* generated using openapi-typescript-codegen -- do no edit */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+export const $PreLoginNotice = {
+    description: `The definition of a notice to be presented to the users before login`,
+    properties: {
+        enabled: {
+            type: 'boolean',
+            description: `Indicates whether the pre-login notice is enabled or not`,
+            isRequired: true,
+        },
+        title: {
+            type: 'string',
+            description: `The title of the pre-login notice, also presented to the user`,
+            isRequired: true,
+        },
+        message: {
+            type: 'string',
+            description: `The full text of the pre-login notice`,
+            isRequired: true,
+        },
+        consent: {
+            type: 'string',
+            description: `An optional text for a consent checkbox that, if present, users will need to check to continue to the login itself`,
+        },
+    },
+} as const;
