@@ -57,7 +57,7 @@ const AssetMonitoringOnboardingTask: FC = () => {
 
   return (
     <List>
-      {!isTaskClear && (
+      {isTaskClear && (
         <ListItem display="flex" gap={4} alignItems="center" mb={1}>
           <Badge colorScheme="green">
             <CheckIcon />
