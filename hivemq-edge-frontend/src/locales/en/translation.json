@@ -82,6 +82,10 @@
       "subheader": "Edge Gateway",
       "tagline": "Plug and play with your Edge devices and unify the data into standards compliant workloads."
     },
+    "preLogin": {
+      "forceReading": "Please read the notice fully before continuing",
+      "submit": "Proceed to sign in"
+    },
     "title": "Sign in",
     "username": {
       "label": "Username",
@@ -104,6 +108,10 @@
       "label": "Sign in"
     },
     "error": {
+      "noConfiguration": {
+        "title": "Problem loading Edge configuration",
+        "description": "The configuration cannot be loaded. Please try again later or contact your system administrator if it persists."
+      },
       "defaultCredentials": "We cannot load your default credentials. Please try again later",
       "verifyCredentials": "We cannot verify your credentials. Please try again later",
       "tokenType": "Authentication Token",
