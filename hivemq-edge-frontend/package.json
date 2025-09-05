@@ -91,7 +91,7 @@
     "d3-shape": "3.2.0",
     "debug": "4.3.7",
     "elkjs": "0.9.1",
-    "form-data": "4.0.3",
+    "form-data": "4.0.4",
     "framer-motion": "10.12.21",
     "i18next": "23.11.3",
     "immutable-json-patch": "6.0.2",
