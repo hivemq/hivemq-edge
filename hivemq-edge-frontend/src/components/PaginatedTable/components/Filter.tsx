@@ -106,6 +106,7 @@ export const Filter = <T,>({
         isMulti={false}
         components={{
           DropdownIndicator: null,
+          ...filterOptions?.components,
         }}
         styles={{
           menuPortal: (provided) => ({ ...provided, zIndex: 'var(--chakra-zIndices-popover)' }),
