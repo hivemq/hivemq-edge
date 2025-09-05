@@ -20,9 +20,18 @@ const AssetMonitoringOnboardingTask: FC = () => {
 
   // TODO[NVL] Colors need to be sync with other Pulse/asset components and the theme
   const categories: AssetMonitoringOnboardingTaskContent = {
-    unmapped: { name: t('New asset(s) requiring mapping'), color: 'status.disconnected' },
-    remapping: { name: t('Existing asset(s) requiring a different mapping'), color: 'status.error' },
-    errors: { name: t('Existing asset(s) with errors'), color: 'status.error' },
+    unmapped: (count: number) => ({
+      name: t('pulse.onboarding.monitoring.unmapped', { count: count }),
+      color: 'status.disconnected',
+    }),
+    remapping: (count: number) => ({
+      name: t('pulse.onboarding.monitoring.remapping', { count: count }),
+      color: 'status.error',
+    }),
+    errors: (count: number) => ({
+      name: t('pulse.onboarding.monitoring.errors', { count: count }),
+      color: 'status.error',
+    }),
   }
 
   const aggregate = useMemo(() => {
@@ -53,7 +62,7 @@ const AssetMonitoringOnboardingTask: FC = () => {
           <Badge colorScheme="green">
             <CheckIcon />
           </Badge>
-          <Text>{t('All assets are streaming')}</Text>
+          <Text>{t('pulse.onboarding.monitoring.allClear')}</Text>
         </ListItem>
       )}
       {!isTaskClear &&

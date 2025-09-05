@@ -49,7 +49,7 @@ export const useOnboarding = (): OnboardingTask[] => {
       },
 
       {
-        title: t('Stay up-to-date with your asset mappings'),
+        title: t('pulse.onboarding.monitoring.task'),
         label: '',
         leftIcon: <PulseAgentIcon boxSize={6} />,
         content: <AssetMonitoringOnboardingTask />,
