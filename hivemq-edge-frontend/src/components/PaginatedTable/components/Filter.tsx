@@ -97,7 +97,7 @@ export const Filter = <T,>({
         value={columnValue ? { value: columnValue, label: columnValue } : null}
         onChange={(item) => setFilterValue(item?.value)}
         // TODO[35494] The label/renderer for the options need customisation per column
-        options={sortedUniqueValues.map((value: string) => ({ value: value, label: value, group: 'DDD' }))}
+        options={sortedUniqueValues.map((value: string) => ({ value: value, label: value }))}
         placeholder={placeholder}
         noOptionsMessage={noOptionsMessage}
         formatCreateLabel={formatCreateLabel}
