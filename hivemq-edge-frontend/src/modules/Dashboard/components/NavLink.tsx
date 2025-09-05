@@ -19,6 +19,7 @@ export const NavLink: FC<NavLinkProps> = ({ link }) => {
     <Button
       justifyContent="space-between"
       variant={active ? 'solid' : 'ghost'}
+      aria-current={active ? 'page' : undefined}
       size="sm"
       w="100%"
       as={isDisabled ? undefined : RouterLink}
