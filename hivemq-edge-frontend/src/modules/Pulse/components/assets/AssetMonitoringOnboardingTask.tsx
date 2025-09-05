@@ -11,7 +11,7 @@ import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 interface AssetMonitoringOnboardingTaskContent {
-  [key: string]: { name: string; color?: string }
+  [key: string]: (count: number) => { name: string; color?: string }
 }
 
 const AssetMonitoringOnboardingTask: FC = () => {
@@ -57,17 +57,20 @@ const AssetMonitoringOnboardingTask: FC = () => {
         </ListItem>
       )}
       {!isTaskClear &&
-        Object.entries(aggregate || {}).map(([key, value]) => (
-          <ListItem key={key} display="flex" gap={4} alignItems="center" mb={1}>
-            <Badge colorScheme={value ? categories[key].color || 'gray' : undefined}>{value}</Badge>
-            {Boolean(value) && (
-              <Button variant="link" as={RouterLink} to="/pulse-assets">
-                {categories[key].name}
-              </Button>
-            )}
-            {!value && <Text>{categories[key].name}</Text>}
-          </ListItem>
-        ))}
+        Object.entries(aggregate || {}).map(([key, value]) => {
+          const category = categories[key](value)
+          return (
+            <ListItem key={key} display="flex" gap={4} alignItems="center" mb={1}>
+              <Badge colorScheme={value ? category.color || 'gray' : undefined}>{value}</Badge>
+              {Boolean(value) && (
+                <Button variant="link" as={RouterLink} to="/pulse-assets">
+                  {category.name}
+                </Button>
+              )}
+              {!value && <Text>{category.name}</Text>}
+            </ListItem>
+          )
+        })}
     </List>
   )
 }
