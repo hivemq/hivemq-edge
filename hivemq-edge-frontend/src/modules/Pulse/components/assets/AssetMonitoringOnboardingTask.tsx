@@ -59,13 +59,13 @@ const AssetMonitoringOnboardingTask: FC = () => {
   if (error) return <ErrorMessage message={error.message} />
 
   return (
-    <List>
+    <List data-testid="asset-monitoring-onboarding-todo">
       {isTaskClear && (
         <ListItem display="flex" gap={4} alignItems="center" mb={1}>
           <Badge colorScheme="green">
             <CheckIcon />
           </Badge>
-          <Text>{t('pulse.onboarding.monitoring.allClear')}</Text>
+          <Text data-testid="asset-monitoring-toto-text">{t('pulse.onboarding.monitoring.allClear')}</Text>
         </ListItem>
       )}
       {!isTaskClear &&
@@ -73,9 +73,15 @@ const AssetMonitoringOnboardingTask: FC = () => {
           const category = categories[key](value)
           return (
             <ListItem key={key} display="flex" gap={4} alignItems="center" mb={1}>
-              <Badge colorScheme={value ? category.color || 'gray' : undefined}>{value}</Badge>
+              <Badge
+                data-testid="asset-monitoring-toto-count"
+                colorScheme={value ? category.color || 'gray' : undefined}
+              >
+                {value}
+              </Badge>
               {Boolean(value) && (
                 <Button
+                  data-testid="asset-monitoring-toto-link"
                   variant="link"
                   as={RouterLink}
                   to={`/pulse-assets${category.searchParams ? '?' + category.searchParams : ''}`}
@@ -83,7 +89,7 @@ const AssetMonitoringOnboardingTask: FC = () => {
                   {category.name}
                 </Button>
               )}
-              {!value && <Text>{category.name}</Text>}
+              {!value && <Text data-testid="asset-monitoring-toto-text">{category.name}</Text>}
             </ListItem>
           )
         })}
