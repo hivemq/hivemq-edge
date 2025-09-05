@@ -108,6 +108,12 @@ export const Filter = <T,>({
           DropdownIndicator: null,
           ...filterOptions?.components,
         }}
+        chakraStyles={{
+          menuList: (provided) => ({
+            ...provided,
+            width: 'fit-content',
+          }),
+        }}
         styles={{
           menuPortal: (provided) => ({ ...provided, zIndex: 'var(--chakra-zIndices-popover)' }),
         }}
