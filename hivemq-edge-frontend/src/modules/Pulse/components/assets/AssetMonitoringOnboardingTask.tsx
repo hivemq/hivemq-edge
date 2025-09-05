@@ -11,7 +11,7 @@ import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 interface AssetMonitoringOnboardingTaskContent {
-  [key: string]: (count: number) => { name: string; color?: string }
+  [key: string]: (count: number) => { name: string; color?: string; searchParams?: string }
 }
 
 const AssetMonitoringOnboardingTask: FC = () => {
@@ -23,14 +23,17 @@ const AssetMonitoringOnboardingTask: FC = () => {
     unmapped: (count: number) => ({
       name: t('pulse.onboarding.monitoring.unmapped', { count: count }),
       color: 'status.disconnected',
+      searchParams: `status=${AssetMapping.status.UNMAPPED}`,
     }),
     remapping: (count: number) => ({
       name: t('pulse.onboarding.monitoring.remapping', { count: count }),
       color: 'status.error',
+      searchParams: `status=${AssetMapping.status.REQUIRES_REMAPPING}`,
     }),
     errors: (count: number) => ({
       name: t('pulse.onboarding.monitoring.errors', { count: count }),
       color: 'status.error',
+      searchParams: `status=${AssetMapping.status.MISSING}`,
     }),
   }
 
@@ -72,7 +75,11 @@ const AssetMonitoringOnboardingTask: FC = () => {
             <ListItem key={key} display="flex" gap={4} alignItems="center" mb={1}>
               <Badge colorScheme={value ? category.color || 'gray' : undefined}>{value}</Badge>
               {Boolean(value) && (
-                <Button variant="link" as={RouterLink} to="/pulse-assets">
+                <Button
+                  variant="link"
+                  as={RouterLink}
+                  to={`/pulse-assets${category.searchParams ? '?' + category.searchParams : ''}`}
+                >
                   {category.name}
                 </Button>
               )}
