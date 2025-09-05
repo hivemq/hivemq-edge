@@ -29,7 +29,7 @@ export const cy_interceptCoreE2E = () => {
 
   // code business requests
   cy.intercept('/api/v1/auth/authenticate', mockAuthApi(mockValidCredentials))
-  cy.intercept('/api/v1/frontend/configuration', mockGatewayConfiguration)
+  cy.intercept('/api/v1/frontend/configuration', { ...mockGatewayConfiguration, preLoginNotice: undefined })
 
   // Add a dummy element so we can check uniqueness
   cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter_OPCUA] }).as('getAdapters')

@@ -24,6 +24,10 @@ export type NorthboundMapping = {
      */
     messageExpiryInterval?: number;
     /**
+     * How collected tags should or shouldn't be aggregated.
+     */
+    messageHandlingOptions?: NorthboundMapping.messageHandlingOptions;
+    /**
      * The tag for which values hould be collected and sent out.
      */
     tagName: string;
@@ -36,4 +40,17 @@ export type NorthboundMapping = {
      */
     userProperties?: Array<MqttUserProperty>;
 };
+
+export namespace NorthboundMapping {
+
+    /**
+     * How collected tags should or shouldn't be aggregated.
+     */
+    export enum messageHandlingOptions {
+        MQTTMESSAGE_PER_TAG = 'MQTTMessagePerTag',
+        MQTTMESSAGE_PER_SUBSCRIPTION = 'MQTTMessagePerSubscription',
+    }
+
+
+}
 
