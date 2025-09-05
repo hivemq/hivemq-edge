@@ -1539,6 +1539,21 @@
         "loading": "Processing the request. Please wait ..."
       }
     },
+    "onboarding": {
+      "monitoring": {
+        "task": "Stay up-to-date with your asset mappings",
+        "allClear": "All assets are streaming",
+        "unmapped_zero": "No asset requires mapping",
+        "unmapped_one": "One new asset requires mapping",
+        "unmapped_other": "New assets require mapping",
+        "remapping_zero": "No asset requires remapping",
+        "remapping_one": "An asset requires remapping",
+        "remapping_other": "Several assets require remapping",
+        "errors_zero": "No asset mapping reports errors",
+        "errors_one": "An asset has errors requiring inspection",
+        "errors_other": "Several assets have errors requiring inspection"
+      }
+    },
     "assets": {
       "status_REQUIRES_REMAPPING": "Requires Remapping",
       "status_UNMAPPED": "Unmapped",

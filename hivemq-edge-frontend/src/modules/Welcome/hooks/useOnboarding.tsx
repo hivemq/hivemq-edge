@@ -8,6 +8,7 @@ import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfi
 import { PulseAgentIcon } from '@/components/Icons/PulseAgentIcon.tsx'
 import { ActivationPanel } from '@/modules/Pulse/components/activation/ActivationPanel.tsx'
 import type { OnboardingTask } from '@/modules/Welcome/types.ts'
+import AssetMonitoringOnboardingTask from '@/modules/Pulse/components/assets/AssetMonitoringOnboardingTask.tsx'
 
 export const useOnboarding = (): OnboardingTask[] => {
   const { t } = useTranslation()
@@ -45,6 +46,13 @@ export const useOnboarding = (): OnboardingTask[] => {
         label: t('welcome.onboarding.pulse.section.assets.label'),
         to: '/pulse-assets',
         leftIcon: <PulseAgentIcon boxSize={6} />,
+      },
+
+      {
+        title: t('pulse.onboarding.monitoring.task'),
+        label: '',
+        leftIcon: <PulseAgentIcon boxSize={6} />,
+        content: <AssetMonitoringOnboardingTask />,
       },
     ],
   }
