@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Box, Skeleton, Text } from '@chakra-ui/react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { chakraComponents } from 'chakra-react-select'
 
 import type { ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
@@ -107,6 +108,18 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
         meta: {
           filterOptions: {
             canCreate: false,
+            components: {
+              Option: ({ children, ...props }) => (
+                <chakraComponents.Option {...props}>
+                  <AssetStatusBadge status={children as AssetMapping.status} />
+                </chakraComponents.Option>
+              ),
+              SingleValue: ({ children, ...props }) => (
+                <chakraComponents.SingleValue {...props}>
+                  <AssetStatusBadge status={children as AssetMapping.status} />
+                </chakraComponents.SingleValue>
+              ),
+            },
           },
         } as FilterMetadata,
       },
