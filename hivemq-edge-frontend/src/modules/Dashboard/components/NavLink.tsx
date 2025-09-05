@@ -4,7 +4,11 @@ import { Button, Center, HStack, Text } from '@chakra-ui/react'
 
 import type { MainNavLinkType } from '../types.ts'
 
-export const NavLink: FC<{ link: MainNavLinkType }> = ({ link }) => {
+interface NavLinkProps {
+  link: MainNavLinkType
+}
+
+export const NavLink: FC<NavLinkProps> = ({ link }) => {
   const location = useLocation()
 
   const { href, icon, isExternal, isDisabled, isActive, label } = link
@@ -13,7 +17,7 @@ export const NavLink: FC<{ link: MainNavLinkType }> = ({ link }) => {
   // TODO[NVL] Styling should be done in a proper theme's variant
   return (
     <Button
-      justifyContent="flex-start"
+      justifyContent="space-between"
       variant={active ? 'solid' : 'ghost'}
       size="sm"
       w="100%"
@@ -24,6 +28,7 @@ export const NavLink: FC<{ link: MainNavLinkType }> = ({ link }) => {
       borderLeftColor={active ? '#FFC000' : '#f5f5f5'}
       borderLeftWidth={active ? 8 : 0}
       borderRadius={0}
+      rightIcon={link.rightAddon}
     >
       <HStack spacing="3" fontSize="sm" fontWeight={active ? 'semibold' : 'medium'} ml={active ? 0 : 2}>
         <Center w="6" h="6">

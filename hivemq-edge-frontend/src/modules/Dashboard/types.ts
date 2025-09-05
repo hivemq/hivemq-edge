@@ -12,4 +12,5 @@ export interface MainNavLinkType {
   isActive?: boolean
   isExternal?: boolean
   isDisabled?: boolean
+  rightAddon?: ReactElement
 }
