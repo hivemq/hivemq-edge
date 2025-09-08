@@ -23,17 +23,17 @@ const AssetMonitoringOnboardingTask: FC = () => {
     unmapped: (count: number) => ({
       name: t('pulse.onboarding.monitoring.unmapped', { count: count }),
       color: 'status.disconnected',
-      searchParams: `status=${AssetMapping.status.UNMAPPED}`,
+      searchParams: `mapping_status=${AssetMapping.status.UNMAPPED}`,
     }),
     remapping: (count: number) => ({
       name: t('pulse.onboarding.monitoring.remapping', { count: count }),
       color: 'status.error',
-      searchParams: `status=${AssetMapping.status.REQUIRES_REMAPPING}`,
+      searchParams: `mapping_status=${AssetMapping.status.REQUIRES_REMAPPING}`,
     }),
     errors: (count: number) => ({
       name: t('pulse.onboarding.monitoring.errors', { count: count }),
       color: 'status.error',
-      searchParams: `status=${AssetMapping.status.MISSING}`,
+      searchParams: `mapping_status=${AssetMapping.status.MISSING}`,
     }),
   }
 
