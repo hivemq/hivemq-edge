@@ -55,6 +55,10 @@ interface PaginatedTableProps<T> {
   getRowStyles?: (row: Row<T>) => CSSProperties
   getSubRows?: (originalRow: T, index: number) => undefined | T[]
   customControls?: React.ReactNode
+  initState?: {
+    columnFilters?: ColumnFiltersState
+    globalFilter?: string
+  }
 }
 
 const DEFAULT_PAGE_SIZES = [5, 10, 20, 30, 40, 50]
@@ -74,10 +78,11 @@ const PaginatedTable = <T,>({
   getSubRows = undefined,
   'aria-label': ariaLabel,
   customControls = undefined,
+  initState,
 }: PaginatedTableProps<T>) => {
   const { t } = useTranslation()
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [globalFilter, setGlobalFilter] = useState('')
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(initState?.columnFilters || [])
+  const [globalFilter, setGlobalFilter] = useState(initState?.globalFilter || '')
   const [rowSelection, setRowSelection] = useState({})
   const [expanded, setExpanded] = useState<ExpandedState>({})
 

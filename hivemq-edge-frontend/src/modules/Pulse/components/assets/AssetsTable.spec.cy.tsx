@@ -1,4 +1,5 @@
 import { WrapperTestRoute } from '@/__test-utils__/hooks/WrapperTestRoute.tsx'
+import { AssetMapping } from '@/api/__generated__'
 import { MOCK_COMBINER_ASSET } from '@/api/hooks/useCombiners/__handlers__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { MOCK_PULSE_ASSET_LIST } from '@/api/hooks/usePulse/__handlers__'
@@ -186,6 +187,22 @@ describe('AssetsTable', () => {
         expect(state).to.have.nested.property('selectedAdapter.type', NodeTypes.ASSETS_NODE)
         expect(state).to.have.nested.property('selectedAdapter.command', WorkspaceNavigationCommand.ASSET_MAPPER)
       })
+  })
+
+  it.only('should handle navigation', () => {
+    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getStatus')
+
+    cy.mountWithProviders(<AssetsTable />, {
+      wrapper: WrapperTestRoute,
+      routerProps: { initialEntries: [`/pulse-assets?mapping_status=${AssetMapping.status.UNMAPPED}`] },
+    })
+
+    cy.wait('@getStatus')
+    cy.getByTestId('test-pathname').should('have.text', '/pulse-assets')
+    cy.getByTestId('test-search').should('have.text', '?mapping_status=UNMAPPED')
+
+    cy.get('table tbody tr').should('have.length', 1)
+    cy_getCell(0, 3).should('have.text', 'Unmapped')
   })
 
   it('should be accessible', () => {
