@@ -1,9 +1,10 @@
+import { WrapperTestRoute } from '@/__test-utils__/hooks/WrapperTestRoute.tsx'
 import { MOCK_PULSE_ASSET_LIST, MOCK_PULSE_ASSET_MAPPED } from '@/api/hooks/usePulse/__handlers__'
 import AssetMonitoringOnboardingTask from '@/modules/Pulse/components/assets/AssetMonitoringOnboardingTask.tsx'
 
 describe('AssetMonitoringOnboardingTask', () => {
   beforeEach(() => {
-    cy.viewport(350, 600)
+    cy.viewport(500, 600)
   })
 
   it('should render properly', () => {
@@ -67,6 +68,23 @@ describe('AssetMonitoringOnboardingTask', () => {
       .should('have.attr', 'data-status', 'error')
       .should('have.text', 'Not Found')
     cy.getByTestId('asset-monitoring-onboarding-todo').should('not.exist')
+  })
+
+  it('should navigate properly', () => {
+    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getAssets')
+    cy.mountWithProviders(<AssetMonitoringOnboardingTask />, { wrapper: WrapperTestRoute })
+
+    cy.wait('@getAssets')
+    cy.getByTestId('asset-monitoring-onboarding-todo').should('be.visible')
+    cy.getByTestId('test-pathname').should('have.text', '/')
+
+    cy.getByTestId('asset-monitoring-onboarding-todo').find('li').eq(0).click()
+    cy.getByTestId('test-pathname').should('have.text', '/pulse-assets')
+    cy.getByTestId('test-search').should('have.text', '?mapping_status=UNMAPPED')
+
+    cy.getByTestId('asset-monitoring-onboarding-todo').find('li').eq(1).click()
+    cy.getByTestId('test-pathname').should('have.text', '/pulse-assets')
+    cy.getByTestId('test-search').should('have.text', '?mapping_status=REQUIRES_REMAPPING')
   })
 
   it('should be accessible', () => {
