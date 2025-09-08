@@ -96,8 +96,7 @@ export const Filter = <T,>({
         menuPortalTarget={document.body}
         value={columnValue ? { value: columnValue, label: columnValue } : null}
         onChange={(item) => setFilterValue(item?.value)}
-        // TODO[35494] The label/renderer for the options need customisation per column
-        options={sortedUniqueValues.map((value: string) => ({ value: value, label: value, group: 'DDD' }))}
+        options={sortedUniqueValues.map((value: string) => ({ value: value, label: value }))}
         placeholder={placeholder}
         noOptionsMessage={noOptionsMessage}
         formatCreateLabel={formatCreateLabel}
@@ -106,6 +105,13 @@ export const Filter = <T,>({
         isMulti={false}
         components={{
           DropdownIndicator: null,
+          ...filterOptions?.components,
+        }}
+        chakraStyles={{
+          menuList: (provided) => ({
+            ...provided,
+            width: 'fit-content',
+          }),
         }}
         styles={{
           menuPortal: (provided) => ({ ...provided, zIndex: 'var(--chakra-zIndices-popover)' }),
