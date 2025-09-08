@@ -19,11 +19,13 @@ package com.hivemq.combining.vanilla;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataCombiningDestination;
+import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.services.PrePublishProcessorService;
+import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,5 +98,157 @@ public class VanillaDataCombiningTransformationServiceTest {
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo(EMPTY_OBJECT);
+    }
+
+    @Test
+    public void when1FilterMatches_thenPublishPasses() {
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "TOPIC_FILTER:topic/a": {
+                    "a": 1
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.a",
+                "dest.a",
+                new DataIdentifierReference("topic/a", DataIdentifierReference.Type.TOPIC_FILTER))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"a\":1}}");
+    }
+
+    @Test
+    public void when2FiltersMatch_thenPublishPasses() {
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "TOPIC_FILTER:topic/a": {
+                    "a": 1
+                  },
+                  "TOPIC_FILTER:topic/b": {
+                    "b": 2
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.a",
+                        "dest.a",
+                        new DataIdentifierReference("topic/a", DataIdentifierReference.Type.TOPIC_FILTER)),
+                new Instruction("$.b",
+                        "dest.b",
+                        new DataIdentifierReference("topic/b", DataIdentifierReference.Type.TOPIC_FILTER))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"a\":1,\"b\":2}}");
+    }
+
+    @Test
+    public void when1TagMatches_thenPublishPasses() {
+        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
+                "dest.tag1",
+                new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"tag1\":\"TAG1\"}}");
+    }
+
+    @Test
+    public void when2TagsMatch_thenPublishPasses() {
+        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
+                        "dest.tag1",
+                        new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG)),
+                new Instruction("$.value",
+                        "dest.tag2",
+                        new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo(
+                "{\"dest\":{\"tag1\":\"TAG1\",\"tag2\":\"TAG2\"}}");
+    }
+
+    @Test
+    public void when2FiltersAnd2TagsMatch_thenPublishPasses() {
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "TOPIC_FILTER:topic/a": {
+                    "a": 1
+                  },
+                  "TOPIC_FILTER:topic/b": {
+                    "b": 2
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.a",
+                        "dest.a",
+                        new DataIdentifierReference("topic/a", DataIdentifierReference.Type.TOPIC_FILTER)),
+                new Instruction("$.b",
+                        "dest.b",
+                        new DataIdentifierReference("topic/b", DataIdentifierReference.Type.TOPIC_FILTER)),
+                new Instruction("$.value",
+                        "dest.tag1",
+                        new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG)),
+                new Instruction("$.value",
+                        "dest.tag2",
+                        new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo(
+                "{\"dest\":{\"a\":1,\"b\":2,\"tag1\":\"TAG1\",\"tag2\":\"TAG2\"}}");
+    }
+
+    @Test
+    public void when2FiltersOverlap_thenLast1WinsAndPublishPasses() {
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "TOPIC_FILTER:topic/a": {
+                    "a": 1
+                  },
+                  "TOPIC_FILTER:topic/b": {
+                    "b": 2
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.a",
+                        "dest.x",
+                        new DataIdentifierReference("topic/a", DataIdentifierReference.Type.TOPIC_FILTER)),
+                new Instruction("$.b",
+                        "dest.x",
+                        new DataIdentifierReference("topic/b", DataIdentifierReference.Type.TOPIC_FILTER))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"x\":2}}");
+    }
+
+    @Test
+    public void when2TagsOverlap_thenLast1WinsAndPublishPasses() {
+        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
+                        "dest.tag",
+                        new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG)),
+                new Instruction("$.value",
+                        "dest.tag",
+                        new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"tag\":\"TAG2\"}}");
+    }
+
+    @Test
+    public void whenSingleAndDoubleQuotesAreInTopic_thenPublishPasses() {
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "TOPIC_FILTER:topic/single'quote": {
+                    "a": 1
+                  },
+                  "TOPIC_FILTER:topic/double\\"quote": {
+                    "b": 2
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.a",
+                        "dest.a",
+                        new DataIdentifierReference("topic/single'quote", DataIdentifierReference.Type.TOPIC_FILTER)),
+                new Instruction("$.b",
+                        "dest.b",
+                        new DataIdentifierReference("topic/double\"quote",
+                                DataIdentifierReference.Type.TOPIC_FILTER))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"a\":1,\"b\":2}}");
     }
 }
