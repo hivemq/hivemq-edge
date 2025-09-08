@@ -38,7 +38,7 @@ const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging 
     return { mapped: allAssets.items.length - unmappedAssets.length, unmapped: unmappedAssets.length }
   }, [allAssets?.items, unmappedAssets])
 
-  const { onContextMenu } = useContextMenu(id, selected, `/workspace/node/pulse-assets`)
+  const { onContextMenu } = useContextMenu(id, selected, `/workspace/pulse-agent/${id}`)
 
   const pulseStatus: PulseStatus.activation = hasPulseCapability
     ? PulseStatus.activation.ACTIVATED
