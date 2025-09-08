@@ -137,7 +137,7 @@ const CombinerMappingManager: FC = () => {
             showNativeWidgets={showNativeWidgets}
             id="combiner-main-form"
             schema={combinerMappingJsonSchema}
-            uiSchema={combinerMappingUiSchema(isAssetManager)}
+            uiSchema={combinerMappingUiSchema(isAssetManager, tabId)}
             formData={selectedNode.data}
             onSubmit={handleOnSubmit}
             formContext={{ queries: sources, entities } as CombinerContext}
