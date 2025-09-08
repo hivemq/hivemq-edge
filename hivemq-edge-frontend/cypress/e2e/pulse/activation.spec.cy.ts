@@ -82,7 +82,7 @@ describe('Pulse Agent Activation', () => {
       homePage.task(ONBOARDING.TASK_CLOUD).should('contain.text', 'Connect To HiveMQ Cloud')
       homePage.task(ONBOARDING.TASK_PULSE).should('contain.text', 'Connect to HiveMQ Pulse')
 
-      homePage.taskSections(ONBOARDING.TASK_PULSE).should('have.length', 2)
+      homePage.taskSections(ONBOARDING.TASK_PULSE).should('have.length', 3)
       homePage.taskSection(ONBOARDING.TASK_PULSE, 0).within(() => {
         pulseActivationPanel.trigger.should('have.text', 'Activate Pulse')
         pulseActivationPanel.trigger.click()
