@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { Card, CardBody, CardHeader, Code } from '@chakra-ui/react'
 
 export const WrapperTestRoute: FC<PropsWithChildren> = ({ children }) => {
-  const { pathname, state } = useLocation()
+  const { pathname, state, search } = useLocation()
 
   return (
     <>
@@ -13,6 +13,11 @@ export const WrapperTestRoute: FC<PropsWithChildren> = ({ children }) => {
         <CardBody data-testid="test-pathname" as={Code}>
           {pathname}
         </CardBody>
+        {search && (
+          <CardBody data-testid="test-search" as={Code}>
+            {search}
+          </CardBody>
+        )}
         {state && (
           <CardBody data-testid="test-state" as={Code}>
             {JSON.stringify(state)}

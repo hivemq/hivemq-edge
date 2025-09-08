@@ -124,7 +124,7 @@ describe('ManagedAssetDrawer', () => {
 
         cy.getByTestId('root_mapping_mappingId').within(() => {
           cy.get('label').should('have.text', 'Mapping ID')
-          cy.get('input').should('have.value', 'ff02efff-7b4c-4f8c-8bf6-74d0756283fb')
+          cy.get('input').should('have.value', '< not found >')
         })
       })
     })

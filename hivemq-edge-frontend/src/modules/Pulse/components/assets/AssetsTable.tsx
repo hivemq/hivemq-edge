@@ -1,9 +1,10 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Box, Skeleton, Text } from '@chakra-ui/react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { chakraComponents } from 'chakra-react-select'
 
 import type { ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
@@ -38,6 +39,7 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   const { t } = useTranslation()
   const { data, isLoading, error } = useListManagedAssets()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const safeData = useMemo(() => {
     if (!data?.items) return [skeletonTemplate, skeletonTemplate, skeletonTemplate]
@@ -107,6 +109,18 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
         meta: {
           filterOptions: {
             canCreate: false,
+            components: {
+              Option: ({ children, ...props }) => (
+                <chakraComponents.Option {...props}>
+                  <AssetStatusBadge status={children as AssetMapping.status} />
+                </chakraComponents.Option>
+              ),
+              SingleValue: ({ children, ...props }) => (
+                <chakraComponents.SingleValue {...props}>
+                  <AssetStatusBadge status={children as AssetMapping.status} />
+                </chakraComponents.SingleValue>
+              ),
+            },
           },
         } as FilterMetadata,
       },
@@ -183,6 +197,7 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
       enablePagination
       enableColumnFilters
       enableGlobalFilter
+      initState={{ columnFilters: [{ id: 'mapping_status', value: searchParams.get('mapping_status') || '' }] }}
     />
   )
 }
