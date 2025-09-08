@@ -6,15 +6,15 @@ on:
       - master**
 
 jobs:
-  monitor-baseline-project:
-    uses: ./.github/workflows/snyk-push.yml
-    with:
-      github_ref: ${{ github.base_ref }}
-    secrets: inherit
+#  monitor-baseline-project:
+#    uses: ./.github/workflows/snyk-push.yml
+#    with:
+#      github_ref: ${{ github.base_ref }}
+#    secrets: inherit
 
   scan-for-new-issues:
     runs-on: ubuntu-latest
-    needs: monitor-baseline-project
+#    needs: monitor-baseline-project
 
     steps:
       - name: Setup Java
@@ -33,7 +33,7 @@ jobs:
       - name: Check for new issues
         uses: hivemq/hivemq-snyk-composite-action@dbe0008ff5a165ad9caf42e7cb2c52d378bd4667 # v2.3.0
         with:
-          snyk-args: --org=hivemq-edge --configuration-matching=^runtimeClasspath$ -d hivemq-edge/hivemq-edge
+          snyk-args: --org=hivemq-edge --configuration-matching=^runtimeClasspath$ -d hivemq-edge/hivemq-edge --gradle-executable=../gradlew
           artifact-name: snyk-report-hivemq-edge
           snyk-token: ${{ secrets.SNYK_TOKEN }}
           github-username: ${{ secrets.JENKINS_GITHUB_USERNAME }}
@@ -47,7 +47,7 @@ jobs:
       - name: Check for new issues (hivemq-edge-frontend)
         uses: hivemq/hivemq-snyk-composite-action@dbe0008ff5a165ad9caf42e7cb2c52d378bd4667 # v2.3.0
         with:
-          snyk-args: --org=hivemq-edge --configuration-matching=^runtimeClasspath$ -d hivemq-edge/hivemq-edge-frontend
+          snyk-args: --org=hivemq-edge --configuration-matching=^runtimeClasspath$ -d hivemq-edge/hivemq-edge-frontend --gradle-executable=../gradlew
           artifact-name: snyk-report-hivemq-edge-frontend
           snyk-token: ${{ secrets.SNYK_TOKEN }}
           github-username: ${{ secrets.JENKINS_GITHUB_USERNAME }}
