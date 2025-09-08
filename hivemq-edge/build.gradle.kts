@@ -347,15 +347,18 @@ val hivemqZip by tasks.registering(Zip::class) {
     into(name)
 }
 
+val cleanJavadoc by tasks.registering(JavaExec::class) {
+    classpath("gradle/tools/javadoc-cleaner-1.0.jar")
+}
+
+
 tasks.javadoc {
     (options as StandardJavadocDocletOptions).addStringOption("-html5")
 
     include("com/hivemq/embedded/*")
 
     doLast {
-        javaexec {
-            classpath("gradle/tools/javadoc-cleaner-1.0.jar")
-        }
+        cleanJavadoc.get().exec()
     }
 
     doLast { // javadoc search fix for jdk 11 https://bugs.openjdk.java.net/browse/JDK-8215291
