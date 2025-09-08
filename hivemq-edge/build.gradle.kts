@@ -351,7 +351,6 @@ val cleanJavadoc by tasks.registering(JavaExec::class) {
     classpath("gradle/tools/javadoc-cleaner-1.0.jar")
 }
 
-
 tasks.javadoc {
     (options as StandardJavadocDocletOptions).addStringOption("-html5")
 
