@@ -8,8 +8,9 @@ export interface NavLinksBlockType {
 export interface MainNavLinkType {
   href: string
   icon: ReactElement
-  label?: string
+  label: string
   isActive?: boolean
   isExternal?: boolean
   isDisabled?: boolean
+  rightAddon?: ReactElement
 }
