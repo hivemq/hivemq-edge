@@ -331,8 +331,8 @@ importers:
         specifier: 14.0.2
         version: 14.0.2
       cypress-axe:
-        specifier: 1.6.0
-        version: 1.6.0(axe-core@4.10.3)(cypress@14.0.2)
+        specifier: 1.7.0
+        version: 1.7.0(axe-core@4.10.3)(cypress@14.0.2)
       cypress-each:
         specifier: 1.14.1
         version: 1.14.1
@@ -3860,12 +3860,12 @@ packages:
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
 
-  cypress-axe@1.6.0:
-    resolution: {integrity: sha512-C/ij50G8eebBrl/WsGT7E+T/SFyIsRZ3Epx9cRTLrPL9Y1GcxlQGFoAVdtSFWRrHSCWXq9HC6iJQMaI89O9yvQ==}
+  cypress-axe@1.7.0:
+    resolution: {integrity: sha512-zzJpvAAjauEB3GZl0KYXb8i3w6MztWAt2WM3czYTFyNVC30alDmqCm9E7GwZ4bgkldZJlmHakaVEyu73R5St4w==}
     engines: {node: '>=10'}
     peerDependencies:
       axe-core: ^3 || ^4
-      cypress: ^10 || ^11 || ^12 || ^13 || ^14
+      cypress: ^10 || ^11 || ^12 || ^13 || ^14 || ^15
 
   cypress-each@1.14.1:
     resolution: {integrity: sha512-evywTv0Gid5J24C2W6ajYsVoBpoXIkvNo6L5a5+6QabtKOG1pn9Fq4zO/EwrdfktDZ9PWRRWFbJBMoRh3NlrYg==}
@@ -11676,7 +11676,7 @@ snapshots:
 
   csstype@3.1.3: {}
 
-  cypress-axe@1.6.0(axe-core@4.10.3)(cypress@14.0.2):
+  cypress-axe@1.7.0(axe-core@4.10.3)(cypress@14.0.2):
     dependencies:
       axe-core: 4.10.3
       cypress: 14.0.2
