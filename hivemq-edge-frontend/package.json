@@ -143,7 +143,7 @@
     "commander": "13.1.0",
     "copyfiles": "2.4.1",
     "cypress": "14.0.2",
-    "cypress-axe": "1.6.0",
+    "cypress-axe": "1.7.0",
     "cypress-each": "1.14.0",
     "cypress-terminal-report": "7.1.0",
     "d3-scale-cluster": "2.0.1",
