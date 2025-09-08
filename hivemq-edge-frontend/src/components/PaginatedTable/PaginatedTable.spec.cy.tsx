@@ -114,45 +114,83 @@ describe('PaginatedTable', () => {
     cy.get('[role="alert"]').should('have.attr', 'data-status', 'info')
   })
 
-  it('should render the filters', () => {
-    cy.mountWithProviders(
-      <PaginatedTable<MOCK_TYPE>
-        data={MOCK_DATA(4)}
-        columns={MOCK_COLUMN}
-        pageSizes={[5, 10, 20]}
-        enableColumnFilters
-        aria-label="table"
-      />
-    )
+  describe('Filters and search', () => {
+    it('should render the filters', () => {
+      cy.mountWithProviders(
+        <PaginatedTable<MOCK_TYPE>
+          data={MOCK_DATA(4)}
+          columns={MOCK_COLUMN}
+          pageSizes={[5, 10, 20]}
+          enableColumnFilters
+          aria-label="table"
+        />
+      )
 
-    cy.getByAriaLabel('Clear selected options').should('not.exist')
+      cy.getByAriaLabel('Clear selected options').should('not.exist')
 
-    cy.get('th').eq(0).find('div#react-select-column1-placeholder').should('have.text', 'Search... (4)')
-    cy.get('th').eq(0).click()
-    cy.get('div#react-select-column1-listbox').find("[role='option']").should('have.length', 4)
-    cy.get('th').eq(0).find('input').type('item 0{Enter}')
+      cy.get('th').eq(0).find('div#react-select-column1-placeholder').should('have.text', 'Search... (4)')
+      cy.get('th').eq(0).click()
+      cy.get('div#react-select-column1-listbox').find("[role='option']").should('have.length', 4)
+      cy.get('th').eq(0).find('input').type('item 0{Enter}')
 
-    // wait for Debounce (should be covered by timeout
-    cy.get('tbody').find('tr').should('have.length', 1)
-    cy.getByAriaLabel('Clear selected options').should('be.visible')
-    cy.getByAriaLabel('Clear selected options').click()
-    cy.get('tbody').find('tr').should('have.length', 4)
-    cy.get('th').eq(0).find('div#react-select-column1-placeholder').should('have.text', 'Search... (4)')
-  })
+      // wait for Debounce (should be covered by timeout
+      cy.get('tbody').find('tr').should('have.length', 1)
+      cy.getByAriaLabel('Clear selected options').should('be.visible')
+      cy.getByAriaLabel('Clear selected options').click()
+      cy.get('tbody').find('tr').should('have.length', 4)
+      cy.get('th').eq(0).find('div#react-select-column1-placeholder').should('have.text', 'Search... (4)')
+    })
 
-  it('should render the global search', () => {
-    cy.mountWithProviders(
-      <PaginatedTable<MOCK_TYPE>
-        data={MOCK_DATA(4)}
-        columns={MOCK_COLUMN}
-        pageSizes={[5, 10, 20]}
-        enableGlobalFilter={true}
-        aria-label="table"
-      />
-    )
+    it('should render the global search', () => {
+      cy.mountWithProviders(
+        <PaginatedTable<MOCK_TYPE>
+          data={MOCK_DATA(4)}
+          columns={MOCK_COLUMN}
+          pageSizes={[5, 10, 20]}
+          enableGlobalFilter={true}
+          aria-label="table"
+        />
+      )
 
-    cy.getByTestId('table-container').within(() => {
-      cy.get('[role="toolbar"] input').should('have.attr', 'placeholder', 'Search for ...')
+      cy.getByTestId('table-container').within(() => {
+        cy.get('[role="toolbar"] input').should('have.attr', 'placeholder', 'Search for ...')
+      })
+    })
+
+    it('should render the filters with their initial state', () => {
+      cy.mountWithProviders(
+        <PaginatedTable<MOCK_TYPE>
+          data={MOCK_DATA(4)}
+          columns={MOCK_COLUMN}
+          pageSizes={[5, 10, 20]}
+          enableColumnFilters
+          aria-label="table"
+          initState={{ columnFilters: [{ id: 'column1', value: 'item 0' }] }}
+        />
+      )
+
+      cy.getByTestId('filter-wrapper').should('have.text', 'item 0')
+      cy.get('tbody').find('tr').should('have.length', 1)
+    })
+
+    it('should render the global search', () => {
+      cy.mountWithProviders(
+        <PaginatedTable<MOCK_TYPE>
+          data={MOCK_DATA(4)}
+          columns={MOCK_COLUMN}
+          pageSizes={[5, 10, 20]}
+          enableGlobalFilter={true}
+          aria-label="table"
+          initState={{ globalFilter: 'item 0' }}
+        />
+      )
+
+      cy.getByTestId('table-container').within(() => {
+        cy.get('[role="toolbar"] input')
+          .should('have.attr', 'placeholder', 'Search for ...')
+          .should('have.value', 'item 0')
+      })
+      cy.get('tbody').find('tr').should('have.length', 1)
     })
   })
 
