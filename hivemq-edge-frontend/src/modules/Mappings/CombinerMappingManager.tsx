@@ -44,7 +44,7 @@ const CombinerMappingManager: FC = () => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
-  const { combinerId } = useParams()
+  const { combinerId, tabId } = useParams()
   const { nodes, onUpdateNode, onNodesChange } = useWorkspaceStore()
   const toast = useToast(BASE_TOAST_OPTION)
 
@@ -69,6 +69,7 @@ const CombinerMappingManager: FC = () => {
   }, [entities])
 
   const sources = useGetCombinedEntities(entities)
+  // @ts-ignore wrong type; need a fix
   const validator = useValidateCombiner(sources, entities)
   const updateCombiner = useUpdateCombiner()
   const deleteCombiner = useDeleteCombiner()
