@@ -36,6 +36,7 @@ import com.hivemq.edge.api.HealthCheckEndpointApi;
 import com.hivemq.edge.api.MetricsApi;
 import com.hivemq.edge.api.PayloadSamplingApi;
 import com.hivemq.edge.api.ProtocolAdaptersApi;
+import com.hivemq.edge.api.PulseApi;
 import com.hivemq.edge.api.TopicFiltersApi;
 import com.hivemq.edge.api.UnsApi;
 import io.swagger.annotations.Api;
@@ -88,6 +89,7 @@ public class ApiResourceRegistry extends ResourceConfig {
     private final @NotNull Lazy<PayloadSamplingApi> samplingResourceLazy;
     private final @NotNull Lazy<TopicFiltersApi> topicFilterApiLazy;
     private final @NotNull Lazy<CombinersApi> combinersApiLazy;
+    private final @NotNull Lazy<PulseApi> pulseApiLazy;
 
 
     @Inject
@@ -109,7 +111,8 @@ public class ApiResourceRegistry extends ResourceConfig {
             final @NotNull Lazy<GenericAPIHolder> genericAPIHolderLazy,
             final @NotNull Lazy<PayloadSamplingApi> samplingResourceLazy,
             final @NotNull Lazy<TopicFiltersApi> topicFilterApiLazy,
-            final @NotNull Lazy<CombinersApi> combinersApiLazy) {
+            final @NotNull Lazy<CombinersApi> combinersApiLazy,
+            final @NotNull Lazy<PulseApi> pulseApiLazy) {
         this.authenticationApi = authenticationApi;
         this.metricsApi = metricsApi;
         this.healthCheckApi = healthCheckApi;
@@ -128,6 +131,7 @@ public class ApiResourceRegistry extends ResourceConfig {
         this.samplingResourceLazy = samplingResourceLazy;
         this.topicFilterApiLazy = topicFilterApiLazy;
         this.combinersApiLazy = combinersApiLazy;
+        this.pulseApiLazy = pulseApiLazy;
     }
 
     @Inject //method injection, this gets called once after instantiation
@@ -169,6 +173,8 @@ public class ApiResourceRegistry extends ResourceConfig {
         logger.trace("Initialized topic filter API resources");
         register(combinersApiLazy.get());
         logger.trace("Initialized combiners API resources");
+        register(pulseApiLazy.get());
+        logger.trace("Initialized pulse API resources");
     }
 
     protected void registerMappers() {
