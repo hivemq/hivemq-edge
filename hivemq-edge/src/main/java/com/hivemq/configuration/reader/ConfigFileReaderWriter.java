@@ -144,10 +144,12 @@ public class ConfigFileReaderWriter {
 
     private final @NotNull ConfigurationFile configFile;
     private final @NotNull List<Configurator<?>> configurators;
+
     private final @NotNull ConcurrentMap<Path, Long> fragmentToModificationTime;
     private final @NotNull BridgeExtractor bridgeExtractor;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
     private final @NotNull DataCombiningExtractor dataCombiningExtractor;
+    private final @NotNull PulseExtractor pulseExtractor;
     private final @NotNull UnsExtractor unsExtractor;
     private final @NotNull List<ReloadableExtractor<?, ?>> extractors;
     private final @NotNull SystemInformation sysInfo;
@@ -167,6 +169,7 @@ public class ConfigFileReaderWriter {
         this.extractors = List.of(this.bridgeExtractor = new BridgeExtractor(this),
                 this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this),
                 this.dataCombiningExtractor = new DataCombiningExtractor(this),
+                this.pulseExtractor = new PulseExtractor(this),
                 this.unsExtractor = new UnsExtractor(this));
         this.fragmentToModificationTime = new ConcurrentHashMap<>();
         this.configEntity = new AtomicReference<>();
@@ -267,6 +270,10 @@ public class ConfigFileReaderWriter {
 
     public @NotNull ProtocolAdapterExtractor getProtocolAdapterExtractor() {
         return protocolAdapterExtractor;
+    }
+
+    public @NotNull PulseExtractor getPulseExtractor() {
+        return pulseExtractor;
     }
 
     public @NotNull UnsExtractor getUnsExtractor() {
