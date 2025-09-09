@@ -1617,6 +1617,9 @@
       }
     },
     "mapper": {
+      "manager": {
+        "header": "Managing Pulse Asset Mappings"
+      },
       "title": "Asset Mapper",
       "unnamed": "< unnamed asset mapper >"
     },
