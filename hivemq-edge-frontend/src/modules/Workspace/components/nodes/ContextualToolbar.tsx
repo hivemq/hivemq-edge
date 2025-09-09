@@ -14,7 +14,7 @@ import type { Adapter, Bridge, Combiner, EntityReference } from '@/api/__generat
 import { EntityType } from '@/api/__generated__'
 import { useCreateCombiner, useListCombiners } from '@/api/hooks/useCombiners'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes'
-import { useCreateAssetMapper } from '@/api/hooks/useAssetMapper'
+import { useCreateAssetMapper, useListAssetMappers } from '@/api/hooks/useAssetMapper'
 
 import { HqCombiner, HqAssets } from '@/components/Icons'
 import IconButton from '@/components/Chakra/IconButton.tsx'
@@ -59,6 +59,8 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const toast = useToast(BASE_TOAST_OPTION)
   const { data } = useGetAdapterTypes()
   const { data: combiners } = useListCombiners()
+  const { data: mappers } = useListAssetMappers()
+
   const navigate = useNavigate()
   const { fitView, getNodesBounds } = useReactFlow()
 
@@ -175,9 +177,9 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
       return entity
     })
 
-    const isCombinerAlreadyDefined = combiners?.items?.find((e) =>
-      arrayWithSameObjects<EntityReference>(links)(e.sources.items)
-    )
+    const isCombinerAlreadyDefined = isAssetManager
+      ? mappers?.items?.find((e) => arrayWithSameObjects<EntityReference>(links)(e.sources.items))
+      : combiners?.items?.find((e) => arrayWithSameObjects<EntityReference>(links)(e.sources.items))
 
     const areAllCandidatesConnected = selectedNodes.length - selectedCombinerCandidates.length === 0
 
