@@ -12,13 +12,13 @@ export const useContextMenu = (id: string, selected: boolean, route: string) => 
 
   useEffect(() => {
     if (selected && spacePressed) {
-      navigate(`${route}/${id}`)
+      navigate(route)
     }
   }, [id, navigate, route, selected, spacePressed])
 
   const onContextMenu = (event: MouseEvent<HTMLElement>) => {
     if (selected) {
-      navigate(`${route}/${id}`)
+      navigate(route)
       event.preventDefault()
     }
   }

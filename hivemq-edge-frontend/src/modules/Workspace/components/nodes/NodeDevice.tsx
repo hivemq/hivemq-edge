@@ -26,7 +26,7 @@ import MappingBadge from '@/modules/Workspace/components/parts/MappingBadge.tsx'
 
 const NodeDevice: FC<NodeProps<NodeDeviceType>> = ({ id, selected, data, dragging }) => {
   const { t } = useTranslation()
-  const { onContextMenu } = useContextMenu(id, selected, '/workspace/node')
+  const { onContextMenu } = useContextMenu(id, selected, `/workspace/device/${id}`)
   const { category, capabilities } = data
   const showSkeleton = useStore(selectorIsSkeletonZoom)
   const { data: deviceTags } = useGetDomainTags(data.sourceAdapterId)
