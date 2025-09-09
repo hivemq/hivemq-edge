@@ -136,7 +136,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
     const newAssetMapper: Combiner = {
       id: newOrchestratorNodeId,
-      name: t('combiner.unnamed'),
+      name: t('pulse.mapper.unnamed'),
       sources: { items: links },
       mappings: { items: [] },
     }

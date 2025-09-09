@@ -125,17 +125,21 @@ const CombinerMappingManager: FC = () => {
 
   const [showNativeWidgets, setShowNativeWidgets] = useBoolean()
 
+  const header = isAssetManager
+    ? t('pulse.mapper.manager.header')
+    : t('protocolAdapter.mapping.manager.header', { context: MappingType.COMBINING })
+
   return (
     <Drawer isOpen={isOpen} placement="right" size="lg" onClose={handleClose} variant="hivemq">
       <DrawerOverlay />
-      <DrawerContent aria-label={t('protocolAdapter.mapping.manager.header', { context: MappingType.COMBINING })}>
+      <DrawerContent aria-label={header}>
         <DrawerCloseButton />
         <DrawerHeader>
-          <Text>{t('protocolAdapter.mapping.manager.header', { context: MappingType.COMBINING })}</Text>
+          <Text>{header}</Text>
           <NodeNameCard
             name={selectedNode.data.name}
             type={isAssetManager ? NodeTypes.ASSETS_NODE : NodeTypes.COMBINER_NODE}
-            description={t('combiner.type')}
+            description={isAssetManager ? t('pulse.mapper.title') : t('combiner.type')}
           />
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
