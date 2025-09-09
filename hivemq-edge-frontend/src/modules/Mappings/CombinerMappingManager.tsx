@@ -154,10 +154,10 @@ const CombinerMappingManager: FC = () => {
           <ButtonGroup>
             {config.isDevMode && (
               <FormControl display="flex" alignItems="center">
-                <FormLabel htmlFor="email-alerts" mb="0">
+                <FormLabel htmlFor="modal-native-switch" mb="0">
                   {t('modals.native')}
                 </FormLabel>
-                <Switch id="email-alerts" isChecked={showNativeWidgets} onChange={setShowNativeWidgets.toggle} />
+                <Switch id="modal-native-switch" isChecked={showNativeWidgets} onChange={setShowNativeWidgets.toggle} />
               </FormControl>
             )}
             <DangerZone onSubmit={handleOnDelete} />
