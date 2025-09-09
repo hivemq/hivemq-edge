@@ -16,7 +16,7 @@ import type { NodeCombinerType } from '@/modules/Workspace/types'
 import MappingBadge from '../parts/MappingBadge'
 
 const NodeCombiner: FC<NodeProps<NodeCombinerType>> = ({ id, selected, data, dragging }) => {
-  const { onContextMenu } = useContextMenu(id, selected, '/workspace/combiner')
+  const { onContextMenu } = useContextMenu(id, selected, `/workspace/combiner/${id}`)
   const bgColour = useColorModeValue('gray.300', 'gray.900')
 
   const topics = useMemo(() => {

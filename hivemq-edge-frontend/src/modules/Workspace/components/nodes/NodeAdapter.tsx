@@ -41,12 +41,12 @@ const NodeAdapter: FC<NodeProps<NodeAdapterType>> = ({ id, data: adapter, select
     return sss.filter((item) => item) as string[]
   }, [southMappings?.items])
 
-  const { onContextMenu } = useContextMenu(id, selected, `/workspace/node/adapter/${adapter.type}`)
+  const { onContextMenu } = useContextMenu(id, selected, `/workspace/adapter/${adapter.type}/${id}`)
   const navigate = useNavigate()
   const showSkeleton = useStore(selectorIsSkeletonZoom)
 
   const bidirectional = isBidirectional(adapterProtocol)
-  const adapterNavPath = `/workspace/node/adapter/${adapter.type}/${id}`
+  const adapterNavPath = `/workspace/adapter/${adapter.type}/${id}`
 
   return (
     <>

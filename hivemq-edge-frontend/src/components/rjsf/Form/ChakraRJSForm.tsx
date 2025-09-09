@@ -6,15 +6,16 @@ import type { JSONPatchAdd, JSONPatchDocument } from 'immutable-json-patch'
 import { immutableJSONPatch } from 'immutable-json-patch'
 import Form from '@rjsf/chakra-ui'
 import type { FormProps, IChangeEvent } from '@rjsf/core'
-import type { IdSchema, RJSFValidationError } from '@rjsf/utils'
+import type { IdSchema, RJSFValidationError, UIOptionsType } from '@rjsf/utils'
+import { getUiOptions } from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
 
+import type { ChakraRJSFormContext, UITab } from '@/components/rjsf/Form/types.ts'
 import { FieldTemplate } from '@/components/rjsf/FieldTemplate.tsx'
 import { DescriptionFieldTemplate } from '@/components/rjsf/Templates/DescriptionFieldTemplate.tsx'
 import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
-import type { ChakraRJSFormContext } from '@/components/rjsf/Form/types.ts'
 import { customFormatsValidator } from '@/components/rjsf/Form/validation.utils.ts'
 import { customFocusError } from '@/components/rjsf/Form/error-focus.utils.ts'
 import { TitleFieldTemplate } from '@/components/rjsf/Templates/TitleFieldTemplate.tsx'
@@ -80,7 +81,10 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
 
   useEffect(
     () => {
-      setTabIndex(0)
+      const uiOptions = getUiOptions(uiSchema, {})
+      const { tabs, initTab } = uiOptions as UIOptionsType & { tabs?: UITab[]; initTab?: string }
+      const index = tabs?.findIndex((tab) => tab.id === initTab) || -1
+      setTabIndex(index !== -1 ? index : 0)
       return () => setTabIndex(0)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
