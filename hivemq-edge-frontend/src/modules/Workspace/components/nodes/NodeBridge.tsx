@@ -23,7 +23,7 @@ const NodeBridge: FC<NodeProps<NodeBridgeType>> = ({ id, selected, data: bridge,
   const { t } = useTranslation()
   const topics = getBridgeTopics(bridge)
   const { options } = useEdgeFlowContext()
-  const { onContextMenu } = useContextMenu(id, selected, '/workspace/node/bridge')
+  const { onContextMenu } = useContextMenu(id, selected, `/workspace/bridge/${id}`)
   const showSkeleton = useStore(selectorIsSkeletonZoom)
 
   return (
