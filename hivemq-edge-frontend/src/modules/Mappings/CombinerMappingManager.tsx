@@ -64,8 +64,7 @@ const CombinerMappingManager: FC = () => {
   }, [selectedNode.data.sources.items])
 
   const isAssetManager = useMemo(() => {
-    // TODO[35769] This is a hack; PULSE_AGENT needs to be supported as a valid EntityType
-    return entities?.some((e) => e.type === EntityType.DEVICE)
+    return entities?.some((e) => e.type === EntityType.PULSE_AGENT)
   }, [entities])
 
   const sources = useGetCombinedEntities(entities)
