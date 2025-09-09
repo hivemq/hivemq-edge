@@ -1,5 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Card, CardBody } from '@chakra-ui/react'
 
 import { Capability } from '@/api/__generated__'
 import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
@@ -31,7 +32,13 @@ const PulsePropertyDrawer: FC<PulsePropertyDrawerProps> = ({ isOpen, selectedNod
       closeOnOverlayClick={false}
     >
       {!hasPulseCapability && <LicenseWarning />}
-      {hasPulseCapability && <AssetsTable variant="summary" />}
+      {hasPulseCapability && (
+        <Card>
+          <CardBody>
+            <AssetsTable variant="summary" />
+          </CardBody>
+        </Card>
+      )}
     </ExpandableDrawer>
   )
 }
