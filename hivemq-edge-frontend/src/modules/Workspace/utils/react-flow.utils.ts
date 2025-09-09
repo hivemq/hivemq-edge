@@ -15,3 +15,7 @@ export const selectorSetZoomMinMax = (state: ReactFlowState) => ({
 export const selectorIsInteractive = (s: ReactFlowState) => ({
   isInteractive: s.nodesDraggable || s.nodesConnectable || s.elementsSelectable,
 })
+
+export const addSelectedNodesState = (state: ReactFlowState) => (nodeIds: string[]) => state.addSelectedNodes(nodeIds)
+
+export const resetSelectedNodesState = (state: ReactFlowState) => () => state.resetSelectedElements()
