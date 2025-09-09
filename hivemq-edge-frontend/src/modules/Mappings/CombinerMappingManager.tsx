@@ -25,12 +25,13 @@ import {
 import type { Combiner } from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
 import { useDeleteCombiner, useUpdateCombiner } from '@/api/hooks/useCombiners/'
+import { useDeleteAssetMapper, useUpdateAssetMapper } from '@/api/hooks/useAssetMapper'
 import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombinedEntities'
 import { combinerMappingJsonSchema } from '@/api/schemas/combiner-mapping.json-schema'
 import { combinerMappingUiSchema } from '@/api/schemas/combiner-mapping.ui-schema'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
-import DangerZone from '@/modules/Mappings/components/DangerZone.tsx'
 import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
+import DangerZone from '@/modules/Mappings/components/DangerZone.tsx'
 import type { CombinerContext } from '@/modules/Mappings/types.ts'
 import { useValidateCombiner } from '@/modules/Mappings/hooks/useValidateCombiner.ts'
 import { MappingType } from '@/modules/Mappings/types.ts'
@@ -72,6 +73,8 @@ const CombinerMappingManager: FC = () => {
   const validator = useValidateCombiner(sources, entities)
   const updateCombiner = useUpdateCombiner()
   const deleteCombiner = useDeleteCombiner()
+  const updateAssetMapper = useUpdateAssetMapper()
+  const deleteAssetMapper = useDeleteAssetMapper()
 
   const handleClose = () => {
     onClose()
@@ -81,7 +84,9 @@ const CombinerMappingManager: FC = () => {
   const handleOnSubmit = (data: IChangeEvent) => {
     if (!data.formData || !combinerId) return
 
-    const promise = updateCombiner.mutateAsync({ combinerId, requestBody: data.formData })
+    const promise = isAssetManager
+      ? updateAssetMapper.mutateAsync({ combinerId, requestBody: data.formData })
+      : updateCombiner.mutateAsync({ combinerId, requestBody: data.formData })
 
     toast.promise(
       promise.then(() => {
@@ -98,7 +103,9 @@ const CombinerMappingManager: FC = () => {
 
   const handleOnDelete = () => {
     if (!combinerId) return
-    const promise = deleteCombiner.mutateAsync({ combinerId })
+    const promise = isAssetManager
+      ? deleteAssetMapper.mutateAsync({ combinerId })
+      : deleteCombiner.mutateAsync({ combinerId })
     toast.promise(
       promise.then(() => {
         onNodesChange([{ id: selectedNode.id, type: 'remove' } as NodeRemoveChange])
