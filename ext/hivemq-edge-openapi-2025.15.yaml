@@ -14,7 +14,7 @@ info:
     ## OpenAPI
     HiveMQ's REST API provides an OpenAPI 3.0 schema definition that can imported into popular API tooling (e.g. Postman) or can be used to generate client-code for multiple programming languages.
   title: HiveMQ Edge REST API
-  version: 2025.14-SNAPSHOT
+  version: 2025.15-SNAPSHOT
   x-logo:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
@@ -357,12 +357,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/BehaviorPolicyList'
           description: Success
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InvalidQueryParameterError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/InvalidQueryParameterError: '#/components/schemas/InvalidQueryParameterError'
+          description: URL parameter missing
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Temporarily not available
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Get all policies
       tags:
         - Data Hub - Behavior Policies
@@ -447,34 +458,45 @@ paths:
           description: Success
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                oneOf:
+                  - $ref: '#/components/schemas/BehaviorPolicyCreationFailureError'
+                  - $ref: '#/components/schemas/BehaviorPolicyInvalidErrors'
+                  - $ref: '#/components/schemas/BehaviorPolicyRejectedError'
+                  - $ref: '#/components/schemas/RequestBodyMissingError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/BehaviorPolicyCreationFailureError: '#/components/schemas/BehaviorPolicyCreationFailureError'
+                    https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: '#/components/schemas/BehaviorPolicyInvalidErrors'
+                    https://hivemq.com/edge/api/model/BehaviorPolicyRejectedError: '#/components/schemas/BehaviorPolicyRejectedError'
+                    https://hivemq.com/edge/api/model/RequestBodyMissingError: '#/components/schemas/RequestBodyMissingError'
           description: Policy creation failed
         '409':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Already exists
+                $ref: '#/components/schemas/BehaviorPolicyAlreadyPresentError'
+          description: Behavior policy already present
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Internal error
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Temporarily unavailable
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
         '507':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Insufficient storage error
+                $ref: '#/components/schemas/PolicyInsufficientStorageError'
+          description: Insufficient storage
       summary: Create a new policy
       tags:
         - Data Hub - Behavior Policies
@@ -504,34 +526,39 @@ paths:
           description: Success, no response body
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
           description: URL parameter missing
         '404':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Policy not found
+                $ref: '#/components/schemas/PolicyNotFoundError'
+          description: Behavior policy not found
         '412':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/PreconditionFailedError'
           description: Precondition failed
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Internal error
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Temporarily not available
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Delete a behavior policy
       tags:
         - Data Hub - Behavior Policies
@@ -599,16 +626,33 @@ paths:
           description: Success
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Invalid query parameter
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
+          description: Bad request
         '404':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/BehaviorPolicyNotFoundError'
           description: Policy not found
+        '500':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
+        '503':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Get a  policy
       tags:
         - Data Hub - Behavior Policies
@@ -709,41 +753,56 @@ paths:
           description: Success
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Policy creation failed
+                oneOf:
+                  - $ref: '#/components/schemas/RequestBodyMissingError'
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                  - $ref: '#/components/schemas/BehaviorPolicyCreationFailureError'
+                  - $ref: '#/components/schemas/BehaviorPolicyInvalidErrors'
+                  - $ref: '#/components/schemas/BehaviorPolicyUpdateFailureError'
+                  - $ref: '#/components/schemas/PolicyIdMismatchError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/RequestBodyMissingError: '#/components/schemas/RequestBodyMissingError'
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
+                    https://hivemq.com/edge/api/model/BehaviorPolicyCreationFailureError: '#/components/schemas/BehaviorPolicyCreationFailureError'
+                    https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: '#/components/schemas/BehaviorPolicyInvalidErrors'
+                    https://hivemq.com/edge/api/model/BehaviorPolicyUpdateFailureError: '#/components/schemas/BehaviorPolicyUpdateFailureError'
+                    https://hivemq.com/edge/api/model/PolicyIdMismatchError: '#/components/schemas/PolicyIdMismatchError'
+          description: Behavior policy creation failed
         '404':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Policy not found
+                $ref: '#/components/schemas/BehaviorPolicyNotFoundError'
+          description: Data policy not found
         '412':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/PreconditionFailedError'
           description: Precondition failed
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Internal error
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Temporarily unavailable
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
         '507':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Insufficient storage error
-      summary: Update an existing policy
+                $ref: '#/components/schemas/PolicyInsufficientStorageError'
+          description: Insufficient storage
+      summary: Update an existing behavior policy
       tags:
         - Data Hub - Behavior Policies
   /api/v1/data-hub/behavior-validation/states/{clientId}:
@@ -787,22 +846,34 @@ paths:
           description: Success
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
           description: URL parameter missing
         '404':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Client is disconnected
+                oneOf:
+                  - $ref: '#/components/schemas/ClientDisconnectedError'
+                  - $ref: '#/components/schemas/ClientNotFoundError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/ClientDisconnectedError: '#/components/schemas/ClientDisconnectedError'
+                    https://hivemq.com/edge/api/model/ClientNotFoundError: '#/components/schemas/ClientNotFoundError'
+          description: Client error
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Internal Server error
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
       summary: Get the state of a client
       tags:
         - Data Hub - State
@@ -1051,27 +1122,20 @@ paths:
           description: Success
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                oneOf:
+                  - $ref: '#/components/schemas/InvalidQueryParameterError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/InvalidQueryParameterError: '#/components/schemas/InvalidQueryParameterError'
           description: URL parameter missing
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: DataPolicy not found
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Internal server error
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
       summary: Get all data policies
       tags:
@@ -1155,33 +1219,44 @@ paths:
           description: Success
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: DataPolicy creation failed
+                oneOf:
+                  - $ref: '#/components/schemas/RequestBodyMissingError'
+                  - $ref: '#/components/schemas/DataPolicyCreationFailureError'
+                  - $ref: '#/components/schemas/DataPolicyInvalidErrors'
+                  - $ref: '#/components/schemas/DataPolicyRejectedError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/RequestBodyMissingError: '#/components/schemas/RequestBodyMissingError'
+                    https://hivemq.com/edge/api/model/DataPolicyCreationFailureError: '#/components/schemas/DataPolicyCreationFailureError'
+                    https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: '#/components/schemas/DataPolicyInvalidErrors'
+                    https://hivemq.com/edge/api/model/DataPolicyRejectedError: '#/components/schemas/DataPolicyRejectedError'
+          description: Data policy creation failed
         '409':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: DataPolicy already present
+                $ref: '#/components/schemas/DataPolicyAlreadyPresentError'
+          description: Data policy already present
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
         '507':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/PolicyInsufficientStorageError'
           description: Insufficient storage
       summary: Create a new data policy
       tags:
@@ -1212,27 +1287,38 @@ paths:
           description: Success, no response body
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
           description: URL parameter missing
         '404':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: DataPolicy not found
+                $ref: '#/components/schemas/PolicyNotFoundError'
+          description: Data policy not found
+        '412':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PreconditionFailedError'
+          description: Precondition failed
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
       summary: Delete a data policy
       tags:
@@ -1300,32 +1386,33 @@ paths:
           description: Success
         '400':
           content:
-            application/json:
-              examples:
-                param-missing:
-                  description: Example response when a required parameter is missing.
-                  summary: Required URL parameter missing
-                  value:
-                    errors:
-                      - title: Required parameter missing
-                        detail: Required URL parameter 'parameterName' is missing
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
           description: Bad request
         '404':
           content:
-            application/json:
-              examples:
-                not-found:
-                  description: Policy not found
-                  summary: Not found
-                  value:
-                    errors:
-                      - title: Resource not found
-                        detail: Resource with id 'my-resource-id' not found
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/PolicyNotFoundError'
           description: Resource not found
+        '500':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal server error
+        '503':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Get a data policy
       tags:
         - Data Hub - Data Policies
@@ -1425,33 +1512,56 @@ paths:
           description: Success
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: DataPolicy creation failed
+                oneOf:
+                  - $ref: '#/components/schemas/RequestBodyMissingError'
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                  - $ref: '#/components/schemas/DataPolicyCreationFailureError'
+                  - $ref: '#/components/schemas/DataPolicyInvalidErrors'
+                  - $ref: '#/components/schemas/DataPolicyUpdateFailureError'
+                  - $ref: '#/components/schemas/PolicyIdMismatchError'
+                  - $ref: '#/components/schemas/TopicFilterMismatchError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/RequestBodyMissingError: '#/components/schemas/RequestBodyMissingError'
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
+                    https://hivemq.com/edge/api/model/DataPolicyCreationFailureError: '#/components/schemas/DataPolicyCreationFailureError'
+                    https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: '#/components/schemas/DataPolicyInvalidErrors'
+                    https://hivemq.com/edge/api/model/DataPolicyUpdateFailureError: '#/components/schemas/DataPolicyUpdateFailureError'
+                    https://hivemq.com/edge/api/model/PolicyIdMismatchError: '#/components/schemas/PolicyIdMismatchError'
+                    https://hivemq.com/edge/api/model/TopicFilterMismatchError: '#/components/schemas/TopicFilterMismatchError'
+          description: Data policy creation failed
         '404':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: DataPolicy not found
+                $ref: '#/components/schemas/DataPolicyNotFoundError'
+          description: Data policy not found
+        '412':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PreconditionFailedError'
+          description: Precondition failed
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
         '507':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/PolicyInsufficientStorageError'
           description: Insufficient storage
       summary: Update an existing data policy
       tags:
@@ -1537,9 +1647,9 @@ paths:
           description: Success
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
       summary: Get all FSMs as a JSON Schema
       tags:
@@ -1699,9 +1809,9 @@ paths:
           description: Success
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
       summary: Get all functions as a JSON Schema
       tags:
@@ -1719,9 +1829,9 @@ paths:
           description: Success
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
       summary: Get all interpolation variables
       tags:
@@ -1739,9 +1849,9 @@ paths:
           description: Success
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
       summary: Get all functions as a list of function specifications
       tags:
@@ -1876,11 +1986,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/SchemaList'
           description: Success
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InvalidQueryParameterError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/InvalidQueryParameterError: '#/components/schemas/InvalidQueryParameterError'
+          description: URL parameter missing
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
       summary: Get all schemas
       tags:
@@ -1927,33 +2048,48 @@ paths:
           description: Success
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Schema could not be validatetd
+                oneOf:
+                  - $ref: '#/components/schemas/RequestBodyParameterMissingError'
+                  - $ref: '#/components/schemas/SchemaInvalidErrors'
+                  - $ref: '#/components/schemas/SchemaParsingFailureError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/RequestBodyParameterMissingError: '#/components/schemas/RequestBodyParameterMissingError'
+                    https://hivemq.com/edge/api/model/SchemaInvalidErrors: '#/components/schemas/SchemaInvalidErrors'
+                    https://hivemq.com/edge/api/model/SchemaParsingFailureError: '#/components/schemas/SchemaParsingFailureError'
+          description: Schema creation failed
         '409':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Schema already exists
+                $ref: '#/components/schemas/SchemaAlreadyPresentError'
+          description: Schema is already present
         '412':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Mismatch between schema and etag
+                $ref: '#/components/schemas/SchemaEtagMismatchError'
+          description: Schema doesn't match etag
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
+        '503':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
         '507':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/SchemaInsufficientStorageError'
           description: Insufficient storage
       summary: Create a new schema
       tags:
@@ -1984,33 +2120,40 @@ paths:
           description: Success, no response body
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Schema referenced
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                  - $ref: '#/components/schemas/SchemaReferencedError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
+                    https://hivemq.com/edge/api/model/SchemaReferencedError: '#/components/schemas/SchemaReferencedError'
+          description: URL parameter missing
         '404':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/SchemaNotFoundError'
           description: Schema not found
         '412':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Mismatch between schema and etag
+                $ref: '#/components/schemas/SchemaEtagMismatchError'
+          description: Schema doesn't match etag
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Internal server error
+                $ref: '#/components/schemas/InternalServerError'
+          description: Internal Server error
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
           description: Request resource temporary unavailable
       summary: Delete all versions of the schema
       tags:
@@ -2056,22 +2199,33 @@ paths:
           description: Success
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: A url parameter is missing
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
+          description: URL parameter missing
         '404':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/SchemaNotFoundError'
           description: Schema not found
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
+        '503':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Get a schema
       tags:
         - Data Hub - Schemas
@@ -2192,12 +2346,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/ScriptList'
           description: Success
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InvalidQueryParameterError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/InvalidQueryParameterError: '#/components/schemas/InvalidQueryParameterError'
+          description: URL parameter missing
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Temporary not available
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Get all scripts
       tags:
         - Data Hub - Scripts
@@ -2243,39 +2408,52 @@ paths:
           description: Success
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Script is invalid
+                oneOf:
+                  - $ref: '#/components/schemas/RequestBodyParameterMissingError'
+                  - $ref: '#/components/schemas/ScriptCreationFailureError'
+                  - $ref: '#/components/schemas/ScriptInvalidErrors'
+                  - $ref: '#/components/schemas/ScriptParsingFailureError'
+                  - $ref: '#/components/schemas/ScriptSanitationFailureError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/RequestBodyParameterMissingError: '#/components/schemas/RequestBodyParameterMissingError'
+                    https://hivemq.com/edge/api/model/ScriptCreationFailureError: '#/components/schemas/ScriptCreationFailureError'
+                    https://hivemq.com/edge/api/model/ScriptInvalidErrors: '#/components/schemas/ScriptInvalidErrors'
+                    https://hivemq.com/edge/api/model/ScriptParsingFailureError: '#/components/schemas/ScriptParsingFailureError'
+                    https://hivemq.com/edge/api/model/ScriptSanitationFailureError: '#/components/schemas/ScriptSanitationFailureError'
+          description: Script creation failed
         '409':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/ScriptAlreadyPresentError'
           description: Script is already present
         '412':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/ScriptEtagMismatchError'
           description: Script doesn't match etag
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal server error
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Temporary not available
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
         '507':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/ScriptInsufficientStorageError'
           description: Insufficient storage
       summary: Create a new script
       tags:
@@ -2303,34 +2481,41 @@ paths:
           description: Success, no response body
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Script is referenced
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                  - $ref: '#/components/schemas/ScriptReferencedError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
+                    https://hivemq.com/edge/api/model/ScriptReferencedError: '#/components/schemas/ScriptReferencedError'
+          description: URL parameter missing
         '404':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/ScriptNotFoundError'
           description: Script not found
         '412':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/ScriptEtagMismatchError'
           description: Script doesn't match etag
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal Server error
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Temporary not available
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Delete a script
       tags:
         - Data Hub - Scripts
@@ -2371,28 +2556,33 @@ paths:
           description: Success
         '400':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                oneOf:
+                  - $ref: '#/components/schemas/UrlParameterMissingError'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
           description: URL parameter missing
         '404':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/ScriptNotFoundError'
           description: Script not found
         '500':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/InternalServerError'
           description: Internal Server error
         '503':
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Temporary not available
+                $ref: '#/components/schemas/TemporaryNotAvailableError'
+          description: Request resource temporary unavailable
       summary: Get a script
       tags:
         - Data Hub - Scripts
@@ -4916,6 +5106,7 @@ components:
         detail:
           type: string
         errors:
+          deprecated: true
           type: array
           items:
             $ref: '#/components/schemas/Error'
@@ -5080,6 +5271,1264 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/BehaviorPolicy'
+    ApiProblemDetails:
+      allOf:
+        - $ref: '#/components/schemas/ProblemDetails'
+        - type: object
+          required:
+            - detail
+            - status
+            - type
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/BehaviorPolicyAlreadyPresentError: '#/components/schemas/BehaviorPolicyAlreadyPresentError'
+          https://hivemq.com/edge/api/model/BehaviorPolicyCreationFailureError: '#/components/schemas/BehaviorPolicyCreationFailureError'
+          https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: '#/components/schemas/BehaviorPolicyInvalidErrors'
+          https://hivemq.com/edge/api/model/BehaviorPolicyNotFoundError: '#/components/schemas/BehaviorPolicyNotFoundError'
+          https://hivemq.com/edge/api/model/BehaviorPolicyRejectedError: '#/components/schemas/BehaviorPolicyRejectedError'
+          https://hivemq.com/edge/api/model/BehaviorPolicyUpdateFailureError: '#/components/schemas/BehaviorPolicyUpdateFailureError'
+          https://hivemq.com/edge/api/model/ClientDisconnectedError: '#/components/schemas/ClientDisconnectedError'
+          https://hivemq.com/edge/api/model/ClientNotFoundError: '#/components/schemas/ClientNotFoundError'
+          https://hivemq.com/edge/api/model/DataPolicyAlreadyPresentError: '#/components/schemas/DataPolicyAlreadyPresentError'
+          https://hivemq.com/edge/api/model/DataPolicyCreationFailureError: '#/components/schemas/DataPolicyCreationFailureError'
+          https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: '#/components/schemas/DataPolicyInvalidErrors'
+          https://hivemq.com/edge/api/model/DataPolicyNotFoundError: '#/components/schemas/DataPolicyNotFoundError'
+          https://hivemq.com/edge/api/model/DataPolicyRejectedError: '#/components/schemas/DataPolicyRejectedError'
+          https://hivemq.com/edge/api/model/DataPolicyUpdateFailureError: '#/components/schemas/DataPolicyUpdateFailureError'
+          https://hivemq.com/edge/api/model/PolicyIdMismatchError: '#/components/schemas/PolicyIdMismatchError'
+          https://hivemq.com/edge/api/model/PolicyInsufficientStorageError: '#/components/schemas/PolicyInsufficientStorageError'
+          https://hivemq.com/edge/api/model/PolicyNotFoundError: '#/components/schemas/PolicyNotFoundError'
+          https://hivemq.com/edge/api/model/SchemaAlreadyPresentError: '#/components/schemas/SchemaAlreadyPresentError'
+          https://hivemq.com/edge/api/model/SchemaEtagMismatchError: '#/components/schemas/SchemaEtagMismatchError'
+          https://hivemq.com/edge/api/model/SchemaInsufficientStorageError: '#/components/schemas/SchemaInsufficientStorageError'
+          https://hivemq.com/edge/api/model/SchemaInvalidErrors: '#/components/schemas/SchemaInvalidErrors'
+          https://hivemq.com/edge/api/model/SchemaNotFoundError: '#/components/schemas/SchemaNotFoundError'
+          https://hivemq.com/edge/api/model/SchemaParsingFailureError: '#/components/schemas/SchemaParsingFailureError'
+          https://hivemq.com/edge/api/model/SchemaReferencedError: '#/components/schemas/SchemaReferencedError'
+          https://hivemq.com/edge/api/model/ScriptAlreadyPresentError: '#/components/schemas/ScriptAlreadyPresentError'
+          https://hivemq.com/edge/api/model/ScriptCreationFailureError: '#/components/schemas/ScriptCreationFailureError'
+          https://hivemq.com/edge/api/model/ScriptEtagMismatchError: '#/components/schemas/ScriptEtagMismatchError'
+          https://hivemq.com/edge/api/model/ScriptInsufficientStorageError: '#/components/schemas/ScriptInsufficientStorageError'
+          https://hivemq.com/edge/api/model/ScriptInvalidErrors: '#/components/schemas/ScriptInvalidErrors'
+          https://hivemq.com/edge/api/model/ScriptNotFoundError: '#/components/schemas/ScriptNotFoundError'
+          https://hivemq.com/edge/api/model/ScriptParsingFailureError: '#/components/schemas/ScriptParsingFailureError'
+          https://hivemq.com/edge/api/model/ScriptReferencedError: '#/components/schemas/ScriptReferencedError'
+          https://hivemq.com/edge/api/model/ScriptSanitationFailureError: '#/components/schemas/ScriptSanitationFailureError'
+          https://hivemq.com/edge/api/model/TopicFilterMismatchError: '#/components/schemas/TopicFilterMismatchError'
+          https://hivemq.com/edge/api/model/InsufficientStorageError: '#/components/schemas/InsufficientStorageError'
+          https://hivemq.com/edge/api/model/InternalServerError: '#/components/schemas/InternalServerError'
+          https://hivemq.com/edge/api/model/InvalidQueryParameterError: '#/components/schemas/InvalidQueryParameterError'
+          https://hivemq.com/edge/api/model/PreconditionFailedError: '#/components/schemas/PreconditionFailedError'
+          https://hivemq.com/edge/api/model/RequestBodyMissingError: '#/components/schemas/RequestBodyMissingError'
+          https://hivemq.com/edge/api/model/RequestBodyParameterMissingError: '#/components/schemas/RequestBodyParameterMissingError'
+          https://hivemq.com/edge/api/model/TemporaryNotAvailableError: '#/components/schemas/TemporaryNotAvailableError'
+          https://hivemq.com/edge/api/model/UrlParameterMissingError: '#/components/schemas/UrlParameterMissingError'
+    BehaviorPolicyAlreadyPresentError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The behavior policy id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 409
+          title: Behavior Policy Already Present
+          detail: The given behavior policy 'abc' is already present.
+          id: abc
+          type: https://hivemq.com/edge/api/model/BehaviorPolicyAlreadyPresentError
+    BehaviorPolicyCreationFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+      example:
+        general:
+          status: 400
+          title: Behavior Policy Creation Failed
+          detail: 'Behavior policy creation failed: The policy was rejected.'
+          type: https://hivemq.com/edge/api/model/BehaviorPolicyCreationFailureError
+    AtLeastOneFieldMissingValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            paths:
+              type: array
+              description: The missing json paths.
+              items:
+                type: string
+                format: json-path
+                description: The json path.
+              example:
+                - $.field1
+                - $.field2
+          required:
+            - paths
+      example:
+        general:
+          detail: 'At least one of the fields must be present: ''$.field1'', ''$.field2''.'
+          paths:
+            - $.field1
+            - $.field2
+          type: https://hivemq.com/edge/api/model/AtLeastOneFieldMissingValidationError
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Detailed contextual description of the validation error.
+        type:
+          type: string
+          format: uri
+          description: Type of the validation error.
+      required:
+        - detail
+        - type
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/AtLeastOneFieldMissingValidationError: '#/components/schemas/AtLeastOneFieldMissingValidationError'
+          https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError: '#/components/schemas/AtMostOneFunctionValidationError'
+          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
+          https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError: '#/components/schemas/IllegalEventTransitionValidationError'
+          https://hivemq.com/edge/api/model/IllegalFunctionValidationError: '#/components/schemas/IllegalFunctionValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
+          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/InvalidSchemaVersionValidationError: '#/components/schemas/InvalidSchemaVersionValidationError'
+          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
+          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
+    AtMostOneFunctionValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            function:
+              type: string
+              description: The function.
+              example: function1
+            occurrences:
+              type: integer
+              format: int32
+              description: The occurrences of the function.
+              minimum: 0
+              example: 3
+            paths:
+              type: array
+              items:
+                type: string
+                format: json-path
+              description: The json paths where the function occurs.
+              example:
+                - $.path1
+                - $.path2
+                - $.path3
+          required:
+            - function
+            - occurrences
+            - paths
+      example:
+        general:
+          detail: The pipeline must contain at most one 'function1' function, but 3 were found at ['$.path1', '$.path2', '$.path3'].
+          function: function1
+          occurrences: 3
+          paths:
+            - $.path1
+            - $.path2
+            - $.path3
+          type: https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError
+    EmptyFieldValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            path:
+              type: string
+              format: json-path
+              description: The missing field.
+              example: $.field
+          required:
+            - path
+      example:
+        general:
+          detail: Required field '$.field' is empty.
+          path: $.field
+          type: https://hivemq.com/edge/api/model/EmptyFieldValidationError
+    FunctionMustBePairedValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            existingFunction:
+              type: string
+              description: The existing function.
+              example: function1
+            missingFunction:
+              type: string
+              description: The missing function.
+              example: function2
+          required:
+            - existingFunction
+            - missingFunction
+      example:
+        general:
+          detail: If 'function1' function is present in the pipeline, 'function2' function must be present as well.
+          existingFunction: function1
+          missingFunction: function2
+          type: https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError
+    IllegalEventTransitionValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            event:
+              type: string
+              description: The event name.
+              example: event1
+            fromState:
+              type: string
+              description: The event from state.
+              example: state1
+            id:
+              type: string
+              description: The event id.
+              example: abc
+            path:
+              type: string
+              description: The path.
+              example: $.event
+            toState:
+              type: string
+              description: The event to state.
+              example: state2
+          required:
+            - event
+            - fromState
+            - id
+            - path
+            - toState
+      example:
+        general:
+          detail: The transition from state 'state1' to state 'state2' on event 'event1' in '$.event' is not defined for behavior 'abc'.
+          event: event1
+          fromState: state1
+          toState: state2
+          id: abc
+          path: $.event
+          type: https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError
+    IllegalFunctionValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            event:
+              type: string
+              description: The event name.
+              example: event1
+            id:
+              type: string
+              description: The function id.
+              example: abc
+            path:
+              type: string
+              format: json-path
+              description: The json path.
+              example: $.event
+          required:
+            - event
+            - id
+            - path
+      example:
+        general:
+          detail: The function 'abc' is not allowed for event 'event1' in '$.event'.
+          event: event1
+          id: abc
+          path: $.event
+          type: https://hivemq.com/edge/api/model/IllegalFunctionValidationError
+    InvalidFieldLengthValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            actualLength:
+              type: integer
+              format: int32
+              description: The actual length of the field value.
+              example: 10
+            expectedMinimumLength:
+              type: integer
+              format: int32
+              description: The minimum length expected for the field value.
+              minimum: 0
+              example: 5
+            expectedMaximumLength:
+              type: integer
+              format: int32
+              description: The maximum length expected for the field value.
+              minimum: 0
+              example: 20
+            path:
+              type: string
+              format: json-path
+              description: The invalid json path.
+              example: $.field
+            value:
+              type: string
+              description: The invalid value.
+              example: function transform() { return 'Hello, World!'; }
+          required:
+            - actualLength
+            - expectedMinimumLength
+            - expectedMaximumLength
+            - path
+            - value
+      example:
+        general:
+          detail: The length of script field '$.transform' 48 must be between 0 and 20.
+          actualLength: 48
+          minimumLength: 0
+          maximumLength: 20
+          path: $.transform
+          value: function transform() { return 'Hello, World!'; }
+          type: https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError
+    InvalidFieldValueValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            path:
+              type: string
+              format: json-path
+              description: The invalid json path.
+              example: $.action.pipeline[1].field
+            value:
+              type: string
+              description: The invalid value.
+              example: functionDoesNotExist
+          required:
+            - path
+      example:
+        general:
+          detail: Referenced function does not exist.
+          path: $.action.pipeline[1].field
+          value: functionDoesNotExist
+          type: https://hivemq.com/edge/api/model/InvalidFieldValueValidationError
+    InvalidFunctionOrderValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            function:
+              type: string
+              description: The function.
+              example: transform
+            path:
+              type: string
+              format: json-path
+              description: The json path.
+              example: $.path
+            previousFunction:
+              type: string
+              description: The previous function.
+              example: init
+          required:
+            - function
+            - path
+            - previousFunction
+      example:
+        general:
+          detail: The operation at '$.path' with the functionId 'transform' must be after a 'init' operation.
+          function: transform
+          path: $.path
+          previousFunction: init
+          type: https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError
+    InvalidIdentifierValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            path:
+              type: string
+              format: json-path
+              description: The invalid identifier path.
+              example: $.id
+            value:
+              type: string
+              description: The invalid identifier value.
+              example: invalidId
+          required:
+            - path
+            - value
+      example:
+        general:
+          detail: Identifier script 'id' must begin with a letter and may only consist of lowercase letters, uppercase letters, numbers, periods, hyphens, and underscores.
+          path: $.id
+          value: invalidId
+          type: https://hivemq.com/edge/api/model/InvalidIdentifierValidationError
+    InvalidSchemaVersionValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema id.
+              example: abc
+            version:
+              type: string
+              description: The schema version.
+              example: '2'
+          required:
+            - id
+            - version
+      example:
+        general:
+          detail: The referenced schema with id 'abc' and version '2' was not found.
+          id: abc
+          version: '2'
+          type: https://hivemq.com/edge/api/model/InvalidSchemaVersionValidationError
+    MissingFieldValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            path:
+              type: string
+              format: json-path
+              description: The missing path.
+              example: $.id
+          required:
+            - path
+      example:
+        general:
+          detail: Required field '$.id' is missing.
+          path: $.id
+          type: https://hivemq.com/edge/api/model/MissingFieldValidationError
+    UnknownVariableValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            path:
+              type: string
+              description: The json path of the field.
+              example: $.path
+            variables:
+              type: array
+              items:
+                type: string
+              description: The unknown variables.
+              example:
+                - a
+                - b
+                - c
+          required:
+            - path
+            - variables
+      example:
+        general:
+          detail: 'Field ''$.path'' contains unknown variables: [a, b, c].'
+          path: $.path
+          variables:
+            - a
+            - b
+            - c
+          type: https://hivemq.com/edge/api/model/UnknownVariableValidationError
+    UnsupportedFieldValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - type: object
+          properties:
+            actualValue:
+              type: string
+              description: The actual value.
+            expectedValue:
+              type: string
+              description: The expected value.
+            path:
+              type: string
+              format: json-path
+              description: The json path.
+              example: $.id
+          required:
+            - actualValue
+            - expectedValue
+            - path
+      example:
+        general:
+          detail: Unsupported type 'String' for field '$.id'. Expected type is 'Object'.
+          actualValue: String
+          expectedValue: Object
+          path: $.id
+          type: https://hivemq.com/edge/api/model/UnsupportedFieldValidationError
+    BehaviorPolicyValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - oneOf:
+            - $ref: '#/components/schemas/IllegalEventTransitionValidationError'
+            - $ref: '#/components/schemas/IllegalFunctionValidationError'
+            - $ref: '#/components/schemas/InvalidSchemaVersionValidationError'
+            - $ref: '#/components/schemas/AtLeastOneFieldMissingValidationError'
+            - $ref: '#/components/schemas/EmptyFieldValidationError'
+            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
+            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
+            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
+            - $ref: '#/components/schemas/MissingFieldValidationError'
+            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/AtLeastOneFieldMissingValidationError: '#/components/schemas/AtLeastOneFieldMissingValidationError'
+          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError: '#/components/schemas/IllegalEventTransitionValidationError'
+          https://hivemq.com/edge/api/model/IllegalFunctionValidationError: '#/components/schemas/IllegalFunctionValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/InvalidSchemaVersionValidationError: '#/components/schemas/InvalidSchemaVersionValidationError'
+          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
+    BehaviorPolicyInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            childErrors:
+              type: array
+              description: List of child validation errors.
+              items:
+                $ref: '#/components/schemas/BehaviorPolicyValidationError'
+          required:
+            - childErrors
+      example:
+        general:
+          status: 400
+          title: Behavior Policy Invalid
+          detail: Behavior policy is invalid due to validation errors.
+          type: https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors
+          childErrors:
+            - detail: The transition from state 'state1' to state 'state2' on event 'event1' in '$.path' is not defined for behavior 'id1'.
+              fromState: state1
+              toState: state2
+              path: $.path
+              id: id1
+              type: https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError
+    BehaviorPolicyNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The data policy id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 404
+          title: Behavior Policy Not Found
+          detail: Behavior policy with ID 'abc' is not found.
+          id: abc
+          type: https://hivemq.com/edge/api/model/BehaviorPolicyNotFoundError
+    BehaviorPolicyRejectedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+      example:
+        general:
+          status: 400
+          title: Behavior Policy Rejected
+          detail: Behavior policy is rejected.
+          type: https://hivemq.com/edge/api/model/BehaviorPolicyRejectedError
+    BehaviorPolicyUpdateFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The ID of the policy that failed to update.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 400
+          title: Behavior Policy Update Failed
+          detail: Behavior policy with ID 'abc' update failed.
+          id: abc
+          type: https://hivemq.com/edge/api/model/BehaviorPolicyUpdateFailureError
+    ClientDisconnectedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The client id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 404
+          title: Client Disconnected
+          detail: Client with ID 'abc' is disconnected.
+          id: abc
+          type: https://hivemq.com/edge/api/model/ClientDisconnectedError
+    ClientNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The client id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 404
+          title: Client Not Found
+          detail: Client with ID 'abc' is not found.
+          id: abc
+          type: https://hivemq.com/edge/api/model/ClientNotFoundError
+    DataPolicyAlreadyPresentError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The data policy id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 409
+          title: Data Policy Already Present
+          detail: The given data policy 'abc' is already present.
+          id: abc
+          type: https://hivemq.com/edge/api/model/DataPolicyAlreadyPresentError
+    DataPolicyCreationFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+      example:
+        general:
+          status: 400
+          title: Data Policy Creation Failed
+          detail: 'Data policy creation failed: The policy was rejected.'
+          type: https://hivemq.com/edge/api/model/DataPolicyCreationFailureError
+    DataPolicyValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - oneOf:
+            - $ref: '#/components/schemas/AtMostOneFunctionValidationError'
+            - $ref: '#/components/schemas/FunctionMustBePairedValidationError'
+            - $ref: '#/components/schemas/InvalidFunctionOrderValidationError'
+            - $ref: '#/components/schemas/InvalidSchemaVersionValidationError'
+            - $ref: '#/components/schemas/UnknownVariableValidationError'
+            - $ref: '#/components/schemas/EmptyFieldValidationError'
+            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
+            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
+            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
+            - $ref: '#/components/schemas/MissingFieldValidationError'
+            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError: '#/components/schemas/AtMostOneFunctionValidationError'
+          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError: '#/components/schemas/FunctionMustBePairedValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError: '#/components/schemas/InvalidFunctionOrderValidationError'
+          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/InvalidSchemaVersionValidationError: '#/components/schemas/InvalidSchemaVersionValidationError'
+          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnknownVariableValidationError: '#/components/schemas/UnknownVariableValidationError'
+          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
+    DataPolicyInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            childErrors:
+              type: array
+              description: List of child validation errors.
+              items:
+                $ref: '#/components/schemas/DataPolicyValidationError'
+          required:
+            - childErrors
+      example:
+        general:
+          status: 400
+          title: Data Policy Invalid
+          detail: Data policy is invalid due to validation errors.
+          type: https://hivemq.com/edge/api/model/DataPolicyInvalidErrors
+          childErrors:
+            - detail: The pipeline must contain at most one 'function1' function, but 3 were found at ['$.path1', '$.path2', '$.path3'].
+              function: function1
+              occurrences: 3
+              paths:
+                - $.path1
+                - $.path2
+                - $.path3
+              type: https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError
+    DataPolicyNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The data policy id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 404
+          title: Data Policy Not Found
+          detail: Data policy with ID 'abc' is not found.
+          id: abc
+          type: https://hivemq.com/edge/api/model/DataPolicyNotFoundError
+    DataPolicyRejectedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+      example:
+        general:
+          status: 400
+          title: Data Policy Rejected
+          detail: Data policy is rejected.
+          type: https://hivemq.com/edge/api/model/DataPolicyRejectedError
+    DataPolicyUpdateFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The ID of the policy that failed to update.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 400
+          title: Data Policy Update Failed
+          detail: Data policy with ID 'abc' update failed.
+          id: abc
+          type: https://hivemq.com/edge/api/model/DataPolicyUpdateFailureError
+    PolicyIdMismatchError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            actualId:
+              type: string
+              description: The actual id.
+              example: id1
+            expectedId:
+              type: string
+              description: The expected id.
+              example: id2
+          required:
+            - actualId
+            - expectedId
+      example:
+        general:
+          status: 400
+          title: Policy ID Mismatch
+          detail: The policy ID 'id1' in the request parameter does not match the policy ID 'id2' in the policy request body.
+          id: abc
+          type: https://hivemq.com/edge/api/model/PolicyIdMismatchError
+    PolicyInsufficientStorageError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The policy id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 507
+          title: Policy Insufficient Storage
+          detail: Policy with ID '123' could not be added because of insufficient server storage.
+          id: abc
+          type: https://hivemq.com/edge/api/model/PolicyInsufficientStorageError
+    PolicyNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The policy id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 404
+          title: Policy Not Found
+          detail: Policy with ID 'abc' is not found.
+          id: abc
+          type: https://hivemq.com/edge/api/model/PolicyNotFoundError
+    SchemaAlreadyPresentError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 409
+          title: Schema Already Present
+          detail: The given schema is already present as the latest version for the schema id 'abc'.
+          id: abc
+          type: https://hivemq.com/edge/api/model/SchemaAlreadyPresentError
+    SchemaEtagMismatchError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema id.
+              example: abc
+            eTag:
+              type: string
+              description: The eTag.
+              example: 33a64df551425fcc55e4d42a148795d9f25f89d4
+          required:
+            - id
+      example:
+        general:
+          status: 412
+          title: Schema eTag Mismatch
+          detail: Schema with id 'abc' does not match the given etag '33a64df551425fcc55e4d42a148795d9f25f89d4'.
+          id: abc
+          eTag: 33a64df551425fcc55e4d42a148795d9f25f89d4
+          type: https://hivemq.com/edge/api/model/SchemaEtagMismatchError
+    SchemaInsufficientStorageError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The policy id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 507
+          title: Schema Insufficient Storage
+          detail: Schema with ID '123' could not be added because of insufficient server storage.
+          id: abc
+          type: https://hivemq.com/edge/api/model/SchemaInsufficientStorageError
+    SchemaValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - oneOf:
+            - $ref: '#/components/schemas/EmptyFieldValidationError'
+            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
+            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
+            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
+            - $ref: '#/components/schemas/MissingFieldValidationError'
+            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/EmptyFieldValidationError: '#/components/schemas/EmptyFieldValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
+    SchemaInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            childErrors:
+              type: array
+              description: List of child validation errors.
+              items:
+                $ref: '#/components/schemas/SchemaValidationError'
+          required:
+            - childErrors
+      example:
+        general:
+          status: 400
+          title: Schema Invalid
+          detail: Schema is invalid due to validation errors.
+          type: https://hivemq.com/edge/api/model/SchemaInvalidErrors
+          childErrors:
+            - detail: The length of script field '$.id' 1025 must be between 0 and 1024.
+              paths: $.id
+              value: aaa...aaa
+              actualLength: 1025
+              expectedMinimumLength: 0
+              expectedMaximumLength: 1024
+              type: https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError
+    SchemaNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema ID.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 404
+          title: Schema Not Found
+          detail: Schema with ID 'abc' is not found.
+          id: abc
+          type: https://hivemq.com/edge/api/model/SchemaNotFoundError
+    SchemaParsingFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            alias:
+              type: string
+              description: The schema alias.
+              example: abc
+          required:
+            - alias
+      example:
+        general:
+          status: 400
+          title: Schema Parsing Failure
+          detail: The given schema 'abc' could not be parsed.
+          alias: abc
+          type: https://hivemq.com/edge/api/model/SchemaParsingFailureError
+    SchemaReferencedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The schema ID.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 400
+          title: Schema Referenced
+          detail: Schema with ID 'abc' is referenced.
+          id: abc
+          type: https://hivemq.com/edge/api/model/SchemaReferencedError
+    ScriptAlreadyPresentError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 409
+          title: Script Already Present
+          detail: The given script 'abc' is already present.
+          id: abc
+          type: https://hivemq.com/edge/api/model/ScriptAlreadyPresentError
+    ScriptCreationFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+      example:
+        general:
+          status: 400
+          title: Script Creation Failure
+          detail: The given script could not be created.
+          type: https://hivemq.com/edge/api/model/ScriptCreationFailureError
+    ScriptEtagMismatchError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script id.
+              example: abc
+            eTag:
+              type: string
+              description: The eTag.
+              example: 33a64df551425fcc55e4d42a148795d9f25f89d4
+          required:
+            - id
+      example:
+        general:
+          status: 412
+          title: Script eTag Mismatch
+          detail: Script with id 'abc' does not match the given etag '33a64df551425fcc55e4d42a148795d9f25f89d4'.
+          id: abc
+          eTag: 33a64df551425fcc55e4d42a148795d9f25f89d4
+          type: https://hivemq.com/edge/api/model/ScriptEtagMismatchError
+    ScriptInsufficientStorageError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The policy id.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 507
+          title: Script Insufficient Storage
+          detail: Script with ID '123' could not be added because of insufficient server storage.
+          id: abc
+          type: https://hivemq.com/edge/api/model/ScriptInsufficientStorageError
+    ScriptValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ValidationError'
+        - oneOf:
+            - $ref: '#/components/schemas/InvalidFieldLengthValidationError'
+            - $ref: '#/components/schemas/InvalidFieldValueValidationError'
+            - $ref: '#/components/schemas/InvalidIdentifierValidationError'
+            - $ref: '#/components/schemas/MissingFieldValidationError'
+            - $ref: '#/components/schemas/UnsupportedFieldValidationError'
+      discriminator:
+        propertyName: type
+        mapping:
+          https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: '#/components/schemas/InvalidFieldLengthValidationError'
+          https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: '#/components/schemas/InvalidFieldValueValidationError'
+          https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: '#/components/schemas/InvalidIdentifierValidationError'
+          https://hivemq.com/edge/api/model/MissingFieldValidationError: '#/components/schemas/MissingFieldValidationError'
+          https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: '#/components/schemas/UnsupportedFieldValidationError'
+    ScriptInvalidErrors:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            childErrors:
+              type: array
+              description: List of child validation errors.
+              items:
+                $ref: '#/components/schemas/ScriptValidationError'
+          required:
+            - childErrors
+      example:
+        general:
+          status: 400
+          title: Script Invalid
+          detail: Script is invalid due to validation errors.
+          type: https://hivemq.com/edge/api/model/ScriptInvalidErrors
+          childErrors:
+            - detail: The length of script field '$.id' 1025 must be between 0 and 1024.
+              paths: $.id
+              value: aaa...aaa
+              actualLength: 1025
+              expectedMinimumLength: 0
+              expectedMaximumLength: 1024
+              type: https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError
+    ScriptNotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script ID.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 404
+          title: Script Not Found
+          detail: Script with ID 'abc' is not found.
+          id: abc
+          type: https://hivemq.com/edge/api/model/ScriptNotFoundError
+    ScriptParsingFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+      example:
+        general:
+          status: 400
+          title: Script Parsing Failure
+          detail: The given script 'abc' could not be parsed.
+          type: https://hivemq.com/edge/api/model/ScriptParsingFailureError
+    ScriptReferencedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: The script ID.
+              example: abc
+          required:
+            - id
+      example:
+        general:
+          status: 400
+          title: Script Referenced
+          detail: Script with ID 'abc' is referenced.
+          id: abc
+          type: https://hivemq.com/edge/api/model/ScriptReferencedError
+    ScriptSanitationFailureError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+      example:
+        general:
+          status: 400
+          title: Script Sanitation Failure
+          detail: The given script could not be sanitized.
+          type: https://hivemq.com/edge/api/model/ScriptSanitationFailureError
+    TopicFilterMismatchError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            path:
+              type: string
+              description: The json path of the topic filter.
+              example: $.filter
+          required:
+            - path
+      example:
+        general:
+          status: 400
+          title: Topic Filter Mismatch
+          detail: The topic filter '$.filter' mismatches.
+          type: https://hivemq.com/edge/api/model/TopicFilterMismatchError
+    InsufficientStorageError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+      example:
+        general:
+          status: 507
+          title: Insufficient Storage
+          detail: Insufficient Storage.
+          type: https://hivemq.com/edge/api/model/InsufficientStorageError
+    InternalServerError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+      example:
+        general:
+          status: 500
+          title: Internal Server Error
+          detail: An unexpected error occurred, check the logs.
+          type: https://hivemq.com/edge/api/model/InternalServerError
+        creation:
+          status: 500
+          title: Internal Server Error
+          detail: 'An unexpected error occurred: Exception during creation of the Json Schema for functions.'
+          type: https://hivemq.com/edge/api/model/InternalServerError
+    InvalidQueryParameterError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            parameter:
+              type: string
+              description: The query parameter.
+          required:
+            - parameter
+      example:
+        general:
+          status: 400
+          title: Query Parameter is Invalid
+          detail: 'Query parameter ''a'' is invalid: ''a'' could not be parsed.'
+          parameter: a
+          type: https://hivemq.com/edge/api/model/InvalidQueryParameterError
+    PreconditionFailedError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+      example:
+        general:
+          status: 412
+          title: Precondition Failed
+          detail: 'A precondition required for fulfilling the request was not fulfilled: Policy does not match the given etag ''abc''.'
+          type: https://hivemq.com/edge/api/model/PreconditionFailedError
+    RequestBodyMissingError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+      example:
+        general:
+          status: 400
+          title: Required Request Body Missing
+          detail: Required request body is missing.
+          type: https://hivemq.com/edge/api/model/RequestBodyMissingError
+    RequestBodyParameterMissingError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            parameter:
+              type: string
+              description: The the missing request body parameter.
+          required:
+            - parameter
+      example:
+        general:
+          status: 400
+          title: Required Request Body Parameter Missing
+          detail: Required request body parameter 'a' is missing.
+          parameter: a
+          type: https://hivemq.com/edge/api/model/RequestBodyParameterMissingError
+    TemporaryNotAvailableError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+      example:
+        general:
+          status: 503
+          title: Endpoint Temporarily not Available
+          detail: The endpoint is temporarily not available, please try again later.
+          type: https://hivemq.com/edge/api/model/TemporaryNotAvailableError
+    UrlParameterMissingError:
+      allOf:
+        - $ref: '#/components/schemas/ApiProblemDetails'
+        - type: object
+          properties:
+            parameter:
+              type: string
+              description: The name of the missing parameter.
+          required:
+            - parameter
+      example:
+        general:
+          status: 400
+          title: Required URL Parameter Missing
+          detail: Required URL parameter 'a' is missing.
+          parameter: a
+          type: https://hivemq.com/edge/api/model/UrlParameterMissingError
     JsonNode:
       type: object
       description: The arguments of the fsm derived from the behavior policy.
@@ -5201,8 +6650,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/DataPolicy'
-    Errors:
-      type: object
     PolicyType:
       description: The type of policy in Data Hub
       type: string
