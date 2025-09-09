@@ -136,19 +136,19 @@ describe('NodeAdapter', () => {
     cy.getByTestId('node-group-toolbar-panel').click()
     cy.getByTestId('test-navigate-pathname').should(
       'have.text',
-      `/workspace/node/adapter/opc-ua-client/${MOCK_NODE_ADAPTER.id}`
+      `/workspace/adapter/opc-ua-client/${MOCK_NODE_ADAPTER.id}`
     )
 
     cy.getByTestId('node-adapter-toolbar-southbound').click()
     cy.getByTestId('test-navigate-pathname').should(
       'have.text',
-      `/workspace/node/adapter/opc-ua-client/${MOCK_NODE_ADAPTER.id}/southbound`
+      `/workspace/adapter/opc-ua-client/${MOCK_NODE_ADAPTER.id}/southbound`
     )
 
     cy.getByTestId('node-adapter-toolbar-northbound').click()
     cy.getByTestId('test-navigate-pathname').should(
       'have.text',
-      `/workspace/node/adapter/opc-ua-client/${MOCK_NODE_ADAPTER.id}/northbound`
+      `/workspace/adapter/opc-ua-client/${MOCK_NODE_ADAPTER.id}/northbound`
     )
   })
 

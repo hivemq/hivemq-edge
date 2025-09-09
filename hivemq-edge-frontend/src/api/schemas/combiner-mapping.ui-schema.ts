@@ -4,11 +4,11 @@ import { DataCombiningTableField } from '@/modules/Mappings/combiner/DataCombini
 import { EntityReferenceTableWidget } from '@/modules/Mappings/combiner/EntityReferenceTableWidget'
 import { DataCombiningEditorField } from '@/modules/Mappings/combiner/DataCombiningEditorField'
 
-/* istanbul ignore next -- @preserve */
-export const combinerMappingUiSchema = (isAssetManager = false): UiSchema => ({
+export const combinerMappingUiSchema = (isAssetManager = false, initTab?: string): UiSchema => ({
   'ui:submitButtonOptions': {
     norender: true,
   },
+  'ui:initTab': initTab,
   'ui:tabs': [
     {
       id: 'combinerTab',

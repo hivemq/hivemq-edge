@@ -43,12 +43,14 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
   const [isExpanded, setExpanded] = useBoolean(true)
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
-  const { nodeId } = useParams()
+  const { adapterId } = useParams()
   const { nodes } = useWorkspaceStore()
 
   const selectedNode = useMemo(() => {
-    return nodes.find((node) => node.id === nodeId && node.type === NodeTypes.ADAPTER_NODE) as Node<Adapter> | undefined
-  }, [nodeId, nodes])
+    return nodes.find((node) => node.id === adapterId && node.type === NodeTypes.ADAPTER_NODE) as
+      | Node<Adapter>
+      | undefined
+  }, [adapterId, nodes])
 
   const { data: protocols } = useGetAdapterTypes()
   const adapterProtocol =
@@ -65,7 +67,6 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
     onOpen()
   }, [onOpen])
 
-  const adapterId = selectedNode?.data.id
   const manager = type === MappingType.NORTHBOUND ? useNorthboundMappingManager : useSouthboundMappingManager
 
   const [showNativeWidgets, setShowNativeWidgets] = useBoolean()

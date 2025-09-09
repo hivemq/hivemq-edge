@@ -22,7 +22,7 @@ import MappingBadge from '../parts/MappingBadge'
 
 const NodeEdge: FC<NodeProps<NodeEdgeType>> = (props) => {
   const { t } = useTranslation()
-  const { onContextMenu } = useContextMenu(props.id, props.selected, '/workspace/edge')
+  const { onContextMenu } = useContextMenu(props.id, props.selected, `/workspace/edge/${props.id}`)
   const navigate = useNavigate()
   const { data } = useListTopicFilters()
 
