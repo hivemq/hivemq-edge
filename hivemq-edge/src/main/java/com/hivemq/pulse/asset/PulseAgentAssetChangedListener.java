@@ -25,7 +25,8 @@ import java.util.List;
 public class PulseAgentAssetChangedListener implements ExternalAssetProvider.AssetChangedListener {
     private final @NotNull PulseExtractor pulseExtractor;
 
-    public PulseAgentAssetChangedListener(final @NotNull PulseExtractor pulseExtractor) {
+    public PulseAgentAssetChangedListener(
+            final @NotNull PulseExtractor pulseExtractor) {
         this.pulseExtractor = pulseExtractor;
     }
 
@@ -35,6 +36,6 @@ public class PulseAgentAssetChangedListener implements ExternalAssetProvider.Ass
 
     @Override
     public void onAssetsChanged(final @NotNull List<Asset> remoteAssets) {
-        pulseExtractor.setPulseEntity(PulseAgentAssetDiffUtils.resolve(pulseExtractor.getPulseEntity(), remoteAssets));
+        PulseAgentAssetDiffUtils.resolve(pulseExtractor, remoteAssets);
     }
 }

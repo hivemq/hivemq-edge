@@ -14,12 +14,15 @@
  *  limitations under the License.
  */
 
-package com.hivemq.api.pulse;
+package com.hivemq.api.resources.impl.pulse;
 
+import com.hivemq.api.resources.impl.PulseApiImpl;
 import com.hivemq.configuration.entity.pulse.PulseAssetsEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
+import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
-import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.edge.api.CombinersApi;
 import com.hivemq.edge.api.PulseApi;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.asset.ExternalAssetProvider;
@@ -41,6 +44,12 @@ import static org.mockito.Mockito.when;
 @MockitoSettings(strictness = Strictness.LENIENT)
 public abstract class AbstractPulseApiImplTest {
     @Mock
+    protected @NotNull SystemInformation systemInformation;
+
+    @Mock
+    protected @NotNull DataCombiningExtractor dataCombiningExtractor;
+
+    @Mock
     protected @NotNull ExternalAssetProvider assetProvider;
 
     @Mock
@@ -51,9 +60,6 @@ public abstract class AbstractPulseApiImplTest {
 
     @Mock
     protected @NotNull StatusProviderRegistry statusProviderRegistry;
-
-    @Mock
-    protected @NotNull ConfigurationService configurationService;
 
     @Mock
     protected @NotNull PulseExtractor pulseExtractor;
@@ -68,12 +74,16 @@ public abstract class AbstractPulseApiImplTest {
 
     @BeforeEach
     public void setUp() {
-        when(configurationService.pulseExtractor()).thenReturn(pulseExtractor);
+        when(systemInformation.isConfigWriteable()).thenReturn(true);
         when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
         when(pulseEntity.getLock()).thenReturn(new Object());
         when(pulseEntity.getPulseAssetsEntity()).thenReturn(pulseAssetsEntity);
         when(assetProviderRegistry.getAssetProviders()).thenReturn(Set.of(assetProvider));
         when(statusProviderRegistry.getStatusProviders()).thenReturn(Set.of(statusProvider));
-        pulseApi = new PulseApiImpl(configurationService, assetProviderRegistry, statusProviderRegistry);
+        pulseApi = new PulseApiImpl(systemInformation,
+                dataCombiningExtractor,
+                pulseExtractor,
+                assetProviderRegistry,
+                statusProviderRegistry);
     }
 }
