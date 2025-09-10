@@ -33,7 +33,7 @@ describe('useListAssetMappers', () => {
           sources: {
             items: expect.arrayContaining([
               {
-                id: 'my-adapter',
+                id: 'opcua-boiler1',
                 type: 'ADAPTER',
               },
               {
@@ -41,7 +41,7 @@ describe('useListAssetMappers', () => {
                 type: 'ADAPTER',
               },
               {
-                id: 'my-pulse-agent',
+                id: 'idPulse',
                 type: 'PULSE_AGENT',
               },
             ]),
