@@ -34,7 +34,6 @@ export const combinerMappingUiSchema = (isAssetManager = false, initTab?: string
   id: {
     'ui:title': 'Unique id',
     'ui:readonly': true,
-    // 'ui:widget': 'hidden',
   },
   description: {
     'ui:widget': 'textarea',
