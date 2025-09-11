@@ -25,7 +25,7 @@ import java.util.Objects;
 
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
-@XmlRootElement(name = "confidentiality-agreement")
+@XmlRootElement(name = "pre-login-notice")
 @XmlAccessorType(XmlAccessType.NONE)
 public class PreLoginNoticeEntity {
 
