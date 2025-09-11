@@ -214,7 +214,6 @@ const CombinerMappingManager: FC = () => {
             onSubmit={handleOnSubmit}
             formContext={{ queries: sources, entities } as CombinerContext}
             customValidate={validator?.validateCombiner}
-            // onChange={(e) => console.log(e)}
           />
         </DrawerBody>
         <DrawerFooter justifyContent="space-between">
