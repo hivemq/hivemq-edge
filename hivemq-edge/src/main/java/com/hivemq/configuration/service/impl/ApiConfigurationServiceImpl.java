@@ -18,18 +18,16 @@ package com.hivemq.configuration.service.impl;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.ApiStaticResourcePath;
+import com.hivemq.api.model.components.PreLoginNotice;
 import com.hivemq.configuration.service.ApiConfigurationService;
+import com.hivemq.http.core.UsernamePasswordRoles;
+import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.http.core.UsernamePasswordRoles;
 
-import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * @author Simon L Johnson
- */
 @Singleton
 public class ApiConfigurationServiceImpl implements ApiConfigurationService {
 
@@ -38,10 +36,15 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
     private @NotNull List<UsernamePasswordRoles> userList = new CopyOnWriteArrayList<>();
     private @NotNull List<ApiListener> listeners = new CopyOnWriteArrayList<>();
     private @Nullable ApiJwtConfiguration apiJwtConfiguration;
+    private @NotNull PreLoginNotice preLoginNotice = new PreLoginNotice();
 
     @Override
     public @NotNull List<ApiListener> getListeners() {
         return listeners;
+    }
+
+    public void setListeners(final @NotNull List<ApiListener> listeners) {
+        this.listeners = listeners;
     }
 
     @Override
@@ -49,9 +52,17 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
         return enabled;
     }
 
+    public void setEnabled(final boolean enabled) {
+        this.enabled = enabled;
+    }
+
     @Override
     public @NotNull List<ApiStaticResourcePath> getResourcePaths() {
         return resourcePaths;
+    }
+
+    public void setResourcePaths(final @NotNull List<ApiStaticResourcePath> resourcePaths) {
+        this.resourcePaths = resourcePaths;
     }
 
     @Override
@@ -59,29 +70,26 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
         return apiJwtConfiguration;
     }
 
+    public void setApiJwtConfiguration(final @NotNull ApiJwtConfiguration apiJwtConfiguration) {
+        this.apiJwtConfiguration = apiJwtConfiguration;
+    }
+
     @Override
     public @NotNull List<UsernamePasswordRoles> getUserList() {
         return userList;
-    }
-
-
-    public void setEnabled(final boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    public void setResourcePaths(final @NotNull List<ApiStaticResourcePath> resourcePaths) {
-        this.resourcePaths = resourcePaths;
     }
 
     public void setUserList(final @NotNull List<UsernamePasswordRoles> userList) {
         this.userList = userList;
     }
 
-    public void setListeners(final @NotNull List<ApiListener> listeners) {
-        this.listeners = listeners;
+    @Override
+    public @NotNull PreLoginNotice getPreLoginNotice() {
+        return preLoginNotice;
     }
 
-    public void setApiJwtConfiguration(final @NotNull ApiJwtConfiguration apiJwtConfiguration) {
-        this.apiJwtConfiguration = apiJwtConfiguration;
+    @Override
+    public void setPreLoginNotice(final @NotNull PreLoginNotice preLoginNotice) {
+        this.preLoginNotice = preLoginNotice;
     }
 }

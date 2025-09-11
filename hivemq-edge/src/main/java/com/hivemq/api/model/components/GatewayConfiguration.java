@@ -18,57 +18,58 @@ package com.hivemq.api.model.components;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.firstuse.FirstUseInformation;
-import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.jetbrains.annotations.NotNull;
 
-/**
- * @author Simon L Johnson
- */
 public class GatewayConfiguration {
 
     @JsonProperty("environment")
     @Schema(description = "A map of properties relating to the installation", nullable = true)
-    private @NotNull EnvironmentProperties environment;
+    private final @NotNull EnvironmentProperties environment;
 
     @JsonProperty("cloudLink")
     @Schema(description = "A referral link to HiveMQ Cloud")
-    private @NotNull Link cloudLink;
+    private final @NotNull Link cloudLink;
 
     @JsonProperty("gitHubLink")
     @Schema(description = "A link to the GitHub Project")
-    private @NotNull Link gitHubLink;
+    private final @NotNull Link gitHubLink;
 
     @JsonProperty("documentationLink")
     @Schema(description = "A link to the documentation Project")
-    private @NotNull Link documentationLink;
+    private final @NotNull Link documentationLink;
 
     @JsonProperty("firstUseInformation")
     @Schema(description = "Information relating to the firstuse experience")
-    private @NotNull FirstUseInformation firstUseInformation;
+    private final @NotNull FirstUseInformation firstUseInformation;
 
     @JsonProperty("ctas")
     @Schema(description = "The calls main to action")
-    private @NotNull LinkList ctas;
+    private final @NotNull LinkList ctas;
 
     @JsonProperty("resources")
     @Schema(description = "A list of resources to render")
-    private @NotNull LinkList resources;
+    private final @NotNull LinkList resources;
 
     @JsonProperty("modules")
     @Schema(description = "The modules available for installation")
-    private @NotNull ModuleList modules;
+    private final @NotNull ModuleList modules;
 
     @JsonProperty("extensions")
     @Schema(description = "The extensions available for installation")
-    private @NotNull ExtensionList extensions;
+    private final @NotNull ExtensionList extensions;
 
     @JsonProperty("hivemqId")
     @Schema(description = "The current id of hivemq edge. Changes at restart.")
-    private @NotNull String hivemqId;
+    private final @NotNull String hivemqId;
 
     @JsonProperty("trackingAllowed")
     @Schema(description = "Is the tracking of user actions allowed.")
-    private boolean trackingAllowed;
+    private final boolean trackingAllowed;
+
+    @JsonProperty("preLoginNotice")
+    @Schema(description = "Pre-login notice configuration")
+    private final @NotNull PreLoginNotice preLoginNotice;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public GatewayConfiguration(
@@ -82,7 +83,8 @@ public class GatewayConfiguration {
             @JsonProperty("modules") final @NotNull ModuleList modules,
             @JsonProperty("extensions") final @NotNull ExtensionList extensions,
             @JsonProperty("hivemqId") final @NotNull String hivemqId,
-            @JsonProperty("trackingAllowed")final boolean trackingAllowed) {
+            @JsonProperty("trackingAllowed") final boolean trackingAllowed,
+            @JsonProperty("preLoginNotice") final PreLoginNotice preLoginNotice) {
         this.environment = environment;
         this.cloudLink = cloudLink;
         this.gitHubLink = gitHubLink;
@@ -94,6 +96,7 @@ public class GatewayConfiguration {
         this.extensions = extensions;
         this.hivemqId = hivemqId;
         this.trackingAllowed = trackingAllowed;
+        this.preLoginNotice = preLoginNotice;
     }
 
     public @NotNull EnvironmentProperties getEnvironment() {
@@ -130,5 +133,17 @@ public class GatewayConfiguration {
 
     public @NotNull ExtensionList getExtensions() {
         return extensions;
+    }
+
+    public @NotNull String getHivemqId() {
+        return hivemqId;
+    }
+
+    public boolean isTrackingAllowed() {
+        return trackingAllowed;
+    }
+
+    public @NotNull PreLoginNotice getPreLoginNotice() {
+        return preLoginNotice;
     }
 }

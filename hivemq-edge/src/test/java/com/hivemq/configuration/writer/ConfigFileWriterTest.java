@@ -45,11 +45,11 @@ public class ConfigFileWriterTest extends AbstractConfigWriterTest {
 
         final File tempCopyFile = new File(System.getProperty("java.io.tmpdir"), "copy-config.xml");
         tempFile.deleteOnExit();
-        configFileReader.writeConfig(new ConfigurationFile(tempCopyFile), false);
+        configFileReader.writeConfigToXML(new ConfigurationFile(tempCopyFile).file().get(), false);
 
         final String copiedFileContent = FileUtils.readFileToString(tempCopyFile, UTF_8);
         final Diff diff = XMLUnit.compareXML(originalXml, copiedFileContent);
-        if(!diff.identical()){
+        if (!diff.identical()) {
             System.err.println("xml diff found " + diff);
             System.err.println(originalXml);
             System.err.println(copiedFileContent);

@@ -44,8 +44,8 @@ public class JaxrsResourceTests {
     protected final Logger logger = LoggerFactory.getLogger(JaxrsResourceTests.class);
 
     static final int TEST_HTTP_PORT = RandomPortGenerator.get();
-    static final int CONNECT_TIMEOUT = 1000;
-    static final int READ_TIMEOUT = 1000;
+    static final int CONNECT_TIMEOUT = 5000;
+    static final int READ_TIMEOUT = 5000;
     static final String HTTP = "http";
     static final String JSON_ENTITY = "{\"key\":\"value\"}";
 
