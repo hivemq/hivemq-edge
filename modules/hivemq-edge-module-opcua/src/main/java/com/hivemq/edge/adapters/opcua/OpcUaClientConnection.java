@@ -28,14 +28,12 @@ import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSessionActivityListener;
-import com.hivemq.edge.adapters.opcua.listeners.OpcUaSubscriptionListener;
+import com.hivemq.edge.adapters.opcua.listeners.OpcUaSubscriptionLifecycleHandler;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
-import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.UaException;
-import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,11 +41,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
@@ -112,7 +107,9 @@ public class OpcUaClientConnection {
             return false;
         }
 
-        final var subscriptionOptional = subscribe(client);
+        final var subscriptionLifecycleHandler = new OpcUaSubscriptionLifecycleHandler(protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, dataPointFactory, config);
+
+        final var subscriptionOptional = subscriptionLifecycleHandler.subscribe(client);
 
         if(subscriptionOptional.isEmpty()) {
             log.error("Failed to create or transfer OPC UA subscription. Closing client connection.");
@@ -160,113 +157,6 @@ public class OpcUaClientConnection {
             return Optional.of(ctx.client());
         }
         return Optional.empty();
-    }
-
-    /**
-     * Subscribes to the OPC UA client.
-     * If a subscription ID is provided, it attempts to transfer the subscription.
-     * If the transfer fails or no ID is provided, it creates a new subscription.
-     * It then synchronizes the tags and monitored items.
-     *
-     * @param client                the OPC UA client
-     * @return an Optional containing the created or transferred subscription, or empty if failed
-     */
-    private @NotNull Optional<OpcUaSubscription> subscribe(final @NotNull OpcUaClient client) {
-            return createNewSubscription(client)
-                    .flatMap(subscription -> {
-                        subscription.setPublishingInterval((double) config.getOpcuaToMqttConfig().publishingInterval());
-                        subscription.setSubscriptionListener(new OpcUaSubscriptionListener(protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, dataPointFactory, config));
-                        if(syncTagsAndMonitoredItems(subscription, tags, config)) {
-                            return Optional.of(subscription);
-                        } else {
-                            return Optional.empty();
-                        }
-                    });
-    }
-
-    /**
-     * Creates a new OPC UA subscription.
-     * If the subscription is created successfully, it returns an Optional containing the subscription.
-     * If the subscription creation fails, it returns an empty Optional.
-     *
-     * @param client the OPC UA client
-     * @return an Optional containing the created subscription or empty if creation failed
-     */
-    public static @NotNull Optional<OpcUaSubscription> createNewSubscription(final @NotNull OpcUaClient client) {
-        log.debug("Creating new OPC UA subscription");
-        final OpcUaSubscription subscription = new OpcUaSubscription(client);
-        try {
-            subscription.create();
-            return subscription
-                    .getSubscriptionId()
-                    .map(subscriptionId -> {
-                        log.trace("New subscription ID: {}", subscriptionId);
-                        return subscription;
-                    })
-                    .or(() -> {
-                        log.error("Subscription not created on the server");
-                        return Optional.empty();
-                    });
-        } catch (final UaException e) {
-            log.error("Failed to create subscription", e);
-        }
-        return Optional.empty();
-    }
-
-    /**
-     * Synchronizes the tags and monitored items in the subscription.
-     * It removes monitored items that are not in the tags list and adds new monitored items from the tags list.
-     * It also updates existing monitored items with the configured queue size and sampling interval.
-     *
-     * @param subscription the OPC UA subscription
-     * @param tags         the list of tags to synchronize
-     * @param config       the configuration for the OPC UA adapter
-     * @return true if synchronization was successful, false otherwise
-     */
-    public static boolean syncTagsAndMonitoredItems(final @NotNull OpcUaSubscription subscription, final @NotNull List<OpcuaTag> tags, final @NotNull OpcUaSpecificAdapterConfig config) {
-
-        final var nodeIdToTag = tags.stream().collect(Collectors.toMap(tag -> NodeId.parse(tag.getDefinition().getNode()), Function.identity()));
-        final var nodeIdToMonitoredItem = subscription.getMonitoredItems().stream().collect(Collectors.toMap(monitoredItem -> monitoredItem.getReadValueId().getNodeId(), Function.identity()));
-
-        final var monitoredItemsToRemove = nodeIdToMonitoredItem.entrySet().stream().filter(entry -> !nodeIdToTag.containsKey(entry.getKey())).map(Map.Entry::getValue).toList();
-        final var monitoredItemsToAdd = nodeIdToTag.entrySet().stream().filter(entry -> !nodeIdToMonitoredItem.containsKey(entry.getKey())).map(Map.Entry::getValue).toList();
-
-        //clear deleted monitored items
-        if(!monitoredItemsToRemove.isEmpty()) {
-            subscription.removeMonitoredItems(monitoredItemsToRemove);
-            log.debug("Removed monitored items: {}", monitoredItemsToRemove.stream().map(item -> item.getReadValueId().getNodeId()));
-        }
-
-        //update existing monitored items
-        subscription.getMonitoredItems().forEach(monitoredItem -> {
-            //TODO: allow to configure these values per TAG!!!!
-            monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().serverQueueSize()));
-            monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().publishingInterval());
-        });
-
-        //add new monitored items
-        if(!monitoredItemsToAdd.isEmpty()) {
-            monitoredItemsToAdd.forEach(opcuaTag -> {
-                final String nodeId = opcuaTag.getDefinition().getNode();
-                final var monitoredItem = OpcUaMonitoredItem.newDataItem(NodeId.parse(nodeId));
-                monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().serverQueueSize()));
-                monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().publishingInterval());
-                subscription.addMonitoredItem(monitoredItem);
-            });
-            log.debug("Added monitored items: {}", monitoredItemsToAdd.stream().map(item -> item.getDefinition().getNode()).toList());
-        }
-
-        try {
-            subscription.synchronizeMonitoredItems();
-            log.info("All monitored items synchronized successfully");
-            return true;
-        } catch (final UaException e) {
-            log.error("Failed to synchronize monitored items: {} {}", e.getStatusCode(), e.getMessage(), e);
-            return false;
-        }
-    }
-
-    private record ConnectionContext(@NotNull OpcUaClient client, @NotNull ServiceFaultListener faultListener, @NotNull SessionActivityListener activityListener) {
     }
 
     private static void quietlyDeleteSubscription(
@@ -318,5 +208,8 @@ public class OpcUaClientConnection {
         } catch (final UaException e) {
             log.error("Failed to disconnect: {}", e.getMessage());
         }
+    }
+
+    private record ConnectionContext(@NotNull OpcUaClient client, @NotNull ServiceFaultListener faultListener, @NotNull SessionActivityListener activityListener) {
     }
 }
