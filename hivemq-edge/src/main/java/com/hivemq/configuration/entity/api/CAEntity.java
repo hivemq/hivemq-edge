@@ -13,43 +13,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.configuration.entity;
+package com.hivemq.configuration.entity.api;
 
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@XmlAccessorType(XmlAccessType.NONE)
-@SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
-public abstract class EnabledEntity {
 
-    @XmlElement(name = "enabled", defaultValue = "true")
-    private boolean enabled = true;
+@SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
+@XmlRootElement(name = "confidentiality-agreement")
+@XmlAccessorType(XmlAccessType.NONE)
+public class CAEntity {
+
+    @XmlElement(name = "enabled")
+    private boolean enabled;
+
+    @XmlElement(name = "content")
+    private @Nullable String content;
+
+    public CAEntity() {
+        this(false, null);
+    }
+
+    public CAEntity(final boolean enabled, final @Nullable String content) {
+        this.enabled = enabled;
+        this.content = content;
+    }
 
     public boolean isEnabled() {
         return enabled;
     }
 
-    public void setEnabled(final boolean enabled) {
-        this.enabled = enabled;
+    public @Nullable String getContent() {
+        return content;
     }
 
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o instanceof final EnabledEntity that) {
-            return enabled == that.enabled;
-        }
-        return false;
+        return o instanceof final CAEntity that &&
+                Objects.equals(enabled, that.enabled) &&
+                Objects.equals(content, that.content);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(enabled);
+        return Objects.hash(enabled, content);
     }
 }

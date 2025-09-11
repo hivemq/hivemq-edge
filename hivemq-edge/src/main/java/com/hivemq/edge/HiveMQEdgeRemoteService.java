@@ -15,17 +15,14 @@
  */
 package com.hivemq.edge;
 
-import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
+import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @author Simon L Johnson
- */
 public interface HiveMQEdgeRemoteService {
 
-    HiveMQEdgeRemoteConfiguration getConfiguration();
+    @NotNull HiveMQEdgeRemoteConfiguration getConfiguration();
 
-    void fireUsageEvent(@NotNull HiveMQEdgeRemoteEvent event);
+    void fireUsageEvent(final @NotNull HiveMQEdgeRemoteEvent event);
 
 }

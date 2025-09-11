@@ -1049,6 +1049,14 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="confidentiality-agreement" minOccurs="0">
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="enabled" type="xs:boolean" default="false"/>
+                        <xs:element name="content" type="xs:string" minOccurs="0"/>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="unsEntity">

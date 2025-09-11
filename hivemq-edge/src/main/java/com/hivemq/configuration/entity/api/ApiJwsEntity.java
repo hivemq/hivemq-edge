@@ -15,14 +15,15 @@
  */
 package com.hivemq.configuration.entity.api;
 
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import jakarta.xml.bind.annotation.*;
 import java.util.Objects;
 
-/**
- * @author Simon L Johnson
- */
 @XmlRootElement(name = "generated-tokens")
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
@@ -30,12 +31,16 @@ public class ApiJwsEntity {
 
     @XmlElement(name = "keySize", required = true)
     private int keySize = 2048;
+
     @XmlElement(name = "issuer", required = true, defaultValue = "HiveMQ-Edge")
     private @NotNull String issuer = "HiveMQ-Edge";
+
     @XmlElement(name = "audience", required = true, defaultValue = "HiveMQ-Edge-Api")
     private @NotNull String audience = "HiveMQ-Edge-Api";
+
     @XmlElement(name = "expiryTimeMinutes", required = true, defaultValue = "30")
     private int expiryTimeMinutes = 30;
+
     @XmlElement(name = "tokenEarlyEpochThresholdMinutes", required = true, defaultValue = "2")
     private int tokenEarlyEpochThresholdMinutes = 2;
 
@@ -43,11 +48,11 @@ public class ApiJwsEntity {
         return keySize;
     }
 
-    public String getIssuer() {
+    public @NotNull String getIssuer() {
         return issuer;
     }
 
-    public String getAudience() {
+    public @NotNull String getAudience() {
         return audience;
     }
 
@@ -60,23 +65,23 @@ public class ApiJwsEntity {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final ApiJwsEntity that = (ApiJwsEntity) o;
-        return getKeySize() == that.getKeySize() &&
-                getExpiryTimeMinutes() == that.getExpiryTimeMinutes() &&
-                getTokenEarlyEpochThresholdMinutes() == that.getTokenEarlyEpochThresholdMinutes() &&
-                Objects.equals(getIssuer(), that.getIssuer()) &&
-                Objects.equals(getAudience(), that.getAudience());
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof final ApiJwsEntity that) {
+            return keySize == that.keySize &&
+                    expiryTimeMinutes == that.expiryTimeMinutes &&
+                    tokenEarlyEpochThresholdMinutes == that.tokenEarlyEpochThresholdMinutes &&
+                    Objects.equals(issuer, that.issuer) &&
+                    Objects.equals(audience, that.audience);
+        }
+        return false;
+
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getKeySize(),
-                getIssuer(),
-                getAudience(),
-                getExpiryTimeMinutes(),
-                getTokenEarlyEpochThresholdMinutes());
+        return Objects.hash(keySize, issuer, audience, expiryTimeMinutes, tokenEarlyEpochThresholdMinutes);
     }
 }

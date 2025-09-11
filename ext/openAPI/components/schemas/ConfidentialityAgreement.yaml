@@ -1,0 +1,11 @@
+type: object
+description: A list of resources to render
+properties:
+  enabled:
+    type: boolean
+    description: Whether the CA should be shown prior to login
+  content:
+    type: string
+    description: The text of the CA
+required:
+  - enabled

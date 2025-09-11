@@ -18,9 +18,10 @@ package com.hivemq.configuration.service;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.ApiStaticResourcePath;
+import com.hivemq.api.model.components.ConfidentialityAgreement;
+import com.hivemq.http.core.UsernamePasswordRoles;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.http.core.UsernamePasswordRoles;
 
 import java.util.List;
 
@@ -31,22 +32,25 @@ public interface ApiConfigurationService {
 
     @NotNull List<ApiListener> getListeners();
 
+    void setListeners(final @NotNull List<ApiListener> listeners);
+
     boolean isEnabled();
-
-    @NotNull List<ApiStaticResourcePath> getResourcePaths();
-
-    @Nullable ApiJwtConfiguration getApiJwtConfiguration();
-
-    @NotNull List<UsernamePasswordRoles> getUserList();
 
     void setEnabled(boolean enabled);
 
-    void setResourcePaths(@NotNull List<ApiStaticResourcePath> resourcePaths);
+    @NotNull List<ApiStaticResourcePath> getResourcePaths();
 
-    void setUserList(@NotNull List<UsernamePasswordRoles> userList);
+    void setResourcePaths(final @NotNull List<ApiStaticResourcePath> resourcePaths);
 
-    void setListeners(@NotNull List<ApiListener> listeners);
+    @Nullable ApiJwtConfiguration getApiJwtConfiguration();
 
-    void setApiJwtConfiguration(@NotNull ApiJwtConfiguration apiJwtConfiguration);
+    void setApiJwtConfiguration(final @NotNull ApiJwtConfiguration apiJwtConfiguration);
 
+    @NotNull List<UsernamePasswordRoles> getUserList();
+
+    void setUserList(final @NotNull List<UsernamePasswordRoles> userList);
+
+    @NotNull ConfidentialityAgreement getConfidentialityAgreement();
+
+    void setConfidentialityAgreement(final @NotNull ConfidentialityAgreement confidentialityAgreement);
 }

@@ -47,9 +47,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-/**
- * @author Christoph Schäbel
- */
 public class ConfigurationBootstrap {
 
     public static @NotNull ConfigurationService bootstrapConfig(final @NotNull SystemInformation systemInformation) {
@@ -94,5 +91,4 @@ public class ConfigurationBootstrap {
         configurationService.setConfigFileReaderWriter(configFileReader);
         return configurationService;
     }
-
 }

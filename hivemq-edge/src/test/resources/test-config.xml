@@ -190,6 +190,9 @@
                 </roles>
             </user>
         </users>
+        <confidentiality-agreement>
+            <enabled>false</enabled>
+        </confidentiality-agreement>
     </admin-api>
     <uns>
         <isa95>

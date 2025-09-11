@@ -28,22 +28,22 @@ import static org.mockito.Mockito.when;
 class ConfigFileReaderWriterTest {
 
     @Test
-    public void test_alltags() throws Exception{
+    public void test_all_tags() throws Exception {
         final var systemInformation = mock(SystemInformation.class);
         when(systemInformation.isConfigFragmentBase64Zip()).thenReturn(false);
         final var reader = new ConfigFileReaderWriter(systemInformation, null, List.of());
         final var configFile = new File(getClass().getClassLoader().getResource("configs/testing/alltags.xml").toURI());
-        final var configEntity = reader.readConfigFromXML(configFile);
+        final var configEntity = reader.loadConfigFromXML(configFile);
         assertThat(configEntity).isNotNull();
     }
 
     @Test
-    public void test_empty() throws Exception{
+    public void test_empty() throws Exception {
         final var systemInformation = mock(SystemInformation.class);
         when(systemInformation.isConfigFragmentBase64Zip()).thenReturn(false);
         final var reader = new ConfigFileReaderWriter(systemInformation, null, List.of());
         final var configFile = new File(getClass().getClassLoader().getResource("configs/testing/empty.xml").toURI());
-        final var configEntity = reader.readConfigFromXML(configFile);
+        final var configEntity = reader.loadConfigFromXML(configFile);
         assertThat(configEntity).isNotNull();
     }
 
@@ -53,9 +53,8 @@ class ConfigFileReaderWriterTest {
         when(systemInformation.isConfigFragmentBase64Zip()).thenReturn(false);
         final var reader = new ConfigFileReaderWriter(systemInformation, null, List.of());
         final var configFile = new File(getClass().getClassLoader().getResource("configs/testing/datacombiners_no_source.xml").toURI());
-        final var configEntity = reader.readConfigFromXML(configFile);
+        final var configEntity = reader.loadConfigFromXML(configFile);
         //This will break as soon as the xsd is fixed
         assertThat(configEntity).isNotNull();
     }
-
 }

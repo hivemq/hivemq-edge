@@ -29,7 +29,6 @@ import java.util.Optional;
 /**
  * The Configuration Service interface which allows to change HiveMQ configuration programmatically.
  *
- * @author Dominik Obermaier
  * @since 3.0
  */
 

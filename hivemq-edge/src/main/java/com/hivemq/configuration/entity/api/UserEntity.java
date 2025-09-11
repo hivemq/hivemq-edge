@@ -15,13 +15,14 @@
  */
 package com.hivemq.configuration.entity.api;
 
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -30,38 +31,43 @@ import java.util.Objects;
 @XmlRootElement(name = "user")
 @XmlAccessorType(XmlAccessType.NONE)
 public class UserEntity {
-    @XmlElement(name = "username")
-    private String userName = null;
-    @XmlElement(name = "password")
-    private String password = null;
     @XmlElementWrapper(name = "roles")
     @XmlElement(name = "role")
-    private @NotNull List<String> roles = new ArrayList<>();
+    private final @NotNull List<String> roles = new ArrayList<>();
 
-    public String getUserName() {
+    @XmlElement(name = "username")
+    private @Nullable String userName = null;
+
+    @XmlElement(name = "password")
+    private @Nullable String password = null;
+
+    public @Nullable String getUserName() {
         return userName;
     }
 
-    public String getPassword() {
+    public @Nullable String getPassword() {
         return password;
     }
 
-    public List<String> getRoles() {
+    public @NotNull List<String> getRoles() {
         return roles;
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final UserEntity that = (UserEntity) o;
-        return Objects.equals(getUserName(), that.getUserName()) &&
-                Objects.equals(getPassword(), that.getPassword()) &&
-                Objects.equals(getRoles(), that.getRoles());
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof final UserEntity that) {
+            return Objects.equals(userName, that.userName) &&
+                    Objects.equals(password, that.password) &&
+                    Objects.equals(roles, that.roles);
+        }
+        return false;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getUserName(), getPassword(), getRoles());
+        return Objects.hash(userName, password, roles);
     }
 }

@@ -17,12 +17,10 @@ package com.hivemq.util;
 
 import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 
-/**
- * @author Simon L Johnson
- */
 public class Files {
 
     static final String PERIOD = ".";
@@ -38,13 +36,10 @@ public class Files {
      * @param filePath - the file path e.g. /some/file/location.txt
      * @return fileName - the fileName e.g. location.txt
      */
-    public static String getFileName(@NotNull String filePath){
+    public static String getFileName(final @NotNull String filePath) {
         Preconditions.checkNotNull(filePath);
-        int idx = filePath.lastIndexOf(File.separator);
-        if(idx > -1){
-            filePath = filePath.substring(idx + 1);
-        }
-        return filePath;
+        final int idx = filePath.lastIndexOf(File.separator);
+        return idx > -1 ? filePath.substring(idx + 1) : filePath;
     }
 
     /**
@@ -54,15 +49,12 @@ public class Files {
      * @param filePath - the file path e.g. /some/file/location.txt
      * @return fileName - the fileName e.g. location
      */
-    public static String getFileNameExcludingExtension(final @NotNull String filePath){
+    public static String getFileNameExcludingExtension(final @NotNull String filePath) {
         Preconditions.checkNotNull(filePath);
-        String name = getFileName(filePath);
-        if(name.contains(PERIOD)){
-            name = name.substring(0, name.lastIndexOf(PERIOD) );
-        }
-        return name;
+        final String name = getFileName(filePath);
+        final int idx = name.lastIndexOf(PERIOD);
+        return idx > -1 ? name.substring(0, idx) : name;
     }
-
 
     /**
      * Given a file path, will return the extension of the file determined by the last
@@ -71,29 +63,23 @@ public class Files {
      * @param filePath - the file path e.g. /some/file/location.txt
      * @return fileName - the fileName e.g. txt
      */
-    public static String getFileExtension(final @NotNull String filePath){
+    public static @Nullable String getFileExtension(final @NotNull String filePath) {
         Preconditions.checkNotNull(filePath);
-        String name = getFileName(filePath);
-        int idx = name.lastIndexOf(PERIOD);
-        String ext = null;
-        if(idx > -1){
-            ext = name.substring(idx + 1);
-        }
-        return ext;
+        final String name = getFileName(filePath);
+        final int idx = name.lastIndexOf(PERIOD);
+        return idx > -1 ? name.substring(idx + 1) : null;
     }
 
     /**
      * Given a file path, will return the directory of the file, determined by
      * the last location of the File.separator
+     *
      * @param filePath - the file path e.g. /some/file/location.txt
      * @return the directory of the file e.g. /some/file
      */
-    public static String getFilePathExcludingFile(@NotNull String filePath){
+    public static @NotNull String getFilePathExcludingFile(final @NotNull String filePath) {
         Preconditions.checkNotNull(filePath);
-        int idx = filePath.lastIndexOf(File.separator);
-        if(idx > -1){
-            filePath = filePath.substring(0, idx);
-        }
-        return filePath;
+        final int idx = filePath.lastIndexOf(File.separator);
+        return idx > -1 ? filePath.substring(0, idx) : filePath;
     }
 }

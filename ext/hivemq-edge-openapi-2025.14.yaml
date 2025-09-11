@@ -5103,6 +5103,18 @@ components:
             $ref: '#/components/schemas/Link'
       required:
         - items
+    ConfidentialityAgreement:
+      type: object
+      description: A list of resources to render
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the CA should be shown prior to login
+        content:
+          type: string
+          description: The text of the CA
+      required:
+        - enabled
     EnvironmentProperties:
       type: object
       description: A map of properties relating to the installation
@@ -5256,6 +5268,8 @@ components:
         trackingAllowed:
           type: boolean
           description: Is the tracking of user actions allowed.
+        confidentialityAgreement:
+            $ref: '#/components/schemas/ConfidentialityAgreement'
     Notification:
       type: object
       description: List of result items that are returned by this endpoint

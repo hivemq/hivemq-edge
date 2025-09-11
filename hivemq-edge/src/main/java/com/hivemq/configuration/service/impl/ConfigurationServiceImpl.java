@@ -49,9 +49,6 @@ import java.util.stream.Stream;
 
 /**
  * The implementation of the {@link ConfigurationService}
- *
- * @author Dominik Obermaier
- * @author Christoph Schäbel
  */
 public class ConfigurationServiceImpl implements ConfigurationService {
 

@@ -19,27 +19,32 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.components.Extension;
-import com.hivemq.api.model.components.Module;
 import com.hivemq.api.model.components.Link;
+import com.hivemq.api.model.components.Module;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author Simon L Johnson
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class HiveMQEdgeRemoteConfiguration {
 
-    private @JsonProperty("ctas") final @NotNull List<Link> ctas;
-    private @JsonProperty("resources") final @NotNull List<Link> resources;
-    private @JsonProperty("extensions") final @NotNull List<Extension> extensions;
-    private @JsonProperty("modules") final @NotNull List<Module> modules;
-    private @JsonProperty("properties") final @NotNull Map<String, Object> properties;
-    private @JsonProperty("cloudLink") final @NotNull Link cloudLink;
-    private @JsonProperty("gitHubLink") final @NotNull Link gitHubLink;
-    private @JsonProperty("documentationLink") final @NotNull Link documentationLink;
+    private @JsonProperty("ctas")
+    final @NotNull List<Link> ctas;
+    private @JsonProperty("resources")
+    final @NotNull List<Link> resources;
+    private @JsonProperty("extensions")
+    final @NotNull List<Extension> extensions;
+    private @JsonProperty("modules")
+    final @NotNull List<Module> modules;
+    private @JsonProperty("properties")
+    final @NotNull Map<String, Object> properties;
+    private @JsonProperty("cloudLink")
+    final @NotNull Link cloudLink;
+    private @JsonProperty("gitHubLink")
+    final @NotNull Link gitHubLink;
+    private @JsonProperty("documentationLink")
+    final @NotNull Link documentationLink;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public HiveMQEdgeRemoteConfiguration(
@@ -61,50 +66,57 @@ public class HiveMQEdgeRemoteConfiguration {
         this.documentationLink = documentationLink;
     }
 
-    public List<Link> getCtas() {
+    public @NotNull List<Link> getCtas() {
         return ctas;
     }
 
-    public List<Link> getResources() {
+    public @NotNull List<Link> getResources() {
         return resources;
     }
 
-    public List<Extension> getExtensions() {
+    public @NotNull List<Extension> getExtensions() {
         return extensions;
     }
 
-    public List<Module> getModules() {
+    public @NotNull List<Module> getModules() {
         return modules;
     }
 
-    public Link getCloudLink() {
+    public @NotNull Link getCloudLink() {
         return cloudLink;
     }
 
-    public Link getGitHubLink() {
+    public @NotNull Link getGitHubLink() {
         return gitHubLink;
     }
 
-    public Link getDocumentationLink() {
+    public @NotNull Link getDocumentationLink() {
         return documentationLink;
     }
 
-    public Map<String, Object> getProperties() {
+    public @NotNull Map<String, Object> getProperties() {
         return properties;
     }
 
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("HiveMQEdgeRemoteConfiguration{");
-        sb.append("ctas=").append(ctas);
-        sb.append(", resources=").append(resources);
-        sb.append(", extensions=").append(extensions);
-        sb.append(", modules=").append(modules);
-        sb.append(", properties=").append(properties);
-        sb.append(", cloudLink=").append(cloudLink);
-        sb.append(", documentationLink=").append(documentationLink);
-        sb.append(", gitHubLink=").append(gitHubLink);
-        sb.append('}');
-        return sb.toString();
+    public @NotNull String toString() {
+        return "HiveMQEdgeRemoteConfiguration{" +
+                "ctas=" +
+                ctas +
+                ", resources=" +
+                resources +
+                ", extensions=" +
+                extensions +
+                ", modules=" +
+                modules +
+                ", properties=" +
+                properties +
+                ", cloudLink=" +
+                cloudLink +
+                ", documentationLink=" +
+                documentationLink +
+                ", gitHubLink=" +
+                gitHubLink +
+                '}';
     }
 }

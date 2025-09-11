@@ -17,9 +17,6 @@ package com.hivemq.configuration.service.impl;
 
 import com.hivemq.configuration.service.DynamicConfigurationService;
 
-/**
- * @author Simon L Johnson
- */
 public class GatewayConfigurationServiceImpl implements DynamicConfigurationService {
 
     private boolean mutableConfigurationEnabled;
@@ -42,5 +39,4 @@ public class GatewayConfigurationServiceImpl implements DynamicConfigurationServ
     public void setConfigurationExportEnabled(final boolean configurationExportEnabled) {
         this.configurationExportEnabled = configurationExportEnabled;
     }
-
 }
