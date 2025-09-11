@@ -25,6 +25,7 @@ import {
 } from '@chakra-ui/react'
 
 import type { Combiner } from '@/api/__generated__'
+import { AssetMapping } from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
 import { useDeleteCombiner, useUpdateCombiner } from '@/api/hooks/useCombiners/'
 import { useDeleteAssetMapper, useUpdateAssetMapper } from '@/api/hooks/useAssetMapper'
@@ -97,8 +98,8 @@ const CombinerMappingManager: FC = () => {
       promises.push(Promise.reject(errorAssets))
     } else {
       // TODO[NVL] This is very inefficient. Some of the mappings have not been modified and should not be updated
-      promises = combiner.mappings.items.reduce<Promise<unknown>[]>((acc, cur) => {
-        const assetId = cur.destination.assetId
+      promises = combiner.mappings.items.reduce<Promise<unknown>[]>((acc, newMapping) => {
+        const assetId = newMapping.destination.assetId
         if (!assetId) {
           acc.push(Promise.reject(t('combiner.error.noAssetId')))
           return acc
@@ -112,7 +113,18 @@ const CombinerMappingManager: FC = () => {
           return acc
         }
 
-        const assetPromise = updateManagedAsset.mutateAsync({ assetId, requestBody: source })
+        console.log('xxxx mapping', { assetId, source, cur: newMapping })
+
+        const assetPromise = updateManagedAsset.mutateAsync({
+          assetId,
+          requestBody: {
+            ...source,
+            mapping: {
+              status: AssetMapping.status.DRAFT,
+              mappingId: newMapping.id,
+            },
+          },
+        })
         acc.push(assetPromise)
 
         return acc
