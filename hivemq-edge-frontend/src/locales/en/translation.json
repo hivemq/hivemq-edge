@@ -1365,7 +1365,9 @@
       "schemaManager": {
         "noSourceSchemaDefined": "You need to define the source schemas first",
         "noValidSourceSchema": "None of your sources have schema to merge"
-      }
+      },
+      "noAssetId": "The ID of the asset is missing from the mapping",
+      "noAssetFound": "Cannot find the asset with the given ID"
     },
     "schema": {
       "tabs": {
