@@ -23,6 +23,9 @@ import com.hivemq.api.errors.adapters.DataCombinerNotFoundError;
 import com.hivemq.api.errors.pulse.ActivationTokenAlreadyDeletedError;
 import com.hivemq.api.errors.pulse.ActivationTokenInvalidError;
 import com.hivemq.api.errors.pulse.ActivationTokenNotDeletedError;
+import com.hivemq.api.errors.pulse.InvalidManagedAssetMappingIdError;
+import com.hivemq.api.errors.pulse.InvalidManagedAssetSchemaError;
+import com.hivemq.api.errors.pulse.InvalidManagedAssetTopicError;
 import com.hivemq.api.errors.pulse.ManagedAssetAlreadyExistsError;
 import com.hivemq.api.errors.pulse.ManagedAssetNotFoundError;
 import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
@@ -54,6 +57,7 @@ import com.hivemq.pulse.converters.PulseAgentStatusConverter;
 import com.hivemq.pulse.status.Status;
 import com.hivemq.pulse.status.StatusProvider;
 import com.hivemq.pulse.status.StatusProviderRegistry;
+import com.hivemq.pulse.utils.PulseAgentAssetUtils;
 import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -98,7 +102,6 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public @NotNull Response addAssetMapper(final @NotNull Combiner combiner) {
-        // TODO
         final Optional<Response> optionalResponse = check(this::checkConfigWritable);
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
@@ -110,6 +113,11 @@ public class PulseApiImpl implements PulseApi {
                     combiner.getId())));
         }
         final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
+        final Optional<Response> optionalResponseDataCombiner =
+                checkDataCombiner(dataCombiner, pulseExtractor.getPulseEntity());
+        if (optionalResponseDataCombiner.isPresent()) {
+            return optionalResponseDataCombiner.get();
+        }
         try {
             dataCombiningExtractor.addDataCombiner(dataCombiner);
         } catch (final Exception e) {
@@ -136,7 +144,7 @@ public class PulseApiImpl implements PulseApi {
                     .filter(i -> Objects.equals(assets.get(i).getId(), managedAsset.getId()))
                     .findAny();
             if (optionalAssetIndex.isEmpty()) {
-                return ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError());
+                return ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(managedAsset.getId()));
             }
             final PulseAgentAsset asset = assets.get(optionalAssetIndex.getAsInt());
             if (asset.getMapping().getId() != null) {
@@ -157,7 +165,6 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public @NotNull Response deleteAssetMapper(final @NotNull UUID combinerId) {
-        // TODO
         final Optional<Response> optionalResponse = check(this::checkConfigWritable);
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
@@ -190,7 +197,7 @@ public class PulseApiImpl implements PulseApi {
                     .filter(i -> Objects.equals(assets.get(i).getId(), assetId))
                     .findAny();
             if (optionalAssetIndex.isEmpty()) {
-                return ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError());
+                return ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(assetId));
             }
             assets.remove(optionalAssetIndex.getAsInt());
             final PulseEntity newPulseEntity = new PulseEntity(assets.toPersistence());
@@ -303,7 +310,6 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public @NotNull Response updateAssetMapper(final @NotNull UUID combinerId, final @NotNull Combiner combiner) {
-        // TODO
         final Optional<Response> optionalResponse = check(this::checkConfigWritable);
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
@@ -313,6 +319,11 @@ public class PulseApiImpl implements PulseApi {
             return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combiner.getId().toString()));
         }
         final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
+        final Optional<Response> optionalResponseDataCombiner =
+                checkDataCombiner(dataCombiner, pulseExtractor.getPulseEntity());
+        if (optionalResponseDataCombiner.isPresent()) {
+            return optionalResponseDataCombiner.get();
+        }
         final boolean updated = dataCombiningExtractor.updateDataCombiner(dataCombiner);
         if (updated) {
             return Response.ok().build();
@@ -335,7 +346,7 @@ public class PulseApiImpl implements PulseApi {
                     .filter(i -> Objects.equals(assets.get(i).getId(), assetId))
                     .findAny();
             if (optionalAssetIndex.isEmpty()) {
-                return ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError());
+                return ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(assetId));
             }
             final PulseAgentAsset asset = assets.get(optionalAssetIndex.getAsInt());
             assets.set(optionalAssetIndex.getAsInt(),
@@ -428,6 +439,33 @@ public class PulseApiImpl implements PulseApi {
     private @NotNull Optional<Response> checkConfigWritable() {
         if (!systemInformation.isConfigWriteable()) {
             return Optional.of(ErrorResponseUtil.errorResponse(new ConfigWritingDisabled()));
+        }
+        return Optional.empty();
+    }
+
+    private @NotNull Optional<Response> checkDataCombiner(
+            final @NotNull DataCombiner dataCombiner,
+            final @NotNull PulseEntity pulseEntity) {
+        final var pulseDataCombinings = dataCombiner.getPulseDataCombinings();
+        if (!pulseDataCombinings.isEmpty()) {
+            final var assetMap = PulseAgentAssetUtils.toAssetMap(pulseExtractor.getPulseEntity());
+            for (final var dataCombining : pulseDataCombinings) {
+                final String id = dataCombining.sources().primaryReference().id();
+                final var asset = assetMap.get(id);
+                if (asset == null) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(id)));
+                }
+                if (!Objects.equals(dataCombining.destination().topic(), asset.getTopic())) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetTopicError(id)));
+                }
+                if (!Objects.equals(dataCombining.destination().schema(), asset.getSchema())) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetSchemaError(id)));
+                }
+                final UUID expectedMappingId = asset.getMapping().getId();
+                if (expectedMappingId != null && !Objects.equals(dataCombining.id(), expectedMappingId)) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(id)));
+                }
+            }
         }
         return Optional.empty();
     }

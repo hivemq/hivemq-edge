@@ -17,7 +17,7 @@
 package com.hivemq.pulse.asset;
 
 import com.hivemq.configuration.reader.PulseExtractor;
-import com.hivemq.pulse.utils.PulseAgentAssetDiffUtils;
+import com.hivemq.pulse.utils.PulseAgentAssetUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -36,6 +36,6 @@ public class PulseAgentAssetChangedListener implements ExternalAssetProvider.Ass
 
     @Override
     public void onAssetsChanged(final @NotNull List<Asset> remoteAssets) {
-        PulseAgentAssetDiffUtils.resolve(pulseExtractor, remoteAssets);
+        PulseAgentAssetUtils.resolveDiff(pulseExtractor, remoteAssets);
     }
 }

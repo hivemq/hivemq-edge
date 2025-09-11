@@ -35,13 +35,25 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class PulseAgentAssetDiffUtils {
-    private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(PulseAgentAssetDiffUtils.class);
+public class PulseAgentAssetUtils {
+    private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(PulseAgentAssetUtils.class);
 
-    private PulseAgentAssetDiffUtils() {
+    private PulseAgentAssetUtils() {
     }
 
-    public static void resolve(final @NotNull PulseExtractor pulseExtractor, final @NotNull List<Asset> remoteAssets) {
+    public static @NotNull Map<String, PulseAssetEntity> toAssetMap(final @NotNull PulseEntity pulseEntity) {
+        return pulseEntity.getPulseAssetsEntity()
+                .getPulseAssetEntities()
+                .stream()
+                .collect(Collectors.toMap(e -> e.getId().toString(),
+                        Function.identity(),
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new));
+    }
+
+    public static void resolveDiff(
+            final @NotNull PulseExtractor pulseExtractor,
+            final @NotNull List<Asset> remoteAssets) {
         final PulseEntity oldPulseEntity = pulseExtractor.getPulseEntity();
         // TODO Update data combiners.
         synchronized (oldPulseEntity.getLock()) {

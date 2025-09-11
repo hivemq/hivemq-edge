@@ -21,18 +21,13 @@ import com.hivemq.http.error.ProblemDetails;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.UUID;
 
-public class ManagedAssetNotFoundError extends ProblemDetails {
-    public ManagedAssetNotFoundError(final @NotNull UUID id) {
-        this(id.toString());
-    }
-
-    public ManagedAssetNotFoundError(final @NotNull String id) {
-        super("ManagedAssetNotFoundError",
-                "Managed Asset Not Found",
-                "The managed asset '" + id + "' is not found.",
-                HttpStatus.NOT_FOUND_404,
+public class InvalidManagedAssetSchemaError extends ProblemDetails {
+    public InvalidManagedAssetSchemaError(final @NotNull String id) {
+        super("InvalidManagedAssetSchemaError",
+                "Invalid Managed Asset Schema",
+                "The schema of the managed asset '" + id + "' is invalid.",
+                HttpStatus.BAD_REQUEST_400,
                 List.of());
     }
 }
