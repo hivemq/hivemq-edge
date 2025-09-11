@@ -17,7 +17,7 @@ export const useUpdateAssetMapper = () => {
     return appClient.pulse.updateAssetMapper(combinerId, requestBody)
   }
 
-  return useMutation<unknown, ApiError, UpdateAssetMapperProps>({
+  return useMutation<UpdateAssetMapperProps, ApiError, UpdateAssetMapperProps>({
     mutationFn: updateAssetMapper,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ASSET_MAPPER] })
