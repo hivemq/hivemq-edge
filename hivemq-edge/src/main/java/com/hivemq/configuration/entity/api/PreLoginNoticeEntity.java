@@ -38,7 +38,7 @@ public class PreLoginNoticeEntity {
     @XmlElement(name = "message")
     private @Nullable String message;
 
-    @XmlElement(name = "message")
+    @XmlElement(name = "consent")
     private @Nullable String consent;
 
     public PreLoginNoticeEntity() {
