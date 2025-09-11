@@ -21,8 +21,10 @@ import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.Constants;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
+import com.hivemq.edge.adapters.opcua.OpcUaClientConnection;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
@@ -54,8 +56,10 @@ public class OpcUaSubscriptionListener implements OpcUaSubscription.Subscription
     private final @NotNull String adapterId;
     final Map<OpcuaTag, Boolean> tagToFirstSeen = new ConcurrentHashMap<>();
     private final @NotNull Map<NodeId, OpcuaTag> nodeIdToTag;
+    private final @NotNull List<OpcuaTag> tags;
     private final @NotNull OpcUaClient client;
     private final @NotNull DataPointFactory dataPointFactory;
+    final @NotNull OpcUaSpecificAdapterConfig config;
 
     public OpcUaSubscriptionListener(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -64,28 +68,46 @@ public class OpcUaSubscriptionListener implements OpcUaSubscription.Subscription
             final @NotNull String adapterId,
             final @NotNull List<OpcuaTag> tags,
             final @NotNull OpcUaClient client,
-            final @NotNull DataPointFactory dataPointFactory) {
+            final @NotNull DataPointFactory dataPointFactory,
+            final @NotNull OpcUaSpecificAdapterConfig config) {
+        this.config = config;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.tagStreamingService = tagStreamingService;
         this.eventService = eventService;
         this.adapterId = adapterId;
         this.client = client;
         this.dataPointFactory = dataPointFactory;
+        this.tags = tags;
         nodeIdToTag = tags.stream()
                 .collect(Collectors.toMap(tag -> NodeId.parse(tag.getDefinition().getNode()), Function.identity()));
     }
     @Override
     public void onKeepAliveReceived(final @NotNull OpcUaSubscription subscription) {
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_KEEPALIVE_COUNT);
-        OpcUaSubscription.SubscriptionListener.super.onKeepAliveReceived(subscription);
     }
 
     @Override
     public void onTransferFailed(
-            final @NotNull OpcUaSubscription subscription,
+            final @NotNull OpcUaSubscription brokenSubscription,
             final @NotNull StatusCode status) {
+        // Transfer failed after a disconnect, the current subscription is broken.
+        // We need to create a new subscription and recreate the monitored items.
+
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_TRANSFER_FAILED_COUNT);
-        OpcUaSubscription.SubscriptionListener.super.onTransferFailed(subscription, status);
+
+        log.error("Subscription Transfer failed, recreating subscription for adapter '{}'", adapterId);
+        OpcUaClientConnection
+                .createNewSubscription(client)
+                .ifPresentOrElse(
+                        replacementSubscription -> {
+                            // reconnect the listener with the new subscription
+                            replacementSubscription.setSubscriptionListener(this);
+                            OpcUaClientConnection.syncTagsAndMonitoredItems(replacementSubscription, tags, config);
+                        },
+                        () -> {
+                            log.error("Subscription Transfer failed, unable to create new subscription '{}'", adapterId);
+                        }
+                );
     }
 
     @Override

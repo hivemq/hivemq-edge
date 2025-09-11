@@ -37,7 +37,6 @@ import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
-import org.eclipse.milo.opcua.stack.core.types.structured.TransferSubscriptionsResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -53,7 +52,7 @@ import java.util.stream.Collectors;
 import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-class OpcUaClientConnection {
+public class OpcUaClientConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
 
     private final @NotNull OpcUaSpecificAdapterConfig config;
@@ -64,8 +63,6 @@ class OpcUaClientConnection {
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
-
-    private final @NotNull AtomicReference<UInteger> lastKnownSubscriptionId;
 
     private final @NotNull AtomicReference<ConnectionContext> context = new AtomicReference<>();
 
@@ -87,12 +84,10 @@ class OpcUaClientConnection {
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
         this.tags = tags;
-        this.lastKnownSubscriptionId = lastSubscriptionId;
     }
 
-    @NotNull synchronized boolean start(final ParsedConfig parsedConfig) {
-        final var subscriptionIdOptional = Optional.ofNullable(lastKnownSubscriptionId.get());
-        log.debug("Subscribing to OPC UA client with subscriptionId: {}", subscriptionIdOptional.orElse(null));
+    synchronized boolean start(final ParsedConfig parsedConfig) {
+        log.debug("Subscribing to OPC UA client");
         final OpcUaClient client;
         final var faultListener = new OpcUaServiceFaultListener(protocolAdapterMetricsService, eventService, adapterId);
         final var activityListener = new OpcUaSessionActivityListener(protocolAdapterMetricsService, eventService, adapterId, protocolAdapterState);
@@ -117,7 +112,7 @@ class OpcUaClientConnection {
             return false;
         }
 
-        final var subscriptionOptional = subscribe(client, subscriptionIdOptional);
+        final var subscriptionOptional = subscribe(client);
 
         if(subscriptionOptional.isEmpty()) {
             log.error("Failed to create or transfer OPC UA subscription. Closing client connection.");
@@ -174,16 +169,13 @@ class OpcUaClientConnection {
      * It then synchronizes the tags and monitored items.
      *
      * @param client                the OPC UA client
-     * @param subscriptionOptional  an Optional containing the subscription ID if available
      * @return an Optional containing the created or transferred subscription, or empty if failed
      */
-    private @NotNull Optional<OpcUaSubscription> subscribe(final @NotNull OpcUaClient client, final @NotNull Optional<UInteger> subscriptionOptional) {
-            return subscriptionOptional
-                    .flatMap(subscriptionId -> transferSubscription(client, subscriptionId))
-                    .or(() -> createNewSubscription(client))
+    private @NotNull Optional<OpcUaSubscription> subscribe(final @NotNull OpcUaClient client) {
+            return createNewSubscription(client)
                     .flatMap(subscription -> {
                         subscription.setPublishingInterval((double) config.getOpcuaToMqttConfig().publishingInterval());
-                        subscription.setSubscriptionListener(new OpcUaSubscriptionListener(protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, dataPointFactory));
+                        subscription.setSubscriptionListener(new OpcUaSubscriptionListener(protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, dataPointFactory, config));
                         if(syncTagsAndMonitoredItems(subscription, tags, config)) {
                             return Optional.of(subscription);
                         } else {
@@ -200,7 +192,7 @@ class OpcUaClientConnection {
      * @param client the OPC UA client
      * @return an Optional containing the created subscription or empty if creation failed
      */
-    private @NotNull Optional<OpcUaSubscription> createNewSubscription(final @NotNull OpcUaClient client) {
+    public static @NotNull Optional<OpcUaSubscription> createNewSubscription(final @NotNull OpcUaClient client) {
         log.debug("Creating new OPC UA subscription");
         final OpcUaSubscription subscription = new OpcUaSubscription(client);
         try {
@@ -209,7 +201,6 @@ class OpcUaClientConnection {
                     .getSubscriptionId()
                     .map(subscriptionId -> {
                         log.trace("New subscription ID: {}", subscriptionId);
-                        lastKnownSubscriptionId.set(subscriptionId);
                         return subscription;
                     })
                     .or(() -> {
@@ -223,45 +214,6 @@ class OpcUaClientConnection {
     }
 
     /**
-     * Transfers an existing subscription to the current client.
-     * If the subscription is not found, it will return an empty Optional.
-     *
-     * @param client         the OPC UA client
-     * @param subscriptionId the subscription ID to transfer
-     * @return an Optional containing the transferred subscription or empty if not found
-     */
-    private static @NotNull Optional<OpcUaSubscription> transferSubscription(final @NotNull OpcUaClient client, final @NotNull UInteger subscriptionId) {
-        log.debug("Transfer OPC UA subscription: {}", subscriptionId);
-        final TransferSubscriptionsResponse response;
-        try {
-            response = client.transferSubscriptions(List.of(subscriptionId), true);
-        } catch (final UaException e) {
-            log.debug("OPC UA subscription not transferred to connection", e);
-            return Optional.empty();
-        }
-
-        final var results = response.getResults();
-        if (results != null && results.length > 0) {
-            if (results[0].getStatusCode().isGood()) {
-                return client.getSubscriptions().stream()
-                        .filter(subscription ->
-                                subscription
-                                        .getSubscriptionId()
-                                        .map(currentSubscriptionId -> currentSubscriptionId.equals(subscriptionId))
-                                        .orElse(false))
-                        .findFirst();
-            } else {
-                log.debug("OPC UA subscription not transferred to connection: {}", results[0].getStatusCode().toString());
-                return Optional.empty();
-            }
-        } else {
-            log.error("OPC UA subscription not transferred to connection: no results returned");
-            return Optional.empty();
-        }
-
-    }
-
-    /**
      * Synchronizes the tags and monitored items in the subscription.
      * It removes monitored items that are not in the tags list and adds new monitored items from the tags list.
      * It also updates existing monitored items with the configured queue size and sampling interval.
@@ -271,7 +223,7 @@ class OpcUaClientConnection {
      * @param config       the configuration for the OPC UA adapter
      * @return true if synchronization was successful, false otherwise
      */
-    private static boolean syncTagsAndMonitoredItems(final @NotNull OpcUaSubscription subscription, final @NotNull List<OpcuaTag> tags, final @NotNull OpcUaSpecificAdapterConfig config) {
+    public static boolean syncTagsAndMonitoredItems(final @NotNull OpcUaSubscription subscription, final @NotNull List<OpcuaTag> tags, final @NotNull OpcUaSpecificAdapterConfig config) {
 
         final var nodeIdToTag = tags.stream().collect(Collectors.toMap(tag -> NodeId.parse(tag.getDefinition().getNode()), Function.identity()));
         final var nodeIdToMonitoredItem = subscription.getMonitoredItems().stream().collect(Collectors.toMap(monitoredItem -> monitoredItem.getReadValueId().getNodeId(), Function.identity()));
