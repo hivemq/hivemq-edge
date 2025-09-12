@@ -57,7 +57,7 @@ public class PreLoginNotice {
         this.consent = consent;
     }
 
-    public boolean isEnabled() {
+    public boolean getEnabled() {
         return enabled;
     }
 
