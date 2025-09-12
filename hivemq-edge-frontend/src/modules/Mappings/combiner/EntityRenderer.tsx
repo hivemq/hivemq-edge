@@ -66,8 +66,6 @@ export const EntityRenderer: FC<EntityRendererProps> = ({ reference }) => {
   if (reference.type === EntityType.BRIDGE) return <BridgeEntityRenderer reference={reference} />
   if (reference.type === EntityType.ADAPTER) return <AdapterEntityRenderer reference={reference} />
   if (reference.type === EntityType.EDGE_BROKER) return <BrokerEntityRenderer reference={reference} />
-  // TODO[35769] This is a hack; PULSE_AGENT needs to be supported as a valid EntityType
-  if (reference.type === EntityType.DEVICE) return <PulseAgentEntityRenderer reference={reference} />
   if (reference.type === EntityType.PULSE_AGENT) return <PulseAgentEntityRenderer reference={reference} />
   return <ErrorMessage message={t('combiner.error.noValidReference')} />
 }

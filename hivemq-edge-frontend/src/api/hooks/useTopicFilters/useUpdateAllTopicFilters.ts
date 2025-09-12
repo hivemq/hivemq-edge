@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { ApiError } from '../../__generated__'
-import { type TopicFilterList } from '../../__generated__'
+import type { ApiError } from '@/api/__generated__'
+import { type TopicFilterList } from '@/api/__generated__'
 
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'

@@ -58,8 +58,7 @@ describe('EntityRenderer', () => {
 
   it('should render a Pulse Agent', () => {
     const mockPulseEntityReference: EntityReference = {
-      // TODO[35769] This is a hack; PULSE_AGENT needs to be supported as a valid EntityType
-      type: EntityType.DEVICE,
+      type: EntityType.PULSE_AGENT,
       id: mockBridgeId,
     }
     cy.mountWithProviders(<EntityRenderer reference={mockPulseEntityReference} />)
