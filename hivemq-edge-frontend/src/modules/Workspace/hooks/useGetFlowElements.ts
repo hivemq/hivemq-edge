@@ -1,10 +1,11 @@
+import { useListAssetMappers } from '@/api/hooks/useAssetMapper'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Edge, Node } from '@xyflow/react'
 import { useEdgesState, useNodesState } from '@xyflow/react'
 import { useTheme } from '@chakra-ui/react'
 
-import type { ProtocolAdapter } from '@/api/__generated__'
+import type { Combiner, ProtocolAdapter } from '@/api/__generated__'
 import { Capability } from '@/api/__generated__'
 import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
@@ -33,13 +34,20 @@ const useGetFlowElements = () => {
   const { data: adapters, isLoading: isAdapterLoading } = useListProtocolAdapters()
   const { data: listenerList, isLoading: isListenerLoading } = useGetListeners()
   const { data: combinerList, isLoading: isCombinerLoading } = useListCombiners()
+  const { data: assetMapperList, isLoading: isAssetMapperLoading } = useListAssetMappers()
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const { data: hasPulse } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
 
   const { items: listeners } = listenerList || {}
 
-  const isLoading = isAdapterLoading || isListenerLoading || isCombinerLoading || isBridgeLoading || isTypeLoading
+  const isLoading =
+    isAdapterLoading ||
+    isListenerLoading ||
+    isCombinerLoading ||
+    isBridgeLoading ||
+    isTypeLoading ||
+    isAssetMapperLoading
 
   useEffect(() => {
     const nodes: Node[] = []
@@ -97,7 +105,7 @@ const useGetFlowElements = () => {
       edges.push(pulseConnector)
     }
 
-    combinerList?.items?.forEach((combiner, index) => {
+    const generateDataTransformationNodes = (combiner: Combiner, index: number) => {
       const sources =
         combiner.sources?.items
           ?.map((entity) => {
@@ -115,7 +123,10 @@ const useGetFlowElements = () => {
 
       nodes.push(nodeCombiner)
       edges.push(edgeConnector, ...sourceConnectors)
-    })
+    }
+
+    combinerList?.items?.forEach(generateDataTransformationNodes)
+    assetMapperList?.items?.forEach(generateDataTransformationNodes)
 
     setNodes([nodeEdge, ...applyLayout(nodes, groups)])
     setEdges([...edges])
@@ -130,6 +141,7 @@ const useGetFlowElements = () => {
     options,
     theme,
     adapterTypes?.items,
+    assetMapperList?.items,
     isLoading,
     combinerList,
     hasPulse,
