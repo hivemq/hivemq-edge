@@ -202,12 +202,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
       return
     }
 
-    let promise
-    if (isAssetManager) {
-      promise = onCreateAssetMapper(links)
-    } else {
-      promise = onCreateCombiner(links)
-    }
+    const promise = isAssetManager ? onCreateAssetMapper(links) : onCreateCombiner(links)
 
     toast.promise(promise, getOptions(areAllCandidatesConnected))
     promise.then(() => {
