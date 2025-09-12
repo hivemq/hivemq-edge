@@ -190,6 +190,9 @@
                 </roles>
             </user>
         </users>
+        <pre-login-notice>
+            <enabled>false</enabled>
+        </pre-login-notice>
     </admin-api>
     <uns>
         <isa95>

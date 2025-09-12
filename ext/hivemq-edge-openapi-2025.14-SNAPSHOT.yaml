@@ -101,7 +101,7 @@ paths:
       responses:
         default:
           content:
-            '*/*': {}
+            '*/*': { }
           description: default response
   /api/v1/auth/authenticate:
     post:
@@ -196,8 +196,8 @@ paths:
         Get all policies. 
 
          This endpoint returns the content of the policies with the content-type `application/json`. 
+      
 
-         
       operationId: getAllBehaviorPolicies
       parameters:
         - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, createdAt, lastUpdatedAt, deserialization, matching, behavior, onTransitions'
@@ -247,7 +247,7 @@ paths:
                           clientIdRegex: .*
                         behavior:
                           id: Mqtt.events
-                          arguments: {}
+                          arguments: { }
                         onTransitions:
                           - fromState: Any.*
                             toState: Any.*
@@ -265,7 +265,7 @@ paths:
                           clientIdRegex: .*
                         behavior:
                           id: Mqtt.events
-                          arguments: {}
+                          arguments: { }
                         onTransitions:
                           - fromState: Any.*
                             toState: Any.*
@@ -288,7 +288,7 @@ paths:
                           clientIdRegex: .*
                         behavior:
                           id: Mqtt.events
-                          arguments: {}
+                          arguments: { }
                         onTransitions:
                           - fromState: Any.*
                             toState: Any.*
@@ -306,7 +306,7 @@ paths:
                           clientIdRegex: .*
                         behavior:
                           id: Mqtt.events
-                          arguments: {}
+                          arguments: { }
                         onTransitions:
                           - fromState: Any.*
                             toState: Any.*
@@ -340,7 +340,7 @@ paths:
                           clientIdRegex: .*
                         behavior:
                           id: Mqtt.events
-                          arguments: {}
+                          arguments: { }
                         onTransitions:
                           - fromState: Any.*
                             toState: Any.*
@@ -387,7 +387,7 @@ paths:
                     version: latest
               behavior:
                 id: Mqtt.events
-                arguments: {}
+                arguments: { }
               onTransitions:
                 - fromState: Any.*
                   toState: Any.*
@@ -425,10 +425,10 @@ paths:
                         schema:
                           schemaId: schema
                           version: latest
-                        arguments: {}
+                        arguments: { }
                     behavior:
                       id: Mqtt.events
-                      arguments: {}
+                      arguments: { }
                     onTransitions:
                       - fromState: Any.*
                         toState: Any.*
@@ -479,8 +479,8 @@ paths:
     delete:
       description: |-
         Deletes an existing policy. 
+      
 
-         
       operationId: deleteBehaviorPolicy
       parameters:
         - description: The identifier of the policy to delete.
@@ -537,8 +537,8 @@ paths:
         Get a specific policy. 
 
          This endpoint returns the content of the policy with the content-type `application/json`. 
+      
 
-         
       operationId: getBehaviorPolicy
       parameters:
         - description: The identifier of the policy.
@@ -577,10 +577,10 @@ paths:
                         schema:
                           schemaId: schema
                           version: latest
-                        arguments: {}
+                        arguments: { }
                     behavior:
                       id: Mqtt.events
-                      arguments: {}
+                      arguments: { }
                     onTransitions:
                       - fromState: Any.*
                         toState: Any.*
@@ -614,7 +614,7 @@ paths:
         Update a behavior policy
 
         The path parameter 'policyId' must match the 'id' of the policy in the request body.
-         
+
       operationId: updateBehaviorPolicy
       parameters:
         - description: The identifier of the policy.
@@ -649,7 +649,7 @@ paths:
                     version: latest
               behavior:
                 id: Mqtt.events
-                arguments: {}
+                arguments: { }
               onTransitions:
                 - fromState: Any.*
                   toState: Any.*
@@ -687,10 +687,10 @@ paths:
                         schema:
                           schemaId: schema
                           version: latest
-                        arguments: {}
+                        arguments: { }
                     behavior:
                       id: Mqtt.events
-                      arguments: {}
+                      arguments: { }
                     onTransitions:
                       - fromState: Any.*
                         toState: Any.*
@@ -809,8 +809,8 @@ paths:
         Get all data policies. 
 
          This endpoint returns the content of the policies with the content-type `application/json`. 
+      
 
-         
       operationId: getAllDataPolicies
       parameters:
         - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, createdAt, lastUpdatedAt, matching, validation, onSuccess, onFailure'
@@ -1187,8 +1187,8 @@ paths:
     delete:
       description: |-
         Deletes an existing data policy. 
+      
 
-         
       operationId: deleteDataPolicy
       parameters:
         - description: The identifier of the data policy to delete.
@@ -1239,8 +1239,8 @@ paths:
         Get a specific data policy. 
 
          This endpoint returns the content of the policy with the content-type `application/json`. 
+      
 
-         
       operationId: getDataPolicy
       parameters:
         - description: The identifier of the policy.
@@ -1332,7 +1332,7 @@ paths:
 
         The path parameter 'policyId' must match the 'id' of the policy in the request body.
          The matching part of policies cannot be changed with an update.
-         
+
       operationId: updateDataPolicy
       parameters:
         - description: The identifier of the policy.
@@ -1513,8 +1513,8 @@ paths:
                               title: Mqtt.events
                               description: This FSM does not require any arguments.
                               type: object
-                              required: []
-                              properties: {}
+                              required: [ ]
+                              properties: { }
                       - if:
                           type: object
                           properties:
@@ -1527,8 +1527,8 @@ paths:
                               title: Publish.duplicate options
                               description: This FSM does not require any arguments.
                               type: object
-                              required: []
-                              properties: {}
+                              required: [ ]
+                              properties: { }
               schema:
                 $ref: '#/components/schemas/JsonNode'
           description: Success
@@ -1596,7 +1596,7 @@ paths:
                       - title: Mqtt.drop
                         description: Drops the MQTT packet that is currently processed
                         type: object
-                        required: []
+                        required: [ ]
                         metaData:
                           isTerminal: false
                           isDataOnly: false
@@ -1628,12 +1628,12 @@ paths:
                       - title: Mqtt.disconnect
                         description: Disconnects the client
                         type: object
-                        required: []
+                        required: [ ]
                         metaData:
                           isTerminal: true
                           isDataOnly: false
                           hasArguments: false
-                        properties: {}
+                        properties: { }
                       - title: Serdes.deserialize
                         description: Deserializes a binary MQTT message payload into a data object based on the configured JSON Schema or Protobuf schema.
                         type: object
@@ -1749,8 +1749,8 @@ paths:
         Get all schemas. 
 
          This endpoint returns the content of the schemas with the content-type `application/json`. 
+      
 
-         
       operationId: getAllSchemas
       parameters:
         - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, type, schemaDefinition, createdAt'
@@ -1959,8 +1959,8 @@ paths:
     delete:
       description: |-
         Deletes the selected schema and all associated versions of the schema. 
+      
 
-         
       operationId: deleteSchema
       parameters:
         - description: The schema identifier of the schema versions to delete.
@@ -2017,8 +2017,8 @@ paths:
         Get a specific schema. 
 
          This endpoint returns the content of the latest version of the schema with the content-type `application/json`. 
+      
 
-         
       operationId: getSchema
       parameters:
         - description: The identifier of the schema.
@@ -2487,7 +2487,7 @@ paths:
                           imageUrl: ''
                           external: true
                     modules:
-                      items: []
+                      items: [ ]
                     extensions:
                       items:
                         - id: extension-1
@@ -2640,12 +2640,12 @@ paths:
                         password: '*****'
                         loopPreventionEnabled: true
                         loopPreventionHopCount: 1
-                        remoteSubscriptions: []
+                        remoteSubscriptions: [ ]
                         localSubscriptions:
                           - filters:
                               - '#'
                             destination: prefix/{#}/bridge/${bridge.name}
-                            excludes: []
+                            excludes: [ ]
                             customUserProperties:
                               - key: test1
                                 value: test2
@@ -2656,8 +2656,8 @@ paths:
                           keystorePassword: ''
                           privateKeyPassword: ''
                           truststorePassword: ''
-                          protocols: []
-                          cipherSuites: []
+                          protocols: [ ]
+                          cipherSuites: [ ]
                           keystoreType: JKS
                           truststoreType: JKS
                           verifyHostname: true
@@ -2777,12 +2777,12 @@ paths:
                     password: password
                     loopPreventionEnabled: true
                     loopPreventionHopCount: 1
-                    remoteSubscriptions: []
+                    remoteSubscriptions: [ ]
                     localSubscriptions:
                       - filters:
                           - '#'
                         destination: prefix/{#}/bridge/${bridge.name}
-                        excludes: []
+                        excludes: [ ]
                         customUserProperties:
                           - key: test1
                             value: test2
@@ -2793,8 +2793,8 @@ paths:
                       keystorePassword: ''
                       privateKeyPassword: ''
                       truststorePassword: ''
-                      protocols: []
-                      cipherSuites: []
+                      protocols: [ ]
+                      cipherSuites: [ ]
                       keystoreType: JKS
                       truststoreType: JKS
                       verifyHostname: true
@@ -2969,7 +2969,7 @@ paths:
                 event-list-result:
                   description: Example response with several events.
                   summary: Event List result
-                  value: {}
+                  value: { }
               schema:
                 $ref: '#/components/schemas/EventList'
           description: Success
@@ -3219,7 +3219,7 @@ paths:
                                 description: ''
                                 nodeType: VALUE
                                 selectable: true
-                                children: []
+                                children: [ ]
               schema:
                 $ref: '#/components/schemas/ValuesTree'
           description: Success
@@ -5103,6 +5103,27 @@ components:
             $ref: '#/components/schemas/Link'
       required:
         - items
+    PreLoginNotice:
+      type: object
+      description: The definition of a notice to be presented to the users before login
+      properties:
+        enabled:
+          type: boolean
+          description: Indicates whether the pre-login notice is enabled or not
+          default: false
+        title:
+          type: string
+          description: The title of the pre-login notice, also presented to the user
+        message:
+          type: string
+          description: The full text of the pre-login notice
+        consent:
+          type: string
+          description: An optional text for a consent checkbox that, if present, users will need to check to continue to the login itself
+      required:
+        - enabled
+        - message
+        - title
     EnvironmentProperties:
       type: object
       description: A map of properties relating to the installation
@@ -5256,6 +5277,8 @@ components:
         trackingAllowed:
           type: boolean
           description: Is the tracking of user actions allowed.
+        preLoginNotice:
+          $ref: '#/components/schemas/PreLoginNotice'
     Notification:
       type: object
       description: List of result items that are returned by this endpoint

@@ -1049,6 +1049,16 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="pre-login-notice" minOccurs="0">
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="enabled" type="xs:boolean" default="false"/>
+                        <xs:element name="title" type="xs:string" minOccurs="0"/>
+                        <xs:element name="message" type="xs:string" minOccurs="0"/>
+                        <xs:element name="consent" type="xs:string" minOccurs="0"/>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="unsEntity">

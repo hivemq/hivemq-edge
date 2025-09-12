@@ -390,7 +390,7 @@ public class ProtocolAdapterExtractorTest {
         final ProtocolAdapterEntity protocolAdapterEntity =
                 new ProtocolAdapterEntity("adapterId", "protocolId", 1, Map.of(), List.of(), List.of(), List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
-        assertThat(configFileReader.setConfiguration(entity)).isTrue();
+        assertThat(configFileReader.internalApplyConfig(entity)).isTrue();
     }
 
     @Test
@@ -406,7 +406,7 @@ public class ProtocolAdapterExtractorTest {
                 List.of(),
                 List.of(new TagEntity("abc", "def", Map.of())));
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
-        assertThat(configFileReader.setConfiguration(entity)).isTrue();
+        assertThat(configFileReader.internalApplyConfig(entity)).isTrue();
     }
 
     @Test
@@ -430,7 +430,7 @@ public class ProtocolAdapterExtractorTest {
                 List.of(),
                 List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
-        assertThat(configFileReader.setConfiguration(entity)).isFalse();
+        assertThat(configFileReader.internalApplyConfig(entity)).isFalse();
     }
 
     @Test
@@ -454,7 +454,7 @@ public class ProtocolAdapterExtractorTest {
                 List.of(),
                 List.of(new TagEntity("abc", "def", Map.of())));
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
-        assertThat(configFileReader.setConfiguration(entity)).isFalse();
+        assertThat(configFileReader.internalApplyConfig(entity)).isFalse();
     }
 
     @ParameterizedTest
@@ -482,7 +482,7 @@ public class ProtocolAdapterExtractorTest {
                 List.of(),
                 List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
-        assertThat(configFileReader.setConfiguration(entity)).isFalse();
+        assertThat(configFileReader.internalApplyConfig(entity)).isFalse();
     }
 
     @Test
@@ -500,7 +500,7 @@ public class ProtocolAdapterExtractorTest {
                 List.of(southboundMappingEntity),
                 List.of(new TagEntity("abc", "def", Map.of())));
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
-        assertThat(configFileReader.setConfiguration(entity)).isFalse();
+        assertThat(configFileReader.internalApplyConfig(entity)).isFalse();
     }
 
     @ParameterizedTest
@@ -523,6 +523,6 @@ public class ProtocolAdapterExtractorTest {
                 List.of(southboundMappingEntity),
                 List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
-        assertThat(configFileReader.setConfiguration(entity)).isFalse();
+        assertThat(configFileReader.internalApplyConfig(entity)).isFalse();
     }
 }

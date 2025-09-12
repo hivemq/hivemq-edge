@@ -25,6 +25,7 @@ import com.hivemq.api.model.components.LinkList;
 import com.hivemq.api.model.components.ModuleList;
 import com.hivemq.api.model.components.Notification;
 import com.hivemq.api.model.components.NotificationList;
+import com.hivemq.api.model.components.PreLoginNotice;
 import com.hivemq.api.model.firstuse.FirstUseInformation;
 import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.api.utils.LoremIpsum;
@@ -32,7 +33,6 @@ import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
-import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
 import com.hivemq.edge.api.FrontendApi;
@@ -40,19 +40,18 @@ import com.hivemq.edge.api.model.Capability;
 import com.hivemq.edge.api.model.CapabilityList;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import com.hivemq.protocols.ProtocolAdapterManager;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
-import java.util.HashMap;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-/**
- * @author Simon L Johnson
- */
+import static com.hivemq.edge.HiveMQEdgeConstants.CONFIGURATION_EXPORT_ENABLED;
+import static com.hivemq.edge.HiveMQEdgeConstants.MUTABLE_CONFIGURAION_ENABLED;
+import static com.hivemq.edge.HiveMQEdgeConstants.VERSION_PROPERTY;
+
 public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     private final @NotNull ConfigurationService configurationService;
@@ -81,10 +80,17 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
         this.hivemqId = hivemqId;
     }
 
+    private static @NotNull Capability fromModel(final @NotNull com.hivemq.api.model.capabilities.Capability cap) {
+        return Capability.builder()
+                .id(Capability.IdEnum.fromString(cap.getId()))
+                .description(cap.getDescription())
+                .displayName(cap.getDisplayName())
+                .build();
+    }
+
     @Override
     public @NotNull Response getConfiguration() {
-
-        final GatewayConfiguration configuration = new GatewayConfiguration(getEnvironmentProperties(),
+        return Response.ok(new GatewayConfiguration(getEnvironmentProperties(),
                 getCloudLink(),
                 getGitHubLink(),
                 getDocumentationLink(),
@@ -94,13 +100,48 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
                 getModules(),
                 getExtensions(),
                 hivemqId.get(),
-                configurationService.usageTrackingConfiguration().isUsageTrackingEnabled());
-        return Response.ok(configuration).build();
+                configurationService.usageTrackingConfiguration().isUsageTrackingEnabled(),
+                configurationService.apiConfiguration().getPreLoginNotice())).build();
     }
 
+    @Override
+    public @NotNull Response getNotifications() {
+        final ImmutableList.Builder<@NotNull Notification> notifs = new ImmutableList.Builder<>();
+        final Optional<Long> lastUpdate = configurationService.getLastUpdateTime();
+        if (!configurationService.gatewayConfiguration().isMutableConfigurationEnabled() &&
+                configurationService.gatewayConfiguration().isConfigurationExportEnabled() &&
+                lastUpdate.isPresent() &&
+                lastUpdate.get() > System.currentTimeMillis() - (60000 * 5)) {
+            notifs.add(new Notification(Notification.LEVEL.NOTICE,
+                    "Configuration Has Changed",
+                    "The gateway configuration has recently been modify. In order to persist these changes across runtimes, please export your configuration for use in your containers.",
+                    new Link("Download XML Configuration",
+                            "/configuration-download",
+                            null,
+                            null,
+                            null,
+                            Boolean.FALSE)));
+        }
+        if (ApiUtils.hasDefaultUser(configurationService.apiConfiguration().getUserList())) {
+            notifs.add(new Notification(Notification.LEVEL.WARNING,
+                    "Default Credentials Need Changing!",
+                    "Your gateway access is configured to use the default username/password combination. This is a security risk. Please ensure you modify your access credentials in your config.xml file.",
+                    null));
+        }
+        return Response.ok(new NotificationList(notifs.build())).build();
+    }
 
-    public @NotNull LinkList getDashboardCTAs() {
-        final ImmutableList.Builder<Link> links = new ImmutableList.Builder().add(new Link("Connect My First Device",
+    @Override
+    public @NotNull Response getCapabilities() {
+        return Response.ok(new CapabilityList(capabilityService.getList()
+                .getItems()
+                .stream()
+                .map(FrontendResourceImpl::fromModel)
+                .toList())).build();
+    }
+
+    private @NotNull LinkList getDashboardCTAs() {
+        return new LinkList(List.of(new Link("Connect My First Device",
                         "./protocol-adapters?from=dashboard-cta",
                         LoremIpsum.generate(40),
                         null,
@@ -117,35 +158,38 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
                         LoremIpsum.generate(40),
                         null,
                         null,
-                        Boolean.FALSE));
-        return new LinkList(links.build());
+                        Boolean.FALSE)));
     }
 
-    protected @NotNull Link getCloudLink() {
+    private @NotNull PreLoginNotice getPreLoginNotice() {
+        return configurationService.apiConfiguration().getPreLoginNotice();
+    }
+
+    private @NotNull Link getCloudLink() {
         return hiveMQEdgeRemoteConfigurationService.getConfiguration().getCloudLink();
     }
 
-    protected @NotNull Link getGitHubLink() {
+    private @NotNull Link getGitHubLink() {
         return hiveMQEdgeRemoteConfigurationService.getConfiguration().getGitHubLink();
     }
 
-    protected @NotNull Link getDocumentationLink() {
+    private @NotNull Link getDocumentationLink() {
         return hiveMQEdgeRemoteConfigurationService.getConfiguration().getDocumentationLink();
     }
 
-    protected @NotNull LinkList getResources() {
+    private @NotNull LinkList getResources() {
         return new LinkList(hiveMQEdgeRemoteConfigurationService.getConfiguration().getResources());
     }
 
-    protected @NotNull ExtensionList getExtensions() {
+    private @NotNull ExtensionList getExtensions() {
         return new ExtensionList(modulesAndExtensionsService.getExtensions());
     }
 
-    protected @NotNull ModuleList getModules() {
+    private @NotNull ModuleList getModules() {
         return new ModuleList(modulesAndExtensionsService.getModules());
     }
 
-    protected @NotNull FirstUseInformation getFirstUse() {
+    private @NotNull FirstUseInformation getFirstUse() {
         //-- First use is determined by zero configuration
         final boolean firstUse = configurationService.bridgeExtractor().getBridges().isEmpty() &&
                 protocolAdapterManager.getProtocolAdapters().isEmpty();
@@ -164,54 +208,12 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
         return new FirstUseInformation(firstUse, prefillUsername, prefillPassword, firstUseTitle, firstUseDescription);
     }
 
-    @Override
-    public @NotNull Response getNotifications() {
-        final ImmutableList.Builder<Notification> notifs = new ImmutableList.Builder<>();
-        final Optional<Long> lastUpdate = configurationService.getLastUpdateTime();
-        if (!configurationService.gatewayConfiguration().isMutableConfigurationEnabled() &&
-                configurationService.gatewayConfiguration().isConfigurationExportEnabled() &&
-                lastUpdate.isPresent() &&
-                lastUpdate.get() > System.currentTimeMillis() - (60000 * 5)) {
-            final Link xmlDownload =
-                    new Link("Download XML Configuration", "/configuration-download", null, null, null, Boolean.FALSE);
-            notifs.add(new Notification(Notification.LEVEL.NOTICE,
-                    "Configuration Has Changed",
-                    "The gateway configuration has recently been modify. In order to persist these changes across runtimes, please export your configuration for use in your containers.",
-                    xmlDownload));
-        }
-        if (ApiUtils.hasDefaultUser(configurationService.apiConfiguration().getUserList())) {
-            notifs.add(new Notification(Notification.LEVEL.WARNING,
-                    "Default Credentials Need Changing!",
-                    "Your gateway access is configured to use the default username/password combination. This is a security risk. Please ensure you modify your access credentials in your config.xml file.",
-                    null));
-        }
-        return Response.ok(new NotificationList(notifs.build())).build();
+    private @NotNull EnvironmentProperties getEnvironmentProperties() {
+        return new EnvironmentProperties(Map.of(VERSION_PROPERTY,
+                systemInformation.getHiveMQVersion(),
+                MUTABLE_CONFIGURAION_ENABLED,
+                String.valueOf(configurationService.gatewayConfiguration().isMutableConfigurationEnabled()),
+                CONFIGURATION_EXPORT_ENABLED,
+                String.valueOf(configurationService.gatewayConfiguration().isConfigurationExportEnabled())));
     }
-
-    @Override
-    public @NotNull Response getCapabilities() {
-        final List<Capability> capabilities = capabilityService.getList()
-                .getItems()
-                .stream()
-                .map(cap -> (Capability) Capability.builder()
-                        .id(Capability.IdEnum.fromString(cap.getId()))
-                        .description(cap.getDescription())
-                        .displayName(cap.getDisplayName())
-                        .build()).collect(Collectors.toList());
-
-        return Response.ok(CapabilityList.builder().items(capabilities).build()).build();
-    }
-
-
-    protected @NotNull EnvironmentProperties getEnvironmentProperties() {
-        final Map<String, String> env = new HashMap<>();
-        env.put(HiveMQEdgeConstants.VERSION_PROPERTY, systemInformation.getHiveMQVersion());
-        env.put(HiveMQEdgeConstants.MUTABLE_CONFIGURAION_ENABLED,
-                String.valueOf(configurationService.gatewayConfiguration().isMutableConfigurationEnabled()));
-        env.put(HiveMQEdgeConstants.CONFIGURATION_EXPORT_ENABLED,
-                String.valueOf(configurationService.gatewayConfiguration().isConfigurationExportEnabled()));
-        return new EnvironmentProperties(env);
-    }
-
-
 }
