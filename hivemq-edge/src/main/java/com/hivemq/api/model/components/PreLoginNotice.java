@@ -31,11 +31,11 @@ public class PreLoginNotice {
 
     @JsonProperty("title")
     @Schema(description = "The title of the notice")
-    private final @Nullable String title;
+    private final @NotNull String title;
 
     @JsonProperty("message")
     @Schema(description = "The message of the notice")
-    private final @Nullable String message;
+    private final @NotNull String message;
 
     @JsonProperty("consent")
     @Schema(description = "The message of the notice")
@@ -52,11 +52,8 @@ public class PreLoginNotice {
             final @Nullable String message,
             final @Nullable String consent) {
         this.enabled = requireNonNullElse(enabled, false);
-        if (this.enabled && (title == null || title.isEmpty() || message == null || message.isEmpty())) {
-            throw new IllegalArgumentException("Title and message cannot be null or empty when enabled");
-        }
-        this.title = title;
-        this.message = message;
+        this.title = requireNonNullElse(title, "");
+        this.message = requireNonNullElse(message, "");
         this.consent = consent;
     }
 
@@ -64,11 +61,11 @@ public class PreLoginNotice {
         return enabled;
     }
 
-    public @Nullable String getTitle() {
+    public @NotNull String getTitle() {
         return title;
     }
 
-    public @Nullable String getMessage() {
+    public @NotNull String getMessage() {
         return message;
     }
 
