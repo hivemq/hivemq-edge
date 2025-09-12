@@ -24,8 +24,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
   const [selectedItem, setSelectedItem] = useState<number | undefined>(undefined)
 
   const isAssetManager = useMemo(() => {
-    // TODO[35769] This is a hack; PULSE_AGENT needs to be supported as a valid EntityType
-    return props.formContext?.entities?.some((e) => e.type === EntityType.DEVICE)
+    return props.formContext?.entities?.some((e) => e.type === EntityType.PULSE_AGENT)
   }, [props.formContext?.entities])
 
   const handleOnSubmit = (data: DataCombining | undefined) => {
