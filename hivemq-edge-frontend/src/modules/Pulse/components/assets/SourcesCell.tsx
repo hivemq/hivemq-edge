@@ -5,7 +5,7 @@ import { Text, VStack } from '@chakra-ui/react'
 
 import type { EntityReference } from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
-import { useListCombiners } from '@/api/hooks/useCombiners'
+import { useListAssetMappers } from '@/api/hooks/useAssetMapper'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
 import { MAX_SOURCES_PER_ROW } from '@/modules/Pulse/utils/pagination-utils.ts'
@@ -18,23 +18,23 @@ interface SourcesCellProps {
 
 const SourcesCell: FC<SourcesCellProps> = ({ mappingId }) => {
   const { t } = useTranslation()
-  const { data, isLoading: isCombinersLoading } = useListCombiners()
+  const { data, isLoading: isAssetMapperLoading } = useListAssetMappers()
 
   const sources = useMemo<EntityReference[] | undefined>(() => {
     if (!data?.items) return undefined
 
-    const ownerCombiner = data.items.find((combiner) =>
-      combiner.mappings?.items.some((mapping) => {
+    const ownerMapper = data.items.find((mapper) =>
+      mapper.mappings?.items.some((mapping) => {
         return mapping.id === mappingId
       })
     )
 
-    if (!ownerCombiner?.sources.items.length) return undefined
+    if (!ownerMapper?.sources.items.length) return undefined
 
-    return ownerCombiner.sources.items.filter((e) => e.type !== EntityType.PULSE_AGENT)
+    return ownerMapper.sources.items.filter((e) => e.type !== EntityType.PULSE_AGENT)
   }, [data?.items, mappingId])
 
-  if (isCombinersLoading) return <LoaderSpinner />
+  if (isAssetMapperLoading) return <LoaderSpinner />
 
   if (!sources)
     return (

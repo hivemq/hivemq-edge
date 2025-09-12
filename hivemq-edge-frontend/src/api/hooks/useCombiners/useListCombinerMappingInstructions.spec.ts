@@ -6,7 +6,7 @@ import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.t
 
 import { handlers } from './__handlers__'
 
-import type { Instruction } from '../../__generated__'
+import type { Instruction } from '@/api/__generated__'
 import { useListCombinerMappingInstructions } from './useListCombinerMappingInstructions'
 
 describe('useListCombinerMappingInstructions', () => {
