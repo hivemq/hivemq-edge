@@ -15,6 +15,7 @@ describe('Login Page', () => {
         firstUseTitle: null,
         firstUseDescription: null,
       },
+      preLoginNotice: undefined,
     })
     loginPage.visit()
   })

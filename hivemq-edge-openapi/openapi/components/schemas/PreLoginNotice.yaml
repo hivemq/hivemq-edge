@@ -1,0 +1,20 @@
+type: object
+description: The definition of a notice to be presented to the users before login
+properties:
+  enabled:
+    type: boolean
+    description: Indicates whether the pre-login notice is enabled or not
+    default: false
+  title:
+    type: string
+    description: The title of the pre-login notice, also presented to the user
+  message:
+    type: string
+    description: The full text of the pre-login notice
+  consent:
+    type: string
+    description: An optional text for a consent checkbox that, if present, users will need to check to continue to the login itself
+required:
+  - enabled
+  - message
+  - title

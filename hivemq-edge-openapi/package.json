@@ -1,0 +1,14 @@
+{
+  "name": "hivemq-edge-api",
+  "version": "1.0.0",
+  "dependencies": {
+    "@redocly/cli": "2.0.2"
+  },
+  "private": true,
+  "scripts": {
+    "dev:start": "redocly preview -p 8888",
+    "dev:build": "redocly bundle openapi/openapi.yaml -o dist/bundle.yaml",
+    "dev:test": "redocly lint",
+    "prod:release": "redocly bundle openapi/openapi.yaml -o ../ext/hivemq-edge-openapi-2025.9-SNAPSHOT.yaml"
+  }
+}

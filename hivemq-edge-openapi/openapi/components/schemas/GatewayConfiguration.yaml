@@ -24,3 +24,5 @@ properties:
   trackingAllowed:
     type: boolean
     description: Is the tracking of user actions allowed.
+  preLoginNotice:
+    $ref: ./PreLoginNotice.yaml
