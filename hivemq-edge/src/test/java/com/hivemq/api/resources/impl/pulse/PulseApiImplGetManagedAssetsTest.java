@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.hivemq.api.pulse;
+package com.hivemq.api.resources.impl.pulse;
 
 import com.hivemq.edge.api.model.ManagedAsset;
 import com.hivemq.edge.api.model.ManagedAssetList;

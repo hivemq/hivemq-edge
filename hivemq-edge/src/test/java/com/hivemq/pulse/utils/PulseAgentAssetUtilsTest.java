@@ -20,25 +20,44 @@ import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingStatus;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
+import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.pulse.asset.Asset;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Fail.fail;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-public class PulseAgentAssetDiffUtilsTest {
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+public class PulseAgentAssetUtilsTest {
     private static final List<PulseAssetMappingStatus> STATUSES = List.of(PulseAssetMappingStatus.values());
+
+    @Mock
+    private @NotNull PulseExtractor pulseExtractor;
+
+    private @NotNull ArgumentCaptor<PulseEntity> pulseEntityArgumentCaptor;
+
     private @NotNull List<PulseAssetEntity> localAssets;
     private @NotNull List<Asset> remoteAssets;
 
     @BeforeEach
     public void setUp() {
+        pulseEntityArgumentCaptor = ArgumentCaptor.forClass(PulseEntity.class);
         localAssets = IntStream.range(0, STATUSES.size()).mapToObj(this::createLocalAsset).toList();
         remoteAssets = IntStream.range(0, STATUSES.size()).mapToObj(this::createRemoteAsset).toList();
     }
@@ -62,36 +81,51 @@ public class PulseAgentAssetDiffUtilsTest {
     }
 
     @Test
-    public void whenConfigWithoutRemoteAssetsAndWithoutMappings_thenLocalAssetsShouldBeCleared() {
-        // There are no local assets.
-        final PulseEntity pulseEntityWithoutAssets = new PulseEntity();
-        final PulseEntity newPulseEntityWithoutAssets =
-                PulseAgentAssetDiffUtils.resolve(pulseEntityWithoutAssets, List.of());
-        assertThat(newPulseEntityWithoutAssets.getPulseAssetsEntity().getPulseAssetEntities()).hasSize(0);
-        // There are local assets.
-        final PulseEntity pulseEntityWithAssets = new PulseEntity();
-        pulseEntityWithAssets.getPulseAssetsEntity().setPulseAssetEntities(localAssets);
-        final PulseEntity newPulseEntityWithAssets = PulseAgentAssetDiffUtils.resolve(pulseEntityWithAssets, List.of());
-        assertThat(newPulseEntityWithAssets.getPulseAssetsEntity().getPulseAssetEntities()).hasSize(0);
+    public void whenConfigWithoutLocalAssetsWithoutRemoteAssetsAndWithoutMappings_thenLocalAssetsShouldBeCleared() {
+        final PulseEntity pulseEntity = new PulseEntity();
+        when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
+        PulseAgentAssetUtils.resolveDiff(pulseExtractor, List.of());
+        verify(pulseExtractor).setPulseEntity(pulseEntityArgumentCaptor.capture());
+        final PulseEntity newPulseEntity = pulseEntityArgumentCaptor.getValue();
+        assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities()).hasSize(0);
+    }
+
+    @Test
+    public void whenConfigWithLocalAssetsWithoutRemoteAssetsAndWithoutMappings_thenLocalAssetsShouldBeCleared() {
+        final PulseEntity pulseEntity = new PulseEntity();
+        pulseEntity.getPulseAssetsEntity().setPulseAssetEntities(localAssets);
+        when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
+        PulseAgentAssetUtils.resolveDiff(pulseExtractor, List.of());
+        verify(pulseExtractor).setPulseEntity(pulseEntityArgumentCaptor.capture());
+        final PulseEntity newPulseEntity = pulseEntityArgumentCaptor.getValue();
+        assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities()).hasSize(0);
     }
 
     @Test
     public void whenConfigWithoutLocalAssetsAndWithMappings_thenMappingsShouldBeCleared() {
-        // There are no local asset mappings.
-        final PulseEntity pulseEntityWithoutAssetMappings = new PulseEntity();
-        final PulseEntity newPulseEntityWithoutAssetMappings =
-                PulseAgentAssetDiffUtils.resolve(pulseEntityWithoutAssetMappings, remoteAssets);
-        assertThat(newPulseEntityWithoutAssetMappings.getPulseAssetsEntity().getPulseAssetEntities()).isEqualTo(
-                localAssets.stream().map(a -> a.withDescription(null)).toList());
-        // There are local asset mappings.
-        final PulseEntity pulseConfigWithAssetMappings = new PulseEntity();
-        pulseConfigWithAssetMappings.getPulseAssetsEntity()
+        final PulseEntity pulseEntity = new PulseEntity();
+        when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
+        PulseAgentAssetUtils.resolveDiff(pulseExtractor, remoteAssets);
+        verify(pulseExtractor).setPulseEntity(pulseEntityArgumentCaptor.capture());
+        final PulseEntity newPulseEntity = pulseEntityArgumentCaptor.getValue();
+        assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities()).isEqualTo(localAssets.stream()
+                .map(a -> a.withDescription(null))
+                .toList());
+    }
+
+    @Test
+    public void whenConfigWithLocalAssetsWithoutLocalAssetsAndWithMappings_thenMappingsShouldBeCleared() {
+        final PulseEntity pulseEntity = new PulseEntity();
+        pulseEntity.getPulseAssetsEntity()
                 .getPulseAssetEntities()
                 .forEach(e -> e.getMapping().setId(UUID.randomUUID()));
-        final PulseEntity newPulseConfigWithAssetMappings =
-                PulseAgentAssetDiffUtils.resolve(pulseConfigWithAssetMappings, remoteAssets);
-        assertThat(newPulseConfigWithAssetMappings.getPulseAssetsEntity()
-                .getPulseAssetEntities()).isEqualTo(localAssets.stream().map(a -> a.withDescription(null)).toList());
+        when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
+        PulseAgentAssetUtils.resolveDiff(pulseExtractor, remoteAssets);
+        verify(pulseExtractor).setPulseEntity(pulseEntityArgumentCaptor.capture());
+        final PulseEntity newPulseEntity = pulseEntityArgumentCaptor.getValue();
+        assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities()).isEqualTo(localAssets.stream()
+                .map(a -> a.withDescription(null))
+                .toList());
     }
 
     @Test
@@ -104,11 +138,14 @@ public class PulseAgentAssetDiffUtilsTest {
                                 .id(localAssets.get(0).getId())
                                 .status(PulseAssetMappingStatus.STREAMING)
                                 .build()));
-        final PulseEntity newPulseEntity = PulseAgentAssetDiffUtils.resolve(pulseEntity,
+        when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
+        PulseAgentAssetUtils.resolveDiff(pulseExtractor,
                 List.of(remoteAssets.get(0)
                         .withName("Updated Name")
                         .withTopic("updated/topic")
                         .withJsonSchema("{ \"name\": \"Updated Name\" }")));
+        verify(pulseExtractor).setPulseEntity(pulseEntityArgumentCaptor.capture());
+        final PulseEntity newPulseEntity = pulseEntityArgumentCaptor.getValue();
         assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities()).hasSize(1);
         final PulseAssetEntity asset = newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities().get(0);
         assertThat(asset.getId()).isEqualTo(localAssets.get(0).getId());
@@ -121,7 +158,8 @@ public class PulseAgentAssetDiffUtilsTest {
 
     @Test
     public void whenLocalMappingExistsAndRemoteAssetIsRemoved_thenStatusShouldBeUpdatedCorrectly() {
-        STATUSES.forEach(status -> {
+        IntStream.range(0, STATUSES.size()).forEach(i -> {
+            final PulseAssetMappingStatus status = STATUSES.get(i);
             final PulseEntity pulseEntity = new PulseEntity();
             final PulseAssetEntity expectedAsset = localAssets.get(0)
                     .withMapping(PulseAssetMappingEntity.builder()
@@ -129,7 +167,10 @@ public class PulseAgentAssetDiffUtilsTest {
                             .status(status)
                             .build());
             pulseEntity.getPulseAssetsEntity().getPulseAssetEntities().add(expectedAsset);
-            final PulseEntity newPulseEntity = PulseAgentAssetDiffUtils.resolve(pulseEntity, List.of());
+            when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
+            PulseAgentAssetUtils.resolveDiff(pulseExtractor, List.of());
+            verify(pulseExtractor, times(i + 1)).setPulseEntity(pulseEntityArgumentCaptor.capture());
+            final PulseEntity newPulseEntity = pulseEntityArgumentCaptor.getValue();
             assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities()).hasSize(1);
             final PulseAssetEntity asset = newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities().get(0);
             assertThat(asset.getId()).isEqualTo(expectedAsset.getId());
@@ -149,7 +190,8 @@ public class PulseAgentAssetDiffUtilsTest {
 
     @Test
     public void whenLocalMappingExistsAndRemoteAssetIsNotUpdated_thenStatusShouldBeUpdatedCorrectly() {
-        STATUSES.forEach(status -> {
+        IntStream.range(0, STATUSES.size()).forEach(i -> {
+            final PulseAssetMappingStatus status = STATUSES.get(i);
             final PulseEntity pulseEntity = new PulseEntity();
             final PulseAssetEntity expectedAsset = localAssets.get(0)
                     .withMapping(PulseAssetMappingEntity.builder()
@@ -157,8 +199,10 @@ public class PulseAgentAssetDiffUtilsTest {
                             .status(status)
                             .build());
             pulseEntity.getPulseAssetsEntity().getPulseAssetEntities().add(expectedAsset);
-            final PulseEntity newPulseEntity =
-                    PulseAgentAssetDiffUtils.resolve(pulseEntity, List.of(remoteAssets.get(0)));
+            when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
+            PulseAgentAssetUtils.resolveDiff(pulseExtractor, List.of(remoteAssets.get(0)));
+            verify(pulseExtractor, times(i + 1)).setPulseEntity(pulseEntityArgumentCaptor.capture());
+            final PulseEntity newPulseEntity = pulseEntityArgumentCaptor.getValue();
             assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities()).hasSize(1);
             final PulseAssetEntity asset = newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities().get(0);
             assertThat(asset.getId()).isEqualTo(expectedAsset.getId());
@@ -178,7 +222,8 @@ public class PulseAgentAssetDiffUtilsTest {
 
     @Test
     public void whenLocalMappingExistsAndRemoteAssetIsUpdated_thenStatusShouldBeUpdatedCorrectly() {
-        STATUSES.forEach(status -> {
+        IntStream.range(0, STATUSES.size()).forEach(i -> {
+            final PulseAssetMappingStatus status = STATUSES.get(i);
             final PulseEntity pulseEntity = new PulseEntity();
             final PulseAssetEntity expectedAsset = localAssets.get(0)
                     .withMapping(PulseAssetMappingEntity.builder()
@@ -186,11 +231,14 @@ public class PulseAgentAssetDiffUtilsTest {
                             .status(status)
                             .build());
             pulseEntity.getPulseAssetsEntity().getPulseAssetEntities().add(expectedAsset);
-            final PulseEntity newPulseEntity = PulseAgentAssetDiffUtils.resolve(pulseEntity,
+            when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
+            PulseAgentAssetUtils.resolveDiff(pulseExtractor,
                     List.of(remoteAssets.get(0)
                             .withName("Updated Name")
                             .withTopic("updated/topic")
                             .withJsonSchema("{ \"name\": \"Updated Name\" }")));
+            verify(pulseExtractor, times(i + 1)).setPulseEntity(pulseEntityArgumentCaptor.capture());
+            final PulseEntity newPulseEntity = pulseEntityArgumentCaptor.getValue();
             assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities()).hasSize(1);
             final PulseAssetEntity asset = newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities().get(0);
             assertThat(asset.getId()).isEqualTo(expectedAsset.getId());
