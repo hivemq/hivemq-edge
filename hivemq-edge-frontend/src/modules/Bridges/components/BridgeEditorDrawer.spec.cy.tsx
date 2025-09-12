@@ -27,8 +27,8 @@ const cy_bridgeShouldBeDefinedProperly = () => {
         { id: 'host' },
         { id: 'port' },
         { id: 'clientId' },
-        { id: 'password' },
         { id: 'username' },
+        { id: 'password' },
       ],
     },
     {
