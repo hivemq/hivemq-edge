@@ -17,10 +17,12 @@
 package com.hivemq.configuration.writer;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.api.PreLoginNoticeEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 import wiremock.org.custommonkey.xmlunit.Diff;
@@ -41,11 +43,14 @@ public class ConfigFileWriterTest extends AbstractConfigWriterTest {
         final String originalXml = FileUtils.readFileToString(tempFile, UTF_8);
 
         final ConfigFileReaderWriter configFileReader = createFileReaderWriter(tempFile);
-        final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
+        final HiveMQConfigEntity entity = configFileReader.applyConfig();
+
+        final PreLoginNoticeEntity notice = entity.getApiConfig().getPreLoginNotice();
+        Assertions.assertNotNull(notice);
 
         final File tempCopyFile = new File(System.getProperty("java.io.tmpdir"), "copy-config.xml");
         tempFile.deleteOnExit();
-        configFileReader.writeConfigToXML(new ConfigurationFile(tempCopyFile).file().get(), false);
+        configFileReader.writeConfigToXML(new ConfigurationFile(tempCopyFile).file().get(), false, false);
 
         final String copiedFileContent = FileUtils.readFileToString(tempCopyFile, UTF_8);
         final Diff diff = XMLUnit.compareXML(originalXml, copiedFileContent);

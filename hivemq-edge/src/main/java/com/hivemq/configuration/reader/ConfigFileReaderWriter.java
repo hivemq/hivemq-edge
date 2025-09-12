@@ -333,12 +333,12 @@ public class ConfigFileReaderWriter {
 
     @VisibleForTesting
     void writeConfigToXML() {
-        writeConfigToXML(getConfigFileOrFail(), defaultBackupConfig);
+        writeConfigToXML(getConfigFileOrFail(), defaultBackupConfig, true);
     }
 
     @VisibleForTesting
-    public void writeConfigToXML(final @NotNull File file, final boolean doBackup) {
-        if (!file.exists() && !file.canWrite()) {
+    public void writeConfigToXML(final @NotNull File file, final boolean doBackup, final boolean checkExists) {
+        if (checkExists && !file.exists() && !file.canWrite()) {
             log.error("Unable to write to supplied configuration file {}", file);
             throw new UnrecoverableException(false);
         }
