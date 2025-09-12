@@ -12,12 +12,13 @@ import type { DataCombining, ManagedAsset } from '@/api/__generated__'
 import { EntityType, DataIdentifierReference } from '@/api/__generated__'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import IconButton from '@/components/Chakra/IconButton'
-import { AssetTag, PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
+import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
 
 import { PrimaryWrapper } from '@/modules/Mappings/combiner/components/PrimaryWrapper.tsx'
 import DataCombiningEditorDrawer from '@/modules/Mappings/combiner/DataCombiningEditorDrawer.tsx'
 import type { CombinerContext } from '@/modules/Mappings/types.ts'
 import ManagedAssetSelect from '@/modules/Pulse/components/assets/ManagedAssetSelect.tsx'
+import AssetNameCell from '@/modules/Pulse/components/assets/AssetNameCell.tsx'
 
 export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
@@ -81,19 +82,22 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
       cell: (info) => {
         return <AssetNameCell assetId={info.row.original.destination.assetId} />
       },
+      header: t('pulse.assets.listing.column.name'),
     }
 
     return [
       ...(isAssetManager ? [assetColumn] : []),
       {
-        accessorKey: 'destination',
+        accessorKey: 'destination.topic',
         cell: (info) => {
           if (info.row.original.destination.topic) return <Topic tagTitle={info.row.original.destination.topic} />
           return <Text>{t('combiner.unset')}</Text>
         },
+        header: t('pulse.assets.listing.column.topic'),
       },
       {
         accessorKey: 'sources',
+        header: t('pulse.assets.listing.column.sources'),
         cell: (info) => {
           const { sources } = info.row.original
           const nbItems = (sources?.tags?.length || 0) + (sources?.topicFilters?.length || 0)
