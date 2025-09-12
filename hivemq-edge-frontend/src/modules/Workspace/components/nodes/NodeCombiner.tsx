@@ -24,8 +24,7 @@ const NodeCombiner: FC<NodeProps<NodeCombinerType>> = ({ id, selected, data, dra
   }, [data.mappings.items])
 
   const isAssetManager = useMemo(() => {
-    // TODO[35769] This is a hack; PULSE_AGENT needs to be supported as a valid EntityType
-    return data.sources.items.some((e) => e.type === EntityType.DEVICE)
+    return data.sources.items.some((e) => e.type === EntityType.PULSE_AGENT)
   }, [data.sources.items])
 
   return (

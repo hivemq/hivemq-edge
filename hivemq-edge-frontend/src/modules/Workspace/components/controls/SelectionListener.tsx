@@ -1,14 +1,13 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import type { ReactFlowState, Node } from '@xyflow/react'
+import type { Node } from '@xyflow/react'
 import { useStore, useReactFlow } from '@xyflow/react'
 
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import type { DeviceMetadata } from '@/modules/Workspace/types.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { WorkspaceNavigationCommand } from '@/modules/Workspace/types.ts'
-
-const addSelectedNodesState = (state: ReactFlowState) => (nodeIds: string[]) => state.addSelectedNodes(nodeIds)
+import { addSelectedNodesState } from '@/modules/Workspace/utils/react-flow.utils.ts'
 
 const SelectionListener = () => {
   const { state, pathname } = useLocation()
