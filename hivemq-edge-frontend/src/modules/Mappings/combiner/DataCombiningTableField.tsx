@@ -79,8 +79,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
     const assetColumn: ColumnDef<DataCombining> = {
       accessorKey: 'destination.assetId',
       cell: (info) => {
-        if (info.row.original.destination.assetId) return <AssetTag tagTitle={info.row.original.destination.topic} />
-        return <Text>{t('combiner.unset')}</Text>
+        return <AssetNameCell assetId={info.row.original.destination.assetId} />
       },
     }
 
