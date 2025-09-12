@@ -1,9 +1,8 @@
 import { NODE_PULSE_AGENT_DEFAULT_ID } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { factory, primaryKey } from '@mswjs/data'
 import { http, HttpResponse } from 'msw'
-import { DataIdentifierReference } from '@/api/__generated__'
+import { DataIdentifierReference, EntityType } from '@/api/__generated__'
 import type { Combiner, CombinerList } from '@/api/__generated__'
-import { EntityType } from '@/api/__generated__'
 
 interface CombinerParams {
   combinerId: string

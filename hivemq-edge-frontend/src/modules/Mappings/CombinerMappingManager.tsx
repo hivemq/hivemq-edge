@@ -113,8 +113,6 @@ const CombinerMappingManager: FC = () => {
           return acc
         }
 
-        console.log('xxxx mapping', { assetId, source, cur: newMapping })
-
         const assetPromise = updateManagedAsset.mutateAsync({
           assetId,
           requestBody: {

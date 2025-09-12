@@ -6,7 +6,7 @@ import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.t
 
 import { handlers, MOCK_ASSET_MAPPER } from './__handlers__'
 
-import type { Combiner } from '../../__generated__'
+import type { Combiner } from '@/api/__generated__'
 import { useGetAssetMapper } from './useGetAssetMapper'
 
 describe('useGetAssetMapper', () => {

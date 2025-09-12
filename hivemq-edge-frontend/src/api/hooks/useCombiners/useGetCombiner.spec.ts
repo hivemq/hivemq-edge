@@ -6,7 +6,7 @@ import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.t
 
 import { handlers, mockCombiner } from './__handlers__'
 
-import type { Combiner } from '../../__generated__'
+import type { Combiner } from '@/api/__generated__'
 import { useGetCombiner } from './useGetCombiner'
 
 describe('useGetCombiner', () => {
