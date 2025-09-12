@@ -35,7 +35,8 @@ public record DataCombiningDestination(String assetId, String topic, String sche
 
     public @NotNull com.hivemq.edge.api.model.DataCombiningDestination toModel() {
         return com.hivemq.edge.api.model.DataCombiningDestination.builder()
-                .assetId(UUID.fromString(assetId()))
+                // Asset ID can be null, so we need to handle that case.
+                .assetId(assetId() == null ? null : UUID.fromString(assetId()))
                 .topic(topic())
                 .schema(schema())
                 .build();
