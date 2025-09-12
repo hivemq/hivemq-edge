@@ -34,6 +34,18 @@ import static org.mockito.Mockito.when;
 
 public class PulseApiImplDeleteManagedAssetTest extends AbstractPulseApiImplTest {
     @Test
+    public void whenConfigNotWritable_thenReturnsConfigWritingDisabledError() {
+        when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
+                Status.ConnectionStatus.CONNECTED,
+                List.of()));
+        when(systemInformation.isConfigWriteable()).thenReturn(false);
+        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
+        try (final Response response = pulseApi.deleteManagedAsset(UUID.randomUUID())) {
+            assertThat(response.getStatus()).isEqualTo(403);
+        }
+    }
+
+    @Test
     public void whenAssetDoesNotExist_thenReturnsManagedAssetNotFoundError() {
         when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
                 Status.ConnectionStatus.CONNECTED,

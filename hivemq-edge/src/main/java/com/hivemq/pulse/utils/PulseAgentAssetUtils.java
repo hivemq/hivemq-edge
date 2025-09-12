@@ -41,7 +41,7 @@ public class PulseAgentAssetUtils {
     private PulseAgentAssetUtils() {
     }
 
-    public static @NotNull Map<String, PulseAssetEntity> toAssetMap(final @NotNull PulseEntity pulseEntity) {
+    public static @NotNull Map<String, PulseAssetEntity> toAssetEntityMap(final @NotNull PulseEntity pulseEntity) {
         return pulseEntity.getPulseAssetsEntity()
                 .getPulseAssetEntities()
                 .stream()

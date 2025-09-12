@@ -37,6 +37,26 @@ import static org.mockito.Mockito.when;
 
 public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest {
     @Test
+    public void whenConfigNotWritable_thenReturnsConfigWritingDisabledError() {
+        when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
+                Status.ConnectionStatus.CONNECTED,
+                List.of()));
+        when(systemInformation.isConfigWriteable()).thenReturn(false);
+        final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder().id(UUID.randomUUID())
+                .name("Test Asset")
+                .description("A test asset")
+                .topic("test/topic")
+                .schema("{}")
+                .mapping(PulseAgentAssetMapping.builder().build())
+                .build();
+        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
+        try (final Response response = pulseApi.updateManagedAsset(expectedAsset.getId(),
+                PulseAgentAssetConverter.INSTANCE.toRestEntity(expectedAsset))) {
+            assertThat(response.getStatus()).isEqualTo(403);
+        }
+    }
+
+    @Test
     public void whenAssetDoesNotExist_thenReturnsManagedAssetNotFoundError() {
         when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
                 Status.ConnectionStatus.CONNECTED,

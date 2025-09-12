@@ -113,8 +113,7 @@ public class PulseApiImpl implements PulseApi {
                     combiner.getId())));
         }
         final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
-        final Optional<Response> optionalResponseDataCombiner =
-                checkDataCombiner(dataCombiner, pulseExtractor.getPulseEntity());
+        final Optional<Response> optionalResponseDataCombiner = checkDataCombiner(dataCombiner);
         if (optionalResponseDataCombiner.isPresent()) {
             return optionalResponseDataCombiner.get();
         }
@@ -152,7 +151,7 @@ public class PulseApiImpl implements PulseApi {
             }
             final PulseAgentAsset newAsset = asset.withDescription(managedAsset.getDescription())
                     .withMapping(PulseAgentAssetMapping.builder()
-                            .id(asset.getId())
+                            .id(managedAsset.getMapping().getMappingId())
                             .status(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(managedAsset.getMapping()
                                     .getStatus()))
                             .build());
@@ -250,7 +249,6 @@ public class PulseApiImpl implements PulseApi {
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
         }
-
         final List<Instruction> instructions = instance.get()
                 .dataCombinings()
                 .stream()
@@ -319,8 +317,7 @@ public class PulseApiImpl implements PulseApi {
             return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combiner.getId().toString()));
         }
         final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
-        final Optional<Response> optionalResponseDataCombiner =
-                checkDataCombiner(dataCombiner, pulseExtractor.getPulseEntity());
+        final Optional<Response> optionalResponseDataCombiner = checkDataCombiner(dataCombiner);
         if (optionalResponseDataCombiner.isPresent()) {
             return optionalResponseDataCombiner.get();
         }
@@ -443,15 +440,13 @@ public class PulseApiImpl implements PulseApi {
         return Optional.empty();
     }
 
-    private @NotNull Optional<Response> checkDataCombiner(
-            final @NotNull DataCombiner dataCombiner,
-            final @NotNull PulseEntity pulseEntity) {
+    private @NotNull Optional<Response> checkDataCombiner(final @NotNull DataCombiner dataCombiner) {
         final var pulseDataCombinings = dataCombiner.getPulseDataCombinings();
         if (!pulseDataCombinings.isEmpty()) {
-            final var assetMap = PulseAgentAssetUtils.toAssetMap(pulseExtractor.getPulseEntity());
+            final var assetEntityMap = PulseAgentAssetUtils.toAssetEntityMap(pulseExtractor.getPulseEntity());
             for (final var dataCombining : pulseDataCombinings) {
                 final String id = dataCombining.sources().primaryReference().id();
-                final var asset = assetMap.get(id);
+                final var asset = assetEntityMap.get(id);
                 if (asset == null) {
                     return Optional.of(ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(id)));
                 }

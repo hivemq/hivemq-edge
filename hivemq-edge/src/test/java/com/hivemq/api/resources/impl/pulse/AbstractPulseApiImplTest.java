@@ -22,8 +22,17 @@ import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
-import com.hivemq.edge.api.CombinersApi;
 import com.hivemq.edge.api.PulseApi;
+import com.hivemq.edge.api.model.Combiner;
+import com.hivemq.edge.api.model.DataCombining;
+import com.hivemq.edge.api.model.DataCombiningDestination;
+import com.hivemq.edge.api.model.DataCombiningList;
+import com.hivemq.edge.api.model.DataCombiningSources;
+import com.hivemq.edge.api.model.DataIdentifierReference;
+import com.hivemq.edge.api.model.EntityReference;
+import com.hivemq.edge.api.model.EntityReferenceList;
+import com.hivemq.edge.api.model.EntityType;
+import com.hivemq.edge.api.model.Instruction;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.asset.ExternalAssetProvider;
 import com.hivemq.pulse.status.StatusProvider;
@@ -36,7 +45,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.mockito.Mockito.when;
 
@@ -71,6 +82,49 @@ public abstract class AbstractPulseApiImplTest {
     protected @NotNull PulseAssetsEntity pulseAssetsEntity;
 
     protected @NotNull PulseApi pulseApi;
+
+    protected static @NotNull Combiner createCombiner(
+            final @NotNull EntityType entityType,
+            final @NotNull DataIdentifierReference.TypeEnum type) {
+        final List<Instruction> instructions = List.of(Instruction.builder()
+                        .source("$.a")
+                        .destination("dest.a")
+                        .sourceRef(DataIdentifierReference.builder().id(UUID.randomUUID().toString()).type(type).build())
+                        .build(),
+                Instruction.builder()
+                        .source("$.b")
+                        .destination("dest.b")
+                        .sourceRef(DataIdentifierReference.builder()
+                                .id(UUID.randomUUID().toString())
+                                .type(type)
+                                .build())
+                        .build());
+        return Combiner.builder()
+                .id(UUID.randomUUID())
+                .name("name")
+                .description("description")
+                .sources(EntityReferenceList.builder()
+                        .items(List.of(EntityReference.builder()
+                                .id(UUID.randomUUID().toString())
+                                .type(entityType)
+                                .build()))
+                        .build())
+                .mappings(DataCombiningList.builder()
+                        .items(List.of(DataCombining.builder()
+                                .id(UUID.randomUUID())
+                                .sources(DataCombiningSources.builder()
+                                        .primary(instructions.get(0).getSourceRef())
+                                        .build())
+                                .destination(DataCombiningDestination.builder()
+                                        .assetId(UUID.randomUUID())
+                                        .topic("topic")
+                                        .schema("{}")
+                                        .build())
+                                .instructions(instructions)
+                                .build()))
+                        .build())
+                .build();
+    }
 
     @BeforeEach
     public void setUp() {
