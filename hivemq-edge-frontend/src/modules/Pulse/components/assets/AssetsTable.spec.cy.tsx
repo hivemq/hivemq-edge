@@ -189,7 +189,7 @@ describe('AssetsTable', () => {
       })
   })
 
-  it.only('should handle navigation', () => {
+  it('should handle navigation', () => {
     cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getStatus')
 
     cy.mountWithProviders(<AssetsTable />, {

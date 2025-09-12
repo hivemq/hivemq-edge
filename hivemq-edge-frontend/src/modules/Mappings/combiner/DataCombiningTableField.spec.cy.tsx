@@ -45,8 +45,8 @@ describe('DataCombiningTableField', () => {
 
     cy.get('form table').within(() => {
       cy.get('thead tr th').should('have.length', 3)
-      cy.get('thead tr th').eq(0).should('have.text', 'destination')
-      cy.get('thead tr th').eq(1).should('have.text', 'sources')
+      cy.get('thead tr th').eq(0).should('have.text', 'Topic')
+      cy.get('thead tr th').eq(1).should('have.text', 'Sources')
       cy.get('thead tr th').eq(2).should('have.text', 'Actions')
 
       cy.get('tbody tr').should('have.length', 1)
