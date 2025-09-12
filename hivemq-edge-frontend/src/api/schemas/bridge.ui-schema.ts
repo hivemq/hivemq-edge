@@ -11,7 +11,17 @@ export const bridgeUISchema: UiSchema = {
   'ui:submitButtonOptions': {
     norender: true,
   },
-  'ui:order': ['id', 'host', 'port', '*', 'loopPreventionEnabled', 'loopPreventionHopCount'],
+  'ui:order': [
+    'id',
+    'host',
+    'port',
+    'clientId',
+    'username',
+    'password',
+    '*',
+    'loopPreventionEnabled',
+    'loopPreventionHopCount',
+  ],
   'ui:tabs': [
     {
       id: 'bridgeConnection',
