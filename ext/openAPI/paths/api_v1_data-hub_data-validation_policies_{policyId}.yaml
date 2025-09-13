@@ -23,27 +23,38 @@ delete:
       description: Success, no response body
     '400':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            oneOf:
+              - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
+            discriminator:
+              propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/UrlParameterMissingError: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
       description: URL parameter missing
     '404':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: DataPolicy not found
+            $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
+      description: Data policy not found
+    '412':
+      content:
+        application/problem+json:
+          schema:
+            $ref: "../components/schemas/errors/http/PreconditionFailedError.yaml"
+      description: Precondition failed
     '500':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/http/InternalServerError.yaml"
       description: Internal server error
     '503':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
       description: Request resource temporary unavailable
   summary: Delete a data policy
   tags:
@@ -118,32 +129,33 @@ get:
       description: Success
     '400':
       content:
-        application/json:
-          examples:
-            param-missing:
-              description: Example response when a required parameter is missing.
-              summary: Required URL parameter missing
-              value:
-                errors:
-                  - title: Required parameter missing
-                    detail: Required URL parameter 'parameterName' is missing
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            oneOf:
+              - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
+            discriminator:
+              propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/UrlParameterMissingError: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
       description: Bad request
     '404':
       content:
-        application/json:
-          examples:
-            not-found:
-              description: Policy not found
-              summary: Not found
-              value:
-                errors:
-                  - title: Resource not found
-                    detail: Resource with id 'my-resource-id' not found
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/datahub/PolicyNotFoundError.yaml"
       description: Resource not found
+    '500':
+      content:
+        application/problem+json:
+          schema:
+            $ref: "../components/schemas/errors/http/InternalServerError.yaml"
+      description: Internal server error
+    '503':
+      content:
+        application/problem+json:
+          schema:
+            $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
+      description: Request resource temporary unavailable
   summary: Get a data policy
   tags:
     - Data Hub - Data Policies
@@ -253,33 +265,56 @@ put:
       description: Success
     '400':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: DataPolicy creation failed
+            oneOf:
+              - $ref: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
+              - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
+              - $ref: "../components/schemas/errors/datahub/DataPolicyCreationFailureError.yaml"
+              - $ref: "../components/schemas/errors/datahub/DataPolicyInvalidErrors.yaml"
+              - $ref: "../components/schemas/errors/datahub/DataPolicyUpdateFailureError.yaml"
+              - $ref: "../components/schemas/errors/datahub/PolicyIdMismatchError.yaml"
+              - $ref: "../components/schemas/errors/datahub/TopicFilterMismatchError.yaml"
+            discriminator:
+              propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/RequestBodyMissingError: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
+                https://hivemq.com/edge/api/model/UrlParameterMissingError: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
+                https://hivemq.com/edge/api/model/DataPolicyCreationFailureError: "../components/schemas/errors/datahub/DataPolicyCreationFailureError.yaml"
+                https://hivemq.com/edge/api/model/DataPolicyInvalidErrors: "../components/schemas/errors/datahub/DataPolicyInvalidErrors.yaml"
+                https://hivemq.com/edge/api/model/DataPolicyUpdateFailureError: "../components/schemas/errors/datahub/DataPolicyUpdateFailureError.yaml"
+                https://hivemq.com/edge/api/model/PolicyIdMismatchError: "../components/schemas/errors/datahub/PolicyIdMismatchError.yaml"
+                https://hivemq.com/edge/api/model/TopicFilterMismatchError: "../components/schemas/errors/datahub/TopicFilterMismatchError.yaml"
+      description: Data policy creation failed
     '404':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: DataPolicy not found
+            $ref: "../components/schemas/errors/datahub/DataPolicyNotFoundError.yaml"
+      description: Data policy not found
+    '412':
+      content:
+        application/problem+json:
+          schema:
+            $ref: "../components/schemas/errors/http/PreconditionFailedError.yaml"
+      description: Precondition failed
     '500':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/http/InternalServerError.yaml"
       description: Internal server error
     '503':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
       description: Request resource temporary unavailable
     '507':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            $ref: "../components/schemas/errors/datahub/PolicyInsufficientStorageError.yaml"
       description: Insufficient storage
   summary: Update an existing data policy
   tags:

@@ -1,0 +1,29 @@
+type: object
+properties:
+  detail:
+    type: string
+    description: Detailed contextual description of the validation error.
+  type:
+    type: string
+    format: uri
+    description: Type of the validation error.
+required:
+  - detail
+  - type
+discriminator:
+  propertyName: type
+  mapping:
+    https://hivemq.com/edge/api/model/AtLeastOneFieldMissingValidationError: "./AtLeastOneFieldMissingValidationError.yaml"
+    https://hivemq.com/edge/api/model/AtMostOneFunctionValidationError: "../datahub/AtMostOneFunctionValidationError.yaml"
+    https://hivemq.com/edge/api/model/EmptyFieldValidationError: "./EmptyFieldValidationError.yaml"
+    https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError: "../datahub/FunctionMustBePairedValidationError.yaml"
+    https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError: "../datahub/IllegalEventTransitionValidationError.yaml"
+    https://hivemq.com/edge/api/model/IllegalFunctionValidationError: "../datahub/IllegalFunctionValidationError.yaml"
+    https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError: "./InvalidFieldLengthValidationError.yaml"
+    https://hivemq.com/edge/api/model/InvalidFieldValueValidationError: "./InvalidFieldValueValidationError.yaml"
+    https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError: "../datahub/InvalidFunctionOrderValidationError.yaml"
+    https://hivemq.com/edge/api/model/InvalidIdentifierValidationError: "./InvalidIdentifierValidationError.yaml"
+    https://hivemq.com/edge/api/model/InvalidSchemaVersionValidationError: "../datahub/InvalidSchemaVersionValidationError.yaml"
+    https://hivemq.com/edge/api/model/MissingFieldValidationError: "./MissingFieldValidationError.yaml"
+    https://hivemq.com/edge/api/model/UnknownVariableValidationError: "../datahub/UnknownVariableValidationError.yaml"
+    https://hivemq.com/edge/api/model/UnsupportedFieldValidationError: "./UnsupportedFieldValidationError.yaml"

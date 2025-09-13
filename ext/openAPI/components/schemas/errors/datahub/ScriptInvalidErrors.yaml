@@ -1,0 +1,25 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      childErrors:
+        type: array
+        description: List of child validation errors.
+        items:
+          $ref: "./ScriptValidationError.yaml"
+    required:
+      - childErrors
+example:
+  general:
+    status: 400
+    title: "Script Invalid"
+    detail: "Script is invalid due to validation errors."
+    type: "https://hivemq.com/edge/api/model/ScriptInvalidErrors"
+    childErrors:
+      - detail: "The length of script field '$.id' 1025 must be between 0 and 1024."
+        paths: "$.id"
+        value: "aaa...aaa"
+        actualLength: 1025
+        expectedMinimumLength: 0
+        expectedMaximumLength: 1024
+        type: "https://hivemq.com/edge/api/model/InvalidFieldLengthValidationError"
