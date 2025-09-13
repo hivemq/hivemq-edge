@@ -36,13 +36,14 @@ dependencies {
     implementation(libs.milo.encoding.json)
     implementation(libs.milo.encoding.xml)
     implementation(libs.milo.client)
-    implementation(libs.milo.server)
     implementation(libs.milo.dtd.reader)
     implementation(libs.milo.dtd.manager)
     errorprone(libs.errorprone)
 }
 
 dependencies {
+    testImplementation(libs.milo.server)
+
     testImplementation("com.hivemq:hivemq-edge")
     testImplementation(libs.jackson.databind)
     testImplementation(libs.hivemq.edge.adaptersdk)
