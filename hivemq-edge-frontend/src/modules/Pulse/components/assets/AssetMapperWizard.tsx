@@ -25,6 +25,7 @@ import {
   type GroupBase,
   type OptionProps,
   type SingleValueProps,
+  type ControlProps,
 } from 'chakra-react-select'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -82,7 +83,7 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
     const isNewOption = Boolean(props.children)
 
     return (
-      <chakraComponents.Option {...props}>
+      <chakraComponents.Option {...props} isSelected={props.data.id === selectedValue?.id}>
         {isNewOption && props.children}
         {!isNewOption && (
           <NodeNameCard
@@ -106,15 +107,23 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
 
   const SingleValue = (props: SingleValueProps<Combiner>) => {
     const { data: assetMapper } = props as unknown as SingleValueProps<CreatableSelectProps>
-    return (
-      <chakraComponents.SingleValue {...props}>
-        <HStack>
-          <Icon as={HqAssets} boxSize={6} />
+    return <chakraComponents.SingleValue {...props}>{assetMapper.name}</chakraComponents.SingleValue>
+  }
 
-          {!assetMapper.__isNew__ && <Text>{assetMapper.name}</Text>}
-          {assetMapper.__isNew__ && <Text>NEW {assetMapper.name}</Text>}
-        </HStack>
-      </chakraComponents.SingleValue>
+  const Control = (props: ControlProps<Combiner>) => {
+    return (
+      <chakraComponents.Control {...props}>
+        <Box
+          height="-webkit-fill-available"
+          alignContent="end"
+          backgroundColor="gray.100"
+          paddingInlineStart="var(--input-padding)"
+          paddingInlineEnd="var(--input-padding)"
+        >
+          <Icon as={HqAssets} boxSize={6} />
+        </Box>
+        {props.children}
+      </chakraComponents.Control>
     )
   }
 
@@ -147,6 +156,7 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
                 components={{
                   Option,
                   SingleValue,
+                  Control,
                 }}
                 filterOption={createFilter({
                   stringify: (option) => {
