@@ -17,7 +17,7 @@
 package com.hivemq.bootstrap.ioc;
 
 import com.hivemq.edge.api.PulseApi;
-import com.hivemq.api.pulse.PulseApiImpl;
+import com.hivemq.api.resources.impl.PulseApiImpl;
 import dagger.Binds;
 import dagger.Module;
 import jakarta.inject.Singleton;

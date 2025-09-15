@@ -21,6 +21,7 @@ import com.hivemq.configuration.entity.pulse.PulseAssetMappingEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingStatus;
 import com.hivemq.configuration.entity.pulse.PulseAssetsEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
+import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.pulse.asset.Asset;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -34,17 +35,29 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class PulseAgentAssetDiffUtils {
-    private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(PulseAgentAssetDiffUtils.class);
+public class PulseAgentAssetUtils {
+    private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(PulseAgentAssetUtils.class);
 
-    private PulseAgentAssetDiffUtils() {
+    private PulseAgentAssetUtils() {
     }
 
-    public static @NotNull PulseEntity resolve(
-            final @NotNull PulseEntity pulseEntity,
+    public static @NotNull Map<String, PulseAssetEntity> toAssetEntityMap(final @NotNull PulseEntity pulseEntity) {
+        return pulseEntity.getPulseAssetsEntity()
+                .getPulseAssetEntities()
+                .stream()
+                .collect(Collectors.toMap(e -> e.getId().toString(),
+                        Function.identity(),
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new));
+    }
+
+    public static void resolveDiff(
+            final @NotNull PulseExtractor pulseExtractor,
             final @NotNull List<Asset> remoteAssets) {
-        synchronized (pulseEntity.getLock()) {
-            final List<PulseAssetEntity> localAssets = pulseEntity.getPulseAssetsEntity().getPulseAssetEntities();
+        final PulseEntity oldPulseEntity = pulseExtractor.getPulseEntity();
+        // TODO Update data combiners.
+        synchronized (oldPulseEntity.getLock()) {
+            final List<PulseAssetEntity> localAssets = oldPulseEntity.getPulseAssetsEntity().getPulseAssetEntities();
             final List<PulseAssetEntity> newLocalAssets = new ArrayList<>();
             final Map<String, Asset> remoteAssetMap = remoteAssets.stream()
                     .collect(Collectors.toMap(Asset::id,
@@ -109,7 +122,8 @@ public class PulseAgentAssetDiffUtils {
                                 .build())
                         .build());
             });
-            return new PulseEntity(new PulseAssetsEntity(newLocalAssets));
+            final PulseEntity newPulseEntity = new PulseEntity(new PulseAssetsEntity(newLocalAssets));
+            pulseExtractor.setPulseEntity(newPulseEntity);
         }
     }
 }
