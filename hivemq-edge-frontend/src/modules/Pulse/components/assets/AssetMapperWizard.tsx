@@ -16,7 +16,6 @@ import {
   VStack,
   Box,
   Icon,
-  HStack,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -27,6 +26,7 @@ import {
   type OptionProps,
   type SingleValueProps,
 } from 'chakra-react-select'
+import { v4 as uuidv4 } from 'uuid'
 
 import type { Combiner } from '@/api/__generated__'
 import { useListAssetMappers } from '@/api/hooks/useAssetMapper'
@@ -159,7 +159,7 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
                 onCreateOption={(name) =>
                   setSelectedValue({
                     name: t('pulse.assets.operation.edit.select.createValue', { name }),
-                    id: 'xxxx',
+                    id: uuidv4(),
                     __isNew__: true,
                     sources: { items: [] },
                     mappings: { items: [] },
