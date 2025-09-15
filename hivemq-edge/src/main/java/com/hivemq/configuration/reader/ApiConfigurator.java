@@ -20,6 +20,7 @@ import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.HttpListener;
 import com.hivemq.api.config.HttpsListener;
+import com.hivemq.api.model.components.PreLoginNotice;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.api.AdminApiEntity;
 import com.hivemq.configuration.entity.api.ApiJwsEntity;
@@ -27,87 +28,86 @@ import com.hivemq.configuration.entity.api.ApiListenerEntity;
 import com.hivemq.configuration.entity.api.ApiTlsEntity;
 import com.hivemq.configuration.entity.api.HttpListenerEntity;
 import com.hivemq.configuration.entity.api.HttpsListenerEntity;
+import com.hivemq.configuration.entity.api.PreLoginNoticeEntity;
+import com.hivemq.configuration.entity.api.UserEntity;
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.http.core.UsernamePasswordRoles;
+import jakarta.inject.Inject;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-public class ApiConfigurator implements Configurator<AdminApiEntity>{
+import static com.hivemq.http.core.UsernamePasswordRoles.DEFAULT_PASSWORD;
+import static com.hivemq.http.core.UsernamePasswordRoles.DEFAULT_USERNAME;
 
-    private static final Logger log = LoggerFactory.getLogger(ApiConfigurator.class);
+public class ApiConfigurator implements Configurator<AdminApiEntity> {
 
-    private final @NotNull ApiConfigurationService apiConfigurationService;
+    private static final @NotNull List<ApiListener> DEFAULT_LISTENERS = List.of(new HttpListener(8080, "127.0.0.1"));
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ApiConfigurator.class);
+    private static final @NotNull List<UsernamePasswordRoles> DEFAULT_USERS =
+            List.of(new UsernamePasswordRoles(DEFAULT_USERNAME, DEFAULT_PASSWORD, Set.of("ADMIN")));
 
-    private volatile AdminApiEntity configEntity;
-    private volatile boolean initialized = false;
+    private final @NotNull ApiConfigurationService apiCfgService;
+    private volatile @Nullable AdminApiEntity configEntity;
 
     @Inject
-    public ApiConfigurator(
-            final @NotNull ApiConfigurationService apiConfigurationService) {
-        this.apiConfigurationService = apiConfigurationService;
+    public ApiConfigurator(final @NotNull ApiConfigurationService apiCfgService) {
+        this.apiCfgService = apiCfgService;
     }
 
-    @Override
-    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
-        if(initialized && hasChanged(this.configEntity, config.getApiConfig())) {
-            return true;
-        }
-        return false;
+    private static @NotNull UsernamePasswordRoles fromModel(final @NotNull UserEntity userEntity) {
+        return new UsernamePasswordRoles(userEntity.getUserName(),
+                userEntity.getPassword(),
+                Set.copyOf(userEntity.getRoles()));
     }
 
     //-- Converts XML entity types to bean types
 
     @Override
-    public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
-        this.configEntity = config.getApiConfig();
-        this.initialized = true;
+    public boolean needsRestartWithConfig(final @NotNull HiveMQConfigEntity config) {
+        final AdminApiEntity entity = configEntity;
+        return entity != null && hasChanged(entity, config.getApiConfig());
+    }
 
-        apiConfigurationService.setEnabled(configEntity.isEnabled());
+    @Override
+    public @NotNull ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
+        final AdminApiEntity entity = config.getApiConfig();
 
-        //Users
-        if (configEntity.getUsers() != null && !configEntity.getUsers().isEmpty()) {
-            apiConfigurationService.setUserList(configEntity.getUsers()
-                    .stream()
-                    .map(userEntity -> new UsernamePasswordRoles(userEntity.getUserName(),
-                            userEntity.getPassword(),
-                            Set.copyOf(userEntity.getRoles())))
-                    .collect(Collectors.toList()));
+        configEntity = entity;
+
+        apiCfgService.setEnabled(entity.isEnabled());
+
+        // Users
+        final List<UserEntity> users = entity.getUsers();
+        if (!users.isEmpty()) {
+            apiCfgService.setUserList(users.stream().map(ApiConfigurator::fromModel).toList());
         } else {
-            apiConfigurationService.setUserList(List.of(
-                    new UsernamePasswordRoles(UsernamePasswordRoles.DEFAULT_USERNAME,
-                            UsernamePasswordRoles.DEFAULT_PASSWORD, Set.of("ADMIN"))));
+            apiCfgService.setUserList(DEFAULT_USERS);
         }
 
+        // JWT
+        final ApiJwsEntity jwsEntity = entity.getJws();
+        apiCfgService.setApiJwtConfiguration(new ApiJwtConfiguration.Builder().withAudience(jwsEntity.getAudience())
+                .withIssuer(jwsEntity.getIssuer())
+                .withKeySize(jwsEntity.getKeySize())
+                .withExpiryTimeMinutes(jwsEntity.getExpiryTimeMinutes())
+                .withTokenEarlyEpochThresholdMinutes(jwsEntity.getTokenEarlyEpochThresholdMinutes())
+                .build());
 
-
-        //JWT
-        ApiJwsEntity jwsEntity = configEntity.getJws();
-        ApiJwtConfiguration.Builder apiJwtConfigurationBuilder = new ApiJwtConfiguration.Builder();
-        if (jwsEntity != null) {
-            apiJwtConfigurationBuilder.withAudience(jwsEntity.getAudience())
-                    .withIssuer(jwsEntity.getIssuer())
-                    .withKeySize(jwsEntity.getKeySize())
-                    .withExpiryTimeMinutes(jwsEntity.getExpiryTimeMinutes())
-                    .withTokenEarlyEpochThresholdMinutes(jwsEntity.getTokenEarlyEpochThresholdMinutes());
-        }
-        apiConfigurationService.setApiJwtConfiguration(apiJwtConfigurationBuilder.build());
-
-        if (configEntity.getListeners().isEmpty()) {
+        if (entity.getListeners().isEmpty()) {
             //set default listener
-            apiConfigurationService.setListeners(List.of(new HttpListener(8080, "127.0.0.1")));
+            apiCfgService.setListeners(DEFAULT_LISTENERS);
         } else {
-            final ImmutableList.Builder<ApiListener> builder = ImmutableList.builder();
-            for (ApiListenerEntity listener : configEntity.getListeners()) {
+            final ImmutableList.Builder<@NotNull ApiListener> listenersBld = ImmutableList.builder();
+            for (final ApiListenerEntity listener : entity.getListeners()) {
                 if (listener instanceof HttpListenerEntity) {
-                    builder.add(new HttpListener(listener.getPort(), listener.getBindAddress()));
+                    listenersBld.add(new HttpListener(listener.getPort(), listener.getBindAddress()));
                 } else if (listener instanceof HttpsListenerEntity) {
                     final ApiTlsEntity tls = ((HttpsListenerEntity) listener).getTls();
                     final KeystoreEntity keystoreEntity = tls.getKeystoreEntity();
@@ -115,7 +115,7 @@ public class ApiConfigurator implements Configurator<AdminApiEntity>{
                         log.error("Keystore can not be emtpy for HTTPS listener");
                         throw new UnrecoverableException(false);
                     }
-                    builder.add(new HttpsListener(listener.getPort(),
+                    listenersBld.add(new HttpsListener(listener.getPort(),
                             listener.getBindAddress(),
                             tls.getProtocols(),
                             tls.getCipherSuites(),
@@ -123,12 +123,19 @@ public class ApiConfigurator implements Configurator<AdminApiEntity>{
                             keystoreEntity.getPassword(),
                             keystoreEntity.getPrivateKeyPassword()));
                 } else {
-                    log.error("Unkown API listener type");
+                    log.error("Unknown API listener type");
                     throw new UnrecoverableException(false);
                 }
             }
-            apiConfigurationService.setListeners(builder.build());
+            apiCfgService.setListeners(listenersBld.build());
         }
+
+        // pre login message
+        final PreLoginNoticeEntity pln = entity.getPreLoginNotice();
+        apiCfgService.setPreLoginNotice(new PreLoginNotice(pln.isEnabled(),
+                pln.getTitle(),
+                pln.getMessage(),
+                pln.getConsent()));
 
         return ConfigResult.SUCCESS;
     }

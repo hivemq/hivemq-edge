@@ -132,7 +132,7 @@ public class ConfigFileReaderTest {
         assertTrue(userProperties.contains(new MqttUserPropertyEntity("my-name", "my-value2")));
         assertTrue(userProperties.contains(new MqttUserPropertyEntity("my-name", "my-value2")));
 
-        configFileReader.writeConfig();
+        configFileReader.writeConfigToXML();
         final String afterReload = FileUtils.readFileToString(tempFile, UTF_8);
         assertThat(afterReload).contains("mqttUserProperty");
         final @NotNull List<ProtocolAdapterEntity> config2 = hiveMQConfigEntity.getProtocolAdapterConfig();

@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -98,8 +99,8 @@ public abstract class AbstractConfigWriterTest {
         return configFileReader;
     }
 
-    protected File loadTestConfigFile() throws IOException {
-        try (final InputStream is = AbstractConfigWriterTest.class.getResourceAsStream("/test-config.xml")) {
+    protected @NotNull File loadTestConfigFile() throws IOException {
+        try (final InputStream is = requireNonNull(AbstractConfigWriterTest.class.getResourceAsStream("/test-config.xml"))) {
             final File tempFile = new File(System.getProperty("java.io.tmpdir"), "original-config.xml");
             tempFile.deleteOnExit();
             FileUtils.copyInputStreamToFile(is, tempFile);
