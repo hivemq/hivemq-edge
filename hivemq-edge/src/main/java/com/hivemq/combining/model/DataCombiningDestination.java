@@ -24,6 +24,7 @@ import java.util.UUID;
 public record DataCombiningDestination(String assetId, String topic, String schema) {
 
     public static DataCombiningDestination from(final @NotNull com.hivemq.edge.api.model.DataCombiningDestination destination) {
+        // Asset ID can be null, so we need to handle that case.
         return new DataCombiningDestination(Optional.ofNullable(destination.getAssetId())
                 .map(UUID::toString)
                 .orElse(null), destination.getTopic(), destination.getSchema());
@@ -36,7 +37,7 @@ public record DataCombiningDestination(String assetId, String topic, String sche
     public @NotNull com.hivemq.edge.api.model.DataCombiningDestination toModel() {
         return com.hivemq.edge.api.model.DataCombiningDestination.builder()
                 // Asset ID can be null, so we need to handle that case.
-                .assetId(assetId() == null ? null : UUID.fromString(assetId()))
+                .assetId(Optional.ofNullable(assetId()).map(UUID::fromString).orElse(null))
                 .topic(topic())
                 .schema(schema())
                 .build();
