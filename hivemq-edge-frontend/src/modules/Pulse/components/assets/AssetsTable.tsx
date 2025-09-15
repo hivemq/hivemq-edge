@@ -12,6 +12,7 @@ import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.
 import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import { Topic } from '@/components/MQTT/EntityTag.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import type { FilterMetadata } from '@/components/PaginatedTable/types.ts'
@@ -35,11 +36,19 @@ interface AssetTableProps {
   variant?: 'full' | 'summary'
 }
 
+interface SelectedAssetOperation {
+  assetId: string
+  asset?: ManagedAsset
+  operation: 'DELETE' | 'EDIT'
+}
+
 const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   const { t } = useTranslation()
   const { data, isLoading, error } = useListManagedAssets()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [selectedAssetOperation, setSelectedAssetOperation] = useState<SelectedAssetOperation | undefined>(undefined)
 
   const safeData = useMemo(() => {
     if (!data?.items) return [skeletonTemplate, skeletonTemplate, skeletonTemplate]
@@ -49,6 +58,16 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
 
   const handleViewWorkspace = (adapterId: string, type: string, command: WorkspaceNavigationCommand) => {
     if (adapterId) navigate('/workspace', { state: { selectedAdapter: { adapterId, type, command } } })
+  }
+
+  const handleCloseDelete = () => {
+    setSelectedAssetOperation(undefined)
+    onClose()
+  }
+
+  const handleConfirmDelete = () => {
+    setSelectedAssetOperation(undefined)
+    onClose()
   }
 
   const columns = useMemo<ColumnDef<ManagedAsset>[]>(() => {
@@ -197,16 +216,29 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   }
 
   return (
-    <PaginatedTable<ManagedAsset>
-      aria-label={t('pulse.assets.listing.aria-label')}
-      noDataText={t('pulse.assets.listing.noDataText')}
-      data={safeData}
-      columns={dynamicColumns}
-      enablePagination
-      enableColumnFilters
-      enableGlobalFilter
-      initState={{ columnFilters: [{ id: 'mapping_status', value: searchParams.get('mapping_status') || '' }] }}
-    />
+    <>
+      <PaginatedTable<ManagedAsset>
+        aria-label={t('pulse.assets.listing.aria-label')}
+        noDataText={t('pulse.assets.listing.noDataText')}
+        data={safeData}
+        columns={dynamicColumns}
+        enablePagination
+        enableColumnFilters
+        enableGlobalFilter
+        initState={{ columnFilters: [{ id: 'mapping_status', value: searchParams.get('mapping_status') || '' }] }}
+      />
+      {selectedAssetOperation && (
+        <>
+          <ConfirmationDialog
+            isOpen={isOpen && selectedAssetOperation?.operation === 'DELETE'}
+            onClose={handleCloseDelete}
+            onSubmit={handleConfirmDelete}
+            header={t('pulse.assets.operation.delete.header')}
+            message={t('pulse.assets.operation.delete.message', { name: selectedAssetOperation?.asset?.name })}
+          />
+        </>
+      )}
+    </>
   )
 }
 
