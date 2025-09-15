@@ -94,13 +94,13 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      */
     public @NotNull Optional<OpcUaSubscription> subscribe(final @NotNull OpcUaClient client) {
         return createNewSubscription(client)
-                .flatMap(subscription -> {
+                .map(subscription -> {
                     subscription.setPublishingInterval((double) config.getOpcuaToMqttConfig().publishingInterval());
                     subscription.setSubscriptionListener(new OpcUaSubscriptionLifecycleHandler(protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, dataPointFactory, config));
                     if(syncTagsAndMonitoredItems(subscription, tags, config)) {
-                        return Optional.of(subscription);
+                        return subscription;
                     } else {
-                        return Optional.empty();
+                        return null;
                     }
                 });
     }
