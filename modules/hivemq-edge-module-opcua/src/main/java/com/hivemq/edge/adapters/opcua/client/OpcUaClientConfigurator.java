@@ -39,10 +39,11 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
 
     @Override
     public void accept(final @NotNull OpcUaClientConfigBuilder configBuilder) {
-        configBuilder.setApplicationName(LocalizedText.english(Constants.OPCUA_APPLICATION_NAME));
-        configBuilder.setApplicationUri(Constants.OPCUA_APPLICATION_URI);
-        configBuilder.setProductUri(Constants.OPCUA_PRODUCT_URI);
-        configBuilder.setSessionName(() -> Constants.OPCUA_SESSION_NAME_PREFIX + adapterId);
+        configBuilder
+                .setApplicationName(LocalizedText.english(Constants.OPCUA_APPLICATION_NAME))
+                .setApplicationUri(Constants.OPCUA_APPLICATION_URI)
+                .setProductUri(Constants.OPCUA_PRODUCT_URI)
+                .setSessionName(() -> Constants.OPCUA_SESSION_NAME_PREFIX + adapterId);
 
         log.info("TLS is enabled: {}", parsedConfig.tlsEnabled());
         if (parsedConfig.tlsEnabled()) {
