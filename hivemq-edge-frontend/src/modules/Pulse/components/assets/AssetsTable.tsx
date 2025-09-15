@@ -18,6 +18,7 @@ import { Topic } from '@/components/MQTT/EntityTag.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import type { FilterMetadata } from '@/components/PaginatedTable/types.ts'
 import { AssetActionMenu } from '@/modules/Pulse/components/assets/AssetActionMenu.tsx'
+import AssetMapperWizard from '@/modules/Pulse/components/assets/AssetMapperWizard.tsx'
 import AssetStatusBadge from '@/modules/Pulse/components/assets/AssetStatusBadge.tsx'
 import FilteredCell from '@/modules/Pulse/components/assets/FilteredCell.tsx'
 import SourcesCell from '@/modules/Pulse/components/assets/SourcesCell.tsx'
@@ -61,6 +62,11 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
 
   const handleViewWorkspace = (adapterId: string, type: string, command: WorkspaceNavigationCommand) => {
     if (adapterId) navigate('/workspace', { state: { selectedAdapter: { adapterId, type, command } } })
+  }
+
+  const handleCloseWizard = () => {
+    setSelectedAssetOperation(undefined)
+    onClose()
   }
 
   const handleCloseDelete = () => {
@@ -207,8 +213,7 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
 
   // TODO[NVL] Tanstack table has a column-visibility as a state; manage it  through it?
   const dynamicColumns = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [name, _description, topic, status, _sources, actions] = columns
+    const [name, , topic, status, , actions] = columns
 
     return variant === 'full' ? columns : [name, topic, status, actions]
   }, [columns, variant])
@@ -238,6 +243,11 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
       />
       {selectedAssetOperation && (
         <>
+          <AssetMapperWizard
+            assetId={selectedAssetOperation?.assetId}
+            onClose={handleCloseWizard}
+            isOpen={isOpen && selectedAssetOperation?.operation === 'EDIT'}
+          />
           <ConfirmationDialog
             isOpen={isOpen && selectedAssetOperation?.operation === 'DELETE'}
             onClose={handleCloseDelete}
