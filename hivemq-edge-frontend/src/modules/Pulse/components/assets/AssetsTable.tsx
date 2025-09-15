@@ -244,16 +244,16 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
       {selectedAssetOperation && (
         <>
           <AssetMapperWizard
+            isOpen={isOpen && selectedAssetOperation?.operation === 'EDIT'}
             assetId={selectedAssetOperation?.assetId}
             onClose={handleCloseWizard}
-            isOpen={isOpen && selectedAssetOperation?.operation === 'EDIT'}
           />
           <ConfirmationDialog
             isOpen={isOpen && selectedAssetOperation?.operation === 'DELETE'}
             onClose={handleCloseDelete}
             onSubmit={handleConfirmDelete}
-            header={t('pulse.assets.operation.delete.header')}
-            message={t('pulse.assets.operation.delete.message', { name: selectedAssetOperation?.asset?.name })}
+            header={t('pulse.assets.operation.delete.header', { name: selectedAssetOperation?.asset?.name })}
+            message={t('pulse.assets.operation.delete.message')}
           />
         </>
       )}
