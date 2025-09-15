@@ -7,7 +7,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { chakraComponents } from 'chakra-react-select'
 import debug from 'debug'
 
-import type { ManagedAsset } from '@/api/__generated__'
+import type { Combiner, ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
 import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
 import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
@@ -23,7 +23,7 @@ import AssetStatusBadge from '@/modules/Pulse/components/assets/AssetStatusBadge
 import FilteredCell from '@/modules/Pulse/components/assets/FilteredCell.tsx'
 import SourcesCell from '@/modules/Pulse/components/assets/SourcesCell.tsx'
 import { compareStatus } from '@/modules/Pulse/utils/pagination-utils.ts'
-import type { WorkspaceNavigationCommand } from '@/modules/Workspace/types.ts'
+import { NodeTypes, WorkspaceNavigationCommand } from '@/modules/Workspace/types.ts'
 
 const combinerLog = debug(`Combiner:AssetsTable`)
 
@@ -67,6 +67,21 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   const handleCloseWizard = () => {
     setSelectedAssetOperation(undefined)
     onClose()
+  }
+
+  const handleConfirmWizard = (assetMapper: Combiner) => {
+    setSelectedAssetOperation(undefined)
+    onClose()
+    if (assetMapper)
+      navigate('/workspace', {
+        state: {
+          selectedAdapter: {
+            adapterId: assetMapper.id,
+            type: NodeTypes.COMBINER_NODE,
+            command: WorkspaceNavigationCommand.ASSET_MAPPER,
+          },
+        },
+      })
   }
 
   const handleCloseDelete = () => {
@@ -247,6 +262,7 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
             isOpen={isOpen && selectedAssetOperation?.operation === 'EDIT'}
             assetId={selectedAssetOperation?.assetId}
             onClose={handleCloseWizard}
+            onSubmit={handleConfirmWizard}
           />
           <ConfirmationDialog
             isOpen={isOpen && selectedAssetOperation?.operation === 'DELETE'}
