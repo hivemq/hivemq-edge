@@ -1572,6 +1572,28 @@
         "delete": "Delete mapping",
         "mapper": "Open asset mapper"
       },
+      "operation": {
+        "delete": {
+          "header": "Unmapping asset \"{{ name }}\"",
+          "message": "Do you want to remove all mapping instructions from the asset? The action cannot be reversed."
+        },
+        "edit": {
+          "header": "Mapping asset \"{{ name }}\"",
+          "overview": "To map an asset, you first have to select an existing mapper or create a new one",
+          "select": {
+            "title": "Asset mappers",
+            "placeholder": "Select ...",
+            "createLabel": "Create a new mapper: {{ name }}",
+            "createValue": "{{ name }} (new)",
+            "moreInfo": {
+              "title": "Asset mappers group selected sources of data together, to restrict access to integration points (tags and topic filters) and to enable the destination schema from Pulse.",
+              "link": "https://docs.hivemq.com/hivemq-edge/pulse-asset-mapping.html"
+            }
+          },
+          "submit_EDIT": "Edit the asset mapper",
+          "submit_CREATE": "Create a new asset mapper"
+        }
+      },
       "selector": {
         "aria-label": "List of assets",
         "placeholder": "Select an asset to map...",

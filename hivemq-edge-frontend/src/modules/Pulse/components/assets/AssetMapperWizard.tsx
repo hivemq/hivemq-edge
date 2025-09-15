@@ -154,11 +154,11 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
                     return `${name}${description}${sources.items.map((source) => source.id).join('')}`
                   },
                 })}
-                formatCreateLabel={(name) => 'Create a new mapper: ' + name}
+                formatCreateLabel={(name) => t('pulse.assets.operation.edit.select.createLabel', { name })}
                 onChange={(e) => setSelectedValue(e || undefined)}
                 onCreateOption={(name) =>
                   setSelectedValue({
-                    name,
+                    name: t('pulse.assets.operation.edit.select.createValue', { name }),
                     id: 'xxxx',
                     __isNew__: true,
                     sources: { items: [] },
