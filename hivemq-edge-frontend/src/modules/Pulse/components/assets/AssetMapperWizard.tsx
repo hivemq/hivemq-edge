@@ -41,6 +41,7 @@ import { NodeTypes } from '@/modules/Workspace/types.ts'
 interface AssetMapperWizardProps {
   assetId: string
   onClose: () => void
+  onSubmit?: (assetMapper: Combiner) => void
   isOpen: boolean
 }
 
@@ -50,7 +51,7 @@ const enum MAPPER_OPERATION {
 }
 type CreatableSelectProps = Combiner & { __isNew__?: boolean }
 
-const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClose }) => {
+const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClose, onSubmit }) => {
   const { t } = useTranslation()
   const { data: listAssets } = useListManagedAssets()
   const { data: listMappers } = useListAssetMappers()
@@ -182,7 +183,13 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
         </ModalBody>
 
         <ModalFooter>
-          <Button variant="primary" onClick={onClose} isDisabled={!selectedValue}>
+          <Button
+            variant="primary"
+            onClick={() => {
+              if (selectedValue && onSubmit) onSubmit(selectedValue)
+            }}
+            isDisabled={!selectedValue}
+          >
             {t('pulse.assets.operation.edit.submit', {
               context: selectedValue?.__isNew__ ? MAPPER_OPERATION.CREATE : MAPPER_OPERATION.EDIT,
             })}
