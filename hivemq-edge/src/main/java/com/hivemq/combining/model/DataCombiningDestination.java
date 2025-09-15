@@ -18,22 +18,32 @@ package com.hivemq.combining.model;
 import com.hivemq.configuration.entity.combining.DataCombiningDestinationEntity;
 import org.jetbrains.annotations.NotNull;
 
-public record DataCombiningDestination(String topic, String schema) {
+import java.util.Optional;
+import java.util.UUID;
 
+public record DataCombiningDestination(String assetId, String topic, String schema) {
 
     public static DataCombiningDestination from(final @NotNull com.hivemq.edge.api.model.DataCombiningDestination destination) {
-        return new DataCombiningDestination(destination.getTopic(), destination.getSchema());
-    }
-
-    public @NotNull com.hivemq.edge.api.model.DataCombiningDestination toModel() {
-        return new com.hivemq.edge.api.model.DataCombiningDestination().topic(topic()).schema(schema());
+        // Asset ID can be null, so we need to handle that case.
+        return new DataCombiningDestination(Optional.ofNullable(destination.getAssetId())
+                .map(UUID::toString)
+                .orElse(null), destination.getTopic(), destination.getSchema());
     }
 
     public static DataCombiningDestination fromPersistence(final @NotNull DataCombiningDestinationEntity entity) {
-        return new DataCombiningDestination(entity.getTopic(), entity.getSchema());
+        return new DataCombiningDestination(entity.getAssetId(), entity.getTopic(), entity.getSchema());
+    }
+
+    public @NotNull com.hivemq.edge.api.model.DataCombiningDestination toModel() {
+        return com.hivemq.edge.api.model.DataCombiningDestination.builder()
+                // Asset ID can be null, so we need to handle that case.
+                .assetId(Optional.ofNullable(assetId()).map(UUID::fromString).orElse(null))
+                .topic(topic())
+                .schema(schema())
+                .build();
     }
 
     public @NotNull DataCombiningDestinationEntity toPersistence() {
-        return new DataCombiningDestinationEntity(topic(), schema());
+        return new DataCombiningDestinationEntity(assetId(), topic(), schema());
     }
 }
