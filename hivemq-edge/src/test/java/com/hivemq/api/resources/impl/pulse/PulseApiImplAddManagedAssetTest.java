@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.hivemq.api.pulse;
+package com.hivemq.api.resources.impl.pulse;
 
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.edge.api.model.AssetMapping;
@@ -42,6 +42,24 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
+    @Test
+    public void whenConfigNotWritable_thenReturnsConfigWritingDisabledError() {
+        when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
+                Status.ConnectionStatus.CONNECTED,
+                List.of()));
+        when(systemInformation.isConfigWriteable()).thenReturn(false);
+        try (final Response response = pulseApi.addManagedAsset(ManagedAsset.builder()
+                .id(UUID.randomUUID())
+                .name("Test Asset")
+                .description("A test asset")
+                .topic("test/topic")
+                .schema("{}")
+                .mapping(AssetMapping.builder().status(AssetMapping.StatusEnum.DRAFT).build())
+                .build())) {
+            assertThat(response.getStatus()).isEqualTo(403);
+        }
+    }
+
     @Test
     public void whenAssetDoesNotExist_thenReturnsManagedAssetNotFoundError() {
         when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
@@ -87,6 +105,7 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
                 Status.ConnectionStatus.CONNECTED,
                 List.of()));
         final UUID id = UUID.randomUUID();
+        final UUID mappingId = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder().id(id)
                 .name("Test Asset")
                 .description("A test asset")
@@ -102,7 +121,7 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
                 .topic("new/topic")
                 .schema("{[]}")
                 .mapping(PulseAgentAssetMappingConverter.INSTANCE.toRestEntity(PulseAgentAssetMapping.builder()
-                        .id(id)
+                        .id(mappingId)
                         .status(expectedStatus)
                         .build())))) {
             assertThat(response.getStatus()).isEqualTo(200);
@@ -115,7 +134,7 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
             assertThat(PulseAgentAssetSchemaConverter.INSTANCE.toInternalEntity(asset.getSchema())).as(
                     "Schema cannot be changed.").isEqualTo(expectedAsset.getSchema());
             assertThat(asset.getMapping()).isNotNull();
-            assertThat(asset.getMapping().getMappingId()).isEqualTo(id);
+            assertThat(asset.getMapping().getMappingId()).isEqualTo(mappingId);
             assertThat(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(asset.getMapping()
                     .getStatus())).isEqualTo(expectedStatus);
             final ArgumentCaptor<PulseEntity> assetsArgumentCaptor = ArgumentCaptor.forClass(PulseEntity.class);

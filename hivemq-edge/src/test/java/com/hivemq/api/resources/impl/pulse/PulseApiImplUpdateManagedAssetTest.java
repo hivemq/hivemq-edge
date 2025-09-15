@@ -14,12 +14,15 @@
  *  limitations under the License.
  */
 
-package com.hivemq.api.pulse;
+package com.hivemq.api.resources.impl.pulse;
 
+import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
+import com.hivemq.configuration.entity.pulse.PulseAssetMappingStatus;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.pulse.asset.PulseAgentAsset;
 import com.hivemq.pulse.asset.PulseAgentAssetMapping;
 import com.hivemq.pulse.asset.PulseAgentAssetMappingStatus;
+import com.hivemq.pulse.converters.PulseAgentAssetConverter;
 import com.hivemq.pulse.status.Status;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
@@ -32,39 +35,43 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class PulseApiImplDeleteManagedAssetTest extends AbstractPulseApiImplTest {
+public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest {
     @Test
-    public void whenAssetDoesNotExist_thenReturnsManagedAssetNotFoundError() {
+    public void whenConfigNotWritable_thenReturnsConfigWritingDisabledError() {
         when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
                 Status.ConnectionStatus.CONNECTED,
                 List.of()));
-        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
-        try (final Response response = pulseApi.deleteManagedAsset(UUID.randomUUID())) {
-            assertThat(response.getStatus()).isEqualTo(404);
-        }
-    }
-
-    @Test
-    public void whenAssetExistsButMappingDoesNotExist_thenReturnsOK() {
-        when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
-                Status.ConnectionStatus.CONNECTED,
-                List.of()));
-        final UUID id = UUID.randomUUID();
-        final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder().id(id)
+        when(systemInformation.isConfigWriteable()).thenReturn(false);
+        final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder().id(UUID.randomUUID())
                 .name("Test Asset")
                 .description("A test asset")
                 .topic("test/topic")
                 .schema("{}")
                 .mapping(PulseAgentAssetMapping.builder().build())
                 .build();
-        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
-        try (final Response response = pulseApi.deleteManagedAsset(expectedAsset.getId())) {
-            assertThat(response.getStatus()).isEqualTo(200);
-            final ArgumentCaptor<PulseEntity> assetsArgumentCaptor = ArgumentCaptor.forClass(PulseEntity.class);
-            verify(pulseExtractor).setPulseEntity(assetsArgumentCaptor.capture());
-            assertThat(assetsArgumentCaptor.getValue()).isNotNull();
-            assertThat(assetsArgumentCaptor.getValue().getPulseAssetsEntity()).isNotNull();
-            assertThat(assetsArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities()).isEmpty();
+        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
+        try (final Response response = pulseApi.updateManagedAsset(expectedAsset.getId(),
+                PulseAgentAssetConverter.INSTANCE.toRestEntity(expectedAsset))) {
+            assertThat(response.getStatus()).isEqualTo(403);
+        }
+    }
+
+    @Test
+    public void whenAssetDoesNotExist_thenReturnsManagedAssetNotFoundError() {
+        when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
+                Status.ConnectionStatus.CONNECTED,
+                List.of()));
+        final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder().id(UUID.randomUUID())
+                .name("Test Asset")
+                .description("A test asset")
+                .topic("test/topic")
+                .schema("{}")
+                .mapping(PulseAgentAssetMapping.builder().build())
+                .build();
+        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
+        try (final Response response = pulseApi.updateManagedAsset(expectedAsset.getId(),
+                PulseAgentAssetConverter.INSTANCE.toRestEntity(expectedAsset))) {
+            assertThat(response.getStatus()).isEqualTo(404);
         }
     }
 
@@ -82,13 +89,30 @@ public class PulseApiImplDeleteManagedAssetTest extends AbstractPulseApiImplTest
                 .mapping(PulseAgentAssetMapping.builder().id(id).status(PulseAgentAssetMappingStatus.STREAMING).build())
                 .build();
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
-        try (final Response response = pulseApi.deleteManagedAsset(id)) {
+        try (final Response response = pulseApi.updateManagedAsset(id,
+                PulseAgentAssetConverter.INSTANCE.toRestEntity(expectedAsset.withName("New name")
+                        .withDescription("New description")
+                        .withTopic("new/topic")
+                        .withSchema("{[]}")
+                        .withMapping(PulseAgentAssetMapping.builder()
+                                .id(id)
+                                .status(PulseAgentAssetMappingStatus.REQUIRES_REMAPPING)
+                                .build())))) {
             assertThat(response.getStatus()).isEqualTo(200);
             final ArgumentCaptor<PulseEntity> assetsArgumentCaptor = ArgumentCaptor.forClass(PulseEntity.class);
             verify(pulseExtractor).setPulseEntity(assetsArgumentCaptor.capture());
             assertThat(assetsArgumentCaptor.getValue()).isNotNull();
             assertThat(assetsArgumentCaptor.getValue().getPulseAssetsEntity()).isNotNull();
-            assertThat(assetsArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities()).isEmpty();
+            assertThat(assetsArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities()).hasSize(1);
+            final PulseAssetEntity asset =
+                    assetsArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities().get(0);
+            assertThat(asset.getId()).isEqualTo(id);
+            assertThat(asset.getName()).isEqualTo(expectedAsset.getName());
+            assertThat(asset.getDescription()).isEqualTo("New description");
+            assertThat(asset.getTopic()).isEqualTo(expectedAsset.getTopic());
+            assertThat(asset.getSchema()).isEqualTo(expectedAsset.getSchema());
+            assertThat(asset.getMapping().getId()).isEqualTo(id);
+            assertThat(asset.getMapping().getStatus()).isEqualTo(PulseAssetMappingStatus.REQUIRES_REMAPPING);
         }
     }
 }

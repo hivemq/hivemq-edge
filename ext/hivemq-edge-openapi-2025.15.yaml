@@ -4359,6 +4359,18 @@ paths:
       responses:
         '200':
           description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Topic, schema, or mapping ID invalid
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Managed asset not found
         '409':
           content:
             application/json:
@@ -4422,6 +4434,18 @@ paths:
       responses:
         '200':
           description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Topic, schema, or mapping ID invalid
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Managed asset not found
         '409':
           content:
             application/json:
@@ -4714,6 +4738,18 @@ paths:
       responses:
         '200':
           description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Topic, schema, or mapping ID invalid
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Managed asset not found
         '409':
           content:
             application/json:
@@ -4777,6 +4813,18 @@ paths:
       responses:
         '200':
           description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Topic, schema, or mapping ID invalid
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Managed asset not found
         '409':
           content:
             application/json:
