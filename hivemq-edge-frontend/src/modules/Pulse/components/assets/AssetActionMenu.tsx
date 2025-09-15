@@ -15,6 +15,7 @@ interface AssetActionMenuProps {
   isInWorkspace?: boolean
   onCreate?: (id: string) => void
   onEdit?: (id: string) => void
+  onView?: (id: string) => void
   onDelete?: (id: string) => void
   onViewWorkspace?: (id: string, type: string, command: WorkspaceNavigationCommand) => void
 }
@@ -23,6 +24,7 @@ export const AssetActionMenu: FC<AssetActionMenuProps> = ({
   asset,
   onEdit,
   onDelete,
+  onView,
   onViewWorkspace,
   isInWorkspace = false,
 }) => {
@@ -41,12 +43,12 @@ export const AssetActionMenu: FC<AssetActionMenuProps> = ({
       />
       <MenuList>
         <MenuGroup>
-          <MenuItem data-testid="assets-action-edit" onClick={() => onEdit?.(asset.id)}>
+          <MenuItem data-testid="assets-action-view" onClick={() => onView?.(asset.id)}>
             {t('pulse.assets.actions.view')}
           </MenuItem>
         </MenuGroup>
         <MenuGroup>
-          <MenuItem data-testid="assets-action-map" isDisabled={!isUnmapped}>
+          <MenuItem data-testid="assets-action-map" isDisabled={!isUnmapped} onClick={() => onEdit?.(asset.id)}>
             <Text>{t('pulse.assets.actions.map')}</Text>
           </MenuItem>
           <MenuItem

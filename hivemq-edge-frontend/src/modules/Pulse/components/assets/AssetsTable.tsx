@@ -159,7 +159,15 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
                 asset={asset}
                 onViewWorkspace={handleViewWorkspace}
                 isInWorkspace={variant === 'summary'}
-                onEdit={(id) => navigate(`/pulse-assets/${id}`)}
+                onView={(id) => navigate(`/pulse-assets/${id}`)}
+                onEdit={(id) => {
+                  setSelectedAsset({ assetId: id, operation: 'EDIT' })
+                  onOpen()
+                }}
+                onDelete={(id) => {
+                  setSelectedAsset({ assetId: id, operation: 'DELETE' })
+                  onOpen()
+                }}
               />
             </Skeleton>
           )
