@@ -1,10 +1,11 @@
 import type { FC } from 'react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Box, Skeleton, Text } from '@chakra-ui/react'
+import { Box, Skeleton, Text, useDisclosure } from '@chakra-ui/react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { chakraComponents } from 'chakra-react-select'
+import debug from 'debug'
 
 import type { ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
@@ -22,6 +23,8 @@ import FilteredCell from '@/modules/Pulse/components/assets/FilteredCell.tsx'
 import SourcesCell from '@/modules/Pulse/components/assets/SourcesCell.tsx'
 import { compareStatus } from '@/modules/Pulse/utils/pagination-utils.ts'
 import type { WorkspaceNavigationCommand } from '@/modules/Workspace/types.ts'
+
+const combinerLog = debug(`Combiner:AssetsTable`)
 
 const skeletonTemplate: ManagedAsset = {
   id: ' ',
@@ -180,12 +183,18 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
                 isInWorkspace={variant === 'summary'}
                 onView={(id) => navigate(`/pulse-assets/${id}`)}
                 onEdit={(id) => {
-                  setSelectedAsset({ assetId: id, operation: 'EDIT' })
-                  onOpen()
+                  const asset = data?.items.find((e) => e.id === id)
+                  if (asset) {
+                    setSelectedAssetOperation({ assetId: id, operation: 'EDIT', asset })
+                    onOpen()
+                  } else combinerLog('Cannot find the asset')
                 }}
                 onDelete={(id) => {
-                  setSelectedAsset({ assetId: id, operation: 'DELETE' })
-                  onOpen()
+                  const asset = data?.items.find((e) => e.id === id)
+                  if (asset) {
+                    setSelectedAssetOperation({ assetId: id, operation: 'DELETE', asset })
+                    onOpen()
+                  } else combinerLog('Cannot find the asset')
                 }}
               />
             </Skeleton>
