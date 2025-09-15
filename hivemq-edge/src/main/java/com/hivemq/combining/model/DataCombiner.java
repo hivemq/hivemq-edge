@@ -48,18 +48,6 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
                 combining);
     }
 
-    public @NotNull Combiner toModel() {
-        final List<com.hivemq.edge.api.model.DataCombining> combining =
-                this.dataCombinings().stream().map(DataCombining::toModel).toList();
-        final List<com.hivemq.edge.api.model.EntityReference> sources =
-                this.entityReferences().stream().map(EntityReference::toModel).toList();
-        return new Combiner().id(id)
-                .name(name)
-                .description(description)
-                .sources(new EntityReferenceList().items(sources))
-                .mappings(new DataCombiningList().items(combining));
-    }
-
     public static @NotNull DataCombiner fromPersistence(final @NotNull DataCombinerEntity combiner) {
         final List<DataCombining> combining =
                 combiner.getDataCombiningEntities().stream().map(DataCombining::fromPersistence).toList();
@@ -72,6 +60,18 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
                 combining);
     }
 
+    public @NotNull Combiner toModel() {
+        final List<com.hivemq.edge.api.model.DataCombining> combining =
+                this.dataCombinings().stream().map(DataCombining::toModel).toList();
+        final List<com.hivemq.edge.api.model.EntityReference> sources =
+                this.entityReferences().stream().map(EntityReference::toModel).toList();
+        return new Combiner().id(id)
+                .name(name)
+                .description(description)
+                .sources(new EntityReferenceList().items(sources))
+                .mappings(new DataCombiningList().items(combining));
+    }
+
     public @NotNull DataCombinerEntity toPersistence() {
         final List<DataCombiningEntity> combining = dataCombinings.stream().map(DataCombining::toPersistence).toList();
         final List<EntityReferenceEntity> sources =
@@ -79,4 +79,10 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
         return new DataCombinerEntity(id, name, description, sources, combining);
     }
 
+    public @NotNull List<DataCombining> getPulseDataCombinings() {
+        return dataCombinings.stream()
+                .filter(dataCombining -> dataCombining.sources().primaryReference().type() ==
+                        DataIdentifierReference.Type.PULSE_ASSET)
+                .toList();
+    }
 }
