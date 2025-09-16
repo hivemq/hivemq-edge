@@ -239,7 +239,7 @@ describe('AssetsTable', () => {
     it('should handle mapping', () => {
       cy.intercept('PUT', 'api/v1/management/pulse/managed-assets/*', (req) => {
         req.reply({ statusCode: 404 })
-      }).as('unmapRequest')
+      })
 
       cy.mountWithProviders(<AssetsTable />, {
         wrapper: WrapperTestRoute,
