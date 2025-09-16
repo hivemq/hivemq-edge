@@ -2,14 +2,16 @@ import type { FC } from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Box, Skeleton, Text, useDisclosure } from '@chakra-ui/react'
+import { Box, Skeleton, Text, useDisclosure, useToast } from '@chakra-ui/react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { chakraComponents } from 'chakra-react-select'
 import debug from 'debug'
 
 import type { Combiner, ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
+import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
+import { useUpdateManagedAsset } from '@/api/hooks/usePulse/useUpdateManagedAsset.ts'
 import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
@@ -53,6 +55,8 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   const [searchParams] = useSearchParams()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [selectedAssetOperation, setSelectedAssetOperation] = useState<SelectedAssetOperation | undefined>(undefined)
+  const updateManagedAsset = useUpdateManagedAsset()
+  const toast = useToast(BASE_TOAST_OPTION)
 
   const safeData = useMemo(() => {
     if (!data?.items) return [skeletonTemplate, skeletonTemplate, skeletonTemplate]
@@ -90,8 +94,40 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   }
 
   const handleConfirmDelete = () => {
-    setSelectedAssetOperation(undefined)
-    onClose()
+    if (!selectedAssetOperation || !selectedAssetOperation.asset) return combinerLog('Cannot find the asset')
+
+    const assetPromise = updateManagedAsset.mutateAsync({
+      assetId: selectedAssetOperation?.assetId,
+      requestBody: {
+        ...selectedAssetOperation.asset,
+        mapping: {
+          status: AssetMapping.status.UNMAPPED,
+          mappingId: undefined,
+        },
+      },
+    })
+    toast.promise(
+      assetPromise.then(() => {
+        setSelectedAssetOperation(undefined)
+        onClose()
+      }),
+      {
+        success: { title: t('pulse.mapper.toast.unmap.title'), description: t('pulse.mapper.toast.unmap.success') },
+        error: (e) => {
+          combinerLog('Error publishing the asset', e)
+          return {
+            title: t('pulse.mapper.toast.unmap.title'),
+            description: (
+              <>
+                <Text>{t('pulse.mapper.toast.unmap.error')}</Text>
+                {e.message && <Text>{e.message}</Text>}
+              </>
+            ),
+          }
+        },
+        loading: { title: t('pulse.mapper.toast.unmap.title'), description: t('pulse.mapper.toast.loading') },
+      }
+    )
   }
 
   const columns = useMemo<ColumnDef<ManagedAsset>[]>(() => {
