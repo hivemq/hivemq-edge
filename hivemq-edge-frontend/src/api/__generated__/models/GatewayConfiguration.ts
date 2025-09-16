@@ -9,6 +9,7 @@ import type { FirstUseInformation } from './FirstUseInformation';
 import type { Link } from './Link';
 import type { LinkList } from './LinkList';
 import type { ModuleList } from './ModuleList';
+import type { PreLoginNotice } from './PreLoginNotice';
 
 export type GatewayConfiguration = {
     cloudLink?: Link;
@@ -28,5 +29,6 @@ export type GatewayConfiguration = {
      * Is the tracking of user actions allowed.
      */
     trackingAllowed?: boolean;
+    preLoginNotice?: PreLoginNotice;
 };
 

@@ -39,5 +39,8 @@ export const $GatewayConfiguration = {
             type: 'boolean',
             description: `Is the tracking of user actions allowed.`,
         },
+        preLoginNotice: {
+            type: 'PreLoginNotice',
+        },
     },
 } as const;
