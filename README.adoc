@@ -19,7 +19,7 @@ image::docs/edge-intro.gif[title=Edge Intro, align="center"]
 * Website: https://www.hivemq.com/
 * Documentation: https://docs.hivemq.com/hivemq-edge/index.html
 * Community Forum: https://community.hivemq.com/
-* Contribution guidelines: link:CONTRIBUTING.adoc[Contributing.adoc]
+* Contribution guidelines: link:CONTRIBUTING.md[Contributing.md]
 * License: The source files in this repository are made available under the link:LICENSE[Apache License Version 2.0].
 
 When you deploy HiveMQ Edge using Docker, you will have a preview of commercially licensed features.
