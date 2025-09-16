@@ -191,8 +191,8 @@ A consent form will be displayed in the browser at first usage. Opt-in or pot-ou
 
 There are two ways you can opt-out before installation and running:
 
-- modify the Edge configuration via the `config.xml` (the `usage-tracking` property allows corporate-wide consent)
-
+- Modify the Edge configuration via the `config.xml` (the `usage-tracking` property allows corporate-wide consent).
++
 [#dissable-tracking]
 .Example configuration to disable usage tracking centrally for all users
 [source,xml]
@@ -205,7 +205,6 @@ There are two ways you can opt-out before installation and running:
 </hivemq>
 ----
 
-- modify the frontend configuration (the `VITE_MONITORING_?????` properties in the `./.env` file contains HiveMQ unique application id required to activate the different trackers).
+- Modify the frontend configuration (the `VITE_MONITORING_?????` properties in the `./.env` file contains HiveMQ unique application id required to activate the different trackers).
 
 Note that you can also change the `VITE_MONITORING_?????` values to your own account(s) if you use any. It will allow you to collect behaviour on your own infrastructure
-
