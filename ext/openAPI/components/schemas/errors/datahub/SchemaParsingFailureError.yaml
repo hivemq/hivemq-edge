@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      alias:
+        type: string
+        description: The schema alias.
+        example: "abc"
+    required:
+      - alias
+example:
+  general:
+    status: 400
+    title: "Schema Parsing Failure"
+    detail: "The given schema 'abc' could not be parsed."
+    alias: "abc"
+    type: "https://hivemq.com/edge/api/model/SchemaParsingFailureError"

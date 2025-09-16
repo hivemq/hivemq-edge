@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The policy id.
+        example: "abc"
+    required:
+      - id
+example:
+  general:
+    status: 507
+    title: "Policy Insufficient Storage"
+    detail: "Policy with ID '123' could not be added because of insufficient server storage."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/PolicyInsufficientStorageError"
