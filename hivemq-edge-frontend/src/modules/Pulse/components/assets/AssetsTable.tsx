@@ -65,6 +65,7 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   }, [data])
 
   const handleViewWorkspace = (adapterId: string, type: string, command: WorkspaceNavigationCommand) => {
+    console.log('XXCXXX', { adapterId, type, command })
     if (adapterId) navigate('/workspace', { state: { selectedAdapter: { adapterId, type, command } } })
   }
 
