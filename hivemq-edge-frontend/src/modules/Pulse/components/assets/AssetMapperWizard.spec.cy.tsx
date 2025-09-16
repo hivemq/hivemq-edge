@@ -13,7 +13,7 @@ describe('AssetMapperWizard', () => {
     const onSubmit = cy.stub().as('onSubmit')
 
     cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getAssets')
-    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', { items: [MOCK_COMBINER_ASSET] }).as('getCombiner')
+    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', { items: [MOCK_COMBINER_ASSET] })
 
     cy.mountWithProviders(
       <AssetMapperWizard assetId={MOCK_PULSE_ASSET.id} isOpen onClose={onClose} onSubmit={onSubmit} />,
@@ -154,8 +154,8 @@ describe('AssetMapperWizard', () => {
   })
 
   it('should be accessible', () => {
-    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('assets')
-    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', { items: [MOCK_COMBINER_ASSET] }).as('getCombiner')
+    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST)
+    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', { items: [MOCK_COMBINER_ASSET] })
 
     cy.injectAxe()
     cy.mountWithProviders(<AssetMapperWizard assetId={MOCK_PULSE_ASSET.id} isOpen onClose={cy.stub} />)
