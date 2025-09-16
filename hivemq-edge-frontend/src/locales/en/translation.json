@@ -1627,7 +1627,31 @@
         "header": "Managing Pulse Asset Mappings"
       },
       "title": "Asset Mapper",
-      "unnamed": "< unnamed asset mapper >"
+      "unnamed": "< unnamed asset mapper >",
+      "toast": {
+        "loading": "Sending the data ...",
+        "create": {
+          "title": "Create the combiner",
+          "success": "We've successfully created the combiner for you.",
+          "partialSuccess": "We've successfully created the combiner for you. Please note that some of the selected entities are not valid for data combining and have not been connected.",
+          "error": "There was a problem trying to create the combiner"
+        },
+        "update": {
+          "title": "Update the combiner",
+          "success": "We've successfully updated the combiner for you.",
+          "error": "There was a problem trying to update the combiner"
+        },
+        "unmap": {
+          "title": "Unmapping the asset",
+          "success": "We've successfully removed the mapping from the asset.",
+          "error": "There was a problem trying to remove the mapping from the asset"
+        },
+        "delete": {
+          "title": "Delete the combiner",
+          "success": "We've successfully deleted the combiner for you.",
+          "error": "There was a problem trying to delete the combiner"
+        }
+      }
     },
 
     "workspace": {
