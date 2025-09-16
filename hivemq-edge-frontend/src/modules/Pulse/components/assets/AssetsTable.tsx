@@ -65,7 +65,6 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   }, [data])
 
   const handleViewWorkspace = (adapterId: string, type: string, command: WorkspaceNavigationCommand) => {
-    console.log('XXCXXX', { adapterId, type, command })
     if (adapterId) navigate('/workspace', { state: { selectedAdapter: { adapterId, type, command } } })
   }
 
@@ -265,8 +264,8 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
 
   // TODO[NVL] Tanstack table has a column-visibility as a state; manage it  through it?
   const dynamicColumns = useMemo(() => {
-    const [name, , topic, status, , actions] = columns
-
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [name, _description, topic, status, _sources, actions] = columns
     return variant === 'full' ? columns : [name, topic, status, actions]
   }, [columns, variant])
 
