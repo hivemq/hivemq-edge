@@ -92,9 +92,9 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
             type={NodeTypes.ASSETS_NODE}
             description={assetMapper.description || t('pulse.mapper.title')}
             rightElement={
-              <VStack gap={0} alignItems="flex-end">
+              <VStack gap={0} alignItems="flex-end" data-testid="node-sources">
                 {assetMapper.sources.items.map((source) => (
-                  <Box key={source.id}>
+                  <Box key={source.id} data-testid="node-source-id">
                     <Text>{source.id}</Text>
                   </Box>
                 ))}
@@ -108,13 +108,18 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
 
   const SingleValue = (props: SingleValueProps<Combiner>) => {
     const { data: assetMapper } = props as unknown as SingleValueProps<CreatableSelectProps>
-    return <chakraComponents.SingleValue {...props}>{assetMapper.name}</chakraComponents.SingleValue>
+    return (
+      <chakraComponents.SingleValue {...props}>
+        <Text id="react-select-mapper-value">{assetMapper.name}</Text>
+      </chakraComponents.SingleValue>
+    )
   }
 
   const Control = (props: ControlProps<Combiner>) => {
     return (
       <chakraComponents.Control {...props}>
         <Box
+          data-testid="wizard-mapper-selector-leftAdd"
           height="-webkit-fill-available"
           alignContent="end"
           backgroundColor="gray.100"
@@ -138,8 +143,8 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
         <ModalCloseButton />
         <ModalBody>
           <VStack spacing={4} alignItems="flex-start">
-            <Text data-testid="schema-infer-prompt">{t('pulse.assets.operation.edit.overview')}</Text>
-            <FormControl>
+            <Text data-testid="wizard-mapper-instruction">{t('pulse.assets.operation.edit.overview')}</Text>
+            <FormControl data-testid="wizard-mapper-selector-container">
               <FormLabel htmlFor="asset-mapper">
                 {t('pulse.assets.operation.edit.select.title')}
                 <MoreInfo
@@ -149,6 +154,9 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
               </FormLabel>
 
               <CreatableSelect<Combiner, false>
+                id="wizard-mapper-selector"
+                // menuIsOpen
+                instanceId="mapper"
                 inputId="asset-mapper"
                 options={listMappers?.items || []}
                 value={selectedValue}
