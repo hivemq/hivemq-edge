@@ -62,23 +62,6 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
     return listAssets.items.find((asset) => asset.id === assetId)
   }, [assetId, listAssets])
 
-  // if (isAssetsLoading || isMapperLoading) return <LoaderSpinner />
-  // if (assetsError) {
-  //   errorToast({ id: 'xx', title: 'This is an error', description: 'And the error is this one' }, assetsError)
-  //   return null
-  // }
-  // if (mappersError) {
-  //   errorToast({ id: 'xx', title: 'This is an error', description: 'And the error is this one' }, mappersError)
-  //   return null
-  // }
-  // if (!asset) {
-  //   errorToast(
-  //     { id: 'xx', title: 'This is an error', description: 'And the error is this one' },
-  //     new Error('Asset not found')
-  //   )
-  //   return null
-  // }
-
   const Option: ComponentType<OptionProps<Combiner, false, GroupBase<Combiner>>> = (props) => {
     const { data: assetMapper } = props
     const isNewOption = Boolean(props.children)
