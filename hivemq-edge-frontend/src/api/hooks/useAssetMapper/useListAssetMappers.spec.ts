@@ -30,6 +30,8 @@ describe('useListAssetMappers', () => {
         {
           id: 'ba4f7882-f7c0-4ce7-bf65-485677fc1b60',
           name: 'my-asset-mapper',
+          description: 'This is a description',
+
           sources: {
             items: expect.arrayContaining([
               {
