@@ -2,6 +2,7 @@ import { MOCK_CREATED_AT } from '@/__test-utils__/mocks.ts'
 
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
 import SchemaTable from '@datahub/components/pages/SchemaTable.tsx'
+import { DateTime } from 'luxon'
 
 describe('SchemaTable (Copilot)', () => {
   beforeEach(() => {
@@ -47,6 +48,7 @@ describe('SchemaTable (Copilot)', () => {
         createdAt: MOCK_CREATED_AT,
       }
       cy.intercept('/api/v1/data-hub/schemas', { items: [schema] }).as('getSchemasSuccess')
+      cy.stub(DateTime, 'now').returns(DateTime.fromISO(MOCK_CREATED_AT).plus({ day: 2 }))
     })
 
     it('should render schema data correctly', () => {
@@ -62,7 +64,7 @@ describe('SchemaTable (Copilot)', () => {
           cy.get('td').eq(1).should('contain', 'JSON')
           cy.get('td').eq(2).should('contain', '2')
           // without clock the date is not correct
-          cy.get('td').eq(3).should('contain', '1 year ago')
+          cy.get('td').eq(3).should('contain', '2 days ago')
           cy.get('td').eq(4).find('button').should('have.length', 2)
         })
     })
@@ -88,19 +90,6 @@ describe('SchemaTable (Copilot)', () => {
       cy.get('tbody tr').first().find('[aria-label="Delete"]').click()
 
       cy.get('@deleteItemSpy').should('have.been.calledOnce')
-    })
-
-    // This one is completely bonkers, as far as I can tell
-    it.skip('should trigger download action correctly', () => {
-      const downloadJSONSpy = cy.spy().as('downloadJSONSpy')
-      cy.window().then((win) => {
-        cy.stub(win, 'downloadJSON').as('downloadJSONStub').callsFake(downloadJSONSpy)
-      })
-
-      cy.mountWithProviders(<SchemaTable />)
-      cy.get('tbody tr').first().find('[aria-label="Download"]').click()
-
-      cy.get('@downloadJSONStub').should('have.been.calledOnce')
     })
   })
 
