@@ -13,6 +13,7 @@ export const MOCK_ASSET_MAPPER_ID = 'ba4f7882-f7c0-4ce7-bf65-485677fc1b60'
 export const MOCK_ASSET_MAPPER: Combiner = {
   id: MOCK_ASSET_MAPPER_ID,
   name: 'my-asset-mapper',
+  description: 'This is a description',
   sources: {
     items: [
       {

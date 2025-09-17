@@ -1580,6 +1580,29 @@
         "delete": "Delete mapping",
         "mapper": "Open asset mapper"
       },
+      "operation": {
+        "delete": {
+          "header": "Unmapping asset \"{{ name }}\"",
+          "message": "Do you want to remove all mapping instructions from the asset? The action cannot be reversed."
+        },
+        "edit": {
+          "header": "Mapping asset \"{{ name }}\"",
+          "overview": "To map an asset, you first have to select an existing mapper or create a new one",
+          "select": {
+            "title": "Asset mappers",
+            "placeholder": "Select ...",
+            "createLabel": "Create a new mapper: {{ name }}",
+            "createValue": "{{ name }} (new)",
+            "helper": "The asset to use for the new mapping",
+            "moreInfo": {
+              "title": "Asset mappers group selected sources of data together, to restrict access to integration points (tags and topic filters) and to enable the destination schema from Pulse.",
+              "link": "https://docs.hivemq.com/hivemq-edge/pulse-asset-mapping.html"
+            }
+          },
+          "submit_EDIT": "Edit the asset mapper",
+          "submit_CREATE": "Create a new asset mapper"
+        }
+      },
       "selector": {
         "aria-label": "List of assets",
         "placeholder": "Select an asset to map...",
@@ -1613,7 +1636,31 @@
         "header": "Managing Pulse Asset Mappings"
       },
       "title": "Asset Mapper",
-      "unnamed": "< unnamed asset mapper >"
+      "unnamed": "< unnamed asset mapper >",
+      "toast": {
+        "loading": "Sending the data ...",
+        "create": {
+          "title": "Create the combiner",
+          "success": "We've successfully created the combiner for you.",
+          "partialSuccess": "We've successfully created the combiner for you. Please note that some of the selected entities are not valid for data combining and have not been connected.",
+          "error": "There was a problem trying to create the combiner"
+        },
+        "update": {
+          "title": "Update the combiner",
+          "success": "We've successfully updated the combiner for you.",
+          "error": "There was a problem trying to update the combiner"
+        },
+        "unmap": {
+          "title": "Unmapping the asset",
+          "success": "We've successfully removed the mapping from the asset.",
+          "error": "There was a problem trying to remove the mapping from the asset"
+        },
+        "delete": {
+          "title": "Delete the combiner",
+          "success": "We've successfully deleted the combiner for you.",
+          "error": "There was a problem trying to delete the combiner"
+        }
+      }
     },
 
     "workspace": {
