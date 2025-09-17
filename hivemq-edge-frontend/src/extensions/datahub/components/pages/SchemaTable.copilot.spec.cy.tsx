@@ -70,21 +70,10 @@ describe('SchemaTable (Copilot)', () => {
     })
   })
 
-  context('Error Handling', () => {
-    it('should handle error state', () => {
-      cy.intercept('/api/v1/data-hub/schemas', { statusCode: 500 }).as('getSchemasError')
-      cy.mountWithProviders(<SchemaTable />)
-
-      // That's hallucinating
-      // cy.contains('Error loading data').should('be.visible')
-      // cy.get('button').contains('Try again').should('be.visible')
-    })
-  })
-
   context('Actions', () => {
     it('should trigger delete action correctly', () => {
       const deleteItemSpy = cy.spy().as('deleteItemSpy')
-      cy.intercept('/api/v1/data-hub/schemas', { items: [mockSchemaTempHumidity] }).as('getSchemas')
+      cy.intercept('/api/v1/data-hub/schemas', { items: [mockSchemaTempHumidity] })
 
       cy.mountWithProviders(<SchemaTable onDeleteItem={deleteItemSpy} />)
       cy.get('tbody tr').first().find('[aria-label="Delete"]').click()
