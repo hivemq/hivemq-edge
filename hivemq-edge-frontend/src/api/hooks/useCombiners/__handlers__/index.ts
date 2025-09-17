@@ -87,6 +87,7 @@ export const mockCombinerMapping: DataCombining = {
 export const MOCK_COMBINER_ASSET: Combiner = {
   id: 'e9af7f82-bec1-4d07-8c0f-e4591148af19',
   name: 'my-combiner-for-asset',
+  description: "This is a description for the asset mapper 'my-combiner-for-asset'",
   sources: {
     items: [
       {
