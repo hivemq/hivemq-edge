@@ -8,7 +8,7 @@ import { QUERY_KEYS } from '@/api/utils.ts'
 
 export const useListManagedAssets = () => {
   const appClient = useHttpClient()
-  const { data: hasPulse, isLoading } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
+  const { data: hasPulse, isLoading: isCapacityLoading } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
 
   const query = useQuery<ManagedAssetList, ApiError>({
     queryKey: [QUERY_KEYS.PULSE_ASSETS],
@@ -19,6 +19,6 @@ export const useListManagedAssets = () => {
   return {
     // eslint-disable-next-line @tanstack/query/no-rest-destructuring
     ...query,
-    isLoading: isLoading || query.isLoading,
+    isLoading: isCapacityLoading || query.isLoading,
   }
 }
