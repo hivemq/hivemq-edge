@@ -8,15 +8,15 @@ describe('AssetMonitoringBadge', () => {
   })
 
   it('should render properly', () => {
-    cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES).as('getCapabilities')
-    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getAssets')
+    cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
+    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST)
     cy.mountWithProviders(<AssetMonitoringBadge />)
 
     cy.getByTestId('asset-monitoring-unattended').should('have.text', '3')
   })
 
   it('should handle errors', () => {
-    cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES).as('getCapabilities')
+    cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
     cy.intercept('/api/v1/management/pulse/managed-assets', { statusCode: 404 }).as('getAssets')
     cy.mountWithProviders(<AssetMonitoringBadge />)
     cy.wait('@getAssets')
@@ -26,7 +26,7 @@ describe('AssetMonitoringBadge', () => {
   })
 
   it('should handle errors', () => {
-    cy.intercept('/api/v1/frontend/capabilities', { items: [] }).as('getCapabilities')
+    cy.intercept('/api/v1/frontend/capabilities', { items: [] })
     cy.intercept('/api/v1/management/pulse/managed-assets', { statusCode: 404 }).as('getAssets')
     cy.mountWithProviders(<AssetMonitoringBadge />)
     cy.get('@getAssets').should('not.exist')
@@ -35,7 +35,7 @@ describe('AssetMonitoringBadge', () => {
   })
 
   it('should be accessible', () => {
-    cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES).as('getCapabilities')
+    cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
     cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST)
     cy.intercept('/api/v1/management/pulse/managed-assets', { statusCode: 404 }).as('getAssets')
     cy.injectAxe()
