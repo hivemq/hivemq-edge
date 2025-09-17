@@ -31,7 +31,7 @@ describe('useGetPulseStatus', () => {
     })
   })
 
-  it('should not load data is disabled', async () => {
+  it('should not load data when disabled', async () => {
     server.use(...handlerCapabilities({ items: [] }))
     const { result } = renderHook(() => useGetPulseStatus(), { wrapper })
 
