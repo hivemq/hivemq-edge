@@ -1,26 +1,33 @@
 import type { FC } from 'react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Box, Skeleton, Text } from '@chakra-ui/react'
+import { Box, Skeleton, Text, useDisclosure, useToast } from '@chakra-ui/react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { chakraComponents } from 'chakra-react-select'
+import debug from 'debug'
 
-import type { ManagedAsset } from '@/api/__generated__'
+import type { Combiner, ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
+import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
+import { useUpdateManagedAsset } from '@/api/hooks/usePulse/useUpdateManagedAsset.ts'
 import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import { Topic } from '@/components/MQTT/EntityTag.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import type { FilterMetadata } from '@/components/PaginatedTable/types.ts'
 import { AssetActionMenu } from '@/modules/Pulse/components/assets/AssetActionMenu.tsx'
+import AssetMapperWizard from '@/modules/Pulse/components/assets/AssetMapperWizard.tsx'
 import AssetStatusBadge from '@/modules/Pulse/components/assets/AssetStatusBadge.tsx'
 import FilteredCell from '@/modules/Pulse/components/assets/FilteredCell.tsx'
 import SourcesCell from '@/modules/Pulse/components/assets/SourcesCell.tsx'
 import { compareStatus } from '@/modules/Pulse/utils/pagination-utils.ts'
-import type { WorkspaceNavigationCommand } from '@/modules/Workspace/types.ts'
+import { NodeTypes, WorkspaceNavigationCommand } from '@/modules/Workspace/types.ts'
+
+const combinerLog = debug(`Combiner:AssetsTable`)
 
 const skeletonTemplate: ManagedAsset = {
   id: ' ',
@@ -35,11 +42,21 @@ interface AssetTableProps {
   variant?: 'full' | 'summary'
 }
 
+interface SelectedAssetOperation {
+  assetId: string
+  asset?: ManagedAsset
+  operation: 'DELETE' | 'EDIT'
+}
+
 const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   const { t } = useTranslation()
   const { data, isLoading, error } = useListManagedAssets()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [selectedAssetOperation, setSelectedAssetOperation] = useState<SelectedAssetOperation | undefined>(undefined)
+  const updateManagedAsset = useUpdateManagedAsset()
+  const toast = useToast(BASE_TOAST_OPTION)
 
   const safeData = useMemo(() => {
     if (!data?.items) return [skeletonTemplate, skeletonTemplate, skeletonTemplate]
@@ -49,6 +66,68 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
 
   const handleViewWorkspace = (adapterId: string, type: string, command: WorkspaceNavigationCommand) => {
     if (adapterId) navigate('/workspace', { state: { selectedAdapter: { adapterId, type, command } } })
+  }
+
+  const handleCloseWizard = () => {
+    setSelectedAssetOperation(undefined)
+    onClose()
+  }
+
+  const handleConfirmWizard = (assetMapper: Combiner) => {
+    setSelectedAssetOperation(undefined)
+    onClose()
+    if (assetMapper)
+      navigate('/workspace', {
+        state: {
+          selectedAdapter: {
+            adapterId: assetMapper.id,
+            type: NodeTypes.COMBINER_NODE,
+            command: WorkspaceNavigationCommand.ASSET_MAPPER,
+          },
+        },
+      })
+  }
+
+  const handleCloseDelete = () => {
+    setSelectedAssetOperation(undefined)
+    onClose()
+  }
+
+  const handleConfirmDelete = () => {
+    if (!selectedAssetOperation || !selectedAssetOperation.asset) return combinerLog('Cannot find the asset')
+
+    const assetPromise = updateManagedAsset.mutateAsync({
+      assetId: selectedAssetOperation?.assetId,
+      requestBody: {
+        ...selectedAssetOperation.asset,
+        mapping: {
+          status: AssetMapping.status.UNMAPPED,
+          mappingId: undefined,
+        },
+      },
+    })
+    toast.promise(
+      assetPromise.then(() => {
+        setSelectedAssetOperation(undefined)
+        onClose()
+      }),
+      {
+        success: { title: t('pulse.mapper.toast.unmap.title'), description: t('pulse.mapper.toast.unmap.success') },
+        error: (e) => {
+          combinerLog('Error publishing the asset', e)
+          return {
+            title: t('pulse.mapper.toast.unmap.title'),
+            description: (
+              <>
+                <Text>{t('pulse.mapper.toast.unmap.error')}</Text>
+                {e.message && <Text>{e.message}</Text>}
+              </>
+            ),
+          }
+        },
+        loading: { title: t('pulse.mapper.toast.unmap.title'), description: t('pulse.mapper.toast.loading') },
+      }
+    )
   }
 
   const columns = useMemo<ColumnDef<ManagedAsset>[]>(() => {
@@ -159,7 +238,21 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
                 asset={asset}
                 onViewWorkspace={handleViewWorkspace}
                 isInWorkspace={variant === 'summary'}
-                onEdit={(id) => navigate(`/pulse-assets/${id}`)}
+                onView={(id) => navigate(`/pulse-assets/${id}`)}
+                onEdit={(id) => {
+                  const asset = data?.items.find((e) => e.id === id)
+                  if (asset) {
+                    setSelectedAssetOperation({ assetId: id, operation: 'EDIT', asset })
+                    onOpen()
+                  } else combinerLog('Cannot find the asset')
+                }}
+                onDelete={(id) => {
+                  const asset = data?.items.find((e) => e.id === id)
+                  if (asset) {
+                    setSelectedAssetOperation({ assetId: id, operation: 'DELETE', asset })
+                    onOpen()
+                  } else combinerLog('Cannot find the asset')
+                }}
               />
             </Skeleton>
           )
@@ -173,7 +266,6 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   const dynamicColumns = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [name, _description, topic, status, _sources, actions] = columns
-
     return variant === 'full' ? columns : [name, topic, status, actions]
   }, [columns, variant])
 
@@ -189,16 +281,35 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   }
 
   return (
-    <PaginatedTable<ManagedAsset>
-      aria-label={t('pulse.assets.listing.aria-label')}
-      noDataText={t('pulse.assets.listing.noDataText')}
-      data={safeData}
-      columns={dynamicColumns}
-      enablePagination
-      enableColumnFilters
-      enableGlobalFilter
-      initState={{ columnFilters: [{ id: 'mapping_status', value: searchParams.get('mapping_status') || '' }] }}
-    />
+    <>
+      <PaginatedTable<ManagedAsset>
+        aria-label={t('pulse.assets.listing.aria-label')}
+        noDataText={t('pulse.assets.listing.noDataText')}
+        data={safeData}
+        columns={dynamicColumns}
+        enablePagination
+        enableColumnFilters
+        enableGlobalFilter
+        initState={{ columnFilters: [{ id: 'mapping_status', value: searchParams.get('mapping_status') || '' }] }}
+      />
+      {selectedAssetOperation && (
+        <>
+          <AssetMapperWizard
+            isOpen={isOpen && selectedAssetOperation?.operation === 'EDIT'}
+            assetId={selectedAssetOperation?.assetId}
+            onClose={handleCloseWizard}
+            onSubmit={handleConfirmWizard}
+          />
+          <ConfirmationDialog
+            isOpen={isOpen && selectedAssetOperation?.operation === 'DELETE'}
+            onClose={handleCloseDelete}
+            onSubmit={handleConfirmDelete}
+            header={t('pulse.assets.operation.delete.header', { name: selectedAssetOperation?.asset?.name })}
+            message={t('pulse.assets.operation.delete.message')}
+          />
+        </>
+      )}
+    </>
   )
 }
 
