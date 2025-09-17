@@ -1585,6 +1585,7 @@
             "placeholder": "Select ...",
             "createLabel": "Create a new mapper: {{ name }}",
             "createValue": "{{ name }} (new)",
+            "helper": "The asset to use for the new mapping",
             "moreInfo": {
               "title": "Asset mappers group selected sources of data together, to restrict access to integration points (tags and topic filters) and to enable the destination schema from Pulse.",
               "link": "https://docs.hivemq.com/hivemq-edge/pulse-asset-mapping.html"

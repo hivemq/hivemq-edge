@@ -185,7 +185,7 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
                   })
                 }
               />
-              <FormHelperText>The asset to use for the new mapping</FormHelperText>
+              <FormHelperText>{t('pulse.assets.operation.edit.select.helper')}</FormHelperText>
             </FormControl>
           </VStack>
         </ModalBody>
