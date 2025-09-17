@@ -91,7 +91,7 @@ describe('AssetMonitoringOnboardingTask', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getAssets')
+    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST)
     cy.mountWithProviders(<AssetMonitoringOnboardingTask />)
     cy.checkAccessibility()
   })
