@@ -37,6 +37,7 @@ public class PulseAssetEntityTest {
         final Asset asset2 = new Asset("123e4567-e89b-12d3-a456-426614174000",
                 "test/topic",
                 "Test Asset",
+                "This is a test asset",
                 "{ \"type\": \"object\" }");
         assertThat(asset1.equals(asset2)).isTrue();
     }
@@ -51,8 +52,11 @@ public class PulseAssetEntityTest {
                 .schema("{\"a\":1,\"b\":2}")
                 .mapping(PulseAssetMappingEntity.builder().build())
                 .build();
-        final Asset asset2 =
-                new Asset("123e4567-e89b-12d3-a456-426614174000", "test/topic", "Test Asset", "{\"b\":2,\"a\":1}");
+        final Asset asset2 = new Asset("123e4567-e89b-12d3-a456-426614174000",
+                "test/topic",
+                "Test Asset",
+                "This is a test asset",
+                "{\"b\":2,\"a\":1}");
         assertThat(asset1.equals(asset2)).isTrue();
     }
 
@@ -66,8 +70,11 @@ public class PulseAssetEntityTest {
                 .schema("{\"a\":1,\"b\":2}")
                 .mapping(PulseAssetMappingEntity.builder().build())
                 .build();
-        final Asset asset2 =
-                new Asset("123e4567-e89b-12d3-a456-426614174002", "test/topic", "Test Asset", "{\"a\":1,\"b\":2}");
+        final Asset asset2 = new Asset("123e4567-e89b-12d3-a456-426614174002",
+                "test/topic",
+                "Test Asset",
+                "This is a test asset",
+                "{\"a\":1,\"b\":2}");
         assertThat(asset1.equals(asset2)).isFalse();
     }
 
@@ -81,8 +88,29 @@ public class PulseAssetEntityTest {
                 .schema("{\"a\":1,\"b\":2}")
                 .mapping(PulseAssetMappingEntity.builder().build())
                 .build();
-        final Asset asset2 =
-                new Asset("123e4567-e89b-12d3-a456-426614174000", "test/topic", "Test Asset 2", "{\"a\":1,\"b\":2}");
+        final Asset asset2 = new Asset("123e4567-e89b-12d3-a456-426614174000",
+                "test/topic",
+                "Test Asset 2",
+                "This is a test asset",
+                "{\"a\":1,\"b\":2}");
+        assertThat(asset1.equals(asset2)).isFalse();
+    }
+
+    @Test
+    public void whenDescriptionIsDifferent_thenEqualsReturnsFalse() {
+        final PulseAssetEntity asset1 = PulseAssetEntity.builder()
+                .id(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
+                .name("Test Asset")
+                .description("This is a test asset")
+                .topic("test/topic")
+                .schema("{\"a\":1,\"b\":2}")
+                .mapping(PulseAssetMappingEntity.builder().build())
+                .build();
+        final Asset asset2 = new Asset("123e4567-e89b-12d3-a456-426614174000",
+                "test/topic",
+                "Test Asset",
+                "This is another test asset",
+                "{\"a\":1,\"b\":2}");
         assertThat(asset1.equals(asset2)).isFalse();
     }
 
@@ -96,8 +124,11 @@ public class PulseAssetEntityTest {
                 .schema("{\"a\":1,\"b\":2}")
                 .mapping(PulseAssetMappingEntity.builder().build())
                 .build();
-        final Asset asset2 =
-                new Asset("123e4567-e89b-12d3-a456-426614174000", "test/topic/2", "Test Asset", "{\"a\":1,\"b\":2}");
+        final Asset asset2 = new Asset("123e4567-e89b-12d3-a456-426614174000",
+                "test/topic/2",
+                "Test Asset",
+                "This is a test asset",
+                "{\"a\":1,\"b\":2}");
         assertThat(asset1.equals(asset2)).isFalse();
     }
 }

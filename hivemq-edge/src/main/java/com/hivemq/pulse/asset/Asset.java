@@ -23,9 +23,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 /**
- * Represents an asset with an id, topic, name, and JSON schema.
+ * Represents an asset with an id, topic, name, description, and JSON schema.
  */
-public record Asset(@NotNull String id, @NotNull String topic, @NotNull String name, @NotNull String jsonSchema) {
+public record Asset(@NotNull String id, @NotNull String topic, @NotNull String name, @Nullable String description, @NotNull String jsonSchema) {
 
     /**
      * Returns a new builder for Asset.
@@ -38,28 +38,35 @@ public record Asset(@NotNull String id, @NotNull String topic, @NotNull String n
         if (Objects.equals(this.id, id)) {
             return this;
         }
-        return new Asset(id, topic, name, jsonSchema);
+        return new Asset(id, topic, name, description, jsonSchema);
     }
 
     public @NotNull Asset withName(final @NotNull String name) {
         if (Objects.equals(this.name, name)) {
             return this;
         }
-        return new Asset(id, topic, name, jsonSchema);
+        return new Asset(id, topic, name, description, jsonSchema);
+    }
+
+    public @NotNull Asset withDescription(final @Nullable String description) {
+        if (Objects.equals(this.description, description)) {
+            return this;
+        }
+        return new Asset(id, topic, name, description, jsonSchema);
     }
 
     public @NotNull Asset withTopic(final @NotNull String topic) {
         if (Objects.equals(this.topic, topic)) {
             return this;
         }
-        return new Asset(id, topic, name, jsonSchema);
+        return new Asset(id, topic, name, description, jsonSchema);
     }
 
     public @NotNull Asset withJsonSchema(final @NotNull String jsonSchema) {
         if (Objects.equals(this.jsonSchema, jsonSchema)) {
             return this;
         }
-        return new Asset(id, topic, name, jsonSchema);
+        return new Asset(id, topic, name, description, jsonSchema);
     }
 
     /**
@@ -69,6 +76,7 @@ public record Asset(@NotNull String id, @NotNull String topic, @NotNull String n
         private @Nullable String id;
         private @Nullable String topic;
         private @Nullable String name;
+        private @Nullable String description;
         private @Nullable String jsonSchema;
 
         public @NotNull Builder id(final @NotNull String id) {
@@ -86,6 +94,11 @@ public record Asset(@NotNull String id, @NotNull String topic, @NotNull String n
             return this;
         }
 
+        public @NotNull Builder description(final @NotNull String description) {
+            this.description = description;
+            return this;
+        }
+
         public @NotNull Builder jsonSchema(final @NotNull String jsonSchema) {
             this.jsonSchema = jsonSchema;
             return this;
@@ -95,6 +108,7 @@ public record Asset(@NotNull String id, @NotNull String topic, @NotNull String n
             return new Asset(Objects.requireNonNull(id),
                     Objects.requireNonNull(topic),
                     Objects.requireNonNull(name),
+                    description,
                     Objects.requireNonNull(jsonSchema));
         }
     }

@@ -106,11 +106,12 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
             assertThat(assetsArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities()).hasSize(1);
             final PulseAssetEntity asset =
                     assetsArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities().get(0);
-            assertThat(asset.getId()).isEqualTo(id);
-            assertThat(asset.getName()).isEqualTo(expectedAsset.getName());
-            assertThat(asset.getDescription()).isEqualTo("New description");
-            assertThat(asset.getTopic()).isEqualTo(expectedAsset.getTopic());
-            assertThat(asset.getSchema()).isEqualTo(expectedAsset.getSchema());
+            assertThat(asset.getId()).as("ID cannot be changed.").isEqualTo(id);
+            assertThat(asset.getName()).as("Name cannot be changed.").isEqualTo(expectedAsset.getName());
+            assertThat(asset.getDescription()).as("Description cannot be changed.")
+                    .isEqualTo(expectedAsset.getDescription());
+            assertThat(asset.getTopic()).as("Topic cannot be changed.").isEqualTo(expectedAsset.getTopic());
+            assertThat(asset.getSchema()).as("Schema cannot be changed.").isEqualTo(expectedAsset.getSchema());
             assertThat(asset.getMapping().getId()).isEqualTo(id);
             assertThat(asset.getMapping().getStatus()).isEqualTo(PulseAssetMappingStatus.REQUIRES_REMAPPING);
         }
