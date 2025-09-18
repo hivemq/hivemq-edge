@@ -21,7 +21,7 @@ jobs:
         uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4
         with:
           distribution: 'adopt'
-          java-version: '17'
+          java-version: '21'
       - uses: whelk-io/maven-settings-xml-action@9dc09b23833fa9aa7f27b63db287951856f3433d # v3.0.0
         with:
           servers: >
