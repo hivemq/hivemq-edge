@@ -80,29 +80,25 @@ public class PulseAgentAssetUtils {
                 } else {
                     // Asset is found remotely. We check if it has changed.
                     if (localAsset.equals(remoteAsset)) {
-                        newLocalAssets.add(localAsset.withMapping(PulseAssetMappingEntity.builder()
-                                .id(localAsset.getId())
-                                .status(switch (localAsset.getMapping().getStatus()) {
+                        newLocalAssets.add(localAsset.withMapping(localAsset.getMapping()
+                                .withStatus(switch (localAsset.getMapping().getStatus()) {
                                     case MISSING -> PulseAssetMappingStatus.UNMAPPED;
                                     default -> localAsset.getMapping().getStatus();
-                                })
-                                .build()));
+                                })));
                     } else {
                         // Asset has changed. We update it and mark its mapping as REQUIRES_REMAPPING if it was STREAMING.
                         newLocalAssets.add(PulseAssetEntity.builder()
                                 .id(localAsset.getId())
                                 .name(remoteAsset.name())
-                                .description(localAsset.getDescription())
+                                .description(remoteAsset.description())
                                 .schema(remoteAsset.jsonSchema())
                                 .topic(remoteAsset.topic())
-                                .mapping(PulseAssetMappingEntity.builder()
-                                        .id(localAsset.getId())
-                                        .status(switch (localAsset.getMapping().getStatus()) {
+                                .mapping(localAsset.getMapping()
+                                        .withStatus(switch (localAsset.getMapping().getStatus()) {
                                             case STREAMING -> PulseAssetMappingStatus.REQUIRES_REMAPPING;
                                             case MISSING -> PulseAssetMappingStatus.UNMAPPED;
                                             default -> localAsset.getMapping().getStatus();
-                                        })
-                                        .build())
+                                        }))
                                 .build());
                     }
                 }
@@ -113,7 +109,7 @@ public class PulseAgentAssetUtils {
                 newLocalAssets.add(PulseAssetEntity.builder()
                         .id(UUID.fromString(id))
                         .name(remoteAsset.name())
-                        .description(null)
+                        .description(remoteAsset.description())
                         .schema(remoteAsset.jsonSchema())
                         .topic(remoteAsset.topic())
                         .mapping(PulseAssetMappingEntity.builder()
