@@ -119,7 +119,7 @@ public class PulseExtractorTest {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity configEntity = configFileReader.applyConfig();
         configEntity.getPulseEntity().setPulseAssetsEntity(new PulseAssetsEntity());
-        assertThat(configFileReader.setConfiguration(configEntity)).isTrue();
+        assertThat(configFileReader.internalApplyConfig(configEntity)).isTrue();
     }
 
     @Test
@@ -193,7 +193,7 @@ public class PulseExtractorTest {
                                                 .build())
                                         .build()))
                         .build());
-        assertThat(configFileReader.setConfiguration(configEntity)).isTrue();
+        assertThat(configFileReader.internalApplyConfig(configEntity)).isTrue();
     }
 
     @Test
@@ -504,7 +504,7 @@ public class PulseExtractorTest {
                                         .build())
                                 .build())
                         .build());
-        assertThat(configFileReader.setConfiguration(configEntity)).isFalse();
+        assertThat(configFileReader.internalApplyConfig(configEntity)).isFalse();
         assertThat(logCapture.isLogCaptured()).isTrue();
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
         assertThat(logCapture.getCapturedLogs()
