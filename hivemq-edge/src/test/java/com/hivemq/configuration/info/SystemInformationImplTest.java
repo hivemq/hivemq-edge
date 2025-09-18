@@ -23,7 +23,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import util.ClearHiveMQPropertiesRule;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -40,15 +39,18 @@ public class SystemInformationImplTest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
-    @Rule
-    public ClearHiveMQPropertiesRule clearHiveMQPropertiesRule = new ClearHiveMQPropertiesRule();
-
     private SystemInformation systemInformation;
 
     private String tempFolderPath;
 
     @Before
     public void before() {
+
+        final var props = new uk.org.webcompere.systemstubs.properties.SystemProperties();
+        props.remove(SystemProperties.HIVEMQ_HOME);
+        props.remove(SystemProperties.LOG_FOLDER);
+        props.remove(SystemProperties.CONFIG_FOLDER);
+        props.remove(SystemProperties.DATA_FOLDER);
 
         tempFolderPath = tempFolder.getRoot().getAbsolutePath();
 

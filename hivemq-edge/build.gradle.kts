@@ -226,9 +226,7 @@ dependencies {
     testImplementation(libs.javassist)
     testImplementation(libs.awaitility)
     testImplementation(libs.assertj)
-    testImplementation(libs.stefanbirkner.systemrules) {
-        exclude("junit", "junit-dep")
-    }
+    testImplementation(libs.systemstubs)
 }
 
 tasks.test {

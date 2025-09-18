@@ -33,13 +33,7 @@ public class HiveMQExceptionHandlerBootstrap {
      * Logs the error and quits HiveMQ
      */
     public static void addUnrecoverableExceptionHandler() {
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(final Thread t, final Throwable e) {
-
-                handleUncaughtException(t, e);
-            }
-        });
+        Thread.setDefaultUncaughtExceptionHandler(HiveMQExceptionHandlerBootstrap::handleUncaughtException);
     }
 
     @VisibleForTesting
@@ -56,8 +50,6 @@ public class HiveMQExceptionHandlerBootstrap {
             if (showException) {
                 log.error("Cause: ", e);
             }
-        } else if (rootCause instanceof ThreadDeath) {
-           // NOOP: this happens when tests stop the remaining threads via thread.stop();
         } else {
             log.error("Uncaught Error:", e);
         }
