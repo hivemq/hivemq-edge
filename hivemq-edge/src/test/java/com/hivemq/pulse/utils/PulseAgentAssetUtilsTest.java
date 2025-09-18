@@ -109,9 +109,7 @@ public class PulseAgentAssetUtilsTest {
         PulseAgentAssetUtils.resolveDiff(pulseExtractor, remoteAssets);
         verify(pulseExtractor).setPulseEntity(pulseEntityArgumentCaptor.capture());
         final PulseEntity newPulseEntity = pulseEntityArgumentCaptor.getValue();
-        assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities()).isEqualTo(localAssets.stream()
-                .map(a -> a.withDescription(null))
-                .toList());
+        assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities()).isEqualTo(localAssets);
     }
 
     @Test
@@ -124,25 +122,25 @@ public class PulseAgentAssetUtilsTest {
         PulseAgentAssetUtils.resolveDiff(pulseExtractor, remoteAssets);
         verify(pulseExtractor).setPulseEntity(pulseEntityArgumentCaptor.capture());
         final PulseEntity newPulseEntity = pulseEntityArgumentCaptor.getValue();
-        assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities()).isEqualTo(localAssets.stream()
-                .map(a -> a.withDescription(null))
-                .toList());
+        assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities()).isEqualTo(localAssets);
     }
 
     @Test
     public void whenLocalMappingStatusIsStreamingAndRemoteAssetUpdated_thenStatusShouldBeRequiresRemapping() {
         final PulseEntity pulseEntity = new PulseEntity();
+        final UUID mappingId = UUID.randomUUID();
         pulseEntity.getPulseAssetsEntity()
                 .getPulseAssetEntities()
                 .add(localAssets.get(0)
                         .withMapping(PulseAssetMappingEntity.builder()
-                                .id(localAssets.get(0).getId())
+                                .id(mappingId)
                                 .status(PulseAssetMappingStatus.STREAMING)
                                 .build()));
         when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
         PulseAgentAssetUtils.resolveDiff(pulseExtractor,
                 List.of(remoteAssets.get(0)
                         .withName("Updated Name")
+                        .withDescription("Updated Description")
                         .withTopic("updated/topic")
                         .withJsonSchema("{ \"name\": \"Updated Name\" }")));
         verify(pulseExtractor).setPulseEntity(pulseEntityArgumentCaptor.capture());
@@ -151,9 +149,10 @@ public class PulseAgentAssetUtilsTest {
         final PulseAssetEntity asset = newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities().get(0);
         assertThat(asset.getId()).isEqualTo(localAssets.get(0).getId());
         assertThat(asset.getName()).isEqualTo("Updated Name");
+        assertThat(asset.getDescription()).isEqualTo("Updated Description");
         assertThat(asset.getTopic()).isEqualTo("updated/topic");
         assertThat(asset.getSchema()).isEqualTo("{ \"name\": \"Updated Name\" }");
-        assertThat(asset.getMapping().getId()).isEqualTo(localAssets.get(0).getId());
+        assertThat(asset.getMapping().getId()).isEqualTo(mappingId);
         assertThat(asset.getMapping().getStatus()).isEqualTo(PulseAssetMappingStatus.REQUIRES_REMAPPING);
     }
 
@@ -162,9 +161,10 @@ public class PulseAgentAssetUtilsTest {
         IntStream.range(0, STATUSES.size()).forEach(i -> {
             final PulseAssetMappingStatus status = STATUSES.get(i);
             final PulseEntity pulseEntity = new PulseEntity();
+            final UUID mappingId = UUID.randomUUID();
             final PulseAssetEntity expectedAsset = localAssets.get(0)
                     .withMapping(PulseAssetMappingEntity.builder()
-                            .id(localAssets.get(0).getId())
+                            .id(mappingId)
                             .status(status)
                             .build());
             pulseEntity.getPulseAssetsEntity().getPulseAssetEntities().add(expectedAsset);
@@ -179,7 +179,7 @@ public class PulseAgentAssetUtilsTest {
             assertThat(asset.getDescription()).isEqualTo(expectedAsset.getDescription());
             assertThat(asset.getTopic()).isEqualTo(expectedAsset.getTopic());
             assertThat(asset.getSchema()).isEqualTo(expectedAsset.getSchema());
-            assertThat(asset.getMapping().getId()).isEqualTo(expectedAsset.getId());
+            assertThat(asset.getMapping().getId()).isEqualTo(mappingId);
             switch (status) {
                 case DRAFT, STREAMING, REQUIRES_REMAPPING, MISSING ->
                         assertThat(asset.getMapping().getStatus()).isEqualTo(PulseAssetMappingStatus.MISSING);
@@ -194,9 +194,10 @@ public class PulseAgentAssetUtilsTest {
         IntStream.range(0, STATUSES.size()).forEach(i -> {
             final PulseAssetMappingStatus status = STATUSES.get(i);
             final PulseEntity pulseEntity = new PulseEntity();
+            final UUID mappingId = UUID.randomUUID();
             final PulseAssetEntity expectedAsset = localAssets.get(0)
                     .withMapping(PulseAssetMappingEntity.builder()
-                            .id(localAssets.get(0).getId())
+                            .id(mappingId)
                             .status(status)
                             .build());
             pulseEntity.getPulseAssetsEntity().getPulseAssetEntities().add(expectedAsset);
@@ -211,7 +212,7 @@ public class PulseAgentAssetUtilsTest {
             assertThat(asset.getDescription()).isEqualTo(expectedAsset.getDescription());
             assertThat(asset.getTopic()).isEqualTo(expectedAsset.getTopic());
             assertThat(asset.getSchema()).isEqualTo(expectedAsset.getSchema());
-            assertThat(asset.getMapping().getId()).isEqualTo(expectedAsset.getId());
+            assertThat(asset.getMapping().getId()).isEqualTo(mappingId);
             switch (status) {
                 case DRAFT, STREAMING, REQUIRES_REMAPPING, UNMAPPED ->
                         assertThat(asset.getMapping().getStatus()).isEqualTo(status);
@@ -227,10 +228,7 @@ public class PulseAgentAssetUtilsTest {
             final PulseAssetMappingStatus status = STATUSES.get(i);
             final PulseEntity pulseEntity = new PulseEntity();
             final PulseAssetEntity expectedAsset = localAssets.get(0)
-                    .withMapping(PulseAssetMappingEntity.builder()
-                            .id(localAssets.get(0).getId())
-                            .status(status)
-                            .build());
+                    .withMapping(PulseAssetMappingEntity.builder().id(UUID.randomUUID()).status(status).build());
             pulseEntity.getPulseAssetsEntity().getPulseAssetEntities().add(expectedAsset);
             when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
             PulseAgentAssetUtils.resolveDiff(pulseExtractor,
@@ -246,7 +244,7 @@ public class PulseAgentAssetUtilsTest {
             assertThat(asset.getName()).isEqualTo("Updated Name");
             assertThat(asset.getTopic()).isEqualTo("updated/topic");
             assertThat(asset.getSchema()).isEqualTo("{ \"name\": \"Updated Name\" }");
-            assertThat(asset.getMapping().getId()).isEqualTo(expectedAsset.getId());
+            assertThat(asset.getMapping().getId()).isEqualTo(expectedAsset.getMapping().getId());
             switch (status) {
                 case DRAFT, REQUIRES_REMAPPING, UNMAPPED ->
                         assertThat(asset.getMapping().getStatus()).isEqualTo(status);
