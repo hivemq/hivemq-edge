@@ -129,7 +129,7 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
             final ManagedAsset asset = (ManagedAsset) response.getEntity();
             assertThat(asset.getId()).as("ID cannot be changed.").isEqualTo(id);
             assertThat(asset.getName()).as("Name cannot be changed.").isEqualTo(expectedAsset.getName());
-            assertThat(asset.getDescription()).as("Description can be changed.").isEqualTo("New description");
+            assertThat(asset.getDescription()).as("Description cannot be changed.").isEqualTo("A test asset");
             assertThat(asset.getTopic()).as("Topic cannot be changed.").isEqualTo(expectedAsset.getTopic());
             assertThat(PulseAgentAssetSchemaConverter.INSTANCE.toInternalEntity(asset.getSchema())).as(
                     "Schema cannot be changed.").isEqualTo(expectedAsset.getSchema());
