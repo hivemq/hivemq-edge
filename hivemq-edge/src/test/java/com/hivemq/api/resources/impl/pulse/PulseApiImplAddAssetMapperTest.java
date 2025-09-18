@@ -93,7 +93,7 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
         when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(PulseAssetEntity.builder()
-                .id(UUID.fromString(combiner.getMappings().getItems().get(0).getSources().getPrimary().getId()))
+                .id(combiner.getMappings().getItems().get(0).getDestination().getAssetId())
                 .name(combiner.getName())
                 .description(combiner.getDescription())
                 .topic("new topic")
@@ -113,7 +113,7 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
         when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(PulseAssetEntity.builder()
-                .id(UUID.fromString(combiner.getMappings().getItems().get(0).getSources().getPrimary().getId()))
+                .id(combiner.getMappings().getItems().get(0).getDestination().getAssetId())
                 .name(combiner.getName())
                 .description(combiner.getDescription())
                 .topic("topic")
@@ -133,7 +133,7 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
         when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(PulseAssetEntity.builder()
-                .id(UUID.fromString(combiner.getMappings().getItems().get(0).getSources().getPrimary().getId()))
+                .id(combiner.getMappings().getItems().get(0).getDestination().getAssetId())
                 .name(combiner.getName())
                 .description(combiner.getDescription())
                 .topic("topic")
@@ -153,15 +153,12 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
         when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(PulseAssetEntity.builder()
-                .id(UUID.fromString(combiner.getMappings().getItems().get(0).getSources().getPrimary().getId()))
+                .id(combiner.getMappings().getItems().get(0).getDestination().getAssetId())
                 .name(combiner.getName())
                 .description(combiner.getDescription())
                 .topic("topic")
                 .schema("{}")
-                .mapping(PulseAssetMappingEntity.builder()
-                        .id(combiner.getMappings().getItems().get(0).getId())
-                        .status(PulseAssetMappingStatus.UNMAPPED)
-                        .build())
+                .mapping(PulseAssetMappingEntity.builder().status(PulseAssetMappingStatus.UNMAPPED).build())
                 .build()));
         try (final Response response = pulseApi.addAssetMapper(combiner)) {
             assertThat(response.getStatus()).isEqualTo(200);

@@ -444,7 +444,7 @@ public class PulseApiImpl implements PulseApi {
         if (!pulseDataCombinings.isEmpty()) {
             final var assetEntityMap = PulseAgentAssetUtils.toAssetEntityMap(pulseExtractor.getPulseEntity());
             for (final var dataCombining : pulseDataCombinings) {
-                final String id = dataCombining.sources().primaryReference().id();
+                final String id = dataCombining.destination().assetId();
                 final var asset = assetEntityMap.get(id);
                 if (asset == null) {
                     return Optional.of(ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(id)));
