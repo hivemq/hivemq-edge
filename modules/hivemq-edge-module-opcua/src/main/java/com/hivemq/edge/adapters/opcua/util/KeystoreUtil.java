@@ -76,7 +76,7 @@ public class KeystoreUtil {
                     TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             trustManagerFactory.init((KeyStore) null);
             return Arrays.stream(trustManagerFactory.getTrustManagers()).flatMap(trustManager -> {
-                if (trustManager minstanceof X509TrustManager) {
+                if (trustManager instanceof X509TrustManager) {
                     return Arrays.stream(((X509TrustManager) trustManager).getAcceptedIssuers());
                 }
                 return Stream.empty();
