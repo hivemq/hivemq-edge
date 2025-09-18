@@ -52,6 +52,7 @@ import com.hivemq.pulse.asset.PulseAgentAssetMapping;
 import com.hivemq.pulse.asset.PulseAgentAssets;
 import com.hivemq.pulse.converters.PulseAgentAssetConverter;
 import com.hivemq.pulse.converters.PulseAgentAssetMappingStatusConverter;
+import com.hivemq.pulse.converters.PulseAgentAssetSchemaConverter;
 import com.hivemq.pulse.converters.PulseAgentAssetsConverter;
 import com.hivemq.pulse.converters.PulseAgentStatusConverter;
 import com.hivemq.pulse.status.Status;
@@ -149,12 +150,11 @@ public class PulseApiImpl implements PulseApi {
             if (asset.getMapping().getId() != null) {
                 return ErrorResponseUtil.errorResponse(new ManagedAssetAlreadyExistsError());
             }
-            final PulseAgentAsset newAsset = asset.withDescription(managedAsset.getDescription())
-                    .withMapping(PulseAgentAssetMapping.builder()
-                            .id(managedAsset.getMapping().getMappingId())
-                            .status(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(managedAsset.getMapping()
-                                    .getStatus()))
-                            .build());
+            final PulseAgentAsset newAsset = asset.withMapping(PulseAgentAssetMapping.builder()
+                    .id(managedAsset.getMapping().getMappingId())
+                    .status(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(managedAsset.getMapping()
+                            .getStatus()))
+                    .build());
             assets.set(optionalAssetIndex.getAsInt(), newAsset);
             final PulseEntity newPulseEntity = new PulseEntity(assets.toPersistence());
             pulseExtractor.setPulseEntity(newPulseEntity);
@@ -347,11 +347,10 @@ public class PulseApiImpl implements PulseApi {
             }
             final PulseAgentAsset asset = assets.get(optionalAssetIndex.getAsInt());
             assets.set(optionalAssetIndex.getAsInt(),
-                    asset.withDescription(managedAsset.getDescription())
-                            .withMapping(asset.getMapping()
-                                    .withId(asset.getId())
-                                    .withStatus(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(
-                                            managedAsset.getMapping().getStatus()))));
+                    asset.withMapping(asset.getMapping()
+                            .withId(asset.getId())
+                            .withStatus(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(managedAsset.getMapping()
+                                    .getStatus()))));
             final PulseEntity newPulseEntity = new PulseEntity(assets.toPersistence());
             pulseExtractor.setPulseEntity(newPulseEntity);
             return Response.ok().build();
@@ -445,7 +444,7 @@ public class PulseApiImpl implements PulseApi {
         if (!pulseDataCombinings.isEmpty()) {
             final var assetEntityMap = PulseAgentAssetUtils.toAssetEntityMap(pulseExtractor.getPulseEntity());
             for (final var dataCombining : pulseDataCombinings) {
-                final String id = dataCombining.sources().primaryReference().id();
+                final String id = dataCombining.destination().assetId();
                 final var asset = assetEntityMap.get(id);
                 if (asset == null) {
                     return Optional.of(ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(id)));
@@ -453,7 +452,10 @@ public class PulseApiImpl implements PulseApi {
                 if (!Objects.equals(dataCombining.destination().topic(), asset.getTopic())) {
                     return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetTopicError(id)));
                 }
-                if (!Objects.equals(dataCombining.destination().schema(), asset.getSchema())) {
+                // There are some cases where the schema is still data-url encoded, so we need to decode it before comparing.
+                final String schema =
+                        PulseAgentAssetSchemaConverter.INSTANCE.toInternalEntity(dataCombining.destination().schema());
+                if (!Objects.equals(schema, asset.getSchema())) {
                     return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetSchemaError(id)));
                 }
                 final UUID expectedMappingId = asset.getMapping().getId();

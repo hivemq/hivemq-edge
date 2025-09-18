@@ -32,7 +32,7 @@ public class PulseAgentAssetSchemaConverter implements PulseApiEntityConverter<S
     @Override
     public @NotNull String toInternalEntity(final @NotNull String str) {
         if (!Objects.requireNonNull(str).startsWith(DATA_APPLICATION_SCHEMA_JSON_BASE64)) {
-            throw new IllegalArgumentException("Invalid schema format");
+            return str;
         }
         final String base64String = str.substring(DATA_APPLICATION_SCHEMA_JSON_BASE64.length());
         return new String(Base64.getDecoder().decode(base64String), StandardCharsets.UTF_8);

@@ -97,6 +97,9 @@ public class PulseAssetEntity implements EntityValidatable {
         if (!Objects.equals(name, remoteAsset.name())) {
             return false;
         }
+        if (!Objects.equals(description, remoteAsset.description())) {
+            return false;
+        }
         if (!Objects.equals(topic, remoteAsset.topic())) {
             return false;
         }
