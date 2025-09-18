@@ -43,18 +43,25 @@ public class SystemInformationImplTest {
 
     private String tempFolderPath;
 
+    final uk.org.webcompere.systemstubs.properties.SystemProperties props = new uk.org.webcompere.systemstubs.properties.SystemProperties();
+    final uk.org.webcompere.systemstubs.environment.EnvironmentVariables envs = new uk.org.webcompere.systemstubs.environment.EnvironmentVariables();
+
+
     @Before
     public void before() {
-
-        final var props = new uk.org.webcompere.systemstubs.properties.SystemProperties();
         props.remove(SystemProperties.HIVEMQ_HOME);
         props.remove(SystemProperties.LOG_FOLDER);
         props.remove(SystemProperties.CONFIG_FOLDER);
         props.remove(SystemProperties.DATA_FOLDER);
 
+        envs.remove(EnvironmentVariables.HIVEMQ_HOME);
+        envs.remove(EnvironmentVariables.LOG_FOLDER);
+        envs.remove(EnvironmentVariables.CONFIG_FOLDER);
+        envs.remove(EnvironmentVariables.DATA_FOLDER);
+
         tempFolderPath = tempFolder.getRoot().getAbsolutePath();
 
-        System.setProperty(SystemProperties.HIVEMQ_HOME, tempFolderPath);
+        props.set(SystemProperties.HIVEMQ_HOME, tempFolderPath);
     }
 
     @Test
@@ -146,15 +153,19 @@ public class SystemInformationImplTest {
 
     @Test
     public void test_getConfigFolder_environmentVariable() throws Exception {
-
+        final uk.org.webcompere.systemstubs.environment.EnvironmentVariables envs = new uk.org.webcompere.systemstubs.environment.EnvironmentVariables();
         final File testfolder = tempFolder.newFolder("testconfig");
 
-        setEnvironmentVariable(EnvironmentVariables.CONFIG_FOLDER, testfolder.getAbsolutePath());
+        envs.set(EnvironmentVariables.CONFIG_FOLDER, testfolder.getAbsolutePath());
 
-        systemInformation = new SystemInformationImpl();
-        systemInformation.init();
+        props.execute(() -> {
+            envs.execute(() -> {
+                systemInformation = new SystemInformationImpl();
+                systemInformation.init();
+            });
+        });
 
-        removeEnvironmentVariable(EnvironmentVariables.CONFIG_FOLDER);
+        envs.remove(EnvironmentVariables.CONFIG_FOLDER);
 
         assertEquals(testfolder.getAbsolutePath(), systemInformation.getConfigFolder().getAbsolutePath());
     }
@@ -162,8 +173,13 @@ public class SystemInformationImplTest {
     @Test
     public void test_getLogFolder_default() throws Exception {
 
-        systemInformation = new SystemInformationImpl();
-        systemInformation.init();
+        props.execute(() -> {
+            envs.execute(() -> {
+                systemInformation = new SystemInformationImpl();
+                systemInformation.init();
+            });
+        });
+
 
         assertEquals(tempFolderPath + File.separator + "log", systemInformation.getLogFolder().getAbsolutePath());
     }
@@ -183,15 +199,17 @@ public class SystemInformationImplTest {
 
     @Test
     public void test_getLogFolder_environmentVariable() throws Exception {
-
+        final uk.org.webcompere.systemstubs.environment.EnvironmentVariables envs = new uk.org.webcompere.systemstubs.environment.EnvironmentVariables();
         final File testfolder = tempFolder.newFolder("testlogs");
 
-        setEnvironmentVariable(EnvironmentVariables.LOG_FOLDER, testfolder.getAbsolutePath());
+        envs.set(EnvironmentVariables.LOG_FOLDER, testfolder.getAbsolutePath());
 
-        systemInformation = new SystemInformationImpl();
-        systemInformation.init();
-
-        removeEnvironmentVariable(EnvironmentVariables.LOG_FOLDER);
+        props.execute(() -> {
+            envs.execute(() -> {
+                systemInformation = new SystemInformationImpl();
+                systemInformation.init();
+            });
+        });
 
         assertEquals(testfolder.getAbsolutePath(), systemInformation.getLogFolder().getAbsolutePath());
     }
