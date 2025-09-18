@@ -158,7 +158,7 @@ public class PulseApiImpl implements PulseApi {
             assets.set(optionalAssetIndex.getAsInt(), newAsset);
             final PulseEntity newPulseEntity = new PulseEntity(assets.toPersistence());
             pulseExtractor.setPulseEntity(newPulseEntity);
-            return Response.ok(PulseAgentAssetConverter.INSTANCE.toRestEntity(newAsset)).build();
+            return Response.ok().build();
         }
     }
 
