@@ -20,7 +20,7 @@ import com.hivemq.api.resources.impl.PulseApiImpl;
 import com.hivemq.configuration.entity.pulse.PulseAssetsEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.info.SystemInformation;
-import com.hivemq.configuration.reader.DataCombiningExtractor;
+import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.edge.api.PulseApi;
 import com.hivemq.edge.api.model.Combiner;
@@ -58,7 +58,7 @@ public abstract class AbstractPulseApiImplTest {
     protected @NotNull SystemInformation systemInformation;
 
     @Mock
-    protected @NotNull DataCombiningExtractor dataCombiningExtractor;
+    protected @NotNull AssetMappingExtractor assetMappingExtractor;
 
     @Mock
     protected @NotNull ExternalAssetProvider assetProvider;
@@ -135,7 +135,7 @@ public abstract class AbstractPulseApiImplTest {
         when(assetProviderRegistry.getAssetProviders()).thenReturn(Set.of(assetProvider));
         when(statusProviderRegistry.getStatusProviders()).thenReturn(Set.of(statusProvider));
         pulseApi = new PulseApiImpl(systemInformation,
-                dataCombiningExtractor,
+                assetMappingExtractor,
                 pulseExtractor,
                 assetProviderRegistry,
                 statusProviderRegistry);
