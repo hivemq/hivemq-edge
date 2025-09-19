@@ -68,6 +68,15 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="asset-mappers" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:choice minOccurs="0" maxOccurs="unbounded">
+                            <xs:any processContents="skip"/>
+                        </xs:choice>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="pulse" type="pulseEntity" minOccurs="0"/>
             <xs:element name="modules" minOccurs="0">
                 <xs:complexType>
