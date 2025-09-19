@@ -1,3 +1,4 @@
+import { handlerCapabilities, MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
 import { beforeEach, expect } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 
@@ -9,7 +10,7 @@ import { handlers as pulseAssetsHandlers } from '@/api/hooks/usePulse/__handlers
 
 describe('useListManagedAssets', () => {
   beforeEach(() => {
-    server.use(...pulseAssetsHandlers)
+    server.use(...pulseAssetsHandlers, ...handlerCapabilities(MOCK_CAPABILITIES))
   })
 
   afterEach(() => {
