@@ -34,7 +34,7 @@ import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.info.SystemInformation;
-import com.hivemq.configuration.reader.DataCombiningExtractor;
+import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.edge.api.PulseApi;
 import com.hivemq.edge.api.model.Combiner;
@@ -82,7 +82,7 @@ import java.util.stream.IntStream;
 public class PulseApiImpl implements PulseApi {
     private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(PulseApiImpl.class);
     private final @NotNull AssetProviderRegistry assetProviderRegistry;
-    private final @NotNull DataCombiningExtractor dataCombiningExtractor;
+    private final @NotNull AssetMappingExtractor assetMappingExtractor;
     private final @NotNull PulseExtractor pulseExtractor;
     private final @NotNull StatusProviderRegistry statusProviderRegistry;
     private final @NotNull SystemInformation systemInformation;
@@ -90,12 +90,12 @@ public class PulseApiImpl implements PulseApi {
     @Inject
     public PulseApiImpl(
             final @NotNull SystemInformation systemInformation,
-            final @NotNull DataCombiningExtractor dataCombiningExtractor,
+            final @NotNull AssetMappingExtractor assetMappingExtractor,
             final @NotNull PulseExtractor pulseExtractor,
             final @NotNull AssetProviderRegistry assetProviderRegistry,
             final @NotNull StatusProviderRegistry statusProviderRegistry) {
         this.assetProviderRegistry = assetProviderRegistry;
-        this.dataCombiningExtractor = dataCombiningExtractor;
+        this.assetMappingExtractor = assetMappingExtractor;
         this.pulseExtractor = pulseExtractor;
         this.statusProviderRegistry = statusProviderRegistry;
         this.systemInformation = systemInformation;
@@ -107,7 +107,7 @@ public class PulseApiImpl implements PulseApi {
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
         }
-        final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combiner.getId());
+        final @NotNull Optional<DataCombiner> instance = assetMappingExtractor.getCombinerById(combiner.getId());
         if (instance.isPresent()) {
             return ErrorResponseUtil.errorResponse(new AlreadyExistsError(String.format(
                     "DataCombiner already exists '%s'",
@@ -119,7 +119,7 @@ public class PulseApiImpl implements PulseApi {
             return optionalResponseDataCombiner.get();
         }
         try {
-            dataCombiningExtractor.addDataCombiner(dataCombiner);
+            assetMappingExtractor.addDataCombiner(dataCombiner);
         } catch (final Exception e) {
             final Throwable cause = e.getCause();
             if (cause instanceof IllegalArgumentException) {
@@ -158,7 +158,7 @@ public class PulseApiImpl implements PulseApi {
             assets.set(optionalAssetIndex.getAsInt(), newAsset);
             final PulseEntity newPulseEntity = new PulseEntity(assets.toPersistence());
             pulseExtractor.setPulseEntity(newPulseEntity);
-            return Response.ok(PulseAgentAssetConverter.INSTANCE.toRestEntity(newAsset)).build();
+            return Response.ok().build();
         }
     }
 
@@ -168,12 +168,12 @@ public class PulseApiImpl implements PulseApi {
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
         }
-        final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combinerId);
+        final @NotNull Optional<DataCombiner> instance = assetMappingExtractor.getCombinerById(combinerId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
         }
         try {
-            dataCombiningExtractor.deleteDataCombiner(combinerId);
+            assetMappingExtractor.deleteDataCombiner(combinerId);
         } catch (final Exception e) {
             final Throwable cause = e.getCause();
             LOGGER.warn("Exception occurred during deletion of data combining '{}':", combinerId, cause);
@@ -236,7 +236,7 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public @NotNull Response getAssetMapper(final @NotNull UUID combinerId) {
-        final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combinerId);
+        final @NotNull Optional<DataCombiner> instance = assetMappingExtractor.getCombinerById(combinerId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
         }
@@ -245,7 +245,7 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public @NotNull Response getAssetMapperInstructions(final @NotNull UUID combinerId, final @NotNull UUID mappingId) {
-        final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combinerId);
+        final @NotNull Optional<DataCombiner> instance = assetMappingExtractor.getCombinerById(combinerId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
         }
@@ -261,7 +261,7 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public @NotNull Response getAssetMapperMappings(final @NotNull UUID combinerId) {
-        final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combinerId);
+        final @NotNull Optional<DataCombiner> instance = assetMappingExtractor.getCombinerById(combinerId);
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
         }
@@ -275,7 +275,7 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public @NotNull Response getAssetMappers() {
-        final List<DataCombiner> allCombiners = dataCombiningExtractor.getAllCombiners();
+        final List<DataCombiner> allCombiners = assetMappingExtractor.getAllCombiners();
         final List<Combiner> combiners = allCombiners.stream().map(DataCombiner::toModel).toList();
         final CombinerList combinerList = new CombinerList().items(combiners);
         return Response.ok().entity(combinerList).build();
@@ -312,7 +312,7 @@ public class PulseApiImpl implements PulseApi {
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
         }
-        final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combiner.getId());
+        final @NotNull Optional<DataCombiner> instance = assetMappingExtractor.getCombinerById(combiner.getId());
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combiner.getId().toString()));
         }
@@ -321,7 +321,7 @@ public class PulseApiImpl implements PulseApi {
         if (optionalResponseDataCombiner.isPresent()) {
             return optionalResponseDataCombiner.get();
         }
-        final boolean updated = dataCombiningExtractor.updateDataCombiner(dataCombiner);
+        final boolean updated = assetMappingExtractor.updateDataCombiner(dataCombiner);
         if (updated) {
             return Response.ok().build();
         } else {
