@@ -350,6 +350,7 @@
         </protocol-adapter>
     </protocol-adapters>
     <data-combiners/>
+    <asset-mappers/>
     <pulse>
         <managed-assets/>
     </pulse>

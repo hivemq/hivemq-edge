@@ -15,17 +15,12 @@
  */
 package com.hivemq.bootstrap.ioc;
 
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.bootstrap.factories.DataCombiningTransformationServiceProvider;
-import com.hivemq.bootstrap.factories.WritingServiceProvider;
 import com.hivemq.combining.mapping.DataCombiningTransformationService;
-import com.hivemq.protocols.InternalProtocolAdapterWritingService;
-import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Module
 public abstract class CombiningModule {

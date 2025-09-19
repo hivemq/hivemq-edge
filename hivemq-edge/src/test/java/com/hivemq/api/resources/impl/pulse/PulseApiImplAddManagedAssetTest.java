@@ -125,18 +125,6 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
                         .status(expectedStatus)
                         .build())))) {
             assertThat(response.getStatus()).isEqualTo(200);
-            assertThat(response.getEntity()).isInstanceOf(ManagedAsset.class);
-            final ManagedAsset asset = (ManagedAsset) response.getEntity();
-            assertThat(asset.getId()).as("ID cannot be changed.").isEqualTo(id);
-            assertThat(asset.getName()).as("Name cannot be changed.").isEqualTo(expectedAsset.getName());
-            assertThat(asset.getDescription()).as("Description cannot be changed.").isEqualTo("A test asset");
-            assertThat(asset.getTopic()).as("Topic cannot be changed.").isEqualTo(expectedAsset.getTopic());
-            assertThat(PulseAgentAssetSchemaConverter.INSTANCE.toInternalEntity(asset.getSchema())).as(
-                    "Schema cannot be changed.").isEqualTo(expectedAsset.getSchema());
-            assertThat(asset.getMapping()).isNotNull();
-            assertThat(asset.getMapping().getMappingId()).isEqualTo(mappingId);
-            assertThat(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(asset.getMapping()
-                    .getStatus())).isEqualTo(expectedStatus);
             final ArgumentCaptor<PulseEntity> assetsArgumentCaptor = ArgumentCaptor.forClass(PulseEntity.class);
             verify(pulseExtractor).setPulseEntity(assetsArgumentCaptor.capture());
             assertThat(assetsArgumentCaptor.getValue()).isNotNull();

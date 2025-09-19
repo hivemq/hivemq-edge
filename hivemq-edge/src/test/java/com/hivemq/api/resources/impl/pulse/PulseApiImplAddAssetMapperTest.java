@@ -54,7 +54,7 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
     @Test
     public void whenCombinerExists_thenReturnsAlreadyExistsError() {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
-        when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
         try (final Response response = pulseApi.addAssetMapper(combiner)) {
             assertThat(response.getStatus()).isEqualTo(409);
         }
@@ -67,12 +67,12 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
                 List.of(DataIdentifierReference.TypeEnum.TAG, DataIdentifierReference.TypeEnum.TOPIC_FILTER);
         IntStream.range(0, types.size()).forEach(i -> {
             final Combiner combiner = createCombiner(entityType, types.get(i));
-            when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.empty());
+            when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
             try (final Response response = pulseApi.addAssetMapper(combiner)) {
                 assertThat(response.getStatus()).isEqualTo(200);
                 final ArgumentCaptor<DataCombiner> dataCombinerArgumentCaptor =
                         ArgumentCaptor.forClass(DataCombiner.class);
-                verify(dataCombiningExtractor, times(i + 1)).addDataCombiner(dataCombinerArgumentCaptor.capture());
+                verify(assetMappingExtractor, times(i + 1)).addDataCombiner(dataCombinerArgumentCaptor.capture());
                 final DataCombiner dataCombiner = dataCombinerArgumentCaptor.getValue();
                 assertThat(dataCombiner.id()).isEqualTo(combiner.getId());
             }
@@ -82,7 +82,7 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
     @Test
     public void whenTypeIsPulseAssetAndAssetNotFound_thenReturnsManagedAssetNotFoundError() {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
-        when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.empty());
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         try (final Response response = pulseApi.addAssetMapper(combiner)) {
             assertThat(response.getStatus()).isEqualTo(404);
         }
@@ -91,7 +91,7 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
     @Test
     public void whenTypeIsPulseAssetAndTopicMismatches_thenReturnsInvalidManagedAssetTopicError() {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
-        when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.empty());
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(PulseAssetEntity.builder()
                 .id(combiner.getMappings().getItems().get(0).getDestination().getAssetId())
                 .name(combiner.getName())
@@ -111,7 +111,7 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
     @Test
     public void whenTypeIsPulseAssetAndSchemaMismatches_thenReturnsInvalidManagedAssetSchemaError() {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
-        when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.empty());
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(PulseAssetEntity.builder()
                 .id(combiner.getMappings().getItems().get(0).getDestination().getAssetId())
                 .name(combiner.getName())
@@ -131,7 +131,7 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
     @Test
     public void whenTypeIsPulseAssetAndMappingIdMismatches_thenReturnsInvalidManagedAssetMappingIdError() {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
-        when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.empty());
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(PulseAssetEntity.builder()
                 .id(combiner.getMappings().getItems().get(0).getDestination().getAssetId())
                 .name(combiner.getName())
@@ -151,7 +151,7 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
     @Test
     public void whenTypeIsPulseAssetAndAllCorrect_thenReturnsOK() {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
-        when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.empty());
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(PulseAssetEntity.builder()
                 .id(combiner.getMappings().getItems().get(0).getDestination().getAssetId())
                 .name(combiner.getName())

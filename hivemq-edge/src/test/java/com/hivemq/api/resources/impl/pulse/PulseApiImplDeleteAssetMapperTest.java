@@ -41,7 +41,7 @@ public class PulseApiImplDeleteAssetMapperTest extends AbstractPulseApiImplTest 
 
     @Test
     public void whenCombinerNotFound_thenReturnsDataCombinerNotFoundError() {
-        when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.empty());
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         try (final Response response = pulseApi.deleteAssetMapper(UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(404);
         }
@@ -50,7 +50,7 @@ public class PulseApiImplDeleteAssetMapperTest extends AbstractPulseApiImplTest 
     @Test
     public void whenCombinerFound_thenReturnsOK() {
         final UUID id = UUID.randomUUID();
-        when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.of(new DataCombiner(id,
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(new DataCombiner(id,
                 "name",
                 "description",
                 List.of(),
@@ -58,7 +58,7 @@ public class PulseApiImplDeleteAssetMapperTest extends AbstractPulseApiImplTest 
         try (final Response response = pulseApi.deleteAssetMapper(id)) {
             assertThat(response.getStatus()).isEqualTo(200);
             final ArgumentCaptor<UUID> dataCombinerArgumentCaptor = ArgumentCaptor.forClass(UUID.class);
-            verify(dataCombiningExtractor).deleteDataCombiner(dataCombinerArgumentCaptor.capture());
+            verify(assetMappingExtractor).deleteDataCombiner(dataCombinerArgumentCaptor.capture());
             assertThat(dataCombinerArgumentCaptor.getValue()).isEqualTo(id);
         }
     }

@@ -85,6 +85,9 @@ public class HiveMQConfigEntity {
     @XmlElementWrapper(name = "data-combiners")
     @XmlElement(name = "data-combiner")
     private @NotNull List<DataCombinerEntity> dataCombinerEntities = new ArrayList<>();
+    @XmlElementWrapper(name = "asset-mappers")
+    @XmlElement(name = "asset-mapper")
+    private @NotNull List<DataCombinerEntity> assetMapperEntities = new ArrayList<>();
     @XmlElementRef(name = "pulse", required = false)
     private @NotNull PulseEntity pulseEntity = new PulseEntity();
     @XmlElement(name = "modules")
@@ -113,6 +116,7 @@ public class HiveMQConfigEntity {
             final @NotNull UnsConfigEntity uns,
             final @NotNull UsageTrackingConfigEntity usageTracking,
             final @NotNull List<DataCombinerEntity> dataCombinerEntities,
+            final @NotNull List<DataCombinerEntity> assetMapperEntities,
             final @NotNull PulseEntity pulseEntity) {
         this.version = Objects.requireNonNullElse(version, CURRENT_CONFIG_VERSION);
         this.api = api;
@@ -130,6 +134,7 @@ public class HiveMQConfigEntity {
         this.uns = uns;
         this.usageTracking = usageTracking;
         this.dataCombinerEntities = dataCombinerEntities;
+        this.assetMapperEntities = assetMapperEntities;
         this.pulseEntity = pulseEntity;
     }
 
@@ -195,6 +200,10 @@ public class HiveMQConfigEntity {
 
     public @NotNull List<DataCombinerEntity> getDataCombinerEntities() {
         return dataCombinerEntities;
+    }
+
+    public @NotNull List<DataCombinerEntity> getAssetMapperEntities() {
+        return assetMapperEntities;
     }
 
     public @NotNull PulseEntity getPulseEntity() {

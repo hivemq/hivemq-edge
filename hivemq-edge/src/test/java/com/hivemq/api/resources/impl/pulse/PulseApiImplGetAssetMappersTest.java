@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 public class PulseApiImplGetAssetMappersTest extends AbstractPulseApiImplTest {
     @Test
     public void whenCombinersNotFound_thenReturnsEmptyList() {
-        when(dataCombiningExtractor.getAllCombiners()).thenReturn(List.of());
+        when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of());
         try (final Response response = pulseApi.getAssetMappers()) {
             assertThat(response.getStatus()).isEqualTo(200);
         }
@@ -45,7 +45,7 @@ public class PulseApiImplGetAssetMappersTest extends AbstractPulseApiImplTest {
                 .flatMap(entityType -> Stream.of(DataIdentifierReference.TypeEnum.values())
                         .map(typeEnum -> createCombiner(entityType, typeEnum)))
                 .toList();
-        when(dataCombiningExtractor.getAllCombiners()).thenReturn(expectedCombiners.stream()
+        when(assetMappingExtractor.getAllCombiners()).thenReturn(expectedCombiners.stream()
                 .map(DataCombiner::fromModel)
                 .toList());
         try (final Response response = pulseApi.getAssetMappers()) {

@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 public class PulseApiImplGetAssetMapperMappingsTest extends AbstractPulseApiImplTest {
     @Test
     public void whenCombinerNotFound_thenReturnsDataCombinerNotFoundError() {
-        when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.empty());
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         try (final Response response = pulseApi.getAssetMapperMappings(UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(404);
         }
@@ -44,7 +44,7 @@ public class PulseApiImplGetAssetMapperMappingsTest extends AbstractPulseApiImpl
     public void whenCombinerExists_thenReturnsOK() {
         final Combiner combiner =
                 createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
-        when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(
                 combiner)));
         try (final Response response = pulseApi.getAssetMapperMappings(combiner.getId())) {
             assertThat(response.getStatus()).isEqualTo(200);

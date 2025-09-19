@@ -149,6 +149,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull BridgeExtractor bridgeExtractor;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
     private final @NotNull DataCombiningExtractor dataCombiningExtractor;
+    private final @NotNull AssetMappingExtractor assetMappingExtractor;
     private final @NotNull PulseExtractor pulseExtractor;
     private final @NotNull UnsExtractor unsExtractor;
     private final @NotNull List<ReloadableExtractor<?, ?>> extractors;
@@ -169,6 +170,7 @@ public class ConfigFileReaderWriter {
         this.extractors = List.of(this.bridgeExtractor = new BridgeExtractor(this),
                 this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this),
                 this.dataCombiningExtractor = new DataCombiningExtractor(this),
+                this.assetMappingExtractor = new AssetMappingExtractor(this),
                 this.pulseExtractor = new PulseExtractor(this),
                 this.unsExtractor = new UnsExtractor(this));
         this.fragmentToModificationTime = new ConcurrentHashMap<>();
@@ -262,6 +264,10 @@ public class ConfigFileReaderWriter {
 
     public @NotNull DataCombiningExtractor getDataCombiningExtractor() {
         return dataCombiningExtractor;
+    }
+
+    public @NotNull AssetMappingExtractor getAssetMappingExtractor() {
+        return assetMappingExtractor;
     }
 
     public @NotNull BridgeExtractor getBridgeExtractor() {
