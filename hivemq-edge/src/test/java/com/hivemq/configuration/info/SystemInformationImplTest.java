@@ -124,6 +124,7 @@ public class SystemInformationImplTest {
 
     @Test
     public void test_getLogFolder_default(final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
+        systemProperties.remove(SystemProperties.LOG_FOLDER);
         systemProperties.set(SystemProperties.HIVEMQ_HOME, tempFolder.getAbsolutePath());
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
@@ -144,9 +145,11 @@ public class SystemInformationImplTest {
     }
 
     @Test
-    public void test_getLogFolder_environmentVariable(final uk.org.webcompere.systemstubs.environment.EnvironmentVariables environmentVariables) {
+    public void test_getLogFolder_environmentVariable(final uk.org.webcompere.systemstubs.environment.EnvironmentVariables environmentVariables,
+                                                      final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
         final var testfolder = new File(tempFolder, "testlogs");
 
+        systemProperties.remove(SystemProperties.LOG_FOLDER);
         environmentVariables.set(EnvironmentVariables.LOG_FOLDER, testfolder.getAbsolutePath());
 
         systemInformation = new SystemInformationImpl();
