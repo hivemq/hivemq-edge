@@ -1,5 +1,7 @@
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_NODE_ASSETS } from '@/__test-utils__/react-flow/nodes.ts'
+import { MOCK_COMBINER_ASSET } from '@/api/hooks/useCombiners/__handlers__'
+import { MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
 import { MOCK_PULSE_ASSET_LIST } from '@/api/hooks/usePulse/__handlers__'
 
 import NodeAssets from '@/modules/Workspace/components/nodes/NodeAssets.tsx'
@@ -7,7 +9,9 @@ import NodeAssets from '@/modules/Workspace/components/nodes/NodeAssets.tsx'
 describe('NodeAssets', () => {
   beforeEach(() => {
     cy.viewport(600, 400)
-    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getStatus')
+    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST)
+    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', { items: [MOCK_COMBINER_ASSET] })
+    cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
 
     cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 202, log: false })
     cy.intercept('/api/v1/management/combiners', { statusCode: 202, log: false })

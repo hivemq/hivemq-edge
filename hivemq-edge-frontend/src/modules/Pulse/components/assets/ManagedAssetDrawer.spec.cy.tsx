@@ -5,6 +5,7 @@ import { Route, Routes } from 'react-router-dom'
 
 import { WrapperTestRoute } from '@/__test-utils__/hooks/WrapperTestRoute.tsx'
 import { MOCK_PULSE_ASSET_LIST } from '@/api/hooks/usePulse/__handlers__'
+import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
 import ManagedAssetDrawer from '@/modules/Pulse/components/assets/ManagedAssetDrawer.tsx'
 
 const wrapper: FC<PropsWithChildren> = ({ children }) => (
@@ -19,6 +20,7 @@ const wrapper: FC<PropsWithChildren> = ({ children }) => (
 describe('ManagedAssetDrawer', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+    cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_PULSE_ASSETS] })
   })
 
   it('should handle errors', () => {
