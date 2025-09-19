@@ -144,6 +144,7 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
                 options={listMappers?.items || []}
                 value={selectedValue}
                 isClearable
+                noOptionsMessage={() => t('pulse.assets.operation.edit.select.noOptions')}
                 placeholder={t('pulse.assets.operation.edit.select.placeholder')}
                 components={{
                   Option,
@@ -168,23 +169,34 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
                   })
                 }
               />
-              <FormHelperText>{t('pulse.assets.operation.edit.select.helper')}</FormHelperText>
+              <FormHelperText>
+                {!selectedValue && t('pulse.assets.operation.edit.select.helper')}
+                {selectedValue && (
+                  <Text data-testid="wizard-mapper-instruction">
+                    {t('pulse.assets.operation.edit.workspace', {
+                      context: selectedValue?.__isNew__ ? MAPPER_OPERATION.CREATE : MAPPER_OPERATION.EDIT,
+                    })}
+                  </Text>
+                )}
+              </FormHelperText>
             </FormControl>
           </VStack>
         </ModalBody>
 
         <ModalFooter>
-          <Button
-            variant="primary"
-            onClick={() => {
-              if (selectedValue && onSubmit) onSubmit(selectedValue)
-            }}
-            isDisabled={!selectedValue}
-          >
-            {t('pulse.assets.operation.edit.submit', {
-              context: selectedValue?.__isNew__ ? MAPPER_OPERATION.CREATE : MAPPER_OPERATION.EDIT,
-            })}
-          </Button>
+          <VStack>
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (selectedValue && onSubmit) onSubmit(selectedValue)
+              }}
+              isDisabled={!selectedValue}
+            >
+              {t('pulse.assets.operation.edit.submit', {
+                context: selectedValue?.__isNew__ ? MAPPER_OPERATION.CREATE : MAPPER_OPERATION.EDIT,
+              })}
+            </Button>
+          </VStack>
         </ModalFooter>
       </ModalContent>
     </Modal>
