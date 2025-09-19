@@ -21,12 +21,17 @@ import com.hivemq.exceptions.UnrecoverableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * @author Dominik Obermaier
  */
 public class HiveMQExceptionHandlerBootstrap {
 
     private static final Logger log = LoggerFactory.getLogger(HiveMQExceptionHandlerBootstrap.class);
+
+    private static final AtomicReference<Runnable> terminator = new AtomicReference<>(() -> System.exit(1));
 
     /**
      * Adds an uncaught Exception Handler for UnrecoverableExceptions.
@@ -36,13 +41,17 @@ public class HiveMQExceptionHandlerBootstrap {
         Thread.setDefaultUncaughtExceptionHandler(HiveMQExceptionHandlerBootstrap::handleUncaughtException);
     }
 
+    public static void setTerminator(Runnable runnable) {
+        terminator.set(runnable);
+    }
+
     @VisibleForTesting
     static void handleUncaughtException(final Thread t, final Throwable e) {
         if (e instanceof UnrecoverableException) {
             if (((UnrecoverableException) e).isShowException()) {
                 log.error("An unrecoverable Exception occurred. Exiting HiveMQ", t, e);
             }
-            System.exit(1);
+            terminator.get().run();
         }
         final Throwable rootCause = Throwables.getRootCause(e);
         if (rootCause instanceof UnrecoverableException) {
