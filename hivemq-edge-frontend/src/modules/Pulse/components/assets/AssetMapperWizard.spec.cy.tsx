@@ -1,11 +1,13 @@
 import { WrapperTestRoute } from '@/__test-utils__/hooks/WrapperTestRoute.tsx'
 import { MOCK_COMBINER_ASSET } from '@/api/hooks/useCombiners/__handlers__'
+import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
 import { MOCK_PULSE_ASSET, MOCK_PULSE_ASSET_LIST } from '@/api/hooks/usePulse/__handlers__'
 import AssetMapperWizard from '@/modules/Pulse/components/assets/AssetMapperWizard.tsx'
 
 describe('AssetMapperWizard', () => {
   beforeEach(() => {
     cy.viewport(800, 600)
+    cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_PULSE_ASSETS] })
   })
 
   it('should render properly', () => {
