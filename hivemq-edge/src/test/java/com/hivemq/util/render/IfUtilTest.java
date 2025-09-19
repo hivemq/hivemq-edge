@@ -15,7 +15,6 @@
  */
 package com.hivemq.util.render;
 
-import com.hivemq.exceptions.UnrecoverableException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
@@ -25,8 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
 
 public class IfUtilTest {
 

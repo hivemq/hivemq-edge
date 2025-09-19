@@ -22,7 +22,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: |
-            17
+            21
 
       - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
         with:

@@ -94,7 +94,7 @@ metadata {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
     withJavadocJar()
     withSourcesJar()
@@ -226,9 +226,7 @@ dependencies {
     testImplementation(libs.javassist)
     testImplementation(libs.awaitility)
     testImplementation(libs.assertj)
-    testImplementation(libs.stefanbirkner.systemrules) {
-        exclude("junit", "junit-dep")
-    }
+    testImplementation(libs.systemstubs)
 }
 
 tasks.test {
