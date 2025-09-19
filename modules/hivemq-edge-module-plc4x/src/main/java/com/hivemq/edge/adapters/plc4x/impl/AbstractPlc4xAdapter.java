@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
@@ -74,6 +75,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
     private final @NotNull PublishChangedDataOnlyHandler lastSamples;
+
+    private final AtomicBoolean connecting = new AtomicBoolean(false);
+
     protected volatile @Nullable Plc4xConnection<T> connection;
 
     public AbstractPlc4xAdapter(
@@ -127,7 +131,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                 pollingOutput.finish();
             }
         } else {
-            pollingOutput.fail("Polling failed for adapter '" + adapterId + "' because the connection was null.");
+            if(!connecting.get()) {
+                pollingOutput.fail("Polling failed for adapter '" + adapterId + "' because the connection was null.");
+            }
         }
     }
 
@@ -148,6 +154,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                         if (log.isTraceEnabled()) {
                             log.trace("Creating new instance of Plc4x connector with {}.", adapterConfig);
                         }
+                        connecting.set(true);
                         final Plc4xConnection<T> tempConnection = createConnection();
                         this.connection = tempConnection;
                         output.startedSuccessfully();
@@ -159,6 +166,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                                 log.error("Plc4x connection failed to start", e);
                                 protocolAdapterState.setConnectionStatus(ERROR);
                             }
+                            connecting.set(false);
                         });
                     }
                 }
