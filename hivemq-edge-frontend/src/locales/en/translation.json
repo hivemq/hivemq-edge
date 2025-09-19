@@ -156,7 +156,11 @@
         "section": {
           "activate": {
             "title": "To access the features of HiveMQ Edge Pulse, you need to activate it first.",
-            "label": "Activate Pulse"
+            "label": "Pulse Activation"
+          },
+          "manage": {
+            "title": "Pulse is currently active.",
+            "label": "Pulse Activation"
           },
           "assets": {
             "title": "Use HiveMQ Edge Pulse to manage and publish assets to your HiveMQ Edge",
@@ -1493,6 +1497,7 @@
     "activation": {
       "action": {
         "activate": "Activate Pulse",
+        "manage": "Manage Activation",
         "revoke": "Revoke",
         "submit": "Activate"
       },

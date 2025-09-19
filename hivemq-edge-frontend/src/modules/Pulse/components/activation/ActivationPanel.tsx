@@ -107,7 +107,7 @@ export const ActivationPanel: FC = () => {
   return (
     <>
       <Button ref={btnRef} onClick={onOpen} data-testid="pulse-activation-trigger">
-        {t('pulse.activation.action.activate')}
+        {hasPulseCapability ? t('pulse.activation.action.manage') : t('pulse.activation.action.activate')}
       </Button>
       <Drawer isOpen={isOpen} size="md" placement="right" onClose={onClose} finalFocusRef={btnRef}>
         <DrawerOverlay />

@@ -40,7 +40,9 @@ export const useOnboarding = (): OnboardingTask[] => {
     header: t('welcome.onboarding.pulse.header'),
     sections: [
       {
-        title: t('welcome.onboarding.pulse.section.activate.title'),
+        title: hasPulse
+          ? t('welcome.onboarding.pulse.section.manage.title')
+          : t('welcome.onboarding.pulse.section.activate.title'),
         label: t('welcome.onboarding.pulse.section.activate.label'),
         content: <ActivationPanel />,
         leftIcon: <PulseAgentIcon />,
