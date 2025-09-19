@@ -133,6 +133,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         } else {
             if(!connecting.get()) {
                 pollingOutput.fail("Polling failed for adapter '" + adapterId + "' because the connection was null.");
+            } else {
+                pollingOutput.finish();
             }
         }
     }
