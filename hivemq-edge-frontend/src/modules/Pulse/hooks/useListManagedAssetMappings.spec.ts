@@ -1,3 +1,4 @@
+import { handlerCapabilities, MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
 import { http, HttpResponse } from 'msw'
 import { expect } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
@@ -12,6 +13,10 @@ import type { ManagedAssetExtended } from '@/modules/Pulse/types.ts'
 import { useCombinedAssetsAndCombiners } from '@/modules/Pulse/hooks/useListManagedAssetMappings.ts'
 
 describe('useCombinedAssetsAndCombiners', () => {
+  beforeEach(() => {
+    server.use(...handlerCapabilities(MOCK_CAPABILITIES))
+  })
+
   afterEach(() => {
     server.resetHandlers()
   })
