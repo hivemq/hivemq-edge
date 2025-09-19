@@ -22,10 +22,10 @@ import com.hivemq.util.ManifestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
 import java.io.File;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,11 +49,8 @@ public class SystemInformationImplTest {
         //check if there is a manifest file present (happens on jenkins) and use the value from the manifest file
         final String valueFromManifest = ManifestUtils.getValueFromManifest(HiveMQEdgeMain.class, "HiveMQ-Edge-Version");
 
-        if (valueFromManifest == null) {
-            assertThat("Development Snapshot").isEqualTo(systemInformation.getHiveMQVersion());
-        } else {
-            assertThat(valueFromManifest).isEqualTo(systemInformation.getHiveMQVersion());
-        }
+        assertThat(Objects.requireNonNullElse(valueFromManifest, "Development Snapshot"))
+                .isEqualTo(systemInformation.getHiveMQVersion());
 
     }
 
@@ -65,11 +62,8 @@ public class SystemInformationImplTest {
         //check if there is a manifest file present (happens on jenkins) and use the value from the manifest file
         final String valueFromManifest = ManifestUtils.getValueFromManifest(HiveMQEdgeMain.class, "HiveMQ-Edge-Version");
 
-        if (valueFromManifest == null) {
-            assertThat("Development Snapshot").isEqualTo(systemInformation.getHiveMQVersion());
-        } else {
-            assertThat(valueFromManifest).isEqualTo(systemInformation.getHiveMQVersion());
-        }
+        assertThat(Objects.requireNonNullElse(valueFromManifest, "Development Snapshot"))
+                .isEqualTo(systemInformation.getHiveMQVersion());
     }
 
     @Test
@@ -226,7 +220,7 @@ public class SystemInformationImplTest {
     }
 
     @Test
-    public void test_get_core_count() throws Exception{
+    public void test_get_core_count() {
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
