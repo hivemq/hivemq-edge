@@ -96,7 +96,7 @@
     "i18next": "23.11.3",
     "immutable-json-patch": "6.0.2",
     "luxon": "3.3.0",
-    "mermaid": "11.4.0",
+    "mermaid": "11.10.0",
     "monaco-editor": "0.47.0",
     "mqtt": "5.10.1",
     "mqtt-match": "3.0.0",
