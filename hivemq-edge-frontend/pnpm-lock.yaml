@@ -153,8 +153,8 @@ importers:
         specifier: 12.5.4
         version: 12.5.4(@types/react@18.0.28)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       axios:
-        specifier: 1.12.0
-        version: 1.12.0(debug@4.3.7)
+        specifier: 1.12.2
+        version: 1.12.2(debug@4.3.7)
       chakra-react-select:
         specifier: 4.7.6
         version: 4.7.6(nvkcn5nbjr7llgqiwoojn5bbhq)
@@ -367,8 +367,8 @@ importers:
         specifier: ^3.0.2
         version: 3.0.5(eslint@9.26.0)
       fs-extra:
-        specifier: 11.3.1
-        version: 11.3.1
+        specifier: 11.3.2
+        version: 11.3.2
       globals:
         specifier: 16.1.0
         version: 16.1.0
@@ -3520,8 +3520,8 @@ packages:
     resolution: {integrity: sha512-Xm7bpRXnDSX2YE2YFfBk2FnF0ep6tmG7xPh8iHee8MIcrgq762Nkce856dYtJYLkuIoYZvGfTs/PbZhideTcEg==}
     engines: {node: '>=4'}
 
-  axios@1.12.0:
-    resolution: {integrity: sha512-oXTDccv8PcfjZmPGlWsPSwtOJCZ/b6W5jAMCNcfwJbCzDckwG0jrYJFaWH1yvivfCXjVzV/SPDEhMB3Q+DSurg==}
+  axios@1.12.2:
+    resolution: {integrity: sha512-vMJzPewAlRyOgxV2dU0Cuz2O8zzzx9VYtbJOaBgXFeLc4IV/Eg50n4LowmehOOR61S8ZMpc2K5Sa7g6A4jfkUw==}
 
   babel-loader@9.2.1:
     resolution: {integrity: sha512-fqe8naHt46e0yIdkjUZYqddSXfej3AHajX+CSO5X7oy0EmPc6o5Xh+RClNoHjnieWz9AW4kZxW9yyFMhVB1QLA==}
@@ -4868,8 +4868,8 @@ packages:
     resolution: {integrity: sha512-oRXApq54ETRj4eMiFzGnHWGy+zo5raudjuxN0b8H7s/RU2oW0Wvsx9O0ACRN/kRq9E8Vu/ReskGB5o3ji+FzHQ==}
     engines: {node: '>=12'}
 
-  fs-extra@11.3.1:
-    resolution: {integrity: sha512-eXvGGwZ5CL17ZSwHWd3bbgk7UUpF6IFHtP57NYYakPvHOs8GDgDe5KJI36jIJzDkJ6eJjuzRA8eBQb6SkKue0g==}
+  fs-extra@11.3.2:
+    resolution: {integrity: sha512-Xr9F6z6up6Ws+NjzMCZc6WXg2YFRlrLP9NQDO3VQrWrfiojdhS56TzueT88ze0uBdCTwEIhQ3ptnmKeWGFAe0A==}
     engines: {node: '>=14.14'}
 
   fs-extra@9.1.0:
@@ -11825,7 +11825,7 @@ snapshots:
 
   axe-core@4.10.3: {}
 
-  axios@1.12.0(debug@4.3.7):
+  axios@1.12.2(debug@4.3.7):
     dependencies:
       follow-redirects: 1.15.9(debug@4.3.7)
       form-data: 4.0.4
@@ -13481,7 +13481,7 @@ snapshots:
       jsonfile: 6.1.0
       universalify: 2.0.1
 
-  fs-extra@11.3.1:
+  fs-extra@11.3.2:
     dependencies:
       graceful-fs: 4.2.11
       jsonfile: 6.1.0
@@ -14794,7 +14794,7 @@ snapshots:
     dependencies:
       camelcase: 6.3.0
       commander: 11.1.0
-      fs-extra: 11.3.1
+      fs-extra: 11.3.2
       handlebars: 4.7.8
       json-schema-ref-parser: 9.0.9
 
