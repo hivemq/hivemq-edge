@@ -56,7 +56,6 @@ export const decodeDataUriJsonSchema = (dataUrl: string) => {
     if (error instanceof SyntaxError) throw new Error(i18n.t('schema.validation.noBase64Data'))
     if (error instanceof DOMException) throw new Error(i18n.t('schema.validation.noJSON'))
     if (error instanceof Error) {
-      console.log('XXXXXX err', error)
       throw new Error(`${error.message}`)
     }
   }
