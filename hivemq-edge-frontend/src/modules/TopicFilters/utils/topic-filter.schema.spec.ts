@@ -11,7 +11,7 @@ interface Suite {
   data: string
   error: string
 }
-//TODO
+
 describe('decodeDataUriJsonSchema', () => {
   const tests: Suite[] = [
     { data: '', error: 'Not a valid data-url encoded JSONSchema' },

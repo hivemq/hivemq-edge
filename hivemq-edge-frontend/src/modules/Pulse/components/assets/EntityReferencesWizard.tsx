@@ -31,7 +31,7 @@ const MultiValueContainer = (props: MultiValueGenericProps<EntityReference, true
   return (
     <chakraComponents.MultiValueContainer
       {...rest}
-      // @ts-ignore
+      // @ts-ignore - this is a bug in the types, the data-testid is not allowed by the original type
       innerProps={{ ...innerProps, 'data-testid': 'multi-selected-value' }}
     >
       {props.children}

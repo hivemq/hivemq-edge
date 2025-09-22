@@ -207,7 +207,7 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
                   const newMapping: DataCombining = {
                     id: uuidv4(),
                     sources: {
-                      // This is annoying, we should have the APi to accept nullable
+                      // This is annoying, we should have the API to accept nullable
                       primary: { id: '', type: DataIdentifierReference.type.TAG },
                       tags: [],
                       topicFilters: [],
