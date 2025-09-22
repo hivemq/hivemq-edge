@@ -19,6 +19,24 @@ interface EntityReferenceWizardProps {
   onChange: (sources: EntityReference[]) => void
 }
 
+const Option = (props: OptionProps<EntityReference, true>) => (
+  <chakraComponents.Option {...props}>
+    <EntityRenderer reference={props.data} />
+  </chakraComponents.Option>
+)
+
+const MultiValue = (props: MultiValueProps<EntityReference, true>) => (
+  <chakraComponents.MultiValue {...props}>
+    <Text>{props.data.id}</Text>
+  </chakraComponents.MultiValue>
+)
+
+const MultiValueRemove = (props: MultiValueRemoveProps<EntityReference, true>) => {
+  if (props.data.type === EntityType.EDGE_BROKER || props.data.type === EntityType.PULSE_AGENT)
+    return <>{props.children}</>
+  return <chakraComponents.MultiValueRemove {...props}>{props.children}</chakraComponents.MultiValueRemove>
+}
+
 const EntityReferencesWizard: FC<EntityReferenceWizardProps> = ({ values, onChange }) => {
   const { t } = useTranslation()
   const { data: bridges, isLoading: isBridgeLoading, error: bridgeError } = useListBridges()
@@ -30,24 +48,6 @@ const EntityReferencesWizard: FC<EntityReferenceWizardProps> = ({ values, onChan
     const adapterEntities = adapters.map<EntityReference>((e) => ({ type: EntityType.ADAPTER, id: e.id }))
     return [...bridgeEntities, ...adapterEntities]
   }, [adapters, bridges])
-
-  const Option = (props: OptionProps<EntityReference, true>) => (
-    <chakraComponents.Option {...props}>
-      <EntityRenderer reference={props.data} />
-    </chakraComponents.Option>
-  )
-
-  const MultiValue = (props: MultiValueProps<EntityReference, true>) => (
-    <chakraComponents.MultiValue {...props}>
-      <Text>{props.data.id}</Text>
-    </chakraComponents.MultiValue>
-  )
-
-  const MultiValueRemove = (props: MultiValueRemoveProps<EntityReference, true>) => {
-    if (props.data.type === EntityType.EDGE_BROKER || props.data.type === EntityType.PULSE_AGENT)
-      return <>{props.children}</>
-    return <chakraComponents.MultiValueRemove {...props}>{props.children}</chakraComponents.MultiValueRemove>
-  }
 
   if (bridgeError) return <ErrorMessage type={bridgeError.message} />
   if (adapterError) return <ErrorMessage type={adapterError.message} />
