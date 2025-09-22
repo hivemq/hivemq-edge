@@ -2,6 +2,8 @@ import { WrapperTestRoute } from '@/__test-utils__/hooks/WrapperTestRoute.tsx'
 import type { Combiner } from '@/api/__generated__'
 import { MOCK_COMBINER_ASSET } from '@/api/hooks/useCombiners/__handlers__'
 import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
+import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { MOCK_PULSE_ASSET, MOCK_PULSE_ASSET_LIST } from '@/api/hooks/usePulse/__handlers__'
 import AssetMapperWizard from '@/modules/Pulse/components/assets/AssetMapperWizard.tsx'
 
@@ -9,6 +11,9 @@ describe('AssetMapperWizard', () => {
   beforeEach(() => {
     cy.viewport(800, 600)
     cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_PULSE_ASSETS] })
+    cy.intercept('/api/v1/management/bridges', { items: [mockBridge] })
+
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] })
   })
 
   it('should render properly', () => {
