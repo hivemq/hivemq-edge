@@ -120,7 +120,7 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
     )
   }
 
-  if (!asset) return <ErrorMessage type="No asset" />
+  if (!asset) return <ErrorMessage type={t('pulse.error.asset.notFound', { assetId })} />
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false}>

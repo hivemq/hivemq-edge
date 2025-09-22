@@ -16,6 +16,14 @@ describe('AssetMapperWizard', () => {
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] })
   })
 
+  it('should handle errors', () => {
+    cy.mountWithProviders(<AssetMapperWizard assetId="fake-id" isOpen onClose={cy.stub} onSubmit={cy.stub} />)
+
+    cy.get('[role="alert"]')
+      .should('have.attr', 'data-status', 'error')
+      .should('contain.text', 'Asset fake-id cannot be found')
+  })
+
   it('should render properly', () => {
     const onClose = cy.stub().as('onClose')
     const onSubmit = cy.stub().as('onSubmit')
