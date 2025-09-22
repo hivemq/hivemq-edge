@@ -16,38 +16,41 @@
 package com.hivemq.bootstrap;
 
 import com.hivemq.exceptions.UnrecoverableException;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Christoph Schäbel
  */
 public class HiveMQExceptionHandlerBootstrapTest {
 
-    @Rule
-    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
-
     @Test
     public void test_unrecoverableException_false() {
-        exit.expectSystemExitWithStatus(1);
-
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        HiveMQExceptionHandlerBootstrap.setTerminator(() -> invoked.set(true));
         HiveMQExceptionHandlerBootstrap.handleUncaughtException(Thread.currentThread(),
                 new UnrecoverableException(false));
+        assertThat(invoked.get()).isTrue();
     }
 
     @Test
     public void test_unrecoverableException_true() {
-        exit.expectSystemExitWithStatus(1);
-
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        HiveMQExceptionHandlerBootstrap.setTerminator(() -> invoked.set(true));
         HiveMQExceptionHandlerBootstrap.handleUncaughtException(Thread.currentThread(),
                 new UnrecoverableException(true));
+        assertThat(invoked.get()).isTrue();
     }
 
     @Test
     public void test_unrecoverableException_wrapped() {
-
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        HiveMQExceptionHandlerBootstrap.setTerminator(() -> invoked.set(true));
         HiveMQExceptionHandlerBootstrap.handleUncaughtException(Thread.currentThread(),
                 new RuntimeException("test", new UnrecoverableException(true)));
+        assertThat(invoked.get()).isFalse();
     }
 }
