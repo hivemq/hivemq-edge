@@ -1594,7 +1594,7 @@
           "header": "Mapping asset \"{{ name }}\"",
           "overview": "To map an asset, you first have to select an existing mapper or create a new one",
           "select": {
-            "title": "Asset mappers",
+            "title": "Asset mapper",
             "placeholder": "Type or select ...",
             "noOptions": "No asset mappers found",
             "createLabel": "Create a new mapper: {{ name }}",
@@ -1604,6 +1604,16 @@
               "title": "Asset mappers group selected sources of data together, to restrict access to integration points (tags and topic filters) and to enable the destination schema from Pulse.",
               "link": "https://docs.hivemq.com/hivemq-edge/pulse-asset-mapping.html"
             }
+          },
+          "Sources": {
+            "title": "Data Sources",
+            "placeholder": "Type or select ...",
+            "moreInfo": {
+              "title": "Data sources are the entities from the Workspace where integration points are collected from. Edge and the Pulse Agent will be added automatically."
+            },
+            "noOptionMatching": "No entities matching the filter",
+            "noOptionAvailable": "no entities available",
+            "helper": "The data sources this new mapper will be initially connected to"
           },
           "workspace_EDIT": "The asset mapper will be updated in the Workspace, with a predefined mapping for this asset",
           "workspace_CREATE": "A new asset mapper will be created in the Workspace, with a predefined mapping for this asset",
@@ -1648,13 +1658,13 @@
       "toast": {
         "loading": "Sending the data ...",
         "create": {
-          "title": "Create the combiner",
-          "success": "We've successfully created the combiner for you.",
+          "title": "Create the mapper",
+          "success": "We've successfully created the mapper for you.",
           "partialSuccess": "We've successfully created the combiner for you. Please note that some of the selected entities are not valid for data combining and have not been connected.",
           "error": "There was a problem trying to create the combiner"
         },
         "update": {
-          "title": "Update the combiner",
+          "title": "Update the mapper",
           "success": "We've successfully updated the combiner for you.",
           "error": "There was a problem trying to update the combiner"
         },
