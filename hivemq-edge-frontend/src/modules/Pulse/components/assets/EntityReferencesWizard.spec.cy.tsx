@@ -3,6 +3,7 @@ import { EntityType } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import EntityReferencesWizard from '@/modules/Pulse/components/assets/EntityReferencesWizard.tsx'
+import { DEFAULT_ASSET_MAPPER_SOURCES } from '@/modules/Pulse/utils/assets.utils.ts'
 
 const MOCK_BRIDGE_LIST: BridgeList = { items: [mockBridge] }
 const MOCK_PROTOCOL_ADAPTER_LIST: AdaptersList = { items: [mockAdapter] }
@@ -18,7 +19,7 @@ describe('EntityReferencesWizard', () => {
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getAdapters')
   })
 
-  it.skip('should render properly with empty values', () => {
+  it('should render properly with empty values', () => {
     const onChange = cy.stub().as('onChange')
 
     cy.mountWithProviders(<EntityReferencesWizard values={[]} onChange={onChange} />)
@@ -27,77 +28,92 @@ describe('EntityReferencesWizard', () => {
 
     cy.getByTestId('wizard-mapper-entities-container').within(() => {
       cy.get("label[for='mapper-sources']").should('contain.text', 'Data Sources')
-      cy.get("label[for='mapper-sources']").within(() => {
-        cy.getByTestId('more-info-trigger').should('be.visible')
-      })
+
+      cy.get('#wizard-mapper-sources').should('have.text', 'Type or select ...')
+      cy.get('#react-select-sources-helper').should(
+        'have.text',
+        'The data sources this new mapper will be initially connected to'
+      )
 
       cy.get('#wizard-mapper-sources').should('be.visible')
       cy.get('#react-select-sources-placeholder').should('be.visible')
-      cy.get('p').should('contain.text', 'Sources helper text')
     })
 
     cy.get('@onChange').should('not.have.been.called')
   })
 
-  it.skip('should display more info popover', () => {
+  it('should display more info popover', () => {
     cy.mountWithProviders(<EntityReferencesWizard values={[]} onChange={cy.stub} />)
-
     cy.wait(['@getBridges', '@getAdapters'])
 
     cy.getByTestId('wizard-mapper-entities-container').within(() => {
       cy.get("label[for='mapper-sources']").within(() => {
         cy.getByTestId('more-info-trigger').click()
-        cy.get('[data-testid="more-info-popover"]').should('be.visible')
+        cy.get('[data-testid="more-info-popover"]')
+          .should('be.visible')
+          .should(
+            'contain.text',
+            'Data sources are the entities from the Workspace where integration points are collected from. Edge and the Pulse Agent will be added automatically.'
+          )
         cy.getByTestId('more-info-trigger').click()
         cy.get('[data-testid="more-info-popover"]').should('not.be.visible')
       })
     })
   })
 
-  it.skip('should load and display options from bridges and adapters', () => {
+  it('should load and display options from bridges and adapters', () => {
     cy.mountWithProviders(<EntityReferencesWizard values={[]} onChange={cy.stub} />)
-
+    cy.get('#wizard-mapper-sources').click()
     cy.wait(['@getBridges', '@getAdapters'])
 
-    cy.get('#wizard-mapper-sources').click()
     cy.get('#react-select-sources-listbox [role="listbox"]').within(() => {
       // Should have options from both bridges and adapters
       cy.get('[role="option"]').should('have.length.greaterThan', 0)
 
       // Verify bridge entities are present
       MOCK_BRIDGE_LIST.items.forEach((bridge) => {
-        cy.contains(`[role="option"]`, bridge.id).should('exist')
+        cy.contains(`[role="option"]`, bridge.id).should('have.text', bridge.id)
       })
 
       // Verify adapter entities are present
       MOCK_PROTOCOL_ADAPTER_LIST.items.forEach((adapter) => {
-        cy.contains(`[role="option"]`, adapter.id).should('exist')
+        cy.contains(`[role="option"]`, adapter.id)
+          .should('contain.text', adapter.id)
+          .should('contain.text', 'Simulated Edge Device')
       })
     })
   })
 
-  it.skip('should handle selecting and removing options', () => {
+  it('should handle selecting and removing options', () => {
     const onChange = cy.stub().as('onChange')
 
-    cy.mountWithProviders(<EntityReferencesWizard values={[]} onChange={onChange} />)
+    cy.mountWithProviders(<EntityReferencesWizard values={DEFAULT_ASSET_MAPPER_SOURCES} onChange={onChange} />)
 
     cy.wait(['@getBridges', '@getAdapters'])
 
     // Select first bridge option
     cy.get('#wizard-mapper-sources').click()
     cy.get('#react-select-sources-listbox [role="listbox"]').within(() => {
-      cy.get('[role="option"]').first().click()
+      cy.get('[role="option"]').eq(1).click()
     })
 
-    cy.get('@onChange').should('have.been.called')
-
-    // Verify selected value is displayed
-    cy.get('#wizard-mapper-sources').within(() => {
-      cy.get('[data-testid="select__multi-value"]').should('have.length', 1)
-    })
+    cy.get('@onChange').should('have.been.calledWith', [
+      {
+        id: 'edge',
+        type: 'EDGE_BROKER',
+      },
+      {
+        id: 'idPulse',
+        type: 'PULSE_AGENT',
+      },
+      {
+        type: 'ADAPTER',
+        id: 'my-adapter',
+      },
+    ])
   })
 
-  it.skip('should render with pre-selected values', () => {
+  it('should render with pre-selected values', () => {
     const preselectedValues = [
       { type: EntityType.BRIDGE, id: 'bridge-1' },
       { type: EntityType.ADAPTER, id: 'adapter-1' },
@@ -107,67 +123,60 @@ describe('EntityReferencesWizard', () => {
 
     cy.wait(['@getBridges', '@getAdapters'])
 
-    cy.get('#wizard-mapper-sources').within(() => {
-      cy.get('[data-testid="select__multi-value"]').should('have.length', 2)
-      cy.contains('bridge-1').should('be.visible')
-      cy.contains('adapter-1').should('be.visible')
+    cy.getByTestId('multi-selected-value').should('have.length', 2)
+    preselectedValues.forEach((value) => {
+      cy.getByTestId('multi-selected-value').should('contain.text', value.id)
     })
   })
 
-  it.skip('should prevent removal of EDGE_BROKER and PULSE_AGENT entities', () => {
+  it('should prevent removal of EDGE_BROKER and PULSE_AGENT entities', () => {
+    const onChange = cy.stub()
     const valuesWithNonRemovable = [
       { type: EntityType.EDGE_BROKER, id: 'edge-broker-1' },
       { type: EntityType.PULSE_AGENT, id: 'pulse-agent-1' },
       { type: EntityType.BRIDGE, id: 'bridge-1' },
     ]
 
-    cy.mountWithProviders(<EntityReferencesWizard values={valuesWithNonRemovable} onChange={cy.stub} />)
+    cy.mountWithProviders(<EntityReferencesWizard values={valuesWithNonRemovable} onChange={onChange} />)
 
     cy.wait(['@getBridges', '@getAdapters'])
 
-    cy.get('#wizard-mapper-sources').within(() => {
-      cy.get('[data-testid="select__multi-value"]').should('have.length', 3)
-
-      // Non-removable entities should not have remove buttons
-      cy.get('[data-testid="select__multi-value"]')
-        .eq(0)
-        .within(() => {
-          cy.get('[data-testid="select__multi-value__remove"]').should('not.exist')
-        })
-
-      cy.get('[data-testid="select__multi-value"]')
-        .eq(1)
-        .within(() => {
-          cy.get('[data-testid="select__multi-value__remove"]').should('not.exist')
-        })
-
-      // Regular entities should have remove buttons
-      cy.get('[data-testid="select__multi-value"]')
-        .eq(2)
-        .within(() => {
-          cy.get('[data-testid="select__multi-value__remove"]').should('exist')
-        })
-    })
+    cy.getByTestId('multi-selected-value').should('have.length', 3)
+    cy.getByTestId('multi-selected-value')
+      .eq(2)
+      .within(() => {
+        cy.get('[role="button"]').should('have.attr', 'aria-label', 'Remove bridge-1')
+      })
+    cy.getByTestId('multi-selected-value')
+      .eq(0)
+      .within(() => {
+        cy.get('[role="button"]').should('not.exist')
+      })
+    cy.getByTestId('multi-selected-value')
+      .eq(1)
+      .within(() => {
+        cy.get('[role="button"]').should('not.exist')
+      })
   })
 
-  it.skip('should enforce minimum default sources when removing all selections', () => {
+  it.only('should enforce minimum default sources when removing all selections', () => {
     const onChange = cy.stub().as('onChange')
     const initialValues = [{ type: EntityType.BRIDGE, id: 'bridge-1' }]
 
     cy.mountWithProviders(<EntityReferencesWizard values={initialValues} onChange={onChange} />)
 
-    cy.wait(['@getBridges', '@getAdapters'])
-
-    // Clear all selections
-    cy.get('#wizard-mapper-sources').within(() => {
-      cy.get('[data-testid="select__clear-indicator"]').click()
+    cy.wait(['@getBridges', '@getAdapters']).then(() => {
+      // Clear all selections
+      cy.get('#wizard-mapper-sources').within(() => {
+        cy.getByAriaLabel('Clear selected options').click()
+      })
     })
 
     // Should call onChange with default sources when attempting to go below minimum
     cy.get('@onChange').should('have.been.called')
   })
 
-  it.skip('should filter options based on search input', () => {
+  it('should filter options based on search input', () => {
     cy.mountWithProviders(<EntityReferencesWizard values={[]} onChange={cy.stub} />)
 
     cy.wait(['@getBridges', '@getAdapters'])
@@ -176,14 +185,13 @@ describe('EntityReferencesWizard', () => {
     cy.get('#wizard-mapper-sources input').type('bridge')
 
     cy.get('#react-select-sources-listbox [role="listbox"]').within(() => {
-      // Should filter to only show options containing "bridge"
       cy.get('[role="option"]').each(($option) => {
         cy.wrap($option).should('contain.text', 'bridge')
       })
     })
   })
 
-  it.skip('should display no options message when no matches found', () => {
+  it('should display no options message when no matches found', () => {
     cy.mountWithProviders(<EntityReferencesWizard values={[]} onChange={cy.stub} />)
 
     cy.wait(['@getBridges', '@getAdapters'])
@@ -191,18 +199,18 @@ describe('EntityReferencesWizard', () => {
     cy.get('#wizard-mapper-sources').click()
     cy.get('#wizard-mapper-sources input').type('nonexistent')
 
-    cy.get('#react-select-sources-listbox').should('contain.text', 'No options matching')
+    cy.get('#react-select-sources-listbox').should('contain.text', 'No entities matching the filter')
   })
 
-  it.skip('should display no options available when input is empty and no options exist', () => {
+  it('should display no options available when input is empty and no options exist', () => {
     cy.intercept('/api/v1/management/bridges', { items: [] })
-    cy.intercept('/api/v1/management/protocol-adapters', { items: [] })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [] })
 
     cy.mountWithProviders(<EntityReferencesWizard values={[]} onChange={cy.stub} />)
 
     cy.get('#wizard-mapper-sources').click()
 
-    cy.get('#react-select-sources-listbox').should('contain.text', 'No options available')
+    cy.get('#react-select-sources-listbox').should('contain.text', 'No entities available')
   })
 
   it('should handle bridge loading error', () => {

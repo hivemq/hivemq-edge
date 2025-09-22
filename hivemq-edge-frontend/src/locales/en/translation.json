@@ -1599,6 +1599,7 @@
             "noOptions": "No asset mappers found",
             "createLabel": "Create a new mapper: {{ name }}",
             "createValue": "{{ name }} (new)",
+            "remove": "Remove {{ name }}",
             "helper": "The asset mapper to use for the new mapping",
             "moreInfo": {
               "title": "Asset mappers group selected sources of data together, to restrict access to integration points (tags and topic filters) and to enable the destination schema from Pulse.",
@@ -1612,7 +1613,7 @@
               "title": "Data sources are the entities from the Workspace where integration points are collected from. Edge and the Pulse Agent will be added automatically."
             },
             "noOptionMatching": "No entities matching the filter",
-            "noOptionAvailable": "no entities available",
+            "noOptionAvailable": "No entities available",
             "helper": "The data sources this new mapper will be initially connected to"
           },
           "workspace_EDIT": "The asset mapper will be updated in the Workspace, with a predefined mapping for this asset",

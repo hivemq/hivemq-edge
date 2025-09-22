@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FormControl, FormHelperText, FormLabel, Text } from '@chakra-ui/react'
-import type { MultiValueProps, MultiValueRemoveProps, OptionProps } from 'chakra-react-select'
+import type { MultiValueGenericProps, MultiValueProps, MultiValueRemoveProps, OptionProps } from 'chakra-react-select'
 import { Select, createFilter, chakraComponents } from 'chakra-react-select'
 
 import type { EntityReference } from '@/api/__generated__'
@@ -25,6 +25,20 @@ const Option = (props: OptionProps<EntityReference, true>) => (
   </chakraComponents.Option>
 )
 
+const MultiValueContainer = (props: MultiValueGenericProps<EntityReference, true>) => {
+  const { innerProps, ...rest } = props
+
+  return (
+    <chakraComponents.MultiValueContainer
+      {...rest}
+      // @ts-ignore
+      innerProps={{ ...innerProps, 'data-testid': 'multi-selected-value' }}
+    >
+      {props.children}
+    </chakraComponents.MultiValueContainer>
+  )
+}
+
 const MultiValue = (props: MultiValueProps<EntityReference, true>) => (
   <chakraComponents.MultiValue {...props}>
     <Text>{props.data.id}</Text>
@@ -32,9 +46,21 @@ const MultiValue = (props: MultiValueProps<EntityReference, true>) => (
 )
 
 const MultiValueRemove = (props: MultiValueRemoveProps<EntityReference, true>) => {
+  const { t } = useTranslation()
+  const { innerProps, ...rest } = props
   if (props.data.type === EntityType.EDGE_BROKER || props.data.type === EntityType.PULSE_AGENT)
     return <>{props.children}</>
-  return <chakraComponents.MultiValueRemove {...props}>{props.children}</chakraComponents.MultiValueRemove>
+  return (
+    <chakraComponents.MultiValueRemove
+      {...rest}
+      innerProps={{
+        ...innerProps,
+        'aria-label': t('pulse.assets.operation.edit.select.remove', { name: props.data.id }),
+      }}
+    >
+      {props.children}
+    </chakraComponents.MultiValueRemove>
+  )
 }
 
 const EntityReferencesWizard: FC<EntityReferenceWizardProps> = ({ values, onChange }) => {
@@ -88,9 +114,12 @@ const EntityReferencesWizard: FC<EntityReferenceWizardProps> = ({ values, onChan
           Option,
           MultiValue,
           MultiValueRemove,
+          MultiValueContainer,
         }}
       />
-      <FormHelperText>{t('pulse.assets.operation.edit.Sources.helper')}</FormHelperText>
+      <FormHelperText id="react-select-sources-helper">
+        {t('pulse.assets.operation.edit.Sources.helper')}
+      </FormHelperText>
     </FormControl>
   )
 }
