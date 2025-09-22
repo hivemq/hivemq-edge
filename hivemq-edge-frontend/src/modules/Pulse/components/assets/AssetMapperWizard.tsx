@@ -178,7 +178,7 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
               <FormHelperText>
                 {!selectedValue && t('pulse.assets.operation.edit.select.helper')}
                 {selectedValue && (
-                  <Text data-testid="wizard-mapper-instruction">
+                  <Text data-testid="wizard-mapper-selector-instruction">
                     {t('pulse.assets.operation.edit.workspace', {
                       context: selectedValue?.__isNew__ ? MAPPER_OPERATION.CREATE : MAPPER_OPERATION.EDIT,
                     })}
