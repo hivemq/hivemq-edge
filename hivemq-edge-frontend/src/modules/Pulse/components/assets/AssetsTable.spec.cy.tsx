@@ -288,7 +288,7 @@ describe('AssetsTable', () => {
           })
       })
 
-      it.only('should handle mapping in a new mapper', () => {
+      it('should handle mapping in a new mapper', () => {
         cy.intercept('PUT', 'api/v1/management/pulse/managed-assets/*', (req) => {
           req.reply({ statusCode: 404 })
         })
