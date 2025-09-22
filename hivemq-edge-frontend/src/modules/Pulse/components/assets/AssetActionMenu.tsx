@@ -15,7 +15,6 @@ import { NodeTypes, WorkspaceNavigationCommand } from '@/modules/Workspace/types
 interface AssetActionMenuProps {
   asset: ManagedAsset
   isInWorkspace?: boolean
-  onCreate?: (id: string) => void
   onEdit?: (id: string) => void
   onView?: (id: string) => void
   onDelete?: (id: string) => void
