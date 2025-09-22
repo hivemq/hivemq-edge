@@ -66,7 +66,8 @@ public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEnt
             errorEvents.forEach(event -> log.error("Pulse config error: {}", event.getMessage()));
             return Configurator.ConfigResult.ERROR;
         }
-        setPulseEntity(newPulseEntity);
+        this.pulseEntity = newPulseEntity;
+        notifyConsumer();
         return Configurator.ConfigResult.SUCCESS;
     }
 
