@@ -18,6 +18,7 @@ package com.hivemq.bootstrap;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.hivemq.exceptions.UnrecoverableException;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,7 @@ public class HiveMQExceptionHandlerBootstrap {
         Thread.setDefaultUncaughtExceptionHandler(HiveMQExceptionHandlerBootstrap::handleUncaughtException);
     }
 
-    public static void setTerminator(Runnable runnable) {
+    public static void setTerminator(@NotNull final Runnable runnable) {
         terminator.set(runnable);
     }
 
