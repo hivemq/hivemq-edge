@@ -65,7 +65,7 @@ describe('WelcomePage', () => {
                 'have.text',
                 'To access the features of HiveMQ Edge Pulse, you need to activate it first.'
               )
-              cy.get('button').should('have.text', 'Activate Pulse')
+              cy.get('button').should('have.text', 'Manage Activation')
             })
 
           cy.get('section')
