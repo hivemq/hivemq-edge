@@ -46,23 +46,23 @@ public class ISA95Entity extends DisabledEntity {
     @XmlElement(name = "work-cell")
     private @Nullable String workCell;
 
-    public String getEnterprise() {
+    public @Nullable String getEnterprise() {
         return enterprise;
     }
 
-    public String getSite() {
+    public @Nullable String getSite() {
         return site;
     }
 
-    public String getArea() {
+    public @Nullable String getArea() {
         return area;
     }
 
-    public String getProductionLine() {
+    public @Nullable String getProductionLine() {
         return productionLine;
     }
 
-    public String getWorkCell() {
+    public @Nullable String getWorkCell() {
         return workCell;
     }
     public boolean isPrefixAllTopics() {
@@ -73,23 +73,23 @@ public class ISA95Entity extends DisabledEntity {
         this.prefixAllTopics = prefixAllTopics;
     }
 
-    public void setEnterprise(final String enterprise) {
+    public void setEnterprise(final @Nullable String enterprise) {
         this.enterprise = enterprise;
     }
 
-    public void setSite(final String site) {
+    public void setSite(final @Nullable String site) {
         this.site = site;
     }
 
-    public void setArea(final String area) {
+    public void setArea(final @Nullable String area) {
         this.area = area;
     }
 
-    public void setProductionLine(final String productionLine) {
+    public void setProductionLine(final @Nullable String productionLine) {
         this.productionLine = productionLine;
     }
 
-    public void setWorkCell(final String workCell) {
+    public void setWorkCell(final @Nullable String workCell) {
         this.workCell = workCell;
     }
 

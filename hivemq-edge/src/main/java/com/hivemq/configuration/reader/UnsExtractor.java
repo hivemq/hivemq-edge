@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 
 public class UnsExtractor implements ReloadableExtractor<UnsConfigEntity, ISA95> {
 
-    private volatile @Nullable ISA95 config = null;;
+    private volatile @Nullable ISA95 config = null;
     private volatile @Nullable Consumer<ISA95> consumer = cfg -> log.debug("No consumer registered yet");
     private final @NotNull ConfigFileReaderWriter configFileReaderWriter;
 
@@ -60,13 +60,18 @@ public class UnsExtractor implements ReloadableExtractor<UnsConfigEntity, ISA95>
     public synchronized void sync(final @NotNull HiveMQConfigEntity entity){
         final ISA95 isa95 = config;
         final ISA95Entity isa95Entity = entity.getUns().getIsa95();
-        isa95Entity.setEnabled(isa95.isEnabled());
-        isa95Entity.setPrefixAllTopics(isa95.isPrefixAllTopics());
-        isa95Entity.setArea(isa95.getArea());
-        isa95Entity.setEnterprise(isa95.getEnterprise());
-        isa95Entity.setSite(isa95.getSite());
-        isa95Entity.setWorkCell(isa95.getWorkCell());
-        isa95Entity.setProductionLine(isa95.getProductionLine());
+        if(isa95 == null){
+            isa95Entity.setEnabled(false);
+            isa95Entity.setPrefixAllTopics(false);
+        } else {
+            isa95Entity.setEnabled(isa95.isEnabled());
+            isa95Entity.setPrefixAllTopics(isa95.isPrefixAllTopics());
+            isa95Entity.setArea(isa95.getArea());
+            isa95Entity.setEnterprise(isa95.getEnterprise());
+            isa95Entity.setSite(isa95.getSite());
+            isa95Entity.setWorkCell(isa95.getWorkCell());
+            isa95Entity.setProductionLine(isa95.getProductionLine());
+        }
     }
 
 
@@ -74,7 +79,7 @@ public class UnsExtractor implements ReloadableExtractor<UnsConfigEntity, ISA95>
         replaceConfigsAndTriggerWrite(isa95);
     }
 
-    private void replaceConfigsAndTriggerWrite(ISA95 newConfig) {
+    private void replaceConfigsAndTriggerWrite(final ISA95 newConfig) {
         config = newConfig;
         notifyConsumer();
         configFileReaderWriter.writeConfigWithSync();
