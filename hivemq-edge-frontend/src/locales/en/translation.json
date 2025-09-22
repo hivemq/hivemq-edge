@@ -1661,12 +1661,12 @@
           "title": "Create the mapper",
           "success": "We've successfully created the mapper for you.",
           "partialSuccess": "We've successfully created the combiner for you. Please note that some of the selected entities are not valid for data combining and have not been connected.",
-          "error": "There was a problem trying to create the combiner"
+          "error": "There was a problem trying to create the asset mapper"
         },
         "update": {
           "title": "Update the mapper",
-          "success": "We've successfully updated the combiner for you.",
-          "error": "There was a problem trying to update the combiner"
+          "success": "We've successfully updated the asset mapper for you.",
+          "error": "There was a problem trying to update the asset mapper"
         },
         "unmap": {
           "title": "Unmapping the asset",
@@ -1675,8 +1675,8 @@
         },
         "delete": {
           "title": "Delete the combiner",
-          "success": "We've successfully deleted the combiner for you.",
-          "error": "There was a problem trying to delete the combiner"
+          "success": "We've successfully deleted the asset mapper for you.",
+          "error": "There was a problem trying to delete the asset mapper"
         }
       }
     },
