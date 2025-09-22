@@ -133,6 +133,17 @@ const MOCK_ERRORS: ErrorObject[] = [
     schema: 'mqtt-topic-filter',
     data: 'dd+/d#',
   },
+  {
+    instancePath: '/items/1/tag',
+    schemaPath: '#/properties/items/items/properties/tag/format',
+    keyword: 'format',
+    params: {
+      format: 'jwt',
+    },
+    message: 'must match format "mqtt-topic-filter"',
+    schema: 'jwt',
+    data: 'ABCDEFG',
+  },
 ]
 
 describe('customLocalizer', () => {
@@ -145,6 +156,7 @@ describe('customLocalizer', () => {
       expect.objectContaining({ message: Messages.noWildCards }),
       expect.objectContaining({ message: Messages.noWildCards }),
       expect.objectContaining({ message: Messages.noSingleLevelString }),
+      expect.objectContaining({ message: Messages.noJWTFormat }),
     ])
   })
 })
@@ -156,6 +168,7 @@ describe('customFormatsValidator', () => {
     } = customFormatsValidator
     const {
       identifier,
+      interpolation,
       boolean,
       'mqtt-topic': mqttTopic,
       'mqtt-tag': mqttTag,
@@ -167,5 +180,6 @@ describe('customFormatsValidator', () => {
     expect((mqttTag as FormatValidator<string>)('test')).toBeDefined()
     expect((mqttTopicFilter as FormatValidator<string>)('test')).toBeDefined()
     expect((identifier as FormatValidator<string>)('test')).toBeDefined()
+    expect((interpolation as FormatValidator<string>)('test')).toBeDefined()
   })
 })
