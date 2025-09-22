@@ -159,7 +159,7 @@ describe('EntityReferencesWizard', () => {
       })
   })
 
-  it.only('should enforce minimum default sources when removing all selections', () => {
+  it('should enforce minimum default sources when removing all selections', () => {
     const onChange = cy.stub().as('onChange')
     const initialValues = [{ type: EntityType.BRIDGE, id: 'bridge-1' }]
 
