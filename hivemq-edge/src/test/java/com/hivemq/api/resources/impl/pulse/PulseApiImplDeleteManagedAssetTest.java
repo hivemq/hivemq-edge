@@ -16,6 +16,9 @@
 
 package com.hivemq.api.resources.impl.pulse;
 
+import com.hivemq.api.errors.ConfigWritingDisabled;
+import com.hivemq.api.errors.pulse.AssetMapperReferencedError;
+import com.hivemq.api.errors.pulse.ManagedAssetNotFoundError;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.pulse.asset.PulseAgentAsset;
 import com.hivemq.pulse.asset.PulseAgentAssetMapping;
@@ -26,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +46,7 @@ public class PulseApiImplDeleteManagedAssetTest extends AbstractPulseApiImplTest
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
         try (final Response response = pulseApi.deleteManagedAsset(UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(403);
+            assertThat(response.getEntity()).isInstanceOf(ConfigWritingDisabled.class);
         }
     }
 
@@ -53,6 +58,32 @@ public class PulseApiImplDeleteManagedAssetTest extends AbstractPulseApiImplTest
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
         try (final Response response = pulseApi.deleteManagedAsset(UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(404);
+            assertThat(response.getEntity()).isInstanceOf(ManagedAssetNotFoundError.class);
+        }
+    }
+
+    @Test
+    public void whenAssetIsReferenced_thenReturnsAssetMapperReferencedError() {
+        when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
+                Status.ConnectionStatus.CONNECTED,
+                List.of()));
+        final UUID id = UUID.randomUUID();
+        final UUID mappingId = UUID.randomUUID();
+        final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder().id(id)
+                .name("Test Asset")
+                .description("A test asset")
+                .topic("test/topic")
+                .schema("{}")
+                .mapping(PulseAgentAssetMapping.builder()
+                        .id(mappingId)
+                        .status(PulseAgentAssetMappingStatus.STREAMING)
+                        .build())
+                .build();
+        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
+        when(assetMappingExtractor.getPulseAssetMappingIdSet()).thenReturn(Set.of(mappingId.toString()));
+        try (final Response response = pulseApi.deleteManagedAsset(id)) {
+            assertThat(response.getStatus()).isEqualTo(400);
+            assertThat(response.getEntity()).isInstanceOf(AssetMapperReferencedError.class);
         }
     }
 
@@ -91,7 +122,10 @@ public class PulseApiImplDeleteManagedAssetTest extends AbstractPulseApiImplTest
                 .description("A test asset")
                 .topic("test/topic")
                 .schema("{}")
-                .mapping(PulseAgentAssetMapping.builder().id(id).status(PulseAgentAssetMappingStatus.STREAMING).build())
+                .mapping(PulseAgentAssetMapping.builder()
+                        .id(UUID.randomUUID())
+                        .status(PulseAgentAssetMappingStatus.STREAMING)
+                        .build())
                 .build();
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
         try (final Response response = pulseApi.deleteManagedAsset(id)) {

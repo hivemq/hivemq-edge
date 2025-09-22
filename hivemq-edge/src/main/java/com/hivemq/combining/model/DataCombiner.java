@@ -25,7 +25,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public record DataCombiner(UUID id, String name, String description, List<EntityReference> entityReferences,
                            List<DataCombining> dataCombinings) {
@@ -79,10 +81,20 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
         return new DataCombinerEntity(id, name, description, sources, combining);
     }
 
-    public @NotNull List<DataCombining> getPulseDataCombinings() {
-        return dataCombinings.stream()
-                .filter(dataCombining -> dataCombining.sources().primaryReference().type() ==
-                        DataIdentifierReference.Type.PULSE_ASSET)
+    public @NotNull List<DataCombining> getPulseAssetDataCombinings() {
+        final Set<String> idSet = entityReferences().stream()
+                .filter(entityReference -> entityReference.type() == EntityType.PULSE_AGENT)
+                .map(EntityReference::id)
+                .collect(Collectors.toSet());
+        return dataCombinings().stream()
+                .filter(dataCombining -> idSet.contains(dataCombining.id().toString()))
                 .toList();
+    }
+
+    public @NotNull Set<String> getPulseAssetMappingIdSet() {
+        return getPulseAssetDataCombinings().stream()
+                .map(DataCombining::id)
+                .map(UUID::toString)
+                .collect(Collectors.toSet());
     }
 }

@@ -17,6 +17,8 @@
 package com.hivemq.api.resources.impl.pulse;
 
 import com.hivemq.edge.api.model.PulseStatus;
+import com.hivemq.pulse.converters.PulseAgentActivationStatusConverter;
+import com.hivemq.pulse.converters.PulseAgentConnectionStatusConverter;
 import com.hivemq.pulse.status.Status;
 import jakarta.ws.rs.core.Response;
 import org.jetbrains.annotations.NotNull;
@@ -48,8 +50,10 @@ public class PulseApiImplGetPulseStatusTest extends AbstractPulseApiImplTest {
             assertThat(response.getEntity()).isInstanceOf(PulseStatus.class);
             final PulseStatus pulseStatus = (PulseStatus) response.getEntity();
             assertThat(pulseStatus).isNotNull();
-            assertThat(pulseStatus.getActivation().name()).isEqualTo(activationStatus.name());
-            assertThat(pulseStatus.getRuntime().name()).isEqualTo(connectionStatus.name());
+            assertThat(pulseStatus.getActivation()).isEqualTo(PulseAgentActivationStatusConverter.INSTANCE.toRestEntity(
+                    activationStatus));
+            assertThat(pulseStatus.getRuntime()).isEqualTo(PulseAgentConnectionStatusConverter.INSTANCE.toRestEntity(
+                    connectionStatus));
         }
     }
 }

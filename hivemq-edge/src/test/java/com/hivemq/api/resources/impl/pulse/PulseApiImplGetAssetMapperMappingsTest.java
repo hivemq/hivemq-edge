@@ -16,6 +16,7 @@
 
 package com.hivemq.api.resources.impl.pulse;
 
+import com.hivemq.api.errors.pulse.AssetMapperNotFoundError;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.edge.api.model.Combiner;
 import com.hivemq.edge.api.model.DataCombiningList;
@@ -33,19 +34,18 @@ import static org.mockito.Mockito.when;
 
 public class PulseApiImplGetAssetMapperMappingsTest extends AbstractPulseApiImplTest {
     @Test
-    public void whenCombinerNotFound_thenReturnsDataCombinerNotFoundError() {
+    public void whenCombinerNotFound_thenReturnsAssetMapperNotFoundError() {
         when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         try (final Response response = pulseApi.getAssetMapperMappings(UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(404);
+            assertThat(response.getEntity()).isInstanceOf(AssetMapperNotFoundError.class);
         }
     }
 
     @Test
     public void whenCombinerExists_thenReturnsOK() {
-        final Combiner combiner =
-                createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
-        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(
-                combiner)));
+        final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
         try (final Response response = pulseApi.getAssetMapperMappings(combiner.getId())) {
             assertThat(response.getStatus()).isEqualTo(200);
             assertThat(response.getEntity()).isInstanceOf(DataCombiningList.class);

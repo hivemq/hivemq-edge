@@ -16,15 +16,19 @@
 
 package com.hivemq.api.resources.impl;
 
+import com.google.common.collect.Sets;
 import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
-import com.hivemq.api.errors.adapters.DataCombinerNotFoundError;
 import com.hivemq.api.errors.pulse.ActivationTokenAlreadyDeletedError;
 import com.hivemq.api.errors.pulse.ActivationTokenInvalidError;
 import com.hivemq.api.errors.pulse.ActivationTokenNotDeletedError;
+import com.hivemq.api.errors.pulse.AssetMapperNotFoundError;
+import com.hivemq.api.errors.pulse.AssetMapperReferencedError;
+import com.hivemq.api.errors.pulse.InvalidDataIdentifierReferenceForAssetMapperError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetMappingIdError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetSchemaError;
+import com.hivemq.api.errors.pulse.InvalidManagedAssetSourceIdError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetTopicError;
 import com.hivemq.api.errors.pulse.ManagedAssetAlreadyExistsError;
 import com.hivemq.api.errors.pulse.ManagedAssetNotFoundError;
@@ -32,6 +36,10 @@ import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
 import com.hivemq.api.errors.pulse.PulseAgentNotConnectedError;
 import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.combining.model.DataCombiner;
+import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.combining.model.EntityReference;
+import com.hivemq.combining.model.EntityType;
+import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.AssetMappingExtractor;
@@ -50,7 +58,6 @@ import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.asset.PulseAgentAsset;
 import com.hivemq.pulse.asset.PulseAgentAssetMapping;
 import com.hivemq.pulse.asset.PulseAgentAssets;
-import com.hivemq.pulse.converters.PulseAgentAssetConverter;
 import com.hivemq.pulse.converters.PulseAgentAssetMappingStatusConverter;
 import com.hivemq.pulse.converters.PulseAgentAssetSchemaConverter;
 import com.hivemq.pulse.converters.PulseAgentAssetsConverter;
@@ -68,11 +75,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -107,25 +118,32 @@ public class PulseApiImpl implements PulseApi {
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
         }
-        final @NotNull Optional<DataCombiner> instance = assetMappingExtractor.getCombinerById(combiner.getId());
-        if (instance.isPresent()) {
-            return ErrorResponseUtil.errorResponse(new AlreadyExistsError(String.format(
-                    "DataCombiner already exists '%s'",
-                    combiner.getId())));
-        }
-        final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
-        final Optional<Response> optionalResponseDataCombiner = checkDataCombiner(dataCombiner);
-        if (optionalResponseDataCombiner.isPresent()) {
-            return optionalResponseDataCombiner.get();
-        }
-        try {
-            assetMappingExtractor.addDataCombiner(dataCombiner);
-        } catch (final Exception e) {
-            final Throwable cause = e.getCause();
-            if (cause instanceof IllegalArgumentException) {
-                LOGGER.warn("Exception occurred during addition of data combining '{}':", combiner.getName(), cause);
+        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
+        synchronized (existingPulseEntity.getLock()) {
+            final @NotNull Optional<DataCombiner> optionalDataCombiner =
+                    assetMappingExtractor.getCombinerById(combiner.getId());
+            if (optionalDataCombiner.isPresent()) {
+                return ErrorResponseUtil.errorResponse(new AlreadyExistsError(String.format(
+                        "Asset mapper already exists '%s'",
+                        combiner.getId())));
             }
-            return ErrorResponseUtil.errorResponse(new InternalServerError("Exception during add of data combiner."));
+            final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
+            final var assetEntityMap = PulseAgentAssetUtils.toAssetEntityMap(pulseExtractor.getPulseEntity());
+            final Optional<Response> optionalResponseDataCombiner = checkAssetMapper(dataCombiner, assetEntityMap);
+            if (optionalResponseDataCombiner.isPresent()) {
+                return optionalResponseDataCombiner.get();
+            }
+            try {
+                assetMappingExtractor.addDataCombiner(dataCombiner);
+            } catch (final Exception e) {
+                final Throwable cause = e.getCause();
+                if (cause instanceof IllegalArgumentException) {
+                    LOGGER.warn("Exception occurred during addition of data combining '{}':",
+                            combiner.getName(),
+                            cause);
+                }
+                return ErrorResponseUtil.errorResponse(new InternalServerError("Exception during add of data combiner."));
+            }
         }
         return Response.ok().build();
     }
@@ -135,6 +153,10 @@ public class PulseApiImpl implements PulseApi {
         final Optional<Response> optionalResponse = check(this::checkStatus, this::checkConfigWritable);
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
+        }
+        final UUID mappingId = managedAsset.getMapping().getMappingId();
+        if (mappingId == null) {
+            return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError("null"));
         }
         final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
         synchronized (existingPulseEntity.getLock()) {
@@ -146,12 +168,18 @@ public class PulseApiImpl implements PulseApi {
             if (optionalAssetIndex.isEmpty()) {
                 return ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(managedAsset.getId()));
             }
+            if (assets.getMappingIdSet().contains(mappingId.toString())) {
+                return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(mappingId));
+            }
+            if (assetMappingExtractor.getPulseAssetMappingIdSet().contains(mappingId.toString())) {
+                return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(mappingId));
+            }
             final PulseAgentAsset asset = assets.get(optionalAssetIndex.getAsInt());
             if (asset.getMapping().getId() != null) {
                 return ErrorResponseUtil.errorResponse(new ManagedAssetAlreadyExistsError());
             }
             final PulseAgentAsset newAsset = asset.withMapping(PulseAgentAssetMapping.builder()
-                    .id(managedAsset.getMapping().getMappingId())
+                    .id(mappingId)
                     .status(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(managedAsset.getMapping()
                             .getStatus()))
                     .build());
@@ -168,16 +196,40 @@ public class PulseApiImpl implements PulseApi {
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
         }
-        final @NotNull Optional<DataCombiner> instance = assetMappingExtractor.getCombinerById(combinerId);
-        if (instance.isEmpty()) {
-            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
-        }
-        try {
-            assetMappingExtractor.deleteDataCombiner(combinerId);
-        } catch (final Exception e) {
-            final Throwable cause = e.getCause();
-            LOGGER.warn("Exception occurred during deletion of data combining '{}':", combinerId, cause);
-            return ErrorResponseUtil.errorResponse(new InternalServerError("Exception during deletion of data combiner."));
+        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
+        synchronized (existingPulseEntity.getLock()) {
+            final @NotNull Optional<DataCombiner> optionalDataCombiner =
+                    assetMappingExtractor.getCombinerById(combinerId);
+            if (optionalDataCombiner.isEmpty()) {
+                return ErrorResponseUtil.errorResponse(new AssetMapperNotFoundError(combinerId));
+            }
+            final DataCombiner dataCombiner = optionalDataCombiner.get();
+            final PulseAgentAssets assets =
+                    PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
+            final Set<String> mappingIdSet = dataCombiner.getPulseAssetMappingIdSet();
+            final PulseAgentAssets newAssets = new PulseAgentAssets();
+            final AtomicBoolean updated = new AtomicBoolean(false);
+            assets.stream().map(asset -> {
+                final UUID mappingId = asset.getMapping().getId();
+                if (mappingId != null && mappingIdSet.contains(mappingId.toString())) {
+                    updated.set(true);
+                    // Reset the asset mapping to mappingId = null and status = UNMAPPED.
+                    return asset.withMapping(PulseAgentAssetMapping.builder().build());
+                }
+                return asset;
+            }).forEach(newAssets::add);
+            try {
+                assetMappingExtractor.deleteDataCombiner(combinerId);
+                if (updated.get()) {
+                    final PulseEntity newPulseEntity = new PulseEntity(newAssets.toPersistence());
+                    pulseExtractor.setPulseEntity(newPulseEntity);
+                }
+            } catch (final Exception e) {
+                final Throwable cause = e.getCause();
+                LOGGER.warn("Exception occurred during deletion of data combining '{}':", combinerId, cause);
+                return ErrorResponseUtil.errorResponse(new InternalServerError(
+                        "Exception during deletion of data combiner."));
+            }
         }
         return Response.ok().build();
     }
@@ -198,11 +250,16 @@ public class PulseApiImpl implements PulseApi {
             if (optionalAssetIndex.isEmpty()) {
                 return ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(assetId));
             }
+            final PulseAgentAsset asset = assets.get(optionalAssetIndex.getAsInt());
+            final UUID mappingId = asset.getMapping().getId();
+            if (mappingId != null && assetMappingExtractor.getPulseAssetMappingIdSet().contains(mappingId.toString())) {
+                return ErrorResponseUtil.errorResponse(new AssetMapperReferencedError(assetId));
+            }
             assets.remove(optionalAssetIndex.getAsInt());
             final PulseEntity newPulseEntity = new PulseEntity(assets.toPersistence());
             pulseExtractor.setPulseEntity(newPulseEntity);
-            return Response.ok().build();
         }
+        return Response.ok().build();
     }
 
     @Override
@@ -236,49 +293,64 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public @NotNull Response getAssetMapper(final @NotNull UUID combinerId) {
-        final @NotNull Optional<DataCombiner> instance = assetMappingExtractor.getCombinerById(combinerId);
-        if (instance.isEmpty()) {
-            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
+        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
+        synchronized (existingPulseEntity.getLock()) {
+            final @NotNull Optional<DataCombiner> optionalDataCombiner =
+                    assetMappingExtractor.getCombinerById(combinerId);
+            if (optionalDataCombiner.isEmpty()) {
+                return ErrorResponseUtil.errorResponse(new AssetMapperNotFoundError(combinerId));
+            }
+            return Response.ok().entity(optionalDataCombiner.get().toModel()).build();
         }
-        return Response.ok().entity(instance.get().toModel()).build();
     }
 
     @Override
     public @NotNull Response getAssetMapperInstructions(final @NotNull UUID combinerId, final @NotNull UUID mappingId) {
-        final @NotNull Optional<DataCombiner> instance = assetMappingExtractor.getCombinerById(combinerId);
-        if (instance.isEmpty()) {
-            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
+        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
+        synchronized (existingPulseEntity.getLock()) {
+            final @NotNull Optional<DataCombiner> optionalDataCombiner =
+                    assetMappingExtractor.getCombinerById(combinerId);
+            if (optionalDataCombiner.isEmpty()) {
+                return ErrorResponseUtil.errorResponse(new AssetMapperNotFoundError(combinerId));
+            }
+            final List<Instruction> instructions = optionalDataCombiner.get()
+                    .dataCombinings()
+                    .stream()
+                    .filter(dataCombining -> Objects.equals(dataCombining.id(), mappingId))
+                    .flatMap(dataCombining -> dataCombining.instructions().stream())
+                    .map(com.hivemq.persistence.mappings.fieldmapping.Instruction::toModel)
+                    .toList();
+            return Response.ok().entity(new InstructionList(instructions)).build();
         }
-        final List<Instruction> instructions = instance.get()
-                .dataCombinings()
-                .stream()
-                .filter(c -> c.id().equals(mappingId))
-                .flatMap(dataCombining -> dataCombining.instructions().stream())
-                .map(com.hivemq.persistence.mappings.fieldmapping.Instruction::toModel)
-                .toList();
-        return Response.ok().entity(new InstructionList(instructions)).build();
     }
 
     @Override
     public @NotNull Response getAssetMapperMappings(final @NotNull UUID combinerId) {
-        final @NotNull Optional<DataCombiner> instance = assetMappingExtractor.getCombinerById(combinerId);
-        if (instance.isEmpty()) {
-            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
+        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
+        synchronized (existingPulseEntity.getLock()) {
+            final @NotNull Optional<DataCombiner> optionalDataCombiner =
+                    assetMappingExtractor.getCombinerById(combinerId);
+            if (optionalDataCombiner.isEmpty()) {
+                return ErrorResponseUtil.errorResponse(new AssetMapperNotFoundError(combinerId));
+            }
+            final List<DataCombining> dataCombiningList = optionalDataCombiner.get()
+                    .dataCombinings()
+                    .stream()
+                    .map(com.hivemq.combining.model.DataCombining::toModel)
+                    .toList();
+            return Response.ok().entity(new DataCombiningList().items(dataCombiningList)).build();
         }
-        final List<DataCombining> dataCombiningList = instance.get()
-                .dataCombinings()
-                .stream()
-                .map(com.hivemq.combining.model.DataCombining::toModel)
-                .toList();
-        return Response.ok().entity(new DataCombiningList().items(dataCombiningList)).build();
     }
 
     @Override
     public @NotNull Response getAssetMappers() {
-        final List<DataCombiner> allCombiners = assetMappingExtractor.getAllCombiners();
-        final List<Combiner> combiners = allCombiners.stream().map(DataCombiner::toModel).toList();
-        final CombinerList combinerList = new CombinerList().items(combiners);
-        return Response.ok().entity(combinerList).build();
+        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
+        synchronized (existingPulseEntity.getLock()) {
+            final List<DataCombiner> allCombiners = assetMappingExtractor.getAllCombiners();
+            final List<Combiner> combiners = allCombiners.stream().map(DataCombiner::toModel).toList();
+            final CombinerList combinerList = new CombinerList().items(combiners);
+            return Response.ok().entity(combinerList).build();
+        }
     }
 
     @Override
@@ -288,9 +360,11 @@ public class PulseApiImpl implements PulseApi {
             return optionalResponse.get();
         }
         final PulseEntity pulseEntity = pulseExtractor.getPulseEntity();
-        final PulseAgentAssets assets = PulseAgentAssets.fromPersistence(pulseEntity.getPulseAssetsEntity());
-        final ManagedAssetList managedAssetList = PulseAgentAssetsConverter.INSTANCE.toRestEntity(assets);
-        return Response.ok(managedAssetList).build();
+        synchronized (pulseEntity.getLock()) {
+            final PulseAgentAssets assets = PulseAgentAssets.fromPersistence(pulseEntity.getPulseAssetsEntity());
+            final ManagedAssetList managedAssetList = PulseAgentAssetsConverter.INSTANCE.toRestEntity(assets);
+            return Response.ok(managedAssetList).build();
+        }
     }
 
     @Override
@@ -312,20 +386,44 @@ public class PulseApiImpl implements PulseApi {
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
         }
-        final @NotNull Optional<DataCombiner> instance = assetMappingExtractor.getCombinerById(combiner.getId());
-        if (instance.isEmpty()) {
-            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combiner.getId().toString()));
-        }
-        final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
-        final Optional<Response> optionalResponseDataCombiner = checkDataCombiner(dataCombiner);
-        if (optionalResponseDataCombiner.isPresent()) {
-            return optionalResponseDataCombiner.get();
-        }
-        final boolean updated = assetMappingExtractor.updateDataCombiner(dataCombiner);
-        if (updated) {
-            return Response.ok().build();
-        } else {
-            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combiner.getId().toString()));
+        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
+        synchronized (existingPulseEntity.getLock()) {
+            final @NotNull Optional<DataCombiner> optionalDataCombiner =
+                    assetMappingExtractor.getCombinerById(combiner.getId());
+            if (optionalDataCombiner.isEmpty()) {
+                return ErrorResponseUtil.errorResponse(new AssetMapperNotFoundError(combiner.getId()));
+            }
+            final DataCombiner newDataCombiner = DataCombiner.fromModel(combiner);
+            final var assetEntityMap = PulseAgentAssetUtils.toAssetEntityMap(pulseExtractor.getPulseEntity());
+            final Optional<Response> optionalResponseDataCombiner = checkAssetMapper(newDataCombiner, assetEntityMap);
+            if (optionalResponseDataCombiner.isPresent()) {
+                return optionalResponseDataCombiner.get();
+            }
+            final DataCombiner oldDataCombiner = optionalDataCombiner.get();
+            final boolean updated = assetMappingExtractor.updateDataCombiner(newDataCombiner);
+            if (updated) {
+                final Set<String> oldMappingIdSet = oldDataCombiner.getPulseAssetMappingIdSet();
+                final Set<String> newMappingIdSet = newDataCombiner.getPulseAssetMappingIdSet();
+                final Set<String> toBeRemovedMappingIdSet = Sets.difference(oldMappingIdSet, newMappingIdSet);
+                if (!toBeRemovedMappingIdSet.isEmpty()) {
+                    final PulseAgentAssets assets =
+                            PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
+                    final PulseAgentAssets newAssets = new PulseAgentAssets();
+                    assets.stream().map(asset -> {
+                        final UUID mappingId = asset.getMapping().getId();
+                        if (mappingId != null && toBeRemovedMappingIdSet.contains(mappingId.toString())) {
+                            // Reset the asset mapping to mappingId = null and status = UNMAPPED.
+                            return asset.withMapping(PulseAgentAssetMapping.builder().build());
+                        }
+                        return asset;
+                    }).forEach(newAssets::add);
+                    final PulseEntity newPulseEntity = new PulseEntity(newAssets.toPersistence());
+                    pulseExtractor.setPulseEntity(newPulseEntity);
+                }
+                return Response.ok().build();
+            } else {
+                return ErrorResponseUtil.errorResponse(new AssetMapperNotFoundError(combiner.getId()));
+            }
         }
     }
 
@@ -337,6 +435,11 @@ public class PulseApiImpl implements PulseApi {
         }
         final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
         synchronized (existingPulseEntity.getLock()) {
+            final UUID newMappingId = managedAsset.getMapping().getMappingId();
+            // Mapping ID cannot be directly set to null once it has been set.
+            if (newMappingId == null) {
+                return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError("null"));
+            }
             final PulseAgentAssets assets =
                     PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
             final OptionalInt optionalAssetIndex = IntStream.range(0, assets.size())
@@ -346,9 +449,17 @@ public class PulseApiImpl implements PulseApi {
                 return ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(assetId));
             }
             final PulseAgentAsset asset = assets.get(optionalAssetIndex.getAsInt());
+            final UUID oldMappingId = asset.getMapping().getId();
+            if (oldMappingId == null) {
+                if (assets.getMappingIdSet().contains(newMappingId.toString())) {
+                    return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(newMappingId));
+                }
+            } else if (!Objects.equals(oldMappingId, newMappingId)) {
+                return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(newMappingId));
+            }
             assets.set(optionalAssetIndex.getAsInt(),
                     asset.withMapping(asset.getMapping()
-                            .withId(asset.getId())
+                            .withId(newMappingId)
                             .withStatus(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(managedAsset.getMapping()
                                     .getStatus()))));
             final PulseEntity newPulseEntity = new PulseEntity(assets.toPersistence());
@@ -439,28 +550,52 @@ public class PulseApiImpl implements PulseApi {
         return Optional.empty();
     }
 
-    private @NotNull Optional<Response> checkDataCombiner(final @NotNull DataCombiner dataCombiner) {
-        final var pulseDataCombinings = dataCombiner.getPulseDataCombinings();
-        if (!pulseDataCombinings.isEmpty()) {
-            final var assetEntityMap = PulseAgentAssetUtils.toAssetEntityMap(pulseExtractor.getPulseEntity());
-            for (final var dataCombining : pulseDataCombinings) {
-                final String id = dataCombining.destination().assetId();
-                final var asset = assetEntityMap.get(id);
+    private @NotNull Optional<Response> checkAssetMapper(
+            final @NotNull DataCombiner dataCombiner,
+            final @NotNull Map<String, PulseAssetEntity> assetEntityMap) {
+        final Set<String> pulseSourceIdSet = dataCombiner.entityReferences()
+                .stream()
+                .filter(entityReference -> entityReference.type() == EntityType.PULSE_AGENT)
+                .map(EntityReference::id)
+                .collect(Collectors.toSet());
+        final Set<String> allSourceIdSet =
+                dataCombiner.entityReferences().stream().map(EntityReference::id).collect(Collectors.toSet());
+        for (final var dataCombining : dataCombiner.dataCombinings()) {
+            final DataIdentifierReference primaryReference = dataCombining.sources().primaryReference();
+            if (dataCombining.instructions()
+                    .stream()
+                    .noneMatch(instruction -> Objects.equals(instruction.dataIdentifierReference(),
+                            primaryReference))) {
+                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceForAssetMapperError(
+                        primaryReference.id())));
+            }
+            if (!allSourceIdSet.contains(dataCombining.id().toString())) {
+                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetSourceIdError(dataCombiner.id()
+                        .toString())));
+            }
+            if (pulseSourceIdSet.contains(dataCombining.id().toString())) {
+                final String assetId = dataCombining.destination().assetId();
+                final var asset = assetEntityMap.get(assetId);
                 if (asset == null) {
-                    return Optional.of(ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(id)));
+                    return Optional.of(ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(assetId)));
                 }
                 if (!Objects.equals(dataCombining.destination().topic(), asset.getTopic())) {
-                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetTopicError(id)));
+                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetTopicError(assetId)));
                 }
                 // There are some cases where the schema is still data-url encoded, so we need to decode it before comparing.
                 final String schema =
                         PulseAgentAssetSchemaConverter.INSTANCE.toInternalEntity(dataCombining.destination().schema());
                 if (!Objects.equals(schema, asset.getSchema())) {
-                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetSchemaError(id)));
+                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetSchemaError(assetId)));
                 }
-                final UUID expectedMappingId = asset.getMapping().getId();
-                if (expectedMappingId != null && !Objects.equals(dataCombining.id(), expectedMappingId)) {
-                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(id)));
+                final UUID mappingId = asset.getMapping().getId();
+                if (mappingId == null) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError("null")));
+                }
+                final UUID dataCombiningId = dataCombining.id();
+                if (!Objects.equals(mappingId, dataCombiningId)) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(
+                            dataCombiningId)));
                 }
             }
         }

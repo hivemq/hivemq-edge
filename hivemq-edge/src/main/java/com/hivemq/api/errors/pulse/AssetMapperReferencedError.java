@@ -23,15 +23,15 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.UUID;
 
-public class InvalidManagedAssetMappingIdError extends ProblemDetails {
-    public InvalidManagedAssetMappingIdError(final @NotNull UUID id) {
-        this(id.toString());
+public class AssetMapperReferencedError extends ProblemDetails {
+    public AssetMapperReferencedError(final @NotNull UUID assetId) {
+        this(assetId.toString());
     }
 
-    public InvalidManagedAssetMappingIdError(final @NotNull String id) {
-        super("InvalidManagedAssetMappingIdError",
-                "Invalid Managed Asset Mapping ID",
-                "The mapping ID of the managed asset '" + id + "' is invalid.",
+    public AssetMapperReferencedError(final @NotNull String assetId) {
+        super("AssetMapperReferencedError",
+                "Asset Mapper Referenced",
+                "There is an asset mapper referenced by asset '" + assetId + "'.",
                 HttpStatus.BAD_REQUEST_400,
                 List.of());
     }

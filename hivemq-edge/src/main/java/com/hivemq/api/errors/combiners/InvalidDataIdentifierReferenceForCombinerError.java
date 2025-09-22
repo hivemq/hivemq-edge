@@ -14,24 +14,19 @@
  *  limitations under the License.
  */
 
-package com.hivemq.api.errors.pulse;
+package com.hivemq.api.errors.combiners;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.ProblemDetails;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.UUID;
 
-public class InvalidManagedAssetMappingIdError extends ProblemDetails {
-    public InvalidManagedAssetMappingIdError(final @NotNull UUID id) {
-        this(id.toString());
-    }
-
-    public InvalidManagedAssetMappingIdError(final @NotNull String id) {
-        super("InvalidManagedAssetMappingIdError",
-                "Invalid Managed Asset Mapping ID",
-                "The mapping ID of the managed asset '" + id + "' is invalid.",
+public class InvalidDataIdentifierReferenceForCombinerError extends ProblemDetails {
+    public InvalidDataIdentifierReferenceForCombinerError(final @NotNull String id) {
+        super("InvalidDataIdentifierReferenceForCombinerError",
+                "Invalid Data Identifier Reference for Combiner",
+                "The data identifier reference '" + id + "' is invalid.",
                 HttpStatus.BAD_REQUEST_400,
                 List.of());
     }

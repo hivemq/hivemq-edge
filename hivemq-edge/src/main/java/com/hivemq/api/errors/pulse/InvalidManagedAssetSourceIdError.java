@@ -21,17 +21,12 @@ import com.hivemq.http.error.ProblemDetails;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.UUID;
 
-public class InvalidManagedAssetMappingIdError extends ProblemDetails {
-    public InvalidManagedAssetMappingIdError(final @NotNull UUID id) {
-        this(id.toString());
-    }
-
-    public InvalidManagedAssetMappingIdError(final @NotNull String id) {
-        super("InvalidManagedAssetMappingIdError",
-                "Invalid Managed Asset Mapping ID",
-                "The mapping ID of the managed asset '" + id + "' is invalid.",
+public class InvalidManagedAssetSourceIdError extends ProblemDetails {
+    public InvalidManagedAssetSourceIdError(final @NotNull String id) {
+        super("InvalidManagedAssetSourceIdError",
+                "Invalid Managed Asset Source ID",
+                "The source ID of the managed asset '" + id + "' is invalid.",
                 HttpStatus.BAD_REQUEST_400,
                 List.of());
     }

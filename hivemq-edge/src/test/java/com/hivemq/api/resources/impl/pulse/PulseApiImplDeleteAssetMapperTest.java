@@ -16,7 +16,15 @@
 
 package com.hivemq.api.resources.impl.pulse;
 
+import com.hivemq.api.errors.ConfigWritingDisabled;
+import com.hivemq.api.errors.pulse.AssetMapperNotFoundError;
 import com.hivemq.combining.model.DataCombiner;
+import com.hivemq.combining.model.DataCombining;
+import com.hivemq.combining.model.DataCombiningDestination;
+import com.hivemq.combining.model.DataCombiningSources;
+import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.combining.model.EntityReference;
+import com.hivemq.combining.model.EntityType;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -36,6 +44,7 @@ public class PulseApiImplDeleteAssetMapperTest extends AbstractPulseApiImplTest 
         when(systemInformation.isConfigWriteable()).thenReturn(false);
         try (final Response response = pulseApi.deleteAssetMapper(UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(403);
+            assertThat(response.getEntity()).isInstanceOf(ConfigWritingDisabled.class);
         }
     }
 
@@ -44,6 +53,7 @@ public class PulseApiImplDeleteAssetMapperTest extends AbstractPulseApiImplTest 
         when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         try (final Response response = pulseApi.deleteAssetMapper(UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(404);
+            assertThat(response.getEntity()).isInstanceOf(AssetMapperNotFoundError.class);
         }
     }
 
@@ -53,8 +63,12 @@ public class PulseApiImplDeleteAssetMapperTest extends AbstractPulseApiImplTest 
         when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(new DataCombiner(id,
                 "name",
                 "description",
-                List.of(),
-                List.of())));
+                List.of(new EntityReference(EntityType.PULSE_AGENT, UUID.randomUUID().toString())),
+                List.of(new DataCombining(UUID.randomUUID(),
+                        new DataCombiningSources(new DataIdentifierReference(UUID.randomUUID().toString(),
+                                DataIdentifierReference.Type.PULSE_ASSET), List.of(), List.of()),
+                        new DataCombiningDestination(UUID.randomUUID().toString(), "topic", "{}"),
+                        List.of())))));
         try (final Response response = pulseApi.deleteAssetMapper(id)) {
             assertThat(response.getStatus()).isEqualTo(200);
             final ArgumentCaptor<UUID> dataCombinerArgumentCaptor = ArgumentCaptor.forClass(UUID.class);
