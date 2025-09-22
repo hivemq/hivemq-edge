@@ -14,7 +14,7 @@ describe('EntityReferencesWizard', () => {
     cy.intercept('/api/v1/management/bridges', { items: [mockBridge] }).as('getBridges')
     cy.intercept('/api/v1/management/bridges/*', mockBridge)
 
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getProtocol')
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] })
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getAdapters')
   })
 
