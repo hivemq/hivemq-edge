@@ -59,6 +59,7 @@ describe('SchemaWidget', () => {
     cy.mountWithProviders(generateSchemaWidgetComponent(MOCK_TOPIC_FILTER_SCHEMA_VALID))
 
     cy.getByTestId('root_schema').within(() => {
+      cy.getByTestId('schema-download').should('not.be.disabled')
       cy.get('label[for="root_schema"]').should('have.attr', 'data-disabled')
       cy.get('#root_schema-helptext').should(
         'have.text',
@@ -84,14 +85,26 @@ describe('SchemaWidget', () => {
     })
   })
 
+  it('should render unset', () => {
+    cy.mountWithProviders(generateSchemaWidgetComponent(undefined))
+
+    cy.getByTestId('root_schema').within(() => {
+      cy.getByTestId('schema-download').should('be.disabled')
+      cy.get('label[for="root_schema"]').should('have.attr', 'data-disabled')
+
+      cy.get('input#root_schema').should('have.value', '< unset >')
+    })
+  })
+
   it('should render errors', () => {
     cy.mountWithProviders(generateSchemaWidgetComponent(MOCK_TOPIC_FILTER_SCHEMA_INVALID))
 
     cy.getByTestId('root_schema').within(() => {
+      cy.getByTestId('schema-download').should('be.disabled')
       cy.get('label[for="root_schema"]').should('have.attr', 'data-disabled')
       cy.get('label[for="root_schema"]').should('have.attr', 'data-invalid')
 
-      cy.get('label[for="root_schema"] + div').should('have.text', '< unset >')
+      cy.get('input#root_schema').should('have.value', '< cannot display the schema >')
     })
   })
 
