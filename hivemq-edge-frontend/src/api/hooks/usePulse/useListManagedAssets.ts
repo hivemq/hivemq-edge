@@ -10,6 +10,5 @@ export const useListManagedAssets = () => {
   return useQuery<ManagedAssetList, ApiError>({
     queryKey: [QUERY_KEYS.PULSE_ASSETS],
     queryFn: () => appClient.pulse.getManagedAssets(),
-    enabled: hasPulse !== undefined,
   })
 }
