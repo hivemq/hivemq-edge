@@ -15,7 +15,6 @@
  */
 package com.hivemq.api.model.mappings.northbound;
 
-import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.api.model.JavaScriptConstants;
 import com.hivemq.api.model.QoSModel;
 import com.hivemq.persistence.mappings.NorthboundMapping;
@@ -33,7 +32,6 @@ class NorthboundMappingModelTest {
         assertEquals(JavaScriptConstants.JS_MAX_SAFE_INTEGER,
                 new NorthboundMappingModel("tag",
                         "topic",
-                        MessageHandlingOptions.MQTTMessagePerSubscription,
                         false,
                         false,
                         List.of(),
@@ -45,7 +43,6 @@ class NorthboundMappingModelTest {
     void test_to_whenMessageExpiryMaxSafeValue_thenParsedValueIsMaxLong() {
         final NorthboundMappingModel northboundMappingModel = new NorthboundMappingModel("tag",
                 "topic",
-                MessageHandlingOptions.MQTTMessagePerSubscription,
                 false,
                 false,
                 List.of(),

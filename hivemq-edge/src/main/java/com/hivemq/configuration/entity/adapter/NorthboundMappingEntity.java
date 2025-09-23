@@ -41,9 +41,6 @@ public class NorthboundMappingEntity implements EntityValidatable {
     @XmlElement(name = "maxQos", required = true)
     private final int maxQoS;
 
-    @XmlElement(name = "messageHandlingOptions", required = true)
-    private final @NotNull MessageHandlingOptions messageHandlingOptions;
-
     @XmlElement(name = "includeTagNames", required = true)
     private final @Nullable Boolean includeTagNames;
 
@@ -62,7 +59,6 @@ public class NorthboundMappingEntity implements EntityValidatable {
         tagName = "";
         topic = "";
         maxQoS = QoS.AT_LEAST_ONCE.getQosNumber();
-        messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
         includeTagNames = false;
         includeTimestamp = true;
         userProperties = new ArrayList<>();
@@ -73,7 +69,6 @@ public class NorthboundMappingEntity implements EntityValidatable {
             final @NotNull String tagName,
             final @NotNull String topic,
             final int maxQoS,
-            final @NotNull MessageHandlingOptions messageHandlingOptions,
             final boolean includeTagNames,
             final boolean includeTimestamp,
             final @NotNull List<MqttUserPropertyEntity> userProperties,
@@ -81,7 +76,6 @@ public class NorthboundMappingEntity implements EntityValidatable {
         this.tagName = tagName;
         this.topic = topic;
         this.maxQoS = maxQoS;
-        this.messageHandlingOptions = messageHandlingOptions;
         this.includeTagNames = includeTagNames;
         this.includeTimestamp = includeTimestamp;
         this.userProperties = userProperties;
@@ -92,7 +86,6 @@ public class NorthboundMappingEntity implements EntityValidatable {
         return new NorthboundMappingEntity(mapping.getTagName(),
                 mapping.getMqttTopic(),
                 mapping.getMqttQos(),
-                mapping.getMessageHandlingOptions(),
                 mapping.getIncludeTagNames(),
                 mapping.getIncludeTimestamp(),
                 mapping.getUserProperties().stream().map(NorthboundMappingEntity::userProp).toList(),
@@ -115,7 +108,6 @@ public class NorthboundMappingEntity implements EntityValidatable {
                     case AT_LEAST_ONCE -> 1;
                     case EXACTLY_ONCE -> 2;
                 },
-                MessageHandlingOptions.MQTTMessagePerTag,
                 mapping.getIncludeTagNames(),
                 mapping.getIncludeTimestamp(),
                 mapping.getUserProperties().stream().map(NorthboundMappingEntity::userProp).toList(),
@@ -131,7 +123,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
     }
 
     public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
-        return messageHandlingOptions;
+        return MessageHandlingOptions.MQTTMessagePerTag;
     }
 
     public boolean isIncludeTagNames() {
@@ -161,7 +153,6 @@ public class NorthboundMappingEntity implements EntityValidatable {
         EntityValidatable.notMatch(validationEvents,
                 () -> QoS.valueOf(maxQoS) != null,
                 () -> "maxQos" + ' ' + maxQoS + " is invalid");
-        EntityValidatable.notNull(validationEvents, messageHandlingOptions, "messageHandlingOptions");
         EntityValidatable.notNull(validationEvents, includeTagNames, "includeTagNames");
         EntityValidatable.notNull(validationEvents, includeTimestamp, "includeTimestamp");
         if (EntityValidatable.notNull(validationEvents, messageExpiryInterval, "messageExpiryInterval")) {
@@ -175,7 +166,6 @@ public class NorthboundMappingEntity implements EntityValidatable {
         return new NorthboundMapping(tagName,
                 topic,
                 maxQoS,
-                messageHandlingOptions,
                 includeTagNames,
                 includeTimestamp,
                 userProperties.stream().map(p -> new MqttUserProperty(p.getName(), p.getValue())).toList(),
@@ -193,8 +183,6 @@ public class NorthboundMappingEntity implements EntityValidatable {
                 '\'' +
                 ", maxQoS=" +
                 maxQoS +
-                ", messageHandlingOptions=" +
-                messageHandlingOptions +
                 ", includeTagNames=" +
                 includeTagNames +
                 ", includeTimestamp=" +
@@ -212,7 +200,6 @@ public class NorthboundMappingEntity implements EntityValidatable {
             return Objects.equals(tagName, that.tagName) &&
                     Objects.equals(topic, that.topic) &&
                     maxQoS == that.maxQoS &&
-                    messageHandlingOptions == that.messageHandlingOptions &&
                     includeTagNames == that.includeTagNames &&
                     includeTimestamp == that.includeTimestamp &&
                     Objects.equals(userProperties, that.userProperties) &&
@@ -226,7 +213,6 @@ public class NorthboundMappingEntity implements EntityValidatable {
         return Objects.hash(tagName,
                 topic,
                 maxQoS,
-                messageHandlingOptions,
                 includeTagNames,
                 includeTimestamp,
                 userProperties,
