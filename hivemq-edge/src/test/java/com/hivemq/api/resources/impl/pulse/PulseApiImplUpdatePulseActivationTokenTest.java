@@ -17,7 +17,6 @@
 package com.hivemq.api.resources.impl.pulse;
 
 import com.hivemq.api.errors.InternalServerError;
-import com.hivemq.api.errors.pulse.ActivationTokenAlreadyDeletedError;
 import com.hivemq.api.errors.pulse.ActivationTokenInvalidError;
 import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
 import com.hivemq.edge.api.model.PulseActivationToken;
