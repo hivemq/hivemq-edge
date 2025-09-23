@@ -17,6 +17,7 @@ package com.hivemq.bootstrap.services;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.bootstrap.ioc.Persistences;
 import com.hivemq.common.shutdown.ShutdownHooks;
@@ -117,6 +118,11 @@ public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBoo
     @Override
     public @NotNull PublishService publishService() {
         return delegate.publishService();
+    }
+
+    @Override
+    public @NotNull InternalPublishService internalPublishService() {
+        return delegate.internalPublishService();
     }
 
     @Override

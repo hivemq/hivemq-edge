@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 public class PrePublishProcessorServiceImpl implements PrePublishProcessorService {
@@ -51,8 +52,7 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,
             final @Nullable String sender) {
-
-        final @NotNull List<PrePublishProcessorHandling> prePublishProcessorHandling = processorHandlingProvider.get();
+        final List<PrePublishProcessorHandling> prePublishProcessorHandling = processorHandlingProvider.get();
         if (prePublishProcessorHandling.isEmpty()) {
             return internalPublishService.publish(publish, executorService, sender);
         }
@@ -62,6 +62,10 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
         for (int i = 1; i < prePublishProcessorHandling.size(); i++) {
             final PrePublishProcessorHandling handler = prePublishProcessorHandling.get(i);
             future = Futures.transformAsync(future, result -> {
+                if (Objects.requireNonNull(result).isPublishAlreadyHandled()) {
+                    return Futures.immediateFuture(result);
+                }
+
                 //FIXME: check when modifiedPublish can be null
                 if (result.isPreventPublish() || result.getModifiedPublish() == null) {
                     //skip further processing and return the previous result
@@ -73,6 +77,10 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
         }
 
         return Futures.transformAsync(future, handlerResult -> {
+            if (Objects.requireNonNull(handlerResult).isPublishAlreadyHandled()) {
+                return Futures.immediateFuture(PublishingResult.DELIVERED);
+            }
+
             final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
             if (handlerResult.isPreventPublish() || modifiedPublish == null) {
                 return Futures.immediateFuture(PublishingResult.failed(handlerResult.getReasonString(),
