@@ -15,6 +15,7 @@
  */
 package com.hivemq.configuration.service;
 
+import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
@@ -88,6 +89,8 @@ public interface ConfigurationService {
     @NotNull ProtocolAdapterExtractor protocolAdapterExtractor();
 
     @NotNull DataCombiningExtractor dataCombiningExtractor();
+
+    @NotNull AssetMappingExtractor assetMappingExtractor();
 
     @NotNull PulseExtractor pulseExtractor();
 

@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 public class PulseApiImplGetAssetMapperInstructionsTest extends AbstractPulseApiImplTest {
     @Test
     public void whenCombinerNotFound_thenReturnsDataCombinerNotFoundError() {
-        when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.empty());
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         try (final Response response = pulseApi.getAssetMapperInstructions(UUID.randomUUID(), UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(404);
         }
@@ -43,7 +43,7 @@ public class PulseApiImplGetAssetMapperInstructionsTest extends AbstractPulseApi
     @Test
     public void whenCombinerExistsButMappingIdDoesNotExist_thenReturnsOK() {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
-        when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
         try (final Response response = pulseApi.getAssetMapperInstructions(combiner.getId(), UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(200);
             assertThat(response.getEntity()).isInstanceOf(PulseApiImpl.InstructionList.class);
@@ -55,7 +55,7 @@ public class PulseApiImplGetAssetMapperInstructionsTest extends AbstractPulseApi
     @Test
     public void whenCombinerAndMappingIdExist_thenReturnsOK() {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
-        when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
         try (final Response response = pulseApi.getAssetMapperInstructions(combiner.getId(),
                 combiner.getMappings().getItems().get(0).getId())) {
             assertThat(response.getStatus()).isEqualTo(200);
