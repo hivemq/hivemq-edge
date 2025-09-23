@@ -20,8 +20,6 @@ import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.codec.decoder.mqtt.MqttConnectDecoder;
 import com.hivemq.codec.decoder.mqtt.MqttDecoders;
 import com.hivemq.configuration.service.MqttConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.metrics.handler.GlobalMQTTMessageCounter;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
@@ -35,27 +33,28 @@ import com.hivemq.util.ReasonStrings;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 import static com.hivemq.mqtt.message.MessageType.CONNECT;
 
-/**
- * @author Dominik Obermaier
- */
 public class MQTTMessageDecoder extends ByteToMessageDecoder {
 
     private static final int MAX_REMAINING_LENGTH_MULTIPLIER = 0x80 * 0x80 * 0x80;
     private static final int NOT_ENOUGH_BYTES_READABLE = -2;
     private static final int MALFORMED_REMAINING_LENGTH = -1;
     private static final int MIN_FIXED_HEADER_LENGTH = 2;
+    private static final int MIN_CONNECT_VAR_HEADER_LENGTH = 7;
 
     private final @NotNull MqttConnectDecoder connectDecoder;
     private final @NotNull MqttConnacker mqttConnacker;
-    private final @NotNull MqttConfigurationService mqttConfig;
     private final @NotNull MqttDecoders mqttDecoders;
     private final @NotNull MqttServerDisconnector mqttServerDisconnector;
     private final @NotNull GlobalMQTTMessageCounter globalMQTTMessageCounter;
+
+    private final int maxPacketSize;
 
     public MQTTMessageDecoder(
             final @NotNull MqttConnectDecoder connectDecoder,
@@ -66,10 +65,10 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
             final @NotNull GlobalMQTTMessageCounter globalMQTTMessageCounter) {
         this.connectDecoder = connectDecoder;
         this.mqttConnacker = mqttConnacker;
-        this.mqttConfig = mqttConfig;
         this.mqttDecoders = mqttDecoders;
         this.mqttServerDisconnector = mqttServerDisconnector;
         this.globalMQTTMessageCounter = globalMQTTMessageCounter;
+        this.maxPacketSize = mqttConfig.maxPacketSize();
     }
 
     public MQTTMessageDecoder(final ChannelDependencies channelDependencies) {
@@ -81,9 +80,59 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
                 channelDependencies.getGlobalMQTTMessageCounter());
     }
 
+    private static int getFixedHeaderSize(final int remainingLength) {
+        // 2 = 1 byte fixed header + 1 byte first byte of remaining length
+        int remainingLengthSize = 2;
+
+        if (remainingLength > 127) {
+            remainingLengthSize++;
+        }
+        if (remainingLength > 16383) {
+            remainingLengthSize++;
+        }
+        if (remainingLength > 2097151) {
+            remainingLengthSize++;
+        }
+        return remainingLengthSize;
+    }
+
+    /**
+     * Calculates the remaining length according to the MQTT spec.
+     *
+     * @param buf the message buffer
+     * @return the remaining length, -1 if the remaining length is malformed or -2 if not enough bytes are available
+     */
+    private static int calculateRemainingLength(final @NotNull ByteBuf buf) {
+        int remainingLength = 0;
+        int multiplier = 1;
+        byte encodedByte;
+        do {
+            if (multiplier > MAX_REMAINING_LENGTH_MULTIPLIER) {
+                buf.skipBytes(buf.readableBytes());
+                //This means the remaining length is malformed!
+                return MALFORMED_REMAINING_LENGTH;
+            }
+            if (!buf.isReadable()) {
+                return NOT_ENOUGH_BYTES_READABLE;
+            }
+
+            encodedByte = buf.readByte();
+            remainingLength += ((encodedByte & (byte) 0x7f) * multiplier);
+            multiplier *= 0x80;
+        } while ((encodedByte & 0x80) != 0);
+
+        return remainingLength;
+    }
+
+    private static @NotNull MessageType getMessageType(final byte fixedHeader) {
+        return MessageType.valueOf((fixedHeader & 0b1111_0000) >> 4);
+    }
+
     @Override
     protected void decode(
-            final @NotNull ChannelHandlerContext ctx, final @NotNull ByteBuf buf, final @NotNull List<Object> out) {
+            final @NotNull ChannelHandlerContext ctx,
+            final @NotNull ByteBuf buf,
+            final @NotNull List<Object> out) {
 
         final int readableBytes = buf.readableBytes();
         if (readableBytes < MIN_FIXED_HEADER_LENGTH) {
@@ -91,11 +140,8 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
         }
 
         buf.markReaderIndex();
-
         final byte fixedHeader = buf.readByte();
-
         final int remainingLength = calculateRemainingLength(buf);
-
         if (remainingLength == NOT_ENOUGH_BYTES_READABLE) {
             buf.resetReaderIndex();
             return;
@@ -116,21 +162,27 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
             return;
         }
 
+        final int fixedHeaderSize = getFixedHeaderSize(remainingLength);
+        final int packetSize = fixedHeaderSize + remainingLength;
+
+        final MessageType messageType = getMessageType(fixedHeader);
+
+        //this is the message size HiveMQ allows for incoming messages
+        if (packetSize > maxPacketSize) {
+            handlePacketTooLarge(buf, messageType, clientConnection);
+            return;
+        }
+
         if (buf.readableBytes() < remainingLength) {
             buf.resetReaderIndex();
             return;
         }
 
-        final int fixedHeaderSize = getFixedHeaderSize(remainingLength);
-        final int packetSize = fixedHeaderSize + remainingLength;
-
-        final MessageType messageType = getMessageType(fixedHeader);
         final Message message;
         if (messageType == CONNECT) {
             message = handleConnect(buf, clientConnection, fixedHeader, packetSize, remainingLength);
         } else {
-            message =
-                    handleMessage(buf, clientConnection, fixedHeader, messageType, packetSize, remainingLength);
+            message = handleMessage(buf, clientConnection, fixedHeader, messageType, packetSize, remainingLength);
         }
         if (message == null) {
             buf.clear();
@@ -138,6 +190,43 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
         }
         globalMQTTMessageCounter.countInbound(message);
         out.add(message);
+    }
+
+    private void handlePacketTooLarge(
+            final @com.hivemq.extension.sdk.api.annotations.NotNull ByteBuf buf,
+            final @com.hivemq.extension.sdk.api.annotations.NotNull MessageType messageType,
+            final @com.hivemq.extension.sdk.api.annotations.NotNull ClientConnection clientConnectionContext) {
+        //connack with PACKET_TOO_LARGE for Mqtt5
+        if (messageType == MessageType.CONNECT) {
+            // Theoretically, remaining length could be too short to read the protocol version.
+            // But in this case we can never reach a "packet too large" as the minimum configurable max packet size is 15
+            // while the broker needs only 7 bytes to read the version. Therefore, broker ignores this case and continues reading until
+            // it has at least 7 bytes of the variable CONNECT header to determine the protocol version,
+            // see https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901035:~:text=identify%20MQTT%20traffic.-,3.1.2.2%20Protocol%20Version,-Figure%203%E2%80%913
+            if (buf.readableBytes() < MIN_CONNECT_VAR_HEADER_LENGTH) {
+                buf.resetReaderIndex();
+                return;
+            }
+            connectDecoder.decodeProtocolVersion(clientConnectionContext, buf);
+            mqttConnacker.connackError(clientConnectionContext.getChannel(),
+                    "A client (ID: {}, IP: {}) connect packet exceeded the maximum permissible size.",
+                    "Sent CONNECT exceeded the maximum permissible size",
+                    Mqtt5ConnAckReasonCode.PACKET_TOO_LARGE,
+                    ReasonStrings.CONNACK_PACKET_TOO_LARGE);
+        } else {
+            final ProtocolVersion protocolVersion = clientConnectionContext.getProtocolVersion();
+            //force channel close for Mqtt3.1, Mqtt3.1.1 and null (before connect)
+            final boolean forceClose = protocolVersion != ProtocolVersion.MQTTv5;
+            mqttServerDisconnector.disconnect(clientConnectionContext.getChannel(),
+                    "A client (ID: {}, IP: {}) sent a message, that was bigger than the maximum message size. Disconnecting client.",
+                    "Sent a message that was bigger than the maximum size",
+                    Mqtt5DisconnectReasonCode.PACKET_TOO_LARGE,
+                    ReasonStrings.DISCONNECT_PACKET_TOO_LARGE_MESSAGE,
+                    Mqtt5UserProperties.NO_USER_PROPERTIES,
+                    false,
+                    forceClose);
+        }
+        buf.clear();
     }
 
     private @Nullable Message handleConnect(
@@ -148,7 +237,7 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
             final int remainingLength) {
 
         //this is the message size HiveMQ allows for incoming messages
-        if (packetSize > mqttConfig.maxPacketSize()) {
+        if (packetSize > maxPacketSize) {
             connectDecoder.decodeProtocolVersion(clientConnection, buf);
             mqttConnacker.connackError(clientConnection.getChannel(),
                     "A client (IP: {}) connect packet exceeded the maximum permissible size.",
@@ -195,7 +284,7 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
         final ProtocolVersion protocolVersion = clientConnection.getProtocolVersion();
 
         //this is the message size HiveMQ allows for incoming messages
-        if (packetSize > mqttConfig.maxPacketSize()) {
+        if (packetSize > maxPacketSize) {
 
             //force channel close for Mqtt3.1, Mqtt3.1.1 and null (before connect)
             final boolean forceClose = protocolVersion != ProtocolVersion.MQTTv5;
@@ -281,60 +370,5 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
                     return null;
             }
         }
-    }
-
-    private static int getFixedHeaderSize(final int remainingLength) {
-
-        // 2 = 1 byte fixed header + 1 byte first byte of remaining length
-        int remainingLengthSize = 2;
-
-        if (remainingLength > 127) {
-            remainingLengthSize++;
-        }
-        if (remainingLength > 16383) {
-            remainingLengthSize++;
-        }
-        if (remainingLength > 2097151) {
-            remainingLengthSize++;
-        }
-        return remainingLengthSize;
-    }
-
-    /**
-     * Calculates the remaining length according to the MQTT spec.
-     *
-     * @param buf the message buffer
-     * @return the remaining length, -1 if the remaining length is malformed or -2 if not enough bytes are available
-     */
-    private static int calculateRemainingLength(final @NotNull ByteBuf buf) {
-
-        int remainingLength = 0;
-        int multiplier = 1;
-        byte encodedByte;
-
-        do {
-            if (multiplier > MAX_REMAINING_LENGTH_MULTIPLIER) {
-                buf.skipBytes(buf.readableBytes());
-                //This means the remaining length is malformed!
-                return MALFORMED_REMAINING_LENGTH;
-            }
-
-            if (!buf.isReadable()) {
-                return NOT_ENOUGH_BYTES_READABLE;
-            }
-
-            encodedByte = buf.readByte();
-
-            remainingLength += ((encodedByte & (byte) 0x7f) * multiplier);
-            multiplier *= 0x80;
-
-        } while ((encodedByte & 0x80) != 0);
-
-        return remainingLength;
-    }
-
-
-    private static @NotNull MessageType getMessageType(final byte fixedHeader) {
-        return MessageType.valueOf((fixedHeader & 0b1111_0000) >> 4);
     }
 }

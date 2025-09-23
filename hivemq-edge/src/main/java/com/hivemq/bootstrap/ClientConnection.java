@@ -15,11 +15,8 @@
  */
 package com.hivemq.bootstrap;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.configuration.service.entity.Listener;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.packets.auth.ModifiableDefaultPermissions;
@@ -37,6 +34,8 @@ import com.hivemq.mqtt.message.pool.FreePacketIdRanges;
 import com.hivemq.security.auth.SslClientCertificate;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -47,21 +46,23 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ClientConnection {
 
     /**
      * The name of the {@link Channel} attribute which the client connection information is stored in.
      */
-    public static final AttributeKey<ClientConnection> CHANNEL_ATTRIBUTE_NAME =
+    public static final @NotNull AttributeKey<ClientConnection> CHANNEL_ATTRIBUTE_NAME =
             AttributeKey.valueOf("Client.Connection");
 
     private final @NotNull Channel channel;
     private final @NotNull PublishFlushHandler publishFlushHandler;
-    private volatile @NotNull ClientState clientState = ClientState.CONNECTING;
+    private final @NotNull FreePacketIdRanges messageIDPool;
+    private final @NotNull AtomicReference<ClientState> clientState;
+    private final @NotNull HashMap<String, Object> additionalInformation;
     private @Nullable ProtocolVersion protocolVersion;
     private @Nullable String clientId;
-    private boolean cleanStart;
     private @Nullable ModifiableDefaultPermissions authPermissions;
     private @Nullable Listener connectedListener;
     private @Nullable MqttWillPublish willPublish;
@@ -72,22 +73,19 @@ public class ClientConnection {
     private @Nullable Long clientSessionExpiryInterval;
     private @Nullable Long connectReceivedTimestamp;
     private @Nullable Long maxPacketSizeSend;
-    private @Nullable String[] topicAliasMapping;
+    private @Nullable String @Nullable [] topicAliasMapping;
+    private @Nullable Boolean requestProblemInformation;
+    private @Nullable SettableFuture<Void> disconnectFuture;
+    private @Nullable ConnectionAttributes connectionAttributes;
     private boolean noSharedSubscription;
     private boolean clientIdAssigned;
     private boolean incomingPublishesSkipRest;
     private boolean incomingPublishesDefaultFailedSkipRest;
     private boolean requestResponseInformation;
-    private @Nullable Boolean requestProblemInformation;
-    private @Nullable SettableFuture<Void> disconnectFuture;
-    private final @NotNull FreePacketIdRanges messageIDPool;
-
-    private @Nullable ConnectionAttributes connectionAttributes;
-
-    private boolean sendWill = true;
+    private boolean cleanStart;
+    private boolean sendWill;
     private boolean preventLwt;
     private boolean inFlightMessagesSent;
-
     private @Nullable SslClientCertificate authCertificate;
     private @Nullable String authSniHostname;
     private @Nullable String authCipherSuite;
@@ -100,20 +98,24 @@ public class ClientConnection {
     private @Nullable Mqtt5UserProperties authUserProperties;
     private @Nullable ScheduledFuture<?> authFuture;
     private @Nullable Boolean clearPasswordAfterAuth;
-
     private @Nullable ClientContextImpl extensionClientContext;
     private @Nullable ClientEventListeners extensionClientEventListeners;
     private @Nullable ClientAuthenticators extensionClientAuthenticators;
     private @Nullable ClientAuthorizers extensionClientAuthorizers;
     private @Nullable ClientInformation extensionClientInformation;
     private @Nullable ConnectionInformation extensionConnectionInformation;
-    private @NotNull HashMap<String, Object> additionalInformation;
 
     public ClientConnection(final @NotNull Channel channel, final @NotNull PublishFlushHandler publishFlushHandler) {
         this.channel = channel;
         this.publishFlushHandler = publishFlushHandler;
-        messageIDPool = new FreePacketIdRanges();
+        this.messageIDPool = new FreePacketIdRanges();
         this.additionalInformation = new HashMap<>();
+        this.clientState = new AtomicReference<>(ClientState.CONNECTING);
+        this.sendWill = true;
+    }
+
+    public static @NotNull ClientConnection fromChannel(final @NotNull Channel channel) {
+        return channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
     }
 
     public @NotNull Channel getChannel() {
@@ -125,20 +127,11 @@ public class ClientConnection {
     }
 
     public @NotNull ClientState getClientState() {
-        return clientState;
+        return clientState.get();
     }
 
-    public void proposeClientState(final @NotNull ClientState clientState) {
-        if (!this.clientState.disconnected()) {
-            this.clientState = clientState;
-        }
-    }
-
-    // ONLY VISIBLE FOR TESTING !!!
-    // DO NOT USE IN PROD !!!
-    @VisibleForTesting()
-    public void setClientStateUnsafe(final @NotNull ClientState clientState) {
-        this.clientState = clientState;
+    public void proposeClientState(final @NotNull ClientState proposed) {
+        clientState.updateAndGet(current -> current.disconnected() ? current : proposed);
     }
 
     public @Nullable ProtocolVersion getProtocolVersion() {
@@ -255,7 +248,7 @@ public class ClientConnection {
         return inFlightMessageCount.incrementAndGet();
     }
 
-    public int incrementInFlightCount(int count) {
+    public int incrementInFlightCount(final int count) {
         if (inFlightMessageCount == null) {
             inFlightMessageCount = new AtomicInteger(0);
         }
@@ -292,11 +285,11 @@ public class ClientConnection {
         this.maxPacketSizeSend = maxPacketSizeSend;
     }
 
-    public @Nullable String[] getTopicAliasMapping() {
+    public @Nullable String @Nullable [] getTopicAliasMapping() {
         return topicAliasMapping;
     }
 
-    public void setTopicAliasMapping(final @Nullable String[] topicAliasMapping) {
+    public void setTopicAliasMapping(final @Nullable String @Nullable [] topicAliasMapping) {
         this.topicAliasMapping = topicAliasMapping;
     }
 
@@ -592,8 +585,8 @@ public class ClientConnection {
         return Optional.ofNullable(clearPasswordAfterAuth);
     }
 
-    public void clearPassword(){
-        if(authPassword == null) {
+    public void clearPassword() {
+        if (authPassword == null) {
             return;
         }
         Arrays.fill(authPassword, (byte) 0);
@@ -602,9 +595,5 @@ public class ClientConnection {
 
     public @NotNull HashMap<String, Object> getAdditionalInformation() {
         return additionalInformation;
-    }
-
-    public static @NotNull ClientConnection fromChannel(Channel channel) {
-        return channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
     }
 }
