@@ -2,8 +2,6 @@ import { WrapperTestRoute } from '@/__test-utils__/hooks/WrapperTestRoute.tsx'
 
 import type { Combiner, ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
-import { MOCK_COMBINER_ASSET } from '@/api/hooks/useCombiners/__handlers__'
-import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import {
   MOCK_PULSE_EXT_ASSET_MAPPERS_LIST,
@@ -18,8 +16,6 @@ const cy_getHeader = (column: number) => cy.get('table thead th').eq(column)
 describe('AssetsTable', () => {
   beforeEach(() => {
     cy.viewport(1000, 700)
-    cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_PULSE_ASSETS] })
-    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', { items: [MOCK_COMBINER_ASSET] })
   })
 
   it('should render errors', () => {

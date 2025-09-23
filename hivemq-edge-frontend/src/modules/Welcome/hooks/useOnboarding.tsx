@@ -13,11 +13,7 @@ import AssetMonitoringOnboardingTask from '@/modules/Pulse/components/assets/Ass
 export const useOnboarding = (): OnboardingTask[] => {
   const { t } = useTranslation()
   const { data: config, isLoading: isConfigLoading, error: configError } = useGetConfiguration()
-  const {
-    data: hasPulse,
-    error: pulseError,
-    isLoading: isPulseLoading,
-  } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
+  const { error: pulseError, isLoading: isPulseLoading } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
 
   const cloud: OnboardingTask = {
     isLoading: isConfigLoading,
@@ -47,23 +43,18 @@ export const useOnboarding = (): OnboardingTask[] => {
         content: <ActivationPanel />,
         leftIcon: <PulseAgentIcon />,
       },
-      ...(hasPulse
-        ? [
-            {
-              title: t('welcome.onboarding.pulse.section.assets.title'),
-              label: t('welcome.onboarding.pulse.section.assets.label'),
-              to: '/pulse-assets',
-              leftIcon: <PulseAgentIcon boxSize={6} />,
-            },
-
-            {
-              title: t('pulse.onboarding.monitoring.task'),
-              label: '',
-              leftIcon: <PulseAgentIcon boxSize={6} />,
-              content: <AssetMonitoringOnboardingTask />,
-            },
-          ]
-        : []),
+      {
+        title: t('welcome.onboarding.pulse.section.assets.title'),
+        label: t('welcome.onboarding.pulse.section.assets.label'),
+        to: '/pulse-assets',
+        leftIcon: <PulseAgentIcon boxSize={6} />,
+      },
+      {
+        title: t('pulse.onboarding.monitoring.task'),
+        label: '',
+        leftIcon: <PulseAgentIcon boxSize={6} />,
+        content: <AssetMonitoringOnboardingTask />,
+      },
     ],
   }
 

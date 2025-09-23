@@ -1,11 +1,9 @@
-import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
 import { MOCK_PULSE_ASSET_LIST, MOCK_PULSE_ASSET_MAPPED_UNIQUE } from '@/api/hooks/usePulse/__handlers__'
 import AssetNameCell from '@/modules/Pulse/components/assets/AssetNameCell.tsx'
 
 describe('AssetNameCell', () => {
   beforeEach(() => {
     cy.viewport(1000, 600)
-    cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_PULSE_ASSETS] })
   })
 
   it('should render errors', () => {

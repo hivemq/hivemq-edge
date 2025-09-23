@@ -9,7 +9,7 @@ import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 const BADGE_ERROR_CONTENT = '?'
 
 const AssetMonitoringBadge: FC = () => {
-  const { data: assets, isLoading, error, isEnabled } = useListManagedAssets()
+  const { data: assets, isLoading, error } = useListManagedAssets()
 
   const unattendedAssets = useMemo(() => {
     if (!assets?.items || error) return undefined
@@ -21,7 +21,6 @@ const AssetMonitoringBadge: FC = () => {
   }, [assets?.items, error])
 
   if (isLoading) return <LoaderSpinner boxSize={4} />
-  if (!isEnabled) return null
 
   return (
     <Badge data-testid="asset-monitoring-unattended" colorScheme={unattendedAssets ? undefined : 'red'}>
