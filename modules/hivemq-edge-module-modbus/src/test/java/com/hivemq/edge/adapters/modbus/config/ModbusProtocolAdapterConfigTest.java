@@ -70,7 +70,7 @@ public class ModbusProtocolAdapterConfigTest {
         assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(modbusToMqttMapping -> {
             assertThat(modbusToMqttMapping.getMqttTopic()).isEqualTo("my/topic");
             assertThat(modbusToMqttMapping.getMqttQos()).isEqualTo(1);
-            assertThat(modbusToMqttMapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
+            assertThat(modbusToMqttMapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(modbusToMqttMapping.getIncludeTimestamp()).isFalse();
             assertThat(modbusToMqttMapping.getIncludeTagNames()).isTrue();
 
@@ -87,7 +87,7 @@ public class ModbusProtocolAdapterConfigTest {
         }, modbusToMqttMapping -> {
             assertThat(modbusToMqttMapping.getMqttTopic()).isEqualTo("my/topic/2");
             assertThat(modbusToMqttMapping.getMqttQos()).isEqualTo(1);
-            assertThat(modbusToMqttMapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
+            assertThat(modbusToMqttMapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(modbusToMqttMapping.getIncludeTimestamp()).isFalse();
             assertThat(modbusToMqttMapping.getIncludeTagNames()).isTrue();
 

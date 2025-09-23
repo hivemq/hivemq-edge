@@ -18,7 +18,6 @@ package com.hivemq.configuration.writer;
 
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ApiConfigurator;
-import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.configuration.reader.Configurator;
@@ -33,8 +32,9 @@ import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import util.TestConfigurationBootstrap;
 
 import java.io.File;
@@ -47,14 +47,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * @author Simon L Johnson
- */
 public abstract class AbstractConfigWriterTest {
 
-    protected ConfigurationService configurationService;
+    protected @Nullable ConfigurationService configurationService;
 
-    protected ConfigFileReaderWriter createFileReaderWriter(final @NotNull File file){
+    protected @NotNull ConfigFileReaderWriter createFileReaderWriter(final @NotNull File file) {
 
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
 
@@ -80,21 +77,19 @@ public abstract class AbstractConfigWriterTest {
         when(apiConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
 
         final ConfigurationFile configurationFile = new ConfigurationFile(file);
-        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(
-                mock(SystemInformation.class),
+        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(mock(SystemInformation.class),
                 configurationFile,
-                List.of(
-                    restrictionConfigurator,
-                    securityConfigurator,
-                    mqttConfigurator,
-                    listenerConfigurator,
-                    persistenceConfigurator,
-                    mqttsnConfigurator,
-                    apiConfigurator,
-                    new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
-                    new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
-                    new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
-                    new InternalConfigurator(configurationService.internalConfigurationService())));
+                List.of(restrictionConfigurator,
+                        securityConfigurator,
+                        mqttConfigurator,
+                        listenerConfigurator,
+                        persistenceConfigurator,
+                        mqttsnConfigurator,
+                        apiConfigurator,
+                        new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
+                        new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
+                        new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
+                        new InternalConfigurator(configurationService.internalConfigurationService())));
         configFileReader.setDefaultBackupConfig(false);
         return configFileReader;
     }

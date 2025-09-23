@@ -26,8 +26,8 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.uns.ISA95Entity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.uns.config.ISA95;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -73,8 +73,7 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
         final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
         configurationService.setConfigFileReaderWriter(configFileReader);
 
-        final List<ProtocolAdapterEntity> entities =
-                configurationService.protocolAdapterExtractor().getAllConfigs();
+        final List<ProtocolAdapterEntity> entities = configurationService.protocolAdapterExtractor().getAllConfigs();
         Assert.assertEquals("Adapter type count should match", 3, entities.size());
 
 

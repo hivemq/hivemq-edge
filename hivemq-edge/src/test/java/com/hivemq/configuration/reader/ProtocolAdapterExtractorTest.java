@@ -114,49 +114,6 @@ public class ProtocolAdapterExtractorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"true,MQTTMessagePerTag", "true,MQTTMessagePerSubscription", "false,abc"})
-    public void whenNorthboundMappingMessageHandlingOptionsIsProvided_thenApplyConfigShouldWorkAsExpected(
-            final boolean valid,
-            final @NotNull String messageHandlingOptions)
-            throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
-                <hivemq>
-                  <protocol-adapters>
-                    <protocol-adapter>
-                      <adapterId>simInvalid</adapterId>
-                      <protocolId>simulation</protocolId>
-                      <configVersion>1</configVersion>
-                      <config>
-                        <pollingIntervalMillis>123</pollingIntervalMillis>
-                        <timeout>10000</timeout>
-                        <minDelay>0</minDelay>
-                        <maxDelay>0</maxDelay>
-                      </config>
-                      <northboundMappings>
-                        <northboundMapping>
-                          <topic>MTConnect/my-steams</topic>
-                          <tagName>tag1</tagName>
-                          <messageHandlingOptions>${messageHandlingOptions}</messageHandlingOptions>
-                        </northboundMapping>
-                      </northboundMappings>
-                      <tags>
-                        <tag>
-                          <name>tag1</name>
-                          <description>description1</description>
-                        </tag>
-                      </tags>
-                    </protocol-adapter>
-                  </protocol-adapters>
-                </hivemq>
-                """.replace("${messageHandlingOptions}", messageHandlingOptions));
-        if (valid) {
-            assertThat(configFileReader.applyConfig()).isNotNull();
-        } else {
-            assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
-        }
-    }
-
-    @ParameterizedTest
     @CsvSource({"true,true", "true,false", "false,abc"})
     public void whenNorthboundMappingIncludeTagNamesIsProvided_thenApplyConfigShouldWorkAsExpected(
             final boolean valid,
