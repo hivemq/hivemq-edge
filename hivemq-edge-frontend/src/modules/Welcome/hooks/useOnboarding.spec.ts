@@ -16,7 +16,7 @@ import { useOnboarding } from './useOnboarding.tsx'
 describe('useOnboarding()', () => {
   beforeEach(() => {
     window.localStorage.clear()
-    server.use(...handlerGatewayConfiguration, ...handlerCapabilities(MOCK_CAPABILITIES))
+    server.use(...handlerGatewayConfiguration)
   })
 
   afterEach(() => {
@@ -24,6 +24,7 @@ describe('useOnboarding()', () => {
   })
 
   it('should return the correct list of tasks', async () => {
+    server.use(...handlerCapabilities({ items: [] }))
     const { result } = renderHook(() => useOnboarding(), { wrapper })
 
     await waitFor(() => {
