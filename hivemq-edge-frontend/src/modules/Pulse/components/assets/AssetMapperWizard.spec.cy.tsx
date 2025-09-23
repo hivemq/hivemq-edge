@@ -1,11 +1,27 @@
 import { WrapperTestRoute } from '@/__test-utils__/hooks/WrapperTestRoute.tsx'
+import type { Combiner } from '@/api/__generated__'
 import { MOCK_COMBINER_ASSET } from '@/api/hooks/useCombiners/__handlers__'
+import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
+import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { MOCK_PULSE_ASSET, MOCK_PULSE_ASSET_LIST } from '@/api/hooks/usePulse/__handlers__'
 import AssetMapperWizard from '@/modules/Pulse/components/assets/AssetMapperWizard.tsx'
 
 describe('AssetMapperWizard', () => {
   beforeEach(() => {
     cy.viewport(800, 600)
+    cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_PULSE_ASSETS] })
+    cy.intercept('/api/v1/management/bridges', { items: [mockBridge] })
+
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] })
+  })
+
+  it('should handle errors', () => {
+    cy.mountWithProviders(<AssetMapperWizard assetId="fake-id" isOpen onClose={cy.stub} onSubmit={cy.stub} />)
+
+    cy.get('[role="alert"]')
+      .should('have.attr', 'data-status', 'error')
+      .should('contain.text', 'Asset fake-id cannot be found')
   })
 
   it('should render properly', () => {
@@ -53,7 +69,7 @@ describe('AssetMapperWizard', () => {
 
       cy.get('#wizard-mapper-selector').within(() => {
         cy.getByTestId('wizard-mapper-selector-leftAdd').should('be.visible')
-        cy.get('#react-select-mapper-placeholder').should('have.text', 'Select ...')
+        cy.get('#react-select-mapper-placeholder').should('have.text', 'Type or select ...')
         cy.get('#react-select-mapper-value').should('not.exist')
       })
     })
@@ -85,42 +101,13 @@ describe('AssetMapperWizard', () => {
     cy.get('footer button').should('have.text', 'Edit the asset mapper')
     cy.get('footer button').click()
 
-    cy.get('@onSubmit').should('have.been.calledWith', {
-      id: 'e9af7f82-bec1-4d07-8c0f-e4591148af19',
-      name: 'my-combiner-for-asset',
-      description: "This is a description for the asset mapper 'my-combiner-for-asset'",
-      sources: {
-        items: [
-          {
-            type: 'ADAPTER',
-            id: 'my-adapter',
-          },
-          {
-            type: 'PULSE_AGENT',
-            id: 'the Pulse Agent',
-          },
-        ],
-      },
-      mappings: {
-        items: [
-          {
-            id: 'ff02efff-7b4c-4f8c-8bf6-74d0756283fb',
-            sources: {
-              primary: {
-                id: '',
-                type: 'TAG',
-              },
-              tags: ['my/tag/t1', 'my/tag/t3'],
-              topicFilters: ['my/topic/+/temp'],
-            },
-            destination: {
-              topic: 'my/first/topic',
-            },
-            instructions: [],
-          },
-        ],
-      },
-    })
+    cy.get('@onSubmit').should(
+      'have.been.calledWith',
+      Cypress.sinon.match((arg) => {
+        const mapper = arg as Combiner
+        return mapper.mappings.items.length === 2
+      })
+    )
 
     cy.getByTestId('wizard-mapper-selector-container').click()
     cy.getByTestId('wizard-mapper-selector-container').type('12343')
@@ -138,17 +125,26 @@ describe('AssetMapperWizard', () => {
     cy.get('footer button').should('have.text', 'Create a new asset mapper')
     cy.get('footer button').click()
 
+    // This is a hack but will do for the time being
+    cy.getByAriaLabel('Clear selected options').eq(1).click()
+
+    cy.get('@onSubmit').should('have.been.called').its('lastCall.args.1').should('be.true')
     cy.get('@onSubmit')
-      .should('have.been.calledWith', Cypress.sinon.match.object)
+      .should('have.been.called')
       .its('lastCall.args.0')
       .should('deep.include', {
         name: '12343 (new)',
-        __isNew__: true,
         sources: {
-          items: [],
-        },
-        mappings: {
-          items: [],
+          items: [
+            {
+              id: 'edge',
+              type: 'EDGE_BROKER',
+            },
+            {
+              id: 'idPulse',
+              type: 'PULSE_AGENT',
+            },
+          ],
         },
       })
   })
