@@ -49,6 +49,7 @@ export const useOnboarding = (): OnboardingTask[] => {
         to: '/pulse-assets',
         leftIcon: <PulseAgentIcon boxSize={6} />,
       },
+
       {
         title: t('pulse.onboarding.monitoring.task'),
         label: '',

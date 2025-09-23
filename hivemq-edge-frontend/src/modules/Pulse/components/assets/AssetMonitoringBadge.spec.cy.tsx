@@ -16,7 +16,6 @@ describe('AssetMonitoringBadge', () => {
   })
 
   it('should handle errors', () => {
-    cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
     cy.intercept('/api/v1/management/pulse/managed-assets', { statusCode: 404 }).as('getAssets')
     cy.mountWithProviders(<AssetMonitoringBadge />)
 
