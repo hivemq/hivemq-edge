@@ -6,7 +6,7 @@ describe('ManagedAssetSelect', () => {
   beforeEach(() => {
     cy.viewport(1000, 600)
     cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_PULSE_ASSETS] })
-    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_EXT_ASSETS_LIST).as('assets')
+    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_EXT_ASSETS_LIST)
   })
 
   it('should render properly', () => {
@@ -51,7 +51,7 @@ describe('ManagedAssetSelect', () => {
   })
 
   it('should be accessible', () => {
-    const onChange = cy.stub().as('onChange')
+    const onChange = cy.stub()
     cy.injectAxe()
     cy.mountWithProviders(<ManagedAssetSelect onChange={onChange} />)
     cy.get('#combiner-asset-select').click()
