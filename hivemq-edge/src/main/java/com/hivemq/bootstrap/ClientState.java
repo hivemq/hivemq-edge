@@ -18,9 +18,6 @@ package com.hivemq.bootstrap;
 import java.util.EnumSet;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @author Abdullah Imal
- */
 public enum ClientState {
     CONNECTING,
 
