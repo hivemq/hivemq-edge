@@ -23,6 +23,7 @@ pnpm-error.log*
 # Cypress collection
 cypress/videos
 cypress/screenshots
+cypress/downloads/
 
 # Exclude test-results
 test-results
