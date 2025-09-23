@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.hivemq.api.errors.combiners;
+package com.hivemq.api.errors.pulse;
 
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.http.HttpStatus;
@@ -23,11 +23,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class InvalidDataIdentifierReferenceTypeForCombinerError extends ProblemDetails {
-    public InvalidDataIdentifierReferenceTypeForCombinerError(final @NotNull DataIdentifierReference.Type type) {
-        super("InvalidDataIdentifierReferenceTypeForCombinerError",
-                "Invalid Data Identifier Reference Type for Combiner",
-                "The data identifier type '" + type.name() + "' for combiner is invalid.",
+public class InvalidDataIdentifierReferenceTypeForAssetMapperError extends ProblemDetails {
+    public InvalidDataIdentifierReferenceTypeForAssetMapperError(final @NotNull DataIdentifierReference.Type type) {
+        super("InvalidDataIdentifierReferenceTypeForAssetMapperError",
+                "Invalid Data Identifier Reference Type for Asset Mapper",
+                "The data identifier type '" + type.name() + "' for asset mapper is invalid.",
                 HttpStatus.BAD_REQUEST_400,
                 List.of());
     }

@@ -27,7 +27,7 @@ public class InvalidEntityTypeForCombinerError extends ProblemDetails {
     public InvalidEntityTypeForCombinerError(final @NotNull EntityType entityType) {
         super("InvalidEntityTypeForCombinerError",
                 "Invalid Entity Type for Combiner",
-                "The entity type '" + entityType + "' is invalid.",
+                "The entity type '" + entityType.name() + "' for combiner is invalid.",
                 HttpStatus.BAD_REQUEST_400,
                 List.of());
     }
