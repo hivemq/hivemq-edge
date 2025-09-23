@@ -28,7 +28,7 @@ const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
   const { t } = useTranslation()
 
   return (
-    <Box mt={6} {...props} data-testid="onboarding-container">
+    <Box mt={6} {...props}>
       <Heading>{t('welcome.onboarding.title')}</Heading>
       <SimpleGrid spacing={6} templateColumns="repeat(auto-fill, minmax(33vw, 10fr))">
         {tasks?.map((task, index) => (

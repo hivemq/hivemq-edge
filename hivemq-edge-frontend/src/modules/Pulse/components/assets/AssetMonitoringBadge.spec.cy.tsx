@@ -11,6 +11,7 @@ describe('AssetMonitoringBadge', () => {
     cy.mountWithProviders(<AssetMonitoringBadge />)
 
     cy.getByTestId('loading-spinner').should('be.visible')
+    cy.wait('@getAssets')
     cy.getByTestId('asset-monitoring-unattended').should('have.text', '3')
   })
 
@@ -19,6 +20,7 @@ describe('AssetMonitoringBadge', () => {
     cy.mountWithProviders(<AssetMonitoringBadge />)
 
     cy.getByTestId('loading-spinner').should('be.visible')
+    cy.wait('@getAssets')
     cy.getByTestId('asset-monitoring-unattended').should('have.text', '?')
   })
 

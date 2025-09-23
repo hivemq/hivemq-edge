@@ -47,7 +47,6 @@ describe('SchemaTable (Copilot)', () => {
         createdAt: MOCK_CREATED_AT,
       }
       cy.intercept('/api/v1/data-hub/schemas', { items: [schema] }).as('getSchemasSuccess')
-      cy.stub(DateTime, 'now').returns(DateTime.fromISO(MOCK_CREATED_AT).plus({ day: 2 }))
     })
 
     it('should render schema data correctly', () => {
