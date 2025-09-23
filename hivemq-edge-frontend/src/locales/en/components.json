@@ -330,6 +330,12 @@
           "missingMapping": "Some of the required properties are missing"
         }
       }
+    },
+    "SchemaWidget": {
+      "error": {
+        "noValidSchema": "< cannot display the schema >"
+      },
+      "download": "Download the schema"
     }
   },
   "GenericSchema": {
