@@ -27,6 +27,7 @@ import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
+import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.status.StatusProviderRegistry;
@@ -42,6 +43,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     private final @NotNull HandlerService handlerService;
     private final @NotNull EventService eventService;
     private final @NotNull PublishService publishService;
+    private final @NotNull InternalPublishService internalPublishService;
     private final @NotNull AssetProviderRegistry assetProviderRegistry;
     private final @NotNull StatusProviderRegistry statusProviderRegistry;
     private final @NotNull PersistenceBootstrapService delegate;
@@ -54,6 +56,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull HandlerService handlerService,
             final @NotNull EventService eventService,
             final @NotNull PublishService publishService,
+            final @NotNull InternalPublishService internalPublishService,
             final @NotNull AssetProviderRegistry assetProviderRegistry,
             final @NotNull StatusProviderRegistry statusProviderRegistry) {
         this.delegate = delegate;
@@ -62,6 +65,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
         this.handlerService = handlerService;
         this.eventService = eventService;
         this.publishService = publishService;
+        this.internalPublishService = internalPublishService;
         this.assetProviderRegistry = assetProviderRegistry;
         this.statusProviderRegistry = statusProviderRegistry;
     }
@@ -129,6 +133,11 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     @Override
     public @NotNull PublishService publishService() {
         return publishService;
+    }
+
+    @Override
+    public @NotNull InternalPublishService internalPublishService() {
+        return internalPublishService;
     }
 
     @Override
