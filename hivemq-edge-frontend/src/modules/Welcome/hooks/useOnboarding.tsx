@@ -13,6 +13,7 @@ import AssetMonitoringOnboardingTask from '@/modules/Pulse/components/assets/Ass
 export const useOnboarding = (): OnboardingTask[] => {
   const { t } = useTranslation()
   const { data: config, isLoading: isConfigLoading, error: configError } = useGetConfiguration()
+  const { error: pulseError, isLoading: isPulseLoading } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
 
   const cloud: OnboardingTask = {
     isLoading: isConfigLoading,
@@ -46,6 +47,7 @@ export const useOnboarding = (): OnboardingTask[] => {
         to: '/pulse-assets',
         leftIcon: <PulseAgentIcon boxSize={6} />,
       },
+
       {
         title: t('pulse.onboarding.monitoring.task'),
         label: '',

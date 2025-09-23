@@ -1,4 +1,3 @@
-import { handlerCapabilities, MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
 import { http, HttpResponse } from 'msw'
 import { expect } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
