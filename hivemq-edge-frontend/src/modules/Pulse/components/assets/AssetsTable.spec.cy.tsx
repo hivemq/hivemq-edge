@@ -1,7 +1,9 @@
 import { WrapperTestRoute } from '@/__test-utils__/hooks/WrapperTestRoute.tsx'
 
-import type { ManagedAsset } from '@/api/__generated__'
+import type { Combiner, ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
+import { MOCK_COMBINER_ASSET } from '@/api/hooks/useCombiners/__handlers__'
+import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import {
   MOCK_PULSE_EXT_ASSET_MAPPERS_LIST,
@@ -16,6 +18,8 @@ const cy_getHeader = (column: number) => cy.get('table thead th').eq(column)
 describe('AssetsTable', () => {
   beforeEach(() => {
     cy.viewport(1000, 700)
+    cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_PULSE_ASSETS] })
+    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', { items: [MOCK_COMBINER_ASSET] })
   })
 
   it('should render errors', () => {
@@ -236,39 +240,92 @@ describe('AssetsTable', () => {
       })
     })
 
-    it('should handle mapping', () => {
-      cy.intercept('PUT', 'api/v1/management/pulse/managed-assets/*', (req) => {
-        req.reply({ statusCode: 404 })
-      })
-
-      cy.mountWithProviders(<AssetsTable />, {
-        wrapper: WrapperTestRoute,
-        routerProps: { initialEntries: ['/pulse-assets'] },
-      })
-
-      cy.getByTestId('test-pathname').should('have.text', '/pulse-assets')
-      cy_getCell(0, 5).find('button').click()
-      cy.get("[role='menu']#menu-list-asset-actions button").eq(1).click()
-
-      cy.get('section[role="dialog"][aria-modal="true"]').within(() => {
-        cy.get('header').should('have.text', 'Mapping asset "Test asset unmapped"')
-
-        cy.getByTestId('wizard-mapper-selector-container').click()
-        cy.getByTestId('node-source-id').eq(0).click()
-
-        cy.get('footer button').should('have.text', 'Edit the asset mapper')
-        cy.get('footer button').click()
-      })
-
-      cy.getByTestId('test-pathname').should('have.text', '/workspace')
-      cy.getByTestId('test-state')
-        .invoke('text')
-        .then((text) => {
-          const state = JSON.parse(text)
-          expect(state).to.have.nested.property('selectedAdapter.adapterId', 'e9af7f82-aaaa-4d07-8c0f-e4591148af19')
-          expect(state).to.have.nested.property('selectedAdapter.type', NodeTypes.COMBINER_NODE)
-          expect(state).to.have.nested.property('selectedAdapter.command', WorkspaceNavigationCommand.ASSET_MAPPER)
+    describe('Mapping', () => {
+      it('should handle mapping in an existing mapper', () => {
+        cy.intercept('PUT', 'api/v1/management/pulse/managed-assets/*', (req) => {
+          req.reply({ statusCode: 404 })
         })
+
+        cy.intercept<Combiner>('PUT', 'api/v1/management/pulse/asset-mappers/*', (req) => {
+          const combiner = req.body
+          req.reply({ body: { updated: combiner.id }, statusCode: 200 })
+        }).as('updateMapperRequest')
+
+        cy.mountWithProviders(<AssetsTable />, {
+          wrapper: WrapperTestRoute,
+          routerProps: { initialEntries: ['/pulse-assets'] },
+        })
+
+        cy.getByTestId('test-pathname').should('have.text', '/pulse-assets')
+        cy_getCell(0, 5).find('button').click()
+        cy.get("[role='menu']#menu-list-asset-actions button").eq(1).click()
+
+        cy.get('section[role="dialog"][aria-modal="true"]').within(() => {
+          cy.get('header').should('have.text', 'Mapping asset "Test asset unmapped"')
+
+          cy.getByTestId('wizard-mapper-selector-container').click()
+          cy.getByTestId('node-source-id').eq(0).click()
+
+          cy.get('footer button').should('have.text', 'Edit the asset mapper')
+          cy.get('footer button').click()
+        })
+
+        cy.wait('@updateMapperRequest').then((e) => {
+          expect(e.response?.body).to.deep.equal({ updated: 'e9af7f82-aaaa-4d07-8c0f-e4591148af19' })
+        })
+
+        cy.get('[role="status"] > div').should('have.attr', 'data-status', 'success')
+        cy.get('[role="status"]').should('contain.text', "We've successfully updated the asset mapper for you.")
+
+        cy.getByTestId('test-pathname').should('have.text', '/workspace')
+        cy.getByTestId('test-state')
+          .invoke('text')
+          .then((text) => {
+            const state = JSON.parse(text)
+            expect(state).to.have.nested.property('selectedAdapter.adapterId', 'e9af7f82-aaaa-4d07-8c0f-e4591148af19')
+            expect(state).to.have.nested.property('selectedAdapter.type', NodeTypes.COMBINER_NODE)
+            expect(state).to.have.nested.property('selectedAdapter.command', WorkspaceNavigationCommand.ASSET_MAPPER)
+          })
+      })
+
+      it('should handle mapping in a new mapper', () => {
+        cy.intercept('PUT', 'api/v1/management/pulse/managed-assets/*', (req) => {
+          req.reply({ statusCode: 404 })
+        })
+
+        cy.intercept<Combiner>('POST', 'api/v1/management/pulse/asset-mappers', (req) => {
+          req.reply({ body: { created: 'new-UUID' }, statusCode: 200 })
+        }).as('updateMapperRequest')
+
+        cy.mountWithProviders(<AssetsTable />, {
+          wrapper: WrapperTestRoute,
+          routerProps: { initialEntries: ['/pulse-assets'] },
+        })
+
+        cy.getByTestId('test-pathname').should('have.text', '/pulse-assets')
+        cy_getCell(0, 5).find('button').click()
+        cy.get("[role='menu']#menu-list-asset-actions button").eq(1).click()
+
+        cy.get('section[role="dialog"][aria-modal="true"]').within(() => {
+          cy.get('header').should('have.text', 'Mapping asset "Test asset unmapped"')
+
+          cy.getByTestId('wizard-mapper-selector-container').type('New mapper{enter}')
+          cy.getByTestId('wizard-mapper-selector-instruction').should(
+            'have.text',
+            'A new asset mapper will be created in the Workspace, with a predefined mapping for this asset'
+          )
+
+          cy.get('footer button').should('have.text', 'Create a new asset mapper')
+          cy.get('footer button').click()
+        })
+
+        cy.wait('@updateMapperRequest').then((e) => {
+          expect(e.response?.body).to.deep.equal({ created: 'new-UUID' })
+        })
+
+        cy.get('[role="status"] > div').should('have.attr', 'data-status', 'success')
+        cy.get('[role="status"]').should('contain.text', "We've successfully created the mapper for you.")
+      })
     })
   })
 })

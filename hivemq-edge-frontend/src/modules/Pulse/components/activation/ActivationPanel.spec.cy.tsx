@@ -21,7 +21,7 @@ describe('ActivationPanel', () => {
   const cy_formShouldRenderProperly = (isActivated: boolean, title: string, description: string) => {
     cy.getByTestId('loading-spinner').should('be.visible')
     cy.wait('@capabilities')
-    cy.getByTestId('pulse-activation-trigger').should('have.text', 'Activate Pulse')
+    cy.getByTestId('pulse-activation-trigger').should('have.text', isActivated ? 'Manage Activation' : 'Activate Pulse')
     cy.getByTestId('pulse-activation-trigger').click()
     cy.get("[role='dialog']").should('be.visible')
     cy.get("[role='dialog']").within(() => {

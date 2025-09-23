@@ -25,8 +25,7 @@ import {
 } from '@chakra-ui/react'
 
 import type { Combiner } from '@/api/__generated__'
-import { AssetMapping } from '@/api/__generated__'
-import { EntityType } from '@/api/__generated__'
+import { AssetMapping, EntityType } from '@/api/__generated__'
 import { useDeleteCombiner, useUpdateCombiner } from '@/api/hooks/useCombiners/'
 import { useDeleteAssetMapper, useUpdateAssetMapper } from '@/api/hooks/useAssetMapper'
 import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombinedEntities'

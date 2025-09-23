@@ -12,6 +12,7 @@ import { AssetMapping } from '@/api/__generated__'
 import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
 import { useUpdateManagedAsset } from '@/api/hooks/usePulse/useUpdateManagedAsset.ts'
+import { useCreateAssetMapper, useUpdateAssetMapper } from '@/api/hooks/useAssetMapper'
 import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
@@ -56,6 +57,8 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [selectedAssetOperation, setSelectedAssetOperation] = useState<SelectedAssetOperation | undefined>(undefined)
   const updateManagedAsset = useUpdateManagedAsset()
+  const createAssetMapper = useCreateAssetMapper()
+  const updateAssetMapper = useUpdateAssetMapper()
   const toast = useToast(BASE_TOAST_OPTION)
 
   const safeData = useMemo(() => {
@@ -73,19 +76,47 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
     onClose()
   }
 
-  const handleConfirmWizard = (assetMapper: Combiner) => {
-    setSelectedAssetOperation(undefined)
-    onClose()
-    if (assetMapper)
-      navigate('/workspace', {
-        state: {
-          selectedAdapter: {
-            adapterId: assetMapper.id,
-            type: NodeTypes.COMBINER_NODE,
-            command: WorkspaceNavigationCommand.ASSET_MAPPER,
-          },
+  const handleConfirmWizard = (assetMapper: Combiner, isNew: boolean = false) => {
+    const mapperPromise = isNew
+      ? createAssetMapper.mutateAsync({ requestBody: assetMapper })
+      : updateAssetMapper.mutateAsync({ combinerId: assetMapper.id, requestBody: assetMapper })
+
+    const title = isNew ? t('pulse.mapper.toast.create.title') : t('pulse.mapper.toast.update.title')
+    toast.promise(
+      mapperPromise.then(() => {
+        setSelectedAssetOperation(undefined)
+        onClose()
+        if (assetMapper)
+          navigate('/workspace', {
+            state: {
+              selectedAdapter: {
+                adapterId: assetMapper.id,
+                type: NodeTypes.COMBINER_NODE,
+                command: WorkspaceNavigationCommand.ASSET_MAPPER,
+              },
+            },
+          })
+      }),
+      {
+        success: {
+          title,
+          description: isNew ? t('pulse.mapper.toast.create.success') : t('pulse.mapper.toast.update.success'),
         },
-      })
+        error: (e) => {
+          combinerLog('Error publishing the mapper', e)
+          return {
+            title,
+            description: (
+              <>
+                <Text>{isNew ? t('pulse.mapper.toast.create.error') : t('pulse.mapper.toast.update.error')}</Text>
+                {e.message && <Text>{e.message}</Text>}
+              </>
+            ),
+          }
+        },
+        loading: { title, description: t('pulse.mapper.toast.loading') },
+      }
+    )
   }
 
   const handleCloseDelete = () => {
@@ -106,17 +137,19 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
         },
       },
     })
+
+    const title = t('pulse.mapper.toast.unmap.title')
     toast.promise(
       assetPromise.then(() => {
         setSelectedAssetOperation(undefined)
         onClose()
       }),
       {
-        success: { title: t('pulse.mapper.toast.unmap.title'), description: t('pulse.mapper.toast.unmap.success') },
+        success: { title, description: t('pulse.mapper.toast.unmap.success') },
         error: (e) => {
           combinerLog('Error publishing the asset', e)
           return {
-            title: t('pulse.mapper.toast.unmap.title'),
+            title,
             description: (
               <>
                 <Text>{t('pulse.mapper.toast.unmap.error')}</Text>
@@ -125,7 +158,7 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
             ),
           }
         },
-        loading: { title: t('pulse.mapper.toast.unmap.title'), description: t('pulse.mapper.toast.loading') },
+        loading: { title, description: t('pulse.mapper.toast.loading') },
       }
     )
   }

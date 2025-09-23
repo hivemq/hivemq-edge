@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { GroupBase, SingleValue } from 'chakra-react-select'
+import type { GroupBase, SingleValue, SingleValueProps, OptionProps } from 'chakra-react-select'
 import { createFilter, chakraComponents, Select } from 'chakra-react-select'
 import type { BoxProps } from '@chakra-ui/react'
 import { Box, HStack, Text, VStack } from '@chakra-ui/react'
@@ -15,6 +15,43 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 interface ManagedAssetSelectProps extends Omit<BoxProps, 'onChange'> {
   onChange?: (value: SingleValue<ManagedAsset>) => void
 }
+
+const SingleValue = (props: SingleValueProps<ManagedAsset>) => (
+  <chakraComponents.SingleValue {...props}>
+    <Text data-testid="combiner-asset-selected-value">{props.data.name}</Text>
+  </chakraComponents.SingleValue>
+)
+
+const Option =
+  (selection: ManagedAsset | null) =>
+  ({ children, ...props }: OptionProps<ManagedAsset>) => (
+    <chakraComponents.Option {...props} isSelected={Boolean(selection && props.data.id === selection?.id)}>
+      <VStack gap={0} alignItems="stretch" w="100%">
+        <HStack>
+          <Box flex={1}>
+            <Text flex={1} data-testid="combiner-asset-name">
+              {props.data.name}
+            </Text>
+          </Box>
+          <Box flex={1}>
+            <Text flex={1} data-testid="combiner-asset-status">
+              {props.data.mapping?.status}
+            </Text>
+          </Box>
+        </HStack>
+        <Text
+          fontSize="sm"
+          noOfLines={3}
+          ml={4}
+          lineHeight="normal"
+          textAlign="justify"
+          data-testid="combiner-asset-description"
+        >
+          {props.data.description}
+        </Text>
+      </VStack>
+    </chakraComponents.Option>
+  )
 
 const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, ...boxProps }) => {
   const { t } = useTranslation()
@@ -34,7 +71,6 @@ const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, ...boxProps
     <HStack mt={3}>
       <Box {...boxProps} flex={1}>
         <Select<ManagedAsset, false, GroupBase<ManagedAsset>>
-          // inputId="react-select-asset-input"
           id="combiner-asset-select"
           instanceId="asset"
           options={filteredData}
@@ -57,32 +93,8 @@ const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, ...boxProps
             },
           })}
           components={{
-            SingleValue: (props) => {
-              return (
-                <chakraComponents.SingleValue {...props}>
-                  <Text>{props.data.name}</Text>
-                </chakraComponents.SingleValue>
-              )
-            },
-            Option: ({ children, ...props }) => {
-              return (
-                <chakraComponents.Option {...props} isSelected={Boolean(selection && props.data.id === selection?.id)}>
-                  <VStack gap={0} alignItems="stretch" w="100%">
-                    <HStack>
-                      <Box flex={1}>
-                        <Text flex={1}>{props.data.name}</Text>
-                      </Box>
-                      <Box flex={1}>
-                        <Text flex={1}>{props.data.mapping?.status}</Text>
-                      </Box>
-                    </HStack>
-                    <Text fontSize="sm" noOfLines={3} ml={4} lineHeight="normal" textAlign="justify">
-                      {props.data.description}
-                    </Text>
-                  </VStack>
-                </chakraComponents.Option>
-              )
-            },
+            SingleValue: SingleValue,
+            Option: Option(selection),
           }}
         />
       </Box>

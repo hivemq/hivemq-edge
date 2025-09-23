@@ -29,19 +29,23 @@ import {
 } from 'chakra-react-select'
 import { v4 as uuidv4 } from 'uuid'
 
-import type { Combiner } from '@/api/__generated__'
+import type { Combiner, DataCombining } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
 import { useListAssetMappers } from '@/api/hooks/useAssetMapper'
 import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { HqAssets } from '@/components/Icons'
 import MoreInfo from '@/components/MoreInfo.tsx'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
+import EntityReferencesWizard from '@/modules/Pulse/components/assets/EntityReferencesWizard.tsx'
+import { DEFAULT_ASSET_MAPPER_SOURCES } from '@/modules/Pulse/utils/assets.utils.ts'
 
 interface AssetMapperWizardProps {
   assetId: string
   onClose: () => void
-  onSubmit?: (assetMapper: Combiner) => void
+  onSubmit?: (assetMapper: Combiner, isNew: boolean) => void
   isOpen: boolean
 }
 
@@ -116,6 +120,8 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
     )
   }
 
+  if (!asset) return <ErrorMessage type={t('pulse.error.asset.notFound', { assetId })} />
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false}>
       <ModalOverlay />
@@ -144,6 +150,7 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
                 options={listMappers?.items || []}
                 value={selectedValue}
                 isClearable
+                noOptionsMessage={() => t('pulse.assets.operation.edit.select.noOptions')}
                 placeholder={t('pulse.assets.operation.edit.select.placeholder')}
                 components={{
                   Option,
@@ -163,28 +170,62 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
                     name: t('pulse.assets.operation.edit.select.createValue', { name }),
                     id: uuidv4(),
                     __isNew__: true,
-                    sources: { items: [] },
+                    sources: { items: DEFAULT_ASSET_MAPPER_SOURCES },
                     mappings: { items: [] },
                   })
                 }
               />
-              <FormHelperText>{t('pulse.assets.operation.edit.select.helper')}</FormHelperText>
+              <FormHelperText>
+                {!selectedValue && t('pulse.assets.operation.edit.select.helper')}
+                {selectedValue && (
+                  <Text data-testid="wizard-mapper-selector-instruction">
+                    {t('pulse.assets.operation.edit.workspace', {
+                      context: selectedValue?.__isNew__ ? MAPPER_OPERATION.CREATE : MAPPER_OPERATION.EDIT,
+                    })}
+                  </Text>
+                )}
+              </FormHelperText>
             </FormControl>
+            {selectedValue && selectedValue.__isNew__ && (
+              <EntityReferencesWizard
+                values={selectedValue.sources.items}
+                onChange={(newValues) => {
+                  setSelectedValue({ ...selectedValue, sources: { items: newValues } })
+                }}
+              />
+            )}
           </VStack>
         </ModalBody>
 
         <ModalFooter>
-          <Button
-            variant="primary"
-            onClick={() => {
-              if (selectedValue && onSubmit) onSubmit(selectedValue)
-            }}
-            isDisabled={!selectedValue}
-          >
-            {t('pulse.assets.operation.edit.submit', {
-              context: selectedValue?.__isNew__ ? MAPPER_OPERATION.CREATE : MAPPER_OPERATION.EDIT,
-            })}
-          </Button>
+          <VStack>
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (selectedValue && onSubmit) {
+                  const { __isNew__, ...rest } = selectedValue
+                  const newMapping: DataCombining = {
+                    id: uuidv4(),
+                    sources: {
+                      // This is annoying, we should have the API to accept nullable
+                      primary: { id: '', type: DataIdentifierReference.type.TAG },
+                      tags: [],
+                      topicFilters: [],
+                    },
+                    destination: { topic: asset.topic, assetId: asset.id, schema: asset.schema },
+                    instructions: [],
+                  }
+                  rest.mappings.items.unshift(newMapping)
+                  onSubmit(rest, Boolean(__isNew__))
+                }
+              }}
+              isDisabled={!selectedValue}
+            >
+              {t('pulse.assets.operation.edit.submit', {
+                context: selectedValue?.__isNew__ ? MAPPER_OPERATION.CREATE : MAPPER_OPERATION.EDIT,
+              })}
+            </Button>
+          </VStack>
         </ModalFooter>
       </ModalContent>
     </Modal>
