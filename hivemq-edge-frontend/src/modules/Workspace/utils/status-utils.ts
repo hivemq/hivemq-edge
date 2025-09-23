@@ -1,11 +1,12 @@
-import type { Edge, Node } from '@xyflow/react'
+import type { Edge, Node, EdgeChange, EdgeReplaceChange } from '@xyflow/react'
+import { getConnectedEdges } from '@xyflow/react'
 import { MarkerType } from '@xyflow/react'
 import type { WithCSSVar } from '@chakra-ui/react'
 import type { Dict } from '@chakra-ui/utils'
 
 import type { Adapter, Bridge, ProtocolAdapter } from '@/api/__generated__'
-import { Status } from '@/api/__generated__'
-import type { EdgeStatus, Group } from '@/modules/Workspace/types.ts'
+import { PulseStatus, Status } from '@/api/__generated__'
+import type { EdgeStatus, Group, NodePulseType } from '@/modules/Workspace/types.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 
@@ -25,11 +26,62 @@ export const getThemeForStatus = (theme: Partial<WithCSSVar<Dict>>, status: Stat
   if (status?.connection === Status.connection.DISCONNECTED) return theme.colors.status.disconnected[500]
   if (status?.connection === Status.connection.STATELESS) return theme.colors.status.stateless[500]
 
-  // if (status?.connection === Status.connection.ERROR) return theme.colors.status.error[500]
-  // if (status?.connection === Status.connection.UNKNOWN) return theme.colors.status.error[500]
   return theme.colors.status.error[500]
 }
 
+/**
+ * TODO[NVL] Unify the styling with PulseStatusBadge
+ * @see PulseStatusBadge
+ */
+export const getThemeForPulseStatus = (theme: Partial<WithCSSVar<Dict>>, status: PulseStatus | undefined) => {
+  if (status?.activation === PulseStatus.activation.ERROR || status?.runtime === PulseStatus.runtime.ERROR)
+    return theme.colors.status.error[500]
+
+  if (status?.activation === PulseStatus.activation.DEACTIVATED) return theme.colors.status.disconnected[500]
+
+  if (status?.runtime === PulseStatus.runtime.CONNECTED) return theme.colors.status.connected[500]
+  if (status?.runtime === PulseStatus.runtime.DISCONNECTED) return theme.colors.status.disconnected[500]
+
+  return theme.colors.status.error[500]
+}
+
+export const updatePulseStatus = (
+  pulseNode: NodePulseType,
+  pulseConnections: PulseStatus,
+  edges: Edge[],
+  theme: Partial<WithCSSVar<Dict>>
+) => {
+  // use onNodesChange to be consistent
+  const newNodeData = { ...pulseNode.data, status: pulseConnections }
+
+  const edgeChanges: EdgeChange[] = []
+  const targets = getConnectedEdges([pulseNode], edges)
+  for (const edge of targets) {
+    const themeForStatus = getThemeForPulseStatus(theme, pulseConnections)
+    const newEdgeData = {
+      ...edge,
+      style: {
+        strokeWidth: 1.5,
+        stroke: themeForStatus,
+      },
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 20,
+        height: 20,
+        color: themeForStatus,
+      },
+    }
+
+    const edgeReplaceChange: EdgeReplaceChange = { id: edge.id, type: 'replace', item: newEdgeData }
+    edgeChanges.push(edgeReplaceChange)
+  }
+
+  return { nodes: newNodeData, edges: edgeChanges }
+}
+
+/**
+ * @deprecated This is wrong, should be based on the useWorkspaceStore, not the React Flow store
+ */
 export const updateNodeStatus = (currentNodes: Node[], updates: Status[]) => {
   return currentNodes.map((n): Node<Bridge | Adapter> => {
     if (n.type === NodeTypes.BRIDGE_NODE) {
@@ -93,6 +145,9 @@ export const getEdgeStatus = (
   return edge
 }
 
+/**
+ * @deprecated This is wrong, should be based on the useWorkspaceStore, not the React Flow store
+ */
 export const updateEdgesStatus = (
   adapterTypes: ProtocolAdapter[],
   currentEdges: Edge[],

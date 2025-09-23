@@ -1,5 +1,6 @@
 import { HStack } from '@chakra-ui/react'
-import type { FC } from 'react'
+import type { CSSProperties, FC } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMemo } from 'react'
 import {
   BaseEdge,
@@ -10,15 +11,14 @@ import {
   useNodesData,
 } from '@xyflow/react'
 
+import { DataHubNodeType } from '@datahub/types.ts'
 import { getEdgeParams } from '@/modules/Workspace/utils/edge.utils'
-import { useNavigate } from 'react-router-dom'
-import { DataHubNodeType } from '../../../../extensions/datahub/types'
-import { useGetPoliciesMatching } from '../../hooks/useGetPoliciesMatching'
+import ObservabilityEdgeCTA from '@/modules/Workspace/components/edges/ObservabilityEdgeCTA.tsx'
+import { useGetPoliciesMatching } from '@/modules/Workspace/hooks/useGetPoliciesMatching.ts'
 import { NodeTypes } from '../../types'
 import DataPolicyEdgeCTA from './DataPolicyEdgeCTA'
-import ObservabilityEdgeCTA from './ObservabilityEdgeCTA'
 
-export const DynamicEdge: FC<EdgeProps> = ({ id, source, target, markerEnd, style }) => {
+export const DynamicEdge: FC<EdgeProps> = ({ id, source, target, markerEnd, style, selected }) => {
   const sourceNode = useInternalNode(source)
   const targetNode = useInternalNode(target)
   const policies = useGetPoliciesMatching(source)
@@ -64,10 +64,17 @@ export const DynamicEdge: FC<EdgeProps> = ({ id, source, target, markerEnd, styl
     targetY: ty,
   })
 
+  const isInSelectedPath = selected || sourceNode.selected || targetNode.selected
+
+  const getSelectedStyle = (): CSSProperties => {
+    if (isInSelectedPath) return { strokeOpacity: 1, strokeWidth: 3 }
+    return { strokeOpacity: 0.5, strokeWidth: 1 }
+  }
+
   return (
     <>
-      <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
-      {isObservable && (
+      <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={{ ...style, ...getSelectedStyle() }} />
+      {isObservable && isInSelectedPath && (
         <EdgeLabelRenderer>
           <HStack
             sx={{

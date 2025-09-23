@@ -15,8 +15,8 @@ import {
 import type { DataCombining, Instruction } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import { SelectTopic } from '@/components/MQTT/EntityCreatableSelect'
+import { Topic } from '@/components/MQTT/EntityTag.tsx'
 import type { CombinerContext } from '@/modules/Mappings/types'
-
 import CombinedEntitySelect from './CombinedEntitySelect'
 import { CombinedSchemaLoader } from './CombinedSchemaLoader'
 import { AutoMapping } from './components/AutoMapping'
@@ -52,6 +52,8 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
   const hasError = (field?: string[]) => {
     return Boolean(field?.length)
   }
+
+  const isDestinationAsset = formData?.destination.assetId
 
   return (
     <Grid templateColumns="1fr repeat(2, 1px) 1fr" rowGap={4} columnGap={6}>
@@ -135,20 +137,22 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
       <GridItem colSpan={2} data-testid="combining-editor-destination-topic">
         <FormControl isInvalid={hasError(destinationErrors)}>
           <FormLabel>{destTopicOptions.title}</FormLabel>
-          <SelectTopic
-            isMulti={false}
-            isCreatable={true}
-            id="destination"
-            value={formData?.destination?.topic || null}
-            onChange={(topic) => {
-              if (!props.formData) return
+          {!isDestinationAsset && (
+            <SelectTopic
+              isMulti={false}
+              isCreatable={true}
+              id="destination"
+              value={formData?.destination?.topic || null}
+              onChange={(topic) => {
+                if (!props.formData) return
 
-              if (topic && typeof topic === 'string') props.onChange({ ...props.formData, destination: { topic } })
-              else if (!topic) props.onChange({ ...props.formData, destination: { topic: '' } })
-            }}
-          />
+                if (topic && typeof topic === 'string') props.onChange({ ...props.formData, destination: { topic } })
+                else if (!topic) props.onChange({ ...props.formData, destination: { topic: '' } })
+              }}
+            />
+          )}
+          {isDestinationAsset && <Topic tagTitle={formData?.destination?.topic} />}
           {!hasError(destinationErrors) && <FormHelperText>{destTopicOptions.description}</FormHelperText>}
-
           <FormErrorMessage>{destinationErrors}</FormErrorMessage>
         </FormControl>
       </GridItem>
@@ -193,6 +197,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
       <GridItem colSpan={2} data-testid="combining-editor-destination-schema">
         <DestinationSchemaLoader
           isInvalid={hasError(destinationSchemaErrors)}
+          isEditable={!isDestinationAsset}
           title={destSchemaOptions.title}
           description={destSchemaOptions.description}
           formData={props.formData}

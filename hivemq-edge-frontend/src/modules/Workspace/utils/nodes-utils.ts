@@ -1,15 +1,16 @@
-import type { Edge, Node, XYPosition } from '@xyflow/react'
-import { MarkerType, Position } from '@xyflow/react'
 import type { WithCSSVar } from '@chakra-ui/react'
 import type { Dict } from '@chakra-ui/utils'
 import type { GenericObjectType } from '@rjsf/utils'
+import type { Edge, Node, XYPosition } from '@xyflow/react'
+import { MarkerType, Position } from '@xyflow/react'
 
 import type { Adapter, Bridge, Combiner, Listener, ProtocolAdapter } from '@/api/__generated__'
 import { Status } from '@/api/__generated__'
 
 import type { DeviceMetadata, NodeEdgeType } from '../types.ts'
+import type { NodePulseType } from '../types.ts'
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
-import { getBridgeTopics, discoverAdapterTopics } from './topics-utils'
+import { discoverAdapterTopics, getBridgeTopics } from './topics-utils'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 
 export const CONFIG_ADAPTER_WIDTH = 245
@@ -19,6 +20,9 @@ const GLUE_SEPARATOR = 200
 const POS_EDGE: XYPosition = { x: 300, y: 200 }
 const POS_NODE_INC: XYPosition = { x: CONFIG_ADAPTER_WIDTH + POS_SEPARATOR, y: 400 }
 const MAX_ADAPTERS = 10
+
+export const NODE_ASSET_DEFAULT_ID = 'idPulseAssets'
+export const NODE_PULSE_AGENT_DEFAULT_ID = 'idPulse'
 
 export const gluedNodeDefinition: Record<string, [NodeTypes, number, 'target' | 'source']> = {
   [NodeTypes.BRIDGE_NODE]: [NodeTypes.HOST_NODE, -GLUE_SEPARATOR, 'target'],
@@ -297,6 +301,42 @@ export const createCombinerNode = (
   }
 
   return { nodeCombiner, edgeConnector, sourceConnectors }
+}
+
+export const createPulseNode = (theme: Partial<WithCSSVar<Dict>>, positionStorage?: Record<string, XYPosition>) => {
+  const pulseStatus = { connection: Status.connection.UNKNOWN, runtime: Status.runtime.STOPPED }
+
+  const nodePulse: NodePulseType = {
+    id: NODE_PULSE_AGENT_DEFAULT_ID,
+    type: NodeTypes.PULSE_NODE,
+    data: { label: 'Pulse Agent', id: NODE_PULSE_AGENT_DEFAULT_ID },
+    position: positionStorage?.[NODE_PULSE_AGENT_DEFAULT_ID] ?? {
+      x: POS_EDGE.x + POS_NODE_INC.x,
+      y: POS_EDGE.y - POS_NODE_INC.y - GLUE_SEPARATOR,
+    },
+  }
+
+  // TODO[NVL] This connector should only be created if there is no asset mappers created yet
+  const pulseConnector: Edge = {
+    id: `${IdStubs.CONNECTOR}-${NODE_PULSE_AGENT_DEFAULT_ID}-${IdStubs.EDGE_NODE}`,
+    source: NODE_PULSE_AGENT_DEFAULT_ID,
+    target: IdStubs.EDGE_NODE,
+    type: EdgeTypes.DYNAMIC_EDGE,
+    focusable: false,
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: getThemeForStatus(theme, pulseStatus),
+    },
+    animated: false,
+    style: {
+      strokeWidth: 1.5,
+      stroke: getThemeForStatus(theme, pulseStatus),
+    },
+  }
+
+  return { nodePulse, pulseConnector }
 }
 
 export const getDefaultMetricsFor = (node: Node): string[] => {

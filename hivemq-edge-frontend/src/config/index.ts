@@ -27,6 +27,7 @@ interface configType {
   }
 }
 
+/* istanbul ignore next -- @preserve */
 /**
  * @experimental This function is used to determine the base path for the API in production.
  */

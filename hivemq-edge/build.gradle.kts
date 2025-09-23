@@ -194,6 +194,9 @@ dependencies {
     implementation(libs.victools.jsonschema.jackson)
     implementation(libs.json.schema.inferrer)
 
+    // json path
+    implementation(libs.json.path)
+
     // Edge modules
     compileOnly("com.hivemq:hivemq-edge-module-etherip")
     compileOnly("com.hivemq:hivemq-edge-module-plc4x")
@@ -203,6 +206,9 @@ dependencies {
     compileOnly("com.hivemq:hivemq-edge-module-databases")
     compileOnly("com.hivemq:hivemq-edge-module-opcua")
     compileOnly("com.hivemq:hivemq-edge-module-file")
+
+    //FIXME: should be in module instead
+    implementation("com.google.protobuf:protobuf-java:4.29.3")
 }
 
 /* ******************** test ******************** */

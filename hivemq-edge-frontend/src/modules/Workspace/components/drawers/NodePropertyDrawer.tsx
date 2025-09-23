@@ -21,13 +21,14 @@ import {
 import { EditIcon } from '@chakra-ui/icons'
 import { MdOutlineEventNote } from 'react-icons/md'
 
-import type { Adapter, Bridge } from '@/api/__generated__'
+import type { Adapter } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
 import EventLogTable from '@/modules/EventLog/components/table/EventLogTable.tsx'
 import MetricsContainer from '@/modules/Metrics/MetricsContainer.tsx'
 import { ChartType } from '@/modules/Metrics/types.ts'
 
+import type { NodeAdapterType, NodeBridgeType } from '../../types.ts'
 import { NodeTypes } from '../../types.ts'
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
@@ -35,7 +36,7 @@ import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapte
 
 interface NodePropertyDrawerProps {
   nodeId: string
-  selectedNode: Node<Bridge | Adapter>
+  selectedNode: NodeBridgeType | NodeAdapterType
   isOpen: boolean
   onClose: () => void
   onEditEntity: () => void

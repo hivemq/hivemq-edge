@@ -4,13 +4,6 @@ import type { Adapter, ProtocolAdapter } from '@/api/__generated__'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import type { Dispatch, SetStateAction } from 'react'
 
-export enum WorkspaceAdapterCommand {
-  VIEW = 'VIEW',
-  TAGS = 'TAGS',
-  TOPIC_FILTERS = 'TOPIC_FILTERS',
-  MAPPINGS = 'MAPPINGS',
-}
-
 export type SubscriptionType = 'remoteSubscriptions' | 'localSubscriptions'
 
 export interface GenericPanelType<T extends FieldValues> {

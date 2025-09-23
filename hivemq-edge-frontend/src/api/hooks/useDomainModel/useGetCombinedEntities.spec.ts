@@ -19,6 +19,10 @@ const mockEntityReferences: EntityReference[] = [
     id: 'a/topic/+/filter',
     type: EntityType.BRIDGE,
   },
+  {
+    id: 'the.id.of.the.plus.agent',
+    type: EntityType.PULSE_AGENT,
+  },
 ]
 
 describe('useGetCombinedEntities', () => {

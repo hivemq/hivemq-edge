@@ -1,14 +1,15 @@
 import { useMemo } from 'react'
-import type { WidgetProps, RJSFSchema } from '@rjsf/utils'
+import type { RJSFSchema, WidgetProps } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ButtonGroup } from '@chakra-ui/react'
 import { LuTrash } from 'react-icons/lu'
 
 import type { EntityReference } from '@/api/__generated__'
-import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
+import { EntityType } from '@/api/__generated__'
 import IconButton from '@/components/Chakra/IconButton'
-import { EntityRenderer } from './EntityRenderer'
+import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
+import { EntityRenderer } from '@/modules/Mappings/combiner/EntityRenderer.tsx'
 
 export const EntityReferenceTableWidget = (props: WidgetProps<WidgetProps<Array<EntityReference>, RJSFSchema>>) => {
   const { t } = useTranslation()
@@ -27,10 +28,18 @@ export const EntityReferenceTableWidget = (props: WidgetProps<WidgetProps<Array<
         id: 'actions',
         header: t('combiner.schema.sources.table.action'),
         sortingFn: undefined,
-        cell: () => {
+        cell: (info) => {
+          const isPermanent =
+            info.row.original.type === EntityType.PULSE_AGENT || info.row.original.type === EntityType.EDGE_BROKER
           return (
             <ButtonGroup isAttached size="sm">
-              <IconButton aria-label={t('combiner.schema.sources.table.delete')} icon={<LuTrash />} isDisabled={true} />
+              {!isPermanent && (
+                <IconButton
+                  aria-label={t('combiner.schema.sources.table.delete')}
+                  icon={<LuTrash />}
+                  isDisabled={true}
+                />
+              )}
             </ButtonGroup>
           )
         },

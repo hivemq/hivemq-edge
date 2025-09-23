@@ -1,7 +1,7 @@
 import type { MouseEventHandler } from 'react'
 import { type FC, useMemo } from 'react'
 import type { Node } from '@xyflow/react'
-import { useReactFlow } from '@xyflow/react'
+import { useStore, useReactFlow } from '@xyflow/react'
 import { getOutgoers, type NodeProps, type NodeToolbarProps, Position } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Divider, Text, useTheme, useToast } from '@chakra-ui/react'
@@ -14,22 +14,24 @@ import type { Adapter, Bridge, Combiner, EntityReference } from '@/api/__generat
 import { EntityType } from '@/api/__generated__'
 import { useCreateCombiner, useListCombiners } from '@/api/hooks/useCombiners'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes'
+import { useCreateAssetMapper, useListAssetMappers } from '@/api/hooks/useAssetMapper'
 
-import { HqCombiner } from '@/components/Icons'
+import { HqCombiner, HqAssets } from '@/components/Icons'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import { ANIMATION } from '@/modules/Theme/utils.ts'
-import type { NodeAdapterType, NodeDeviceType } from '@/modules/Workspace/types.ts'
+import type { NodeAdapterType, NodeDeviceType, NodePulseType } from '@/modules/Workspace/types.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { createGroup, getGroupBounds } from '@/modules/Workspace/utils/group.utils.ts'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { arrayWithSameObjects } from '@/modules/Workspace/utils/combiner.utils'
+import { resetSelectedNodesState } from '@/modules/Workspace/utils/react-flow.utils.ts'
 
 // TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
-type CombinerEligibleNode = Node<Adapter, NodeTypes.ADAPTER_NODE> | Node<Bridge, NodeTypes.BRIDGE_NODE>
+type CombinerEligibleNode = Node<Adapter, NodeTypes.ADAPTER_NODE> | Node<Bridge, NodeTypes.BRIDGE_NODE> | NodePulseType
 
 type SelectedNodeProps = Pick<NodeProps, 'id' | `dragging`> & Pick<NodeToolbarProps, 'position'>
 interface ContextualToolbarProps extends SelectedNodeProps {
@@ -51,9 +53,14 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const { onInsertGroupNode, nodes, edges } = useWorkspaceStore()
   const theme = useTheme()
   const createCombiner = useCreateCombiner()
+  const createAssetMapper = useCreateAssetMapper()
+  const resetSelectedNodes = useStore(resetSelectedNodesState)
+
   const toast = useToast(BASE_TOAST_OPTION)
   const { data } = useGetAdapterTypes()
   const { data: combiners } = useListCombiners()
+  const { data: mappers } = useListAssetMappers()
+
   const navigate = useNavigate()
   const { fitView, getNodesBounds } = useReactFlow()
 
@@ -62,7 +69,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   }, [nodes])
 
   const topSelectedNode = useMemo(() => {
-    const [firstNode] = selectedNodes.sort((a, b) => {
+    const [firstNode] = selectedNodes.toSorted((a, b) => {
       return a.position.y - b.position.y < 0 ? -1 : 1
     })
 
@@ -95,10 +102,14 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
         return protocol?.capabilities?.includes('COMBINE')
       }
 
-      return node.type === NodeTypes.BRIDGE_NODE
+      return node.type === NodeTypes.BRIDGE_NODE || node.type === NodeTypes.PULSE_NODE
     }) as CombinerEligibleNode[]
     return result.length ? result : undefined
   }, [data?.items, selectedNodes])
+
+  const isAssetManager = useMemo(() => {
+    return selectedCombinerCandidates?.find((e) => e.type === NodeTypes.PULSE_NODE)
+  }, [selectedCombinerCandidates])
 
   const onCreateGroup = () => {
     if (!selectedGroupCandidates) return
@@ -109,26 +120,68 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
     onInsertGroupNode(newGroupNode, newGroupEdge, groupRect)
   }
 
-  const onManageCombiners = () => {
+  const getOptions = (areAllCandidatesConnected: boolean) => ({
+    success: {
+      title: t('combiner.toast.create.title'),
+      description: areAllCandidatesConnected
+        ? t('combiner.toast.create.success')
+        : t('combiner.toast.create.partialSuccess'),
+    },
+    error: { title: t('combiner.toast.create.title'), description: t('combiner.toast.create.error') },
+    loading: { title: t('combiner.toast.create.title'), description: t('combiner.toast.loading') },
+  })
+
+  const onCreateAssetMapper = (links: EntityReference[]) => {
+    const newOrchestratorNodeId = uuidv4()
+
+    const newAssetMapper: Combiner = {
+      id: newOrchestratorNodeId,
+      name: t('pulse.mapper.unnamed'),
+      sources: { items: links },
+      mappings: { items: [] },
+    }
+
+    return createAssetMapper.mutateAsync({ requestBody: newAssetMapper })
+  }
+
+  const onCreateCombiner = (links: EntityReference[]) => {
+    const newOrchestratorNodeId = uuidv4()
+
+    const newCombiner: Combiner = {
+      id: newOrchestratorNodeId,
+      name: t('combiner.unnamed'),
+      sources: { items: links },
+      mappings: { items: [] },
+    }
+    return createCombiner.mutateAsync({ requestBody: newCombiner })
+  }
+
+  const onManageTransformationNode = () => {
     if (!selectedCombinerCandidates) return
     const edgeNode = nodes.find((node) => node.type === NodeTypes.EDGE_NODE)
     if (!edgeNode) return
 
-    const newOrchestratorNodeId = uuidv4()
     const links = selectedCombinerCandidates.map<EntityReference>((node) => {
+      const getType = () => {
+        if (node.type === NodeTypes.ADAPTER_NODE) return EntityType.ADAPTER
+        if (node.type === NodeTypes.BRIDGE_NODE) return EntityType.BRIDGE
+
+        return EntityType.PULSE_AGENT
+      }
+
       const entity: EntityReference = {
-        type: node.type === NodeTypes.ADAPTER_NODE ? EntityType.ADAPTER : EntityType.BRIDGE,
+        type: getType(),
         id: node.data.id,
       }
 
       return entity
     })
 
-    const isCombinerAlreadyDefined = combiners?.items?.find((e) =>
-      arrayWithSameObjects<EntityReference>(links)(e.sources.items)
-    )
+    const isCombinerAlreadyDefined = isAssetManager
+      ? mappers?.items?.find((e) => arrayWithSameObjects<EntityReference>(links)(e.sources.items))
+      : combiners?.items?.find((e) => arrayWithSameObjects<EntityReference>(links)(e.sources.items))
 
-    const isCombinerSourcesAllValid = selectedNodes.length - selectedCombinerCandidates.length === 0
+    const areAllCandidatesConnected = selectedNodes.length - selectedCombinerCandidates.length === 0
 
     if (isCombinerAlreadyDefined) {
       toast({
@@ -139,29 +192,21 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
       })
       const node = nodes.find((e) => e.id === isCombinerAlreadyDefined.id)
       if (node) {
-        fitView({ nodes: [{ id: isCombinerAlreadyDefined.id }], padding: 3, duration: ANIMATION.FIT_VIEW_DURATION_MS })
-        navigate(`combiner/${isCombinerAlreadyDefined.id}`)
+        fitView({
+          nodes: [{ id: isCombinerAlreadyDefined.id }],
+          padding: 3,
+          duration: ANIMATION.FIT_VIEW_DURATION_MS,
+        }).then(() => navigate(`combiner/${isCombinerAlreadyDefined.id}`))
       }
 
       return
     }
 
-    const newCombiner: Combiner = {
-      id: newOrchestratorNodeId,
-      name: t('combiner.unnamed'),
-      sources: { items: links },
-      mappings: { items: [] },
-    }
+    const promise = isAssetManager ? onCreateAssetMapper(links) : onCreateCombiner(links)
 
-    toast.promise(createCombiner.mutateAsync({ requestBody: newCombiner }), {
-      success: {
-        title: t('combiner.toast.create.title'),
-        description: isCombinerSourcesAllValid
-          ? t('combiner.toast.create.success')
-          : t('combiner.toast.create.partialSuccess'),
-      },
-      error: { title: t('combiner.toast.create.title'), description: t('combiner.toast.create.error') },
-      loading: { title: t('combiner.toast.create.title'), description: t('combiner.toast.loading') },
+    toast.promise(promise, getOptions(areAllCandidatesConnected))
+    promise.then(() => {
+      resetSelectedNodes()
     })
   }
 
@@ -186,9 +231,13 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
         <IconButton
           isDisabled={!selectedCombinerCandidates}
           data-testid="node-group-toolbar-combiner"
-          icon={<HqCombiner />}
-          aria-label={t('workspace.toolbar.command.combiner.create')}
-          onClick={onManageCombiners}
+          icon={isAssetManager ? <HqAssets /> : <HqCombiner />}
+          aria-label={
+            isAssetManager
+              ? t('workspace.toolbar.command.assets.create')
+              : t('workspace.toolbar.command.combiner.create')
+          }
+          onClick={onManageTransformationNode}
         />
       </ToolbarButtonGroup>
 

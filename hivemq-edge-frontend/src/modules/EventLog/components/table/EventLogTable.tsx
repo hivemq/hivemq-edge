@@ -12,6 +12,7 @@ import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import { mockEdgeEvent } from '@/api/hooks/useEvents/__handlers__'
 import { useGetEvents } from '@/api/hooks/useEvents/useGetEvents.ts'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
+import type { FilterMetadata } from '@/components/PaginatedTable/types.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 
@@ -40,7 +41,7 @@ const EventLogTable: FC<EventLogTableProps> = ({
   const { data, isLoading, isFetching, error, refetch } = useGetEvents()
 
   const safeData = useMemo<Event[]>(() => {
-    if (!data || !data?.items) return [...mockEdgeEvent(5)]
+    if (!data?.items) return [...mockEdgeEvent(5)]
     if (globalSourceFilter) {
       return data.items
         .filter((e: Event) => globalSourceFilter.includes(e.source?.identifier || ''))
@@ -76,8 +77,12 @@ const EventLogTable: FC<EventLogTableProps> = ({
       },
       {
         accessorKey: 'created',
-        sortType: 'datetime',
         accessorFn: (row) => DateTime.fromISO(row.created).toMillis(),
+        meta: {
+          filterOptions: {
+            filterType: 'datetime',
+          },
+        } as FilterMetadata,
         cell: (info) => (
           <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">
             <DateTimeRenderer date={DateTime.fromMillis(info.getValue() as number)} isApprox />
@@ -97,7 +102,7 @@ const EventLogTable: FC<EventLogTableProps> = ({
       },
       {
         accessorKey: 'source.identifier',
-        sortType: 'alphanumeric',
+        accessorFn: (row) => row.source?.identifier || '',
         header: t('eventLog.table.header.source'),
         cell: (info) => (
           <Skeleton isLoaded={!isLoading}>
@@ -139,34 +144,34 @@ const EventLogTable: FC<EventLogTableProps> = ({
   }
 
   return (
-    <>
-      {variant === 'full' && (
-        <Flex justifyContent="flex-end">
-          <Button
-            isLoading={isFetching}
-            loadingText={t('eventLog.table.cta.refetch')}
-            variant="outline"
-            size="sm"
-            leftIcon={<Icon as={BiRefresh} fontSize={20} />}
-            onClick={() => refetch()}
-            data-testid="eventLog-refetch"
-          >
-            {t('eventLog.table.cta.refetch')}
-          </Button>
-        </Flex>
-      )}
-      <PaginatedTable<Event>
-        aria-label={t('eventLog.title')}
-        data={safeData}
-        columns={displayColumns}
-        enablePaginationGoTo={variant === 'full'}
-        enablePaginationSizes={variant === 'full'}
-        enableColumnFilters={variant === 'full'}
-        // getRowStyles={(row) => {
-        //   return { backgroundColor: theme.colors.blue[50] }
-        // }}
-      />
-    </>
+    <PaginatedTable<Event>
+      aria-label={t('eventLog.title')}
+      data={safeData}
+      columns={displayColumns}
+      enablePaginationGoTo={variant === 'full'}
+      enablePaginationSizes={variant === 'full'}
+      enableColumnFilters={variant === 'full'}
+      // getRowStyles={(row) => {
+      //   return { backgroundColor: theme.colors.blue[50] }
+      // }}
+      customControls={
+        variant === 'full' && (
+          <Flex justifyContent="flex-end">
+            <Button
+              isLoading={isFetching}
+              loadingText={t('eventLog.table.cta.refetch')}
+              variant="outline"
+              size="sm"
+              leftIcon={<Icon as={BiRefresh} fontSize={20} />}
+              onClick={() => refetch()}
+              data-testid="eventLog-refetch"
+            >
+              {t('eventLog.table.cta.refetch')}
+            </Button>
+          </Flex>
+        )
+      }
+    />
   )
 }
 

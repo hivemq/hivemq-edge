@@ -26,6 +26,7 @@ import {
   NodeHost,
   NodeDevice,
   NodeCombiner,
+  NodePulse,
 } from '@/modules/Workspace/components/nodes'
 import { getGluedPosition, gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
@@ -44,6 +45,7 @@ const ReactFlowWrapper = () => {
       [NodeTypes.HOST_NODE]: NodeHost,
       [NodeTypes.DEVICE_NODE]: NodeDevice,
       [NodeTypes.COMBINER_NODE]: NodeCombiner,
+      [NodeTypes.PULSE_NODE]: NodePulse,
     }),
     []
   )

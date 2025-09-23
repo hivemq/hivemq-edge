@@ -5,7 +5,7 @@ import { formatTopicString } from '@/components/MQTT/topic-utils.ts'
 import MappingBadge from './MappingBadge.tsx'
 import { SelectEntityType } from '../../../../components/MQTT/types'
 
-describe('TopicsContainer', () => {
+describe('MappingBadge', () => {
   beforeEach(() => {
     cy.viewport(400, 400)
   })
@@ -31,6 +31,26 @@ describe('TopicsContainer', () => {
 
     cy.getByTestId('topics-show-more').should('not.exist')
     cy.getByTestId('topic-wrapper').find('svg').should('have.attr', 'aria-label', 'Tag')
+  })
+
+  it('should render properly all topic filters', () => {
+    cy.mountWithProviders(<MappingBadge destinations={['my/first/tag']} type={SelectEntityType.TOPIC_FILTER} />)
+
+    cy.getByTestId('topic-wrapper').should('have.length', 1)
+    cy.getByTestId('topic-wrapper').eq(0).should('contain.text', formatTopicString('my/first/tag'))
+
+    cy.getByTestId('topics-show-more').should('not.exist')
+    cy.getByTestId('topic-wrapper').find('svg').should('have.attr', 'aria-label', 'Topic Filter')
+  })
+
+  it('should render properly all assets', () => {
+    cy.mountWithProviders(<MappingBadge destinations={['my/first/tag']} type={SelectEntityType.PULSE_ASSET} />)
+
+    cy.getByTestId('topic-wrapper').should('have.length', 1)
+    cy.getByTestId('topic-wrapper').eq(0).should('contain.text', formatTopicString('my/first/tag'))
+
+    cy.getByTestId('topics-show-more').should('not.exist')
+    cy.getByTestId('topic-wrapper').find('svg').should('have.attr', 'aria-label', 'Asset')
   })
 
   it('should render properly a show more if too many topics', () => {

@@ -4,7 +4,7 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
-import { handlers } from './__handlers__'
+import { handlerCapabilities, handlers, MOCK_CAPABILITIES } from './__handlers__'
 import { useGetCapabilities } from '@/api/hooks/useFrontendServices/useGetCapabilities.ts'
 
 describe('useGetCapabilities', () => {
@@ -13,7 +13,7 @@ describe('useGetCapabilities', () => {
   })
 
   it('should load the data', async () => {
-    server.use(...handlers)
+    server.use(...handlers, ...handlerCapabilities(MOCK_CAPABILITIES))
 
     const { result } = renderHook(useGetCapabilities, { wrapper })
     await waitFor(() => {
@@ -30,26 +30,10 @@ describe('useGetCapabilities', () => {
         displayName: 'Data Hub for HiveMQ Edge',
         id: 'data-hub',
       }),
-    ])
-  })
-
-  it('should load the data', async () => {
-    server.use(...handlers)
-
-    const { result } = renderHook(useGetCapabilities, { wrapper })
-    await waitFor(() => {
-      expect(result.current.isLoading).toBeFalsy()
-      expect(result.current.isSuccess).toBeTruthy()
-    })
-    expect(result.current.data?.items).toStrictEqual([
-      expect.objectContaining({
-        displayName: 'Persistent Data for MQTT traffic',
-        id: 'mqtt-persistence',
-      }),
 
       expect.objectContaining({
-        displayName: 'Data Hub for HiveMQ Edge',
-        id: 'data-hub',
+        displayName: 'Pulse Asset Management',
+        id: 'pulse-asset-management',
       }),
     ])
   })

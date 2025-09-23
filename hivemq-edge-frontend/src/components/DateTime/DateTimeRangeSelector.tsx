@@ -10,13 +10,14 @@ import Option from './components/Option.tsx'
 import { makeDefaultRangeOption } from './utils/range-option.utils.ts'
 
 interface DateTimeRangeSelectorProps {
+  id: string
   min?: DateTime
   max?: DateTime
   value?: DateTime
   setFilterValue?: (value: number[] | undefined) => void
 }
 
-const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = ({ min, max, setFilterValue }) => {
+const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = ({ id, min, max, setFilterValue }) => {
   const { t } = useTranslation('components')
   const [options, setOptions] = useState<RangeOption[]>([])
 
@@ -60,6 +61,8 @@ const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = ({ min, max, setFi
       aria-label={t('DateTimeRangeSelector.ariaLabel')}
       isClearable={true}
       isMulti={false}
+      inputId={id}
+      instanceId={id}
       components={{
         DropdownIndicator: null,
         Option,

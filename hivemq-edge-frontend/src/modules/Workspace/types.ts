@@ -1,5 +1,5 @@
 import type { Edge, Node, OnEdgesChange, OnNodesChange, NodeAddChange, EdgeAddChange, Rect } from '@xyflow/react'
-import type { Adapter, Bridge, Combiner, Listener, ProtocolAdapter } from '@/api/__generated__'
+import type { Adapter, Bridge, Combiner, Listener, ProtocolAdapter, PulseStatus } from '@/api/__generated__'
 
 export type NodeAdapterType = Node<Adapter, NodeTypes.ADAPTER_NODE>
 export type NodeDeviceType = Node<DeviceMetadata, NodeTypes.DEVICE_NODE>
@@ -9,6 +9,8 @@ export type NodeCombinerType = Node<Combiner, NodeTypes.COMBINER_NODE>
 export type NodeListenerType = Node<Listener, NodeTypes.LISTENER_NODE>
 export type NodeEdgeType = Node<{ label: string }, NodeTypes.EDGE_NODE>
 export type NodeHostType = Node<{ label: string }, NodeTypes.HOST_NODE>
+export type NodePulseType = Node<{ label: string; id: string; status?: PulseStatus }, NodeTypes.PULSE_NODE>
+export type NodeAssetsType = Node<{ label: string; id: string }, NodeTypes.ASSETS_NODE>
 
 export interface EdgeFlowOptions {
   showTopics: boolean
@@ -35,6 +37,8 @@ export enum NodeTypes {
   HOST_NODE = 'HOST_NODE',
   DEVICE_NODE = 'DEVICE_NODE',
   COMBINER_NODE = 'COMBINER_NODE',
+  PULSE_NODE = 'PULSE_NODE',
+  ASSETS_NODE = 'ASSETS_NODE',
 }
 
 export enum EdgeTypes {
@@ -95,4 +99,12 @@ export interface TopicTreeMetadata {
 
 export type DeviceMetadata = ProtocolAdapter & {
   sourceAdapterId: string
+}
+
+export enum WorkspaceNavigationCommand {
+  VIEW = 'VIEW',
+  TAGS = 'TAGS',
+  TOPIC_FILTERS = 'TOPIC_FILTERS',
+  MAPPINGS = 'MAPPINGS',
+  ASSET_MAPPER = 'ASSET_MAPPER',
 }

@@ -15,10 +15,12 @@
  */
 package com.hivemq.configuration.service;
 
+import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
+import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import org.jetbrains.annotations.NotNull;
@@ -87,6 +89,10 @@ public interface ConfigurationService {
     @NotNull ProtocolAdapterExtractor protocolAdapterExtractor();
 
     @NotNull DataCombiningExtractor dataCombiningExtractor();
+
+    @NotNull AssetMappingExtractor assetMappingExtractor();
+
+    @NotNull PulseExtractor pulseExtractor();
 
     @NotNull UnsExtractor unsExtractor();
 

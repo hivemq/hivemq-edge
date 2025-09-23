@@ -22,7 +22,9 @@ public enum EntityType {
     ADAPTER,
     DEVICE,
     BRIDGE,
-    EDGE_BROKER;
+    EDGE_BROKER,
+    PULSE_AGENT,
+    ;
 
     public static @NotNull EntityType fromModel(@NotNull final com.hivemq.edge.api.model.EntityType type) {
         switch (type) {
@@ -37,6 +39,9 @@ public enum EntityType {
             }
             case EDGE_BROKER -> {
                 return EDGE_BROKER;
+            }
+            case  PULSE_AGENT -> {
+                return PULSE_AGENT;
             }
         }
         throw new IllegalArgumentException();
@@ -55,6 +60,9 @@ public enum EntityType {
             }
             case EDGE_BROKER -> {
                 return com.hivemq.edge.api.model.EntityType.EDGE_BROKER;
+            }
+            case PULSE_AGENT -> {
+                return com.hivemq.edge.api.model.EntityType.PULSE_AGENT;
             }
         }
         throw new IllegalArgumentException();

@@ -48,7 +48,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
     name: type, // unique name for your Field Array
   })
   const getRulesForProperty = useValidationRules()
-  const hasPersistence = useGetCapability(Capability.id.MQTT_PERSISTENCE)
+  const { data: hasPersistence } = useGetCapability(Capability.id.MQTT_PERSISTENCE)
   const isPersistEnabled = form.watch('persist')
 
   const {

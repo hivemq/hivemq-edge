@@ -8,6 +8,7 @@ import { HStack, Skeleton, Text } from '@chakra-ui/react'
 import type { PolicySchema, SchemaList } from '@/api/__generated__'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
+import type { FilterMetadata } from '@/components/PaginatedTable/types.ts'
 import { downloadJSON } from '@/utils/download.utils.ts'
 
 import { useDeleteSchema } from '@datahub/api/hooks/DataHubSchemasService/useDeleteSchema.ts'
@@ -83,7 +84,11 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
       },
       {
         accessorKey: 'createdAt',
-        sortType: 'datetime',
+        meta: {
+          filterOptions: {
+            filterType: 'datetime',
+          },
+        } as FilterMetadata,
         accessorFn: (row) => (row.createdAt ? DateTime.fromISO(row.createdAt).toMillis() : undefined),
         cell: (info) => (
           <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">

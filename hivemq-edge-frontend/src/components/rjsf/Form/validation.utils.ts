@@ -1,4 +1,6 @@
 import { customizeValidator } from '@rjsf/validator-ajv8'
+import { parseJWT } from '@/api/utils.ts'
+import i18n from '@/config/i18n.config.ts'
 
 // No exposed from '@rjsf/validator-ajv8'
 export interface ErrorObject<K extends string = string, P = Record<string, unknown>, S = unknown> {
@@ -12,8 +14,6 @@ export interface ErrorObject<K extends string = string, P = Record<string, unkno
   parentSchema?: unknown
   data?: unknown
 }
-
-import i18n from '@/config/i18n.config.ts'
 
 // TODO[NVL] Initially crafted as /^[^+#$]*$/; is $ allowed?
 export const validationTopic = (data: string): string | undefined => {
@@ -106,6 +106,11 @@ export const validationTopicFilter = (topic: string): string | undefined => {
 // TODO[NVL] Currently like topic but what about the + and # chars?
 export const validationTag = validationTopic
 
+export const validationJWT = (token: string) => {
+  if (parseJWT(token) === null) return i18n.t('rjsf.customFormats.validation.noJWTFormat', { ns: 'components' })
+  return undefined
+}
+
 export const customLocalizer = (errors?: null | ErrorObject[]) => {
   if (!errors) return
 
@@ -121,6 +126,9 @@ export const customLocalizer = (errors?: null | ErrorObject[]) => {
     if (error.schema === 'mqtt-tag') {
       error.message = validationTag(error.data as string)
     }
+    if (error.schema === 'jwt') {
+      error.message = validationJWT(error.data as string)
+    }
   }
 }
 
@@ -135,6 +143,7 @@ export const customFormatsValidator = customizeValidator(
       'mqtt-topic': (topic) => validationTopic(topic) === undefined,
       'mqtt-tag': (tag) => validationTag(tag) === undefined,
       'mqtt-topic-filter': (topicFilter) => validationTopicFilter(topicFilter) === undefined,
+      jwt: (topic) => validationJWT(topic) === undefined,
     },
   },
   customLocalizer
