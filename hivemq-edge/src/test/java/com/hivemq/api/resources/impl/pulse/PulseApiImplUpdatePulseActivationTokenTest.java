@@ -16,6 +16,9 @@
 
 package com.hivemq.api.resources.impl.pulse;
 
+import com.hivemq.api.errors.InternalServerError;
+import com.hivemq.api.errors.pulse.ActivationTokenInvalidError;
+import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
 import com.hivemq.edge.api.model.PulseActivationToken;
 import com.hivemq.pulse.status.Status;
 import jakarta.ws.rs.core.Response;
@@ -33,6 +36,7 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
         when(statusProvider.activatePulse(anyString())).thenThrow(new RuntimeException("Test exception"));
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("1234567890"))) {
             assertThat(response.getStatus()).isEqualTo(500);
+            assertThat(response.getEntity()).isInstanceOf(InternalServerError.class);
         }
     }
 
@@ -41,9 +45,11 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
         when(statusProvider.activatePulse(anyString())).thenReturn(false);
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken(""))) {
             assertThat(response.getStatus()).isEqualTo(422);
+            assertThat(response.getEntity()).isInstanceOf(ActivationTokenInvalidError.class);
         }
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("123"))) {
             assertThat(response.getStatus()).isEqualTo(422);
+            assertThat(response.getEntity()).isInstanceOf(ActivationTokenInvalidError.class);
         }
     }
 
@@ -66,6 +72,7 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
                 List.of()));
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("1234567890"))) {
             assertThat(response.getStatus()).isEqualTo(400);
+            assertThat(response.getEntity()).isInstanceOf(PulseAgentDeactivatedError.class);
         }
     }
 
@@ -77,6 +84,7 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
                 List.of()));
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("1234567890"))) {
             assertThat(response.getStatus()).isEqualTo(500);
+            assertThat(response.getEntity()).isInstanceOf(InternalServerError.class);
         }
     }
 }

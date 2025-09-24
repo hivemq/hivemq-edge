@@ -16,6 +16,9 @@
 
 package com.hivemq.api.resources.impl.pulse;
 
+import com.hivemq.api.errors.InternalServerError;
+import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
+import com.hivemq.api.errors.pulse.PulseAgentNotConnectedError;
 import com.hivemq.edge.api.model.ManagedAsset;
 import com.hivemq.edge.api.model.ManagedAssetList;
 import com.hivemq.pulse.asset.PulseAgentAsset;
@@ -41,6 +44,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
                 List.of()));
         try (final Response response = pulseApi.getManagedAssets()) {
             assertThat(response.getStatus()).isEqualTo(400);
+            assertThat(response.getEntity()).isInstanceOf(PulseAgentDeactivatedError.class);
         }
     }
 
@@ -51,6 +55,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
                 List.of()));
         try (final Response response = pulseApi.getManagedAssets()) {
             assertThat(response.getStatus()).isEqualTo(500);
+            assertThat(response.getEntity()).isInstanceOf(InternalServerError.class);
         }
     }
 
@@ -61,6 +66,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
                 List.of()));
         try (final Response response = pulseApi.getManagedAssets()) {
             assertThat(response.getStatus()).isEqualTo(503);
+            assertThat(response.getEntity()).isInstanceOf(PulseAgentNotConnectedError.class);
         }
     }
 
@@ -71,6 +77,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
                 List.of()));
         try (final Response response = pulseApi.getManagedAssets()) {
             assertThat(response.getStatus()).isEqualTo(500);
+            assertThat(response.getEntity()).isInstanceOf(InternalServerError.class);
         }
     }
 
@@ -99,7 +106,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
                 .description("A test asset")
                 .topic("test/topic")
                 .schema("{}")
-                .mapping(PulseAgentAssetMapping.builder().status(PulseAgentAssetMappingStatus.UNMAPPED).build())
+                .mapping(PulseAgentAssetMapping.builder().build())
                 .build();
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
         try (final Response response = pulseApi.getManagedAssets()) {
@@ -117,6 +124,9 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
                     expectedAsset.getSchema());
             assertThat(asset.getMapping()).isNotNull();
             assertThat(asset.getMapping().getMappingId()).isNull();
+            assertThat(asset.getMapping()
+                    .getStatus()).isEqualTo(PulseAgentAssetMappingStatusConverter.INSTANCE.toRestEntity(
+                    PulseAgentAssetMappingStatus.UNMAPPED));
             assertThat(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(asset.getMapping()
                     .getStatus())).isEqualTo(expectedAsset.getMapping().getStatus());
         }
@@ -128,12 +138,16 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
                 Status.ConnectionStatus.CONNECTED,
                 List.of()));
         final UUID id = UUID.randomUUID();
+        final UUID mappingId = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder().id(id)
                 .name("Test Asset")
                 .description("A test asset")
                 .topic("test/topic")
                 .schema("{}")
-                .mapping(PulseAgentAssetMapping.builder().id(id).status(PulseAgentAssetMappingStatus.STREAMING).build())
+                .mapping(PulseAgentAssetMapping.builder()
+                        .id(mappingId)
+                        .status(PulseAgentAssetMappingStatus.STREAMING)
+                        .build())
                 .build();
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
         try (final Response response = pulseApi.getManagedAssets()) {
@@ -150,7 +164,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
             assertThat(PulseAgentAssetSchemaConverter.INSTANCE.toInternalEntity(asset.getSchema())).isEqualTo(
                     expectedAsset.getSchema());
             assertThat(asset.getMapping()).isNotNull();
-            assertThat(asset.getMapping().getMappingId()).isEqualTo(id);
+            assertThat(asset.getMapping().getMappingId()).isEqualTo(mappingId);
             assertThat(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(asset.getMapping()
                     .getStatus())).isEqualTo(expectedAsset.getMapping().getStatus());
         }

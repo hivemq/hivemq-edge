@@ -16,22 +16,18 @@
 
 package com.hivemq.api.errors.pulse;
 
+import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.ProblemDetails;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.UUID;
 
-public class InvalidManagedAssetMappingIdError extends ProblemDetails {
-    public InvalidManagedAssetMappingIdError(final @NotNull UUID id) {
-        this(id.toString());
-    }
-
-    public InvalidManagedAssetMappingIdError(final @NotNull String id) {
-        super("InvalidManagedAssetMappingIdError",
-                "Invalid Managed Asset Mapping ID",
-                "The mapping ID of the managed asset '" + id + "' is invalid.",
+public class InvalidDataIdentifierReferenceTypeForAssetMapperError extends ProblemDetails {
+    public InvalidDataIdentifierReferenceTypeForAssetMapperError(final @NotNull DataIdentifierReference.Type type) {
+        super("InvalidDataIdentifierReferenceTypeForAssetMapperError",
+                "Invalid Data Identifier Reference Type for Asset Mapper",
+                "The data identifier type '" + type.name() + "' for asset mapper is invalid.",
                 HttpStatus.BAD_REQUEST_400,
                 List.of());
     }

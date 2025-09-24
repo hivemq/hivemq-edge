@@ -16,6 +16,10 @@
 
 package com.hivemq.api.resources.impl.pulse;
 
+import com.hivemq.api.errors.ConfigWritingDisabled;
+import com.hivemq.api.errors.pulse.InvalidManagedAssetMappingIdError;
+import com.hivemq.api.errors.pulse.ManagedAssetAlreadyExistsError;
+import com.hivemq.api.errors.pulse.ManagedAssetNotFoundError;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.edge.api.model.AssetMapping;
 import com.hivemq.edge.api.model.ManagedAsset;
@@ -24,8 +28,6 @@ import com.hivemq.pulse.asset.PulseAgentAssetMapping;
 import com.hivemq.pulse.asset.PulseAgentAssetMappingStatus;
 import com.hivemq.pulse.converters.PulseAgentAssetConverter;
 import com.hivemq.pulse.converters.PulseAgentAssetMappingConverter;
-import com.hivemq.pulse.converters.PulseAgentAssetMappingStatusConverter;
-import com.hivemq.pulse.converters.PulseAgentAssetSchemaConverter;
 import com.hivemq.pulse.status.Status;
 import jakarta.ws.rs.core.Response;
 import org.jetbrains.annotations.NotNull;
@@ -57,6 +59,26 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
                 .mapping(AssetMapping.builder().status(AssetMapping.StatusEnum.DRAFT).build())
                 .build())) {
             assertThat(response.getStatus()).isEqualTo(403);
+            assertThat(response.getEntity()).isInstanceOf(ConfigWritingDisabled.class);
+        }
+    }
+
+    @Test
+    public void whenMappingIdIsNull_thenReturnsInvalidManagedAssetMappingIdError() {
+        when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
+                Status.ConnectionStatus.CONNECTED,
+                List.of()));
+        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
+        try (final Response response = pulseApi.addManagedAsset(ManagedAsset.builder()
+                .id(UUID.randomUUID())
+                .name("Test Asset")
+                .description("A test asset")
+                .topic("test/topic")
+                .schema("{}")
+                .mapping(AssetMapping.builder().status(AssetMapping.StatusEnum.DRAFT).build())
+                .build())) {
+            assertThat(response.getStatus()).isEqualTo(400);
+            assertThat(response.getEntity()).isInstanceOf(InvalidManagedAssetMappingIdError.class);
         }
     }
 
@@ -72,9 +94,37 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
                 .description("A test asset")
                 .topic("test/topic")
                 .schema("{}")
-                .mapping(AssetMapping.builder().status(AssetMapping.StatusEnum.DRAFT).build())
+                .mapping(AssetMapping.builder()
+                        .mappingId(UUID.randomUUID())
+                        .status(AssetMapping.StatusEnum.DRAFT)
+                        .build())
                 .build())) {
             assertThat(response.getStatus()).isEqualTo(404);
+            assertThat(response.getEntity()).isInstanceOf(ManagedAssetNotFoundError.class);
+        }
+    }
+
+    @Test
+    public void whenMappingIdExists_thenReturnsInvalidManagedAssetMappingIdError() {
+        when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
+                Status.ConnectionStatus.CONNECTED,
+                List.of()));
+        final UUID id = UUID.randomUUID();
+        final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder().id(id)
+                .name("Test Asset")
+                .description("A test asset")
+                .topic("test/topic")
+                .schema("{}")
+                .mapping(PulseAgentAssetMapping.builder()
+                        .id(UUID.randomUUID())
+                        .status(PulseAgentAssetMappingStatus.STREAMING)
+                        .build())
+                .build();
+        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
+        try (final Response response = pulseApi.addManagedAsset(PulseAgentAssetConverter.INSTANCE.toRestEntity(
+                expectedAsset))) {
+            assertThat(response.getStatus()).isEqualTo(400);
+            assertThat(response.getEntity()).isInstanceOf(InvalidManagedAssetMappingIdError.class);
         }
     }
 
@@ -89,12 +139,16 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
                 .description("A test asset")
                 .topic("test/topic")
                 .schema("{}")
-                .mapping(PulseAgentAssetMapping.builder().id(id).status(PulseAgentAssetMappingStatus.STREAMING).build())
+                .mapping(PulseAgentAssetMapping.builder()
+                        .id(UUID.randomUUID())
+                        .status(PulseAgentAssetMappingStatus.STREAMING)
+                        .build())
                 .build();
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
         try (final Response response = pulseApi.addManagedAsset(PulseAgentAssetConverter.INSTANCE.toRestEntity(
-                expectedAsset))) {
+                expectedAsset.withMapping(expectedAsset.getMapping().withId(UUID.randomUUID()))))) {
             assertThat(response.getStatus()).isEqualTo(409);
+            assertThat(response.getEntity()).isInstanceOf(ManagedAssetAlreadyExistsError.class);
         }
     }
 
