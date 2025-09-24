@@ -119,14 +119,14 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
           title,
           description: isNew ? t('pulse.mapper.toast.create.success') : t('pulse.mapper.toast.update.success'),
         },
-        error: (e) => {
-          combinerLog('Error publishing the mapper', e)
+        error: (error) => {
+          combinerLog('Error publishing the mapper', error)
           return {
             title,
             description: (
               <>
                 <Text>{isNew ? t('pulse.mapper.toast.create.error') : t('pulse.mapper.toast.update.error')}</Text>
-                {e.message && <Text>{e.message}</Text>}
+                {error.message && <Text>{error.message}</Text>}
               </>
             ),
           }
