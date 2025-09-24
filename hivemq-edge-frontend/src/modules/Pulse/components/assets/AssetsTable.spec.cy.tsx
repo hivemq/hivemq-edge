@@ -7,6 +7,7 @@ import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import {
   MOCK_PULSE_EXT_ASSET_MAPPERS_LIST,
+  MOCK_PULSE_EXT_ASSET_UNMAPPED,
   MOCK_PULSE_EXT_ASSETS_LIST,
 } from '@/api/hooks/usePulse/__handlers__/pulse-mocks.ts'
 import AssetsTable from '@/modules/Pulse/components/assets/AssetsTable.tsx'
@@ -242,9 +243,10 @@ describe('AssetsTable', () => {
 
     describe('Mapping', () => {
       it('should handle mapping in an existing mapper', () => {
-        cy.intercept('PUT', 'api/v1/management/pulse/managed-assets/*', (req) => {
-          req.reply({ statusCode: 404 })
-        })
+        cy.intercept<ManagedAsset>('PUT', 'api/v1/management/pulse/managed-assets/*', (req) => {
+          const asset = req.body
+          req.reply({ body: { updated: asset.id }, statusCode: 200 })
+        }).as('updateAssetRequest')
 
         cy.intercept<Combiner>('PUT', 'api/v1/management/pulse/asset-mappers/*', (req) => {
           const combiner = req.body
@@ -274,6 +276,10 @@ describe('AssetsTable', () => {
           expect(e.response?.body).to.deep.equal({ updated: 'e9af7f82-aaaa-4d07-8c0f-e4591148af19' })
         })
 
+        cy.wait('@updateAssetRequest').then((e) => {
+          expect(e.response?.body).to.deep.equal({ updated: MOCK_PULSE_EXT_ASSET_UNMAPPED.id })
+        })
+
         cy.get('[role="status"] > div').should('have.attr', 'data-status', 'success')
         cy.get('[role="status"]').should('contain.text', "We've successfully updated the asset mapper for you.")
 
@@ -289,9 +295,10 @@ describe('AssetsTable', () => {
       })
 
       it('should handle mapping in a new mapper', () => {
-        cy.intercept('PUT', 'api/v1/management/pulse/managed-assets/*', (req) => {
-          req.reply({ statusCode: 404 })
-        })
+        cy.intercept<ManagedAsset>('PUT', 'api/v1/management/pulse/managed-assets/*', (req) => {
+          const asset = req.body
+          req.reply({ body: { updated: asset.id }, statusCode: 200 })
+        }).as('updateAssetRequest')
 
         cy.intercept<Combiner>('POST', 'api/v1/management/pulse/asset-mappers', (req) => {
           req.reply({ body: { created: 'new-UUID' }, statusCode: 200 })
@@ -321,6 +328,10 @@ describe('AssetsTable', () => {
 
         cy.wait('@updateMapperRequest').then((e) => {
           expect(e.response?.body).to.deep.equal({ created: 'new-UUID' })
+        })
+
+        cy.wait('@updateAssetRequest').then((e) => {
+          expect(e.response?.body).to.deep.equal({ updated: MOCK_PULSE_EXT_ASSET_UNMAPPED.id })
         })
 
         cy.get('[role="status"] > div').should('have.attr', 'data-status', 'success')
