@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
-import type { ApiError } from '@/api/__generated__'
-import { type DomainTagList } from '@/api/__generated__'
+import type { ApiError, DomainTagList } from '@/api/__generated__'
 import { QUERY_KEYS } from '@/api/utils.ts'
 
 export const useGetDomainTags = (adapterId: string) => {
