@@ -32,7 +32,6 @@ const ManagedAssetDrawer: FC = () => {
     if (error || (!error && listAssets && !selectedAsset)) {
       errorToast(
         {
-          duration: 60000,
           id: assetId,
           title: t('pulse.error.asset.title'),
           description: t('pulse.error.asset.loading'),
