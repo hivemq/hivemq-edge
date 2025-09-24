@@ -18,19 +18,22 @@ package com.hivemq.api.resources.impl.pulse;
 
 import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
-import com.hivemq.api.errors.pulse.AssetMapperSourcesAndMappingsSizeMismatchError;
-import com.hivemq.api.errors.pulse.InvalidDataIdentifierReferenceTypeForAssetMapperError;
+import com.hivemq.api.errors.pulse.EmptyMappingsForAssetMapperError;
+import com.hivemq.api.errors.pulse.EmptySourcesForAssetMapperError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetMappingIdError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetSchemaError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetTopicError;
 import com.hivemq.api.errors.pulse.ManagedAssetNotFoundError;
+import com.hivemq.api.errors.pulse.MissingEntityTypePulseAgentForAssetMapperError;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingStatus;
 import com.hivemq.edge.api.model.Combiner;
 import com.hivemq.edge.api.model.DataCombining;
+import com.hivemq.edge.api.model.DataCombiningList;
 import com.hivemq.edge.api.model.DataIdentifierReference;
+import com.hivemq.edge.api.model.EntityReferenceList;
 import com.hivemq.edge.api.model.EntityType;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
@@ -73,6 +76,28 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
         try (final Response response = pulseApi.addAssetMapper(combiner)) {
             assertThat(response.getStatus()).isEqualTo(404);
             assertThat(response.getEntity()).isInstanceOf(ManagedAssetNotFoundError.class);
+        }
+    }
+
+    @Test
+    public void whenSourcesAreEmpty_thenReturnsEmptySourcesForAssetMapperError() {
+        final Combiner combiner =
+                createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET).sources(
+                        EntityReferenceList.builder().build()).mappings(DataCombiningList.builder().build());
+        try (final Response response = pulseApi.addAssetMapper(combiner)) {
+            assertThat(response.getStatus()).isEqualTo(400);
+            assertThat(response.getEntity()).isInstanceOf(EmptySourcesForAssetMapperError.class);
+        }
+    }
+
+    @Test
+    public void whenMappingsAreEmpty_thenReturnsEmptyMappingsForAssetMapperError() {
+        final Combiner combiner =
+                createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET).mappings(
+                        DataCombiningList.builder().build());
+        try (final Response response = pulseApi.addAssetMapper(combiner)) {
+            assertThat(response.getStatus()).isEqualTo(400);
+            assertThat(response.getEntity()).isInstanceOf(EmptyMappingsForAssetMapperError.class);
         }
     }
 
@@ -158,23 +183,7 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
     }
 
     @Test
-    public void whenEntityTypeIsNotPulseAgentAndTypeIsPulseAsset_thenReturnsInvalidDataIdentifierReferenceTypeForAssetMapperError() {
-        Stream.of(EntityType.values())
-                .filter(entityType -> entityType != EntityType.PULSE_AGENT)
-                .forEach(entityType -> {
-                    final Combiner combiner = createCombiner(entityType, DataIdentifierReference.TypeEnum.PULSE_ASSET);
-                    when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
-                    when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
-                    try (final Response response = pulseApi.addAssetMapper(combiner)) {
-                        assertThat(response.getStatus()).isEqualTo(400);
-                        assertThat(response.getEntity()).isInstanceOf(
-                                InvalidDataIdentifierReferenceTypeForAssetMapperError.class);
-                    }
-                });
-    }
-
-    @Test
-    public void whenEntityTypeIsNotPulseAgentAndTypeIsNotPulseAsset_thenReturnsOK() {
+    public void whenEntityTypeIsNotPulseAgentAndTypeIsNotPulseAsset_thenReturnsMissingEntityTypePulseAgentForAssetMapperError() {
         Stream.of(EntityType.values())
                 .filter(entityType -> entityType != EntityType.PULSE_AGENT)
                 .forEach(entityType -> Stream.of(DataIdentifierReference.TypeEnum.values())
@@ -184,23 +193,11 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
                             when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
                             when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
                             try (final Response response = pulseApi.addAssetMapper(combiner)) {
-                                assertThat(response.getStatus()).isEqualTo(200);
+                                assertThat(response.getStatus()).isEqualTo(400);
+                                assertThat(response.getEntity()).isInstanceOf(
+                                        MissingEntityTypePulseAgentForAssetMapperError.class);
                             }
                         }));
-    }
-
-    @Test
-    public void whenSizesMismatch_thenReturnsAssetMapperSourcesAndMappingsSizeMismatchError() {
-        final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
-        final List<DataCombining> mappings = new ArrayList<>(combiner.getMappings().getItems());
-        mappings.addAll(combiner.getMappings().getItems());
-        combiner.getMappings().setItems(mappings);
-        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
-        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
-        try (final Response response = pulseApi.addAssetMapper(combiner)) {
-            assertThat(response.getStatus()).isEqualTo(400);
-            assertThat(response.getEntity()).isInstanceOf(AssetMapperSourcesAndMappingsSizeMismatchError.class);
-        }
     }
 
     @Test

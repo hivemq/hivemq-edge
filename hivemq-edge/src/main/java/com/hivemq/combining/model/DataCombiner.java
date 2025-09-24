@@ -24,11 +24,12 @@ import com.hivemq.edge.api.model.EntityReferenceList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public record DataCombiner(UUID id, String name, String description, List<EntityReference> entityReferences,
                            List<DataCombining> dataCombinings) {
@@ -82,15 +83,8 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
         return new DataCombinerEntity(id, name, description, sources, combining);
     }
 
-    public @NotNull List<DataCombining> getPulseAssetDataCombinings() {
-        return IntStream.range(0, Math.min(entityReferences.size(), dataCombinings.size()))
-                .filter(i -> entityReferences.get(i).type() == EntityType.PULSE_AGENT)
-                .mapToObj(i -> dataCombinings().get(i))
-                .toList();
-    }
-
-    public @NotNull Set<String> getPulseAssetMappingIdSet() {
-        return getPulseAssetDataCombinings().stream()
+    public @NotNull Set<String> getMappingIdSet() {
+        return dataCombinings().stream()
                 .map(DataCombining::id)
                 .map(UUID::toString)
                 .collect(Collectors.toSet());

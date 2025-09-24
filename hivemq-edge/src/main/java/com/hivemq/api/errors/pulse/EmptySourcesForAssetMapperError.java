@@ -21,11 +21,11 @@ import com.hivemq.http.error.ProblemDetails;
 
 import java.util.List;
 
-public class AssetMapperSourcesAndMappingsSizeMismatchError extends ProblemDetails {
-    public AssetMapperSourcesAndMappingsSizeMismatchError(final int sourcesSize, final int mappingsSize) {
-        super("AssetMapperSourcesAndMappingsSizeMismatchError",
-                "Asset Mapper Sources and Mappings Size Mismatch",
-                "The sources size " + sourcesSize + " and mappings size " + mappingsSize + " do not match.",
+public class EmptySourcesForAssetMapperError extends ProblemDetails {
+    public EmptySourcesForAssetMapperError() {
+        super("EmptySourcesForAssetMapperError",
+                "Empty Sources for Asset Mapper",
+                "The sources for the asset mapper is empty.",
                 HttpStatus.BAD_REQUEST_400,
                 List.of());
     }
