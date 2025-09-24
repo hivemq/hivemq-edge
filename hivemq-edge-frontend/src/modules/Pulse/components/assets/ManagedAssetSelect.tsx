@@ -75,6 +75,7 @@ const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, mappings, .
 
   const handleAddAsset = () => {
     onChange?.(selection)
+    setSelection(null)
   }
 
   return (
