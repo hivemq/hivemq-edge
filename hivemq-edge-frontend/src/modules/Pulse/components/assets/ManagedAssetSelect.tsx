@@ -1,10 +1,10 @@
 import type { FC } from 'react'
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { GroupBase, SingleValue, SingleValueProps, OptionProps } from 'chakra-react-select'
-import { createFilter, chakraComponents, Select } from 'chakra-react-select'
 import type { BoxProps } from '@chakra-ui/react'
 import { Box, HStack, Text, VStack } from '@chakra-ui/react'
+import { chakraComponents, createFilter, Select } from 'chakra-react-select'
+import type { GroupBase, OptionProps, SingleValue, SingleValueProps } from 'chakra-react-select'
 import { LuPlus } from 'react-icons/lu'
 
 import type { DataCombining, ManagedAsset } from '@/api/__generated__'
@@ -63,7 +63,12 @@ const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, mappings, .
   }, [mappings])
 
   const filteredData = useMemo(() => {
-    return data?.items || []
+    if (!data?.items) return []
+    return data.items.filter(
+      // Only shows unmapped or draft assets
+      (asset) =>
+        asset.mapping.status === AssetMapping.status.UNMAPPED || asset.mapping.status === AssetMapping.status.DRAFT
+    )
   }, [data?.items])
 
   const [selection, setSelection] = useState<ManagedAsset | null>(null)
@@ -91,7 +96,10 @@ const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, mappings, .
           }}
           isClearable
           placeholder={t('pulse.assets.selector.placeholder')}
-          isOptionDisabled={(asset) => asset.mapping.status === AssetMapping.status.STREAMING}
+          isOptionDisabled={(asset) => {
+            // Assets currently in mappings cannot be added again
+            return allAssetIds.includes(asset.id)
+          }}
           filterOption={createFilter({
             stringify: (option) => {
               return `${option.data.name || ''}${option.data.description || ''}`
