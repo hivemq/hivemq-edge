@@ -77,13 +77,30 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   }
 
   const handleConfirmWizard = (assetMapper: Combiner, isNew: boolean = false) => {
+    if (!selectedAssetOperation || !selectedAssetOperation.asset) return combinerLog('Cannot find the asset')
+
+    const promises: Promise<unknown>[] = []
+
     const mapperPromise = isNew
       ? createAssetMapper.mutateAsync({ requestBody: assetMapper })
       : updateAssetMapper.mutateAsync({ combinerId: assetMapper.id, requestBody: assetMapper })
+    promises.push(mapperPromise)
+
+    const assetPromise = updateManagedAsset.mutateAsync({
+      assetId: selectedAssetOperation.assetId,
+      requestBody: {
+        ...selectedAssetOperation.asset,
+        mapping: {
+          status: AssetMapping.status.DRAFT,
+          mappingId: selectedAssetOperation.asset.mapping.mappingId,
+        },
+      },
+    })
+    promises.push(assetPromise)
 
     const title = isNew ? t('pulse.mapper.toast.create.title') : t('pulse.mapper.toast.update.title')
     toast.promise(
-      mapperPromise.then(() => {
+      Promise.all(promises).then(() => {
         setSelectedAssetOperation(undefined)
         onClose()
         if (assetMapper)
@@ -102,14 +119,14 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
           title,
           description: isNew ? t('pulse.mapper.toast.create.success') : t('pulse.mapper.toast.update.success'),
         },
-        error: (e) => {
-          combinerLog('Error publishing the mapper', e)
+        error: (error) => {
+          combinerLog('Error publishing the mapper', error)
           return {
             title,
             description: (
               <>
                 <Text>{isNew ? t('pulse.mapper.toast.create.error') : t('pulse.mapper.toast.update.error')}</Text>
-                {e.message && <Text>{e.message}</Text>}
+                {error.message && <Text>{error.message}</Text>}
               </>
             ),
           }

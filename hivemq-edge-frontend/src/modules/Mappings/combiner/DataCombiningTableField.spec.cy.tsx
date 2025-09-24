@@ -1,6 +1,7 @@
 import { CustomFormTesting } from '@/__test-utils__/rjsf/CustomFormTesting'
 import type { DataCombining } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
+import { MOCK_ASSET_MAPPER } from '@/api/hooks/useAssetMapper/__handlers__'
 import { mockCombinerMapping } from '@/api/hooks/useCombiners/__handlers__'
 import { mockAdapter_OPCUA, mockProtocolAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { combinerMappingJsonSchema } from '@/api/schemas/combiner-mapping.json-schema'
@@ -183,5 +184,41 @@ describe('DataCombiningTableField', () => {
       />
     )
     cy.checkAccessibility()
+  })
+
+  describe('Asset Mapper', () => {
+    it('should render properly', () => {
+      cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter_OPCUA] })
+      cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter_OPCUA] })
+
+      const onChange = cy.stub()
+      const onSubmit = cy.stub()
+      const onError = cy.stub()
+
+      cy.mountWithProviders(
+        <CustomFormTesting
+          schema={mockDataCombiningTableSchema}
+          uiSchema={mockDataCombiningTableUISchema}
+          formData={{
+            items: [mockPrimary],
+          }}
+          formContext={{ entities: MOCK_ASSET_MAPPER.sources.items }}
+          onChange={onChange}
+          onSubmit={onSubmit}
+          onError={onError}
+        />
+      )
+
+      cy.get('form table tfoot tr td')
+        .eq(2)
+        .within(() => {
+          cy.get('button').should('not.exist')
+        })
+
+      cy.getByTestId('root').within(() => {
+        cy.get('#combiner-asset-select').should('have.text', 'Select an asset to map...')
+        cy.getByTestId('combiner-mappings-add-asset').should('have.attr', 'aria-label', 'Add the asset to the mappings')
+      })
+    })
   })
 })
