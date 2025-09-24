@@ -77,13 +77,30 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
   }
 
   const handleConfirmWizard = (assetMapper: Combiner, isNew: boolean = false) => {
+    if (!selectedAssetOperation || !selectedAssetOperation.asset) return combinerLog('Cannot find the asset')
+
+    const promises: Promise<unknown>[] = []
+
     const mapperPromise = isNew
       ? createAssetMapper.mutateAsync({ requestBody: assetMapper })
       : updateAssetMapper.mutateAsync({ combinerId: assetMapper.id, requestBody: assetMapper })
+    promises.push(mapperPromise)
+
+    const assetPromise = updateManagedAsset.mutateAsync({
+      assetId: selectedAssetOperation.assetId,
+      requestBody: {
+        ...selectedAssetOperation.asset,
+        mapping: {
+          status: AssetMapping.status.DRAFT,
+          mappingId: selectedAssetOperation.asset.mapping.mappingId,
+        },
+      },
+    })
+    promises.push(assetPromise)
 
     const title = isNew ? t('pulse.mapper.toast.create.title') : t('pulse.mapper.toast.update.title')
     toast.promise(
-      mapperPromise.then(() => {
+      Promise.all(promises).then(() => {
         setSelectedAssetOperation(undefined)
         onClose()
         if (assetMapper)
