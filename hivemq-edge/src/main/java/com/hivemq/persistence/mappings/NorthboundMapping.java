@@ -35,7 +35,6 @@ public class NorthboundMapping implements PollingContext {
     private final @NotNull String topic;
     private final @NotNull String tagName;
     private final int maxQoS;
-    private final @NotNull MessageHandlingOptions messageHandlingOptions;
     private final @NotNull Boolean includeTagNames;
     private final @NotNull Boolean includeTimestamp;
     private final @NotNull List<MqttUserProperty> userProperties;
@@ -45,7 +44,6 @@ public class NorthboundMapping implements PollingContext {
             final @NotNull String tagName,
             final @NotNull String topic,
             final int maxQoS,
-            final @Nullable MessageHandlingOptions messageHandlingOptions,
             final @Nullable Boolean includeTagNames,
             final @Nullable Boolean includeTimestamp,
             final @Nullable List<MqttUserProperty> userProperties,
@@ -53,8 +51,6 @@ public class NorthboundMapping implements PollingContext {
         this.tagName = tagName;
         this.topic = topic;
         this.maxQoS = maxQoS;
-        this.messageHandlingOptions =
-                messageHandlingOptions != null ? messageHandlingOptions : MessageHandlingOptions.MQTTMessagePerTag;
         this.includeTagNames = includeTagNames != null && includeTagNames;
         this.includeTimestamp = includeTimestamp == null || includeTimestamp; // default is true
         this.userProperties = userProperties != null ? userProperties : new ArrayList<>();
@@ -69,7 +65,6 @@ public class NorthboundMapping implements PollingContext {
         return new NorthboundMapping(model.getTagName(),
                 model.getTopic(),
                 model.getMaxQoS() == null ? DEFAULT_QOS : model.getMaxQoS().ordinal(),
-                MessageHandlingOptions.MQTTMessagePerTag,
                 model.getIncludeTagNames() != null && model.getIncludeTagNames(),
                 model.getIncludeTimestamp() == null || model.getIncludeTimestamp(),
                 model.getUserProperties() != null ?
@@ -95,7 +90,7 @@ public class NorthboundMapping implements PollingContext {
 
     @Override
     public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
-        return messageHandlingOptions;
+        return MessageHandlingOptions.MQTTMessagePerTag;
     }
 
     @Override
@@ -124,7 +119,6 @@ public class NorthboundMapping implements PollingContext {
             return Objects.equals(tagName, that.tagName) &&
                     Objects.equals(topic, that.topic) &&
                     maxQoS == that.maxQoS &&
-                    messageHandlingOptions == that.messageHandlingOptions &&
                     Objects.equals(includeTagNames, that.includeTagNames) &&
                     Objects.equals(includeTimestamp, that.includeTimestamp) &&
                     Objects.equals(userProperties, that.userProperties) &&
@@ -139,7 +133,6 @@ public class NorthboundMapping implements PollingContext {
         return Objects.hash(tagName,
                 topic,
                 maxQoS,
-                messageHandlingOptions,
                 includeTagNames,
                 includeTimestamp,
                 userProperties,
@@ -154,10 +147,7 @@ public class NorthboundMapping implements PollingContext {
                 '\'' +
                 ", tagName='" +
                 tagName +
-                '\'' +
-                ", messageHandlingOptions=" +
-                messageHandlingOptions +
-                ", includeTagNames=" +
+                "', includeTagNames=" +
                 includeTagNames +
                 ", includeTimestamp=" +
                 includeTimestamp +

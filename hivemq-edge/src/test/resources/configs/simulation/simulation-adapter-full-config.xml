@@ -18,7 +18,6 @@
                     <topic>my/topic</topic>
                     <maxQos>1</maxQos>
                     <tagName>tag</tagName>
-                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                     <includeTagNames>true</includeTagNames>
                     <includeTimestamp>false</includeTimestamp>
                     <mqttUserProperties>
@@ -32,7 +31,6 @@
                     <topic>my/topic/2</topic>
                     <maxQos>1</maxQos>
                     <tagName>tag</tagName>
-                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                     <includeTagNames>true</includeTagNames>
                     <includeTimestamp>false</includeTimestamp>
                     <mqttUserProperties>

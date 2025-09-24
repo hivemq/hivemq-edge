@@ -100,7 +100,7 @@ class SimulationProtocolAdapterConfigTest {
         assertThat(protocolAdapterEntity.getNorthboundMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getTopic()).isEqualTo("my/topic");
             assertThat(subscription.getMaxQoS()).isEqualTo(1);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
+            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.isIncludeTimestamp()).isFalse();
             assertThat(subscription.isIncludeTagNames()).isTrue();
 
@@ -111,7 +111,7 @@ class SimulationProtocolAdapterConfigTest {
         }, subscription -> {
             assertThat(subscription.getTopic()).isEqualTo("my/topic/2");
             assertThat(subscription.getMaxQoS()).isEqualTo(1);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
+            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.isIncludeTimestamp()).isFalse();
             assertThat(subscription.isIncludeTagNames()).isTrue();
 

@@ -26,7 +26,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.ClearSystemProperties;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -45,9 +44,6 @@ public class ConfigurationFileProviderTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
-    @Rule
-    public final ClearSystemProperties myPropertyIsCleared = new ClearSystemProperties(SystemProperties.HIVEMQ_HOME);
-
     @Mock
     private Appender mockAppender;
 
@@ -62,6 +58,8 @@ public class ConfigurationFileProviderTest {
 
     @Before
     public void setUp() throws Exception {
+        final var props = new uk.org.webcompere.systemstubs.properties.SystemProperties();
+        props.remove(SystemProperties.HIVEMQ_HOME);
 
         MockitoAnnotations.initMocks(this);
 

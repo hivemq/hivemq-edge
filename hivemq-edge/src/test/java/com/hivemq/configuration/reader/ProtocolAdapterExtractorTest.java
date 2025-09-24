@@ -15,7 +15,6 @@
  */
 package com.hivemq.configuration.reader;
 
-import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
@@ -107,49 +106,6 @@ public class ProtocolAdapterExtractorTest {
                   </protocol-adapters>
                 </hivemq>
                 """.replace("${maxQoS}", maxQoS));
-        if (valid) {
-            assertThat(configFileReader.applyConfig()).isNotNull();
-        } else {
-            assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
-        }
-    }
-
-    @ParameterizedTest
-    @CsvSource({"true,MQTTMessagePerTag", "true,MQTTMessagePerSubscription", "false,abc"})
-    public void whenNorthboundMappingMessageHandlingOptionsIsProvided_thenApplyConfigShouldWorkAsExpected(
-            final boolean valid,
-            final @NotNull String messageHandlingOptions)
-            throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
-                <hivemq>
-                  <protocol-adapters>
-                    <protocol-adapter>
-                      <adapterId>simInvalid</adapterId>
-                      <protocolId>simulation</protocolId>
-                      <configVersion>1</configVersion>
-                      <config>
-                        <pollingIntervalMillis>123</pollingIntervalMillis>
-                        <timeout>10000</timeout>
-                        <minDelay>0</minDelay>
-                        <maxDelay>0</maxDelay>
-                      </config>
-                      <northboundMappings>
-                        <northboundMapping>
-                          <topic>MTConnect/my-steams</topic>
-                          <tagName>tag1</tagName>
-                          <messageHandlingOptions>${messageHandlingOptions}</messageHandlingOptions>
-                        </northboundMapping>
-                      </northboundMappings>
-                      <tags>
-                        <tag>
-                          <name>tag1</name>
-                          <description>description1</description>
-                        </tag>
-                      </tags>
-                    </protocol-adapter>
-                  </protocol-adapters>
-                </hivemq>
-                """.replace("${messageHandlingOptions}", messageHandlingOptions));
         if (valid) {
             assertThat(configFileReader.applyConfig()).isNotNull();
         } else {
@@ -414,14 +370,8 @@ public class ProtocolAdapterExtractorTest {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
-        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity("tagName",
-                "topic",
-                1,
-                MessageHandlingOptions.MQTTMessagePerTag,
-                false,
-                true,
-                List.of(),
-                100L);
+        final NorthboundMappingEntity northboundMappingEntity =
+                new NorthboundMappingEntity("tagName", "topic", 1, false, true, List.of(), 100L);
         final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
                 "protocolId",
                 1,
@@ -438,14 +388,8 @@ public class ProtocolAdapterExtractorTest {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
-        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity("tagName",
-                "topic",
-                1,
-                MessageHandlingOptions.MQTTMessagePerTag,
-                false,
-                true,
-                List.of(),
-                100L);
+        final NorthboundMappingEntity northboundMappingEntity =
+                new NorthboundMappingEntity("tagName", "topic", 1, false, true, List.of(), 100L);
         final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
                 "protocolId",
                 1,
@@ -466,14 +410,8 @@ public class ProtocolAdapterExtractorTest {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
-        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity(tagName,
-                topic,
-                1,
-                MessageHandlingOptions.MQTTMessagePerTag,
-                false,
-                true,
-                List.of(),
-                100L);
+        final NorthboundMappingEntity northboundMappingEntity =
+                new NorthboundMappingEntity(tagName, topic, 1, false, true, List.of(), 100L);
         final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
                 "protocolId",
                 1,

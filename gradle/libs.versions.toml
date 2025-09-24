@@ -42,16 +42,16 @@ mqtt-sn-codec = "838f51d691"
 mssql="12.8.1.jre11"
 mtconnect-protocol = "1.0.0"
 mariadb= "3.5.3"
-netty = "4.2.5.Final"
+netty = "4.2.6.Final"
 json = "20250107"
 pmd = "6.55.0"
 postgresql = "42.7.3"
 shrinkwrap = "1.2.6"
 slf4j = "2.0.17"
 spotBugs = "4.9.4"
-stefanbirkner-systemrules = "1.19.0"
 swagger-annotations = "2.2.34"
 swagger-jaxrs = "1.6.16"
+systemstubs = "2.1.8"
 victools = "4.38.0"
 wiremock = "3.0.1"
 zeroallocationhashing = "0.27ea0"
@@ -147,9 +147,9 @@ shrinkwrap-api = { module = "org.jboss.shrinkwrap:shrinkwrap-api", version.ref =
 shrinkwrap-impl = { module = "org.jboss.shrinkwrap:shrinkwrap-impl-base", version.ref = "shrinkwrap" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jultoslf4j = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
-stefanbirkner-systemrules = { module = "com.github.stefanbirkner:system-rules", version.ref = "stefanbirkner-systemrules" }
 swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger-annotations" }
 swagger-jaxrs = { module = "io.swagger:swagger-jaxrs", version.ref = "swagger-jaxrs" }
+systemstubs = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "systemstubs" }
 victools-jsonschema-generator = { module = "com.github.victools:jsonschema-generator", version.ref = "victools" }
 victools-jsonschema-jackson = { module = "com.github.victools:jsonschema-module-jackson", version.ref = "victools" }
 wiremock-jre8-standalone = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version.ref = "wiremock" }

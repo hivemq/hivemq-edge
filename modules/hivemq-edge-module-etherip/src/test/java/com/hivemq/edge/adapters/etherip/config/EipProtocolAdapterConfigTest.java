@@ -54,8 +54,7 @@ class EipProtocolAdapterConfigTest {
         final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
 
         final EipSpecificAdapterConfig config = (EipSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
+        assertThat(protocolAdapterConfig.missingTags()).isEmpty();
 
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -66,13 +65,11 @@ class EipProtocolAdapterConfigTest {
         assertThat(config.getEipToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
         assertThat(config.getEipToMqttConfig().getPublishChangedDataOnly()).isFalse();
 
-        assertThat(protocolAdapterConfig.getTags())
-                .allSatisfy(t -> {
-                    assertThat(t)
-                            .isInstanceOf(EipTag.class)
-                            .extracting("name", "description", "definition")
-                            .contains("tag-name", "description", new EipTagDefinition("addressy", EipDataType.BOOL));
-                });
+        assertThat(protocolAdapterConfig.getTags()).allSatisfy(t -> {
+            assertThat(t).isInstanceOf(EipTag.class)
+                    .extracting("name", "description", "definition")
+                    .contains("tag-name", "description", new EipTagDefinition("addressy", EipDataType.BOOL));
+        });
     }
 
     @Test
@@ -81,8 +78,7 @@ class EipProtocolAdapterConfigTest {
         final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
 
         final EipSpecificAdapterConfig config = (EipSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
+        assertThat(protocolAdapterConfig.missingTags()).isEmpty();
 
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -93,33 +89,22 @@ class EipProtocolAdapterConfigTest {
         assertThat(config.getEipToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
         assertThat(config.getEipToMqttConfig().getPublishChangedDataOnly()).isTrue();
 
-        assertThat(protocolAdapterConfig.getTags())
-                .allSatisfy(t -> {
-                    assertThat(t)
-                            .isInstanceOf(EipTag.class)
-                            .extracting("name", "description", "definition")
-                            .contains("tag-name", "description", new EipTagDefinition("addressy", EipDataType.BOOL));
-                });
+        assertThat(protocolAdapterConfig.getTags()).allSatisfy(t -> {
+            assertThat(t).isInstanceOf(EipTag.class)
+                    .extracting("name", "description", "definition")
+                    .contains("tag-name", "description", new EipTagDefinition("addressy", EipDataType.BOOL));
+        });
     }
-
 
 
     @Test
     public void unconvertConfigObject_full_valid() {
-        final EipSpecificAdapterConfig adapterConfig = new EipSpecificAdapterConfig(
-                14,
-                "my.host.com",
-                15,
-                16,
-                new EipToMqttConfig(
-                        12,
-                        13,
-                        true));
+        final EipSpecificAdapterConfig adapterConfig =
+                new EipSpecificAdapterConfig(14, "my.host.com", 15, 16, new EipToMqttConfig(12, 13, true));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
-        final EipProtocolAdapterFactory eipProtocolAdapterFactory =
-                new EipProtocolAdapterFactory(mockInput);
+        final EipProtocolAdapterFactory eipProtocolAdapterFactory = new EipProtocolAdapterFactory(mockInput);
         final Map<String, Object> config = eipProtocolAdapterFactory.unconvertConfigObject(mapper, adapterConfig);
 
         assertThat(config.get("port")).isEqualTo(14);
@@ -135,8 +120,8 @@ class EipProtocolAdapterConfigTest {
     }
 
 
-    private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource) throws
-            URISyntaxException {
+    private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource)
+            throws URISyntaxException {
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
@@ -159,9 +144,8 @@ class EipProtocolAdapterConfigTest {
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(mock(SystemInformation.class), new ConfigurationFile(configFile), List.of());
+        final ConfigFileReaderWriter readerWriter =
+                new ConfigFileReaderWriter(mock(SystemInformation.class), new ConfigurationFile(configFile), List.of());
         return readerWriter.applyConfig();
     }
-
-
 }
