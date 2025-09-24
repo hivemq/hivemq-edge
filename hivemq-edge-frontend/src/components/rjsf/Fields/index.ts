@@ -1,5 +1,3 @@
-import CompactArrayField from './CompactArrayField.tsx'
-import { InternalNotice } from './InternalNotice.tsx'
-import { MqttTransformationField } from './MqttTransformationField.tsx'
-
-export { CompactArrayField, InternalNotice, MqttTransformationField }
+export { default as CompactArrayField } from './CompactArrayField.tsx'
+export { InternalNotice } from './InternalNotice.tsx'
+export { MqttTransformationField } from './MqttTransformationField.tsx'
