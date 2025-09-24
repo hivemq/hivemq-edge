@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public record DataCombiner(UUID id, String name, String description, List<EntityReference> entityReferences,
                            List<DataCombining> dataCombinings) {
@@ -82,12 +83,9 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
     }
 
     public @NotNull List<DataCombining> getPulseAssetDataCombinings() {
-        final Set<String> idSet = entityReferences().stream()
-                .filter(entityReference -> entityReference.type() == EntityType.PULSE_AGENT)
-                .map(EntityReference::id)
-                .collect(Collectors.toSet());
-        return dataCombinings().stream()
-                .filter(dataCombining -> idSet.contains(dataCombining.id().toString()))
+        return IntStream.range(0, Math.min(entityReferences.size(), dataCombinings.size()))
+                .filter(i -> entityReferences.get(i).type() == EntityType.PULSE_AGENT)
+                .mapToObj(i -> dataCombinings().get(i))
                 .toList();
     }
 
