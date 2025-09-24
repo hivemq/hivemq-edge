@@ -16,6 +16,7 @@
 
 package com.hivemq.api.resources.impl.pulse;
 
+import com.hivemq.api.errors.pulse.AssetMapperNotFoundError;
 import com.hivemq.api.resources.impl.PulseApiImpl;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.edge.api.model.Combiner;
@@ -33,10 +34,11 @@ import static org.mockito.Mockito.when;
 
 public class PulseApiImplGetAssetMapperInstructionsTest extends AbstractPulseApiImplTest {
     @Test
-    public void whenCombinerNotFound_thenReturnsDataCombinerNotFoundError() {
+    public void whenCombinerNotFound_thenReturnsAssetMapperNotFoundError() {
         when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         try (final Response response = pulseApi.getAssetMapperInstructions(UUID.randomUUID(), UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(404);
+            assertThat(response.getEntity()).isInstanceOf(AssetMapperNotFoundError.class);
         }
     }
 

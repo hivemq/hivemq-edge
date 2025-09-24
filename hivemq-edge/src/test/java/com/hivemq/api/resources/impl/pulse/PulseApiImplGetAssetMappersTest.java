@@ -36,6 +36,10 @@ public class PulseApiImplGetAssetMappersTest extends AbstractPulseApiImplTest {
         when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of());
         try (final Response response = pulseApi.getAssetMappers()) {
             assertThat(response.getStatus()).isEqualTo(200);
+            assertThat(response.getEntity()).isInstanceOf(CombinerList.class);
+            final CombinerList actualCombiners = (CombinerList) response.getEntity();
+            assertThat(actualCombiners).isNotNull();
+            assertThat(actualCombiners.getItems()).isEmpty();
         }
     }
 
@@ -52,6 +56,7 @@ public class PulseApiImplGetAssetMappersTest extends AbstractPulseApiImplTest {
             assertThat(response.getStatus()).isEqualTo(200);
             assertThat(response.getEntity()).isInstanceOf(CombinerList.class);
             final CombinerList actualCombiners = (CombinerList) response.getEntity();
+            assertThat(actualCombiners).isNotNull();
             assertThat(actualCombiners.getItems().size()).isEqualTo(expectedCombiners.size());
             assertThat(actualCombiners.getItems()).isEqualTo(expectedCombiners);
         }
