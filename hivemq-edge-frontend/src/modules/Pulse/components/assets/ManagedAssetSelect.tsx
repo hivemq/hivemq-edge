@@ -1,22 +1,23 @@
 import type { FC } from 'react'
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { GroupBase, SingleValue, SingleValueProps, OptionProps } from 'chakra-react-select'
-import { createFilter, chakraComponents, Select } from 'chakra-react-select'
 import type { BoxProps } from '@chakra-ui/react'
 import { Box, HStack, Text, VStack } from '@chakra-ui/react'
+import { chakraComponents, createFilter, Select } from 'chakra-react-select'
+import type { GroupBase, OptionProps, SingleValue, SingleValueProps } from 'chakra-react-select'
 import { LuPlus } from 'react-icons/lu'
 
-import type { ManagedAsset } from '@/api/__generated__'
+import type { DataCombining, ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
 import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 
 interface ManagedAssetSelectProps extends Omit<BoxProps, 'onChange'> {
   onChange?: (value: SingleValue<ManagedAsset>) => void
+  mappings: DataCombining[]
 }
 
-const SingleValue = (props: SingleValueProps<ManagedAsset>) => (
+const SingleValueComponent = (props: SingleValueProps<ManagedAsset>) => (
   <chakraComponents.SingleValue {...props}>
     <Text data-testid="combiner-asset-selected-value">{props.data.name}</Text>
   </chakraComponents.SingleValue>
@@ -53,18 +54,28 @@ const Option =
     </chakraComponents.Option>
   )
 
-const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, ...boxProps }) => {
+const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, mappings, ...boxProps }) => {
   const { t } = useTranslation()
   const { isLoading, data } = useListManagedAssets()
 
+  const allAssetIds = useMemo(() => {
+    return mappings.map((e) => e.destination.assetId)
+  }, [mappings])
+
   const filteredData = useMemo(() => {
-    return data?.items || []
+    if (!data?.items) return []
+    return data.items.filter(
+      // Only shows unmapped or draft assets
+      (asset) =>
+        asset.mapping.status === AssetMapping.status.UNMAPPED || asset.mapping.status === AssetMapping.status.DRAFT
+    )
   }, [data?.items])
 
   const [selection, setSelection] = useState<ManagedAsset | null>(null)
 
   const handleAddAsset = () => {
     onChange?.(selection)
+    setSelection(null)
   }
 
   return (
@@ -86,14 +97,17 @@ const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, ...boxProps
           }}
           isClearable
           placeholder={t('pulse.assets.selector.placeholder')}
-          isOptionDisabled={(asset) => asset.mapping.status === AssetMapping.status.STREAMING}
+          isOptionDisabled={(asset) => {
+            // Assets currently in mappings cannot be added again
+            return allAssetIds.includes(asset.id)
+          }}
           filterOption={createFilter({
             stringify: (option) => {
               return `${option.data.name || ''}${option.data.description || ''}`
             },
           })}
           components={{
-            SingleValue: SingleValue,
+            SingleValue: SingleValueComponent,
             Option: Option(selection),
           }}
         />
