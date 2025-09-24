@@ -54,7 +54,6 @@
     "@nivo/sankey": "0.88.0",
     "@nivo/sunburst": "0.88.0",
     "@nivo/tree": "0.88.0",
-    "@redocly/cli": "1.33.1",
     "@rjsf/chakra-ui": "5.24.13",
     "@rjsf/core": "5.24.13",
     "@rjsf/utils": "5.24.13",
@@ -167,7 +166,7 @@
     "stylelint-config-standard-scss": "14.0.0",
     "typescript": "5.7.3",
     "typescript-eslint": "8.32.1",
-    "vite": "6.2.7",
+    "vite": "6.3.6",
     "vite-plugin-istanbul": "6.0.2",
     "vitest": "3.1.1"
   },
