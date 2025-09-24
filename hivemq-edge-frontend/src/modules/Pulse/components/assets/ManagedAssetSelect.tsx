@@ -7,13 +7,14 @@ import type { BoxProps } from '@chakra-ui/react'
 import { Box, HStack, Text, VStack } from '@chakra-ui/react'
 import { LuPlus } from 'react-icons/lu'
 
-import type { ManagedAsset } from '@/api/__generated__'
+import type { DataCombining, ManagedAsset } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
 import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 
 interface ManagedAssetSelectProps extends Omit<BoxProps, 'onChange'> {
   onChange?: (value: SingleValue<ManagedAsset>) => void
+  mappings: DataCombining[]
 }
 
 const SingleValue = (props: SingleValueProps<ManagedAsset>) => (
@@ -53,9 +54,13 @@ const Option =
     </chakraComponents.Option>
   )
 
-const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, ...boxProps }) => {
+const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, mappings, ...boxProps }) => {
   const { t } = useTranslation()
   const { isLoading, data } = useListManagedAssets()
+
+  const allAssetIds = useMemo(() => {
+    return mappings.map((e) => e.destination.assetId)
+  }, [mappings])
 
   const filteredData = useMemo(() => {
     return data?.items || []

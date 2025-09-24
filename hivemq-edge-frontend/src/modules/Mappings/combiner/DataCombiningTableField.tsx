@@ -178,7 +178,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
         enablePaginationSizes={false}
         enableColumnFilters={false}
       />
-      {isAssetManager && <ManagedAssetSelect onChange={handleAddAsset} />}
+      {isAssetManager && <ManagedAssetSelect mappings={props.formData || []} onChange={handleAddAsset} />}
 
       {selectedItem != undefined && props.formData?.[selectedItem] && (
         <DataCombiningEditorDrawer
