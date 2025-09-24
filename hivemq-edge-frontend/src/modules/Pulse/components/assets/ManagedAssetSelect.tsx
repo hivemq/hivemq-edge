@@ -17,7 +17,7 @@ interface ManagedAssetSelectProps extends Omit<BoxProps, 'onChange'> {
   mappings: DataCombining[]
 }
 
-const SingleValue = (props: SingleValueProps<ManagedAsset>) => (
+const SingleValueComponent = (props: SingleValueProps<ManagedAsset>) => (
   <chakraComponents.SingleValue {...props}>
     <Text data-testid="combiner-asset-selected-value">{props.data.name}</Text>
   </chakraComponents.SingleValue>
@@ -107,7 +107,7 @@ const ManagedAssetSelect: FC<ManagedAssetSelectProps> = ({ onChange, mappings, .
             },
           })}
           components={{
-            SingleValue: SingleValue,
+            SingleValue: SingleValueComponent,
             Option: Option(selection),
           }}
         />
