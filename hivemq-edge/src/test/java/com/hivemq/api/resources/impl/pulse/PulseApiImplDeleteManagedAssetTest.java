@@ -80,7 +80,7 @@ public class PulseApiImplDeleteManagedAssetTest extends AbstractPulseApiImplTest
                         .build())
                 .build();
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
-        when(assetMappingExtractor.getPulseAssetMappingIdSet()).thenReturn(Set.of(mappingId.toString()));
+        when(assetMappingExtractor.getMappingIdSet()).thenReturn(Set.of(mappingId.toString()));
         try (final Response response = pulseApi.deleteManagedAsset(id)) {
             assertThat(response.getStatus()).isEqualTo(400);
             assertThat(response.getEntity()).isInstanceOf(AssetMapperReferencedError.class);

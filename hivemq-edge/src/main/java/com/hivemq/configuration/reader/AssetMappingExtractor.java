@@ -17,9 +17,9 @@ package com.hivemq.configuration.reader;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.combining.model.DataCombiner;
-import com.hivemq.combining.model.EntityType;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.combining.DataCombinerEntity;
+import com.hivemq.configuration.entity.combining.DataCombiningEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +30,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class AssetMappingExtractor
         implements ReloadableExtractor<List<@NotNull DataCombinerEntity>, List<@NotNull DataCombiner>> {
@@ -136,14 +135,11 @@ public class AssetMappingExtractor
         config.getAssetMapperEntities().addAll(this.config);
     }
 
-    public @NotNull Set<String> getPulseAssetMappingIdSet() {
+    public @NotNull Set<String> getMappingIdSet() {
         return config.stream()
-                .flatMap(dataCombinerEntity -> IntStream.range(0,
-                                Math.min(dataCombinerEntity.getEntityReferenceEntities().size(),
-                                        dataCombinerEntity.getDataCombiningEntities().size()))
-                        .filter(i -> dataCombinerEntity.getEntityReferenceEntities().get(i).getType() ==
-                                EntityType.PULSE_AGENT)
-                        .mapToObj(i -> dataCombinerEntity.getDataCombiningEntities().get(i).getId()))
+                .flatMap(dataCombinerEntity -> dataCombinerEntity.getDataCombiningEntities()
+                        .stream()
+                        .map(DataCombiningEntity::getId))
                 .map(UUID::toString)
                 .collect(Collectors.toSet());
     }
