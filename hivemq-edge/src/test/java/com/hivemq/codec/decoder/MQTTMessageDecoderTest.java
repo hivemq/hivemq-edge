@@ -40,7 +40,6 @@ public class MQTTMessageDecoderTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         channel = new EmbeddedChannel(TestMqttDecoder.create());
         clientConnection = new ClientConnection(channel, null);
         // setting version to fake "connected" state
