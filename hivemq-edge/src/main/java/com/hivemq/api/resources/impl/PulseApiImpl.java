@@ -25,19 +25,19 @@ import com.hivemq.api.errors.pulse.ActivationTokenInvalidError;
 import com.hivemq.api.errors.pulse.ActivationTokenNotDeletedError;
 import com.hivemq.api.errors.pulse.AssetMapperNotFoundError;
 import com.hivemq.api.errors.pulse.AssetMapperReferencedError;
-import com.hivemq.api.errors.pulse.AssetMapperSourcesAndMappingsSizeMismatchError;
+import com.hivemq.api.errors.pulse.EmptyMappingsForAssetMapperError;
+import com.hivemq.api.errors.pulse.EmptySourcesForAssetMapperError;
 import com.hivemq.api.errors.pulse.InvalidDataIdentifierReferenceForAssetMapperError;
-import com.hivemq.api.errors.pulse.InvalidDataIdentifierReferenceTypeForAssetMapperError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetMappingIdError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetSchemaError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetTopicError;
 import com.hivemq.api.errors.pulse.ManagedAssetAlreadyExistsError;
 import com.hivemq.api.errors.pulse.ManagedAssetNotFoundError;
+import com.hivemq.api.errors.pulse.MissingEntityTypePulseAgentForAssetMapperError;
 import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
 import com.hivemq.api.errors.pulse.PulseAgentNotConnectedError;
 import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.combining.model.DataCombiner;
-import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.combining.model.EntityType;
 import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
@@ -170,7 +170,7 @@ public class PulseApiImpl implements PulseApi {
             if (assets.getMappingIdSet().contains(mappingId.toString())) {
                 return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(mappingId));
             }
-            if (assetMappingExtractor.getPulseAssetMappingIdSet().contains(mappingId.toString())) {
+            if (assetMappingExtractor.getMappingIdSet().contains(mappingId.toString())) {
                 return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(mappingId));
             }
             final PulseAgentAsset asset = assets.get(optionalAssetIndex.getAsInt());
@@ -205,7 +205,7 @@ public class PulseApiImpl implements PulseApi {
             final DataCombiner dataCombiner = optionalDataCombiner.get();
             final PulseAgentAssets assets =
                     PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
-            final Set<String> mappingIdSet = dataCombiner.getPulseAssetMappingIdSet();
+            final Set<String> mappingIdSet = dataCombiner.getMappingIdSet();
             final PulseAgentAssets newAssets = new PulseAgentAssets();
             final AtomicBoolean updated = new AtomicBoolean(false);
             assets.stream().map(asset -> {
@@ -251,7 +251,7 @@ public class PulseApiImpl implements PulseApi {
             }
             final PulseAgentAsset asset = assets.get(optionalAssetIndex.getAsInt());
             final UUID mappingId = asset.getMapping().getId();
-            if (mappingId != null && assetMappingExtractor.getPulseAssetMappingIdSet().contains(mappingId.toString())) {
+            if (mappingId != null && assetMappingExtractor.getMappingIdSet().contains(mappingId.toString())) {
                 return ErrorResponseUtil.errorResponse(new AssetMapperReferencedError(assetId));
             }
             assets.remove(optionalAssetIndex.getAsInt());
@@ -401,8 +401,8 @@ public class PulseApiImpl implements PulseApi {
             final DataCombiner oldDataCombiner = optionalDataCombiner.get();
             final boolean updated = assetMappingExtractor.updateDataCombiner(newDataCombiner);
             if (updated) {
-                final Set<String> oldMappingIdSet = oldDataCombiner.getPulseAssetMappingIdSet();
-                final Set<String> newMappingIdSet = newDataCombiner.getPulseAssetMappingIdSet();
+                final Set<String> oldMappingIdSet = oldDataCombiner.getMappingIdSet();
+                final Set<String> newMappingIdSet = newDataCombiner.getMappingIdSet();
                 final Set<String> toBeRemovedMappingIdSet = Sets.difference(oldMappingIdSet, newMappingIdSet);
                 if (!toBeRemovedMappingIdSet.isEmpty()) {
                     final PulseAgentAssets assets =
@@ -552,81 +552,48 @@ public class PulseApiImpl implements PulseApi {
     private @NotNull Optional<Response> checkAssetMapper(
             final @NotNull DataCombiner dataCombiner,
             final @NotNull Map<String, PulseAssetEntity> assetEntityMap) {
-        final int referenceSize = dataCombiner.entityReferences().size();
-        final int combiningSize = dataCombiner.dataCombinings().size();
-        if (referenceSize != combiningSize) {
-            return Optional.of(ErrorResponseUtil.errorResponse(new AssetMapperSourcesAndMappingsSizeMismatchError(
-                    referenceSize,
-                    combiningSize)));
+        if (dataCombiner.entityReferences().isEmpty()) {
+            return Optional.of(ErrorResponseUtil.errorResponse(new EmptySourcesForAssetMapperError()));
         }
-        for (int i = 0; i < combiningSize; i++) {
-            final var entityReference = dataCombiner.entityReferences().get(i);
-            final var dataCombining = dataCombiner.dataCombinings().get(i);
-            // Check that the primary reference is used in only one instruction.
-            final DataIdentifierReference primaryReference = dataCombining.sources().primaryReference();
-            int primaryReferenceCount = 0;
-            if (entityReference.type() == EntityType.PULSE_AGENT) {
-                if (primaryReference.type() != DataIdentifierReference.Type.PULSE_ASSET) {
-                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForAssetMapperError(
-                            primaryReference.type())));
-                }
-                for (final var instruction : dataCombining.instructions()) {
-                    final var dataIdentifierReference = instruction.dataIdentifierReference();
-                    if (dataIdentifierReference != null) {
-                        if (dataIdentifierReference.type() != DataIdentifierReference.Type.PULSE_ASSET) {
-                            return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForAssetMapperError(
-                                    dataIdentifierReference.type())));
-                        }
-                        if (Objects.equals(dataIdentifierReference, primaryReference)) {
-                            primaryReferenceCount++;
-                        }
-                    }
-                    final String assetId = dataCombining.destination().assetId();
-                    final var asset = assetEntityMap.get(assetId);
-                    if (asset == null) {
-                        return Optional.of(ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(assetId)));
-                    }
-                    if (!Objects.equals(dataCombining.destination().topic(), asset.getTopic())) {
-                        return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetTopicError(assetId)));
-                    }
-                    // There are some cases where the schema is still data-url encoded, so we need to decode it before comparing.
-                    final String schema =
-                            PulseAgentAssetSchemaConverter.INSTANCE.toInternalEntity(dataCombining.destination()
-                                    .schema());
-                    if (!Objects.equals(schema, asset.getSchema())) {
-                        return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetSchemaError(assetId)));
-                    }
-                    final UUID mappingId = asset.getMapping().getId();
-                    if (mappingId == null) {
-                        return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError("null")));
-                    }
-                    final UUID dataCombiningId = dataCombining.id();
-                    if (!Objects.equals(mappingId, dataCombiningId)) {
-                        return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(
-                                dataCombiningId)));
-                    }
-                }
-            } else {
-                if (primaryReference.type() == DataIdentifierReference.Type.PULSE_ASSET) {
-                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForAssetMapperError(
-                            primaryReference.type())));
-                }
-                for (final var instruction : dataCombining.instructions()) {
-                    final var dataIdentifierReference = instruction.dataIdentifierReference();
-                    if (dataIdentifierReference != null) {
-                        if (dataIdentifierReference.type() == DataIdentifierReference.Type.PULSE_ASSET) {
-                            return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForAssetMapperError(
-                                    dataIdentifierReference.type())));
-                        }
-                        if (Objects.equals(dataIdentifierReference, primaryReference)) {
-                            primaryReferenceCount++;
-                        }
-                    }
-                }
-            }
-            if (primaryReferenceCount != 1) {
+        if (dataCombiner.dataCombinings().isEmpty()) {
+            return Optional.of(ErrorResponseUtil.errorResponse(new EmptyMappingsForAssetMapperError()));
+        }
+        if (dataCombiner.entityReferences()
+                .stream()
+                .noneMatch(entityReference -> entityReference.type() == EntityType.PULSE_AGENT)) {
+            return Optional.of(ErrorResponseUtil.errorResponse(new MissingEntityTypePulseAgentForAssetMapperError()));
+        }
+        for (final var dataCombining : dataCombiner.dataCombinings()) {
+            if (!dataCombining.isPrimaryReferenceFound()) {
                 return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceForAssetMapperError(
-                        primaryReference.id())));
+                        dataCombining.sources().primaryReference().id())));
+            }
+            final String assetId = dataCombining.destination().assetId();
+            final var asset = assetEntityMap.get(assetId);
+            if (asset == null) {
+                return Optional.of(ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(assetId)));
+            }
+            if (!Objects.equals(dataCombining.destination().topic(), asset.getTopic())) {
+                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetTopicError(assetId)));
+            }
+            // There are some cases where the schema is still data-url encoded, so we need to decode it before comparing.
+            final String schema =
+                    PulseAgentAssetSchemaConverter.INSTANCE.toInternalEntity(dataCombining.destination().schema());
+            if (!Objects.equals(schema, asset.getSchema())) {
+                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetSchemaError(assetId)));
+            }
+            final Optional<String> optionalDuplicateMappingId = dataCombining.getFirstDuplicateMappingId();
+            if (optionalDuplicateMappingId.isPresent()) {
+                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceForAssetMapperError(
+                        optionalDuplicateMappingId.get())));
+            }
+            final UUID mappingId = asset.getMapping().getId();
+            if (mappingId == null) {
+                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError("null")));
+            }
+            final UUID dataCombiningId = dataCombining.id();
+            if (!Objects.equals(mappingId, dataCombiningId)) {
+                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(dataCombiningId)));
             }
         }
         return Optional.empty();
