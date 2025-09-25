@@ -86,9 +86,24 @@ const interceptStatus = (factory: PulseFactory, isActivated: boolean) => {
   }).as('getPulseStatus')
 }
 
+const interceptAssets = (factory: PulseFactory) => {
+  for (const asset of MOCK_PULSE_EXT_ASSETS_LIST.items) {
+    console.log('XXX asset', asset)
+    factory.assets.create({
+      id: asset.id,
+      json: JSON.stringify(asset),
+    })
+  }
+
+  cy.intercept<ManagedAssetList>('GET', '/api/v1/management/pulse/managed-assets', (req) => {
+    const data = factory.assets.getAll()
+    req.reply(200, { items: data.map((e) => JSON.parse(e.json)) })
+  }).as('getAssets')
+}
+
 export const cy_interceptPulseWithMockDB = (factory: PulseFactory, isActivated = false) => {
   interceptCapabilities(factory, isActivated)
   interceptStatus(factory, isActivated)
-  // interceptAssets(factory)
+  interceptAssets(factory)
   // interceptAssetMappers(factory)
 }
