@@ -24,7 +24,7 @@
                 <host>my.ads-server.com</host>
                 <port>1234</port>
                 <targetAmsPort>1234</targetAmsPort>
-                <sourceAmsPort>12345</sourceAmsPort>
+                <sourceAmsPort>12345</sourceAmsPort
                 <targetAmsNetId>1.2.3.4.5.6</targetAmsNetId>
                 <sourceAmsNetId>1.2.3.4.5.7</sourceAmsNetId>
                 <adsToMqtt>
@@ -39,6 +39,7 @@
                     <maxQos>1</maxQos>
                     <includeTagNames>true</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                     <tagName>tag-name</tagName>
                     <mqttUserProperties>
                         <mqttUserProperty>
@@ -56,6 +57,7 @@
                     <maxQos>1</maxQos>
                     <includeTagNames>true</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                     <tagName>tag-name</tagName>
                     <mqttUserProperties>
                         <mqttUserProperty>

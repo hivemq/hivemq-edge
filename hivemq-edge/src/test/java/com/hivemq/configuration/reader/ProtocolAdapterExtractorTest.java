@@ -15,6 +15,7 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
@@ -371,7 +372,7 @@ public class ProtocolAdapterExtractorTest {
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
         final NorthboundMappingEntity northboundMappingEntity =
-                new NorthboundMappingEntity("tagName", "topic", 1, false, true, List.of(), 100L);
+                new NorthboundMappingEntity("tagName", "topic", 1, null, false, true, List.of(), 100L);
         final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
                 "protocolId",
                 1,
@@ -388,8 +389,14 @@ public class ProtocolAdapterExtractorTest {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
-        final NorthboundMappingEntity northboundMappingEntity =
-                new NorthboundMappingEntity("tagName", "topic", 1, false, true, List.of(), 100L);
+        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity("tagName",
+                "topic",
+                1,
+                MessageHandlingOptions.MQTTMessagePerSubscription,
+                false,
+                true,
+                List.of(),
+                100L);
         final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
                 "protocolId",
                 1,
@@ -410,8 +417,14 @@ public class ProtocolAdapterExtractorTest {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
-        final NorthboundMappingEntity northboundMappingEntity =
-                new NorthboundMappingEntity(tagName, topic, 1, false, true, List.of(), 100L);
+        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity(tagName,
+                topic,
+                1,
+                MessageHandlingOptions.MQTTMessagePerSubscription,
+                false,
+                true,
+                List.of(),
+                100L);
         final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
                 "protocolId",
                 1,

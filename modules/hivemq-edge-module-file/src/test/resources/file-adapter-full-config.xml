@@ -30,6 +30,7 @@
                 <northboundMapping>
                     <topic>my/topic</topic>
                     <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                     <includeTagNames>true</includeTagNames>
                     <includeTimestamp>false</includeTimestamp>
                     <tagName>tag1</tagName>
@@ -47,6 +48,7 @@
                 <northboundMapping>
                     <topic>my/topic/2</topic>
                     <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                     <includeTagNames>true</includeTagNames>
                     <includeTimestamp>false</includeTimestamp>
                     <tagName>tag2</tagName>
