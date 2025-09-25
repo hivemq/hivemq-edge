@@ -2,8 +2,11 @@ import { factory, primaryKey } from '@mswjs/data'
 import type { FactoryAPI } from '@mswjs/data/lib/glossary'
 import type { PrimaryKey } from '@mswjs/data/lib/primaryKey'
 
-import type { ProtocolAdapter } from '@/api/__generated__'
+import type { ManagedAssetList, ProtocolAdapter, PulseStatus } from '@/api/__generated__'
 import { MOCK_CAPABILITY_PERSISTENCE, MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
+import { MOCK_PULSE_STATUS_CONNECTED, MOCK_PULSE_STATUS_DISCONNECTED } from '@/api/hooks/usePulse/__handlers__'
+import { MOCK_PULSE_EXT_ASSETS_LIST } from '@/api/hooks/usePulse/__handlers__/pulse-mocks.ts'
+import { QUERY_KEYS } from '@/api/utils.ts'
 
 type PrimaryKeyGetter = {
   id: PrimaryKey<string>
@@ -12,6 +15,7 @@ type PrimaryKeyGetter = {
 
 export type PulseFactory = FactoryAPI<{
   capabilities: PrimaryKeyGetter
+  status: PrimaryKeyGetter
   assets: PrimaryKeyGetter
   assetMappers: PrimaryKeyGetter
 }>
@@ -19,6 +23,10 @@ export type PulseFactory = FactoryAPI<{
 export const getPulseFactory = () =>
   factory({
     capabilities: {
+      id: primaryKey(String),
+      json: String,
+    },
+    status: {
       id: primaryKey(String),
       json: String,
     },
@@ -60,8 +68,27 @@ const interceptCapabilities = (factory: PulseFactory, isActivated: boolean) => {
   })
 }
 
+const interceptStatus = (factory: PulseFactory, isActivated: boolean) => {
+  factory.status.create({
+    id: QUERY_KEYS.PULSE_STATUS,
+    json: JSON.stringify(isActivated ? MOCK_PULSE_STATUS_CONNECTED : MOCK_PULSE_STATUS_DISCONNECTED),
+  })
+
+  cy.intercept<PulseStatus>('GET', '/api/v1/management/pulse/status', (req) => {
+    const data = factory.status.findFirst({
+      where: {
+        id: {
+          equals: QUERY_KEYS.PULSE_STATUS,
+        },
+      },
+    })
+    req.reply(200, JSON.parse(data.json))
+  }).as('getPulseStatus')
+}
+
 export const cy_interceptPulseWithMockDB = (factory: PulseFactory, isActivated = false) => {
   interceptCapabilities(factory, isActivated)
+  interceptStatus(factory, isActivated)
   // interceptAssets(factory)
   // interceptAssetMappers(factory)
 }
