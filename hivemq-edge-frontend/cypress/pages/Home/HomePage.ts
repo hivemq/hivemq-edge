@@ -1,5 +1,5 @@
 import { ShellPage } from '../ShellPage.ts'
-import { EDGE_MENU_LINKS } from 'cypress/utils/constants.utils.ts'
+import { EDGE_MENU_LINKS, ONBOARDING } from 'cypress/utils/constants.utils.ts'
 
 export class HomePage extends ShellPage {
   get navLink() {
@@ -24,6 +24,24 @@ export class HomePage extends ShellPage {
 
   taskSection(task: number, section: number) {
     return cy.get('main aside').eq(task).find('section').eq(section)
+  }
+
+  taskSectionTitle(task: number, section: number) {
+    return cy.get('main aside').eq(task).find('section').eq(section).find('p').eq(0)
+  }
+
+  pulseOnboarding = {
+    get title() {
+      return homePage.taskSection(ONBOARDING.TASK_PULSE, 2).find('p').first()
+    },
+
+    get todos() {
+      return homePage.taskSection(ONBOARDING.TASK_PULSE, 2).find('ul li')
+    },
+
+    get todosSummary() {
+      return homePage.taskSection(ONBOARDING.TASK_PULSE, 2).find('ul li span')
+    },
   }
 }
 
