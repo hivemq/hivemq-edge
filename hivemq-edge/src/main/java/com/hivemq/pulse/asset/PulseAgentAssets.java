@@ -20,9 +20,12 @@ import com.hivemq.configuration.entity.pulse.PulseAssetsEntity;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class PulseAgentAssets extends ArrayList<PulseAgentAsset> {
@@ -32,6 +35,13 @@ public class PulseAgentAssets extends ArrayList<PulseAgentAsset> {
         return assets;
     }
 
+    public @NotNull Map<String, PulseAgentAsset> getAssetMap() {
+        return stream().collect(Collectors.toMap(asset -> asset.getId().toString(),
+                Function.identity(),
+                (a1, a2) -> a1,
+                LinkedHashMap::new));
+    }
+
     public @NotNull PulseAssetsEntity toPersistence() {
         final PulseAssetsEntity assetsEntity = new PulseAssetsEntity();
         stream().map(PulseAgentAsset::toPersistence).forEach(assetsEntity.getPulseAssetEntities()::add);
@@ -39,8 +49,7 @@ public class PulseAgentAssets extends ArrayList<PulseAgentAsset> {
     }
 
     public @NotNull Set<String> getMappingIdSet() {
-        return this.stream()
-                .map(asset -> asset.getMapping().getId())
+        return stream().map(asset -> asset.getMapping().getId())
                 .filter(Objects::nonNull)
                 .map(UUID::toString)
                 .collect(Collectors.toSet());
