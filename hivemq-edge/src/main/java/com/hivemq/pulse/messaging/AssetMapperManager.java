@@ -21,8 +21,6 @@ import com.google.common.collect.Sets;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.combining.model.DataCombiner;
-import com.hivemq.combining.model.DataCombining;
-import com.hivemq.combining.model.EntityType;
 import com.hivemq.combining.runtime.DataCombiningRuntime;
 import com.hivemq.combining.runtime.DataCombiningRuntimeFactory;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
@@ -43,6 +41,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -50,7 +50,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.hivemq.metrics.HiveMQMetrics.ASSET_MAPPERS_COUNT_CURRENT;
 
@@ -112,38 +111,34 @@ public final class AssetMapperManager {
             LOGGER.info("AssetMappers: {}", assetMapperIdSet);
             // Let's filter out non-streaming asset mappers.
             final Map<String, PulseAssetEntity> assetEntityMap = PulseAgentAssetUtils.toAssetEntityMap(pulseEntity);
-            final @NotNull Map<UUID, DataCombiner> newAssetMapperMap = assetMappers.stream()
-                    .filter(dataCombiner -> IntStream.range(0,
-                                    Math.min(dataCombiner.entityReferences().size(), dataCombiner.dataCombinings().size()))
-                            .noneMatch(i -> {
-                                if (dataCombiner.entityReferences().get(i).type() == EntityType.PULSE_AGENT) {
-                                    final DataCombining dataCombining = dataCombiner.dataCombinings().get(i);
-                                    final PulseAssetEntity asset = assetEntityMap.get(dataCombining.id().toString());
-                                    if (asset == null) {
-                                        LOGGER.warn("Pulse asset '{}' is not found.", dataCombining.id());
-                                        return true;
-                                    }
-                                    return asset.getMapping().getId() == null ||
-                                            asset.getMapping().getStatus() != PulseAssetMappingStatus.STREAMING;
-                                }
-                                return false;
-                            }))
+            final Map<UUID, DataCombiner> newAssetMapperMap = assetMappers.stream()
+                    .filter(dataCombiner -> dataCombiner.dataCombinings()
+                            .stream()
+                            .allMatch(dataCombining -> Optional.ofNullable(assetEntityMap.get(dataCombining.destination()
+                                            .assetId()))
+                                    .map(PulseAssetEntity::getMapping)
+                                    .map(mapping -> Objects.equals(mapping.getId(), dataCombining.id()) &&
+                                            Objects.equals(mapping.getStatus(), PulseAssetMappingStatus.STREAMING))
+                                    .orElse(false)))
                     .collect(Collectors.toMap(DataCombiner::id, Function.identity()));
             // Let's determine what to be created, updated, deleted.
             final Set<UUID> newAssetMapperIdSet = newAssetMapperMap.keySet();
-            final Set<UUID> toBeDeletedAssetMapperIdSet = Sets.difference(assetMapperIdSet, newAssetMapperIdSet);
-            final Set<UUID> toBeCreatedAssetMapperIdSet = Sets.difference(newAssetMapperIdSet, assetMapperIdSet);
-            final Set<UUID> toBeUpdatedAssetMapperIdSet = Sets.intersection(newAssetMapperIdSet, assetMapperIdSet);
+            final List<UUID> toBeDeletedAssetMapperIdList =
+                    new ArrayList<>(Sets.difference(assetMapperIdSet, newAssetMapperIdSet));
+            final List<UUID> toBeCreatedAssetMapperIdList =
+                    new ArrayList<>(Sets.difference(newAssetMapperIdSet, assetMapperIdSet));
+            final List<UUID> toBeUpdatedAssetMapperIdList =
+                    new ArrayList<>(Sets.intersection(newAssetMapperIdSet, assetMapperIdSet));
             final List<UUID> failedDataCombiners = new ArrayList<>();
             // Delete
-            toBeDeletedAssetMapperIdSet.forEach(uuid -> {
+            toBeDeletedAssetMapperIdList.forEach(uuid -> {
                 try {
                     LOGGER.debug("Deleting asset mapper '{}'", uuid);
                     final AssetMapperTask assetMapperTask = idToAssetMapperTaskMap.get(uuid);
                     internalDeleteDataCombiner(uuid);
                     eventService.createCombinerEvent(assetMapperTask.dataCombiner().id())
                             .withSeverity(Event.SEVERITY.INFO)
-                            .withMessage(String.format("Asset mapper '%s' was permanently deleted.",
+                            .withMessage(String.format("Asset mapper '%s' was successfully deleted.",
                                     assetMapperTask.getName()))
                             .fire();
                 } catch (final Exception e) {
@@ -152,7 +147,7 @@ public final class AssetMapperManager {
                 }
             });
             // Create
-            toBeCreatedAssetMapperIdSet.forEach(uuid -> {
+            toBeCreatedAssetMapperIdList.forEach(uuid -> {
                 try {
                     LOGGER.debug("Creating asset mapper '{}'", uuid);
                     final DataCombiner dataCombiner = newAssetMapperMap.get(uuid);
@@ -168,7 +163,7 @@ public final class AssetMapperManager {
                 }
             });
             // Update
-            toBeUpdatedAssetMapperIdSet.forEach(uuid -> {
+            toBeUpdatedAssetMapperIdList.forEach(uuid -> {
                 try {
                     LOGGER.debug("Updating asset mapper '{}'", uuid);
                     final DataCombiner dataCombiner = newAssetMapperMap.get(uuid);
@@ -211,15 +206,13 @@ public final class AssetMapperManager {
     }
 
     private void internalUpdateAssetMapper(final @NotNull DataCombiner dataCombiner) {
-        LOGGER.debug("Updating asset mapper '{}'", dataCombiner.id());
         internalDeleteDataCombiner(dataCombiner.id());
         internalCreateDataCombiner(dataCombiner);
     }
 
 
     private void internalCreateDataCombiner(final @NotNull DataCombiner dataCombiner) {
-        LOGGER.debug("Creating asset mapper '{}'", dataCombiner.id());
-        if (idToAssetMapperTaskMap.get(dataCombiner.id()) != null) {
+        if (idToAssetMapperTaskMap.containsKey(dataCombiner.id())) {
             throw new IllegalArgumentException("Data combiner already exists by id '" + dataCombiner.id() + "'");
         }
         final List<DataCombiningRuntime> dataCombiningRuntimes = createDataCombiningStates(dataCombiner);
@@ -228,7 +221,6 @@ public final class AssetMapperManager {
     }
 
     private void internalDeleteDataCombiner(final @NotNull UUID id) {
-        LOGGER.debug("Deleting asset mapper '{}'", id);
         final AssetMapperTask assetMapperTask = idToAssetMapperTaskMap.remove(id);
         if (assetMapperTask != null) {
             try {
