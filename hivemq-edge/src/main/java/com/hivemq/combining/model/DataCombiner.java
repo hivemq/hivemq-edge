@@ -24,9 +24,7 @@ import com.hivemq.edge.api.model.EntityReferenceList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -84,9 +82,14 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
     }
 
     public @NotNull Set<String> getMappingIdSet() {
-        return dataCombinings().stream()
-                .map(DataCombining::id)
-                .map(UUID::toString)
-                .collect(Collectors.toSet());
+        return dataCombinings().stream().map(DataCombining::id).map(UUID::toString).collect(Collectors.toSet());
+    }
+
+    public DataCombiner withDescription(final @NotNull String description) {
+        return new DataCombiner(id, name, description, entityReferences, dataCombinings);
+    }
+
+    public DataCombiner withName(final @NotNull String name) {
+        return new DataCombiner(id, name, description, entityReferences, dataCombinings);
     }
 }
