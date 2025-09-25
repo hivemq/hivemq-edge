@@ -5,7 +5,10 @@ import type { PrimaryKey } from '@mswjs/data/lib/primaryKey'
 import type { ManagedAssetList, ProtocolAdapter, PulseStatus } from '@/api/__generated__'
 import { MOCK_CAPABILITY_PERSISTENCE, MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
 import { MOCK_PULSE_STATUS_CONNECTED, MOCK_PULSE_STATUS_DISCONNECTED } from '@/api/hooks/usePulse/__handlers__'
-import { MOCK_PULSE_EXT_ASSETS_LIST } from '@/api/hooks/usePulse/__handlers__/pulse-mocks.ts'
+import {
+  MOCK_PULSE_EXT_ASSET_MAPPERS_LIST,
+  MOCK_PULSE_EXT_ASSETS_LIST,
+} from '@/api/hooks/usePulse/__handlers__/pulse-mocks.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
 
 type PrimaryKeyGetter = {
@@ -88,7 +91,6 @@ const interceptStatus = (factory: PulseFactory, isActivated: boolean) => {
 
 const interceptAssets = (factory: PulseFactory) => {
   for (const asset of MOCK_PULSE_EXT_ASSETS_LIST.items) {
-    console.log('XXX asset', asset)
     factory.assets.create({
       id: asset.id,
       json: JSON.stringify(asset),
@@ -101,9 +103,23 @@ const interceptAssets = (factory: PulseFactory) => {
   }).as('getAssets')
 }
 
+const interceptAssetMappers = (factory: PulseFactory) => {
+  for (const assetMapper of MOCK_PULSE_EXT_ASSET_MAPPERS_LIST.items) {
+    factory.assetMappers.create({
+      id: assetMapper.id,
+      json: JSON.stringify(assetMapper),
+    })
+  }
+
+  cy.intercept<ManagedAssetList>('GET', '/api/v1/management/pulse/asset-mappers', (req) => {
+    const data = factory.assetMappers.getAll()
+    req.reply(200, { items: data.map((e) => JSON.parse(e.json)) })
+  }).as('getAssetMappers')
+}
+
 export const cy_interceptPulseWithMockDB = (factory: PulseFactory, isActivated = false) => {
   interceptCapabilities(factory, isActivated)
   interceptStatus(factory, isActivated)
   interceptAssets(factory)
-  // interceptAssetMappers(factory)
+  interceptAssetMappers(factory)
 }
