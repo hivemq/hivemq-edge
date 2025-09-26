@@ -1,92 +1,123 @@
 package com.hivemq.fsm;
 
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class ProtocolAdapterFSMTest {
 
-    public static final ProtocolAdapterFSM.State STATE_FULLY_STOPPED =
-            new ProtocolAdapterFSM.State(ProtocolAdapterFSM.AdapterState.STOPPED,
-                    ProtocolAdapterFSM.StateEnum.DISCONNECTED,
-                    ProtocolAdapterFSM.StateEnum.DISCONNECTED);
-
-    public static final ProtocolAdapterFSM.State STATE_STOPPING_WITHOUT_CONNECTION =
-            new ProtocolAdapterFSM.State(ProtocolAdapterFSM.AdapterState.STOPPING,
-                    ProtocolAdapterFSM.StateEnum.DISCONNECTED,
-                    ProtocolAdapterFSM.StateEnum.DISCONNECTED);
-
-    public static final ProtocolAdapterFSM.State STATE_STARTED_NOT_CONNECTED = new ProtocolAdapterFSM.State(
-            ProtocolAdapterFSM.AdapterState.STARTED,
-            ProtocolAdapterFSM.StateEnum.DISCONNECTED,
-            ProtocolAdapterFSM.StateEnum.DISCONNECTED);
-
     @Test
-    public void test_initialValue() {
-        final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId");
-        assertThat(protocolAdapterFSM.currentState())
-                .isEqualTo(STATE_FULLY_STOPPED);
-    }
-
-    @Test
-    public void test_listenersReceiveUpdates() throws Exception{
-        final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId");
-        final var latchListener1 = new CountDownLatch(1);
-        final var latchListener2 = new CountDownLatch(1);
-
-        protocolAdapterFSM.registerStateTransitionListener(newState -> latchListener1.countDown());
-        protocolAdapterFSM.registerStateTransitionListener(newState -> latchListener2.countDown());
+    public void test_startAdapter_withLegacyConnectBehavior() throws Exception{
+        final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId") {
+            @Override
+            public boolean onStarting() {
+                return true;
+            }
+        };
 
         assertThat(protocolAdapterFSM.currentState())
-                .isEqualTo(STATE_FULLY_STOPPED);
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STOPPED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
 
         protocolAdapterFSM.startAdapter();
 
-        latchListener1.await();
-        latchListener2.await();
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
 
-        assertThat(latchListener1.getCount())
-                .isEqualTo(0);
-
-        assertThat(latchListener2.getCount())
-                .isEqualTo(0);
+        protocolAdapterFSM.accept(ProtocolAdapterState.ConnectionStatus.CONNECTED);
 
         assertThat(protocolAdapterFSM.currentState())
-                .isEqualTo(STATE_STARTED_NOT_CONNECTED);
-
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                        ProtocolAdapterFSM.StateEnum.CONNECTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
     }
 
     @Test
-    public void test_startThenStopAdapter() throws Exception{
-        final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId");
-
-        final var state = new AtomicReference<ProtocolAdapterFSM.State>();
-
-        protocolAdapterFSM.registerStateTransitionListener(state::set);
+    public void test_startAdapter_withGoingThroughConnectingState() throws Exception{
+        final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId") {
+            @Override
+            public boolean onStarting() {
+                return true;
+            }
+        };
 
         assertThat(protocolAdapterFSM.currentState())
-                .isEqualTo(STATE_FULLY_STOPPED);
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STOPPED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
 
         protocolAdapterFSM.startAdapter();
 
-        await().untilAsserted(() ->
-                assertThat(state.get())
-                    .isNotNull()
-                    .isEqualTo(STATE_STARTED_NOT_CONNECTED)
-        );
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
 
-        protocolAdapterFSM.stopAdapter();
+        protocolAdapterFSM.accept(ProtocolAdapterState.ConnectionStatus.CONNECTING);
 
-        await().untilAsserted(() ->
-                assertThat(state.get())
-                        .isNotNull()
-                        .isEqualTo(STATE_STOPPING_WITHOUT_CONNECTION)
-        );
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                        ProtocolAdapterFSM.StateEnum.CONNECTING,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
 
+        protocolAdapterFSM.accept(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                        ProtocolAdapterFSM.StateEnum.CONNECTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
+    }
+
+    @Test
+    public void test_startAdapter_northboundError() throws Exception{
+        final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId") {
+            @Override
+            public boolean onStarting() {
+                return true;
+            }
+        };
+
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STOPPED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
+
+        protocolAdapterFSM.startAdapter();
+
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
+
+        protocolAdapterFSM.accept(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                        ProtocolAdapterFSM.StateEnum.CONNECTING,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
+
+        protocolAdapterFSM.accept(ProtocolAdapterState.ConnectionStatus.ERROR);
+
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                        ProtocolAdapterFSM.StateEnum.ERROR,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
     }
 
 }
