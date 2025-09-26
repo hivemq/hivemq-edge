@@ -65,18 +65,6 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
         this.adapterId = adapterId;
     }
 
-    public void registerStateTransitionListener(final @NotNull Consumer<State> stateTransitionListener) {
-        stateTransitionListeners.add(stateTransitionListener);
-    }
-
-    public void unregisterStateTransitionListener(final @NotNull Consumer<StateEnum> stateTransitionListener) {
-        stateTransitionListeners.remove(stateTransitionListener);
-    }
-
-    public State currentState() {
-        return new State(adapterState.get(), northboundState.get(), southboundState.get());
-    }
-
     public abstract boolean onStarting();
 
     // ADAPTER signals
@@ -96,7 +84,7 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     }
 
     public void stopAdapter() {
-        if(adapterState.compareAndSet(AdapterStateEnum.STARTED, AdapterStateEnum.STOPPING)) {
+        if(transitionAdapterState(AdapterStateEnum.STOPPING)) {
             log.debug("Protocol adapter {} stopping", adapterId);
         } else {
             log.info("Protocol adapter {} already stopped or stopping", adapterId);
@@ -104,7 +92,7 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     }
 
     public void adapterStopped() {
-        if(adapterState.compareAndSet(AdapterStateEnum.STOPPING, AdapterStateEnum.STOPPED)) {
+        if(transitionAdapterState(AdapterStateEnum.STOPPED)) {
             log.debug("Protocol adapter {} stopped", adapterId);
         } else {
             log.info("Protocol adapter {} already stopped or stopping", adapterId);
@@ -116,7 +104,7 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
         if(canTransition(currentState, newState)) {
             if(adapterState.compareAndSet(currentState, newState)) {
                 log.debug("Adapter state transition from {} to {} for adapter {}", currentState, newState, adapterId);
-                notifyListenersAboutStateTransition(getCurrentState());
+                notifyListenersAboutStateTransition(currentState());
                 return true;
             }
         } else {
@@ -130,7 +118,7 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
         if(canTransition(currentState, newState)) {
             if(northboundState.compareAndSet(currentState, newState)) {
                 log.debug("Northbound state transition from {} to {} for adapter {}", currentState, newState, adapterId);
-                notifyListenersAboutStateTransition(getCurrentState());
+                notifyListenersAboutStateTransition(currentState());
                 return true;
             }
         } else {
@@ -144,7 +132,7 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
         if(canTransition(currentState, newState)) {
             if(southboundState.compareAndSet(currentState, newState)) {
                 log.debug("Southbound state transition from {} to {} for adapter {}", currentState, newState, adapterId);
-                notifyListenersAboutStateTransition(getCurrentState());
+                notifyListenersAboutStateTransition(currentState());
                 return true;
             }
         } else {
@@ -165,7 +153,15 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
         }
     }
 
-    private State getCurrentState() {
+    public void registerStateTransitionListener(final @NotNull Consumer<State> stateTransitionListener) {
+        stateTransitionListeners.add(stateTransitionListener);
+    }
+
+    public void unregisterStateTransitionListener(final @NotNull Consumer<StateEnum> stateTransitionListener) {
+        stateTransitionListeners.remove(stateTransitionListener);
+    }
+
+    public State currentState() {
         return new State(adapterState.get(), northboundState.get(), southboundState.get());
     }
 
