@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -79,6 +80,14 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
         final List<EntityReferenceEntity> sources =
                 entityReferences.stream().map(EntityReference::toPersistence).toList();
         return new DataCombinerEntity(id, name, description, sources, combining);
+    }
+
+    public @NotNull Set<String> getAssetIdSet() {
+        return dataCombinings().stream()
+                .map(DataCombining::destination)
+                .filter(Objects::nonNull)
+                .map(DataCombiningDestination::assetId)
+                .collect(Collectors.toSet());
     }
 
     public @NotNull Set<String> getMappingIdSet() {
