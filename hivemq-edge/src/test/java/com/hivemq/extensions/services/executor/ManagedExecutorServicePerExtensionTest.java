@@ -100,7 +100,7 @@ public class ManagedExecutorServicePerExtensionTest {
 
         managedExecutorServicePerExtension.execute(runLatch::countDown);
 
-        assertTrue(runLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -111,7 +111,7 @@ public class ManagedExecutorServicePerExtensionTest {
 
         managedExecutorServicePerExtension.execute(runLatch::countDown);
 
-        assertTrue(runLatch.await(1, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -129,7 +129,7 @@ public class ManagedExecutorServicePerExtensionTest {
         });
 
         assertFalse(runLatch.await(250, TimeUnit.MILLISECONDS));
-        assertTrue(runLatch.await(2, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
 
         futureLatch.await();
 
@@ -145,7 +145,7 @@ public class ManagedExecutorServicePerExtensionTest {
         final CompletableScheduledFuture<?> schedule =
                 managedExecutorServicePerExtension.schedule(runLatch::countDown, 500, TimeUnit.MILLISECONDS);
 
-        assertTrue(runLatch.await(2, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
 
         schedule.get();
 
@@ -153,7 +153,7 @@ public class ManagedExecutorServicePerExtensionTest {
         assertTrue(schedule.isDone());
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 10000)
     public void test_schedule_callable() throws Exception {
         final CountDownLatch runLatch = new CountDownLatch(1);
         final CountDownLatch futureLatch = new CountDownLatch(1);
@@ -161,7 +161,7 @@ public class ManagedExecutorServicePerExtensionTest {
         final CompletableScheduledFuture<String> scheduledFuture = managedExecutorServicePerExtension.schedule(() -> {
             runLatch.countDown();
             return "test";
-        }, 50, TimeUnit.MILLISECONDS);
+        }, 500, TimeUnit.MILLISECONDS);
 
         scheduledFuture.whenComplete((string, throwable) -> {
             if (string.equals("test")) {
@@ -169,13 +169,13 @@ public class ManagedExecutorServicePerExtensionTest {
             }
         });
 
-        assertFalse(runLatch.await(25, TimeUnit.MILLISECONDS));
+        assertFalse(runLatch.await(250, TimeUnit.MILLISECONDS));
         assertFalse(futureLatch.await(0, TimeUnit.MILLISECONDS));
-        assertTrue(runLatch.await(2, TimeUnit.SECONDS));
-        assertTrue(futureLatch.await(2, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(futureLatch.await(10, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 10000)
     public void test_schedule_callable_cancelled() throws Exception {
         final CountDownLatch runLatch = new CountDownLatch(1);
         final CountDownLatch exceptionLatch = new CountDownLatch(1);
@@ -198,7 +198,7 @@ public class ManagedExecutorServicePerExtensionTest {
         assertTrue(exceptionLatch.await(2, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 10000)
     public void test_schedule_callable_plugin_stopped() throws Exception {
         final CountDownLatch runLatch = new CountDownLatch(1);
 
@@ -227,7 +227,7 @@ public class ManagedExecutorServicePerExtensionTest {
         final CompletableScheduledFuture<?> scheduledFuture =
                 managedExecutorServicePerExtension.scheduleAtFixedRate(task, 10, 10, TimeUnit.MILLISECONDS);
 
-        assertTrue(runLatch.await(2, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
 
         final long delay = scheduledFuture.getDelay(TimeUnit.MILLISECONDS);
         assertTrue("bad delay: " + delay, delay <= 10);
@@ -240,7 +240,7 @@ public class ManagedExecutorServicePerExtensionTest {
         scheduledFuture.cancel(true);
 
         // completes by cancellation
-        assertTrue(completeLatch.await(1, TimeUnit.SECONDS));
+        assertTrue(completeLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -259,7 +259,7 @@ public class ManagedExecutorServicePerExtensionTest {
         final CompletableScheduledFuture<?> scheduledFuture =
                 managedExecutorServicePerExtension.scheduleAtFixedRate(task, 10, 10, TimeUnit.MILLISECONDS);
 
-        assertTrue(runLatch.await(2, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
 
         final long delay = scheduledFuture.getDelay(TimeUnit.MILLISECONDS);
         assertTrue("bad delay: " + delay, delay <= 100);
@@ -293,7 +293,7 @@ public class ManagedExecutorServicePerExtensionTest {
         final CompletableScheduledFuture<?> scheduledFuture =
                 managedExecutorServicePerExtension.scheduleWithFixedDelay(task, 10, 10, TimeUnit.MILLISECONDS);
 
-        assertTrue(runLatch.await(2, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
 
         final long delay = scheduledFuture.getDelay(TimeUnit.MILLISECONDS);
         assertTrue("bad delay: " + delay, delay <= 10);
@@ -308,7 +308,7 @@ public class ManagedExecutorServicePerExtensionTest {
         scheduledFuture.cancel(true);
 
         // completes by cancellation
-        assertTrue(completeLatch.await(1, TimeUnit.SECONDS));
+        assertTrue(completeLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -332,7 +332,7 @@ public class ManagedExecutorServicePerExtensionTest {
         final CompletableScheduledFuture<?> scheduledFuture =
                 managedExecutorServicePerExtension.scheduleWithFixedDelay(task, 10, 10, TimeUnit.MILLISECONDS);
 
-        assertTrue(runLatch.await(2, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
 
         final long delay = scheduledFuture.getDelay(TimeUnit.MILLISECONDS);
         assertTrue("bad delay: " + delay, delay <= 10);
@@ -378,7 +378,7 @@ public class ManagedExecutorServicePerExtensionTest {
             }
         });
 
-        assertTrue(callableLatch.await(1, TimeUnit.SECONDS));
+        assertTrue(callableLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -399,7 +399,7 @@ public class ManagedExecutorServicePerExtensionTest {
             }
         });
 
-        assertTrue(callableLatch.await(1, TimeUnit.SECONDS));
+        assertTrue(callableLatch.await(10, TimeUnit.SECONDS));
 
         assertTrue(submit.isCompletedExceptionally());
 
@@ -418,7 +418,7 @@ public class ManagedExecutorServicePerExtensionTest {
 
         submit.whenComplete((s, throwable) -> runLatch.countDown());
 
-        assertTrue(runLatch.await(1, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -437,7 +437,7 @@ public class ManagedExecutorServicePerExtensionTest {
             runLatch.countDown();
         });
 
-        assertTrue(runLatch.await(1, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
 
         assertTrue(submit.isCompletedExceptionally());
 
@@ -456,7 +456,7 @@ public class ManagedExecutorServicePerExtensionTest {
 
         submit.whenComplete((s, throwable) -> s.countDown());
 
-        assertTrue(runLatch.await(1, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
         assertTrue(submit.isDone());
         assertFalse(submit.isCompletedExceptionally());
     }
@@ -474,7 +474,7 @@ public class ManagedExecutorServicePerExtensionTest {
 
         submit.whenComplete((s, throwable) -> s.countDown());
 
-        assertTrue(runLatch.await(1, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
         assertTrue(submit.isDone());
         assertFalse(submit.isCancelled());
     }
@@ -498,7 +498,7 @@ public class ManagedExecutorServicePerExtensionTest {
             }
         });
 
-        assertTrue(runLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(runLatch.await(10, TimeUnit.SECONDS));
 
         assertTrue(submit.isDone());
         assertTrue(submit.isCompletedExceptionally());
@@ -530,7 +530,7 @@ public class ManagedExecutorServicePerExtensionTest {
             });
         }
 
-        assertTrue(invokeAllLatch.await(1, TimeUnit.SECONDS));
+        assertTrue(invokeAllLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test

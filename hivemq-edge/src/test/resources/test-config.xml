@@ -240,6 +240,7 @@
                     <tagName>tag1</tagName>
                     <topic>test/blubb/#</topic>
                     <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
                     <mqttUserProperties/>
@@ -275,6 +276,7 @@
                     <tagName>tag2</tagName>
                     <topic>test</topic>
                     <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
                     <mqttUserProperties/>
@@ -317,6 +319,7 @@
                     <tagName>tag-modbus-2</tagName>
                     <topic>test</topic>
                     <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
                     <mqttUserProperties/>
@@ -326,6 +329,7 @@
                     <tagName>tag-modbus-2</tagName>
                     <topic>test</topic>
                     <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
                     <mqttUserProperties/>
@@ -335,6 +339,7 @@
                     <tagName>tag-modbus-2</tagName>
                     <topic>test</topic>
                     <maxQos>1</maxQos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
                     <mqttUserProperties/>
