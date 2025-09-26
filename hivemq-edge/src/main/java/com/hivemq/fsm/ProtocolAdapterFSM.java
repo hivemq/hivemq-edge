@@ -1,5 +1,6 @@
 package com.hivemq.fsm;
 
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +12,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-public class ProtocolAdapterFSM {
+public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterState.ConnectionStatus> {
 
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterFSM.class);
 
@@ -27,14 +28,8 @@ public class ProtocolAdapterFSM {
         NOT_SUPPORTED
     }
 
-    public enum AdapterState {
-        STARTED,
-        STOPPING,
-        STOPPED
-    }
-
     public static final Map<StateEnum, Set<StateEnum>> possibleTransitions = Map.of(
-            StateEnum.DISCONNECTED, Set.of(StateEnum.CONNECTING),
+            StateEnum.DISCONNECTED, Set.of(StateEnum.CONNECTED,StateEnum.CONNECTING), //for compatibility, we allow to go from CONNECTING to CONNECTED directly
             StateEnum.CONNECTING, Set.of(StateEnum.CONNECTED, StateEnum.ERROR),
             StateEnum.CONNECTED, Set.of(StateEnum.DISCONNECTING, StateEnum.CLOSING, StateEnum.ERROR_CLOSING),
             StateEnum.DISCONNECTING, Set.of(StateEnum.CONNECTING),
@@ -42,13 +37,27 @@ public class ProtocolAdapterFSM {
             StateEnum.ERROR_CLOSING, Set.of(StateEnum.ERROR)
     );
 
+    public enum AdapterStateEnum {
+        STARTING,
+        STARTED,
+        STOPPING,
+        STOPPED
+    }
+
+    public static final Map<AdapterStateEnum, Set<AdapterStateEnum>> possibleAdapterStateTransitions = Map.of(
+            AdapterStateEnum.STOPPED, Set.of(AdapterStateEnum.STARTING),
+            AdapterStateEnum.STARTING, Set.of(AdapterStateEnum.STARTED, AdapterStateEnum.STOPPED),
+            AdapterStateEnum.STARTED, Set.of(AdapterStateEnum.STOPPING),
+            AdapterStateEnum.STOPPING, Set.of(AdapterStateEnum.STOPPED)
+    );
+
     private final AtomicReference<StateEnum> northboundState = new AtomicReference<>(StateEnum.DISCONNECTED);
     private final AtomicReference<StateEnum> southboundState = new AtomicReference<>(StateEnum.DISCONNECTED);
-    private final AtomicReference<AdapterState> adapterState = new AtomicReference<>(AdapterState.STOPPED);
+    private final AtomicReference<AdapterStateEnum> adapterState = new AtomicReference<>(AdapterStateEnum.STOPPED);
 
     private final List<Consumer<State>> stateTransitionListeners = new CopyOnWriteArrayList<>();
 
-    public record State(AdapterState state, StateEnum northbound, StateEnum southbound) { }
+    public record State(AdapterStateEnum state, StateEnum northbound, StateEnum southbound) { }
 
     private final String adapterId;
 
@@ -68,47 +77,110 @@ public class ProtocolAdapterFSM {
         return new State(adapterState.get(), northboundState.get(), southboundState.get());
     }
 
+    public abstract boolean onStarting();
+
+    // ADAPTER signals
     public void startAdapter() {
-        if(adapterState.compareAndSet(AdapterState.STOPPED, AdapterState.STARTED)) {
-            log.debug("Protocol adapter {} started", adapterId);
-            notifyListenersAboutStateTransition(getCurrentState());
+        if(transitionAdapterState(AdapterStateEnum.STARTING)) {
+            log.debug("Protocol adapter {} starting", adapterId);
+            if(onStarting()) {
+                if(!adapterState.compareAndSet(AdapterStateEnum.STARTING, AdapterStateEnum.STARTED)) {
+                    log.warn("Protocol adapter {} already started", adapterId);
+                }
+            } else {
+                adapterState.compareAndSet(AdapterStateEnum.STARTING, AdapterStateEnum.STOPPED);
+            }
         } else {
-            log.info("Protocol adapter {} already started", adapterId);
+            log.info("Protocol adapter {} already started or starting", adapterId);
         }
     }
 
     public void stopAdapter() {
-        if(adapterState.compareAndSet(AdapterState.STARTED, AdapterState.STOPPING)) {
-            log.debug("Protocol adapter {} stopped", adapterId);
-            notifyListenersAboutStateTransition(getCurrentState());
+        if(adapterState.compareAndSet(AdapterStateEnum.STARTED, AdapterStateEnum.STOPPING)) {
+            log.debug("Protocol adapter {} stopping", adapterId);
         } else {
             log.info("Protocol adapter {} already stopped or stopping", adapterId);
         }
     }
 
-    public void transitionNorthboundState(final @NotNull StateEnum newState) {
-        if(canTransition(northboundState.get(), newState)) {
-            synchronized (northboundState) {
-                final StateEnum oldState = northboundState.getAndSet(newState);
-                log.debug("Northbound state transition from {} to {} for adapter {}", oldState, newState, adapterId);
+    public void adapterStopped() {
+        if(adapterState.compareAndSet(AdapterStateEnum.STOPPING, AdapterStateEnum.STOPPED)) {
+            log.debug("Protocol adapter {} stopped", adapterId);
+        } else {
+            log.info("Protocol adapter {} already stopped or stopping", adapterId);
+        }
+    }
+
+    public boolean transitionAdapterState(final @NotNull AdapterStateEnum newState) {
+        final var currentState = adapterState.get();
+        if(canTransition(currentState, newState)) {
+            if(adapterState.compareAndSet(currentState, newState)) {
+                log.debug("Adapter state transition from {} to {} for adapter {}", currentState, newState, adapterId);
                 notifyListenersAboutStateTransition(getCurrentState());
+                return true;
+            }
+        } else {
+            throw new IllegalStateException("Cannot transition adapter state to " + newState);
+        }
+        return false;
+    }
+
+    public boolean transitionNorthboundState(final @NotNull StateEnum newState) {
+        final var currentState = northboundState.get();
+        if(canTransition(currentState, newState)) {
+            if(northboundState.compareAndSet(currentState, newState)) {
+                log.debug("Northbound state transition from {} to {} for adapter {}", currentState, newState, adapterId);
+                notifyListenersAboutStateTransition(getCurrentState());
+                return true;
             }
         } else {
             throw new IllegalStateException("Cannot transition northbound state to " + newState);
         }
+        return false;
+    }
+
+    public boolean transitionSouthboundState(final @NotNull StateEnum newState) {
+        final var currentState = southboundState.get();
+        if(canTransition(currentState, newState)) {
+            if(southboundState.compareAndSet(currentState, newState)) {
+                log.debug("Southbound state transition from {} to {} for adapter {}", currentState, newState, adapterId);
+                notifyListenersAboutStateTransition(getCurrentState());
+                return true;
+            }
+        } else {
+            throw new IllegalStateException("Cannot transition southbound state to " + newState);
+        }
+        return false;
+    }
+
+    @Override
+    public void accept(final ProtocolAdapterState.ConnectionStatus connectionStatus) {
+        switch (connectionStatus) {
+            case CONNECTED -> transitionNorthboundState(StateEnum.CONNECTED);
+            case CONNECTING -> transitionNorthboundState(StateEnum.CONNECTING);
+            case DISCONNECTED -> transitionNorthboundState(StateEnum.DISCONNECTED);
+            case ERROR -> transitionNorthboundState(StateEnum.ERROR);
+            case UNKNOWN -> transitionNorthboundState(StateEnum.DISCONNECTED);
+            case STATELESS -> transitionNorthboundState(StateEnum.NOT_SUPPORTED);
+        }
+    }
+
+    private State getCurrentState() {
+        return new State(adapterState.get(), northboundState.get(), southboundState.get());
     }
 
     private void notifyListenersAboutStateTransition(final @NotNull State newState) {
         stateTransitionListeners.forEach(listener -> listener.accept(newState));
     }
 
-    private boolean canTransition(final @NotNull StateEnum currentState, final @NotNull StateEnum newState) {
-        final Set<StateEnum> allowedTransitions = possibleTransitions.get(currentState);
+    private static boolean canTransition(final @NotNull StateEnum currentState, final @NotNull StateEnum newState) {
+        final var allowedTransitions = possibleTransitions.get(currentState);
         return allowedTransitions != null && allowedTransitions.contains(newState);
     }
 
-    private State getCurrentState() {
-        return new State(adapterState.get(), northboundState.get(), southboundState.get());
+    private static boolean canTransition(final @NotNull AdapterStateEnum currentState, final @NotNull AdapterStateEnum newState) {
+        final var allowedTransitions = possibleAdapterStateTransitions.get(currentState);
+        return allowedTransitions != null && allowedTransitions.contains(newState);
     }
 }
 
