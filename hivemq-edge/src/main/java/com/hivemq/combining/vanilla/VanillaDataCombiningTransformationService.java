@@ -68,11 +68,8 @@ public final class VanillaDataCombiningTransformationService implements DataComb
                 .forEach(instruction -> {
                     Object value = null;
                     switch (instruction.dataIdentifierReference().type()) {
-                        case PULSE_ASSET -> {
-                            // TODO
-                        }
-                        case TAG -> {
-                            // Source json path is ignored for TAG type.
+                        case PULSE_ASSET, TAG -> {
+                            // Source json path is ignored for PULSE_ASSET or TAG.
                             value = instruction.dataIdentifierReference().id();
                         }
                         case TOPIC_FILTER -> {
