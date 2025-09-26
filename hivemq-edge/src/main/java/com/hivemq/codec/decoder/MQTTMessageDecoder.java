@@ -53,8 +53,7 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
     private final @NotNull MqttDecoders mqttDecoders;
     private final @NotNull MqttServerDisconnector mqttServerDisconnector;
     private final @NotNull GlobalMQTTMessageCounter globalMQTTMessageCounter;
-
-    private final int maxPacketSize;
+    private final @NotNull MqttConfigurationService mqttConfig;
 
     public MQTTMessageDecoder(
             final @NotNull MqttConnectDecoder connectDecoder,
@@ -68,7 +67,7 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
         this.mqttDecoders = mqttDecoders;
         this.mqttServerDisconnector = mqttServerDisconnector;
         this.globalMQTTMessageCounter = globalMQTTMessageCounter;
-        this.maxPacketSize = mqttConfig.maxPacketSize();
+        this.mqttConfig = mqttConfig;
     }
 
     public MQTTMessageDecoder(final ChannelDependencies channelDependencies) {
@@ -175,7 +174,8 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
         final MessageType messageType = getMessageType(fixedHeader);
 
         //this is the message size HiveMQ allows for incoming messages
-        if (packetSize > maxPacketSize) {
+
+        if (packetSize > mqttConfig.maxPacketSize()) {
             handlePacketTooLarge(buf, messageType, clientConnection);
             return;
         }
