@@ -3,13 +3,20 @@ package com.hivemq.fsm;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 class ProtocolAdapterFSMTest {
 
     public static final ProtocolAdapterFSM.State STATE_FULLY_STOPPED =
             new ProtocolAdapterFSM.State(ProtocolAdapterFSM.AdapterState.STOPPED,
+                    ProtocolAdapterFSM.StateEnum.DISCONNECTED,
+                    ProtocolAdapterFSM.StateEnum.DISCONNECTED);
+
+    public static final ProtocolAdapterFSM.State STATE_STOPPING_WITHOUT_CONNECTION =
+            new ProtocolAdapterFSM.State(ProtocolAdapterFSM.AdapterState.STOPPING,
                     ProtocolAdapterFSM.StateEnum.DISCONNECTED,
                     ProtocolAdapterFSM.StateEnum.DISCONNECTED);
 
@@ -56,28 +63,29 @@ class ProtocolAdapterFSMTest {
     @Test
     public void test_startThenStopAdapter() throws Exception{
         final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId");
-        final var latchListener1 = new CountDownLatch(1);
-        final var latchListener2 = new CountDownLatch(1);
 
-        protocolAdapterFSM.registerStateTransitionListener(newState -> latchListener1.countDown());
-        protocolAdapterFSM.registerStateTransitionListener(newState -> latchListener2.countDown());
+        final var state = new AtomicReference<ProtocolAdapterFSM.State>();
+
+        protocolAdapterFSM.registerStateTransitionListener(state::set);
 
         assertThat(protocolAdapterFSM.currentState())
                 .isEqualTo(STATE_FULLY_STOPPED);
 
         protocolAdapterFSM.startAdapter();
 
-        latchListener1.await();
-        latchListener2.await();
+        await().untilAsserted(() ->
+                assertThat(state.get())
+                    .isNotNull()
+                    .isEqualTo(STATE_STARTED_NOT_CONNECTED)
+        );
 
-        assertThat(latchListener1.getCount())
-                .isEqualTo(0);
+        protocolAdapterFSM.stopAdapter();
 
-        assertThat(latchListener2.getCount())
-                .isEqualTo(0);
-
-        assertThat(protocolAdapterFSM.currentState())
-                .isEqualTo(STATE_STARTED_NOT_CONNECTED);
+        await().untilAsserted(() ->
+                assertThat(state.get())
+                        .isNotNull()
+                        .isEqualTo(STATE_STOPPING_WITHOUT_CONNECTION)
+        );
 
     }
 
