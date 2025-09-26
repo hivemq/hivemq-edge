@@ -86,7 +86,6 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
             this.etherNetIP = etherNetIP;
             output.startedSuccessfully();
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
-            protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
         } catch (final Exception e) {
             output.failStart(e, null);
         }
@@ -102,8 +101,6 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
             if (etherNetIPTemp != null) {
                 etherNetIPTemp.close();
                 protocolAdapterStopOutput.stoppedSuccessfully();
-
-                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
                 log.info("Stopped");
             } else {
                 protocolAdapterStopOutput.stoppedSuccessfully();
