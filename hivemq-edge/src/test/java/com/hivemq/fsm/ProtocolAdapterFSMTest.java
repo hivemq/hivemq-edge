@@ -3,6 +3,10 @@ package com.hivemq.fsm;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -19,6 +23,11 @@ class ProtocolAdapterFSMTest {
             @Override
             public void onStopping() {
                 throw new IllegalStateException("Shouldn't be triggered");
+            }
+
+            @Override
+            public boolean startSouthbound() {
+                return true;
             }
         };
 
@@ -56,6 +65,11 @@ class ProtocolAdapterFSMTest {
             @Override
             public void onStopping() {
                 throw new IllegalStateException("Shouldn't be triggered");
+            }
+
+            @Override
+            public boolean startSouthbound() {
+                return true;
             }
         };
 
@@ -102,6 +116,11 @@ class ProtocolAdapterFSMTest {
             public void onStopping() {
                 throw new IllegalStateException("Shouldn't be triggered");
             }
+
+            @Override
+            public boolean startSouthbound() {
+                return true;
+            }
         };
 
         assertThat(protocolAdapterFSM.currentState())
@@ -136,6 +155,54 @@ class ProtocolAdapterFSMTest {
     }
 
     @Test
+    public void test_startAdapter_northbound_connected_southbound_error() throws Exception{
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId") {
+            @Override
+            public boolean onStarting() {
+                return true;
+            }
+
+            @Override
+            public void onStopping() {
+            }
+
+            @Override
+            public boolean startSouthbound() {
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        TimeUnit.SECONDS.sleep(2);
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(e);
+                    }
+                    transitionSouthboundState(StateEnum.ERROR);
+                });
+                return transitionSouthboundState(StateEnum.CONNECTING);
+            }
+        };
+
+        protocolAdapterFSM.startAdapter();
+        protocolAdapterFSM.accept(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+        protocolAdapterFSM.accept(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                        ProtocolAdapterFSM.StateEnum.CONNECTED,
+                        ProtocolAdapterFSM.StateEnum.CONNECTING));
+
+        await().untilAsserted(() -> {
+            assertThat(protocolAdapterFSM.currentState())
+                    .isEqualTo(new ProtocolAdapterFSM.State(
+                            ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                            ProtocolAdapterFSM.StateEnum.CONNECTED,
+                            ProtocolAdapterFSM.StateEnum.ERROR)); // this is a valid state for EDGE
+        });
+    }
+
+    @Test
     public void test_startAndStopAdapter() throws Exception{
         final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId") {
             @Override
@@ -145,6 +212,11 @@ class ProtocolAdapterFSMTest {
 
             @Override
             public void onStopping() {
+            }
+
+            @Override
+            public boolean startSouthbound() {
+                return true;
             }
         };
 
