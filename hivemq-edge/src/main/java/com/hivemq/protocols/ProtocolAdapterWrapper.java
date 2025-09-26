@@ -151,6 +151,7 @@ public class ProtocolAdapterWrapper {
                 .thenCompose(Function.identity())
                 .handle((ignored, error) -> {
                     if(error != null) {
+                        log.error("Error starting adapter", error);
                         stopAfterFailedStart();
                         protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
                         //we still return the initial error since that's the most significant information
@@ -182,6 +183,7 @@ public class ProtocolAdapterWrapper {
     }
 
     private void stopAfterFailedStart() {
+        log.warn("Stopping adapter with id {} after a failed start", adapter.getId());
         final var stopInput = new ProtocolAdapterStopInputImpl();
         final var stopOutput = new ProtocolAdapterStopOutputImpl();
         stopPolling(protocolAdapterPollingService);
