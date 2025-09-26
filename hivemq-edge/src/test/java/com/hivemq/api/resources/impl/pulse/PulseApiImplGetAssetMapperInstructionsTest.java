@@ -59,7 +59,7 @@ public class PulseApiImplGetAssetMapperInstructionsTest extends AbstractPulseApi
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
         when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
         try (final Response response = pulseApi.getAssetMapperInstructions(combiner.getId(),
-                combiner.getMappings().getItems().get(0).getId())) {
+                combiner.getMappings().getItems().getFirst().getId())) {
             assertThat(response.getStatus()).isEqualTo(200);
             assertThat(response.getEntity()).isInstanceOf(PulseApiImpl.InstructionList.class);
             final PulseApiImpl.InstructionList instructionList = (PulseApiImpl.InstructionList) response.getEntity();

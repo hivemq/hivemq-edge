@@ -26,6 +26,9 @@ import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingStatus;
 import com.hivemq.edge.api.model.Combiner;
+import com.hivemq.edge.api.model.DataCombining;
+import com.hivemq.edge.api.model.DataCombiningDestination;
+import com.hivemq.edge.api.model.DataCombiningSources;
 import com.hivemq.edge.api.model.DataIdentifierReference;
 import com.hivemq.edge.api.model.EntityType;
 import jakarta.ws.rs.core.Response;
@@ -35,6 +38,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -67,7 +71,7 @@ public class PulseApiImplUpdateAssetMapperTest extends AbstractPulseApiImplTest 
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
         when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(PulseAssetEntity.builder()
-                .id(combiner.getMappings().getItems().get(0).getDestination().getAssetId())
+                .id(combiner.getMappings().getItems().getFirst().getDestination().getAssetId())
                 .name(combiner.getName())
                 .description(combiner.getDescription())
                 .topic("new topic")
@@ -88,7 +92,7 @@ public class PulseApiImplUpdateAssetMapperTest extends AbstractPulseApiImplTest 
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
         when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(PulseAssetEntity.builder()
-                .id(combiner.getMappings().getItems().get(0).getDestination().getAssetId())
+                .id(combiner.getMappings().getItems().getFirst().getDestination().getAssetId())
                 .name(combiner.getName())
                 .description(combiner.getDescription())
                 .topic("topic")
@@ -109,11 +113,11 @@ public class PulseApiImplUpdateAssetMapperTest extends AbstractPulseApiImplTest 
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
         when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(PulseAssetEntity.builder()
-                .id(combiner.getMappings().getItems().get(0).getDestination().getAssetId())
+                .id(combiner.getMappings().getItems().getFirst().getDestination().getAssetId())
                 .name(combiner.getName())
                 .description(combiner.getDescription())
-                .topic(combiner.getMappings().getItems().get(0).getDestination().getTopic())
-                .schema(combiner.getMappings().getItems().get(0).getDestination().getSchema())
+                .topic(combiner.getMappings().getItems().getFirst().getDestination().getTopic())
+                .schema(combiner.getMappings().getItems().getFirst().getDestination().getSchema())
                 .mapping(PulseAssetMappingEntity.builder()
                         .id(UUID.randomUUID())
                         .status(PulseAssetMappingStatus.UNMAPPED)
@@ -126,18 +130,76 @@ public class PulseApiImplUpdateAssetMapperTest extends AbstractPulseApiImplTest 
     }
 
     @Test
+    public void whenTypeIsPulseAssetAndAssetIdsAreSwapped_thenReturnsOK() {
+        final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
+        final UUID assetId = UUID.randomUUID();
+        final UUID mappingId = UUID.randomUUID();
+        combiner.getMappings()
+                .getItems()
+                .add(DataCombining.builder()
+                        .id(UUID.randomUUID())
+                        .sources(DataCombiningSources.builder()
+                                .primary(combiner.getMappings().getItems().getFirst().getSources().getPrimary())
+                                .build())
+                        .destination(DataCombiningDestination.builder()
+                                .assetId(UUID.randomUUID())
+                                .topic("topic")
+                                .schema("{}")
+                                .build())
+                        .instructions(combiner.getMappings().getItems().getFirst().getInstructions())
+                        .build());
+        combiner.getMappings().getItems().getLast().setId(mappingId);
+        combiner.getMappings().getItems().getLast().getDestination().setAssetId(assetId);
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
+        combiner.getMappings().getItems().getLast().setId(combiner.getMappings().getItems().getFirst().getId());
+        combiner.getMappings()
+                .getItems()
+                .getLast()
+                .getDestination()
+                .setAssetId(combiner.getMappings().getItems().getFirst().getDestination().getAssetId());
+        combiner.getMappings().getItems().getFirst().setId(mappingId);
+        combiner.getMappings().getItems().getFirst().getDestination().setAssetId(assetId);
+        when(assetMappingExtractor.getAssetIdSet()).thenReturn(combiner.getMappings()
+                .getItems()
+                .stream()
+                .map(com.hivemq.edge.api.model.DataCombining::getDestination)
+                .map(com.hivemq.edge.api.model.DataCombiningDestination::getAssetId)
+                .map(UUID::toString)
+                .collect(Collectors.toSet()));
+        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(combiner.getMappings()
+                .getItems()
+                .stream()
+                .map(dataCombining -> PulseAssetEntity.builder()
+                        .id(dataCombining.getDestination().getAssetId())
+                        .name(combiner.getName())
+                        .description(combiner.getDescription())
+                        .topic(dataCombining.getDestination().getTopic())
+                        .schema(dataCombining.getDestination().getSchema())
+                        .mapping(PulseAssetMappingEntity.builder()
+                                .id(dataCombining.getId())
+                                .status(PulseAssetMappingStatus.UNMAPPED)
+                                .build())
+                        .build())
+                .toList());
+        when(assetMappingExtractor.updateDataCombiner(any())).thenReturn(true);
+        try (final Response response = pulseApi.updateAssetMapper(combiner.getId(), combiner)) {
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+    }
+
+    @Test
     public void whenTypeIsPulseAssetAndAllCorrect_thenReturnsOK() {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
         when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
         when(assetMappingExtractor.updateDataCombiner(any())).thenReturn(true);
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(PulseAssetEntity.builder()
-                .id(combiner.getMappings().getItems().get(0).getDestination().getAssetId())
+                .id(combiner.getMappings().getItems().getFirst().getDestination().getAssetId())
                 .name(combiner.getName())
                 .description(combiner.getDescription())
-                .topic(combiner.getMappings().getItems().get(0).getDestination().getTopic())
-                .schema(combiner.getMappings().getItems().get(0).getDestination().getSchema())
+                .topic(combiner.getMappings().getItems().getFirst().getDestination().getTopic())
+                .schema(combiner.getMappings().getItems().getFirst().getDestination().getSchema())
                 .mapping(PulseAssetMappingEntity.builder()
-                        .id(combiner.getMappings().getItems().get(0).getId())
+                        .id(combiner.getMappings().getItems().getFirst().getId())
                         .status(PulseAssetMappingStatus.UNMAPPED)
                         .build())
                 .build()));
