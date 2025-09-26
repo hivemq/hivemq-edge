@@ -25,12 +25,18 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class NorthboundMappingEntity implements EntityValidatable {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(NorthboundMappingEntity.class);
+
+    private static final @NotNull MessageHandlingOptions NORTHBOUND_OPTS = MessageHandlingOptions.MQTTMessagePerTag;
 
     @XmlElement(name = "tagName", required = true)
     private final @NotNull String tagName;
@@ -40,6 +46,9 @@ public class NorthboundMappingEntity implements EntityValidatable {
 
     @XmlElement(name = "maxQos", required = true)
     private final int maxQoS;
+
+    @XmlElement(name = "messageHandlingOptions", defaultValue = "MQTTMessagePerTag", nillable = true)
+    private final @Nullable MessageHandlingOptions messageHandlingOptions;
 
     @XmlElement(name = "includeTagNames", required = true)
     private final @Nullable Boolean includeTagNames;
@@ -63,12 +72,14 @@ public class NorthboundMappingEntity implements EntityValidatable {
         includeTimestamp = true;
         userProperties = new ArrayList<>();
         messageExpiryInterval = Long.MAX_VALUE;
+        messageHandlingOptions = NORTHBOUND_OPTS;
     }
 
     public NorthboundMappingEntity(
             final @NotNull String tagName,
             final @NotNull String topic,
             final int maxQoS,
+            final @Nullable MessageHandlingOptions ignore,
             final boolean includeTagNames,
             final boolean includeTimestamp,
             final @NotNull List<MqttUserPropertyEntity> userProperties,
@@ -76,6 +87,8 @@ public class NorthboundMappingEntity implements EntityValidatable {
         this.tagName = tagName;
         this.topic = topic;
         this.maxQoS = maxQoS;
+        log.warn("The 'messageHandlingOptions' property in the 'northboundMapping' configuration is ignored. Always using 'MQTTMessagePerTag' handling.");
+        this.messageHandlingOptions = null;
         this.includeTagNames = includeTagNames;
         this.includeTimestamp = includeTimestamp;
         this.userProperties = userProperties;
@@ -86,6 +99,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
         return new NorthboundMappingEntity(mapping.getTagName(),
                 mapping.getMqttTopic(),
                 mapping.getMqttQos(),
+                NORTHBOUND_OPTS,
                 mapping.getIncludeTagNames(),
                 mapping.getIncludeTimestamp(),
                 mapping.getUserProperties().stream().map(NorthboundMappingEntity::userProp).toList(),
@@ -108,6 +122,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
                     case AT_LEAST_ONCE -> 1;
                     case EXACTLY_ONCE -> 2;
                 },
+                NORTHBOUND_OPTS,
                 mapping.getIncludeTagNames(),
                 mapping.getIncludeTimestamp(),
                 mapping.getUserProperties().stream().map(NorthboundMappingEntity::userProp).toList(),
@@ -123,7 +138,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
     }
 
     public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
-        return MessageHandlingOptions.MQTTMessagePerTag;
+        return NORTHBOUND_OPTS;
     }
 
     public boolean isIncludeTagNames() {
@@ -153,6 +168,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
         EntityValidatable.notMatch(validationEvents,
                 () -> QoS.valueOf(maxQoS) != null,
                 () -> "maxQos" + ' ' + maxQoS + " is invalid");
+        EntityValidatable.notNull(validationEvents, messageHandlingOptions, "messageHandlingOptions");
         EntityValidatable.notNull(validationEvents, includeTagNames, "includeTagNames");
         EntityValidatable.notNull(validationEvents, includeTimestamp, "includeTimestamp");
         if (EntityValidatable.notNull(validationEvents, messageExpiryInterval, "messageExpiryInterval")) {
@@ -200,6 +216,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
             return Objects.equals(tagName, that.tagName) &&
                     Objects.equals(topic, that.topic) &&
                     maxQoS == that.maxQoS &&
+                    Objects.equals(messageHandlingOptions, that.messageHandlingOptions) &&
                     includeTagNames == that.includeTagNames &&
                     includeTimestamp == that.includeTimestamp &&
                     Objects.equals(userProperties, that.userProperties) &&
@@ -213,6 +230,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
         return Objects.hash(tagName,
                 topic,
                 maxQoS,
+                messageHandlingOptions,
                 includeTagNames,
                 includeTimestamp,
                 userProperties,

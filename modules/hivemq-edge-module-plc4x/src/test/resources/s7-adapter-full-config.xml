@@ -41,6 +41,7 @@
                     <maxQos>1</maxQos>
                     <includeTagNames>true</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                     <tagName>tag-name</tagName>
                     <mqttUserProperties>
                         <mqttUserProperty>
@@ -58,6 +59,7 @@
                     <maxQos>1</maxQos>
                     <includeTagNames>true</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                     <tagName>tag-name</tagName>
                     <mqttUserProperties>
                         <mqttUserProperty>
