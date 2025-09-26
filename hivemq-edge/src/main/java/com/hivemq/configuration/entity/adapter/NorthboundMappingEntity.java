@@ -25,12 +25,16 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class NorthboundMappingEntity implements EntityValidatable {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(NorthboundMappingEntity.class);
 
     private static final @NotNull MessageHandlingOptions NORTHBOUND_OPTS = MessageHandlingOptions.MQTTMessagePerTag;
 
@@ -43,8 +47,8 @@ public class NorthboundMappingEntity implements EntityValidatable {
     @XmlElement(name = "maxQos", required = true)
     private final int maxQoS;
 
-    @XmlElement(name = "messageHandlingOptions", required = true)
-    private final @NotNull MessageHandlingOptions messageHandlingOptions;
+    @XmlElement(name = "messageHandlingOptions", defaultValue = "MQTTMessagePerTag", nillable = true)
+    private final @Nullable MessageHandlingOptions messageHandlingOptions;
 
     @XmlElement(name = "includeTagNames", required = true)
     private final @Nullable Boolean includeTagNames;
@@ -75,7 +79,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
             final @NotNull String tagName,
             final @NotNull String topic,
             final int maxQoS,
-            final @NotNull MessageHandlingOptions ignore,
+            final @Nullable MessageHandlingOptions ignore,
             final boolean includeTagNames,
             final boolean includeTimestamp,
             final @NotNull List<MqttUserPropertyEntity> userProperties,
@@ -83,7 +87,8 @@ public class NorthboundMappingEntity implements EntityValidatable {
         this.tagName = tagName;
         this.topic = topic;
         this.maxQoS = maxQoS;
-        this.messageHandlingOptions = NORTHBOUND_OPTS;
+        log.warn("The 'messageHandlingOptions' property in the 'northboundMapping' configuration is ignored. Always using 'MQTTMessagePerTag' handling.");
+        this.messageHandlingOptions = null;
         this.includeTagNames = includeTagNames;
         this.includeTimestamp = includeTimestamp;
         this.userProperties = userProperties;
@@ -194,8 +199,6 @@ public class NorthboundMappingEntity implements EntityValidatable {
                 '\'' +
                 ", maxQoS=" +
                 maxQoS +
-                ", messageHandlingOptions=" +
-                messageHandlingOptions +
                 ", includeTagNames=" +
                 includeTagNames +
                 ", includeTimestamp=" +
