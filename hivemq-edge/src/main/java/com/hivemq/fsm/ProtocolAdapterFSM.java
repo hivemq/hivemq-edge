@@ -67,16 +67,18 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
 
     public abstract boolean onStarting();
 
+    public abstract void onStopping();
+
     // ADAPTER signals
     public void startAdapter() {
         if(transitionAdapterState(AdapterStateEnum.STARTING)) {
             log.debug("Protocol adapter {} starting", adapterId);
             if(onStarting()) {
-                if(!adapterState.compareAndSet(AdapterStateEnum.STARTING, AdapterStateEnum.STARTED)) {
+                if(!transitionAdapterState(AdapterStateEnum.STARTED)) {
                     log.warn("Protocol adapter {} already started", adapterId);
                 }
             } else {
-                adapterState.compareAndSet(AdapterStateEnum.STARTING, AdapterStateEnum.STOPPED);
+                transitionAdapterState(AdapterStateEnum.STOPPED);
             }
         } else {
             log.info("Protocol adapter {} already started or starting", adapterId);
@@ -85,15 +87,10 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
 
     public void stopAdapter() {
         if(transitionAdapterState(AdapterStateEnum.STOPPING)) {
-            log.debug("Protocol adapter {} stopping", adapterId);
-        } else {
-            log.info("Protocol adapter {} already stopped or stopping", adapterId);
-        }
-    }
-
-    public void adapterStopped() {
-        if(transitionAdapterState(AdapterStateEnum.STOPPED)) {
-            log.debug("Protocol adapter {} stopped", adapterId);
+            onStopping();
+            if(!transitionAdapterState(AdapterStateEnum.STOPPED)) {
+                log.warn("Protocol adapter {} already stopped", adapterId);
+            }
         } else {
             log.info("Protocol adapter {} already stopped or stopping", adapterId);
         }

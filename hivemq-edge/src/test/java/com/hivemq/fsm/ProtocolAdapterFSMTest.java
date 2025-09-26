@@ -15,6 +15,11 @@ class ProtocolAdapterFSMTest {
             public boolean onStarting() {
                 return true;
             }
+
+            @Override
+            public void onStopping() {
+                throw new IllegalStateException("Shouldn't be triggered");
+            }
         };
 
         assertThat(protocolAdapterFSM.currentState())
@@ -46,6 +51,11 @@ class ProtocolAdapterFSMTest {
             @Override
             public boolean onStarting() {
                 return true;
+            }
+
+            @Override
+            public void onStopping() {
+                throw new IllegalStateException("Shouldn't be triggered");
             }
         };
 
@@ -87,6 +97,11 @@ class ProtocolAdapterFSMTest {
             public boolean onStarting() {
                 return true;
             }
+
+            @Override
+            public void onStopping() {
+                throw new IllegalStateException("Shouldn't be triggered");
+            }
         };
 
         assertThat(protocolAdapterFSM.currentState())
@@ -117,6 +132,58 @@ class ProtocolAdapterFSMTest {
                 .isEqualTo(new ProtocolAdapterFSM.State(
                         ProtocolAdapterFSM.AdapterStateEnum.STARTED,
                         ProtocolAdapterFSM.StateEnum.ERROR,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
+    }
+
+    @Test
+    public void test_startAndStopAdapter() throws Exception{
+        final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId") {
+            @Override
+            public boolean onStarting() {
+                return true;
+            }
+
+            @Override
+            public void onStopping() {
+            }
+        };
+
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STOPPED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
+
+        protocolAdapterFSM.startAdapter();
+
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
+
+        protocolAdapterFSM.accept(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                        ProtocolAdapterFSM.StateEnum.CONNECTING,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
+
+        protocolAdapterFSM.accept(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                        ProtocolAdapterFSM.StateEnum.CONNECTED,
+                        ProtocolAdapterFSM.StateEnum.DISCONNECTED));
+
+        protocolAdapterFSM.stopAdapter();
+
+        assertThat(protocolAdapterFSM.currentState())
+                .isEqualTo(new ProtocolAdapterFSM.State(
+                        ProtocolAdapterFSM.AdapterStateEnum.STOPPED,
+                        ProtocolAdapterFSM.StateEnum.CONNECTED,
                         ProtocolAdapterFSM.StateEnum.DISCONNECTED));
     }
 
