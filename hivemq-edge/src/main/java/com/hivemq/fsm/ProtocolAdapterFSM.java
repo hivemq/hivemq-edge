@@ -143,13 +143,16 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
 
     @Override
     public void accept(final ProtocolAdapterState.ConnectionStatus connectionStatus) {
-        switch (connectionStatus) {
+        final var transitionResult = switch (connectionStatus) {
             case CONNECTED -> transitionNorthboundState(StateEnum.CONNECTED);
             case CONNECTING -> transitionNorthboundState(StateEnum.CONNECTING);
             case DISCONNECTED -> transitionNorthboundState(StateEnum.DISCONNECTED);
             case ERROR -> transitionNorthboundState(StateEnum.ERROR);
             case UNKNOWN -> transitionNorthboundState(StateEnum.DISCONNECTED);
             case STATELESS -> transitionNorthboundState(StateEnum.NOT_SUPPORTED);
+        };
+        if(!transitionResult) {
+            log.warn("Failed to transition connection state to {} for adapter {}", connectionStatus, adapterId);
         }
     }
 
