@@ -35,7 +35,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     protected @NotNull AtomicReference<ConnectionStatus> connectionStatus =
             new AtomicReference<>(ConnectionStatus.DISCONNECTED);
     protected @Nullable String lastErrorMessage;
-    private AtomicReference<Consumer<ConnectionStatus>> connectionStatusListener = new AtomicReference<>();
+    private final AtomicReference<Consumer<ConnectionStatus>> connectionStatusListener = new AtomicReference<>();
 
     public ProtocolAdapterStateImpl(final @NotNull EventService eventService,
                                     final @NotNull String adapterId,
@@ -111,7 +111,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
         return lastErrorMessage;
     }
 
-    public void setConnectionStatusListener(Consumer<ConnectionStatus> connectionStatusListener) {
+    public void setConnectionStatusListener(final @NotNull Consumer<ConnectionStatus> connectionStatusListener) {
         this.connectionStatusListener.set(connectionStatusListener);
         connectionStatusListener.accept(connectionStatus.get());
     }
