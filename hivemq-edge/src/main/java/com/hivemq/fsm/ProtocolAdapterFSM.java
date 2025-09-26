@@ -14,6 +14,44 @@ import java.util.function.Consumer;
 
 public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterState.ConnectionStatus> {
 
+    // +--------------------------------------------------------------------+
+    //       |                                                                    |
+    //       |                                                                    |
+    //       |                        +--------------+                            |
+    //       |                        | DISCONNECTED |                            |
+    //       |                        +--------------+                            |
+    //       |                               ^                                    |
+    //       |                               |                                    |
+    //       |   +---------------------------+                                    |
+    //       |   |                                                                |
+    //       |   |                                                                |
+    //       |   | (connect)                                                      |
+    //       |   |                                                                |
+    //       v   v                                                                |
+    //   +------------+                                                          |
+    //   | CONNECTING |                                                          |
+    //   +--+------+--+                                                          |
+    //      |      |                                                             |
+    //      |      +--------------------------------------------------------+    |
+    //      |                                                               |    |
+    //      v                                                               v    |
+    //+-----------+                                                     +-------+  |
+    //| CONNECTED |                                                     | ERROR | -+
+    //+-----+-----+                                                     +-------+
+    //      |                                                               ^
+    //      +-----------------------------+-------------------------------+
+    //      |                             |                               |
+    //      v                             v                               v
+    //+---------------+               +---------+               +---------------+
+    //| DISCONNECTING |               | CLOSING |               | ERROR_CLOSING |
+    //+---------------+               +---------+               +---------------+
+    //      |                             |                               |
+    //      |                             v                               v
+    //      +-----------------------------+                            (to ERROR)
+    //                              +--------+
+    //                              | CLOSED |
+    //                              +--------+
+
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterFSM.class);
 
     public enum StateEnum {
@@ -31,8 +69,8 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     public static final Map<StateEnum, Set<StateEnum>> possibleTransitions = Map.of(
             StateEnum.DISCONNECTED, Set.of(StateEnum.CONNECTED,StateEnum.CONNECTING), //for compatibility, we allow to go from CONNECTING to CONNECTED directly
             StateEnum.CONNECTING, Set.of(StateEnum.CONNECTED, StateEnum.ERROR),
-            StateEnum.CONNECTED, Set.of(StateEnum.DISCONNECTING, StateEnum.CLOSING, StateEnum.ERROR_CLOSING),
-            StateEnum.DISCONNECTING, Set.of(StateEnum.CONNECTING),
+            StateEnum.CONNECTED, Set.of(StateEnum.DISCONNECTING, StateEnum.CONNECTING ,StateEnum.CLOSING, StateEnum.ERROR_CLOSING), // transition to CONNECTING in case of recovery
+            StateEnum.DISCONNECTING, Set.of(StateEnum.CLOSING),
             StateEnum.CLOSING, Set.of(StateEnum.CLOSED),
             StateEnum.ERROR_CLOSING, Set.of(StateEnum.ERROR)
     );
@@ -68,6 +106,8 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     public abstract boolean onStarting();
 
     public abstract void onStopping();
+
+    public abstract boolean startSouthbound();
 
     // ADAPTER signals
     public void startAdapter() {
@@ -141,7 +181,9 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     @Override
     public void accept(final ProtocolAdapterState.ConnectionStatus connectionStatus) {
         final var transitionResult = switch (connectionStatus) {
-            case CONNECTED -> transitionNorthboundState(StateEnum.CONNECTED);
+            case CONNECTED ->
+                transitionNorthboundState(StateEnum.CONNECTED)  && startSouthbound();
+
             case CONNECTING -> transitionNorthboundState(StateEnum.CONNECTING);
             case DISCONNECTED -> transitionNorthboundState(StateEnum.DISCONNECTED);
             case ERROR -> transitionNorthboundState(StateEnum.ERROR);
