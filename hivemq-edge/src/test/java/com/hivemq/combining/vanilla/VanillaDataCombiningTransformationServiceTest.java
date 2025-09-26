@@ -165,7 +165,21 @@ public class VanillaDataCombiningTransformationServiceTest {
     }
 
     @Test
-    public void when2FiltersAnd2TagsMatch_thenPublishPasses() {
+    public void when1AssetMatches_thenPublishPasses() {
+        final String assetId = UUID.randomUUID().toString();
+        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
+                "dest.asset",
+                new DataIdentifierReference(assetId, DataIdentifierReference.Type.PULSE_ASSET))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"asset\":\"" +
+                assetId +
+                "\"}}");
+    }
+
+    @Test
+    public void when2FiltersAnd2TagsAnd2AssetsMatch_thenPublishPasses() {
         when(publish.getPayload()).thenReturn("""
                 {
                   "TOPIC_FILTER:topic/a": {
@@ -186,11 +200,17 @@ public class VanillaDataCombiningTransformationServiceTest {
                         new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG)),
                 new Instruction("$.value",
                         "dest.tag2",
-                        new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
+                        new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG)),
+                new Instruction("$.value",
+                        "dest.asset1",
+                        new DataIdentifierReference("ASSET1", DataIdentifierReference.Type.PULSE_ASSET)),
+                new Instruction("$.value",
+                        "dest.asset2",
+                        new DataIdentifierReference("ASSET2", DataIdentifierReference.Type.PULSE_ASSET))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo(
-                "{\"dest\":{\"a\":1,\"b\":2,\"tag1\":\"TAG1\",\"tag2\":\"TAG2\"}}");
+                "{\"dest\":{\"a\":1,\"b\":2,\"tag1\":\"TAG1\",\"tag2\":\"TAG2\",\"asset1\":\"ASSET1\",\"asset2\":\"ASSET2\"}}");
     }
 
     @Test
