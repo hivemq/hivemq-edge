@@ -129,10 +129,14 @@ public final class AssetMapperManager {
             final List<UUID> toBeUpdatedAssetMapperIdList =
                     new ArrayList<>(Sets.intersection(newAssetMapperIdSet, oldAssetMapperIdSet));
             LOGGER.info("Old asset mapper IDs: {}", oldAssetMapperIdSet);
-            LOGGER.info("New asset mapper IDs: {}", newAssetMapperIdSet);
-            LOGGER.debug("To be deleted asset mapper IDs: {}", toBeDeletedAssetMapperIdList);
-            LOGGER.debug("To be created asset mapper IDs: {}", toBeCreatedAssetMapperIdList);
-            LOGGER.debug("To be updated asset mapper IDs: {}", toBeUpdatedAssetMapperIdList);
+            LOGGER.info("New asset mapper filtered IDs: {}", newAssetMapperIdSet);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.info("Asset IDs: {}", assetEntityMap.keySet());
+                LOGGER.info("New asset mapper IDs: {}", assetMappers.stream().map(DataCombiner::id).toList());
+                LOGGER.debug("To be deleted asset mapper IDs: {}", toBeDeletedAssetMapperIdList);
+                LOGGER.debug("To be created asset mapper IDs: {}", toBeCreatedAssetMapperIdList);
+                LOGGER.debug("To be updated asset mapper IDs: {}", toBeUpdatedAssetMapperIdList);
+            }
             final List<UUID> failedDataCombiners = new ArrayList<>();
             // Delete
             toBeDeletedAssetMapperIdList.forEach(uuid -> {
