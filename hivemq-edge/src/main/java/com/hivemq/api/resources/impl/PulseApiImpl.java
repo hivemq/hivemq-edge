@@ -190,6 +190,7 @@ public class PulseApiImpl implements PulseApi {
             assets.set(optionalAssetIndex.getAsInt(), newAsset);
             final PulseEntity newPulseEntity = new PulseEntity(assets.toPersistence());
             pulseExtractor.setPulseEntity(newPulseEntity);
+            notifyAssetMapper(newAsset);
             return Response.ok().build();
         }
     }
@@ -262,6 +263,7 @@ public class PulseApiImpl implements PulseApi {
             assets.remove(optionalAssetIndex.getAsInt());
             final PulseEntity newPulseEntity = new PulseEntity(assets.toPersistence());
             pulseExtractor.setPulseEntity(newPulseEntity);
+            notifyAssetMapper(asset);
         }
         return Response.ok().build();
     }
@@ -461,13 +463,14 @@ public class PulseApiImpl implements PulseApi {
             } else if (!Objects.equals(oldMappingId, newMappingId)) {
                 return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(newMappingId));
             }
-            assets.set(optionalAssetIndex.getAsInt(),
-                    asset.withMapping(asset.getMapping()
-                            .withId(newMappingId)
-                            .withStatus(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(managedAsset.getMapping()
-                                    .getStatus()))));
+            final PulseAgentAsset newAsset = asset.withMapping(asset.getMapping()
+                    .withId(newMappingId)
+                    .withStatus(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(managedAsset.getMapping()
+                            .getStatus())));
+            assets.set(optionalAssetIndex.getAsInt(), newAsset);
             final PulseEntity newPulseEntity = new PulseEntity(assets.toPersistence());
             pulseExtractor.setPulseEntity(newPulseEntity);
+            notifyAssetMapper(asset);
             return Response.ok().build();
         }
     }
@@ -610,6 +613,15 @@ public class PulseApiImpl implements PulseApi {
             }
         }
         return Optional.empty();
+    }
+
+    private void notifyAssetMapper(final @NotNull PulseAgentAsset asset) {
+        assetMappingExtractor.getAllCombiners()
+                .stream()
+                .filter(dataCombiner -> dataCombiner.dataCombinings()
+                        .stream()
+                        .anyMatch(dataCombining -> Objects.equals(asset.getMapping().getId(), dataCombining.id())))
+                .forEach(assetMappingExtractor::updateDataCombiner);
     }
 
     public static class InstructionList extends ItemsResponse<Instruction> {
