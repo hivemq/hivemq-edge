@@ -109,41 +109,17 @@ public final class AssetMapperManager {
         synchronized (pulseEntity.getLock()) {
             final Set<UUID> oldAssetMapperIdSet = idToAssetMapperTaskMap.keySet();
             // Let's filter out non-streaming asset mappers.
-            pulseEntity.getPulseAssetsEntity()
-                    .getPulseAssetEntities()
-                    .forEach(pulseAssetEntity -> LOGGER.debug("Pulse Asset: {}", pulseAssetEntity));
-            assetMappers.forEach(assetMapper -> LOGGER.debug("Asset Mapper: {}", assetMapper.toModel()));
             final Map<String, PulseAssetEntity> assetEntityMap = PulseAgentAssetUtils.toAssetEntityMap(pulseEntity);
-            final Map<UUID, DataCombiner> newAssetMapperMap = assetMappers.stream().filter(dataCombiner -> {
-                final boolean found1 = dataCombiner.dataCombinings().stream().allMatch(dataCombining -> {
-                    final var asset = assetEntityMap.get(dataCombining.destination().assetId());
-                    if (asset == null) {
-                        LOGGER.debug("Asset ID {} not found for mapping {}",
-                                dataCombining.destination().assetId(),
-                                dataCombining.id());
-                    } else if (asset.getMapping() == null) {
-                        LOGGER.debug("Asset ID {} has no mapping for mapping {}",
-                                dataCombining.destination().assetId(),
-                                dataCombining.id());
-                    } else if (Objects.equals(asset.getMapping().getId(), dataCombining.id()) &&
-                            asset.getMapping().getStatus() != PulseAssetMappingStatus.STREAMING) {
-                        LOGGER.debug("Asset ID {} has mapping status {} instead of STREAMING for mapping {}",
-                                dataCombining.destination().assetId(),
-                                asset.getMapping().getStatus(),
-                                dataCombining.id());
-                    }
-                    final boolean found2 =
-                            Optional.ofNullable(assetEntityMap.get(dataCombining.destination().assetId()))
+            final Map<UUID, DataCombiner> newAssetMapperMap = assetMappers.stream()
+                    .filter(dataCombiner -> dataCombiner.dataCombinings()
+                            .stream()
+                            .allMatch(dataCombining -> Optional.ofNullable(assetEntityMap.get(dataCombining.destination()
+                                            .assetId()))
                                     .map(PulseAssetEntity::getMapping)
                                     .map(mapping -> Objects.equals(mapping.getId(), dataCombining.id()) &&
                                             Objects.equals(mapping.getStatus(), PulseAssetMappingStatus.STREAMING))
-                                    .orElse(false);
-                    LOGGER.debug("Mapping {} found: {}", dataCombining.id(), found2);
-                    return found2;
-                });
-                LOGGER.debug("Asset Mapper {} found: {}", dataCombiner.id(), found1);
-                return found1;
-            }).collect(Collectors.toMap(DataCombiner::id, Function.identity()));
+                                    .orElse(false)))
+                    .collect(Collectors.toMap(DataCombiner::id, Function.identity()));
             // Let's determine what to be created, updated, deleted.
             final Set<UUID> newAssetMapperIdSet = newAssetMapperMap.keySet();
             final List<UUID> toBeDeletedAssetMapperIdList =
@@ -152,11 +128,11 @@ public final class AssetMapperManager {
                     new ArrayList<>(Sets.difference(newAssetMapperIdSet, oldAssetMapperIdSet));
             final List<UUID> toBeUpdatedAssetMapperIdList =
                     new ArrayList<>(Sets.intersection(newAssetMapperIdSet, oldAssetMapperIdSet));
-            LOGGER.info("Old asset mapper IDs: {}", oldAssetMapperIdSet);
-            LOGGER.info("New asset mapper filtered IDs: {}", newAssetMapperIdSet);
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.info("Asset IDs: {}", assetEntityMap.keySet());
-                LOGGER.info("New asset mapper IDs: {}", assetMappers.stream().map(DataCombiner::id).toList());
+                LOGGER.debug("Old asset mapper IDs: {}", oldAssetMapperIdSet);
+                LOGGER.debug("New asset mapper filtered IDs: {}", newAssetMapperIdSet);
+                LOGGER.debug("Asset IDs: {}", assetEntityMap.keySet());
+                LOGGER.debug("New asset mapper IDs: {}", assetMappers.stream().map(DataCombiner::id).toList());
                 LOGGER.debug("To be deleted asset mapper IDs: {}", toBeDeletedAssetMapperIdList);
                 LOGGER.debug("To be created asset mapper IDs: {}", toBeCreatedAssetMapperIdList);
                 LOGGER.debug("To be updated asset mapper IDs: {}", toBeUpdatedAssetMapperIdList);
@@ -267,7 +243,8 @@ public final class AssetMapperManager {
         }
     }
 
-    private @NotNull CompletableFuture<Void> stop(final @NotNull AssetMapperManager.AssetMapperTask assetMapperTask) {
+    private @NotNull CompletableFuture<Void> stop(
+            final @NotNull AssetMapperManager.AssetMapperTask assetMapperTask) {
         synchronized (pulseExtractor.getPulseEntity().getLock()) {
             // stopping is fast no reason for async
             assetMapperTask.dataCombiningRuntimes().forEach(DataCombiningRuntime::stop);
