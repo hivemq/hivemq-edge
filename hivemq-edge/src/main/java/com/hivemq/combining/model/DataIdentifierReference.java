@@ -42,6 +42,10 @@ public record DataIdentifierReference(String id, Type type) {
         return new DataIdentifierReferenceEntity(this.id(), this.type);
     }
 
+    public boolean isIdEmpty() {
+        return id == null || id.isBlank();
+    }
+
     public enum Type {
         PULSE_ASSET,
         TAG,
