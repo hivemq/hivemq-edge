@@ -107,8 +107,7 @@ public final class AssetMapperManager {
         LOGGER.info("Refreshing Pulse Asset Mappers");
         final PulseEntity pulseEntity = pulseExtractor.getPulseEntity();
         synchronized (pulseEntity.getLock()) {
-            final Set<UUID> assetMapperIdSet = idToAssetMapperTaskMap.keySet();
-            LOGGER.info("AssetMappers: {}", assetMapperIdSet);
+            final Set<UUID> oldAssetMapperIdSet = idToAssetMapperTaskMap.keySet();
             // Let's filter out non-streaming asset mappers.
             final Map<String, PulseAssetEntity> assetEntityMap = PulseAgentAssetUtils.toAssetEntityMap(pulseEntity);
             final Map<UUID, DataCombiner> newAssetMapperMap = assetMappers.stream()
@@ -124,11 +123,16 @@ public final class AssetMapperManager {
             // Let's determine what to be created, updated, deleted.
             final Set<UUID> newAssetMapperIdSet = newAssetMapperMap.keySet();
             final List<UUID> toBeDeletedAssetMapperIdList =
-                    new ArrayList<>(Sets.difference(assetMapperIdSet, newAssetMapperIdSet));
+                    new ArrayList<>(Sets.difference(oldAssetMapperIdSet, newAssetMapperIdSet));
             final List<UUID> toBeCreatedAssetMapperIdList =
-                    new ArrayList<>(Sets.difference(newAssetMapperIdSet, assetMapperIdSet));
+                    new ArrayList<>(Sets.difference(newAssetMapperIdSet, oldAssetMapperIdSet));
             final List<UUID> toBeUpdatedAssetMapperIdList =
-                    new ArrayList<>(Sets.intersection(newAssetMapperIdSet, assetMapperIdSet));
+                    new ArrayList<>(Sets.intersection(newAssetMapperIdSet, oldAssetMapperIdSet));
+            LOGGER.info("Old asset mapper IDs: {}", oldAssetMapperIdSet);
+            LOGGER.info("New asset mapper IDs: {}", newAssetMapperIdSet);
+            LOGGER.debug("To be deleted asset mapper IDs: {}", toBeDeletedAssetMapperIdList);
+            LOGGER.debug("To be created asset mapper IDs: {}", toBeCreatedAssetMapperIdList);
+            LOGGER.debug("To be updated asset mapper IDs: {}", toBeUpdatedAssetMapperIdList);
             final List<UUID> failedDataCombiners = new ArrayList<>();
             // Delete
             toBeDeletedAssetMapperIdList.forEach(uuid -> {
