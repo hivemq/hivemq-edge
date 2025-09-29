@@ -45,9 +45,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.mockito.Mockito.when;
 
@@ -86,7 +89,7 @@ public abstract class AbstractPulseApiImplTest {
     protected static @NotNull Combiner createCombiner(
             final @NotNull EntityType entityType,
             final @NotNull DataIdentifierReference.TypeEnum type) {
-        final List<Instruction> instructions = List.of(Instruction.builder()
+        final List<Instruction> instructions = Stream.of(Instruction.builder()
                         .source("$.a")
                         .destination("dest.a")
                         .sourceRef(DataIdentifierReference.builder().id(UUID.randomUUID().toString()).type(type).build())
@@ -98,20 +101,20 @@ public abstract class AbstractPulseApiImplTest {
                                 .id(UUID.randomUUID().toString())
                                 .type(type)
                                 .build())
-                        .build());
+                        .build()).collect(Collectors.toCollection(ArrayList::new));
         final UUID dataCombiningId = UUID.randomUUID();
         return Combiner.builder()
                 .id(UUID.randomUUID())
                 .name("name")
                 .description("description")
                 .sources(EntityReferenceList.builder()
-                        .items(List.of(EntityReference.builder()
+                        .items(Stream.of(EntityReference.builder()
                                 .id(dataCombiningId.toString())
                                 .type(entityType)
-                                .build()))
+                                .build()).collect(Collectors.toCollection(ArrayList::new)))
                         .build())
                 .mappings(DataCombiningList.builder()
-                        .items(List.of(DataCombining.builder()
+                        .items(Stream.of(DataCombining.builder()
                                 .id(dataCombiningId)
                                 .sources(DataCombiningSources.builder()
                                         .primary(instructions.get(0).getSourceRef())
@@ -122,7 +125,7 @@ public abstract class AbstractPulseApiImplTest {
                                         .schema("{}")
                                         .build())
                                 .instructions(instructions)
-                                .build()))
+                                .build()).collect(Collectors.toCollection(ArrayList::new)))
                         .build())
                 .build();
     }

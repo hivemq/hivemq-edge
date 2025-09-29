@@ -60,6 +60,9 @@ public record DataCombining(UUID id, DataCombiningSources sources, DataCombining
 
     public boolean isPrimaryReferenceFound() {
         final DataIdentifierReference primaryReference = sources().primaryReference();
+        if (primaryReference == null || primaryReference.isIdEmpty()) {
+            return false;
+        }
         return instructions().stream()
                 .map(com.hivemq.persistence.mappings.fieldmapping.Instruction::dataIdentifierReference)
                 .filter(Objects::nonNull)
@@ -71,8 +74,8 @@ public record DataCombining(UUID id, DataCombiningSources sources, DataCombining
         for (final String id : instructions().stream()
                 .map(Instruction::dataIdentifierReference)
                 .filter(Objects::nonNull)
+                .filter(dataIdentifierReference -> !dataIdentifierReference.isIdEmpty())
                 .map(DataIdentifierReference::id)
-                .filter(Objects::nonNull)
                 .toList()) {
             if (!idSet.add(id)) {
                 return Optional.of(id);
