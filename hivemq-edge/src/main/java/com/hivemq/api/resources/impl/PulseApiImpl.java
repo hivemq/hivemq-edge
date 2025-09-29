@@ -473,6 +473,7 @@ public class PulseApiImpl implements PulseApi {
      */
     @Override
     public synchronized @NotNull Response updatePulseActivationToken(final @NotNull PulseActivationToken pulseActivationToken) {
+        LOGGER.info("PulseApiImpl.updatePulseActivationToken");
         final String token = pulseActivationToken.getToken();
         try {
             final Optional<StatusProvider> optionalStatusProvider =
@@ -480,8 +481,12 @@ public class PulseApiImpl implements PulseApi {
             if (optionalStatusProvider.isEmpty()) {
                 return ErrorResponseUtil.errorResponse(new InternalServerError(null));
             }
+            LOGGER.info("PulseApiImpl.before optionalStatusProvider.get");
             final StatusProvider statusProvider = optionalStatusProvider.get();
+            LOGGER.info("PulseApiImpl.after statusProvider.get");
             final boolean tokenValid = statusProvider.activatePulse(token);
+            LOGGER.info("PulseApiImpl.after activatePulse.get");
+
             if (!tokenValid) {
                 return ErrorResponseUtil.errorResponse(new ActivationTokenInvalidError());
             }
