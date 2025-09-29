@@ -110,6 +110,11 @@ public class PulseAssetMappingEntity implements EntityValidatable {
         EntityValidatable.notNull(validationEvents, status, "status");
     }
 
+    @Override
+    public @NotNull String toString() {
+        return "PulseAssetMappingEntity{" + "id=" + id + ", status=" + status + '}';
+    }
+
     public static class Builder {
         private @Nullable UUID id;
         private @NotNull PulseAssetMappingStatus status;

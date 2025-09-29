@@ -116,6 +116,22 @@ public final class AssetMapperManager {
             final Map<String, PulseAssetEntity> assetEntityMap = PulseAgentAssetUtils.toAssetEntityMap(pulseEntity);
             final Map<UUID, DataCombiner> newAssetMapperMap = assetMappers.stream().filter(dataCombiner -> {
                 final boolean found1 = dataCombiner.dataCombinings().stream().allMatch(dataCombining -> {
+                    final var asset = assetEntityMap.get(dataCombining.destination().assetId());
+                    if (asset == null) {
+                        LOGGER.debug("Asset ID {} not found for mapping {}",
+                                dataCombining.destination().assetId(),
+                                dataCombining.id());
+                    } else if (asset.getMapping() == null) {
+                        LOGGER.debug("Asset ID {} has no mapping for mapping {}",
+                                dataCombining.destination().assetId(),
+                                dataCombining.id());
+                    } else if (Objects.equals(asset.getMapping().getId(), dataCombining.id()) &&
+                            asset.getMapping().getStatus() != PulseAssetMappingStatus.STREAMING) {
+                        LOGGER.debug("Asset ID {} has mapping status {} instead of STREAMING for mapping {}",
+                                dataCombining.destination().assetId(),
+                                asset.getMapping().getStatus(),
+                                dataCombining.id());
+                    }
                     final boolean found2 =
                             Optional.ofNullable(assetEntityMap.get(dataCombining.destination().assetId()))
                                     .map(PulseAssetEntity::getMapping)
