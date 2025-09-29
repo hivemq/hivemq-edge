@@ -239,6 +239,28 @@ public class PulseAssetEntity implements EntityValidatable {
         }
     }
 
+    @Override
+    public @NotNull String toString() {
+        return "PulseAssetEntity{" +
+                "id=" +
+                id +
+                ", name='" +
+                name +
+                '\'' +
+                ", description='" +
+                description +
+                '\'' +
+                ", topic='" +
+                topic +
+                '\'' +
+                ", schema='" +
+                schema +
+                '\'' +
+                ", mapping=" +
+                mapping +
+                '}';
+    }
+
     public static class Builder {
         private @Nullable UUID id;
         private @Nullable String name;
