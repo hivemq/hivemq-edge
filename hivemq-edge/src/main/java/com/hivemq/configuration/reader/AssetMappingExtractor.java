@@ -37,7 +37,7 @@ public class AssetMappingExtractor
     private final @NotNull ConfigFileReaderWriter configFileReaderWriter;
     private volatile @NotNull List<DataCombinerEntity> config = List.of();
     private volatile @Nullable Consumer<List<@NotNull DataCombiner>> consumer =
-            cfg -> log.debug("No consumer registered yet");
+            cfg -> log.debug("No consumer registered for Asset Mapping yet");
 
     public AssetMappingExtractor(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
         this.configFileReaderWriter = configFileReaderWriter;
@@ -50,7 +50,7 @@ public class AssetMappingExtractor
 
     @Override
     public @NotNull Configurator.ConfigResult updateConfig(final HiveMQConfigEntity config) {
-        this.config = config.getAssetMapperEntities();
+        this.config = List.copyOf(config.getAssetMapperEntities());
         notifyConsumer();
         return Configurator.ConfigResult.SUCCESS;
     }
