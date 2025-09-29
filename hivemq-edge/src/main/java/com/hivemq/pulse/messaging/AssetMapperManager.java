@@ -109,17 +109,25 @@ public final class AssetMapperManager {
         synchronized (pulseEntity.getLock()) {
             final Set<UUID> oldAssetMapperIdSet = idToAssetMapperTaskMap.keySet();
             // Let's filter out non-streaming asset mappers.
+            pulseEntity.getPulseAssetsEntity()
+                    .getPulseAssetEntities()
+                    .forEach(pulseAssetEntity -> LOGGER.debug("Pulse Asset: {}", pulseAssetEntity));
+            assetMappers.forEach(assetMapper -> LOGGER.debug("Asset Mapper: {}", assetMapper.toModel()));
             final Map<String, PulseAssetEntity> assetEntityMap = PulseAgentAssetUtils.toAssetEntityMap(pulseEntity);
-            final Map<UUID, DataCombiner> newAssetMapperMap = assetMappers.stream()
-                    .filter(dataCombiner -> dataCombiner.dataCombinings()
-                            .stream()
-                            .allMatch(dataCombining -> Optional.ofNullable(assetEntityMap.get(dataCombining.destination()
-                                            .assetId()))
+            final Map<UUID, DataCombiner> newAssetMapperMap = assetMappers.stream().filter(dataCombiner -> {
+                final boolean found1 = dataCombiner.dataCombinings().stream().allMatch(dataCombining -> {
+                    final boolean found2 =
+                            Optional.ofNullable(assetEntityMap.get(dataCombining.destination().assetId()))
                                     .map(PulseAssetEntity::getMapping)
                                     .map(mapping -> Objects.equals(mapping.getId(), dataCombining.id()) &&
                                             Objects.equals(mapping.getStatus(), PulseAssetMappingStatus.STREAMING))
-                                    .orElse(false)))
-                    .collect(Collectors.toMap(DataCombiner::id, Function.identity()));
+                                    .orElse(false);
+                    LOGGER.debug("Mapping {} found: {}", dataCombining.id(), found2);
+                    return found2;
+                });
+                LOGGER.debug("Asset Mapper {} found: {}", dataCombiner.id(), found1);
+                return found1;
+            }).collect(Collectors.toMap(DataCombiner::id, Function.identity()));
             // Let's determine what to be created, updated, deleted.
             final Set<UUID> newAssetMapperIdSet = newAssetMapperMap.keySet();
             final List<UUID> toBeDeletedAssetMapperIdList =
