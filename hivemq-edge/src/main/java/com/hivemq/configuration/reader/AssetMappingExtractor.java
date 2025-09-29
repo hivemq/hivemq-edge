@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.combining.DataCombinerEntity;
+import com.hivemq.configuration.entity.combining.DataCombiningDestinationEntity;
 import com.hivemq.configuration.entity.combining.DataCombiningEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -86,7 +87,7 @@ public class AssetMappingExtractor
         });
     }
 
-    public Optional<DataCombiner> getCombinerById(final @NotNull UUID id) {
+    public @NotNull Optional<DataCombiner> getCombinerById(final @NotNull UUID id) {
         return config.stream()
                 .filter(oldInstance -> oldInstance.getId().equals(id))
                 .findFirst()
@@ -133,6 +134,15 @@ public class AssetMappingExtractor
     public void sync(final @NotNull HiveMQConfigEntity config) {
         config.getAssetMapperEntities().clear();
         config.getAssetMapperEntities().addAll(this.config);
+    }
+
+    public @NotNull Set<String> getAssetIdSet() {
+        return config.stream()
+                .flatMap(dataCombinerEntity -> dataCombinerEntity.getDataCombiningEntities()
+                        .stream()
+                        .map(DataCombiningEntity::getDestination)
+                        .map(DataCombiningDestinationEntity::getAssetId))
+                .collect(Collectors.toSet());
     }
 
     public @NotNull Set<String> getMappingIdSet() {

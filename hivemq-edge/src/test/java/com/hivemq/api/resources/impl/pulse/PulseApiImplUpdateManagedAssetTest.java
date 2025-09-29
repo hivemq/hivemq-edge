@@ -159,7 +159,7 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
             assertThat(assetsArgumentCaptor.getValue().getPulseAssetsEntity()).isNotNull();
             assertThat(assetsArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities()).hasSize(1);
             final PulseAssetEntity asset =
-                    assetsArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities().get(0);
+                    assetsArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities().getFirst();
             assertThat(asset.getId()).as("ID cannot be changed.").isEqualTo(id);
             assertThat(asset.getName()).as("Name cannot be changed.").isEqualTo(expectedAsset.getName());
             assertThat(asset.getDescription()).as("Description cannot be changed.")
@@ -205,7 +205,7 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
             assertThat(assetsArgumentCaptor.getValue().getPulseAssetsEntity()).isNotNull();
             assertThat(assetsArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities()).hasSize(1);
             final PulseAssetEntity asset =
-                    assetsArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities().get(0);
+                    assetsArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities().getFirst();
             assertThat(asset.getId()).as("ID cannot be changed.").isEqualTo(id);
             assertThat(asset.getName()).as("Name cannot be changed.").isEqualTo(expectedAsset.getName());
             assertThat(asset.getDescription()).as("Description cannot be changed.")

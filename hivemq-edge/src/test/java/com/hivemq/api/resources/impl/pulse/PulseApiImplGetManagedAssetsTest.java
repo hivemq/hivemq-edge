@@ -115,7 +115,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
             final ManagedAssetList assetList = (ManagedAssetList) response.getEntity();
             assertThat(assetList).isNotNull();
             assertThat(assetList.getItems()).hasSize(1);
-            final ManagedAsset asset = assetList.getItems().get(0);
+            final ManagedAsset asset = assetList.getItems().getFirst();
             assertThat(asset.getId()).isEqualTo(expectedAsset.getId());
             assertThat(asset.getName()).isEqualTo(expectedAsset.getName());
             assertThat(asset.getDescription()).isEqualTo(expectedAsset.getDescription());
@@ -156,7 +156,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
             final ManagedAssetList assetList = (ManagedAssetList) response.getEntity();
             assertThat(assetList).isNotNull();
             assertThat(assetList.getItems()).hasSize(1);
-            final ManagedAsset asset = assetList.getItems().get(0);
+            final ManagedAsset asset = assetList.getItems().getFirst();
             assertThat(asset.getId()).isEqualTo(id);
             assertThat(asset.getName()).isEqualTo(expectedAsset.getName());
             assertThat(asset.getDescription()).isEqualTo(expectedAsset.getDescription());
