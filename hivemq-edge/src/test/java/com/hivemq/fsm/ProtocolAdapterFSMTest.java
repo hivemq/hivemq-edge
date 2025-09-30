@@ -1,6 +1,7 @@
 package com.hivemq.fsm;
 
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -12,9 +13,11 @@ import static org.awaitility.Awaitility.await;
 
 class ProtocolAdapterFSMTest {
 
+    private static final @NotNull String ID = "adapterId";
+
     @Test
     public void test_startAdapter_withLegacyConnectBehavior() throws Exception{
-        final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId") {
+        final var protocolAdapterFSM = new ProtocolAdapterFSM(ID) {
             @Override
             public boolean onStarting() {
                 return true;
@@ -45,6 +48,7 @@ class ProtocolAdapterFSMTest {
                         ProtocolAdapterFSM.StateEnum.DISCONNECTED,
                         ProtocolAdapterFSM.StateEnum.DISCONNECTED));
 
+        // northbound is connected
         protocolAdapterFSM.accept(ProtocolAdapterState.ConnectionStatus.CONNECTED);
 
         assertThat(protocolAdapterFSM.currentState())
@@ -56,7 +60,7 @@ class ProtocolAdapterFSMTest {
 
     @Test
     public void test_startAdapter_withGoingThroughConnectingState() throws Exception{
-        final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId") {
+        final var protocolAdapterFSM = new ProtocolAdapterFSM(ID) {
             @Override
             public boolean onStarting() {
                 return true;
@@ -106,7 +110,7 @@ class ProtocolAdapterFSMTest {
 
     @Test
     public void test_startAdapter_northboundError() throws Exception{
-        final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId") {
+        final var protocolAdapterFSM = new ProtocolAdapterFSM(ID) {
             @Override
             public boolean onStarting() {
                 return true;
@@ -158,7 +162,7 @@ class ProtocolAdapterFSMTest {
     public void test_startAdapter_northbound_connected_southbound_error() throws Exception{
 
         final CountDownLatch latch = new CountDownLatch(1);
-        final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId") {
+        final var protocolAdapterFSM = new ProtocolAdapterFSM(ID) {
             @Override
             public boolean onStarting() {
                 return true;
@@ -204,7 +208,7 @@ class ProtocolAdapterFSMTest {
 
     @Test
     public void test_startAndStopAdapter() throws Exception{
-        final var protocolAdapterFSM = new ProtocolAdapterFSM("adapterId") {
+        final var protocolAdapterFSM = new ProtocolAdapterFSM(ID) {
             @Override
             public boolean onStarting() {
                 return true;
@@ -258,5 +262,4 @@ class ProtocolAdapterFSMTest {
                         ProtocolAdapterFSM.StateEnum.CONNECTED,
                         ProtocolAdapterFSM.StateEnum.DISCONNECTED));
     }
-
 }
