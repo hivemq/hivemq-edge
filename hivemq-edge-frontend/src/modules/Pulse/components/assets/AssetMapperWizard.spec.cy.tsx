@@ -51,8 +51,8 @@ describe('AssetMapperWizard', () => {
     )
 
     cy.getByTestId('wizard-mapper-selector-container').within(() => {
-      cy.get("label[for='asset-mapper']").should('contain.text', 'Asset mappers')
-      cy.get("label[for='asset-mapper']").within(() => {
+      cy.get("label[for='asset-mapper']").should('contain.text', 'Asset mapper')
+      cy.get("div:has(> label[for='asset-mapper'])").within(() => {
         cy.getByTestId('more-info-trigger').click()
         cy.get('[data-testid="more-info-popover"] p').should(
           'have.text',
