@@ -16,6 +16,7 @@
 
 package com.hivemq.pulse.asset;
 
+import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.pulse.utils.PulseAgentAssetUtils;
 import org.jetbrains.annotations.NotNull;
@@ -23,11 +24,18 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class PulseAgentAssetChangedListener implements ExternalAssetProvider.AssetChangedListener {
+    private final @NotNull AssetMappingExtractor assetMappingExtractor;
     private final @NotNull PulseExtractor pulseExtractor;
 
     public PulseAgentAssetChangedListener(
+            final @NotNull AssetMappingExtractor assetMappingExtractor,
             final @NotNull PulseExtractor pulseExtractor) {
+        this.assetMappingExtractor = assetMappingExtractor;
         this.pulseExtractor = pulseExtractor;
+    }
+
+    public @NotNull AssetMappingExtractor getAssetMappingExtractor() {
+        return assetMappingExtractor;
     }
 
     public @NotNull PulseExtractor getPulseExtractor() {
@@ -36,6 +44,6 @@ public class PulseAgentAssetChangedListener implements ExternalAssetProvider.Ass
 
     @Override
     public void onAssetsChanged(final @NotNull List<Asset> remoteAssets) {
-        PulseAgentAssetUtils.resolveDiff(pulseExtractor, remoteAssets);
+        PulseAgentAssetUtils.resolveDiff(assetMappingExtractor, pulseExtractor, remoteAssets);
     }
 }
