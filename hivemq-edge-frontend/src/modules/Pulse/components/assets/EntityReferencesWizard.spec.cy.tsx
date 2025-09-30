@@ -47,7 +47,7 @@ describe('EntityReferencesWizard', () => {
     cy.wait(['@getBridges', '@getAdapters'])
 
     cy.getByTestId('wizard-mapper-entities-container').within(() => {
-      cy.get("label[for='mapper-sources']").within(() => {
+      cy.get("div:has(> label[for='mapper-sources'])").within(() => {
         cy.getByTestId('more-info-trigger').click()
         cy.get('[data-testid="more-info-popover"]')
           .should('be.visible')
@@ -227,15 +227,6 @@ describe('EntityReferencesWizard', () => {
     cy.mountWithProviders(<EntityReferencesWizard values={[]} onChange={cy.stub} />)
 
     cy.get('[role="alert"]').should('have.attr', 'data-status', 'error').should('contain.text', 'Not Found')
-  })
-
-  it.skip('should show loading state while fetching data', () => {
-    cy.intercept('/api/v1/management/bridges', { delay: 1000, body: MOCK_BRIDGE_LIST })
-    cy.intercept('/api/v1/management/protocol-adapters', { delay: 1000, body: MOCK_PROTOCOL_ADAPTER_LIST })
-
-    cy.mountWithProviders(<EntityReferencesWizard values={[]} onChange={cy.stub} />)
-
-    cy.get('#wizard-mapper-sources').should('have.attr', 'aria-busy', 'true')
   })
 
   it('should be accessible', () => {
