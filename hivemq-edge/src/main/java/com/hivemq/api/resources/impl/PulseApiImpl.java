@@ -433,28 +433,24 @@ public class PulseApiImpl implements PulseApi {
             if (optionalResponseDataCombiner.isPresent()) {
                 return optionalResponseDataCombiner.get();
             }
-            final boolean updated = assetMappingExtractor.updateDataCombiner(newDataCombiner);
-            if (updated) {
-                final Set<String> oldMappingIdSet = oldDataCombiner.getMappingIdSet();
-                final Set<String> newMappingIdSet = newDataCombiner.getMappingIdSet();
-                final Set<String> toBeRemovedMappingIdSet = Sets.difference(oldMappingIdSet, newMappingIdSet);
-                if (!toBeRemovedMappingIdSet.isEmpty()) {
-                    final PulseAgentAssets assets =
-                            PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
-                    final PulseAgentAssets newAssets = new PulseAgentAssets();
-                    assets.stream()
-                            .map(asset -> Optional.ofNullable(asset.getMapping().getId())
-                                    .filter(mappingId -> toBeRemovedMappingIdSet.contains(mappingId.toString()))
-                                    .map(mappingId -> asset.withMapping(PulseAgentAssetMapping.builder().build()))
-                                    .orElse(asset))
-                            .forEach(newAssets::add);
-                    final PulseEntity newPulseEntity = new PulseEntity(newAssets.toPersistence());
-                    pulseExtractor.setPulseEntity(newPulseEntity);
-                }
-                return Response.ok().build();
-            } else {
-                return ErrorResponseUtil.errorResponse(new AssetMapperNotFoundError(combiner.getId()));
+            final Set<String> oldMappingIdSet = oldDataCombiner.getMappingIdSet();
+            final Set<String> newMappingIdSet = newDataCombiner.getMappingIdSet();
+            final Set<String> toBeRemovedMappingIdSet = Sets.difference(oldMappingIdSet, newMappingIdSet);
+            if (!toBeRemovedMappingIdSet.isEmpty()) {
+                final PulseAgentAssets assets =
+                        PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
+                final PulseAgentAssets newAssets = new PulseAgentAssets();
+                assets.stream()
+                        .map(asset -> Optional.ofNullable(asset.getMapping().getId())
+                                .filter(mappingId -> toBeRemovedMappingIdSet.contains(mappingId.toString()))
+                                .map(mappingId -> asset.withMapping(PulseAgentAssetMapping.builder().build()))
+                                .orElse(asset))
+                        .forEach(newAssets::add);
+                final PulseEntity newPulseEntity = new PulseEntity(newAssets.toPersistence());
+                pulseExtractor.setPulseEntity(newPulseEntity);
             }
+            assetMappingExtractor.updateDataCombiner(newDataCombiner);
+            return Response.ok().build();
         }
     }
 
