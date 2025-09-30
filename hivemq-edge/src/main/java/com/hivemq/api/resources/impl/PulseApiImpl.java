@@ -249,11 +249,11 @@ public class PulseApiImpl implements PulseApi {
                 return asset;
             }).forEach(newAssets::add);
             try {
-                assetMappingExtractor.deleteDataCombiner(combinerId);
                 if (updated.get()) {
                     final PulseEntity newPulseEntity = new PulseEntity(newAssets.toPersistence());
                     pulseExtractor.setPulseEntity(newPulseEntity);
                 }
+                assetMappingExtractor.deleteDataCombiner(combinerId);
             } catch (final Exception e) {
                 final Throwable cause = e.getCause();
                 LOGGER.warn("Exception occurred during deletion of data combining '{}':", combinerId, cause);
