@@ -45,7 +45,7 @@ import { DEFAULT_ASSET_MAPPER_SOURCES } from '@/modules/Pulse/utils/assets.utils
 interface AssetMapperWizardProps {
   assetId: string
   onClose: () => void
-  onSubmit?: (assetMapper: Combiner, isNew: boolean) => void
+  onSubmit?: (assetMapper: Combiner, mappingId: string, isNew: boolean) => void
   isOpen: boolean
 }
 
@@ -216,7 +216,7 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
                     instructions: [],
                   }
                   rest.mappings.items.unshift(newMapping)
-                  onSubmit(rest, Boolean(__isNew__))
+                  onSubmit(rest, newMapping.id, Boolean(__isNew__))
                 }
               }}
               isDisabled={!selectedValue}
