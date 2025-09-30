@@ -20,8 +20,12 @@ import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetMappingIdError;
 import com.hivemq.api.errors.pulse.ManagedAssetAlreadyExistsError;
 import com.hivemq.api.errors.pulse.ManagedAssetNotFoundError;
+import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.edge.api.model.AssetMapping;
+import com.hivemq.edge.api.model.Combiner;
+import com.hivemq.edge.api.model.DataIdentifierReference;
+import com.hivemq.edge.api.model.EntityType;
 import com.hivemq.edge.api.model.ManagedAsset;
 import com.hivemq.pulse.asset.PulseAgentAsset;
 import com.hivemq.pulse.asset.PulseAgentAssetMapping;
@@ -167,7 +171,10 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
                 .schema("{}")
                 .mapping(PulseAgentAssetMapping.builder().status(PulseAgentAssetMappingStatus.UNMAPPED).build())
                 .build();
+        final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
+        combiner.getMappings().getItems().getFirst().id(mappingId).getDestination().assetId(id);
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
+        when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of(DataCombiner.fromModel(combiner)));
         try (final Response response = pulseApi.addManagedAsset(PulseAgentAssetConverter.INSTANCE.toRestEntity(
                         expectedAsset)
                 .name("New name")
@@ -184,6 +191,9 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
             assertThat(assetsArgumentCaptor.getValue()).isNotNull();
             assertThat(assetsArgumentCaptor.getValue().getPulseAssetsEntity()).isNotNull();
             assertThat(assetsArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities()).hasSize(1);
+            final ArgumentCaptor<DataCombiner> dataCombinerArgumentCaptor = ArgumentCaptor.forClass(DataCombiner.class);
+            verify(assetMappingExtractor).updateDataCombiner(dataCombinerArgumentCaptor.capture());
+            assertThat(dataCombinerArgumentCaptor.getValue()).isEqualTo(DataCombiner.fromModel(combiner));
         }
     }
 }

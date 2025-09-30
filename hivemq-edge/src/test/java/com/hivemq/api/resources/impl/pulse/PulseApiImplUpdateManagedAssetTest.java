@@ -19,9 +19,13 @@ package com.hivemq.api.resources.impl.pulse;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetMappingIdError;
 import com.hivemq.api.errors.pulse.ManagedAssetNotFoundError;
+import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingStatus;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
+import com.hivemq.edge.api.model.Combiner;
+import com.hivemq.edge.api.model.DataIdentifierReference;
+import com.hivemq.edge.api.model.EntityType;
 import com.hivemq.pulse.asset.PulseAgentAsset;
 import com.hivemq.pulse.asset.PulseAgentAssetMapping;
 import com.hivemq.pulse.asset.PulseAgentAssetMappingStatus;
@@ -188,7 +192,10 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
                         .status(PulseAgentAssetMappingStatus.STREAMING)
                         .build())
                 .build();
+        final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
+        combiner.getMappings().getItems().getFirst().id(mappingId).getDestination().assetId(id);
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
+        when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of(DataCombiner.fromModel(combiner)));
         try (final Response response = pulseApi.updateManagedAsset(id,
                 PulseAgentAssetConverter.INSTANCE.toRestEntity(expectedAsset.withName("New name")
                         .withDescription("New description")
@@ -214,6 +221,9 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
             assertThat(asset.getSchema()).as("Schema cannot be changed.").isEqualTo(expectedAsset.getSchema());
             assertThat(asset.getMapping().getId()).isEqualTo(mappingId);
             assertThat(asset.getMapping().getStatus()).isEqualTo(PulseAssetMappingStatus.REQUIRES_REMAPPING);
+            final ArgumentCaptor<DataCombiner> dataCombinerArgumentCaptor = ArgumentCaptor.forClass(DataCombiner.class);
+            verify(assetMappingExtractor).updateDataCombiner(dataCombinerArgumentCaptor.capture());
+            assertThat(dataCombinerArgumentCaptor.getValue()).isEqualTo(DataCombiner.fromModel(combiner));
         }
     }
 }
