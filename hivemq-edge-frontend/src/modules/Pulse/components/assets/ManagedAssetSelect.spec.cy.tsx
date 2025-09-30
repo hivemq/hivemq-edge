@@ -56,7 +56,7 @@ describe('ManagedAssetSelect', () => {
     cy.getByTestId('combiner-asset-selected-value').should('not.exist')
   })
 
-  it.only('should render mapped assets properly', () => {
+  it('should render mapped assets properly', () => {
     cy.mountWithProviders(
       <ManagedAssetSelect
         mappings={[
