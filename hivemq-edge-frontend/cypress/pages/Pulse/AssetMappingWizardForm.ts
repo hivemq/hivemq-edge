@@ -1,5 +1,3 @@
-import { RJSFomField } from '../RJSF/RJSFomField.ts'
-
 export class AssetMappingWizardForm {
   get form() {
     return cy.get('section[role="dialog"]#chakra-modal-wizard-mapper')
