@@ -85,7 +85,9 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -136,6 +138,29 @@ public class PulseApiImpl implements PulseApi {
                     checkAssetMapper(dataCombiner, null, assetEntityMap);
             if (optionalResponseDataCombiner.isPresent()) {
                 return optionalResponseDataCombiner.get();
+            }
+            final PulseAgentAssets assets =
+                    PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
+            final Map<String, com.hivemq.combining.model.DataCombining> dataCombiningMap = dataCombiner.dataCombinings()
+                    .stream()
+                    .collect(Collectors.toMap(dataCombining -> dataCombining.destination().assetId(),
+                            Function.identity()));
+            final PulseAgentAssets newAssets = new PulseAgentAssets();
+            final AtomicBoolean assetUpdated = new AtomicBoolean(false);
+            assets.stream()
+                    .map(asset -> Optional.ofNullable(dataCombiningMap.get(asset.getId().toString()))
+                            .map(dataCombining -> {
+                                if (asset.getMapping().getId() == null) {
+                                    assetUpdated.set(true);
+                                    return asset.withMapping(asset.getMapping().withId(dataCombining.id()));
+                                }
+                                return asset;
+                            })
+                            .orElse(asset))
+                    .forEach(newAssets::add);
+            if (assetUpdated.get()) {
+                final PulseEntity newPulseEntity = new PulseEntity(newAssets.toPersistence());
+                pulseExtractor.setPulseEntity(newPulseEntity);
             }
             try {
                 assetMappingExtractor.addDataCombiner(dataCombiner);
@@ -604,12 +629,23 @@ public class PulseApiImpl implements PulseApi {
                         optionalDuplicateMappingId.get())));
             }
             final UUID mappingId = asset.getMapping().getId();
-            if (mappingId == null) {
-                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError("null")));
-            }
             final UUID dataCombiningId = dataCombining.id();
-            if (!Objects.equals(mappingId, dataCombiningId)) {
-                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(dataCombiningId)));
+            if (oldDataCombiner == null) {
+                if (dataCombiningId == null) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError("null")));
+                }
+                if (mappingId != null && !Objects.equals(dataCombiningId, mappingId)) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(
+                            dataCombiningId)));
+                }
+            } else {
+                if (mappingId == null) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError("null")));
+                }
+                if (!Objects.equals(mappingId, dataCombiningId)) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(
+                            dataCombiningId)));
+                }
             }
         }
         return Optional.empty();
