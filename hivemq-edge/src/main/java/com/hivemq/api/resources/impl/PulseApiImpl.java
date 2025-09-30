@@ -462,11 +462,6 @@ public class PulseApiImpl implements PulseApi {
         }
         final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
         synchronized (existingPulseEntity.getLock()) {
-            final UUID newMappingId = managedAsset.getMapping().getMappingId();
-            // Mapping ID cannot be directly set to null once it has been set.
-            if (newMappingId == null) {
-                return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError("null"));
-            }
             final PulseAgentAssets assets =
                     PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
             final OptionalInt optionalAssetIndex = IntStream.range(0, assets.size())
@@ -476,22 +471,17 @@ public class PulseApiImpl implements PulseApi {
                 return ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(assetId));
             }
             final PulseAgentAsset asset = assets.get(optionalAssetIndex.getAsInt());
-            final UUID oldMappingId = asset.getMapping().getId();
-            if (oldMappingId == null) {
-                if (assets.getMappingIdSet().contains(newMappingId.toString())) {
-                    return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(newMappingId));
-                }
-            } else if (!Objects.equals(oldMappingId, newMappingId)) {
-                return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(newMappingId));
+            if (asset.getMapping().getId() == null) {
+                // Existing mapping ID cannot be null.
+                return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError("null"));
             }
             final PulseAgentAsset newAsset = asset.withMapping(asset.getMapping()
-                    .withId(newMappingId)
                     .withStatus(PulseAgentAssetMappingStatusConverter.INSTANCE.toInternalEntity(managedAsset.getMapping()
                             .getStatus())));
             assets.set(optionalAssetIndex.getAsInt(), newAsset);
             final PulseEntity newPulseEntity = new PulseEntity(assets.toPersistence());
             pulseExtractor.setPulseEntity(newPulseEntity);
-            notifyAssetMapper(asset);
+            notifyAssetMapper(newAsset);
             return Response.ok().build();
         }
     }
