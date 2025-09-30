@@ -128,7 +128,7 @@ describe('AssetMapperWizard', () => {
     // This is a hack but will do for the time being
     cy.getByAriaLabel('Clear selected options').eq(1).click()
 
-    cy.get('@onSubmit').should('have.been.called').its('lastCall.args.1').should('be.true')
+    cy.get('@onSubmit').should('have.been.called').its('lastCall.args.2').should('be.true')
     cy.get('@onSubmit')
       .should('have.been.called')
       .its('lastCall.args.0')
