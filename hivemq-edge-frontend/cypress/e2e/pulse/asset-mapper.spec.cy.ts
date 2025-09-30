@@ -3,7 +3,8 @@ import { drop } from '@mswjs/data'
 import { loginPage, homePage, assetsPage } from 'cypress/pages'
 import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
 import { cy_interceptPulseWithMockDB, getPulseFactory } from 'cypress/utils/intercept-pulse.utils.ts'
-import { ONBOARDING } from '../../utils/constants.utils.ts'
+import { assetMappingWizard } from 'cypress/pages/Pulse/AssetMappingWizardForm.ts'
+import { ONBOARDING } from 'cypress/utils/constants.utils.ts'
 
 describe('Pulse Assets', () => {
   const mswDB = getPulseFactory()
@@ -50,8 +51,66 @@ describe('Pulse Assets', () => {
   })
 
   describe('Asset Mapping', () => {
-    it.skip('should create a new asset mapper', () => {})
-    it.skip('should add an asset to an existing mapper', () => {})
+    it('should create a new asset mapper', () => {
+      homePage.taskSectionTitle(ONBOARDING.TASK_PULSE, 0).should('contain.text', 'Pulse is currently active.')
+      homePage.pulseOnboarding.todos.eq(0).find('a').click()
+      assetsPage.location.should('equal', '/app/pulse-assets')
+      assetsPage.table.action(0, 'map').click()
+
+      assetMappingWizard.form.should('be.visible').and('have.css', 'opacity', '1')
+      assetMappingWizard.selectMapper.root.should('be.visible')
+      assetMappingWizard.selectSources.root.should('not.exist')
+
+      assetMappingWizard.selectMapper.label.should('have.text', 'Asset mapper')
+      assetMappingWizard.selectMapper.moreInfo.should('have.attr', 'aria-label', 'More information')
+      assetMappingWizard.selectMapper.select.should('be.visible')
+      assetMappingWizard.selectMapper.value.should('not.exist')
+      assetMappingWizard.selectMapper.placeholder.should('have.text', 'Type or select ...')
+      assetMappingWizard.selectMapper.helperText.should('have.text', 'The asset mapper to use for the new mapping')
+
+      assetMappingWizard.selectMapper.select.type('Non-existing mapper{enter}')
+      assetMappingWizard.selectMapper.helperText.should(
+        'have.text',
+        'A new asset mapper will be created in the Workspace, with a predefined mapping for this asset'
+      )
+
+      assetMappingWizard.selectSources.root.should('be.visible')
+      assetMappingWizard.selectSources.label.should('have.text', 'Data Sources')
+      assetMappingWizard.selectSources.moreInfo.should('have.attr', 'aria-label', 'More information')
+      assetMappingWizard.selectSources.select.should('be.visible')
+      assetMappingWizard.selectSources.values.should('have.length', 2)
+      assetMappingWizard.selectSources.helperText.should(
+        'have.text',
+        'The data sources this new mapper will be initially connected to'
+      )
+      assetMappingWizard.selectSources.select.type('my-adapter{enter}')
+      assetMappingWizard.submit.click()
+      assetsPage.toast.error.should('be.visible')
+    })
+
+    it.only('should add an asset to an existing mapper', () => {
+      assetsPage.navLink.click()
+      assetsPage.location.should('equal', '/app/pulse-assets')
+
+      // create the first default mapper
+      assetsPage.table.action(0, 'map').click()
+      assetMappingWizard.selectMapper.select.type('Non-existing mapper{enter}')
+      assetMappingWizard.selectSources.select.type('my-adapter{enter}')
+      assetMappingWizard.submit.click()
+      assetsPage.location.should('equal', '/app/workspace')
+
+      // TODO Check that the mapper has been created in the workspace
+
+      // go back to assets and map another asset to the existing mapper
+      assetsPage.navLink.click()
+      assetsPage.location.should('equal', '/app/pulse-assets')
+      assetsPage.table.action(1, 'map').click()
+      assetMappingWizard.selectMapper.value.should('have.text', 'Non-existing mapper')
+      // assetMappingWizard.selectSources.select.type('my-other-adapter{enter}')
+      // assetMappingWizard.submit.click()
+      // assetsPage.location.should('equal', '/workspace')
+    })
+
     it.skip('should remove an existing mapping', () => {})
     it.skip('should change an existing mapping', () => {})
   })
