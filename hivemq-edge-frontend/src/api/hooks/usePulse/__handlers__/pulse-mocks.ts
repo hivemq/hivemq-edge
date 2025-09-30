@@ -72,10 +72,7 @@ export const MOCK_PULSE_EXT_ASSET_MAPPER: Combiner = {
         type: EntityType.ADAPTER,
         id: 'my-adapter',
       },
-      {
-        type: EntityType.PULSE_AGENT,
-        id: 'The Pulse Agent',
-      },
+      ...DEFAULT_ASSET_MAPPER_SOURCES,
     ],
   },
   mappings: {
@@ -122,10 +119,7 @@ export const MOCK_PULSE_EXT_ASSET_MAPPER_EMPTY: Combiner = {
         type: EntityType.ADAPTER,
         id: 'my-other-adapter',
       },
-      {
-        type: EntityType.PULSE_AGENT,
-        id: 'The Pulse Agent',
-      },
+      ...DEFAULT_ASSET_MAPPER_SOURCES,
     ],
   },
   mappings: {
