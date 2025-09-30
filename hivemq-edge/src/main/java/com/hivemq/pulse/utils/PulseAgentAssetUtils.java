@@ -16,11 +16,13 @@
 
 package com.hivemq.pulse.utils;
 
+import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingStatus;
 import com.hivemq.configuration.entity.pulse.PulseAssetsEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
+import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.pulse.asset.Asset;
 import org.jetbrains.annotations.NotNull;
@@ -28,9 +30,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -52,10 +57,10 @@ public class PulseAgentAssetUtils {
     }
 
     public static void resolveDiff(
+            final @NotNull AssetMappingExtractor assetMappingExtractor,
             final @NotNull PulseExtractor pulseExtractor,
             final @NotNull List<Asset> remoteAssets) {
         final PulseEntity oldPulseEntity = pulseExtractor.getPulseEntity();
-        // TODO Update data combiners.
         synchronized (oldPulseEntity.getLock()) {
             final List<PulseAssetEntity> localAssets = oldPulseEntity.getPulseAssetsEntity().getPulseAssetEntities();
             final List<PulseAssetEntity> newLocalAssets = new ArrayList<>();
@@ -64,6 +69,7 @@ public class PulseAgentAssetUtils {
                             Function.identity(),
                             (asset1, asset2) -> asset1,
                             LinkedHashMap::new));
+            final Set<UUID> toBeUpdatedMappingIdSet = new HashSet<>();
             // Process local assets.
             localAssets.forEach(localAsset -> {
                 final String id = localAsset.getId().toString();
@@ -72,7 +78,11 @@ public class PulseAgentAssetUtils {
                     // Asset is removed remotely.
                     if (localAsset.getMapping().getId() != null) {
                         newLocalAssets.add(localAsset.withMapping(switch (localAsset.getMapping().getStatus()) {
-                            case DRAFT, REQUIRES_REMAPPING, STREAMING ->
+                            case STREAMING -> {
+                                toBeUpdatedMappingIdSet.add(localAsset.getMapping().getId());
+                                yield localAsset.getMapping().withStatus(PulseAssetMappingStatus.MISSING);
+                            }
+                            case DRAFT, REQUIRES_REMAPPING ->
                                     localAsset.getMapping().withStatus(PulseAssetMappingStatus.MISSING);
                             default -> localAsset.getMapping();
                         }));
@@ -95,7 +105,11 @@ public class PulseAgentAssetUtils {
                                 .topic(remoteAsset.topic())
                                 .mapping(localAsset.getMapping()
                                         .withStatus(switch (localAsset.getMapping().getStatus()) {
-                                            case STREAMING -> PulseAssetMappingStatus.REQUIRES_REMAPPING;
+                                            case STREAMING -> {
+                                                Optional.ofNullable(localAsset.getMapping().getId())
+                                                        .ifPresent(toBeUpdatedMappingIdSet::add);
+                                                yield PulseAssetMappingStatus.REQUIRES_REMAPPING;
+                                            }
                                             case MISSING -> PulseAssetMappingStatus.UNMAPPED;
                                             default -> localAsset.getMapping().getStatus();
                                         }))
@@ -120,6 +134,17 @@ public class PulseAgentAssetUtils {
             });
             final PulseEntity newPulseEntity = new PulseEntity(new PulseAssetsEntity(newLocalAssets));
             pulseExtractor.setPulseEntity(newPulseEntity);
+            if (!toBeUpdatedMappingIdSet.isEmpty()) {
+                final List<DataCombiner> toBeUpdatedAssetMappers = assetMappingExtractor.getAllCombiners()
+                        .stream()
+                        .filter(dataCombiner -> dataCombiner.dataCombinings()
+                                .stream()
+                                .anyMatch(dataCombining -> toBeUpdatedMappingIdSet.contains(dataCombining.id())))
+                        .toList();
+                if (!toBeUpdatedAssetMappers.isEmpty()) {
+                    assetMappingExtractor.updateDataCombiners(toBeUpdatedAssetMappers);
+                }
+            }
         }
     }
 }
