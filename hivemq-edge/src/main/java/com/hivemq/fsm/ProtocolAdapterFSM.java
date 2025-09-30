@@ -1,7 +1,7 @@
 package com.hivemq.fsm;
 
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,45 +14,7 @@ import java.util.function.Consumer;
 
 public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterState.ConnectionStatus> {
 
-    // +--------------------------------------------------------------------+
-    //       |                                                                    |
-    //       |                                                                    |
-    //       |                        +--------------+                            |
-    //       |                        | DISCONNECTED |                            |
-    //       |                        +--------------+                            |
-    //       |                               ^                                    |
-    //       |                               |                                    |
-    //       |   +---------------------------+                                    |
-    //       |   |                                                                |
-    //       |   |                                                                |
-    //       |   | (connect)                                                      |
-    //       |   |                                                                |
-    //       v   v                                                                |
-    //   +------------+                                                          |
-    //   | CONNECTING |                                                          |
-    //   +--+------+--+                                                          |
-    //      |      |                                                             |
-    //      |      +--------------------------------------------------------+    |
-    //      |                                                               |    |
-    //      v                                                               v    |
-    //+-----------+                                                     +-------+  |
-    //| CONNECTED |                                                     | ERROR | -+
-    //+-----+-----+                                                     +-------+
-    //      |                                                               ^
-    //      +-----------------------------+-------------------------------+
-    //      |                             |                               |
-    //      v                             v                               v
-    //+---------------+               +---------+               +---------------+
-    //| DISCONNECTING |               | CLOSING |               | ERROR_CLOSING |
-    //+---------------+               +---------+               +---------------+
-    //      |                             |                               |
-    //      |                             v                               v
-    //      +-----------------------------+                            (to ERROR)
-    //                              +--------+
-    //                              | CLOSED |
-    //                              +--------+
-
-    private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterFSM.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterFSM.class);
 
     public enum StateEnum {
         DISCONNECTED,
@@ -66,8 +28,8 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
         NOT_SUPPORTED
     }
 
-    public static final Map<StateEnum, Set<StateEnum>> possibleTransitions = Map.of(
-            StateEnum.DISCONNECTED, Set.of(StateEnum.CONNECTED,StateEnum.CONNECTING), //for compatibility, we allow to go from CONNECTING to CONNECTED directly
+    public static final @NotNull Map<StateEnum, Set<StateEnum>> possibleTransitions = Map.of(
+            StateEnum.DISCONNECTED, Set.of(StateEnum.CONNECTING, StateEnum.CONNECTED), //for compatibility, we allow to go from CONNECTING to CONNECTED directly
             StateEnum.CONNECTING, Set.of(StateEnum.CONNECTED, StateEnum.ERROR),
             StateEnum.CONNECTED, Set.of(StateEnum.DISCONNECTING, StateEnum.CONNECTING ,StateEnum.CLOSING, StateEnum.ERROR_CLOSING), // transition to CONNECTING in case of recovery
             StateEnum.DISCONNECTING, Set.of(StateEnum.CLOSING),
