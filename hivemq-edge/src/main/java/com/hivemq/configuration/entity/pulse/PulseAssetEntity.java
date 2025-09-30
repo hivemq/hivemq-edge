@@ -232,11 +232,6 @@ public class PulseAssetEntity implements EntityValidatable {
         EntityValidatable.notEmpty(validationEvents, schema, "schema");
         EntityValidatable.notNull(validationEvents, mapping, "mapping");
         mapping.validate(validationEvents);
-        if (mapping.getId() != null) {
-            EntityValidatable.notMatch(validationEvents,
-                    () -> Objects.equals(id, mapping.getId()),
-                    () -> "id and mapping.id must be equal");
-        }
     }
 
     @Override

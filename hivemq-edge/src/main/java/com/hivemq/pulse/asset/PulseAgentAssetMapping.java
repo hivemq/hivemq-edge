@@ -76,7 +76,7 @@ public class PulseAgentAssetMapping {
         this.id = id;
     }
 
-    public @NotNull PulseAgentAssetMapping withId(final @NotNull UUID id) {
+    public @NotNull PulseAgentAssetMapping withId(final @Nullable UUID id) {
         if (Objects.equals(this.id, id)) {
             return this;
         }

@@ -115,7 +115,10 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
                 .description("A test asset")
                 .topic("test/topic")
                 .schema("{}")
-                .mapping(PulseAgentAssetMapping.builder().id(UUID.randomUUID()).status(PulseAgentAssetMappingStatus.STREAMING).build())
+                .mapping(PulseAgentAssetMapping.builder()
+                        .id(UUID.randomUUID())
+                        .status(PulseAgentAssetMappingStatus.STREAMING)
+                        .build())
                 .build();
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
         try (final Response response = pulseApi.updateManagedAsset(id,
