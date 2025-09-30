@@ -76,7 +76,7 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
     onClose()
   }
 
-  const handleConfirmWizard = (assetMapper: Combiner, isNew: boolean = false) => {
+  const handleConfirmWizard = (assetMapper: Combiner, mappingId: string, isNew: boolean = false) => {
     if (!selectedAssetOperation || !selectedAssetOperation.asset) return combinerLog('Cannot find the asset')
 
     const promises: Promise<unknown>[] = []
@@ -92,7 +92,7 @@ const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
         ...selectedAssetOperation.asset,
         mapping: {
           status: AssetMapping.status.DRAFT,
-          mappingId: selectedAssetOperation.asset.mapping.mappingId,
+          mappingId: mappingId,
         },
       },
     })
