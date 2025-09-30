@@ -32,6 +32,7 @@ const MoreInfo: FC<MoreInfoProps> = ({ description, link }) => {
           aria-label={t('MoreInfo.title')}
           variant="ghost"
           data-testid="more-info-trigger"
+          h="auto"
         />
       </PopoverTrigger>
       <PopoverContent
