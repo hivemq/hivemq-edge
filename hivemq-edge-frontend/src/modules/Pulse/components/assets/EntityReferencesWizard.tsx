@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FormControl, FormHelperText, FormLabel, Text } from '@chakra-ui/react'
+import { FormControl, FormHelperText, Text } from '@chakra-ui/react'
 import type { MultiValueGenericProps, MultiValueProps, MultiValueRemoveProps, OptionProps } from 'chakra-react-select'
 import { Select, createFilter, chakraComponents } from 'chakra-react-select'
 
@@ -11,6 +11,7 @@ import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import MoreInfo from '@/components/MoreInfo.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import FormLabel from '@/components/Chakra/FormLabel.tsx'
 import { EntityRenderer } from '@/modules/Mappings/combiner/EntityRenderer.tsx'
 import { DEFAULT_ASSET_MAPPER_SOURCES } from '@/modules/Pulse/utils/assets.utils.ts'
 
@@ -80,9 +81,11 @@ const EntityReferencesWizard: FC<EntityReferenceWizardProps> = ({ values, onChan
 
   return (
     <FormControl data-testid="wizard-mapper-entities-container">
-      <FormLabel htmlFor="mapper-sources">
+      <FormLabel
+        htmlFor="mapper-sources"
+        rightAddon={<MoreInfo description={t('pulse.assets.operation.edit.Sources.moreInfo.title')} />}
+      >
         {t('pulse.assets.operation.edit.Sources.title')}
-        <MoreInfo description={t('pulse.assets.operation.edit.Sources.moreInfo.title')} />
       </FormLabel>
       <Select<EntityReference, true>
         id="wizard-mapper-sources"
