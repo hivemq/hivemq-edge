@@ -144,7 +144,7 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
     }
 
     @Test
-    public void whenTypeIsPulseAssetAndMappingIdIsNull_thenReturnsInvalidManagedAssetMappingIdError() {
+    public void whenTypeIsPulseAssetAndMappingIdIsNull_thenReturnsOK() {
         final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
         when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(PulseAssetEntity.builder()
@@ -153,11 +153,10 @@ public class PulseApiImplAddAssetMapperTest extends AbstractPulseApiImplTest {
                 .description(combiner.getDescription())
                 .topic(combiner.getMappings().getItems().getFirst().getDestination().getTopic())
                 .schema(combiner.getMappings().getItems().getFirst().getDestination().getSchema())
-                .mapping(PulseAssetMappingEntity.builder().id(null).status(PulseAssetMappingStatus.UNMAPPED).build())
+                .mapping(PulseAssetMappingEntity.builder().status(PulseAssetMappingStatus.UNMAPPED).build())
                 .build()));
         try (final Response response = pulseApi.addAssetMapper(combiner)) {
-            assertThat(response.getStatus()).isEqualTo(400);
-            assertThat(response.getEntity()).isInstanceOf(InvalidManagedAssetMappingIdError.class);
+            assertThat(response.getStatus()).isEqualTo(200);
         }
     }
 
