@@ -20,6 +20,7 @@ export const useDeleteAssetMapper = () => {
     mutationFn: deleteAssetMapper,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ASSET_MAPPER] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PULSE_ASSETS] })
     },
   })
 }

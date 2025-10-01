@@ -21,6 +21,7 @@ export const useUpdateAssetMapper = () => {
     mutationFn: updateAssetMapper,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ASSET_MAPPER] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PULSE_ASSETS] })
     },
   })
 }
