@@ -20,6 +20,7 @@ export const useCreateManagedAsset = () => {
     mutationFn: createManagedAsset,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PULSE_ASSETS] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ASSET_MAPPER] })
     },
   })
 }

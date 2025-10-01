@@ -7,6 +7,7 @@ import {
   type EntityReference,
   type JsonNode,
   type TopicFilter,
+  EntityType,
 } from '@/api/__generated__'
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import { AUTO_MATCH_DISTANCE } from '@/components/rjsf/BatchModeMappings/utils/config.utils'
@@ -38,19 +39,23 @@ export const getCombinedDataEntityReference = (
   content: (DomainTag[] | TopicFilter[])[],
   entities: EntityReference[]
 ): DataReference[] => {
+  const dataSources = entities.filter((e) => e.type === EntityType.ADAPTER || e.type === EntityType.EDGE_BROKER)
   return content.reduce<DataReference[]>((acc, cur, currentIndex) => {
     const firstItem = cur[0]
     if (!firstItem) return acc
+
     if ((firstItem as DomainTag).name) {
+      // This is a domain tag
       const tagDataReferences = (cur as DomainTag[]).map<DataReference>((tag) => {
         return {
           id: tag.name,
           type: DataIdentifierReference.type.TAG,
-          adapterId: entities?.[currentIndex]?.id,
+          adapterId: dataSources?.[currentIndex]?.id,
         }
       })
       acc.push(...tagDataReferences)
     } else if ((firstItem as TopicFilter).topicFilter) {
+      // This is a topic filter
       const topicFilterDataReferences = (cur as TopicFilter[]).map<DataReference>((topicFilter) => ({
         id: topicFilter.topicFilter,
         type: DataIdentifierReference.type.TOPIC_FILTER,
