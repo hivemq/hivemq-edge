@@ -24,15 +24,14 @@ import {
   useToast,
 } from '@chakra-ui/react'
 
-import type { Combiner } from '@/api/__generated__'
-import { AssetMapping, EntityType } from '@/api/__generated__'
+import type { ApiError, Combiner } from '@/api/__generated__'
+import { EntityType } from '@/api/__generated__'
 import { useDeleteCombiner, useUpdateCombiner } from '@/api/hooks/useCombiners/'
 import { useDeleteAssetMapper, useUpdateAssetMapper } from '@/api/hooks/useAssetMapper'
 import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombinedEntities'
 import { combinerMappingJsonSchema } from '@/api/schemas/combiner-mapping.json-schema'
 import { combinerMappingUiSchema } from '@/api/schemas/combiner-mapping.ui-schema'
 import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
-import { useUpdateManagedAsset } from '@/api/hooks/usePulse/useUpdateManagedAsset.ts'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import DangerZone from '@/modules/Mappings/components/DangerZone.tsx'
@@ -81,7 +80,6 @@ const CombinerMappingManager: FC = () => {
   const updateCombiner = useUpdateCombiner()
   const deleteCombiner = useDeleteCombiner()
   const updateAssetMapper = useUpdateAssetMapper()
-  const updateManagedAsset = useUpdateManagedAsset()
   const deleteAssetMapper = useDeleteAssetMapper()
   const { data: allAssets, error: errorAssets, isLoading: isAssetsLoading } = useListManagedAssets()
 
@@ -112,18 +110,6 @@ const CombinerMappingManager: FC = () => {
           return acc
         }
 
-        const assetPromise = updateManagedAsset.mutateAsync({
-          assetId,
-          requestBody: {
-            ...source,
-            mapping: {
-              status: AssetMapping.status.DRAFT,
-              mappingId: newMapping.id,
-            },
-          },
-        })
-        acc.push(assetPromise)
-
         return acc
       }, promises)
 
@@ -148,8 +134,11 @@ const CombinerMappingManager: FC = () => {
       }),
       {
         success: { title: t('combiner.toast.update.title'), description: t('combiner.toast.update.success') },
-        error: (e) => {
-          combinerLog(`Error publishing the ${isAssetManager ? t('pulse.mapper.title') : t('combiner.type')}`, e)
+        error: (e: ApiError) => {
+          combinerLog(
+            `Error publishing the ${isAssetManager ? t('pulse.mapper.title') : t('combiner.type')}`,
+            e.body.detail || e.message
+          )
           return {
             title: t('combiner.toast.update.title'),
             description: (
