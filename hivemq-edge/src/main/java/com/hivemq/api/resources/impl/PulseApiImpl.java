@@ -666,10 +666,7 @@ public class PulseApiImpl implements PulseApi {
                             dataCombiningId)));
                 }
             } else {
-                if (mappingId == null) {
-                    return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError("null")));
-                }
-                if (!Objects.equals(mappingId, dataCombiningId)) {
+                if (mappingId != null && !Objects.equals(mappingId, dataCombiningId)) {
                     return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(
                             dataCombiningId)));
                 }
