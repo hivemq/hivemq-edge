@@ -26,8 +26,6 @@ import com.hivemq.api.errors.pulse.ActivationTokenNotDeletedError;
 import com.hivemq.api.errors.pulse.AssetMapperNotFoundError;
 import com.hivemq.api.errors.pulse.AssetMapperReferencedError;
 import com.hivemq.api.errors.pulse.DuplicatedManagedAssetIdError;
-import com.hivemq.api.errors.pulse.EmptyMappingsForAssetMapperError;
-import com.hivemq.api.errors.pulse.EmptySourcesForAssetMapperError;
 import com.hivemq.api.errors.pulse.InvalidDataIdentifierReferenceForAssetMapperError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetMappingIdError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetSchemaError;
@@ -146,21 +144,28 @@ public class PulseApiImpl implements PulseApi {
                     .collect(Collectors.toMap(dataCombining -> dataCombining.destination().assetId(),
                             Function.identity()));
             final PulseAgentAssets newAssets = new PulseAgentAssets();
-            final AtomicBoolean assetUpdated = new AtomicBoolean(false);
-            assets.stream()
-                    .map(asset -> Optional.ofNullable(dataCombiningMap.get(asset.getId().toString()))
-                            .map(dataCombining -> {
-                                if (asset.getMapping().getId() == null) {
-                                    assetUpdated.set(true);
-                                    return asset.withMapping(asset.getMapping().withId(dataCombining.id()));
-                                }
-                                return asset;
-                            })
-                            .orElse(asset))
-                    .forEach(newAssets::add);
-            if (assetUpdated.get()) {
-                final PulseEntity newPulseEntity = new PulseEntity(newAssets.toPersistence());
-                pulseExtractor.setPulseEntity(newPulseEntity);
+            boolean updated = false;
+            for (final PulseAgentAsset asset : assets) {
+                final var dataCombining = dataCombiningMap.get(asset.getId().toString());
+                if (dataCombining == null) {
+                    // There is no change to the asset.
+                    newAssets.add(asset);
+                } else {
+                    final UUID mappingId = asset.getMapping().getId();
+                    if (mappingId == null) {
+                        // Mapping ID is set.
+                        updated = true;
+                        newAssets.add(asset.withMapping(asset.getMapping().withId(dataCombining.id())));
+                    } else if (Objects.equals(mappingId, dataCombining.id())) {
+                        // There is no change to the asset.
+                        newAssets.add(asset);
+                    } else {
+                        return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(dataCombining.id()));
+                    }
+                }
+            }
+            if (updated) {
+                pulseExtractor.setPulseEntity(new PulseEntity(newAssets.toPersistence()));
             }
             try {
                 assetMappingExtractor.addDataCombiner(dataCombiner);
@@ -436,16 +441,39 @@ public class PulseApiImpl implements PulseApi {
             final Set<String> oldMappingIdSet = oldDataCombiner.getMappingIdSet();
             final Set<String> newMappingIdSet = newDataCombiner.getMappingIdSet();
             final Set<String> toBeRemovedMappingIdSet = Sets.difference(oldMappingIdSet, newMappingIdSet);
-            if (!toBeRemovedMappingIdSet.isEmpty()) {
-                final PulseAgentAssets assets =
-                        PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
-                final PulseAgentAssets newAssets = new PulseAgentAssets();
-                assets.stream()
-                        .map(asset -> Optional.ofNullable(asset.getMapping().getId())
-                                .filter(mappingId -> toBeRemovedMappingIdSet.contains(mappingId.toString()))
-                                .map(mappingId -> asset.withMapping(PulseAgentAssetMapping.builder().build()))
-                                .orElse(asset))
-                        .forEach(newAssets::add);
+            final PulseAgentAssets assets =
+                    PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
+            final Map<String, com.hivemq.combining.model.DataCombining> dataCombiningMap =
+                    newDataCombiner.dataCombinings()
+                            .stream()
+                            .collect(Collectors.toMap(dataCombining -> dataCombining.destination().assetId(),
+                                    Function.identity()));
+            final PulseAgentAssets newAssets = new PulseAgentAssets();
+            boolean updated = false;
+            for (final PulseAgentAsset asset : assets) {
+                final var dataCombining = dataCombiningMap.get(asset.getId().toString());
+                if (dataCombining == null) {
+                    // There is no change to the asset.
+                    newAssets.add(asset);
+                } else {
+                    final UUID mappingId = asset.getMapping().getId();
+                    if (mappingId == null) {
+                        // Mapping ID is set.
+                        updated = true;
+                        newAssets.add(asset.withMapping(asset.getMapping().withId(dataCombining.id())));
+                    } else if (toBeRemovedMappingIdSet.contains(mappingId.toString())) {
+                        // Reset the asset mapping to mappingId = null and status = UNMAPPED.
+                        updated = true;
+                        newAssets.add(asset.withMapping(PulseAgentAssetMapping.builder().build()));
+                    } else if (Objects.equals(mappingId, dataCombining.id())) {
+                        // There is no change to the asset.
+                        newAssets.add(asset);
+                    } else {
+                        return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(dataCombining.id()));
+                    }
+                }
+            }
+            if (updated) {
                 final PulseEntity newPulseEntity = new PulseEntity(newAssets.toPersistence());
                 pulseExtractor.setPulseEntity(newPulseEntity);
             }
@@ -508,7 +536,8 @@ public class PulseApiImpl implements PulseApi {
      * This method is synchronized to ensure thread safety when updating the token.
      */
     @Override
-    public synchronized @NotNull Response updatePulseActivationToken(final @NotNull PulseActivationToken pulseActivationToken) {
+    public synchronized @NotNull Response updatePulseActivationToken(
+            final @NotNull PulseActivationToken pulseActivationToken) {
         final String token = pulseActivationToken.getToken();
         try {
             final Optional<StatusProvider> optionalStatusProvider =
@@ -589,15 +618,10 @@ public class PulseApiImpl implements PulseApi {
             final @NotNull DataCombiner newDataCombiner,
             final @Nullable DataCombiner oldDataCombiner,
             final @NotNull Map<String, PulseAssetEntity> assetEntityMap) {
-        if (newDataCombiner.entityReferences().isEmpty()) {
-            return Optional.of(ErrorResponseUtil.errorResponse(new EmptySourcesForAssetMapperError()));
-        }
-        if (newDataCombiner.dataCombinings().isEmpty()) {
-            return Optional.of(ErrorResponseUtil.errorResponse(new EmptyMappingsForAssetMapperError()));
-        }
-        if (newDataCombiner.entityReferences()
-                .stream()
-                .noneMatch(entityReference -> entityReference.type() == EntityType.PULSE_AGENT)) {
+        if (!newDataCombiner.entityReferences().isEmpty() &&
+                newDataCombiner.entityReferences()
+                        .stream()
+                        .noneMatch(entityReference -> entityReference.type() == EntityType.PULSE_AGENT)) {
             return Optional.of(ErrorResponseUtil.errorResponse(new MissingEntityTypePulseAgentForAssetMapperError()));
         }
         final Set<String> oldAssetIdSet =
