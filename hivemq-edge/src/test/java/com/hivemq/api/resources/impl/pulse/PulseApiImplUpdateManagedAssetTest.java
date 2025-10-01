@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,26 +66,6 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
     }
 
     @Test
-    public void whenMappingIdIsNull_thenReturnsInvalidManagedAssetMappingIdError() {
-        when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
-                Status.ConnectionStatus.CONNECTED,
-                List.of()));
-        final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder().id(UUID.randomUUID())
-                .name("Test Asset")
-                .description("A test asset")
-                .topic("test/topic")
-                .schema("{}")
-                .mapping(PulseAgentAssetMapping.builder().build())
-                .build();
-        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
-        try (final Response response = pulseApi.updateManagedAsset(expectedAsset.getId(),
-                PulseAgentAssetConverter.INSTANCE.toRestEntity(expectedAsset))) {
-            assertThat(response.getStatus()).isEqualTo(400);
-            assertThat(response.getEntity()).isInstanceOf(InvalidManagedAssetMappingIdError.class);
-        }
-    }
-
-    @Test
     public void whenAssetDoesNotExist_thenReturnsManagedAssetNotFoundError() {
         when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
                 Status.ConnectionStatus.CONNECTED,
@@ -105,7 +86,7 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
     }
 
     @Test
-    public void whenAssetExistsAndMappingIdMismatches_thenReturnsInvalidManagedAssetMappingIdError() {
+    public void whenAssetExistsAndMappingIdsMismatch_thenReturnsInvalidManagedAssetMappingIdError() {
         when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
                 Status.ConnectionStatus.CONNECTED,
                 List.of()));
@@ -128,6 +109,69 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
                         .withSchema("{[]}")
                         .withMapping(PulseAgentAssetMapping.builder()
                                 .id(UUID.randomUUID())
+                                .status(PulseAgentAssetMappingStatus.REQUIRES_REMAPPING)
+                                .build())))) {
+            assertThat(response.getStatus()).isEqualTo(400);
+            assertThat(response.getEntity()).isInstanceOf(InvalidManagedAssetMappingIdError.class);
+        }
+    }
+
+    @Test
+    public void whenMappingIdIsUsedByAsset_thenReturnsInvalidManagedAssetMappingIdError() {
+        when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
+                Status.ConnectionStatus.CONNECTED,
+                List.of()));
+        final UUID id = UUID.randomUUID();
+        final UUID mappingId = UUID.randomUUID();
+        final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder().id(id)
+                .name("Test Asset")
+                .description("A test asset")
+                .topic("test/topic")
+                .schema("{}")
+                .mapping(PulseAgentAssetMapping.builder().status(PulseAgentAssetMappingStatus.STREAMING).build())
+                .build();
+        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence(),
+                expectedAsset.withMapping(expectedAsset.getMapping().withId(mappingId)).toPersistence()));
+        try (final Response response = pulseApi.updateManagedAsset(id,
+                PulseAgentAssetConverter.INSTANCE.toRestEntity(expectedAsset.withName("New name")
+                        .withDescription("New description")
+                        .withTopic("new/topic")
+                        .withSchema("{[]}")
+                        .withMapping(PulseAgentAssetMapping.builder()
+                                .id(mappingId)
+                                .status(PulseAgentAssetMappingStatus.REQUIRES_REMAPPING)
+                                .build())))) {
+            assertThat(response.getStatus()).isEqualTo(400);
+            assertThat(response.getEntity()).isInstanceOf(InvalidManagedAssetMappingIdError.class);
+        }
+    }
+
+    @Test
+    public void whenMappingIdIsUsedByAssetMapper_thenReturnsInvalidManagedAssetMappingIdError() {
+        when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
+                Status.ConnectionStatus.CONNECTED,
+                List.of()));
+        final UUID id = UUID.randomUUID();
+        final UUID mappingId = UUID.randomUUID();
+        final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder().id(id)
+                .name("Test Asset")
+                .description("A test asset")
+                .topic("test/topic")
+                .schema("{}")
+                .mapping(PulseAgentAssetMapping.builder()
+                        .id(mappingId)
+                        .status(PulseAgentAssetMappingStatus.STREAMING)
+                        .build())
+                .build();
+        when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
+        when(assetMappingExtractor.getMappingIdSet()).thenReturn(Set.of(mappingId.toString()));
+        try (final Response response = pulseApi.updateManagedAsset(id,
+                PulseAgentAssetConverter.INSTANCE.toRestEntity(expectedAsset.withName("New name")
+                        .withDescription("New description")
+                        .withTopic("new/topic")
+                        .withSchema("{[]}")
+                        .withMapping(PulseAgentAssetMapping.builder()
+                                .id(null)
                                 .status(PulseAgentAssetMappingStatus.REQUIRES_REMAPPING)
                                 .build())))) {
             assertThat(response.getStatus()).isEqualTo(400);
@@ -176,6 +220,33 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
             assertThat(asset.getMapping().getId()).isEqualTo(mappingId);
             assertThat(asset.getMapping().getStatus()).isEqualTo(PulseAssetMappingStatus.REQUIRES_REMAPPING);
         }
+    }
+
+    @Test
+    public void whenAssetExistsAndMappingIdIsNull_thenReturnsOK() {
+        when(statusProvider.getStatus()).thenReturn(new Status(Status.ActivationStatus.ACTIVATED,
+                Status.ConnectionStatus.CONNECTED,
+                List.of()));
+        final List<UUID[]> testCases = List.of(new UUID[]{null, null},
+                new UUID[]{null, UUID.randomUUID()},
+                new UUID[]{UUID.randomUUID(), null});
+        testCases.forEach(uuids -> {
+            final UUID oldMappingId = uuids[0];
+            final UUID newMappingId = uuids[1];
+            final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder().id(UUID.randomUUID())
+                    .name("Test Asset")
+                    .description("A test asset")
+                    .topic("test/topic")
+                    .schema("{}")
+                    .mapping(PulseAgentAssetMapping.builder().id(oldMappingId).build())
+                    .build();
+            when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(expectedAsset.toPersistence()));
+            try (final Response response = pulseApi.updateManagedAsset(expectedAsset.getId(),
+                    PulseAgentAssetConverter.INSTANCE.toRestEntity(expectedAsset.withMapping(expectedAsset.getMapping()
+                            .withId(newMappingId))))) {
+                assertThat(response.getStatus()).isEqualTo(200);
+            }
+        });
     }
 
     @Test
