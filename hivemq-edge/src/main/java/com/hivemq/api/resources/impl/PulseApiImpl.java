@@ -462,11 +462,6 @@ public class PulseApiImpl implements PulseApi {
         }
         final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
         synchronized (existingPulseEntity.getLock()) {
-            final UUID newMappingId = managedAsset.getMapping().getMappingId();
-            // Mapping ID cannot be directly set to null once it has been set.
-            if (newMappingId == null) {
-                return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError("null"));
-            }
             final PulseAgentAssets assets =
                     PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
             final OptionalInt optionalAssetIndex = IntStream.range(0, assets.size())
@@ -476,13 +471,25 @@ public class PulseApiImpl implements PulseApi {
                 return ErrorResponseUtil.errorResponse(new ManagedAssetNotFoundError(assetId));
             }
             final PulseAgentAsset asset = assets.get(optionalAssetIndex.getAsInt());
+            final Set<String> assetMappingIdSet = assets.getMappingIdSet();
+            final Set<String> assetMappingMappingIdSet = assetMappingExtractor.getMappingIdSet();
             final UUID oldMappingId = asset.getMapping().getId();
-            if (oldMappingId == null) {
-                if (assets.getMappingIdSet().contains(newMappingId.toString())) {
+            final UUID newMappingId = managedAsset.getMapping().getMappingId();
+            if (!Objects.equals(oldMappingId, newMappingId)) {
+                if (oldMappingId == null) {
+                    // We cannot set a mapping ID that is already used by another asset.
+                    if (assetMappingIdSet.contains(newMappingId.toString())) {
+                        return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(newMappingId));
+                    }
+                } else if (newMappingId == null) {
+                    // We cannot remove a mapping ID that is already used by an asset mapper.
+                    if (assetMappingMappingIdSet.contains(oldMappingId.toString())) {
+                        return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(oldMappingId));
+                    }
+                } else {
+                    // We cannot allow mapping ID to be changed.
                     return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(newMappingId));
                 }
-            } else if (!Objects.equals(oldMappingId, newMappingId)) {
-                return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(newMappingId));
             }
             final PulseAgentAsset newAsset = asset.withMapping(asset.getMapping()
                     .withId(newMappingId)
