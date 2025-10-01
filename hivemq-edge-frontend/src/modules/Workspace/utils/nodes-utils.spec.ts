@@ -24,6 +24,7 @@ import {
   createCombinerNode,
   createEdgeNode,
   createListenerNode,
+  createPulseNode,
   getDefaultMetricsFor,
   getGluedPosition,
   LAYOUT_GLUE_TYPE,
@@ -288,6 +289,42 @@ describe('createCombinerNode', () => {
         }),
       ],
     })
+  })
+})
+
+describe('createPulseNode', () => {
+  it('should create the default nodes', async () => {
+    const actual = createPulseNode(MOCK_THEME)
+
+    expect(actual).toStrictEqual(
+      expect.objectContaining({
+        nodePulse: expect.objectContaining({
+          data: {
+            label: 'Pulse Agent',
+            id: 'idPulse',
+          },
+          id: 'idPulse',
+          type: NodeTypes.PULSE_NODE,
+        }),
+      })
+    )
+  })
+
+  it('should create links to nodes', async () => {
+    const actual = createPulseNode(MOCK_THEME)
+
+    expect(actual).toStrictEqual(
+      expect.objectContaining({
+        pulseConnector: expect.objectContaining({
+          id: 'connect-idPulse-edge',
+          source: 'idPulse',
+          target: 'edge',
+          type: 'DYNAMIC_EDGE',
+          animated: false,
+          focusable: false,
+        }),
+      })
+    )
   })
 })
 

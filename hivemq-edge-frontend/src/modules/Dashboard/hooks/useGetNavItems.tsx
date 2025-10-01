@@ -8,7 +8,9 @@ import { GoLinkExternal } from 'react-icons/go'
 import { MdOutlineEventNote, MdPolicy } from 'react-icons/md'
 
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
-import { WorkspaceIcon } from '@/components/Icons/TopicIcon.tsx'
+
+import { PulseAgentIcon, WorkspaceIcon } from '@/components/Icons'
+import AssetMonitoringBadge from '@/modules/Pulse/components/assets/AssetMonitoringBadge.tsx'
 
 import type { NavLinksBlockType } from '../types.ts'
 
@@ -16,7 +18,7 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
   const { t } = useTranslation()
   const { data, isSuccess } = useGetConfiguration()
 
-  const menu = [
+  const menu: NavLinksBlockType[] = [
     {
       title: t('translation:navigation.gateway.title'),
       items: [
@@ -49,6 +51,12 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
           icon: <Icon as={MdPolicy} fontSize="16px" />,
           href: '/datahub',
           label: t('datahub:navigation.mainPage'),
+        },
+        {
+          icon: <PulseAgentIcon boxSize={6} />,
+          href: '/pulse-assets',
+          label: t('translation:navigation.gateway.routes.assets'),
+          rightAddon: <AssetMonitoringBadge />,
         },
         {
           icon: <BsIntersect />,

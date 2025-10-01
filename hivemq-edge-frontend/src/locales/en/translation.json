@@ -3,6 +3,11 @@
     "appName": "HiveMQ Edge",
     "company": "HiveMQ"
   },
+  "common": {
+    "placeholder": {
+      "typeOrSelect": "Type or select ..."
+    }
+  },
   "action": {
     "skipNavLink": "Skip to content",
     "logout": "Logout",
@@ -45,7 +50,8 @@
         "workspace": "Workspace",
         "bridges": "MQTT Bridges",
         "protocolAdapters": "Protocol Adapters",
-        "eventLogs": "Event Logs"
+        "eventLogs": "Event Logs",
+        "assets": "Assets"
       }
     },
     "extensions": {
@@ -148,6 +154,23 @@
         "section": {
           "title": "Create a single source of truth for all your enterprise-wide data by seamlessly connecting your HiveMQ Edge deployment to a HiveMQ Cloud MQTT broker.",
           "label": "Connect To HiveMQ Cloud"
+        }
+      },
+      "pulse": {
+        "header": "Connect to HiveMQ Pulse",
+        "section": {
+          "activate": {
+            "title": "To access the features of HiveMQ Edge Pulse, you need to activate it first.",
+            "label": "Pulse Activation"
+          },
+          "manage": {
+            "title": "Pulse is currently active.",
+            "label": "Pulse Activation"
+          },
+          "assets": {
+            "title": "Use HiveMQ Edge Pulse to manage and publish assets to your HiveMQ Edge",
+            "label": "Manage Pulse Assets"
+          }
         }
       }
     }
@@ -270,7 +293,7 @@
       },
       "preserveRetain": {
         "label": "Preserve Retain",
-        "helper": "Description of the Preserve Retain"
+        "helper": "Defines whether the retained message flags of retained messages in the selected data stream are kept."
       },
       "customUserProperties": {
         "label": "Custom Properties",
@@ -898,6 +921,9 @@
         "combiner": {
           "create": "Create a data combiner from selection"
         },
+        "assets": {
+          "create": "Create a new Asset Mapper from the selection"
+        },
         "edge": {
           "topicFilter": "Manage topic filters"
         }
@@ -958,6 +984,8 @@
       "header_CLUSTER_NODE": "Group Overview",
       "header_EDGE_NODE": "Edge Overview",
       "header_DEVICE_NODE": "Device Overview",
+      "header_PULSE_NODE": "Pulse Agent Overview",
+      "header_ASSETS_NODE": "Assets Overview",
       "modify_ADAPTER_NODE": "Modify the adapter",
       "modify_BRIDGE_NODE": "Modify the bridge",
       "eventLog": {
@@ -970,7 +998,9 @@
       "header_ADAPTER_NODE": "Adapter Observability",
       "header_BRIDGE_NODE": "Bridge Observability",
       "header_CLUSTER_NODE": "Group Observability",
-      "header_COMBINER_NODE": "Combiner Observability"
+      "header_COMBINER_NODE": "Combiner Observability",
+      "header_PULSE_NODE": "Pulse Agent Observability",
+      "header_ASSETS_NODE": "Pulse Assets Observability"
     },
     "datahub": {
       "aria-label": "Open the Data Hub policy",
@@ -1352,13 +1382,16 @@
       "schemaManager": {
         "noSourceSchemaDefined": "You need to define the source schemas first",
         "noValidSourceSchema": "None of your sources have schema to merge"
-      }
+      },
+      "noAssetId": "The ID of the asset is missing from the mapping",
+      "noAssetFound": "Cannot find the asset with the given ID"
     },
     "schema": {
       "tabs": {
         "combinerTab": "Configuration",
         "sourcesTab": "Sources",
-        "mappingsTab": "Mappings"
+        "mappingsTab": "Mappings",
+        "assetTabs": "Asset mappings"
       },
       "description": "A data combiner brings tags (adapters) and topic filters (bridges) together for further northbound data mapping",
       "config": {
@@ -1373,6 +1406,10 @@
         },
         "edge": {
           "description": "Always added as the owner of the topic filters"
+        },
+        "pulse": {
+          "name": "Pulse Agent",
+          "description": "Assets managed by the Pulse Agent"
         }
       },
       "mappings": {
@@ -1385,12 +1422,6 @@
           "source": "Source"
         },
         "sources": {
-          "title": "Sources",
-          "description": "Define the elements to combine",
-          "primary": {
-            "title": "Primary key",
-            "description": "Select the integration point (tag or topic filter) that will act as the trigger for combining"
-          },
           "combinedData": {
             "title": "Integration points",
             "description": "Select the tags and topic filters you want to use for combining"
@@ -1398,18 +1429,6 @@
           "combinedSchema": {
             "title": "Source schemas",
             "description": "Drag the required properties into the destination schema"
-          }
-        },
-        "destination": {
-          "title": "Destination",
-          "description": "Define the topic to subscribe the combination to",
-          "topic": {
-            "title": "Destination topic",
-            "description": "Select or create a new topic"
-          },
-          "schema": {
-            "title": "Destination schema",
-            "description": "Upload or create a schema then drop source properties on every required destination properties"
           }
         }
       },
@@ -1451,6 +1470,228 @@
             "description": "This is generated from the Edge data combiner"
           }
         }
+      }
+    }
+  },
+  "pulse": {
+    "status_ERROR": "Error",
+    "status_DEACTIVATED": "Deactivated",
+    "status_ACTIVATED": "Activated",
+    "status_CONNECTED": "Connected",
+    "status_DISCONNECTED": "Disconnected",
+    "coverage": {
+      "unmapped": "Unmapped assets",
+      "mapped": "Mapped assets",
+      "attention": "Assets requiring attention"
+    },
+    "title": "Assets",
+    "description": "Manage Assets and their data mappings to stream live data from Edge to Pulse and other external infrastructure.",
+    "error": {
+      "loading": "We cannot load the assets at this time. Please try again later",
+      "notYetAvailable": "Pulse Assets are not yet available for HiveMQ Edge. <1>Please contact us for more information.</1",
+      "notActivated": "The Pulse Agent is not connected to this Edge instance.",
+      "asset": {
+        "title": "Loading Asset",
+        "loading": "There was an error loading the asset: ",
+        "notFound": "Asset {{ assetId }} cannot be found"
+      },
+      "mapping": {
+        "notFound": "The specified mapping cannot be found"
+      }
+    },
+    "activation": {
+      "action": {
+        "activate": "Activate Pulse",
+        "manage": "Manage Activation",
+        "revoke": "Revoke",
+        "submit": "Activate"
+      },
+      "heading": {
+        "title": "Pulse Agent Activation"
+      },
+      "error": {
+        "noCapabilityLoaded": "Cannot check the Pulse capability. Please try again later"
+      },
+      "form": {
+        "activated": {
+          "title": "Pulse is activated",
+          "description": "You can revoke the activation or activate a different instance with a new token."
+        },
+        "notActivated": {
+          "title": "Pulse is not activated",
+          "description": "To activate Pulse, you need to submit the activation token."
+        },
+        "token": {
+          "title": "Activation Token",
+          "description": "Enter the activation token you received from the Pulse team.",
+          "placeholder": "Paste or drop the activation token here"
+        }
+      },
+      "activate": {
+        "title": "Pulse Agent Activation",
+        "success": "The Pulse Agent has been successfully activated",
+        "error": "The Pulse Agent could not be activated: {{error}}. Please check the activation token and try again",
+        "loading": "Processing the request. Please wait ..."
+      },
+      "revoke": {
+        "title": "Pulse Agent Deactivation",
+        "confirmation": "Do you really want to deactivate the Pulse Agent? The operation cannot be reversed.",
+        "success": "The Pulse Agent has been successfully deactivated",
+        "error": "The Pulse Agent could not be deactivated: {{error}}. Please try again.",
+        "loading": "Processing the request. Please wait ..."
+      }
+    },
+    "onboarding": {
+      "monitoring": {
+        "task": "Stay up-to-date with your asset mappings",
+        "allClear": "All assets are streaming",
+        "unmapped_zero": "No asset requires mapping",
+        "unmapped_one": "One new asset requires mapping",
+        "unmapped_other": "New assets require mapping",
+        "remapping_zero": "No asset requires remapping",
+        "remapping_one": "An asset requires remapping",
+        "remapping_other": "Several assets require remapping",
+        "errors_zero": "No asset mapping reports errors",
+        "errors_one": "An asset has errors requiring inspection",
+        "errors_other": "Several assets have errors requiring inspection"
+      }
+    },
+    "assets": {
+      "status_REQUIRES_REMAPPING": "Requires Remapping",
+      "status_UNMAPPED": "Unmapped",
+      "status_DRAFT": "Draft",
+      "status_STREAMING": "Streaming",
+      "listing": {
+        "aria-label": "List of Pulse assets",
+        "noDataText": "No assets found",
+        "column": {
+          "name": "Name",
+          "description": "Description",
+          "topic": "Topic",
+          "status": "Status",
+          "lastChanged": "Last changed",
+          "sources": "Sources",
+          "actions": "Actions"
+        },
+        "sources": {
+          "unset": "< unset >",
+          "notFound": "< not found >",
+          "more": "+{{ count }} more"
+        }
+      },
+      "actions": {
+        "group": {
+          "workspace": "Manage from Workspace"
+        },
+        "aria-label": "Actions",
+        "edit": "Edit",
+        "view": "View details",
+        "map": "Map the asset",
+        "delete": "Delete mapping",
+        "mapper": "Open asset mapper"
+      },
+      "operation": {
+        "delete": {
+          "header": "Unmapping asset \"{{ name }}\"",
+          "message": "Do you want to remove all mapping instructions from the asset? The action cannot be reversed."
+        },
+        "edit": {
+          "header": "Mapping asset \"{{ name }}\"",
+          "overview": "To map an asset, you first have to select an existing mapper or create a new one",
+          "select": {
+            "title": "Asset mapper",
+            "placeholder": "$t(common.placeholder.typeOrSelect)",
+            "noOptions": "No asset mappers found",
+            "createLabel": "Create a new mapper: {{ name }}",
+            "createValue": "{{ name }} (new)",
+            "remove": "Remove {{ name }}",
+            "helper": "The asset mapper to use for the new mapping",
+            "moreInfo": {
+              "title": "Asset mappers group selected sources of data together, to restrict access to integration points (tags and topic filters) and to enable the destination schema from Pulse.",
+              "link": "https://docs.hivemq.com/hivemq-edge/pulse-asset-mapping.html"
+            }
+          },
+          "Sources": {
+            "title": "Data Sources",
+            "placeholder": "$t(common.placeholder.typeOrSelect)",
+            "moreInfo": {
+              "title": "Data sources are the entities from the Workspace where integration points are collected from. Edge and the Pulse Agent will be added automatically."
+            },
+            "noOptionMatching": "No entities matching the filter",
+            "noOptionAvailable": "No entities available",
+            "helper": "The data sources this new mapper will be initially connected to"
+          },
+          "workspace_EDIT": "The asset mapper will be updated in the Workspace, with a predefined mapping for this asset",
+          "workspace_CREATE": "A new asset mapper will be created in the Workspace, with a predefined mapping for this asset",
+          "submit_EDIT": "Edit the asset mapper",
+          "submit_CREATE": "Create a new asset mapper"
+        }
+      },
+      "selector": {
+        "aria-label": "List of assets",
+        "placeholder": "Select an asset to map...",
+        "loading": "Loading the assets...",
+        "noAssetsFound": "No assets found",
+        "add": "Add the asset to the mappings"
+      },
+      "viewer": {
+        "aria-label": "Asset Overview",
+        "tabs": {
+          "config": "Configuration",
+          "destination": "Destination",
+          "mapping": "Mapping"
+        },
+        "mapping": {
+          "title": "Mapping",
+          "description": "The mapping instructions of the asset",
+          "status": {
+            "title": "Mapping status",
+            "description": "The state of the current mapping"
+          },
+          "mappingId": {
+            "title": "Mapping ID",
+            "description": "The reference to the set of mapping instructions in a combiner"
+          }
+        }
+      }
+    },
+    "mapper": {
+      "manager": {
+        "header": "Managing Pulse Asset Mappings"
+      },
+      "title": "Asset Mapper",
+      "unnamed": "< unnamed asset mapper >",
+      "toast": {
+        "loading": "Sending the data ...",
+        "create": {
+          "title": "Create the mapper",
+          "success": "We've successfully created the mapper for you.",
+          "partialSuccess": "We've successfully created the combiner for you. Please note that some of the selected entities are not valid for data combining and have not been connected.",
+          "error": "There was a problem trying to create the asset mapper"
+        },
+        "update": {
+          "title": "Update the mapper",
+          "success": "We've successfully updated the asset mapper for you.",
+          "error": "There was a problem trying to update the asset mapper"
+        },
+        "unmap": {
+          "title": "Unmapping the asset",
+          "success": "We've successfully removed the mapping from the asset.",
+          "error": "There was a problem trying to remove the mapping from the asset"
+        },
+        "delete": {
+          "title": "Delete the combiner",
+          "success": "We've successfully deleted the asset mapper for you.",
+          "error": "There was a problem trying to delete the asset mapper"
+        }
+      }
+    },
+
+    "workspace": {
+      "nodeClient": {
+        "status_ACTIVATED": "Activated",
+        "status_DEACTIVATED": "Not Activated",
+        "title": "Pulse Agent"
       }
     }
   }

@@ -103,7 +103,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
         isLoading={isLoading}
         isMulti
         value={values}
-        aria-label={t('combiner.schema.mappings.sources.description')}
+        aria-label={t('Combiner.mappings.items.sources.description', { ns: 'schemas' })}
         onChange={(newValue) => {
           if (newValue) onChange(newValue)
         }}

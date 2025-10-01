@@ -1,7 +1,8 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { HStack, Tag, TagLabel, VStack } from '@chakra-ui/react'
-import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag.tsx'
+
+import { AssetTag, PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag.tsx'
 import { SelectEntityType } from '@/components/MQTT/types'
 
 const MAX_MAPPINGS = 2
@@ -18,6 +19,8 @@ const MappingBadge: FC<MappingBadgeProps> = ({ destinations, type }) => {
         return Topic
       case SelectEntityType.TAG:
         return PLCTag
+      case SelectEntityType.PULSE_ASSET:
+        return AssetTag
       case SelectEntityType.TOPIC_FILTER:
       default:
         return TopicFilter

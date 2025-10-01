@@ -16,13 +16,17 @@
 package com.hivemq.configuration.entity.combining;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.xml.bind.annotation.XmlElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import jakarta.xml.bind.annotation.XmlElement;
 import java.util.Objects;
 
 public class DataCombiningDestinationEntity {
+
+    @JsonProperty(value = "assetId")
+    @XmlElement(name = "assetId")
+    private @Nullable String assetId;
 
     @JsonProperty(value = "topic", required = true)
     @XmlElement(name = "topic", required = true)
@@ -36,9 +40,13 @@ public class DataCombiningDestinationEntity {
     public DataCombiningDestinationEntity() {
     }
 
-    public DataCombiningDestinationEntity(@NotNull final String topic, @NotNull final String schema) {
+    public DataCombiningDestinationEntity(
+            @Nullable final String assetId,
+            @NotNull final String topic,
+            @NotNull final String schema) {
         Objects.requireNonNull(topic, "topic must not be null");
         Objects.requireNonNull(schema, "schema must not be null");
+        this.assetId = assetId;
         this.schema = schema;
         this.topic = topic;
     }
@@ -52,27 +60,26 @@ public class DataCombiningDestinationEntity {
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return "DataCombiningDestinationEntity{" + "topic='" + topic + '\'' + ", schema='" + schema + '\'' + '}';
     }
 
     @Override
-    public boolean equals(final @Nullable Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
+    public boolean equals(final @NotNull Object o) {
+        if (!(o instanceof final DataCombiningDestinationEntity that)) {
             return false;
         }
-
-        final DataCombiningDestinationEntity that = (DataCombiningDestinationEntity) o;
-        return topic.equals(that.topic) && schema.equals(that.schema);
+        return Objects.equals(assetId, that.assetId) &&
+                Objects.equals(topic, that.topic) &&
+                Objects.equals(schema, that.schema);
     }
 
     @Override
     public int hashCode() {
-        int result = topic.hashCode();
-        result = 31 * result + schema.hashCode();
-        return result;
+        return Objects.hash(assetId, topic, schema);
+    }
+
+    public @Nullable String getAssetId() {
+        return assetId;
     }
 }

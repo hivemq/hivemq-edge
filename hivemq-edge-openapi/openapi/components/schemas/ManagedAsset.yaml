@@ -1,0 +1,18 @@
+type: object
+description: The definition of an extended asset, as managed in Edge for the Pulse Client
+allOf:
+  - $ref: ./Asset.yaml
+  - type: object
+    properties:
+      mapping:
+        $ref: ./AssetMapping.yaml
+    required:
+      - mapping
+example:
+  id: "123e4567-e89b-12d3-a456-426614174000"
+  name: "The fancy asset"
+  topic: "a/valid/mqtt/topic"
+  schema: "data:application/schema+json;base64,eyJ0eXBlIjoiT2JqZWN0IiwiaWQiOiJhc3NldC1zY2hlbWEifQ=="
+  mapping:
+    status: "STREAMING"
+    mappingId: "64a64c9a-1cd6-47b8-bec9-5a869ee824d4"

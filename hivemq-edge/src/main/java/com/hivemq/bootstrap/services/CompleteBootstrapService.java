@@ -17,10 +17,13 @@ package com.hivemq.bootstrap.services;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.bootstrap.ioc.Persistences;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.RestComponentsService;
+import com.hivemq.mqtt.services.InternalPublishService;
+import com.hivemq.pulse.asset.AssetProviderRegistry;
+import com.hivemq.pulse.status.StatusProviderRegistry;
+import org.jetbrains.annotations.NotNull;
 
 public interface CompleteBootstrapService extends PersistenceBootstrapService {
 
@@ -30,10 +33,18 @@ public interface CompleteBootstrapService extends PersistenceBootstrapService {
 
     @NotNull HandlerService handlerService();
 
-    @NotNull
-    EventService eventService();
+    @NotNull EventService eventService();
 
-    @NotNull
-    PublishService publishService();
+    @NotNull PublishService publishService();
+
+    /**
+     * Required here to be able to directly put messages into client queues without them getting processed again by
+     * another PrePublishHandler
+     */
+    @NotNull InternalPublishService internalPublishService();
+
+    @NotNull AssetProviderRegistry assetProviderRegistry();
+
+    @NotNull StatusProviderRegistry statusProviderRegistry();
 
 }

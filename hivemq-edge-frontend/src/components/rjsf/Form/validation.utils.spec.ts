@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
+
+import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
 import type { ErrorObject } from '@/components/rjsf/Form/validation.utils.ts'
+import { validationJWT } from '@/components/rjsf/Form/validation.utils.ts'
 import {
   customFormatsValidator,
   customLocalizer,
@@ -18,6 +21,7 @@ enum Messages {
   noMultiLevelString = 'Wildcard # must not be followed or preceded by any character',
   noSingleLevelString = 'Wildcard + must not be followed or preceded by any character',
   noSingleLevelFinal = 'Wildcard + must be followed by the end-of-segment `/`',
+  noJWTFormat = 'The token is not a completely valid JSON object conforming to JWT format',
 }
 
 interface ValidationTestSuite {
@@ -74,6 +78,15 @@ describe('validationRules', () => {
       expect(validationTopicFilter(entity)).toBe(expected)
     })
   })
+
+  describe('validationJWT', () => {
+    test.each<ValidationTestSuite>([
+      { entity: '', expected: Messages.noJWTFormat },
+      { entity: MOCK_JWT, expected: undefined },
+    ])('should return $expected  with $entity', ({ entity, expected }) => {
+      expect(validationJWT(entity)).toBe(expected)
+    })
+  })
 })
 
 const MOCK_ERRORS: ErrorObject[] = [
@@ -120,6 +133,17 @@ const MOCK_ERRORS: ErrorObject[] = [
     schema: 'mqtt-topic-filter',
     data: 'dd+/d#',
   },
+  {
+    instancePath: '/items/1/tag',
+    schemaPath: '#/properties/items/items/properties/tag/format',
+    keyword: 'format',
+    params: {
+      format: 'jwt',
+    },
+    message: 'must match format "mqtt-topic-filter"',
+    schema: 'jwt',
+    data: 'ABCDEFG',
+  },
 ]
 
 describe('customLocalizer', () => {
@@ -132,6 +156,7 @@ describe('customLocalizer', () => {
       expect.objectContaining({ message: Messages.noWildCards }),
       expect.objectContaining({ message: Messages.noWildCards }),
       expect.objectContaining({ message: Messages.noSingleLevelString }),
+      expect.objectContaining({ message: Messages.noJWTFormat }),
     ])
   })
 })
@@ -143,6 +168,7 @@ describe('customFormatsValidator', () => {
     } = customFormatsValidator
     const {
       identifier,
+      interpolation,
       boolean,
       'mqtt-topic': mqttTopic,
       'mqtt-tag': mqttTag,
@@ -154,5 +180,6 @@ describe('customFormatsValidator', () => {
     expect((mqttTag as FormatValidator<string>)('test')).toBeDefined()
     expect((mqttTopicFilter as FormatValidator<string>)('test')).toBeDefined()
     expect((identifier as FormatValidator<string>)('test')).toBeDefined()
+    expect((interpolation as FormatValidator<string>)('test')).toBeDefined()
   })
 })

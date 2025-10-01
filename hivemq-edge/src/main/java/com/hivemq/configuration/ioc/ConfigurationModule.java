@@ -15,9 +15,11 @@
  */
 package com.hivemq.configuration.ioc;
 
+import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
+import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -90,6 +92,18 @@ public class ConfigurationModule {
     @Singleton
     static @NotNull DataCombiningExtractor dataCombiningExtractor(final @NotNull ConfigurationService configurationService) {
         return configurationService.dataCombiningExtractor();
+    }
+
+    @Provides
+    @Singleton
+    static @NotNull AssetMappingExtractor assetMappingExtractor(final @NotNull ConfigurationService configurationService) {
+        return configurationService.assetMappingExtractor();
+    }
+
+    @Provides
+    @Singleton
+    static @NotNull PulseExtractor pulseExtractor(final @NotNull ConfigurationService configurationService) {
+        return configurationService.pulseExtractor();
     }
 
     @Provides

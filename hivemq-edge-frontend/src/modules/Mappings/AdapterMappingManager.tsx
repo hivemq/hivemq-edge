@@ -43,12 +43,14 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
   const [isExpanded, setExpanded] = useBoolean(true)
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
-  const { nodeId } = useParams()
+  const { adapterId } = useParams()
   const { nodes } = useWorkspaceStore()
 
   const selectedNode = useMemo(() => {
-    return nodes.find((node) => node.id === nodeId && node.type === NodeTypes.ADAPTER_NODE) as Node<Adapter> | undefined
-  }, [nodeId, nodes])
+    return nodes.find((node) => node.id === adapterId && node.type === NodeTypes.ADAPTER_NODE) as
+      | Node<Adapter>
+      | undefined
+  }, [adapterId, nodes])
 
   const { data: protocols } = useGetAdapterTypes()
   const adapterProtocol =
@@ -65,7 +67,6 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
     onOpen()
   }, [onOpen])
 
-  const adapterId = selectedNode?.data.id
   const manager = type === MappingType.NORTHBOUND ? useNorthboundMappingManager : useSouthboundMappingManager
 
   const [showNativeWidgets, setShowNativeWidgets] = useBoolean()
@@ -86,10 +87,10 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
           />
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
-          {!adapterId && <ErrorMessage message={t('protocolAdapter.error.loading')} />}
-          {adapterId && (
+          {!selectedNode && <ErrorMessage message={t('protocolAdapter.error.loading')} />}
+          {selectedNode && (
             <MappingForm
-              adapterId={adapterId}
+              adapterId={selectedNode.data.id}
               adapterType={selectedNode?.data.type}
               onSubmit={handleClose}
               useManager={manager}
@@ -101,10 +102,10 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
         <DrawerFooter>
           {config.isDevMode && (
             <FormControl display="flex" alignItems="center">
-              <FormLabel htmlFor="email-alerts" mb="0">
+              <FormLabel htmlFor="modal-native-switch" mb="0">
                 {t('modals.native')}
               </FormLabel>
-              <Switch id="email-alerts" isChecked={showNativeWidgets} onChange={setShowNativeWidgets.toggle} />
+              <Switch id="modal-native-switch" isChecked={showNativeWidgets} onChange={setShowNativeWidgets.toggle} />
             </FormControl>
           )}
           <Button variant="primary" type="submit" form="adapter-mapping-form">

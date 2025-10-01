@@ -6,7 +6,11 @@ import '@/config/i18n.config.ts'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
-import { handlers as useFrontendServices } from '@/api/hooks/useFrontendServices/__handlers__'
+import {
+  handlerCapabilities,
+  handlers as useFrontendServices,
+  MOCK_CAPABILITIES,
+} from '@/api/hooks/useFrontendServices/__handlers__'
 import { handlers as ProtocolAdapterHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { handlers as DataHubDataPoliciesService } from '@/extensions/datahub/api/hooks/DataHubDataPoliciesService/__handlers__'
 
@@ -24,7 +28,12 @@ vi.mock('@/modules/Workspace/hooks/useWorkspaceStore.ts', async () => {
 
 describe('useGetPoliciesMatching', () => {
   beforeEach(() => {
-    server.use(...useFrontendServices, ...DataHubDataPoliciesService, ...ProtocolAdapterHandlers)
+    server.use(
+      ...useFrontendServices,
+      ...DataHubDataPoliciesService,
+      ...ProtocolAdapterHandlers,
+      ...handlerCapabilities(MOCK_CAPABILITIES)
+    )
   })
 
   afterEach(() => {

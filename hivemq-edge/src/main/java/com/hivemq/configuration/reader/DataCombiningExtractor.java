@@ -22,6 +22,7 @@ import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,7 +46,7 @@ public class DataCombiningExtractor implements ReloadableExtractor<List<@NotNull
 
     @Override
     public Configurator.ConfigResult updateConfig(final HiveMQConfigEntity config) {
-        this.config = config.getDataCombinerEntities();
+        this.config = List.copyOf(config.getDataCombinerEntities());
         notifyConsumer();
         return Configurator.ConfigResult.SUCCESS;
     }

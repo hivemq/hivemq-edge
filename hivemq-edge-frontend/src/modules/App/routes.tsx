@@ -14,7 +14,9 @@ const ExportDrawer = lazy(() => import('@/modules/ProtocolAdapters/components/dr
 const UnifiedNamespaceEditor = lazy(() => import('@/modules/UnifiedNamespace/components/UnifiedNamespaceEditor.tsx'))
 const UnifiedNamespacePage = lazy(() => import('@/modules/UnifiedNamespace/UnifiedNamespacePage.tsx'))
 const EdgeFlowPage = lazy(() => import('@/modules/Workspace/EdgeFlowPage.tsx'))
-const NodePanelController = lazy(() => import('@/modules/Workspace/components/controls/NodePanelController.tsx'))
+const ConfigurationPanelController = lazy(
+  () => import('@/modules/Workspace/components/controls/ConfigurationPanelController.tsx')
+)
 const EvenLogPage = lazy(() => import('@/modules/EventLog/EvenLogPage.tsx'))
 const AdapterSubscriptionManager = lazy(() => import('@/modules/Mappings/AdapterMappingManager.tsx'))
 const CombinerMappingManager = lazy(() => import('../Mappings/CombinerMappingManager.tsx'))
@@ -23,9 +25,13 @@ const ProtocolIntegrationStore = lazy(
   () => import('@/modules/ProtocolAdapters/components/panels/ProtocolIntegrationStore.tsx')
 )
 const ProtocolAdapters = lazy(() => import('@/modules/ProtocolAdapters/components/panels/ProtocolAdapters.tsx'))
+const PulsePage = lazy(() => import('@/modules/Pulse/PulsePage.tsx'))
+const ManagedAssetDrawer = lazy(() => import('@/modules/Pulse/components/assets/ManagedAssetDrawer.tsx'))
 
 import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
 import { MappingType } from '@/modules/Mappings/types.ts'
+import { EdgeTypes, NodeTypes } from '@/modules/Workspace/types.ts'
+
 import config from '@/config'
 
 /**
@@ -112,19 +118,46 @@ export const routes = createBrowserRouter(
               element: <TopicFilterManager />,
             },
             {
-              path: ':nodeType/:device?/:adapter?/:nodeId',
-              element: <NodePanelController />,
+              path: 'edge/:edgeId',
+              element: <ConfigurationPanelController type={NodeTypes.EDGE_NODE} />,
             },
             {
-              path: ':nodeType/:device?/:adapter?/:nodeId/northbound',
-              element: <AdapterSubscriptionManager type={MappingType.NORTHBOUND} />,
+              path: 'pulse-agent/*',
+              element: <ConfigurationPanelController type={NodeTypes.PULSE_NODE} />,
             },
             {
-              path: ':nodeType/:device?/:adapter?/:nodeId/southbound',
-              element: <AdapterSubscriptionManager type={MappingType.SOUTHBOUND} />,
+              path: 'device/:deviceId',
+              element: <ConfigurationPanelController type={NodeTypes.DEVICE_NODE} />,
             },
             {
-              path: 'combiner/:combinerId',
+              path: 'group/:groupId',
+              element: <ConfigurationPanelController type={NodeTypes.CLUSTER_NODE} />,
+            },
+            {
+              path: 'bridge/:bridgeId',
+              element: <ConfigurationPanelController type={NodeTypes.BRIDGE_NODE} />,
+            },
+            {
+              path: 'adapter/:adapterType/:adapterId',
+              element: <ConfigurationPanelController type={NodeTypes.ADAPTER_NODE} />,
+              children: [
+                {
+                  path: 'northbound',
+                  element: <AdapterSubscriptionManager type={MappingType.NORTHBOUND} />,
+                },
+                {
+                  path: 'southbound',
+                  element: <AdapterSubscriptionManager type={MappingType.SOUTHBOUND} />,
+                },
+              ],
+            },
+
+            {
+              path: 'connector/:connectorId',
+              element: <ConfigurationPanelController type={EdgeTypes.DYNAMIC_EDGE} />,
+            },
+            {
+              path: 'combiner/:combinerId/:tabId?',
               element: <CombinerMappingManager />,
             },
           ],
@@ -140,6 +173,16 @@ export const routes = createBrowserRouter(
             {
               path: 'edit',
               element: <UnifiedNamespaceEditor />,
+            },
+          ],
+        },
+        {
+          path: 'pulse-assets/',
+          element: <PulsePage />,
+          children: [
+            {
+              path: ':assetId',
+              element: <ManagedAssetDrawer />,
             },
           ],
         },

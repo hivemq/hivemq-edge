@@ -1,4 +1,2 @@
-import CanvasControls from './CanvasControls.tsx'
-import Minimap from './Minimap.tsx'
-
-export { Minimap, CanvasControls }
+export { default as CanvasControls } from './CanvasControls.tsx'
+export { default as Minimap } from './Minimap.tsx'

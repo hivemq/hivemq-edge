@@ -1,0 +1,7 @@
+name: assetId
+description: The unique id of the managed asset to retrieve.
+in: path
+required: true
+schema:
+  type: string
+  format: uuid

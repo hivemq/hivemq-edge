@@ -25,7 +25,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public record DataCombiner(UUID id, String name, String description, List<EntityReference> entityReferences,
                            List<DataCombining> dataCombinings) {
@@ -48,18 +51,6 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
                 combining);
     }
 
-    public @NotNull Combiner toModel() {
-        final List<com.hivemq.edge.api.model.DataCombining> combining =
-                this.dataCombinings().stream().map(DataCombining::toModel).toList();
-        final List<com.hivemq.edge.api.model.EntityReference> sources =
-                this.entityReferences().stream().map(EntityReference::toModel).toList();
-        return new Combiner().id(id)
-                .name(name)
-                .description(description)
-                .sources(new EntityReferenceList().items(sources))
-                .mappings(new DataCombiningList().items(combining));
-    }
-
     public static @NotNull DataCombiner fromPersistence(final @NotNull DataCombinerEntity combiner) {
         final List<DataCombining> combining =
                 combiner.getDataCombiningEntities().stream().map(DataCombining::fromPersistence).toList();
@@ -72,6 +63,18 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
                 combining);
     }
 
+    public @NotNull Combiner toModel() {
+        final List<com.hivemq.edge.api.model.DataCombining> combining =
+                this.dataCombinings().stream().map(DataCombining::toModel).toList();
+        final List<com.hivemq.edge.api.model.EntityReference> sources =
+                this.entityReferences().stream().map(EntityReference::toModel).toList();
+        return new Combiner().id(id)
+                .name(name)
+                .description(description)
+                .sources(new EntityReferenceList().items(sources))
+                .mappings(new DataCombiningList().items(combining));
+    }
+
     public @NotNull DataCombinerEntity toPersistence() {
         final List<DataCombiningEntity> combining = dataCombinings.stream().map(DataCombining::toPersistence).toList();
         final List<EntityReferenceEntity> sources =
@@ -79,4 +82,23 @@ public record DataCombiner(UUID id, String name, String description, List<Entity
         return new DataCombinerEntity(id, name, description, sources, combining);
     }
 
+    public @NotNull Set<String> getAssetIdSet() {
+        return dataCombinings().stream()
+                .map(DataCombining::destination)
+                .filter(Objects::nonNull)
+                .map(DataCombiningDestination::assetId)
+                .collect(Collectors.toSet());
+    }
+
+    public @NotNull Set<String> getMappingIdSet() {
+        return dataCombinings().stream().map(DataCombining::id).map(UUID::toString).collect(Collectors.toSet());
+    }
+
+    public DataCombiner withDescription(final @NotNull String description) {
+        return new DataCombiner(id, name, description, entityReferences, dataCombinings);
+    }
+
+    public DataCombiner withName(final @NotNull String name) {
+        return new DataCombiner(id, name, description, entityReferences, dataCombinings);
+    }
 }

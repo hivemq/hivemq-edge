@@ -1,0 +1,366 @@
+import type { FC } from 'react'
+import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Box, Skeleton, Text, useDisclosure, useToast } from '@chakra-ui/react'
+import type { ColumnDef } from '@tanstack/react-table'
+import { chakraComponents } from 'chakra-react-select'
+import debug from 'debug'
+
+import type { Combiner, ManagedAsset } from '@/api/__generated__'
+import { AssetMapping } from '@/api/__generated__'
+import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
+import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'
+import { useUpdateManagedAsset } from '@/api/hooks/usePulse/useUpdateManagedAsset.ts'
+import { useCreateAssetMapper, useUpdateAssetMapper } from '@/api/hooks/useAssetMapper'
+import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
+
+import ErrorMessage from '@/components/ErrorMessage.tsx'
+import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
+import { Topic } from '@/components/MQTT/EntityTag.tsx'
+import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
+import type { FilterMetadata } from '@/components/PaginatedTable/types.ts'
+import { AssetActionMenu } from '@/modules/Pulse/components/assets/AssetActionMenu.tsx'
+import AssetMapperWizard from '@/modules/Pulse/components/assets/AssetMapperWizard.tsx'
+import AssetStatusBadge from '@/modules/Pulse/components/assets/AssetStatusBadge.tsx'
+import FilteredCell from '@/modules/Pulse/components/assets/FilteredCell.tsx'
+import SourcesCell from '@/modules/Pulse/components/assets/SourcesCell.tsx'
+import { compareStatus } from '@/modules/Pulse/utils/pagination-utils.ts'
+import { NodeTypes, WorkspaceNavigationCommand } from '@/modules/Workspace/types.ts'
+
+const combinerLog = debug(`Combiner:AssetsTable`)
+
+const skeletonTemplate: ManagedAsset = {
+  id: ' ',
+  name: ' ',
+  description: ' ',
+  topic: ' ',
+  schema: ' ',
+  mapping: { status: AssetMapping.status.UNMAPPED },
+}
+
+interface AssetTableProps {
+  variant?: 'full' | 'summary'
+}
+
+interface SelectedAssetOperation {
+  assetId: string
+  asset?: ManagedAsset
+  operation: 'DELETE' | 'EDIT'
+}
+
+const AssetsTable: FC<AssetTableProps> = ({ variant = 'full' }) => {
+  const { t } = useTranslation()
+  const { data, isLoading, error } = useListManagedAssets()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [selectedAssetOperation, setSelectedAssetOperation] = useState<SelectedAssetOperation | undefined>(undefined)
+  const updateManagedAsset = useUpdateManagedAsset()
+  const createAssetMapper = useCreateAssetMapper()
+  const updateAssetMapper = useUpdateAssetMapper()
+  const toast = useToast(BASE_TOAST_OPTION)
+
+  const safeData = useMemo(() => {
+    if (!data?.items) return [skeletonTemplate, skeletonTemplate, skeletonTemplate]
+
+    return data.items
+  }, [data])
+
+  const handleViewWorkspace = (adapterId: string, type: string, command: WorkspaceNavigationCommand) => {
+    if (adapterId) navigate('/workspace', { state: { selectedAdapter: { adapterId, type, command } } })
+  }
+
+  const handleCloseWizard = () => {
+    setSelectedAssetOperation(undefined)
+    onClose()
+  }
+
+  const handleConfirmWizard = (assetMapper: Combiner, mappingId: string, isNew: boolean = false) => {
+    if (!selectedAssetOperation || !selectedAssetOperation.asset) return combinerLog('Cannot find the asset')
+
+    const promises: Promise<unknown>[] = []
+
+    const mapperPromise = isNew
+      ? createAssetMapper.mutateAsync({ requestBody: assetMapper })
+      : updateAssetMapper.mutateAsync({ combinerId: assetMapper.id, requestBody: assetMapper })
+    promises.push(mapperPromise)
+
+    const assetPromise = updateManagedAsset.mutateAsync({
+      assetId: selectedAssetOperation.assetId,
+      requestBody: {
+        ...selectedAssetOperation.asset,
+        mapping: {
+          status: AssetMapping.status.DRAFT,
+          mappingId: mappingId,
+        },
+      },
+    })
+    promises.push(assetPromise)
+
+    const title = isNew ? t('pulse.mapper.toast.create.title') : t('pulse.mapper.toast.update.title')
+    toast.promise(
+      Promise.all(promises).then(() => {
+        setSelectedAssetOperation(undefined)
+        onClose()
+        if (assetMapper)
+          navigate('/workspace', {
+            state: {
+              selectedAdapter: {
+                adapterId: assetMapper.id,
+                type: NodeTypes.COMBINER_NODE,
+                command: WorkspaceNavigationCommand.ASSET_MAPPER,
+              },
+            },
+          })
+      }),
+      {
+        success: {
+          title,
+          description: isNew ? t('pulse.mapper.toast.create.success') : t('pulse.mapper.toast.update.success'),
+        },
+        error: (error) => {
+          combinerLog('Error publishing the mapper', error)
+          return {
+            title,
+            description: (
+              <>
+                <Text>{isNew ? t('pulse.mapper.toast.create.error') : t('pulse.mapper.toast.update.error')}</Text>
+                {error.message && <Text>{error.message}</Text>}
+              </>
+            ),
+          }
+        },
+        loading: { title, description: t('pulse.mapper.toast.loading') },
+      }
+    )
+  }
+
+  const handleCloseDelete = () => {
+    setSelectedAssetOperation(undefined)
+    onClose()
+  }
+
+  const handleConfirmDelete = () => {
+    if (!selectedAssetOperation || !selectedAssetOperation.asset) return combinerLog('Cannot find the asset')
+
+    const assetPromise = updateManagedAsset.mutateAsync({
+      assetId: selectedAssetOperation?.assetId,
+      requestBody: {
+        ...selectedAssetOperation.asset,
+        mapping: {
+          status: AssetMapping.status.UNMAPPED,
+          mappingId: undefined,
+        },
+      },
+    })
+
+    const title = t('pulse.mapper.toast.unmap.title')
+    toast.promise(
+      assetPromise.then(() => {
+        setSelectedAssetOperation(undefined)
+        onClose()
+      }),
+      {
+        success: { title, description: t('pulse.mapper.toast.unmap.success') },
+        error: (e) => {
+          combinerLog('Error publishing the asset', e)
+          return {
+            title,
+            description: (
+              <>
+                <Text>{t('pulse.mapper.toast.unmap.error')}</Text>
+                {e.message && <Text>{e.message}</Text>}
+              </>
+            ),
+          }
+        },
+        loading: { title, description: t('pulse.mapper.toast.loading') },
+      }
+    )
+  }
+
+  const columns = useMemo<ColumnDef<ManagedAsset>[]>(() => {
+    return [
+      {
+        accessorKey: 'name',
+        enableGlobalFilter: true,
+        enableColumnFilter: false,
+        header: t('pulse.assets.listing.column.name'),
+        cell: (info) => (
+          <FilteredCell
+            isLoading={isLoading}
+            value={info.getValue<string>()}
+            canGlobalFilter={info.column.getCanGlobalFilter()}
+            globalFilter={info.table.getState().globalFilter}
+          />
+        ),
+      },
+      {
+        accessorKey: 'description',
+        enableGlobalFilter: true,
+        enableColumnFilter: false,
+        header: t('pulse.assets.listing.column.description'),
+        cell: (info) => (
+          <FilteredCell
+            isLoading={isLoading}
+            value={info.getValue<string>()}
+            canGlobalFilter={info.column.getCanGlobalFilter()}
+            globalFilter={info.table.getState().globalFilter}
+          />
+        ),
+      },
+      {
+        accessorKey: 'topic',
+        enableGlobalFilter: false,
+        header: t('pulse.assets.listing.column.topic'),
+        cell: (info) => {
+          return (
+            <Skeleton isLoaded={!isLoading}>
+              <Topic tagTitle={info.getValue<string>()} />
+            </Skeleton>
+          )
+        },
+      },
+      {
+        accessorFn: (row) => row.mapping.status,
+        accessorKey: 'mapping.status',
+        enableGlobalFilter: false,
+        header: t('pulse.assets.listing.column.status'),
+        sortingFn: (rowA, rowB) => compareStatus(rowA.original.mapping.status, rowB.original.mapping.status),
+        cell: (info) => {
+          return (
+            <Skeleton isLoaded={!isLoading}>
+              <AssetStatusBadge status={info.getValue<AssetMapping.status>()} />
+            </Skeleton>
+          )
+        },
+        meta: {
+          filterOptions: {
+            canCreate: false,
+            components: {
+              Option: ({ children, ...props }) => (
+                <chakraComponents.Option {...props}>
+                  <AssetStatusBadge status={children as AssetMapping.status} />
+                </chakraComponents.Option>
+              ),
+              SingleValue: ({ children, ...props }) => (
+                <chakraComponents.SingleValue {...props}>
+                  <AssetStatusBadge status={children as AssetMapping.status} />
+                </chakraComponents.SingleValue>
+              ),
+            },
+          },
+        } as FilterMetadata,
+      },
+      {
+        // accessorFn: (row) => row.mapping.sources ?? [],
+        accessorKey: 'combiner.sources',
+        enableGlobalFilter: false,
+        enableColumnFilter: false,
+        enableSorting: false,
+        sortingFn: undefined,
+        // filterFn: (row, _, filterValue) => {
+        //   return !!row.original.mapping.sources.some((e) => e.id === filterValue)
+        // },
+        header: t('pulse.assets.listing.column.sources'),
+        cell: (info) => {
+          const mappingId = info.row.original.mapping.mappingId
+          return (
+            <Skeleton isLoaded={!isLoading}>
+              {!mappingId && <Text whiteSpace="nowrap">{t('pulse.assets.listing.sources.unset')}</Text>}
+              {mappingId && <SourcesCell mappingId={mappingId} isLoading={isLoading} />}
+            </Skeleton>
+          )
+        },
+      },
+      {
+        id: 'actions',
+        enableGlobalFilter: false,
+        header: t('pulse.assets.listing.column.actions'),
+        sortingFn: undefined,
+
+        cell: (info) => {
+          const asset = info.row.original
+          return (
+            <Skeleton isLoaded={!isLoading}>
+              <AssetActionMenu
+                asset={asset}
+                onViewWorkspace={handleViewWorkspace}
+                isInWorkspace={variant === 'summary'}
+                onView={(id) => navigate(`/pulse-assets/${id}`)}
+                onEdit={(id) => {
+                  const asset = data?.items.find((e) => e.id === id)
+                  if (asset) {
+                    setSelectedAssetOperation({ assetId: id, operation: 'EDIT', asset })
+                    onOpen()
+                  } else combinerLog('Cannot find the asset')
+                }}
+                onDelete={(id) => {
+                  const asset = data?.items.find((e) => e.id === id)
+                  if (asset) {
+                    setSelectedAssetOperation({ assetId: id, operation: 'DELETE', asset })
+                    onOpen()
+                  } else combinerLog('Cannot find the asset')
+                }}
+              />
+            </Skeleton>
+          )
+        },
+      },
+    ]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading])
+
+  // TODO[NVL] Tanstack table has a column-visibility as a state; manage it  through it?
+  const dynamicColumns = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [name, _description, topic, status, _sources, actions] = columns
+    return variant === 'full' ? columns : [name, topic, status, actions]
+  }, [columns, variant])
+
+  if (error) {
+    return (
+      <Box mt="20%" mx="20%" alignItems="center">
+        <ErrorMessage
+          type={error?.message}
+          message={(error?.body as ProblemDetails)?.title || t('pulse.error.loading')}
+        />
+      </Box>
+    )
+  }
+
+  return (
+    <>
+      <PaginatedTable<ManagedAsset>
+        aria-label={t('pulse.assets.listing.aria-label')}
+        noDataText={t('pulse.assets.listing.noDataText')}
+        data={safeData}
+        columns={dynamicColumns}
+        enablePagination
+        enableColumnFilters
+        enableGlobalFilter
+        initState={{ columnFilters: [{ id: 'mapping_status', value: searchParams.get('mapping_status') || '' }] }}
+      />
+      {selectedAssetOperation && (
+        <>
+          <AssetMapperWizard
+            isOpen={isOpen && selectedAssetOperation?.operation === 'EDIT'}
+            assetId={selectedAssetOperation?.assetId}
+            onClose={handleCloseWizard}
+            onSubmit={handleConfirmWizard}
+          />
+          <ConfirmationDialog
+            isOpen={isOpen && selectedAssetOperation?.operation === 'DELETE'}
+            onClose={handleCloseDelete}
+            onSubmit={handleConfirmDelete}
+            header={t('pulse.assets.operation.delete.header', { name: selectedAssetOperation?.asset?.name })}
+            message={t('pulse.assets.operation.delete.message')}
+          />
+        </>
+      )}
+    </>
+  )
+}
+
+export default AssetsTable

@@ -1,10 +1,13 @@
+import { useListAssetMappers } from '@/api/hooks/useAssetMapper'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Edge, Node } from '@xyflow/react'
 import { useEdgesState, useNodesState } from '@xyflow/react'
 import { useTheme } from '@chakra-ui/react'
 
-import type { ProtocolAdapter } from '@/api/__generated__'
+import type { Combiner, ProtocolAdapter } from '@/api/__generated__'
+import { Capability } from '@/api/__generated__'
+import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { useGetListeners } from '@/api/hooks/useGateway/useGetListeners.ts'
@@ -17,6 +20,7 @@ import {
   createAdapterNode,
   createListenerNode,
   createCombinerNode,
+  createPulseNode,
 } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { applyLayout } from '@/modules/Workspace/utils/layout-utils.ts'
 import { useEdgeFlowContext } from './useEdgeFlowContext.ts'
@@ -30,12 +34,20 @@ const useGetFlowElements = () => {
   const { data: adapters, isLoading: isAdapterLoading } = useListProtocolAdapters()
   const { data: listenerList, isLoading: isListenerLoading } = useGetListeners()
   const { data: combinerList, isLoading: isCombinerLoading } = useListCombiners()
+  const { data: assetMapperList, isLoading: isAssetMapperLoading } = useListAssetMappers()
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  const { data: hasPulse } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
 
   const { items: listeners } = listenerList || {}
 
-  const isLoading = isAdapterLoading || isListenerLoading || isCombinerLoading || isBridgeLoading || isTypeLoading
+  const isLoading =
+    isAdapterLoading ||
+    isListenerLoading ||
+    isCombinerLoading ||
+    isBridgeLoading ||
+    isTypeLoading ||
+    isAssetMapperLoading
 
   useEffect(() => {
     const nodes: Node[] = []
@@ -86,13 +98,20 @@ const useGetFlowElements = () => {
     const nbCombiners = combinerList?.items?.length || 1
     const deltaPosition = Math.floor((nbCombiners - 1) / 2)
 
-    combinerList?.items?.forEach((combiner, index) => {
+    if (hasPulse) {
+      const { nodePulse, pulseConnector } = createPulseNode(theme)
+
+      nodes.push(nodePulse)
+      edges.push(pulseConnector)
+    }
+
+    const generateDataTransformationNodes = (combiner: Combiner, index: number) => {
       const sources =
         combiner.sources?.items
           ?.map((entity) => {
             return nodes.find((node) => node.data.id === entity.id)
           })
-          // TODO[] Error message for missing references
+          // TODO[xxxxxx] Error message for missing references
           .filter((node) => node) || []
 
       const { nodeCombiner, edgeConnector, sourceConnectors } = createCombinerNode(
@@ -104,7 +123,10 @@ const useGetFlowElements = () => {
 
       nodes.push(nodeCombiner)
       edges.push(edgeConnector, ...sourceConnectors)
-    })
+    }
+
+    combinerList?.items?.forEach(generateDataTransformationNodes)
+    assetMapperList?.items?.forEach(generateDataTransformationNodes)
 
     setNodes([nodeEdge, ...applyLayout(nodes, groups)])
     setEdges([...edges])
@@ -119,8 +141,10 @@ const useGetFlowElements = () => {
     options,
     theme,
     adapterTypes?.items,
+    assetMapperList?.items,
     isLoading,
     combinerList,
+    hasPulse,
   ])
 
   return { nodes, edges, onNodesChange, onEdgesChange, isLoading }

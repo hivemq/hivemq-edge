@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
-import type { ApiBearerToken, ApiError, UsernamePasswordCredentials } from '../../__generated__'
-import { HiveMqClient } from '../../__generated__'
+import type { ApiBearerToken, ApiError, UsernamePasswordCredentials } from '@/api/__generated__'
+import { HiveMqClient } from '@/api/__generated__'
 import config from '../../../config'
 
 export const usePostAuthentication = () => {
