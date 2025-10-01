@@ -69,7 +69,7 @@ import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatu
 public class ProtocolAdapterManager {
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
 
-    private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters = new ConcurrentHashMap<>();
+    private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters;
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull ModuleServicesImpl moduleServices;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
@@ -113,6 +113,7 @@ public class ProtocolAdapterManager {
         this.northboundConsumerFactory = northboundConsumerFactory;
         this.tagManager = tagManager;
         this.protocolAdapterConfig = protocolAdapterConfig;
+        this.protocolAdapters = new ConcurrentHashMap<>();
         this.executorService = Executors.newSingleThreadExecutor();
         Runtime.getRuntime().addShutdownHook(new Thread(executorService::shutdown));
         protocolAdapterWritingService.addWritingChangedCallback(() -> protocolAdapterFactoryManager.writingEnabledChanged(
