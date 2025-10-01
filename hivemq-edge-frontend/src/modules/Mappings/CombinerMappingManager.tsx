@@ -117,7 +117,7 @@ const CombinerMappingManager: FC = () => {
           requestBody: {
             ...source,
             mapping: {
-              status: AssetMapping.status.DRAFT,
+              status: AssetMapping.status.STREAMING,
               mappingId: newMapping.id,
             },
           },
