@@ -25,6 +25,8 @@ export type PulseFactory = FactoryAPI<{
   assetMappers: PrimaryKeyGetter
 }>
 
+export const MOCK_MAIN_ASSET_MAPPER_ID = '1366d05d-df9a-4f3f-9dd2-ec58881437c0'
+
 export const getPulseFactory = () =>
   factory({
     capabilities: {
@@ -121,14 +123,14 @@ const interceptAssets = (factory: PulseFactory, isPreLoaded: boolean) => {
 }
 
 const interceptAssetMappers = (factory: PulseFactory, isPreLoaded: boolean) => {
-  if (isPreLoaded) {
-    for (const assetMapper of MOCK_PULSE_EXT_ASSET_MAPPERS_LIST.items) {
-      factory.assetMappers.create({
-        id: assetMapper.id,
-        json: JSON.stringify(assetMapper),
-      })
-    }
-  }
+  // if (isPreLoaded) {
+  //   for (const assetMapper of MOCK_PULSE_EXT_ASSET_MAPPERS_LIST.items) {
+  //     factory.assetMappers.create({
+  //       id: assetMapper.id,
+  //       json: JSON.stringify(assetMapper),
+  //     })
+  //   }
+  // }
 
   // make sure we have the connected adapters
   cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_OPC_UA] }).as('getProtocols')
@@ -148,12 +150,29 @@ const interceptAssetMappers = (factory: PulseFactory, isPreLoaded: boolean) => {
 
   cy.intercept<Combiner>('POST', '/api/v1/management/pulse/asset-mappers', (req) => {
     const combiner = req.body
+
+    // This is a bit too hacky for a deterministic id
+    const id = isPreLoaded ? MOCK_MAIN_ASSET_MAPPER_ID : combiner.id
     const newCombinerData = factory.assetMappers.create({
-      id: combiner.id,
-      json: JSON.stringify(combiner),
+      id,
+      json: JSON.stringify({ ...combiner, id }),
     })
     req.reply(200, { created: JSON.parse(newCombinerData.json) })
   }).as('createAssetMapper')
+
+  cy.intercept<Combiner>('PUT', '/api/v1/management/pulse/asset-mappers/**', (req) => {
+    const combiner = req.body
+    const updatedData = factory.assetMappers.update({
+      where: {
+        id: {
+          equals: combiner.id,
+        },
+      },
+
+      data: { json: JSON.stringify(combiner) },
+    })
+    req.reply(200, { updated: JSON.parse(updatedData.json) })
+  }).as('updateAssetMapper')
 }
 
 export const cy_interceptPulseWithMockDB = (factory: PulseFactory, isActivated = false, isPreLoaded = false) => {
