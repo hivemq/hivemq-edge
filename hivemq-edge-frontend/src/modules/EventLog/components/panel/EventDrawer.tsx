@@ -41,68 +41,66 @@ const EventDrawer: FC<BridgeMainDrawerProps> = ({ event, isOpen, onClose }) => {
   const isXML = event.payload?.contentType === Payload.contentType.XML
 
   return (
-    <>
-      <Drawer variant="hivemq" closeOnOverlayClick={true} size="lg" isOpen={isOpen} placement="right" onClose={onClose}>
-        <DrawerContent aria-label={t('eventLog.panel.title')}>
-          <DrawerCloseButton />
-          <DrawerHeader id="bridge-form-header">{t('eventLog.panel.title')}</DrawerHeader>
+    <Drawer variant="hivemq" closeOnOverlayClick={true} size="lg" isOpen={isOpen} placement="right" onClose={onClose}>
+      <DrawerContent aria-label={t('eventLog.panel.title')}>
+        <DrawerCloseButton />
+        <DrawerHeader id="bridge-form-header">{t('eventLog.panel.title')}</DrawerHeader>
 
-          <DrawerBody>
-            <VStack gap={2}>
+        <DrawerBody>
+          <VStack gap={2}>
+            <Card w="100%">
+              <CardHeader>
+                <SeverityBadge event={event} data-testid="event-title-status" />
+              </CardHeader>
+              <CardBody>
+                <Grid templateColumns="repeat(2, 1fr)" gap={6}>
+                  <GridItem data-testid="event-title-created">
+                    <Text>{t('eventLog.table.header.created')}</Text>
+                  </GridItem>
+                  <GridItem data-testid="event-value-created">
+                    <DateTimeRenderer date={DateTime.fromISO(event?.created || '')} />
+                  </GridItem>
+                  <GridItem data-testid="event-title-source">
+                    <Text>{t('eventLog.table.header.source')}</Text>
+                  </GridItem>
+                  <GridItem data-testid="event-value-source">
+                    <SourceLink source={event?.source} type={event?.associatedObject} />
+                  </GridItem>
+                  <GridItem data-testid="event-title-associatedObject">
+                    <Text>{t('eventLog.table.header.associatedObject')}</Text>
+                  </GridItem>
+                  <GridItem data-testid="event-value-associatedObject">
+                    <SourceLink source={event?.associatedObject} />
+                  </GridItem>
+                </Grid>
+              </CardBody>
+            </Card>
+
+            <Card w="100%">
+              <CardBody data-testid="event-value-message">{event.message}</CardBody>
+            </Card>
+
+            {event.payload && (
               <Card w="100%">
-                <CardHeader>
-                  <SeverityBadge event={event} data-testid="event-title-status" />
+                <CardHeader data-testid="event-title-payload">
+                  {t('eventLog.table.header.payload')}
+                  <Badge variant="outline" mx={2}>
+                    {event.payload?.contentType}
+                  </Badge>
                 </CardHeader>
-                <CardBody>
-                  <Grid templateColumns="repeat(2, 1fr)" gap={6}>
-                    <GridItem data-testid="event-title-created">
-                      <Text>{t('eventLog.table.header.created')}</Text>
-                    </GridItem>
-                    <GridItem data-testid="event-value-created">
-                      <DateTimeRenderer date={DateTime.fromISO(event?.created || '')} />
-                    </GridItem>
-                    <GridItem data-testid="event-title-source">
-                      <Text>{t('eventLog.table.header.source')}</Text>
-                    </GridItem>
-                    <GridItem data-testid="event-value-source">
-                      <SourceLink source={event?.source} type={event?.associatedObject} />
-                    </GridItem>
-                    <GridItem data-testid="event-title-associatedObject">
-                      <Text>{t('eventLog.table.header.associatedObject')}</Text>
-                    </GridItem>
-                    <GridItem data-testid="event-value-associatedObject">
-                      <SourceLink source={event?.associatedObject} />
-                    </GridItem>
-                  </Grid>
+                <CardBody pt={0}>
+                  <Code w="100%" p={2} whiteSpace="pre-wrap" overflow="auto" sx={{ textWrap: 'nowrap' }} maxH={400}>
+                    {isJSON && prettyJSON(event.payload?.content)}
+                    {isXML && prettifyXml(event.payload?.content)}
+                    {!isJSON && !isXML && event.payload?.content}
+                  </Code>
                 </CardBody>
               </Card>
-
-              <Card w="100%">
-                <CardBody data-testid="event-value-message">{event.message}</CardBody>
-              </Card>
-
-              {event.payload && (
-                <Card w="100%">
-                  <CardHeader data-testid="event-title-payload">
-                    {t('eventLog.table.header.payload')}
-                    <Badge variant="outline" mx={2}>
-                      {event.payload?.contentType}
-                    </Badge>
-                  </CardHeader>
-                  <CardBody pt={0}>
-                    <Code w="100%" p={2} whiteSpace="pre-wrap" overflow="auto" sx={{ textWrap: 'nowrap' }} maxH={400}>
-                      {isJSON && prettyJSON(event.payload?.content)}
-                      {isXML && prettifyXml(event.payload?.content)}
-                      {!isJSON && !isXML && event.payload?.content}
-                    </Code>
-                  </CardBody>
-                </Card>
-              )}
-            </VStack>
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
-    </>
+            )}
+          </VStack>
+        </DrawerBody>
+      </DrawerContent>
+    </Drawer>
   )
 }
 
