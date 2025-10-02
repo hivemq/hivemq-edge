@@ -40,9 +40,6 @@ const EventDrawer: FC<BridgeMainDrawerProps> = ({ event, isOpen, onClose }) => {
   const isJSON = event.payload?.contentType === Payload.contentType.JSON
   const isXML = event.payload?.contentType === Payload.contentType.XML
 
-  const JSONFormat = isJSON && prettyJSON(event.payload?.content)
-  const XMLFormat = isXML && prettifyXml(event.payload?.content)
-
   return (
     <>
       <Drawer variant="hivemq" closeOnOverlayClick={true} size="lg" isOpen={isOpen} placement="right" onClose={onClose}>
@@ -94,8 +91,8 @@ const EventDrawer: FC<BridgeMainDrawerProps> = ({ event, isOpen, onClose }) => {
                   </CardHeader>
                   <CardBody pt={0}>
                     <Code w="100%" p={2} whiteSpace="pre-wrap" overflow="auto" sx={{ textWrap: 'nowrap' }} maxH={400}>
-                      {JSONFormat && JSONFormat}
-                      {XMLFormat && XMLFormat}
+                      {isJSON && prettyJSON(event.payload?.content)}
+                      {isXML && prettifyXml(event.payload?.content)}
                       {!isJSON && !isXML && event.payload?.content}
                     </Code>
                   </CardBody>
