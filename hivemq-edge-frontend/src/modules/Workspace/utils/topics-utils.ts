@@ -59,7 +59,7 @@ export const getTopicPaths = (configSchema: RJSFSchema, format = CustomFormat.MQ
       .map(([path]) =>
         path
           // A `type: 'array'` property will have a `items: { properties: {}}` pattern [?]
-          .replace(/items\.properties/gi, TOPIC_PATH_ITEMS_TOKEN)
+          .replaceAll(/items\.properties/gi, TOPIC_PATH_ITEMS_TOKEN)
           // The root of the path will always be "properties" [?]
           .replaceAll('properties.', '')
           // The leaf of the path will always be "format"
