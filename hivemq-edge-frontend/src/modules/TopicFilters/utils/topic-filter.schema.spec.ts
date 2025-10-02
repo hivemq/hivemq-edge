@@ -21,6 +21,18 @@ describe('decodeDataUriJsonSchema', () => {
     { data: 'data:test,456', error: "The media types doesn't include the mandatory `application/schema+json`" },
     { data: 'data:application/json,456', error: "The media types doesn't include the mandatory `base64`" },
     { data: 'data:application/json;base64,456', error: 'The data is not properly encoded as a `base64` string' },
+    {
+      data: 'data:application/fakeType+json;base64,ewogICJ0ZXN0IjogMQp9Cg==',
+      error: "The media types doesn't include the mandatory `application/schema+json`",
+    },
+    {
+      data: 'data:application/schema+json;base64,ewogICJ0ZXN0IjogMQp9Cg==',
+      error: 'Not a valid JSONSchema: `properties` is missing',
+    },
+    {
+      data: 'data:application/json;base64,ewogICJ0ZXN0IjogMQp9Cg==',
+      error: 'Not a valid JSONSchema: `properties` is missing',
+    },
   ]
 
   it.each<Suite>(tests)('$data should throw $error', ({ data, error }) => {

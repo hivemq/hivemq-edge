@@ -6,7 +6,7 @@ import { AiFillExperiment } from 'react-icons/ai'
 import { RiCompassDiscoverLine } from 'react-icons/ri'
 import { HqCombiner } from '@/components/Icons'
 
-import { type ProtocolAdapter, Status } from '@/api/__generated__'
+import { type ProtocolAdapter } from '@/api/__generated__'
 import { HmInput, HmOutput } from '@/components/react-icons/hm'
 
 export const isBidirectional = (adapter: ProtocolAdapter | undefined) => {
@@ -44,13 +44,4 @@ export const deviceCapabilityIcon: Record<CapabilityType, IconType> = {
   ['DISCOVER']: RiCompassDiscoverLine,
   ['WRITE']: HmInput,
   ['COMBINE']: HqCombiner,
-}
-
-export const statusMapping = {
-  [Status.runtime.STOPPED]: { text: 'STOPPED', color: 'status.error' },
-  [Status.connection.ERROR]: { text: 'ERROR', color: 'status.error' },
-  [Status.connection.UNKNOWN]: { text: 'UNKNOWN', color: 'status.unknown' },
-  [Status.connection.CONNECTED]: { text: 'CONNECTED', color: 'status.connected' },
-  [Status.connection.DISCONNECTED]: { text: 'DISCONNECTED', color: 'status.disconnected' },
-  [Status.connection.STATELESS]: { text: 'STATELESS', color: 'status.stateless' },
 }

@@ -37,7 +37,6 @@ public class EnvironmentVariables {
      */
     public static final String LICENSE_FOLDER = "HIVEMQ_LICENSE_FOLDER";
 
-
     /**
      * Name of the environment variable for configuring the config folder.
      */
@@ -67,6 +66,11 @@ public class EnvironmentVariables {
      * Name of the environment variable for configuring the data folder.
      */
     public static final String DATA_FOLDER = "HIVEMQ_DATA_FOLDER";
+
+    /**
+     * Name of the environment variable for configuring the data folder.
+     */
+    public static final String PULSE_TOKEN_FOLDER = "HIVEMQ_PULSE_TOKEN_FOLDER";
 
     /**
      * Name of the environment variable for configuring the extension folder.

@@ -1,12 +1,32 @@
+/*
+ *  Copyright 2019-present HiveMQ GmbH
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.hivemq.api.resources.impl;
 
 import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.adapters.DataCombinerNotFoundError;
+import com.hivemq.api.errors.combiners.InvalidDataIdentifierReferenceTypeForCombinerError;
+import com.hivemq.api.errors.combiners.InvalidEntityTypeForCombinerError;
 import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.combining.model.DataCombining;
+import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.combining.model.EntityType;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.edge.api.CombinersApi;
@@ -15,15 +35,16 @@ import com.hivemq.edge.api.model.CombinerList;
 import com.hivemq.edge.api.model.DataCombiningList;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import com.hivemq.util.ErrorResponseUtil;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.core.Response;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-import jakarta.ws.rs.core.Response;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -50,16 +71,17 @@ public class CombinersResourceImpl implements CombinersApi {
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
-
         final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combiner.getId());
         if (instance.isPresent()) {
             return ErrorResponseUtil.errorResponse(new AlreadyExistsError(String.format(
                     "DataCombiner already exists '%s'",
                     combiner.getId())));
         }
-
-
         final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
+        final Optional<Response> optionalResponse = checkDataCombiner(dataCombiner);
+        if (optionalResponse.isPresent()) {
+            return optionalResponse.get();
+        }
         try {
             dataCombiningExtractor.addDataCombiner(dataCombiner);
         } catch (final Exception e) {
@@ -77,14 +99,15 @@ public class CombinersResourceImpl implements CombinersApi {
         if (!systemInformation.isConfigWriteable()) {
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
-
         final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combiner.getId());
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combiner.getId().toString()));
         }
-
         final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
-
+        final Optional<Response> optionalResponse = checkDataCombiner(dataCombiner);
+        if (optionalResponse.isPresent()) {
+            return optionalResponse.get();
+        }
         final boolean updated = dataCombiningExtractor.updateDataCombiner(dataCombiner);
         if (updated) {
             return Response.ok().build();
@@ -102,7 +125,6 @@ public class CombinersResourceImpl implements CombinersApi {
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
         }
-
         try {
             dataCombiningExtractor.deleteDataCombiner(combinerId);
         } catch (final Exception e) {
@@ -159,6 +181,28 @@ public class CombinersResourceImpl implements CombinersApi {
         return Response.ok().entity(new InstructionList(instructions)).build();
     }
 
+    private @NotNull Optional<Response> checkDataCombiner(final @NotNull DataCombiner dataCombiner) {
+        if (dataCombiner.entityReferences()
+                .stream()
+                .anyMatch(entityReference -> entityReference.type() == EntityType.PULSE_AGENT)) {
+            return Optional.of(ErrorResponseUtil.errorResponse(new InvalidEntityTypeForCombinerError(EntityType.PULSE_AGENT)));
+        }
+        for (final DataCombining dataCombining : dataCombiner.dataCombinings()) {
+            if (dataCombining.sources().primaryReference().type() == DataIdentifierReference.Type.PULSE_ASSET) {
+                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
+                        DataIdentifierReference.Type.PULSE_ASSET)));
+            }
+            if (dataCombining.instructions()
+                    .stream()
+                    .filter(instruction -> Objects.nonNull(instruction.dataIdentifierReference()))
+                    .anyMatch(instruction -> instruction.dataIdentifierReference().type() ==
+                            DataIdentifierReference.Type.PULSE_ASSET)) {
+                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
+                        DataIdentifierReference.Type.PULSE_ASSET)));
+            }
+        }
+        return Optional.empty();
+    }
 
     public static class InstructionList extends ItemsResponse<com.hivemq.edge.api.model.Instruction> {
         public InstructionList(final @NotNull List<com.hivemq.edge.api.model.Instruction> items) {

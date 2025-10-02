@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import type { ApiError } from '@/api/__generated__'
-import { type DomainTag } from '@/api/__generated__'
+import type { ApiError, DomainTag } from '@/api/__generated__'
 
 import { QUERY_KEYS } from '@/api/utils.ts'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'

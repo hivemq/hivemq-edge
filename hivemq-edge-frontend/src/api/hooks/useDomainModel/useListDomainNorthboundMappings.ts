@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { QUERY_KEYS } from '@/api/utils.ts'
 
-import type { ApiError } from '@/api/__generated__'
-import { type NorthboundMappingList } from '@/api/__generated__'
+import type { ApiError, NorthboundMappingList } from '@/api/__generated__'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 
 export const useListDomainNorthboundMappings = () => {

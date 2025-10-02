@@ -34,9 +34,9 @@ import { WorkspaceIcon } from '@/components/Icons/TopicIcon.tsx'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 
 import type { AdapterNavigateState } from '@/modules/ProtocolAdapters/types.ts'
-import { ProtocolAdapterTabIndex, WorkspaceAdapterCommand } from '@/modules/ProtocolAdapters/types.ts'
+import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import { NodeTypes } from '@/modules/Workspace/types.ts'
+import { NodeTypes, WorkspaceNavigationCommand } from '@/modules/Workspace/types.ts'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
@@ -97,8 +97,8 @@ const ProtocolAdapters: FC = () => {
       onConfirmDeleteOpen()
     }
 
-    const handleViewWorkspace = (adapterId: string, type: string, command: WorkspaceAdapterCommand) => {
-      if (adapterId) navigate(`/workspace`, { state: { selectedAdapter: { adapterId, type, command } } })
+    const handleViewWorkspace = (adapterId: string, type: string | undefined, command: WorkspaceNavigationCommand) => {
+      if (adapterId) navigate('/workspace', { state: { selectedAdapter: { adapterId, type, command } } })
     }
 
     const handleExport = (adapterId: string, type: string) => {
@@ -168,7 +168,7 @@ const ProtocolAdapters: FC = () => {
                 <IconButton
                   size="sm"
                   ml={2}
-                  onClick={() => handleViewWorkspace(id, type as string, WorkspaceAdapterCommand.VIEW)}
+                  onClick={() => handleViewWorkspace(id, type, WorkspaceNavigationCommand.VIEW)}
                   aria-label={t('protocolAdapter.table.actions.workspace.view')}
                   icon={<WorkspaceIcon />}
                 />

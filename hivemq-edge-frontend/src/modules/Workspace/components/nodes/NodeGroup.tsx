@@ -26,7 +26,7 @@ const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props 
   const { colors } = useTheme()
   const { onToggleGroup, onNodesChange, onEdgesChange, nodes, edges } = useWorkspaceStore()
   const { isOpen: isConfirmUngroupOpen, onOpen: onConfirmUngroupOpen, onClose: onConfirmUngroupClose } = useDisclosure()
-  const { onContextMenu } = useContextMenu(id, selected, '/workspace/group')
+  const { onContextMenu } = useContextMenu(id, selected, `/workspace/group/${id}`)
   const { colorMode } = useColorMode()
   const isLight = colorMode === 'light'
 

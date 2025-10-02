@@ -26,6 +26,7 @@ describe('DestinationSchemaLoader', () => {
         formData={mockDataCombining}
         onChange={onChange}
         onChangeInstructions={onChangeInstructions}
+        isEditable
       />
     )
 
@@ -38,6 +39,24 @@ describe('DestinationSchemaLoader', () => {
     cy.get('[role="dialog"]#chakra-modal-destination-schema').should('not.exist')
     cy.getByTestId('combiner-destination-upload').click()
     cy.get('[role="dialog"]#chakra-modal-destination-schema').should('be.visible')
+  })
+
+  it('should render properly when non-editable', () => {
+    const onChange = cy.stub().as('onChange')
+    const onChangeInstructions = cy.stub().as('onChangeInstructions')
+    cy.mountWithProviders(
+      <DestinationSchemaLoader
+        formData={mockDataCombining}
+        onChange={onChange}
+        onChangeInstructions={onChangeInstructions}
+      />
+    )
+
+    cy.get('@onChange').should('have.not.been.called')
+
+    cy.getByTestId('combiner-destination-infer').should('not.exist')
+    cy.getByTestId('combiner-destination-upload').should('not.exist')
+    cy.getByTestId('combiner-destination-download').should('have.attr', 'aria-label', 'Download the schema')
   })
 
   it('should be accessible', () => {

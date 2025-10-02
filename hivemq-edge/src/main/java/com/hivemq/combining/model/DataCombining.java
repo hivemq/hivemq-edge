@@ -20,7 +20,11 @@ import com.hivemq.configuration.entity.combining.DataCombiningEntity;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public record DataCombining(UUID id, DataCombiningSources sources, DataCombiningDestination destination,
@@ -52,5 +56,31 @@ public record DataCombining(UUID id, DataCombiningSources sources, DataCombining
                 sources().toPersistence(),
                 destination().toPersistence(),
                 instructions().stream().map(InstructionEntity::from).toList());
+    }
+
+    public boolean isPrimaryReferenceFound() {
+        final DataIdentifierReference primaryReference = sources().primaryReference();
+        if (primaryReference == null || primaryReference.isIdEmpty()) {
+            return false;
+        }
+        return instructions().stream()
+                .map(com.hivemq.persistence.mappings.fieldmapping.Instruction::dataIdentifierReference)
+                .filter(Objects::nonNull)
+                .anyMatch(reference -> Objects.equals(reference, primaryReference));
+    }
+
+    public @NotNull Optional<String> getFirstDuplicateMappingId() {
+        final Set<String> idSet = new HashSet<>();
+        for (final String id : instructions().stream()
+                .map(Instruction::dataIdentifierReference)
+                .filter(Objects::nonNull)
+                .filter(dataIdentifierReference -> !dataIdentifierReference.isIdEmpty())
+                .map(DataIdentifierReference::id)
+                .toList()) {
+            if (!idSet.add(id)) {
+                return Optional.of(id);
+            }
+        }
+        return Optional.empty();
     }
 }

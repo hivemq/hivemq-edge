@@ -46,4 +46,9 @@ public class CapabilityServiceImpl implements HiveMQCapabilityService {
     public synchronized void addCapability(final @NotNull Capability capability) {
         capabilities.add(capability);
     }
+
+    @Override
+    public synchronized void removeCapability(@NotNull final Capability capability) {
+        capabilities.remove(capability);
+    }
 }

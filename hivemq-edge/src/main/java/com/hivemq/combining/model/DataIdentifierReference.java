@@ -42,12 +42,18 @@ public record DataIdentifierReference(String id, Type type) {
         return new DataIdentifierReferenceEntity(this.id(), this.type);
     }
 
+    public boolean isIdEmpty() {
+        return id == null || id.isBlank();
+    }
+
     public enum Type {
+        PULSE_ASSET,
         TAG,
         TOPIC_FILTER;
 
         public static @NotNull Type from(final com.hivemq.edge.api.model.DataIdentifierReference.@NotNull TypeEnum type) {
             return switch (type) {
+                case PULSE_ASSET -> PULSE_ASSET;
                 case TAG -> TAG;
                 case TOPIC_FILTER -> TOPIC_FILTER;
             };
@@ -55,6 +61,7 @@ public record DataIdentifierReference(String id, Type type) {
 
         public com.hivemq.edge.api.model.DataIdentifierReference.@NotNull TypeEnum to() {
             return switch (this) {
+                case PULSE_ASSET -> com.hivemq.edge.api.model.DataIdentifierReference.TypeEnum.PULSE_ASSET;
                 case TAG -> com.hivemq.edge.api.model.DataIdentifierReference.TypeEnum.TAG;
                 case TOPIC_FILTER -> com.hivemq.edge.api.model.DataIdentifierReference.TypeEnum.TOPIC_FILTER;
             };

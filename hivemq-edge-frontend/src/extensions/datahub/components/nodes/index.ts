@@ -1,4 +1,2 @@
-import { CustomHandle } from './CustomHandle.tsx'
-import { NodeWrapper } from './NodeWrapper.tsx'
-
-export { CustomHandle, NodeWrapper }
+export { CustomHandle } from './CustomHandle.tsx'
+export { NodeWrapper } from './NodeWrapper.tsx'

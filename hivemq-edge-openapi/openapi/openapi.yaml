@@ -30,7 +30,7 @@ info:
     imported into popular API tooling (e.g. Postman) or can be used to generate
     client-code for multiple programming languages.
   title: HiveMQ Edge REST API
-  version: 2025.10-SNAPSHOT
+  version: 2025.14-SNAPSHOT
   x-logo:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
@@ -155,6 +155,9 @@ tags:
       Hub.
 
     name: Data Hub - State
+  - description: >+
+      These endpoints can be used to manage Pulse and its assets.
+    name: Pulse
 paths:
   /:
     $ref: paths/root.yaml
@@ -278,3 +281,19 @@ paths:
     $ref: paths/api_v1_management_combiners_{combinerId}_mappings.yaml
   /api/v1/management/combiners/{combinerId}/mappings/{mappingId}/instructions:
     $ref: paths/api_v1_management_combiners_{combinerId}_mappings_{mappingId}_instructions.yaml
+  /api/v1/management/pulse/activation-token:
+    $ref: paths/pulse/activation_token.yaml
+  /api/v1/management/pulse/status:
+    $ref: paths/pulse/pulse_status.yaml
+  /api/v1/management/pulse/managed-assets:
+    $ref: paths/pulse/managed-assets.yaml
+  /api/v1/management/pulse/managed-assets/{assetId}:
+    $ref: paths/pulse/managed-assets_{assetId}.yaml
+  /api/v1/management/pulse/asset-mappers:
+    $ref: paths/pulse/asset-mappers.yaml
+  /api/v1/management/pulse/asset-mappers/{combinerId}:
+    $ref: paths/pulse/asset-mappers_{combinerId}.yaml
+  /api/v1/management/pulse/asset-mappers/{combinerId}/mappings:
+    $ref: paths/pulse/asset-mappers_{combinerId}_mappings.yaml
+  /api/v1/management/pulse/asset-mappers/{combinerId}/mappings/{mappingId}/instructions:
+    $ref: paths/pulse/asset-mappers_{combinerId}_mappings_{mappingId}_instructions.yaml

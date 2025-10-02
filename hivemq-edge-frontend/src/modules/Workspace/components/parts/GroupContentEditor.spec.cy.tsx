@@ -57,7 +57,7 @@ describe('GroupContentEditor', () => {
     cy.get('@device-row').eq(1).should('have.text', 'Unknown')
     cy.get('@device-row').eq(2).should('have.text', 'simulation')
 
-    cy.get('nav').should('be.visible').should('have.attr', 'aria-label', 'Pagination')
+    cy.get('nav').should('be.visible').should('have.attr', 'aria-label', 'Pagination Toolbar')
     cy.get('nav').find('[role="group"]').should('have.length', 2)
   })
 

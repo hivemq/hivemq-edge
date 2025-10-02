@@ -152,6 +152,7 @@ public class DataCombiningRuntime {
     }
 
     public void triggerPublish(final @NotNull DataCombining dataCombining) {
+        log.debug("Triggering data combining {}", dataCombining.id());
         final var tagsToDataPoints = Map.copyOf(tagResults);
         final var topicFilterResults = Map.copyOf(topicFilterToPublish);
         final ObjectNode rootNode = mapper.createObjectNode();

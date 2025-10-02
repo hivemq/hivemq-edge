@@ -9,8 +9,7 @@ import mockFunction from 'cypress/fixtures/test-function-2025-07-23.json'
 
 import type { DataHubFactory } from 'cypress/utils/intercept.utils.ts'
 import { cy_interceptCoreE2E, cy_interceptDataHubWithMockDB } from 'cypress/utils/intercept.utils.ts'
-import { datahubPage, loginPage } from 'cypress/pages'
-import { datahubDesignerPage } from 'cypress/pages/DataHub/DesignerPage.ts'
+import { datahubPage, loginPage, datahubDesignerPage } from 'cypress/pages'
 import { cy_checkDataPolicyGraph } from 'cypress/utils/datahub.utils.ts'
 
 import { MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
@@ -63,11 +62,11 @@ describe('Data Hub', () => {
 
     datahubDesignerPage.toolbox.trigger.click()
 
-    datahubDesignerPage.toolbox.dataPolicy.drag('[role="region"][data-testid="rf__wrapper"]')
+    datahubDesignerPage.toolbox.dataPolicy.drag('[role="application"][data-testid="rf__wrapper"]')
     datahubDesignerPage.controls.fit.click()
 
     datahubDesignerPage.toolbox.trigger.click()
-    datahubDesignerPage.toolbox.topicFilter.drag('[role="region"][data-testid="rf__wrapper"]')
+    datahubDesignerPage.toolbox.topicFilter.drag('[role="application"][data-testid="rf__wrapper"]')
     datahubDesignerPage.controls.fit.click()
 
     datahubDesignerPage.designer.connectNodes('TOPIC_FILTER', 'topic-0', 'DATA_POLICY', 'topicFilter')

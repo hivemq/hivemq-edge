@@ -17,6 +17,8 @@ package com.hivemq.bootstrap.services;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.mqtt.services.InternalPublishService;
+import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.bootstrap.ioc.Persistences;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
@@ -25,6 +27,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.ModulesAndExtensionsService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
+import com.hivemq.pulse.status.StatusProviderRegistry;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
@@ -115,6 +118,21 @@ public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBoo
     @Override
     public @NotNull PublishService publishService() {
         return delegate.publishService();
+    }
+
+    @Override
+    public @NotNull InternalPublishService internalPublishService() {
+        return delegate.internalPublishService();
+    }
+
+    @Override
+    public @NotNull AssetProviderRegistry assetProviderRegistry() {
+        return delegate.assetProviderRegistry();
+    }
+
+    @Override
+    public @NotNull StatusProviderRegistry statusProviderRegistry() {
+        return delegate.statusProviderRegistry();
     }
 
     @Override

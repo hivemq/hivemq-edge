@@ -34,7 +34,7 @@ describe('NodeDevice', () => {
 
     cy.getByTestId('test-navigate-pathname').should('have.text', '/')
     cy.getByTestId('node-device-toolbar-metadata').click()
-    cy.getByTestId('test-navigate-pathname').should('have.text', `/workspace/node/${MOCK_NODE_DEVICE.id}`)
+    cy.getByTestId('test-navigate-pathname').should('have.text', `/workspace/device/${MOCK_NODE_DEVICE.id}`)
   })
 
   it('should be accessible', () => {

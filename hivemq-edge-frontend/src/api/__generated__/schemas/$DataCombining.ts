@@ -34,8 +34,14 @@ export const $DataCombining = {
         },
         destination: {
             properties: {
+                assetId: {
+                    type: 'string',
+                    description: `The id of a mapped asset containing the topic and schema used for destination of the mapping`,
+                    format: 'uuid',
+                },
                 topic: {
                     type: 'string',
+                    description: `The MQTT topic used for destination of the mapping`,
                     format: 'mqtt-topic',
                 },
                 schema: {

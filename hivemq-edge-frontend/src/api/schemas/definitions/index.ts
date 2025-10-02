@@ -1,7 +1,5 @@
-import { Instruction } from './Instruction.json-schema'
-import { MqttUserProperty } from './MqttUserProperty.json-schema'
-import { QoS } from './QoS.json-schema'
-import { MaxQoS } from './MaxQoS.json-schema'
-import { StatusConnection, StatusRuntime } from './Status.json-schema'
-
-export { Instruction, MqttUserProperty, QoS, MaxQoS, StatusConnection, StatusRuntime }
+export { Instruction } from './Instruction.json-schema'
+export { MqttUserProperty } from './MqttUserProperty.json-schema'
+export { QoS } from './QoS.json-schema'
+export { MaxQoS } from './MaxQoS.json-schema'
+export { StatusConnection, StatusRuntime } from './Status.json-schema'

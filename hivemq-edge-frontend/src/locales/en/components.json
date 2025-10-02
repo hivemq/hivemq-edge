@@ -10,16 +10,22 @@
     "topic-filter": "Topic Filter",
     "tag": "Tag",
     "client": "Client",
-    "workspace": "Workspace"
+    "workspace": "Workspace",
+    "pulse": "Pulse Agent",
+    "asset": "Asset"
+  },
+  "TableToolBar": {
+    "aria-label": "Table Toolbar"
   },
   "pagination": {
-    "ariaLabel": "Pagination",
+    "ariaLabel": "Pagination Toolbar",
     "filter": {
       "label": "Filter column",
       "placeholder": "Search... ({{ size }})",
       "noOptions": "No options available",
       "create": "Add filter... {{ topic }}",
-      "clear": "Clear filter"
+      "clear": "Clear filter",
+      "clearAll": "Clear all filters"
     },
     "noDataText": "No data received yet.",
     "noDataLoadError": "There was an error loading the data.",
@@ -31,6 +37,12 @@
     "pageOf": "Page {{ page }} of {{ max }}",
     "goPage": "Go to page",
     "perPage": "Items per page"
+  },
+  "SearchBar": {
+    "aria-label": "Search Toolbar",
+    "filter": {
+      "placeholder": "Search for ..."
+    }
   },
   "EntityCreatableSelect": {
     "aria-label_TAG": "Add a tag",
@@ -105,7 +117,8 @@
         "noEmptySharedName": "Shared name cannot be empty",
         "noMultiLevelString": "Wildcard # must not be followed or preceded by any character",
         "noSingleLevelString": "Wildcard + must not be followed or preceded by any character",
-        "noSingleLevelFinal": "Wildcard + must be followed by the end-of-segment `/`"
+        "noSingleLevelFinal": "Wildcard + must be followed by the end-of-segment `/`",
+        "noJWTFormat": "The token is not a completely valid JSON object conforming to JWT format"
       }
     },
     "actions": {
@@ -317,6 +330,12 @@
           "missingMapping": "Some of the required properties are missing"
         }
       }
+    },
+    "SchemaWidget": {
+      "error": {
+        "noValidSchema": "< cannot display the schema >"
+      },
+      "download": "Download the schema"
     }
   },
   "GenericSchema": {

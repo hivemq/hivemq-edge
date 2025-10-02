@@ -10,6 +10,7 @@ import {
 import {
   type FlatJSONSchema7,
   getPropertyListFrom,
+  getSchemaFromPropertyList,
   payloadToSchema,
   reducerSchemaExamples,
 } from './json-schema.utils.ts'
@@ -196,5 +197,12 @@ describe('payloadToSchema', () => {
 })
 
 describe('getSchemaFromPropertyList', () => {
-  it.skip('should return an empty list of properties', async () => {})
+  it('should return the root object', async () => {
+    expect(getSchemaFromPropertyList([])).toStrictEqual<RJSFSchema>({
+      description: 'This is generated from the Edge data combiner',
+      properties: {},
+      title: 'OPCUA/MQTT combined schema',
+      type: 'object',
+    })
+  })
 })

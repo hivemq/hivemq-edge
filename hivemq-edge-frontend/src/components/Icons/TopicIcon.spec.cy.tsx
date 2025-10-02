@@ -1,4 +1,4 @@
-import { ClientIcon, PLCTagIcon, TopicFilterIcon, TopicIcon } from '@/components/Icons/TopicIcon.tsx'
+import { AssetIcon, ClientIcon, PLCTagIcon, TopicFilterIcon, TopicIcon } from '@/components/Icons/TopicIcon.tsx'
 
 describe('TopicIcon', () => {
   beforeEach(() => {
@@ -48,6 +48,19 @@ describe('TopicFilterIcon', () => {
     cy.injectAxe()
     cy.mountWithProviders(<TopicFilterIcon />)
     cy.get('svg').should('have.attr', 'aria-label', 'Topic Filter')
+    cy.checkAccessibility()
+  })
+})
+
+describe('AssetIcon', () => {
+  beforeEach(() => {
+    cy.viewport(100, 100)
+  })
+
+  it('should render properly ', () => {
+    cy.injectAxe()
+    cy.mountWithProviders(<AssetIcon />)
+    cy.get('svg').should('have.attr', 'aria-label', 'Asset')
     cy.checkAccessibility()
   })
 })

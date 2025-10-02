@@ -15,13 +15,12 @@ import {
   Text,
 } from '@chakra-ui/react'
 
-import type { Adapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import DeviceTagList from '@/modules/Device/components/DeviceTagList.tsx'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import type { DeviceMetadata, NodeTypes } from '@/modules/Workspace/types.ts'
+import type { DeviceMetadata, NodeAdapterType, NodeTypes } from '@/modules/Workspace/types.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 
 interface DevicePropertyDrawerProps {
@@ -37,9 +36,9 @@ const DevicePropertyDrawer: FC<DevicePropertyDrawerProps> = ({ isOpen, selectedN
   const { nodes, edges } = useWorkspaceStore()
   const { data, isError, isLoading } = useGetAdapterTypes()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const incomers = getIncomers<Adapter, any>(selectedNode, nodes, edges)
-  const adapter = incomers.find(Boolean)?.data
+  const incomers = getIncomers(selectedNode, nodes, edges)
+  const adapterNode = incomers.find(Boolean) as NodeAdapterType | undefined
+  const adapter = adapterNode?.data
   const protocol = data?.items?.find((e) => e.id === adapter?.type)
 
   if (isLoading) return <LoaderSpinner />

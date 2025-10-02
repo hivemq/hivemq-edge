@@ -71,8 +71,6 @@ public interface SystemInformation {
     File getDataFolder();
 
     /**
-     * /**
-     *
      * @return the config folder of HiveMQ
      */
     @NotNull
@@ -83,6 +81,12 @@ public interface SystemInformation {
      */
     @NotNull
     File getExtensionsFolder();
+
+    /**
+     * @return the folder where HiveMQ stores pulse related data
+     */
+    @NotNull
+    File getPulseTokenFolder();
 
     /**
      * @return the modules folder of HiveMQ

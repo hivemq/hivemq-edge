@@ -27,7 +27,7 @@ import { MdOutlineEventNote } from 'react-icons/md'
 
 import MetricsContainer from '@/modules/Metrics/MetricsContainer.tsx'
 
-import type { Group, NodeAdapterType } from '../../types.ts'
+import type { NodeAdapterType, NodeGroupType } from '../../types.ts'
 import { NodeTypes } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
@@ -40,7 +40,7 @@ import EventLogTable from '@/modules/EventLog/components/table/EventLogTable.tsx
 
 interface GroupPropertyDrawerProps {
   nodeId: string
-  selectedNode: Node<Group>
+  selectedNode: NodeGroupType
   nodes: Node[]
   isOpen: boolean
   showConfig?: boolean

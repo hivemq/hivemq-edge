@@ -25,6 +25,7 @@ import com.hivemq.extension.sdk.api.services.admin.AdminService;
 import com.hivemq.extensions.ExtensionBootstrap;
 import com.hivemq.extensions.services.admin.AdminServiceImpl;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.pulse.messaging.AssetMapperManager;
 import com.hivemq.util.Checkpoints;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +40,7 @@ public class HiveMQEdgeGateway {
     private final @NotNull AdminService adminService;
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull DataCombinerManager dataCombinerManager;
+    private final @NotNull AssetMapperManager assetMapperManager;
 
     @Inject
     public HiveMQEdgeGateway(
@@ -46,12 +48,14 @@ public class HiveMQEdgeGateway {
             final @NotNull ExtensionBootstrap extensionBootstrap,
             final @NotNull AdminService adminService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
-            final @NotNull DataCombinerManager dataCombinerManager) {
+            final @NotNull DataCombinerManager dataCombinerManager,
+            final @NotNull AssetMapperManager assetMapperManager) {
         this.nettyBootstrap = nettyBootstrap;
         this.extensionBootstrap = extensionBootstrap;
         this.adminService = adminService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.dataCombinerManager = dataCombinerManager;
+        this.assetMapperManager = assetMapperManager;
     }
 
     public void start(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
@@ -59,6 +63,7 @@ public class HiveMQEdgeGateway {
             extensionBootstrap.startExtensionSystem(embeddedExtension).get();
             protocolAdapterManager.start();
             dataCombinerManager.start();
+            assetMapperManager.start();
 
             final List<ListenerStartupInformation> startupInformation = nettyBootstrap.bootstrapServer().get();
             Checkpoints.checkpoint("listener-started");

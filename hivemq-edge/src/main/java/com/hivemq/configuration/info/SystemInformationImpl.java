@@ -20,9 +20,9 @@ import com.hivemq.HiveMQEdgeGateway;
 import com.hivemq.HiveMQEdgeMain;
 import com.hivemq.configuration.EnvironmentVariables;
 import com.hivemq.configuration.SystemProperties;
+import com.hivemq.util.ManifestUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.util.ManifestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +48,9 @@ public class SystemInformationImpl implements SystemInformation {
     private @NotNull File dataFolder;
     private @NotNull File pluginFolder;
     private @NotNull File modulesFolder;
+    private @NotNull File pulseTokenFolder;
     private @NotNull String hivemqVersion;
+
     private final long runningSince;
     private final boolean embedded;
     private final int processorCount;
@@ -66,7 +68,7 @@ public class SystemInformationImpl implements SystemInformation {
     }
 
     public SystemInformationImpl(final boolean usePathOfRunningJar) {
-        this(usePathOfRunningJar, false, null, null, null, null, null, null);
+        this(usePathOfRunningJar, false, null, null, null, null, null, null, null);
     }
 
     public SystemInformationImpl(
@@ -77,7 +79,8 @@ public class SystemInformationImpl implements SystemInformation {
             final @Nullable File dataFolder,
             final @Nullable File pluginFolder,
             final @Nullable File modulesFolder,
-            final @Nullable File licenseFolder) {
+            final @Nullable File licenseFolder,
+            final @Nullable File pulseTokenLocation) {
         final String refreshInterval = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_REFRESH_INTERVAL, EnvironmentVariables.CONFIG_REFRESH_INTERVAL);
         final String configWriteable = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_WRITEABLE, EnvironmentVariables.CONFIG_WRITEABLE);
         final String configFragmentBase64ZipString = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_FRAGMENT_BASE64ZIP, EnvironmentVariables.CONFIG_FRAGMENT_BASE64ZIP);
@@ -89,6 +92,7 @@ public class SystemInformationImpl implements SystemInformation {
         this.pluginFolder = pluginFolder;
         this.modulesFolder = modulesFolder;
         this.licenseFolder = licenseFolder;
+        this.pulseTokenFolder = pulseTokenLocation;
         this.runningSince = System.currentTimeMillis();
         this.configRefreshIntervalInMs = Long.parseLong(Objects.requireNonNullElse(refreshInterval, "-1"));
         this.configWriteable = Boolean.parseBoolean((configWriteable == null || configWriteable.isEmpty()) ? "true" : configWriteable );
@@ -161,6 +165,15 @@ public class SystemInformationImpl implements SystemInformation {
                 )
         );
 
+        pulseTokenFolder = Objects.requireNonNullElseGet(pulseTokenFolder,
+                () -> setUpHiveMQFolder(
+                        SystemProperties.PULSE_TOKEN_FOLDER,
+                        EnvironmentVariables.PULSE_TOKEN_FOLDER,
+                        new File(dataFolder, "pulsetoken").getAbsolutePath(),
+                        true
+                )
+        );
+
         pluginFolder = Objects.requireNonNullElseGet(
                 pluginFolder,
                 () -> setUpHiveMQFolder(
@@ -184,16 +197,18 @@ public class SystemInformationImpl implements SystemInformation {
 
     private void setHivemqVersion() {
 
-        hivemqVersion = ManifestUtils.getValueFromManifest(HiveMQEdgeMain.class, "HiveMQ-Edge-Version");
+        var hivemqVersion = ManifestUtils.getValueFromManifest(HiveMQEdgeMain.class, "HiveMQ-Edge-Version");
 
-        if (hivemqVersion == null || hivemqVersion.length() < 1) {
+        if (hivemqVersion == null || hivemqVersion.isEmpty()) {
             hivemqVersion = DEVELOPMENT_VERSION;
         }
+
+        this.hivemqVersion = hivemqVersion;
 
         log.info("HiveMQ Edge Version: {}", hivemqVersion);
     }
 
-    public void setHivemqVersion(final String hivemqVersion) {
+    public void setHivemqVersion(final @NotNull String hivemqVersion) {
         this.hivemqVersion = hivemqVersion;
     }
 
@@ -241,6 +256,11 @@ public class SystemInformationImpl implements SystemInformation {
     @Override
     public @NotNull File getModulesFolder() {
         return this.modulesFolder;
+    }
+
+    @Override
+    public @NotNull File getPulseTokenFolder() {
+        return this.pulseTokenFolder;
     }
 
     @Override
@@ -305,8 +325,7 @@ public class SystemInformationImpl implements SystemInformation {
             return systemProperty;
         }
 
-        final String environmentVariable = System.getenv().get(variableName);
-        return environmentVariable;
+        return System.getenv().get(variableName);
     }
 
     private void setHomeFolder() {

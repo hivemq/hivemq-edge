@@ -23,6 +23,7 @@ interface CustomFormTestingProps
     | 'onError'
     | 'formContext'
     | 'widgets'
+    | `customValidate`
   > {
   id?: string
 }
@@ -38,6 +39,7 @@ export const CustomFormTesting: FC<CustomFormTestingProps> = ({
   onBlur,
   onError,
   onSubmit,
+  customValidate,
 }) => {
   return (
     <Form
@@ -54,6 +56,7 @@ export const CustomFormTesting: FC<CustomFormTestingProps> = ({
       liveValidate
       showErrorList="bottom"
       widgets={widgets}
+      customValidate={customValidate}
       templates={{
         ObjectFieldTemplate,
         FieldTemplate,

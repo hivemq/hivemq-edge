@@ -38,7 +38,8 @@ class DataCombiningExtractorTest {
     private final @NotNull UUID generatedUuid = UUID.randomUUID();
 
     private final @NotNull ConfigFileReaderWriter configFileReaderWriter = mock();
-    private final @NotNull DataCombiningExtractor dataCombiningExtractor = new DataCombiningExtractor(configFileReaderWriter);
+    private final @NotNull DataCombiningExtractor dataCombiningExtractor =
+            new DataCombiningExtractor(configFileReaderWriter);
 
     private final @NotNull DataCombiner defaultCombinerInstance = new DataCombiner(generatedUuid,
             "name",
@@ -47,7 +48,7 @@ class DataCombiningExtractorTest {
             List.of(new DataCombining(UUID.randomUUID(),
                     new DataCombiningSources(new DataIdentifierReference("#",
                             DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
-                    new DataCombiningDestination("dest", "{}"),
+                    new DataCombiningDestination(null, "dest", "{}"),
                     List.of())));
 
     @Test
@@ -55,9 +56,7 @@ class DataCombiningExtractorTest {
         dataCombiningExtractor.addDataCombiner(defaultCombinerInstance);
 
         final List<DataCombiner> allCombiners = dataCombiningExtractor.getAllCombiners();
-        assertThat(allCombiners)
-                .hasSize(1)
-                .containsExactly(allCombiners.get(0));
+        assertThat(allCombiners).hasSize(1).containsExactly(allCombiners.get(0));
     }
 
 
@@ -70,15 +69,13 @@ class DataCombiningExtractorTest {
                 List.of(new DataCombining(UUID.randomUUID(),
                         new DataCombiningSources(new DataIdentifierReference("#",
                                 DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
-                        new DataCombiningDestination("dest", "{}"),
+                        new DataCombiningDestination(null, "dest", "{}"),
                         List.of())));
 
         dataCombiningExtractor.addDataCombiner(defaultCombinerInstance);
 
         final List<DataCombiner> allCombiners = dataCombiningExtractor.getAllCombiners();
-        assertThat(allCombiners)
-                .hasSize(1)
-                .containsExactly(allCombiners.get(0));
+        assertThat(allCombiners).hasSize(1).containsExactly(allCombiners.get(0));
     }
 
     @Test
@@ -90,22 +87,19 @@ class DataCombiningExtractorTest {
                 List.of(new DataCombining(UUID.randomUUID(),
                         new DataCombiningSources(new DataIdentifierReference("#",
                                 DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
-                        new DataCombiningDestination("dest", "{}"),
+                        new DataCombiningDestination(null, "dest", "{}"),
                         List.of())));
 
-        assertThat(dataCombiningExtractor.updateDataCombiner(updatedDataCombiner))
-                .isFalse();
+        assertThat(dataCombiningExtractor.updateDataCombiner(updatedDataCombiner)).isFalse();
     }
 
     @Test
     void test_delete_whenPresent_thenStopAndDeleteIT() {
         dataCombiningExtractor.addDataCombiner(defaultCombinerInstance);
-        assertThat(dataCombiningExtractor.getAllCombiners())
-                .hasSize(1);
+        assertThat(dataCombiningExtractor.getAllCombiners()).hasSize(1);
 
         dataCombiningExtractor.deleteDataCombiner(defaultCombinerInstance.id());
-        assertThat(dataCombiningExtractor.getAllCombiners())
-                .hasSize(0);
+        assertThat(dataCombiningExtractor.getAllCombiners()).hasSize(0);
 
     }
 }

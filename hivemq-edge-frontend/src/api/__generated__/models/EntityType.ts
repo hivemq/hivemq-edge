@@ -4,11 +4,12 @@
 /* eslint-disable */
 
 /**
- * These are the prime entities owning tags and topic filters
+ * These are the prime entities owning integration points such as tags and topic filters
  */
 export enum EntityType {
     ADAPTER = 'ADAPTER',
     DEVICE = 'DEVICE',
     BRIDGE = 'BRIDGE',
     EDGE_BROKER = 'EDGE_BROKER',
+    PULSE_AGENT = 'PULSE_AGENT',
 }

@@ -33,7 +33,7 @@ describe('useContextMenu', () => {
   it('should navigate to the proper route', () => {
     const preventDefault = vi.fn()
 
-    const { result } = renderHook(() => useContextMenu('id', true, 'route'), { wrapper })
+    const { result } = renderHook(() => useContextMenu('id', true, 'route/my-id'), { wrapper })
 
     act(() => {
       const mockEvent = { preventDefault: preventDefault } as unknown as MouseEvent<HTMLElement>
@@ -41,7 +41,7 @@ describe('useContextMenu', () => {
     })
 
     expect(preventDefault).toHaveBeenCalled()
-    expect(mocks.navigate).toHaveBeenCalledWith('route/id')
+    expect(mocks.navigate).toHaveBeenCalledWith('route/my-id')
   })
 
   it('should not navigate if not selected', () => {

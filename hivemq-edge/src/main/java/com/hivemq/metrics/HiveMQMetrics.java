@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hivemq.metrics;
 
 import com.codahale.metrics.Counter;
@@ -172,7 +173,6 @@ public class HiveMQMetrics {
     public static final HiveMQMetric<Counter> WILL_MESSAGE_COUNT =
             HiveMQMetric.valueOf(HIVEMQ_PREFIX + "messages.will.count.current", Counter.class);
 
-
     /**
      * Represents a {@link Counter}, which holds the total amount of published LWT messages.
      *
@@ -180,7 +180,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Counter> WILL_MESSAGE_PUBLISHED_COUNT_TOTAL =
             HiveMQMetric.valueOf(HIVEMQ_PREFIX + "messages.will.published.count.total", Counter.class);
-
 
     /**
      * represents a {@link Gauge}, which holds the current total number of adapters
@@ -190,7 +189,6 @@ public class HiveMQMetrics {
     public static final HiveMQMetric<Gauge<Number>> ADAPTERS_CURRENT =
             HiveMQMetric.gaugeValue(PROTOCOL_ADAPTER_PREFIX + "current");
 
-
     /**
      * represents a {@link Gauge}, which holds the current total number of bridges
      *
@@ -198,9 +196,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Gauge<Number>> BRIDGES_CURRENT =
             HiveMQMetric.gaugeValue(HIVEMQ_PREFIX + "bridges.current");
-
-
-
 
     /**
      * represents a {@link Gauge}, which holds the current total number of data combiners
@@ -210,7 +205,12 @@ public class HiveMQMetrics {
     public static final HiveMQMetric<Gauge<Number>> DATA_COMBINERS_COUNT_CURRENT =
             HiveMQMetric.gaugeValue(HIVEMQ_PREFIX + "data-combining.data-combiners.current");
 
-
-
+    /**
+     * represents a {@link Gauge}, which holds the current total number of active asset mappers
+     *
+     * @since 2025.16
+     */
+    public static final HiveMQMetric<Gauge<Number>> ASSET_MAPPERS_COUNT_CURRENT =
+            HiveMQMetric.gaugeValue(HIVEMQ_PREFIX + "pulse.asset-mappers.current");
 }
 

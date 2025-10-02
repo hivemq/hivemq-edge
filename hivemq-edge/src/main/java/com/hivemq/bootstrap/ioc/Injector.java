@@ -82,7 +82,8 @@ import java.util.Set;
         RemoteServiceModule.class,
         BootstrapServicesModule.class,
         AdapterModule.class,
-        CombiningModule.class})
+        CombiningModule.class,
+        PulseModule.class})
 @Singleton
 public interface Injector {
 

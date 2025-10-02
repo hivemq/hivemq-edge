@@ -16,6 +16,11 @@ import { handlers as BridgeHandlers } from '@/api/hooks/useGetBridges/__handlers
 import { handlers as ProtocolAdapterHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { handlers as ListenerHandlers } from '@/api/hooks/useGateway/__handlers__'
 import { handlers as combinerHandlers } from '@/api/hooks/useCombiners/__handlers__'
+import {
+  handlerCapabilities,
+  handlers as FrontendHandlers,
+  MOCK_CAPABILITIES,
+} from '@/api/hooks/useFrontendServices/__handlers__'
 
 // [Vitest] Mocking hooks
 vi.mock('@chakra-ui/react', async () => {
@@ -28,7 +33,14 @@ vi.mock('@chakra-ui/react', async () => {
 describe('useGetFlowElements', () => {
   beforeEach(() => {
     // window.localStorage.clear()
-    server.use(...BridgeHandlers, ...ProtocolAdapterHandlers, ...ListenerHandlers, ...combinerHandlers)
+    server.use(
+      ...BridgeHandlers,
+      ...ProtocolAdapterHandlers,
+      ...ListenerHandlers,
+      ...combinerHandlers,
+      ...FrontendHandlers,
+      ...handlerCapabilities(MOCK_CAPABILITIES)
+    )
   })
 
   afterEach(() => {
@@ -37,9 +49,9 @@ describe('useGetFlowElements', () => {
   })
 
   it.each<[Partial<EdgeFlowOptions>, number, number]>([
-    [{}, 8, 8],
-    [{ showGateway: true }, 9, 9],
-    [{ showGateway: false }, 8, 8],
+    [{}, 9, 9],
+    [{ showGateway: true }, 10, 10],
+    [{ showGateway: false }, 9, 9],
   ])('should consider %s for %s nodes and %s edges', async (defaults, countNode, countEdge) => {
     const { result } = renderHook(() => useGetFlowElements(), { wrapper: getWrapperEdgeProvider(defaults) })
 
@@ -50,4 +62,6 @@ describe('useGetFlowElements', () => {
     expect(result.current.nodes).toHaveLength(countNode)
     expect(result.current.edges).toHaveLength(countEdge)
   })
+
+  // TODO asset mapper
 })

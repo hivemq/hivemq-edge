@@ -23,15 +23,17 @@ import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
-import com.hivemq.persistence.connection.ConnectionPersistence;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
-
+import com.hivemq.mqtt.services.InternalPublishService;
+import com.hivemq.persistence.connection.ConnectionPersistence;
+import com.hivemq.pulse.asset.AssetProviderRegistry;
+import com.hivemq.pulse.status.StatusProviderRegistry;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
@@ -41,6 +43,9 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     private final @NotNull HandlerService handlerService;
     private final @NotNull EventService eventService;
     private final @NotNull PublishService publishService;
+    private final @NotNull InternalPublishService internalPublishService;
+    private final @NotNull AssetProviderRegistry assetProviderRegistry;
+    private final @NotNull StatusProviderRegistry statusProviderRegistry;
     private final @NotNull PersistenceBootstrapService delegate;
 
     @Inject
@@ -50,13 +55,19 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull RestComponentsService restComponentsService,
             final @NotNull HandlerService handlerService,
             final @NotNull EventService eventService,
-            final @NotNull PublishService publishService) {
+            final @NotNull PublishService publishService,
+            final @NotNull InternalPublishService internalPublishService,
+            final @NotNull AssetProviderRegistry assetProviderRegistry,
+            final @NotNull StatusProviderRegistry statusProviderRegistry) {
         this.delegate = delegate;
         this.persistences = persistences;
         this.restComponentsService = restComponentsService;
         this.handlerService = handlerService;
         this.eventService = eventService;
         this.publishService = publishService;
+        this.internalPublishService = internalPublishService;
+        this.assetProviderRegistry = assetProviderRegistry;
+        this.statusProviderRegistry = statusProviderRegistry;
     }
 
     @Override
@@ -122,6 +133,21 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     @Override
     public @NotNull PublishService publishService() {
         return publishService;
+    }
+
+    @Override
+    public @NotNull InternalPublishService internalPublishService() {
+        return internalPublishService;
+    }
+
+    @Override
+    public @NotNull AssetProviderRegistry assetProviderRegistry() {
+        return assetProviderRegistry;
+    }
+
+    @Override
+    public @NotNull StatusProviderRegistry statusProviderRegistry() {
+        return statusProviderRegistry;
     }
 
     @Override

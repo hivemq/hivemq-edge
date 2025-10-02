@@ -7,7 +7,7 @@ import { CustomNodeTesting } from '@/__test-utils__/react-flow/CustomNodeTesting
 
 describe('NodeGroup', () => {
   beforeEach(() => {
-    cy.viewport(400, 400)
+    cy.viewport(500, 400)
   })
 
   it('should render unselected group properly', () => {
@@ -30,7 +30,7 @@ describe('NodeGroup', () => {
   it('should render selected group properly', () => {
     cy.mountWithProviders(
       <CustomNodeTesting
-        nodes={[{ ...MOCK_NODE_GROUP, position: { x: 50, y: 100 }, selected: true }]}
+        nodes={[{ ...MOCK_NODE_GROUP, position: { x: 150, y: 100 }, selected: true }]}
         nodeTypes={{ [NodeTypes.CLUSTER_NODE]: NodeGroup }}
       />
     )
@@ -47,7 +47,7 @@ describe('NodeGroup', () => {
   it('should render the toolbar properly', () => {
     cy.mountWithProviders(
       <CustomNodeTesting
-        nodes={[{ ...MOCK_NODE_GROUP, position: { x: 50, y: 100 }, selected: true }]}
+        nodes={[{ ...MOCK_NODE_GROUP, position: { x: 150, y: 100 }, selected: true }]}
         nodeTypes={{ [NodeTypes.CLUSTER_NODE]: NodeGroup }}
       />
     )
@@ -79,11 +79,10 @@ describe('NodeGroup', () => {
     cy.injectAxe()
     cy.mountWithProviders(
       <CustomNodeTesting
-        nodes={[{ ...MOCK_NODE_GROUP, position: { x: 100, y: 100 }, selected: true }]}
+        nodes={[{ ...MOCK_NODE_GROUP, position: { x: 150, y: 100 }, selected: true }]}
         nodeTypes={{ [NodeTypes.CLUSTER_NODE]: NodeGroup }}
       />
     )
-    cy.get("[role='button']").click({ force: true })
     cy.checkAccessibility()
     cy.percySnapshot('Component: NodeGroup')
   })

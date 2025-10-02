@@ -1,12 +1,14 @@
 import React from 'react'
+import { setupWorker } from 'msw/browser'
 import ReactDOM from 'react-dom/client'
+
+import { createInterceptHandlers } from '@/__test-utils__/msw/handlers.ts'
 import MainApp from './modules/App/MainApp.tsx'
+
 import config from '@/config'
 
 import './config/sentry.config'
 import './config/i18n.config'
-import { ConditionalWrapper } from '@/components/ConditonalWrapper.tsx'
-import { PrivateMqttClientProvider } from '@/hooks/usePrivateMqttClient/PrivateMqttClientProvider.tsx'
 
 if (config.isDevMode) {
   import(/* webpackChunkName: "hivemq-dev-chunk" */ './__test-utils__/dev-console')
@@ -17,16 +19,20 @@ if (body) {
   body.dataset['appVersion'] = import.meta.env.VITE_APP_VERSION
 }
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <React.StrictMode>
-    <ConditionalWrapper
-      condition={config.features.DEV_MOCK_SERVER && config.isDevMode}
-      wrapper={(children) => <PrivateMqttClientProvider>{children}</PrivateMqttClientProvider>}
-    >
+const createRoot = () =>
+  ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+    <React.StrictMode>
       <MainApp />
-    </ConditionalWrapper>
-  </React.StrictMode>
-)
+    </React.StrictMode>
+  )
+
+if (config.features.DEV_MOCK_SERVER && config.isDevMode) {
+  const worker = setupWorker(...createInterceptHandlers())
+  worker.start({ onUnhandledRequest: 'bypass' }).then(() => {
+    worker.listHandlers()
+    createRoot()
+  })
+} else createRoot()
 
 if (window.location.pathname === '/') {
   window.location.replace('/app')

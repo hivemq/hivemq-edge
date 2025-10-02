@@ -8,7 +8,7 @@ export const useGetCombiner = (combinerId: string) => {
   const appClient = useHttpClient()
 
   return useQuery<Combiner, ApiError>({
-    queryKey: [QUERY_KEYS.ADAPTERS, combinerId],
+    queryKey: [QUERY_KEYS.COMBINER, combinerId],
     queryFn: () => appClient.combiners.getCombinersById(combinerId),
   })
 }

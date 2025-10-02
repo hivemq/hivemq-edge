@@ -4,7 +4,9 @@ import type { NodeProps } from '@xyflow/react'
 import { Handle, Position } from '@xyflow/react'
 import { Icon, Text, useColorModeValue, VStack } from '@chakra-ui/react'
 
-import { HqCombiner } from '@/components/Icons'
+import { EntityType } from '@/api/__generated__'
+
+import { HqAssets, HqCombiner } from '@/components/Icons'
 import { SelectEntityType } from '@/components/MQTT/types'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
@@ -14,12 +16,16 @@ import type { NodeCombinerType } from '@/modules/Workspace/types'
 import MappingBadge from '../parts/MappingBadge'
 
 const NodeCombiner: FC<NodeProps<NodeCombinerType>> = ({ id, selected, data, dragging }) => {
-  const { onContextMenu } = useContextMenu(id, selected, '/workspace/combiner')
+  const { onContextMenu } = useContextMenu(id, selected, `/workspace/combiner/${id}`)
   const bgColour = useColorModeValue('gray.300', 'gray.900')
 
   const topics = useMemo(() => {
     return data.mappings.items.map((e) => e.destination.topic as string)
   }, [data.mappings.items])
+
+  const isAssetManager = useMemo(() => {
+    return data.sources.items.some((e) => e.type === EntityType.PULSE_AGENT)
+  }, [data.sources.items])
 
   return (
     <>
@@ -46,7 +52,7 @@ const NodeCombiner: FC<NodeProps<NodeCombinerType>> = ({ id, selected, data, dra
           borderBottomLeftRadius={30}
           justifyContent="center"
         >
-          <Icon as={HqCombiner} boxSize={10} />
+          <Icon as={isAssetManager ? HqAssets : HqCombiner} boxSize={10} />
         </VStack>
         <VStack p={2} h="100%" justifyContent="space-evenly">
           <Text data-testid="combiner-description" noOfLines={1}>

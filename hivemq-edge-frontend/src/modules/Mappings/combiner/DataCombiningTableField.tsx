@@ -1,49 +1,32 @@
-import type { FC, ReactElement } from 'react'
-import { useState } from 'react'
-import { useMemo } from 'react'
+import type { FC } from 'react'
+import { useState, useMemo } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ButtonGroup, HStack, Tag, TagLeftIcon, Text } from '@chakra-ui/react'
+import type { SingleValue } from 'chakra-react-select'
+import { ButtonGroup, HStack, Text } from '@chakra-ui/react'
 import type { FieldProps, RJSFSchema } from '@rjsf/utils'
 import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
-import { FaKey } from 'react-icons/fa'
 
-import type { DataCombining } from '@/api/__generated__'
-import { DataIdentifierReference } from '@/api/__generated__'
+import type { DataCombining, ManagedAsset } from '@/api/__generated__'
+import { EntityType, DataIdentifierReference } from '@/api/__generated__'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import IconButton from '@/components/Chakra/IconButton'
-import { ConditionalWrapper } from '@/components/ConditonalWrapper'
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
-import DataCombiningEditorDrawer from './DataCombiningEditorDrawer'
-import type { CombinerContext } from '../types'
 
-interface PrimaryWrapperProps {
-  isPrimary: boolean
-  children: ReactElement
-}
-
-const PrimaryWrapper: FC<PrimaryWrapperProps> = ({ children, isPrimary }) => {
-  const { t } = useTranslation()
-
-  return (
-    <ConditionalWrapper
-      condition={isPrimary}
-      wrapper={(children) => (
-        <Tag data-testid="primary-wrapper" role="group" p={1} variant="outline">
-          <TagLeftIcon boxSize="12px" as={FaKey} ml={1} aria-label={t('combiner.schema.mapping.primary.aria-label')} />
-          {children}
-        </Tag>
-      )}
-    >
-      {children}
-    </ConditionalWrapper>
-  )
-}
+import { PrimaryWrapper } from '@/modules/Mappings/combiner/components/PrimaryWrapper.tsx'
+import DataCombiningEditorDrawer from '@/modules/Mappings/combiner/DataCombiningEditorDrawer.tsx'
+import type { CombinerContext } from '@/modules/Mappings/types.ts'
+import ManagedAssetSelect from '@/modules/Pulse/components/assets/ManagedAssetSelect.tsx'
+import AssetNameCell from '@/modules/Pulse/components/assets/AssetNameCell.tsx'
 
 export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
   const [selectedItem, setSelectedItem] = useState<number | undefined>(undefined)
+
+  const isAssetManager = useMemo(() => {
+    return props.formContext?.entities?.some((e) => e.type === EntityType.PULSE_AGENT)
+  }, [props.formContext?.entities])
 
   const handleOnSubmit = (data: DataCombining | undefined) => {
     if (selectedItem === undefined) return
@@ -56,6 +39,21 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
       props.onChange(newValues)
     }
     setSelectedItem(undefined)
+  }
+
+  const handleAddAsset = (asset: SingleValue<ManagedAsset>) => {
+    if (!asset) return
+    const newMapping: DataCombining = {
+      id: uuidv4(),
+      sources: {
+        primary: { id: '', type: DataIdentifierReference.type.TAG },
+        tags: [],
+        topicFilters: [],
+      },
+      destination: { topic: asset.topic, assetId: asset.id, schema: asset.schema },
+      instructions: [],
+    }
+    props.onChange([...(props.formData || []), newMapping])
   }
 
   const displayColumns = useMemo<ColumnDef<DataCombining>[]>(() => {
@@ -79,16 +77,27 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
       props.onChange(newValues)
     }
 
+    const assetColumn: ColumnDef<DataCombining> = {
+      accessorKey: 'destination.assetId',
+      cell: (info) => {
+        return <AssetNameCell assetId={info.row.original.destination.assetId} />
+      },
+      header: t('pulse.assets.listing.column.name'),
+    }
+
     return [
+      ...(isAssetManager ? [assetColumn] : []),
       {
-        accessorKey: 'destination',
+        accessorKey: 'destination.topic',
         cell: (info) => {
           if (info.row.original.destination.topic) return <Topic tagTitle={info.row.original.destination.topic} />
           return <Text>{t('combiner.unset')}</Text>
         },
+        header: t('pulse.assets.listing.column.topic'),
       },
       {
         accessorKey: 'sources',
+        header: t('pulse.assets.listing.column.sources'),
         cell: (info) => {
           const { sources } = info.row.original
           const nbItems = (sources?.tags?.length || 0) + (sources?.topicFilters?.length || 0)
@@ -143,6 +152,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
           )
         },
         footer: () => {
+          if (isAssetManager) return null
           return (
             <ButtonGroup isAttached size="sm">
               <IconButton
@@ -156,7 +166,7 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
         },
       },
     ]
-  }, [props, t])
+  }, [isAssetManager, props, t])
 
   return (
     <>
@@ -168,6 +178,8 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
         enablePaginationSizes={false}
         enableColumnFilters={false}
       />
+      {isAssetManager && <ManagedAssetSelect mappings={props.formData || []} onChange={handleAddAsset} />}
+
       {selectedItem != undefined && props.formData?.[selectedItem] && (
         <DataCombiningEditorDrawer
           onClose={() => setSelectedItem(undefined)}

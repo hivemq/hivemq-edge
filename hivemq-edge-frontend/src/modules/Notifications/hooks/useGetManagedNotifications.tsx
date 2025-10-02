@@ -16,7 +16,7 @@ export const useGetManagedNotifications = () => {
   const { data: configuration } = useGetConfiguration()
   const { data: releases, isSuccess: isReleasesSuccess } = useGetReleases()
   const { data: notification, isSuccess: isNotificationsSuccess } = useGetNotifications()
-  const isWritableConfig = useGetCapability(Capability.id.CONFIG_WRITEABLE)
+  const { data: isWritableConfig } = useGetCapability(Capability.id.CONFIG_WRITEABLE)
   const [readNotifications, setReadNotifications] = useState<string[]>([])
   const [skip] = useLocalStorage<string[]>('edge.notifications', [])
 

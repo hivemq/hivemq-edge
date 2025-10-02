@@ -35,7 +35,8 @@ export const decodeDataUriJsonSchema = (dataUrl: string) => {
   if (scheme !== DECODE_DATA) throw new Error(i18n.t('schema.validation.noSchemeData'))
 
   const options = mediaTypes.split(DECODE_MEDIA_TYPES_SEPARATOR)
-  if (!options.includes(MIMETYPE_JSON)) throw new Error(i18n.t('schema.validation.noJsonSchemaMimeType'))
+  const testSchema = options.includes(MIMETYPE_JSON_SCHEMA) || options.includes(MIMETYPE_JSON)
+  if (!testSchema) throw new Error(i18n.t('schema.validation.noJsonSchemaMimeType'))
   if (!options.includes(DECODE_BASE64)) throw new Error(i18n.t('schema.validation.noBase64MediaType'))
 
   try {

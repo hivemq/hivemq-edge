@@ -1,5 +1,3 @@
-import type { FC } from 'react'
-import type { EdgeProps, NodeProps } from '@xyflow/react'
 import { DataHubNodeType, EdgeTypes } from '@datahub/types.ts'
 import { TopicFilterNode } from '@datahub/designer/topic_filter/TopicFilterNode.tsx'
 import { ClientFilterNode } from '@datahub/designer/client_filter/ClientFilterNode.tsx'
@@ -15,7 +13,7 @@ import DataHubPolicyEdge from '@datahub/components/edges/DataHubPolicyEdge.tsx'
 /**
  * Used in the ReactFlow component to create custom nodes
  */
-export const CustomNodeTypes: Record<string, FC<NodeProps>> = {
+export const CustomNodeTypes = {
   [DataHubNodeType.TOPIC_FILTER]: TopicFilterNode,
   [DataHubNodeType.CLIENT_FILTER]: ClientFilterNode,
   [DataHubNodeType.DATA_POLICY]: DataPolicyNode,
@@ -25,11 +23,11 @@ export const CustomNodeTypes: Record<string, FC<NodeProps>> = {
   [DataHubNodeType.FUNCTION]: FunctionNode,
   [DataHubNodeType.BEHAVIOR_POLICY]: BehaviorPolicyNode,
   [DataHubNodeType.TRANSITION]: TransitionNode,
-}
+} as const
 
 /**
  * Used in the ReactFlow component to create custom edges
  */
-export const CustomEdgeTypes: Record<string, FC<EdgeProps>> = {
+export const CustomEdgeTypes = {
   [EdgeTypes.DATAHUB_EDGE]: DataHubPolicyEdge,
-}
+} as const

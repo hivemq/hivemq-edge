@@ -1,4 +1,2 @@
-import NodeIcon from './NodeIcon.tsx'
-import NodeParams from './NodeParams.tsx'
-
-export { NodeIcon, NodeParams }
+export { default as NodeIcon } from './NodeIcon.tsx'
+export { default as NodeParams } from './NodeParams.tsx'

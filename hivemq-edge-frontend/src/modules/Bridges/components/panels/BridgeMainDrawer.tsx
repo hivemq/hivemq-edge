@@ -53,7 +53,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
 }) => {
   const { t } = useTranslation()
   const { bridge } = useBridgeConfig()
-  const hasPersistence = useGetCapability(Capability.id.MQTT_PERSISTENCE)
+  const { data: hasPersistence } = useGetCapability(Capability.id.MQTT_PERSISTENCE)
   const form = useForm<Bridge>({
     mode: 'all',
     criteriaMode: 'all',

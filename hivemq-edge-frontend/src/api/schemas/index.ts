@@ -1,6 +1,4 @@
-import { tagListUISchema } from './domain-tags.ui-schema'
-import { tagListJsonSchema } from './domain-tags.json-schema'
-import { bridgeSchema } from './bridge.json-schema.ts'
-import { bridgeUISchema } from './bridge.ui-schema.ts'
-
-export { tagListJsonSchema, tagListUISchema, bridgeSchema, bridgeUISchema }
+export { tagListUISchema } from './domain-tags.ui-schema'
+export { tagListJsonSchema } from './domain-tags.json-schema'
+export { bridgeSchema } from './bridge.json-schema.ts'
+export { bridgeUISchema } from './bridge.ui-schema.ts'

@@ -6,15 +6,16 @@ import type { JSONPatchAdd, JSONPatchDocument } from 'immutable-json-patch'
 import { immutableJSONPatch } from 'immutable-json-patch'
 import Form from '@rjsf/chakra-ui'
 import type { FormProps, IChangeEvent } from '@rjsf/core'
-import type { IdSchema } from '@rjsf/utils'
+import type { IdSchema, RJSFValidationError, UIOptionsType } from '@rjsf/utils'
+import { getUiOptions } from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
 
+import type { ChakraRJSFormContext, UITab } from '@/components/rjsf/Form/types.ts'
 import { FieldTemplate } from '@/components/rjsf/FieldTemplate.tsx'
 import { DescriptionFieldTemplate } from '@/components/rjsf/Templates/DescriptionFieldTemplate.tsx'
 import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
-import type { ChakraRJSFormContext } from '@/components/rjsf/Form/types.ts'
 import { customFormatsValidator } from '@/components/rjsf/Form/validation.utils.ts'
 import { customFocusError } from '@/components/rjsf/Form/error-focus.utils.ts'
 import { TitleFieldTemplate } from '@/components/rjsf/Templates/TitleFieldTemplate.tsx'
@@ -28,7 +29,16 @@ import UpDownWidget from '@/components/rjsf/Widgets/UpDownWidget'
 interface CustomFormProps<T>
   extends Pick<
     FormProps<T>,
-    'id' | 'schema' | 'uiSchema' | 'formData' | 'formContext' | 'customValidate' | 'readonly' | 'onChange'
+    | 'id'
+    | 'schema'
+    | 'uiSchema'
+    | 'formData'
+    | 'formContext'
+    | 'customValidate'
+    | 'readonly'
+    | 'onChange'
+    | 'onError'
+    | 'extraErrors'
   > {
   onSubmit: (data: IChangeEvent) => void
   showNativeWidgets?: boolean
@@ -47,6 +57,8 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
   formContext,
   customValidate,
   readonly,
+  onError,
+  extraErrors,
   showNativeWidgets = false,
 }) => {
   const { t } = useTranslation()
@@ -69,7 +81,10 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
 
   useEffect(
     () => {
-      setTabIndex(0)
+      const uiOptions = getUiOptions(uiSchema, {})
+      const { tabs, initTab } = uiOptions as UIOptionsType & { tabs?: UITab[]; initTab?: string }
+      const index = tabs?.findIndex((tab) => tab.id === initTab) || -1
+      setTabIndex(index !== -1 ? index : 0)
       return () => setTabIndex(0)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -95,6 +110,8 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
   }
 
   const rjsfLog = debug(`RJSF:${id}`)
+  const onErrorDefault = (errors: RJSFValidationError[]) => rjsfLog(t('error.rjsf.validation'), errors)
+
   // TODO[27657] Problem with the $schema property again; removing from the UI
   //   https://hivemq.kanbanize.com/ctrl_board/57/cards/27041/details/
   const { $schema, ...unspecifiedSchema } = schema
@@ -133,7 +150,9 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
       noHtml5Validate
       validator={customFormatsValidator}
       customValidate={customValidate}
-      onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
+      extraErrors={extraErrors}
+      // onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
+      onError={onError || onErrorDefault}
       showErrorList="bottom"
       focusOnFirstError={context.focusOnError}
       onChange={onChange}

@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
-import type { ApiError } from '@/api/__generated__'
-import { type SouthboundMappingList } from '@/api/__generated__'
+import type { ApiError, SouthboundMappingList } from '@/api/__generated__'
 import { QUERY_KEYS } from '@/api/utils.ts'
 
 export const useListSouthboundMappings = (adapterId: string) => {

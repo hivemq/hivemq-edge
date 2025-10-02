@@ -21,6 +21,8 @@ import org.jetbrains.annotations.Nullable;
 
 public class HandlerResult {
 
+
+    private final boolean publishAlreadyHandled;
     private final boolean preventPublish;
     private final @Nullable PUBLISH modifiedPublish;
     private final @Nullable String reasonString;
@@ -30,7 +32,7 @@ public class HandlerResult {
             final boolean preventPublish,
             final @Nullable PUBLISH modifiedPublish,
             final @Nullable String reasonString) {
-        this(preventPublish, modifiedPublish, reasonString, null);
+        this(false, preventPublish, modifiedPublish, reasonString, null);
     }
 
     public HandlerResult(
@@ -38,10 +40,24 @@ public class HandlerResult {
             final @Nullable PUBLISH modifiedPublish,
             final @Nullable String reasonString,
             final @Nullable AckReasonCode ackReasonCode) {
+        this(false, preventPublish, modifiedPublish, reasonString, ackReasonCode);
+    }
+
+    public HandlerResult(
+            final boolean publishAlreadyHandled,
+            final boolean preventPublish,
+            final @Nullable PUBLISH modifiedPublish,
+            final @Nullable String reasonString,
+            final @Nullable AckReasonCode ackReasonCode) {
+        this.publishAlreadyHandled = publishAlreadyHandled;
         this.preventPublish = preventPublish;
         this.modifiedPublish = modifiedPublish;
         this.reasonString = reasonString;
         this.ackReasonCode = ackReasonCode;
+    }
+
+    public boolean isPublishAlreadyHandled() {
+        return publishAlreadyHandled;
     }
 
     public boolean isPreventPublish() {

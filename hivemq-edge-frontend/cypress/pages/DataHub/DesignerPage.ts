@@ -9,21 +9,21 @@ export class DesignerPage extends Page {
   }
 
   get canvas() {
-    return cy.get('[role="region"][data-testid="rf__wrapper"]')
+    return cy.get('[role="application"][data-testid="rf__wrapper"]')
   }
 
   designer = {
     mode(type: string) {
-      return cy.get(`[role="button"][data-testid^="rf__node-${type}_"]`)
+      return cy.get(`[role="group"][data-testid^="rf__node-${type}_"]`)
     },
 
     modes() {
-      return cy.get(`[role="button"][data-testid^="rf__node-"]`)
+      return cy.get(`[role="group"][data-testid^="rf__node-"]`)
     },
 
     edges() {
       // xy-edge__FUNCTION_8be4812a-59a1-4b27-87e3-99268cc4e3bd-OPERATION_77b42291-6889-43d7-8205-81799c4ae7b7function
-      return cy.get(`[role="button"][data-id^="xy-edge__"]`)
+      return cy.get(`[role="group"][data-id^="xy-edge__"]`)
     },
 
     handle(node: string, type?: string) {
@@ -40,7 +40,7 @@ export class DesignerPage extends Page {
     },
 
     createOnDrop(source: string, aourceHandle: string) {
-      this.handle(source, aourceHandle).drag('[role="region"][data-testid="rf__wrapper"]', {
+      this.handle(source, aourceHandle).drag('[role="application"][data-testid="rf__wrapper"]', {
         target: { position: 'right' },
       })
     },
