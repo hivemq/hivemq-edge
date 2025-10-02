@@ -63,7 +63,7 @@ export const useGetEdgeTopics = (options?: EdgeTopicsOptions): EdgeTopics => {
 
     return mergeAllTopics(adapterTypes, adapters, bridges, options?.useOrigin)
       .reduce<string[]>(reduceTopicsBy(_options), [])
-      .sort()
+      .sort((a, b) => a.localeCompare(b))
   }, [adapterTypes, adapters, bridges, options])
 
   return {
