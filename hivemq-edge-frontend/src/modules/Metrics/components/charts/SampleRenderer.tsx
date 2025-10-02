@@ -81,8 +81,8 @@ const SampleRenderer: FC<SampleRendererProps> = ({
         <StatNumber py={2} data-testid="metric-value">
           {isLoading && <Spinner data-testid="metric-loader" />}
           {!!error && <NotAllowedIcon color="red.100" />}
-          {isNaN(n) && '-'}
-          {!isNaN(n) && formatNumber.format(n)}
+          {Number.isNaN(n) && '-'}
+          {!Number.isNaN(n) && formatNumber.format(n)}
         </StatNumber>
         {!!change && (
           <StatHelpText data-testid="metric-change">
