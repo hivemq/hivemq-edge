@@ -19,9 +19,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.EnumSet;
 
-/**
- * @author Abdullah Imal
- */
 public enum ClientState {
 
     CONNECTING,
