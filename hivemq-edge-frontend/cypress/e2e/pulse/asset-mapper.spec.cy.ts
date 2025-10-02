@@ -1,10 +1,16 @@
+import { formatTopicString } from '@/components/MQTT/topic-utils.ts'
 import { drop } from '@mswjs/data'
 
-import { loginPage, homePage, assetsPage } from 'cypress/pages'
+import { loginPage, homePage, assetsPage, workspacePage, rjsf } from 'cypress/pages'
 import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
-import { cy_interceptPulseWithMockDB, getPulseFactory } from 'cypress/utils/intercept-pulse.utils.ts'
+import {
+  cy_interceptPulseWithMockDB,
+  getPulseFactory,
+  MOCK_MAIN_ASSET_MAPPER_ID,
+} from 'cypress/utils/intercept-pulse.utils.ts'
 import { assetMappingWizard } from 'cypress/pages/Pulse/AssetMappingWizardForm.ts'
 import { ONBOARDING } from 'cypress/utils/constants.utils.ts'
+import { assetMapperForm } from '../../pages/Workspace/AssetMapperFormPage.ts'
 
 describe('Pulse Assets', () => {
   const mswDB = getPulseFactory()
@@ -13,7 +19,7 @@ describe('Pulse Assets', () => {
     drop(mswDB)
 
     cy_interceptCoreE2E()
-    cy_interceptPulseWithMockDB(mswDB, true)
+    cy_interceptPulseWithMockDB(mswDB, true, true)
 
     loginPage.visit('/app/workspace')
     loginPage.loginButton.click()
@@ -88,7 +94,7 @@ describe('Pulse Assets', () => {
       assetsPage.toast.error.should('be.visible')
     })
 
-    it('should add an asset to an existing mapper', () => {
+    it.only('should add an asset to an existing mapper', () => {
       assetsPage.navLink.click()
       assetsPage.location.should('equal', '/app/pulse-assets')
 
@@ -97,18 +103,35 @@ describe('Pulse Assets', () => {
       assetMappingWizard.selectMapper.select.type('Non-existing mapper{enter}')
       assetMappingWizard.selectSources.select.type('my-adapter{enter}')
       assetMappingWizard.submit.click()
-      assetsPage.location.should('equal', '/app/workspace')
+
+      assetsPage.toast.success.should('be.visible')
+      assetsPage.toast.close()
 
       // TODO Check that the mapper has been created in the workspace
+      workspacePage.location.should('equal', '/app/workspace')
+      workspacePage.canvas.should('be.visible')
+      workspacePage.toolbox.fit.click()
 
-      // go back to assets and map another asset to the existing mapper
-      assetsPage.navLink.click()
-      assetsPage.location.should('equal', '/app/pulse-assets')
-      assetsPage.table.action(1, 'map').click()
-      assetMappingWizard.selectMapper.value.should('have.text', 'Non-existing mapper')
-      // assetMappingWizard.selectSources.select.type('my-other-adapter{enter}')
-      // assetMappingWizard.submit.click()
-      // assetsPage.location.should('equal', '/workspace')
+      workspacePage
+        .combinerNodeContent(MOCK_MAIN_ASSET_MAPPER_ID)
+        .title.should('have.text', 'Non-existing mapper (new)')
+      workspacePage
+        .combinerNodeContent(MOCK_MAIN_ASSET_MAPPER_ID)
+        .topic.should('have.text', formatTopicString('test/topic'))
+      workspacePage.combinerNode(MOCK_MAIN_ASSET_MAPPER_ID).click()
+      workspacePage.combinerNode(MOCK_MAIN_ASSET_MAPPER_ID).dblclick()
+      assetMapperForm.formTab(2).click()
+
+      // delete the mapping, to allow editing of the name
+      assetMapperForm.assetMappings.action(0, 'delete').click()
+      assetMapperForm.field('mappings').table.noDataMessage.should('have.text', 'No data received yet.')
+
+      assetMapperForm.formTab(0).click()
+      assetMapperForm.field('name').input.clear().type('my mapper')
+      assetMapperForm.submit.click()
+
+      workspacePage.combinerNodeContent(MOCK_MAIN_ASSET_MAPPER_ID).title.should('have.text', 'my mapper')
+      workspacePage.combinerNodeContent(MOCK_MAIN_ASSET_MAPPER_ID).topic.should('not.exist')
     })
 
     it.skip('should remove an existing mapping', () => {})
