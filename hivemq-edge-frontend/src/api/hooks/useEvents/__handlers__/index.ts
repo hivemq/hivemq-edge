@@ -43,7 +43,7 @@ const contentType = [
 ]
 
 export const mockEdgeEvent = (n = maxEvents): Event[] =>
-  Array.from(Array(n), (_, x) => ({
+  Array.from(new Array(n), (_, x) => ({
     identifier: makeID(TypeIdentifier.type.EVENT, x),
 
     severity: severityKeys[x % severityKeys.length] as Event.severity,

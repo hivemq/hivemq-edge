@@ -66,7 +66,7 @@ export const MOCK_METRIC_SAMPLE: DataPoint = {
   value: 50000,
 }
 
-export const MOCK_METRIC_SAMPLE_ARRAY: DataPoint[] = Array.from(Array(10), (_, x) => ({
+export const MOCK_METRIC_SAMPLE_ARRAY: DataPoint[] = Array.from(new Array(10), (_, x) => ({
   sampleTime: DateTime.fromISO(MOCK_METRIC_SAMPLE.sampleTime as string)
     .plus({ hour: x })
     .toISO(),
