@@ -72,7 +72,7 @@ jobs:
   check-backend:
     needs: [ check-for-changes, check-openapi ]
     uses: ./.github/workflows/check-backend.yml
-    if: needs.check-for-changes.outputs.backend-changed == '["changed"]'
+    if: needs.check-for-changes.outputs.backend-changed == 'true'
 
 
   check:
