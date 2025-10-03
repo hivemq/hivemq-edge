@@ -13,7 +13,7 @@ export type ExpandableGroupedResource<T extends ResourceBase> = T & {
 }
 
 export const groupResourceItems = <T extends { items?: Array<U> }, U extends ResourceBase>(data: T | undefined) => {
-  if (!data || !data.items || !data.items.length) return []
+  if (!data?.items?.length) return []
 
   // TODO[33008] Update Node to 21; Object.groupBy is not supported in Node 18 or 20
   // const schemasGroupedById = Object.groupBy(data.items, (schema) => schema.id)
