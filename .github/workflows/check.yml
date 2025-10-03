@@ -57,7 +57,8 @@ jobs:
               - '.github/**'
 
       - name: Debug openapi-changed output
-        run: echo "openapi-changed: ${{ needs.check-for-changes.outputs.frontend-changed }}"
+        run: |
+          echo "openapi-changed: ${{ needs.check-for-changes.outputs.frontend-changed }}"
 
 
   check-openapi:
