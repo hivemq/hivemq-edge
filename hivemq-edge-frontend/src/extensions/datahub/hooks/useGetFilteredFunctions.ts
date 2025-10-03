@@ -18,7 +18,7 @@ export const useGetFilteredFunction = (
   const { isError, error, isLoading, isSuccess, data } = useGetAllFunctionSpecs()
 
   const filteredFunctions = useMemo(() => {
-    if (!data || !data.items?.length) return []
+    if (!data?.items?.length) return []
 
     return data.items.filter(filterFunctionSpecsByContext(type, transition))
   }, [data, transition, type])

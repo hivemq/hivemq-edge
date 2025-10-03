@@ -33,7 +33,7 @@ const ChartWrapper: FC<ChartWrapperProps> = ({ children, cta, help, helpTitle, f
           as={HStack}
           justifyContent={cta && help ? 'space-between' : cta ? 'flex-start' : 'flex-end'}
         >
-          {cta && cta}
+          {cta}
           {help && (
             <Popover placement="bottom-end" isLazy>
               <PopoverTrigger>

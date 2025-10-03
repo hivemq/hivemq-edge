@@ -94,7 +94,7 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceStatus & Workspace
         option?: { name?: string; type?: DataHubNodeType.DATA_POLICY | DataHubNodeType.BEHAVIOR_POLICY }
       ) => {
         set({ status: status })
-        if (option && option.name != undefined) set({ name: option.name })
+        if (option?.name != undefined) set({ name: option.name })
         if (option?.type) set({ type: option.type })
       },
     }),

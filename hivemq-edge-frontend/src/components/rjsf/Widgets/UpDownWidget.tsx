@@ -25,8 +25,8 @@ export default function UpDownWidget<T>(props: WidgetProps) {
   const chakraProps = getChakra({ uiSchema: uiSchema })
 
   const _onChange = (value: string | number) => onChange(value)
-  const _onBlur = ({ target }: FocusEvent<HTMLInputElement>) => onBlur(id, target && target.value)
-  const _onFocus = ({ target }: FocusEvent<HTMLInputElement>) => onFocus(id, target && target.value)
+  const _onBlur = ({ target }: FocusEvent<HTMLInputElement>) => onBlur(id, target.value)
+  const _onFocus = ({ target }: FocusEvent<HTMLInputElement>) => onFocus(id, target.value)
 
   return (
     <FormControl

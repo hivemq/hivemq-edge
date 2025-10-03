@@ -39,7 +39,7 @@ export const usePolicyGuards = (selectedNode?: string) => {
   return {
     status,
     isPolicyEditable,
-    isNodeEditable: isPolicyEditable && protectedNode && protectedNode?.delete,
+    isNodeEditable: isPolicyEditable && protectedNode?.delete,
     guardAlert: guardAlert,
   }
 }

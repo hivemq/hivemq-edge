@@ -20,7 +20,7 @@ const MOCK_COLUMN: ColumnDef<MOCK_TYPE>[] = [
 ]
 
 const MOCK_DATA = (n: number): MOCK_TYPE[] =>
-  Array.from(Array(n), (_, x) => ({
+  Array.from(new Array(n), (_, x) => ({
     column1: `item ${x}`,
     column2: n - x,
   }))

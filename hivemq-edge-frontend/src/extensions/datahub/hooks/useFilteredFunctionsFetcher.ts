@@ -68,7 +68,7 @@ export const useFilteredFunctionsFetcher = () => {
   // Return a function that filters the data based on provided parameters
   const getFilteredFunctions = useCallback(
     (type: DataHubNodeType = DataHubNodeType.DATA_POLICY, transition?: BehaviorPolicyTransitionEvent) => {
-      if (!data || !data.items?.length || isLoading) return []
+      if (!data?.items?.length || isLoading) return []
 
       return [...data.items, MqttTransformFunction].filter(filterFunctionSpecsByContext(type, transition))
     },

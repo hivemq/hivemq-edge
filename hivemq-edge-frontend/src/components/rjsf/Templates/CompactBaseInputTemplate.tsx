@@ -34,8 +34,8 @@ export const CompactBaseInputTemplate: FC<BaseInputTemplateProps> = (props) => {
         name={id}
         value={value || value === 0 ? value : ''}
         onChange={onChangeOverride || _onChange}
-        onBlur={({ target }) => onBlur(id, target && target.value)}
-        onFocus={({ target }) => onFocus(id, target && target.value)}
+        onBlur={({ target }) => onBlur(id, target.value)}
+        onFocus={({ target }) => onFocus(id, target.value)}
         autoFocus={autofocus}
         placeholder={placeholder}
         {...inputProps}

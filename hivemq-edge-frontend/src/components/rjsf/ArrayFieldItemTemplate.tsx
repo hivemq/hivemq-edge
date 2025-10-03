@@ -58,7 +58,6 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
 
   const { isOpen, onToggle, getButtonProps, getDisclosureProps, onOpen } = useDisclosure({
     defaultIsOpen:
-      !collapsableItems ||
       !collapsableItems?.titleKey ||
       (index === props.totalItems - 1 && children.props.formData[collapsableItems?.titleKey] === undefined),
   })

@@ -42,7 +42,7 @@ describe('SourcesCell', () => {
   })
 
   it('should render long list', () => {
-    const testCases = Array.from(Array(5).keys())
+    const testCases = Array.from(new Array(5).keys())
     const mockCombiner: Combiner = {
       ...MOCK_COMBINER_ASSET,
       sources: {

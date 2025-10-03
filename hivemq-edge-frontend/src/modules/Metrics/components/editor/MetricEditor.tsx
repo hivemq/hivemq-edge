@@ -40,7 +40,7 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filters, selectedMetric
   })
 
   const sortedItems: OptionsOrGroups<MetricNameOption, GroupBase<MetricNameOption>> = useMemo(() => {
-    if (!data || !data.items) return []
+    if (!data?.items) return []
     const { items } = data
 
     const groupedMetrics = filters

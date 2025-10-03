@@ -17,7 +17,7 @@ export const bridgeInitialState: Bridge = {
 export const useBridgeConfig = () => {
   const context = useContext(BridgeContext)
   if (context === null) {
-    throw Error('useBridgeSetup must be used within a BridgeContext')
+    throw new Error('useBridgeSetup must be used within a BridgeContext')
   }
   return context
 }

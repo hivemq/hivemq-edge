@@ -45,8 +45,8 @@ export const cy_checkDataPolicyGraph = () => {
 
       const areArraysIdentical = (a: string[], b: string[]): boolean => {
         if (a.length !== b.length) return false
-        const sortedA = [...a].sort()
-        const sortedB = [...b].sort()
+        const sortedA = [...a].sort((a, b) => a.localeCompare(b))
+        const sortedB = [...b].sort((a, b) => a.localeCompare(b))
         return sortedA.every((val, idx) => val === sortedB[idx])
       }
 
