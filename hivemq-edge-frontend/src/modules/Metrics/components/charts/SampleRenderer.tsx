@@ -53,6 +53,7 @@ const SampleRenderer: FC<SampleRendererProps> = ({
   }, [series])
 
   const n = series[0]?.value as number
+  const isNumber = Number.isFinite(n)
 
   const colorScheme = chartTheme?.colourScheme || 'red'
   const colorElement = colors[colorScheme][500]
@@ -81,8 +82,8 @@ const SampleRenderer: FC<SampleRendererProps> = ({
         <StatNumber py={2} data-testid="metric-value">
           {isLoading && <Spinner data-testid="metric-loader" />}
           {!!error && <NotAllowedIcon color="red.100" />}
-          {Number.isNaN(n) && '-'}
-          {!Number.isNaN(n) && formatNumber.format(n)}
+          {!isNumber && '-'}
+          {isNumber && formatNumber.format(n)}
         </StatNumber>
         {!!change && (
           <StatHelpText data-testid="metric-change">
