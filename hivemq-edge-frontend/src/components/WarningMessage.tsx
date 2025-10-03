@@ -4,7 +4,7 @@ import DefaultLogo from '@/assets/app/bridge-empty.svg'
 
 interface WarningMessageProps extends HTMLChakraProps<'div'> {
   title?: string
-  image?: string | undefined
+  image?: string
   prompt: string
   alt: string
 }
