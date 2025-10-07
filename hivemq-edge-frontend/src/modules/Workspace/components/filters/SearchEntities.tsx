@@ -18,7 +18,11 @@ import { MdArrowBack, MdArrowForward, MdClear } from 'react-icons/md'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import { addSelectedNodesState, resetSelectedNodesState } from '@/modules/Workspace/utils/react-flow.utils.ts'
+import {
+  addSelectedNodesState,
+  CONFIG_FITVIEW_OPTION,
+  resetSelectedNodesState,
+} from '@/modules/Workspace/utils/react-flow.utils.ts'
 
 interface SearchEntitiesProps {
   id?: string
@@ -40,12 +44,12 @@ const SearchEntities: FC<SearchEntitiesProps> = () => {
     if (newIndex < 0) newIndex = selectedNodes.length - 1
     if (newIndex >= selectedNodes.length) newIndex = 0
     setCurrent(newIndex)
-    fitView({ nodes: [{ id: selectedNodes[newIndex] }], padding: 0.25, duration: 750 })
+    fitView({ nodes: [{ id: selectedNodes[newIndex] }], ...CONFIG_FITVIEW_OPTION })
   }
 
   const handleClear = (clearValue = false) => {
     resetSelectedNodes()
-    fitView()
+    fitView({ ...CONFIG_FITVIEW_OPTION })
     setSelectedNodes([])
     setCurrent(null)
     if (clearValue) setSearch('')
@@ -71,7 +75,7 @@ const SearchEntities: FC<SearchEntitiesProps> = () => {
 
     addSelectedNodes(ids)
     setCurrent(0)
-    fitView({ nodes: foundNodes, padding: 0.25, duration: 750 })
+    fitView({ nodes: foundNodes, ...CONFIG_FITVIEW_OPTION })
   }
 
   return (
