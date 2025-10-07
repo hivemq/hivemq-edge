@@ -67,7 +67,6 @@ const SearchEntities: FC<SearchEntitiesProps> = () => {
     setSearch(value)
     setSelectedNodes(ids)
 
-    console.log('foundNodes', value, foundNodes)
     if (foundNodes.length === 0) {
       handleClear()
       return
