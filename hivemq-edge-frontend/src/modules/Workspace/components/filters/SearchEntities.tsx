@@ -61,7 +61,7 @@ const SearchEntities: FC<SearchEntitiesProps> = () => {
       return
     }
     const foundNodes = nodes.filter((node) => {
-      return new RegExp(value, 'i').test(node.id) && node.hidden === false
+      return new RegExp(value, 'i').test(node.id) && node.hidden !== true
     })
     const ids = foundNodes.map((node) => node.id)
     setSearch(value)
