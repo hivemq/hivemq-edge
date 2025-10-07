@@ -109,12 +109,20 @@ const SearchEntities: FC<SearchEntitiesProps> = () => {
         )}
       </InputGroup>
       <ButtonGroup size="sm" isAttached isDisabled={current === null}>
-        <IconButton icon={<MdArrowBack />} aria-label="Previous node" onClick={() => handleNavigate('prev')} />
+        <IconButton
+          icon={<MdArrowBack />}
+          aria-label={t('workspace.searchToolbox.search.previous')}
+          onClick={() => handleNavigate('prev')}
+        />
         <Text alignContent="center" marginX={2}>
           {current !== null ? current + 1 : 0} of {selectedNodes.length}
         </Text>
 
-        <IconButton icon={<MdArrowForward />} aria-label="Next node" onClick={() => handleNavigate('next')} />
+        <IconButton
+          icon={<MdArrowForward />}
+          aria-label={t('workspace.searchToolbox.search.next')}
+          onClick={() => handleNavigate('next')}
+        />
       </ButtonGroup>
     </FormControl>
   )
