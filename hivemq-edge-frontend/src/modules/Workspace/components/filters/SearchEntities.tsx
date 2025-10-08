@@ -87,6 +87,7 @@ const SearchEntities: FC<SearchEntitiesProps> = () => {
           <Icon as={SearchIcon} boxSize="3" />
         </InputLeftElement>
         <Input
+          data-testid="workspace-search"
           placeholder={t('workspace.searchToolbox.search.placeholder')}
           size="sm"
           id="workspace-search"
@@ -98,6 +99,7 @@ const SearchEntities: FC<SearchEntitiesProps> = () => {
             <IconButton
               size="sm"
               variant="ghost"
+              data-testid="workspace-search-clear"
               aria-label={t('workspace.searchToolbox.search.clear')}
               icon={<MdClear />}
               onClick={() => {
@@ -109,15 +111,17 @@ const SearchEntities: FC<SearchEntitiesProps> = () => {
       </InputGroup>
       <ButtonGroup size="sm" isAttached isDisabled={current === null}>
         <IconButton
+          data-testid="workspace-search-prev"
           icon={<MdArrowBack />}
           aria-label={t('workspace.searchToolbox.search.previous')}
           onClick={() => handleNavigate('prev')}
         />
-        <Text alignContent="center" marginX={2}>
+        <Text alignContent="center" marginX={2} data-testid="workspace-search-counter" userSelect="none">
           {current !== null ? current + 1 : 0} of {selectedNodes.length}
         </Text>
 
         <IconButton
+          data-testid="workspace-search-next"
           icon={<MdArrowForward />}
           aria-label={t('workspace.searchToolbox.search.next')}
           onClick={() => handleNavigate('next')}

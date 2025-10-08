@@ -7,7 +7,7 @@ import SearchEntities from '@/modules/Workspace/components/filters/SearchEntitie
 const CanvasToolbar: FC = () => {
   return (
     <Panel position="top-left">
-      <HStack m={2}>
+      <HStack m={2} data-testid="canvas-toolbar">
         <SearchEntities />
       </HStack>
     </Panel>
