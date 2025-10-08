@@ -97,6 +97,8 @@ const SearchEntities: FC<SearchEntitiesProps> = ({ onChange, onNavigate }) => {
     onChange?.(ids)
   }
 
+  const hasSearchStarted = current !== null && search !== ''
+
   return (
     <FormControl variant="horizontal">
       <FormLabel fontSize="sm" htmlFor="workspace-search" whiteSpace="nowrap" hidden>
@@ -137,7 +139,10 @@ const SearchEntities: FC<SearchEntitiesProps> = ({ onChange, onNavigate }) => {
           onClick={() => handleNavigate('prev')}
         />
         <Text alignContent="center" marginX={2} data-testid="workspace-search-counter" userSelect="none">
-          {current !== null ? current + 1 : 0} of {selectedNodes.length}
+          {t('workspace.searchToolbox.search.matches', {
+            index: hasSearchStarted ? current + 1 : 0,
+            count: hasSearchStarted ? selectedNodes.length : 0,
+          })}
         </Text>
 
         <IconButton

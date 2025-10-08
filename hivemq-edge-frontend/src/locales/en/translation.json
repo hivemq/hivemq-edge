@@ -1038,7 +1038,8 @@
         "helper": "Search for an adapter, bridge or device",
         "clear": "Clear the search",
         "previous": "Previous entity",
-        "next": "Next entity"
+        "next": "Next entity",
+        "matches": "{{ index }} of {{ count }}"
       }
     }
   },
