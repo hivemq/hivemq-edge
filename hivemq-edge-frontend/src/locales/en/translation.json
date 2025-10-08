@@ -1040,6 +1040,50 @@
         "previous": "Previous entity",
         "next": "Next entity",
         "matches": "{{ index }} of {{ count }}"
+      },
+      "title": "Filter Workspace",
+      "trigger": {
+        "aria-label": "Filter Workspace"
+      },
+      "configuration": {
+        "label": "Save/Load filter",
+        "placeholder": "Select or create a configuration",
+        "createLabel": "Save configuration as '{{ name }}'",
+        "delete": "Delete configuration"
+      },
+      "bySelection": {
+        "label": "By selection",
+        "nodeSelected": "{{ count }} entity selected",
+        "nodeFiltered": "{{ count }} entity filtered",
+        "select": "Add selection",
+        "clear": "Clear selection"
+      },
+      "byEntity": {
+        "label": "By entity types",
+        "placeholder": "Select entities to filter ...",
+        "noOptions": "No matching entity",
+        "categories": {
+          "ADAPTER_NODE": "Adapters",
+          "DEVICE_NODE": "Devices",
+          "BRIDGE_NODE": "Bridges",
+          "HOST_NODE": "Hosts",
+          "PULSE_NODE": "Pulse Agents",
+          "EDGE_NODE": "Edge Broker",
+          "COMBINER_NODE": "Combiners",
+          "ASSETS_NODE": "Assets",
+
+          "CLUSTER_NODE": "Groups"
+        }
+      },
+      "byTopics": {
+        "label": "By Integration points",
+        "placeholder": "Select topics to trace ...",
+        "noOptions": "No matching topic"
+      },
+      "byStatus": {
+        "label": "By Status",
+        "placeholder": "Select statuses to trace ...",
+        "noOptions": "No matching status"
       }
     }
   },
