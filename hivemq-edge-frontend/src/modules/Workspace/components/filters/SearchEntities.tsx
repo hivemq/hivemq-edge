@@ -1,7 +1,8 @@
 import type { FC } from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useReactFlow, useStore } from '@xyflow/react'
+import type { NodeSelectionChange } from '@xyflow/react'
+import { useReactFlow } from '@xyflow/react'
 import {
   ButtonGroup,
   FormControl,
@@ -18,25 +19,23 @@ import { MdArrowBack, MdArrowForward, MdClear } from 'react-icons/md'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import {
-  addSelectedNodesState,
-  CONFIG_FITVIEW_OPTION,
-  resetSelectedNodesState,
-} from '@/modules/Workspace/utils/react-flow.utils.ts'
+import { CONFIG_FITVIEW_OPTION } from '@/modules/Workspace/utils/react-flow.utils.ts'
 
 interface SearchEntitiesProps {
-  id?: string
+  onChange?: (values: string[]) => void
+  onNavigate?: (current: string) => void
 }
 
-const SearchEntities: FC<SearchEntitiesProps> = () => {
+const SearchEntities: FC<SearchEntitiesProps> = ({ onChange, onNavigate }) => {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
-  const [selectedNodes, setSelectedNodes] = useState<string[]>([])
   const [current, setCurrent] = useState<number | null>(null)
   const { fitView } = useReactFlow()
-  const { nodes } = useWorkspaceStore()
-  const resetSelectedNodes = useStore(resetSelectedNodesState)
-  const addSelectedNodes = useStore(addSelectedNodesState)
+  const { nodes, onNodesChange } = useWorkspaceStore()
+
+  const selectedNodes = useMemo(() => {
+    return nodes.filter((e) => e.selected === true).map((e) => e.id)
+  }, [nodes])
 
   const handleNavigate = (direction: 'next' | 'prev') => {
     if (current === null) return
@@ -45,14 +44,24 @@ const SearchEntities: FC<SearchEntitiesProps> = () => {
     if (newIndex >= selectedNodes.length) newIndex = 0
     setCurrent(newIndex)
     fitView({ nodes: [{ id: selectedNodes[newIndex] }], ...CONFIG_FITVIEW_OPTION })
+    onNavigate?.(selectedNodes[newIndex])
   }
 
   const handleClear = (clearValue = false) => {
-    resetSelectedNodes()
+    onNodesChange(
+      nodes.map((node) => {
+        const select: NodeSelectionChange = {
+          id: node.id,
+          type: 'select',
+          selected: false,
+        }
+        return select
+      })
+    )
     fitView({ ...CONFIG_FITVIEW_OPTION })
-    setSelectedNodes([])
     setCurrent(null)
     if (clearValue) setSearch('')
+    onChange?.([])
   }
 
   const handleChange = (value: string) => {
@@ -65,16 +74,27 @@ const SearchEntities: FC<SearchEntitiesProps> = () => {
     })
     const ids = foundNodes.map((node) => node.id)
     setSearch(value)
-    setSelectedNodes(ids)
 
     if (foundNodes.length === 0) {
       handleClear()
       return
     }
 
-    addSelectedNodes(ids)
+    // change the selection status of selected node
+    onNodesChange(
+      nodes.map((node) => {
+        const select: NodeSelectionChange = {
+          id: node.id,
+          type: 'select',
+          selected: ids.includes(node.id),
+        }
+        return select
+      })
+    )
+
     setCurrent(0)
     fitView({ nodes: foundNodes, ...CONFIG_FITVIEW_OPTION })
+    onChange?.(ids)
   }
 
   return (
