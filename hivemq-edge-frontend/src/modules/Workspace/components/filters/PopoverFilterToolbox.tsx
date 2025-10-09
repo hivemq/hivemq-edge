@@ -60,7 +60,10 @@ const PopoverFilterToolbox: FC = () => {
             <FilterStatus onChange={setStatus} />
             <OptionsFilter onChangeDynamic={setIsDynamic} onChangeJoin={setJoin} />
           </PopoverBody>
-          <PopoverFooter>
+          <PopoverFooter as={VStack} gap={2}>
+            <ConfigurationSelector />
+          </PopoverFooter>
+          <PopoverFooter as={VStack} gap={2}>
             <ApplyFilter
               topics={topics}
               status={status}
@@ -69,7 +72,6 @@ const PopoverFilterToolbox: FC = () => {
               selection={selection}
               join={join}
             />
-            <ConfigurationSelector />
           </PopoverFooter>
         </PopoverContent>
       </Popover>
