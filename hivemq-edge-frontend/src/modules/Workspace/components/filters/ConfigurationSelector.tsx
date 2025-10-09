@@ -10,7 +10,7 @@ import { MdDeleteOutline } from 'react-icons/md'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { filterContainerStyle } from '@/modules/Workspace/components/filters/filters.utils.ts'
 import type { FilterConfigurationOption } from '@/modules/Workspace/components/filters/types.ts'
-import { KEY_FILTER_CONFIGURATION } from '@/modules/Workspace/components/filters/types.ts'
+import { KEY_FILTER_CONFIGURATIONS } from '@/modules/Workspace/components/filters/types.ts'
 
 interface ConfigurationSelectorProps {
   id?: string
@@ -18,7 +18,10 @@ interface ConfigurationSelectorProps {
 
 const ConfigurationSelector: FC<ConfigurationSelectorProps> = () => {
   const { t } = useTranslation()
-  const [configurations, setConfigurations] = useLocalStorage<FilterConfigurationOption[]>(KEY_FILTER_CONFIGURATION, [])
+  const [configurations, setConfigurations] = useLocalStorage<FilterConfigurationOption[]>(
+    KEY_FILTER_CONFIGURATIONS,
+    []
+  )
   const [configuration, setConfiguration] = useState<FilterConfigurationOption | null>()
 
   const handleConfigDelete = () => {
