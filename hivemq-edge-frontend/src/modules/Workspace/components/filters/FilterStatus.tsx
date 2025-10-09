@@ -51,7 +51,6 @@ const FilterStatus: FC<FilterStatusProps> = ({ onChange }) => {
         onChange={handleChange}
         placeholder={t('workspace.searchToolbox.byStatus.placeholder')}
         noOptionsMessage={() => t('workspace.searchToolbox.byStatus.noOptions')}
-        menuPortalTarget={document.body}
         size="sm"
         chakraStyles={{
           container: filterContainerStyle,

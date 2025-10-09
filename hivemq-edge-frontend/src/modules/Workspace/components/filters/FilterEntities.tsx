@@ -45,7 +45,6 @@ const FilterEntities: FC<FilterEntitiesProps> = ({ onChange }) => {
         onChange={handleChange}
         placeholder={t('workspace.searchToolbox.byEntity.placeholder')}
         noOptionsMessage={() => t('workspace.searchToolbox.byEntity.noOptions')}
-        menuPortalTarget={document.body}
         size="sm"
         chakraStyles={{
           container: filterContainerStyle,

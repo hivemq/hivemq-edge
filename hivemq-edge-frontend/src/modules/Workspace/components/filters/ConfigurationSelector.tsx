@@ -61,7 +61,6 @@ const ConfigurationSelector: FC<ConfigurationSelectorProps> = () => {
         chakraStyles={{
           container: filterContainerStyle,
         }}
-        menuPortalTarget={document.body}
         formatCreateLabel={(inputValue) => t('workspace.searchToolbox.configuration.createLabel', { name: inputValue })}
       />
       <IconButton

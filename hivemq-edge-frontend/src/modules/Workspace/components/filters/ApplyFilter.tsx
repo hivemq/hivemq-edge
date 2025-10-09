@@ -36,6 +36,7 @@ const ApplyFilter: FC<ApplyFilterProps> = ({ topics, status, entities, selection
       type: 'replace',
     }))
     onNodesChange(changeContent)
+    fitView({ padding: 0.25, duration: 750 })
   }
 
   const handleFilter = () => {

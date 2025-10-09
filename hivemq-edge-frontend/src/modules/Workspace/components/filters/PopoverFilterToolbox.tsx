@@ -17,20 +17,20 @@ import type {
   FilterStatusOption,
   FilterTopicsOption,
 } from '@/modules/Workspace/components/filters/types.ts'
-import { ChevronDownIcon } from '@chakra-ui/icons'
 import {
   Button,
   ButtonGroup,
-  Popover,
-  PopoverArrow,
-  PopoverBody,
-  PopoverCloseButton,
-  PopoverContent,
-  PopoverFooter,
-  PopoverHeader,
-  PopoverTrigger,
+  Drawer,
+  DrawerBody,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerContent,
+  DrawerCloseButton,
   VStack,
+  useDisclosure,
+  Icon,
 } from '@chakra-ui/react'
+import { GoSidebarExpand } from 'react-icons/go'
 
 const PopoverFilterToolbox: FC = () => {
   const { t } = useTranslation()
@@ -40,30 +40,35 @@ const PopoverFilterToolbox: FC = () => {
   const [selection, setSelection] = useState<MultiValue<FilterSelectionOption>>([])
   const [isDynamic, setIsDynamic] = useState<boolean>(false)
   const [join, setJoin] = useState<string>('OR')
+  const { isOpen, onOpen, onClose } = useDisclosure()
 
   return (
     <ButtonGroup variant="outline" isAttached size="sm" m={1}>
-      <Popover closeOnBlur={false} isLazy>
-        <PopoverTrigger>
-          <Button size="sm" variant="ghost" rightIcon={<ChevronDownIcon boxSize="24px" />}>
-            {t('workspace.searchToolbox.trigger.aria-label')}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent minWidth="450px" boxShadow="var(--chakra-shadows-dark-lg)">
-          <PopoverArrow />
-          <PopoverCloseButton />
-          <PopoverHeader> {t('workspace.searchToolbox.title')}</PopoverHeader>
-          <PopoverBody overflowY="scroll" maxH="33vh" as={VStack} gap={2}>
+      <Button
+        size="sm"
+        variant="ghost"
+        leftIcon={<Icon as={GoSidebarExpand} boxSize="24px" />}
+        // rightIcon={<Icon as={TbFilter} boxSize="24px" />}
+        onClick={onOpen}
+      >
+        {t('workspace.searchToolbox.trigger.aria-label')}
+      </Button>
+      <Drawer isOpen={isOpen} placement="right" size="sm" onClose={onClose}>
+        {/*<DrawerOverlay />*/}
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader> {t('workspace.searchToolbox.title')}</DrawerHeader>
+
+          <DrawerBody as={VStack} gap={4}>
             <FilterSelection onChange={setSelection} selection={selection} />
             <FilterEntities onChange={setEntities} />
             <FilterTopics onChange={setTopics} />
             <FilterStatus onChange={setStatus} />
             <OptionsFilter onChangeDynamic={setIsDynamic} onChangeJoin={setJoin} />
-          </PopoverBody>
-          <PopoverFooter as={VStack} gap={2}>
             <ConfigurationSelector />
-          </PopoverFooter>
-          <PopoverFooter as={VStack} gap={2}>
+          </DrawerBody>
+
+          <DrawerFooter>
             <ApplyFilter
               topics={topics}
               status={status}
@@ -72,9 +77,9 @@ const PopoverFilterToolbox: FC = () => {
               selection={selection}
               join={join}
             />
-          </PopoverFooter>
-        </PopoverContent>
-      </Popover>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </ButtonGroup>
   )
 }

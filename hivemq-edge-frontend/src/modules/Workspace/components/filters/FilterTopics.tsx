@@ -76,7 +76,6 @@ const FilterTopics: FC<FilterTopicsProps> = ({ onChange }) => {
         components={{
           Option,
         }}
-        menuPortalTarget={document.body}
       />
     </FormControl>
   )
