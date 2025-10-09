@@ -1058,7 +1058,8 @@
       "join": {
         "label": "Join filters using",
         "option_AND": "AND",
-        "option_OR": "OR"
+        "option_OR": "OR",
+        "helper": "Choose how multiple filter criteria are combined"
       },
       "liveUpdate": {
         "label": "Live updating",

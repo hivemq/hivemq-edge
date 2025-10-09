@@ -2,9 +2,12 @@ import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FormControl, FormHelperText, FormLabel, Radio, RadioGroup, Stack, Switch, VStack } from '@chakra-ui/react'
 
+const FILTER_JOIN_OPTIONS = ['OR', 'AND'] as const
+type FilterJoinOptions = (typeof FILTER_JOIN_OPTIONS)[number]
+
 interface FilterDynamicProps {
   onChangeDynamic?: (value: boolean) => void
-  onChangeJoin?: (value: 'AND' | 'OR') => void
+  onChangeJoin?: (value: FilterJoinOptions) => void
 }
 
 const OptionsFilter: FC<FilterDynamicProps> = ({ onChangeDynamic, onChangeJoin }) => {
@@ -20,16 +23,22 @@ const OptionsFilter: FC<FilterDynamicProps> = ({ onChangeDynamic, onChangeJoin }
         <FormLabel fontSize="sm" htmlFor="workspace-filter-join">
           {t('workspace.searchToolbox.join.label')}
         </FormLabel>
-        <RadioGroup
-          onChange={(value: 'AND' | 'OR') => onChangeJoin?.(value)}
-          defaultValue="OR"
-          id="workspace-filter-join"
-        >
-          <Stack direction="row">
-            <Radio value="AND">{t('workspace.searchToolbox.join.option', { context: 'AND' })}</Radio>
-            <Radio value="OR">{t('workspace.searchToolbox.join.option', { context: 'OR' })}</Radio>
-          </Stack>
-        </RadioGroup>
+        <VStack alignItems="flex-start">
+          <RadioGroup
+            onChange={(value: FilterJoinOptions) => onChangeJoin?.(value)}
+            defaultValue={FILTER_JOIN_OPTIONS[0]}
+            id="workspace-filter-join"
+          >
+            <Stack direction="row">
+              {FILTER_JOIN_OPTIONS.map((option) => (
+                <Radio key={option} value={option}>
+                  {t('workspace.searchToolbox.join.option', { context: option })}
+                </Radio>
+              ))}
+            </Stack>
+          </RadioGroup>
+          <FormHelperText>{t('workspace.searchToolbox.join.helper')}</FormHelperText>
+        </VStack>
       </FormControl>
       <FormControl variant="horizontal">
         <FormLabel fontSize="sm" htmlFor="workspace-filter-dynamic-update">
