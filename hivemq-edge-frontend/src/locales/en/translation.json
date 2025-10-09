@@ -1051,6 +1051,19 @@
         "createLabel": "Save configuration as '{{ name }}'",
         "delete": "Delete configuration"
       },
+      "action": {
+        "apply": "Apply filters",
+        "clear": "Clear filters"
+      },
+      "join": {
+        "label": "Join filters using",
+        "option_AND": "AND",
+        "option_OR": "OR"
+      },
+      "liveUpdate": {
+        "label": "Live updating",
+        "helper": "Turn on if you wish the filters to be automatically updated"
+      },
       "bySelection": {
         "label": "By selection",
         "nodeSelected": "{{ count }} entity selected",

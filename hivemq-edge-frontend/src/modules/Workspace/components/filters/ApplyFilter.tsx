@@ -68,8 +68,8 @@ const ApplyFilter: FC<ApplyFilterProps> = ({ topics, status, entities, selection
   return (
     <FormControl variant="horizontal">
       <FormLabel fontSize="sm" htmlFor="workspace-filter-apply"></FormLabel>
-      <Button onClick={() => handleApply()}>{t('Apply filters')} </Button>
-      <Button onClick={() => handleClearFilters()}>{t('Clear filters')} </Button>
+      <Button onClick={() => handleApply()}>{t('workspace.searchToolbox.action.apply')} </Button>
+      <Button onClick={() => handleClearFilters()}>{t('workspace.searchToolbox.action.clear')} </Button>
     </FormControl>
   )
 }

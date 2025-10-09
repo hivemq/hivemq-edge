@@ -18,7 +18,7 @@ const OptionsFilter: FC<FilterDynamicProps> = ({ onChangeDynamic, onChangeJoin }
     <>
       <FormControl variant="horizontal">
         <FormLabel fontSize="sm" htmlFor="workspace-filter-join">
-          {t('Join filters using')}
+          {t('workspace.searchToolbox.join.label')}
         </FormLabel>
         <RadioGroup
           onChange={(value: 'AND' | 'OR') => onChangeJoin?.(value)}
@@ -26,18 +26,18 @@ const OptionsFilter: FC<FilterDynamicProps> = ({ onChangeDynamic, onChangeJoin }
           id="workspace-filter-join"
         >
           <Stack direction="row">
-            <Radio value="AND">AND</Radio>
-            <Radio value="OR">OR</Radio>
+            <Radio value="AND">{t('workspace.searchToolbox.join.option', { context: 'AND' })}</Radio>
+            <Radio value="OR">{t('workspace.searchToolbox.join.option', { context: 'OR' })}</Radio>
           </Stack>
         </RadioGroup>
       </FormControl>
       <FormControl variant="horizontal">
         <FormLabel fontSize="sm" htmlFor="workspace-filter-dynamic-update">
-          {t('Live updating')}
+          {t('workspace.searchToolbox.liveUpdate.label')}
         </FormLabel>
         <VStack alignItems="flex-start">
           <Switch id="workspace-filter-dynamic-update" onChange={handleChange} />
-          <FormHelperText>Turn on if you wish the filters to be automatically updated</FormHelperText>
+          <FormHelperText>{t('workspace.searchToolbox.liveUpdate.helper')}</FormHelperText>
         </VStack>
       </FormControl>
     </>
