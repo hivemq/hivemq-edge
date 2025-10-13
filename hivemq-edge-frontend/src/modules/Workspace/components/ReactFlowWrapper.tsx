@@ -16,6 +16,7 @@ import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import StatusListener from '@/modules/Workspace/components/controls/StatusListener.tsx'
 import CanvasControls from '@/modules/Workspace/components/controls/CanvasControls.tsx'
 import SelectionListener from '@/modules/Workspace/components/controls/SelectionListener.tsx'
+import CanvasToolbar from '@/modules/Workspace/components/controls/CanvasToolbar.tsx'
 import MonitoringEdge from '@/modules/Workspace/components/edges/MonitoringEdge.tsx'
 import CanvasToolbar from '@/modules/Workspace/components/controls/CanvasToolbar.tsx'
 import {
