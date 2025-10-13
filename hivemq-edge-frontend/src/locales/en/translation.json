@@ -1065,15 +1065,28 @@
         "label": "Live updating",
         "helper": "Turn on if you wish the filters to be automatically updated"
       },
+      "quickFilters": {
+        "label": "Quick filters",
+        "action": {
+          "edit": "Edit",
+          "delete": "Delete"
+        },
+        "delete": {
+          "header": "Delete the quick filter",
+          "message": "Do you really want to delete the quick filter? The action cannot be reverted."
+        }
+      },
       "bySelection": {
-        "label": "By selection",
+        "criteria": "By selection",
+        "label": "Selection",
         "nodeSelected": "{{ count }} entity selected",
         "nodeFiltered": "{{ count }} entity filtered",
         "select": "Add selection",
         "clear": "Clear selection"
       },
       "byEntity": {
-        "label": "By entity types",
+        "criteria": "By entity types",
+        "label": "Entities",
         "placeholder": "Select entities to filter ...",
         "noOptions": "No matching entity",
         "categories": {
@@ -1089,13 +1102,21 @@
           "CLUSTER_NODE": "Groups"
         }
       },
+      "byProtocol": {
+        "criteria": "By Protocol",
+        "label": "Protocols",
+        "placeholder": "Select Protocols to filter ...",
+        "noOptions": "No matching protocol"
+      },
       "byTopics": {
-        "label": "By Integration points",
+        "criteria": "By Integration points",
+        "label": "Topics",
         "placeholder": "Select topics to trace ...",
         "noOptions": "No matching topic"
       },
       "byStatus": {
-        "label": "By Status",
+        "criteria": "By Status",
+        "label": "Status",
         "placeholder": "Select statuses to trace ...",
         "noOptions": "No matching status"
       }
