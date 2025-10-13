@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FormControl, FormLabel } from '@chakra-ui/react'
-import { type MultiValue, Select } from 'chakra-react-select'
+import { FormControl, FormLabel, Text } from '@chakra-ui/react'
+import { chakraComponents, type MultiValue, type MultiValueProps, Select } from 'chakra-react-select'
 
 import { Status } from '@/api/__generated__'
 import type { FilterStatusOption } from '@/modules/Workspace/components/filters/types.ts'
@@ -54,6 +54,13 @@ const FilterStatus: FC<FilterStatusProps> = ({ onChange }) => {
         size="sm"
         chakraStyles={{
           container: filterContainerStyle,
+        }}
+        components={{
+          MultiValue: (props: MultiValueProps<FilterStatusOption, true>) => (
+            <chakraComponents.MultiValue {...props}>
+              <Text data-testid="workspace-filter-status-values">{props.data.label}</Text>
+            </chakraComponents.MultiValue>
+          ),
         }}
       />
     </FormControl>

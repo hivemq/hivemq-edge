@@ -1,11 +1,13 @@
 import type { FC } from 'react'
-import { FormControl, FormLabel } from '@chakra-ui/react'
-import { Select } from 'chakra-react-select'
+import { useMemo } from 'react'
+import { FormControl, FormLabel, Text } from '@chakra-ui/react'
+import { chakraComponents, type MultiValueProps, Select } from 'chakra-react-select'
 import type { MultiValue } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 
 import { filterContainerStyle } from '@/modules/Workspace/components/filters/filters.utils.ts'
 import type { FilterEntitiesOption } from '@/modules/Workspace/components/filters/types.ts'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 interface FilterEntitiesProps {
@@ -15,6 +17,11 @@ interface FilterEntitiesProps {
 
 const FilterEntities: FC<FilterEntitiesProps> = ({ onChange }) => {
   const { t } = useTranslation()
+  const { nodes } = useWorkspaceStore()
+
+  const existingNodeTypes = useMemo(() => {
+    return new Set(nodes.map((e) => e.type as NodeTypes))
+  }, [nodes])
 
   const options: FilterEntitiesOption[] = [
     { label: t('workspace.searchToolbox.byEntity.categories.ADAPTER_NODE'), value: NodeTypes.ADAPTER_NODE },
@@ -48,6 +55,19 @@ const FilterEntities: FC<FilterEntitiesProps> = ({ onChange }) => {
         size="sm"
         chakraStyles={{
           container: filterContainerStyle,
+        }}
+        filterOption={(option, value) => {
+          return (
+            existingNodeTypes.has(option.value as NodeTypes) &&
+            (new RegExp(value, 'i').test(option.value) || new RegExp(value, 'i').test(option.label))
+          )
+        }}
+        components={{
+          MultiValue: (props: MultiValueProps<FilterEntitiesOption, true>) => (
+            <chakraComponents.MultiValue {...props}>
+              <Text data-testid="workspace-filter-entities-values">{props.data.label}</Text>
+            </chakraComponents.MultiValue>
+          ),
         }}
       />
     </FormControl>

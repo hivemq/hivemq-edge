@@ -1,8 +1,8 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FormControl, FormLabel } from '@chakra-ui/react'
-import { chakraComponents, type MultiValue, type OptionProps, Select } from 'chakra-react-select'
+import { FormControl, FormLabel, Text } from '@chakra-ui/react'
+import { chakraComponents, type MultiValue, type MultiValueProps, type OptionProps, Select } from 'chakra-react-select'
 
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag.tsx'
 import { SelectEntityType } from '@/components/MQTT/types.ts'
@@ -75,6 +75,11 @@ const FilterTopics: FC<FilterTopicsProps> = ({ onChange }) => {
         }}
         components={{
           Option,
+          MultiValue: (props: MultiValueProps<FilterTopicsOption, true>) => (
+            <chakraComponents.MultiValue {...props}>
+              <Text data-testid="workspace-filter-topics-values">{props.data.label}</Text>
+            </chakraComponents.MultiValue>
+          ),
         }}
       />
     </FormControl>
