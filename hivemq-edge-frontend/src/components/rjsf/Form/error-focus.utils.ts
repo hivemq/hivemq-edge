@@ -96,7 +96,7 @@ export const isPropertyBehindTab = (
   let inTab: UITabIndexed | null = null
   for (const [index, tab] of (tabs as UITab[]).entries()) {
     const { properties } = tab
-    if (properties && properties.includes(root)) inTab = { ...tab, index }
+    if (properties?.includes(root)) inTab = { ...tab, index }
   }
 
   return inTab ? inTab : undefined

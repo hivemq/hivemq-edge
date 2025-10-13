@@ -56,6 +56,11 @@ jobs:
               - 'hivemq-edge-openapi/**'
               - '.github/**'
 
+      - name: Debug openapi-changed output
+        run: |
+          echo "openapi-changed: ${{ steps.frontend.outputs.changed }}"
+
+
   check-openapi:
     needs: check-for-changes
     uses: ./.github/workflows/check-openapi.yml

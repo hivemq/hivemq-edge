@@ -17,8 +17,8 @@ export const BaseInputTemplate: FC<BaseInputTemplateProps> = (props) => {
 
   const _onChange = ({ target: { value } }: ChangeEvent<HTMLInputElement>) =>
     props.onChange(value === '' ? props.options.emptyValue : value)
-  const _onBlur = ({ target }: FocusEvent<HTMLInputElement>) => props.onBlur(props.id, target && target.value)
-  const _onFocus = ({ target }: FocusEvent<HTMLInputElement>) => props.onFocus(props.id, target && target.value)
+  const _onBlur = ({ target }: FocusEvent<HTMLInputElement>) => props.onBlur(props.id, target.value)
+  const _onFocus = ({ target }: FocusEvent<HTMLInputElement>) => props.onFocus(props.id, target.value)
 
   return (
     <FormControl
