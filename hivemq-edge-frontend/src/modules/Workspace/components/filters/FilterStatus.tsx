@@ -21,6 +21,10 @@ const FilterStatus: FC<FilterStatusProps> = ({ onChange, value }) => {
       status: Status.connection.CONNECTED,
     },
     {
+      label: t('hivemq.connection.status', { context: Status.connection.STATELESS }),
+      status: Status.connection.STATELESS,
+    },
+    {
       label: t('hivemq.connection.status', { context: Status.connection.DISCONNECTED }),
       status: Status.connection.DISCONNECTED,
     },
