@@ -54,7 +54,7 @@ describe('SearchEntities', () => {
     })
   })
 
-  it.only('should search', () => {
+  it('should search', () => {
     const onchange = cy.stub().as('onchange')
     const onNavigate = cy.stub().as('onNavigate')
     cy.mountWithProviders(<SearchEntities onChange={onchange} onNavigate={onNavigate} />, {
