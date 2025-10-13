@@ -38,7 +38,7 @@ export interface FilterStatusOption {
 }
 
 export interface FilterOperationOption {
-  isLiveUpdate: string
+  isLiveUpdate: boolean
   joinOperator: 'OR' | 'AND'
 }
 
@@ -55,7 +55,7 @@ export interface Filter {
   status?: ActiveFilter<MultiValue<FilterStatusOption>>
 }
 
-export interface FilerConfig extends Filter {
+export interface FilterConfig extends Filter {
   quickFilters?: Array<Filter>
   options?: FilterOperationOption
 }

@@ -34,7 +34,7 @@ import { hideNodeWithFilters } from '@/modules/Workspace/components/filters/filt
 
 import type {
   ActiveFilter,
-  FilerConfig,
+  FilterConfig,
   Filter,
   FilterEditorProps,
   FilterEntitiesOption,
@@ -49,7 +49,9 @@ const DrawerFilterToolbox: FC = () => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
   // const [currentState, setCurrentState] = useState<Filter>({})
-  const [currentState, setCurrentState] = useLocalStorage<FilerConfig>(KEY_FILTER_CURRENT, {})
+  const [currentState, setCurrentState] = useLocalStorage<FilterConfig>(KEY_FILTER_CURRENT, {
+    options: { isLiveUpdate: false, joinOperator: 'OR' },
+  })
   const { nodes, onNodesChange } = useWorkspaceStore()
   const { fitView } = useReactFlow()
 
