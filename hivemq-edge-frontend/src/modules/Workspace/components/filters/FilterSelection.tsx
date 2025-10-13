@@ -36,12 +36,12 @@ const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange }) => {
   }
 
   return (
-    <FormControl variant="horizontal">
-      <FormLabel fontSize="sm" htmlFor="workspace-filter-selection">
+    <FormControl variant="horizontal" id="workspace-filter-selection">
+      <FormLabel fontSize="sm" htmlFor="workspace-filter-selection-items">
         {t('workspace.searchToolbox.bySelection.label')}
       </FormLabel>
       <HStack justifyContent="space-between">
-        <Text id="workspace-filter-selection">
+        <Text id="workspace-filter-selection-items">
           {Boolean(value?.length) && t('workspace.searchToolbox.bySelection.nodeFiltered', { count: value?.length })}
           {!value?.length && t('workspace.searchToolbox.bySelection.nodeSelected', { count: selectedNodes.length })}
         </Text>
@@ -51,6 +51,7 @@ const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange }) => {
             aria-label={t('workspace.searchToolbox.bySelection.select')}
             isDisabled={!selectedNodes.length}
             onClick={handleSelect}
+            data-testid="workspace-filter-selection-add"
           />
 
           <IconButton
@@ -58,6 +59,7 @@ const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange }) => {
             aria-label={t('workspace.searchToolbox.bySelection.clear')}
             onClick={handleClearSelect}
             isDisabled={!value?.length}
+            data-testid="workspace-filter-selection-clear"
           />
         </ButtonGroup>
       </HStack>
