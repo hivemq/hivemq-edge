@@ -17,6 +17,7 @@ import StatusListener from '@/modules/Workspace/components/controls/StatusListen
 import CanvasControls from '@/modules/Workspace/components/controls/CanvasControls.tsx'
 import SelectionListener from '@/modules/Workspace/components/controls/SelectionListener.tsx'
 import MonitoringEdge from '@/modules/Workspace/components/edges/MonitoringEdge.tsx'
+import CanvasToolbar from '@/modules/Workspace/components/controls/CanvasToolbar.tsx'
 import {
   NodeAdapter,
   NodeBridge,
@@ -28,9 +29,9 @@ import {
   NodeCombiner,
   NodePulse,
 } from '@/modules/Workspace/components/nodes'
+import { DynamicEdge } from '@/modules/Workspace/components/edges/DynamicEdge'
 import { getGluedPosition, gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
-import { DynamicEdge } from './edges/DynamicEdge'
 
 const ReactFlowWrapper = () => {
   const { t } = useTranslation()
@@ -115,6 +116,7 @@ const ReactFlowWrapper = () => {
       aria-label={t('workspace.canvas.aria-label')}
     >
       <Box role="toolbar" aria-label={t('workspace.controls.aria-label')} aria-controls="edge-workspace-canvas">
+        <CanvasToolbar />
         <SelectionListener />
         <StatusListener />
         <Background />
