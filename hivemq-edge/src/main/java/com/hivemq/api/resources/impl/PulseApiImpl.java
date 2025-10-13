@@ -120,8 +120,8 @@ public class PulseApiImpl implements PulseApi {
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
         }
-        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
-        synchronized (existingPulseEntity.getLock()) {
+        synchronized (pulseExtractor.getLock()) {
+            final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
             final UUID id = combiner.getId();
             final @NotNull Optional<DataCombiner> optionalDataCombiner = assetMappingExtractor.getCombinerById(id);
             if (optionalDataCombiner.isPresent()) {
@@ -192,8 +192,8 @@ public class PulseApiImpl implements PulseApi {
         if (mappingId == null) {
             return ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError("null"));
         }
-        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
-        synchronized (existingPulseEntity.getLock()) {
+        synchronized (pulseExtractor.getLock()) {
+            final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
             final PulseAgentAssets assets =
                     PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
             final OptionalInt optionalAssetIndex = IntStream.range(0, assets.size())
@@ -231,8 +231,8 @@ public class PulseApiImpl implements PulseApi {
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
         }
-        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
-        synchronized (existingPulseEntity.getLock()) {
+        synchronized (pulseExtractor.getLock()) {
+            final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
             final @NotNull Optional<DataCombiner> optionalDataCombiner =
                     assetMappingExtractor.getCombinerById(combinerId);
             if (optionalDataCombiner.isEmpty()) {
@@ -275,8 +275,8 @@ public class PulseApiImpl implements PulseApi {
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
         }
-        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
-        synchronized (existingPulseEntity.getLock()) {
+        synchronized (pulseExtractor.getLock()) {
+            final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
             final PulseAgentAssets assets =
                     PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
             final OptionalInt optionalAssetIndex = IntStream.range(0, assets.size())
@@ -329,8 +329,7 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public @NotNull Response getAssetMapper(final @NotNull UUID combinerId) {
-        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
-        synchronized (existingPulseEntity.getLock()) {
+        synchronized (pulseExtractor.getLock()) {
             final @NotNull Optional<DataCombiner> optionalDataCombiner =
                     assetMappingExtractor.getCombinerById(combinerId);
             if (optionalDataCombiner.isEmpty()) {
@@ -342,8 +341,7 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public @NotNull Response getAssetMapperInstructions(final @NotNull UUID combinerId, final @NotNull UUID mappingId) {
-        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
-        synchronized (existingPulseEntity.getLock()) {
+        synchronized (pulseExtractor.getLock()) {
             final @NotNull Optional<DataCombiner> optionalDataCombiner =
                     assetMappingExtractor.getCombinerById(combinerId);
             if (optionalDataCombiner.isEmpty()) {
@@ -362,8 +360,7 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public @NotNull Response getAssetMapperMappings(final @NotNull UUID combinerId) {
-        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
-        synchronized (existingPulseEntity.getLock()) {
+        synchronized (pulseExtractor.getLock()) {
             final @NotNull Optional<DataCombiner> optionalDataCombiner =
                     assetMappingExtractor.getCombinerById(combinerId);
             if (optionalDataCombiner.isEmpty()) {
@@ -380,8 +377,7 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public @NotNull Response getAssetMappers() {
-        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
-        synchronized (existingPulseEntity.getLock()) {
+        synchronized (pulseExtractor.getLock()) {
             final List<DataCombiner> allCombiners = assetMappingExtractor.getAllCombiners();
             final List<Combiner> combiners = allCombiners.stream().map(DataCombiner::toModel).toList();
             final CombinerList combinerList = new CombinerList().items(combiners);
@@ -395,8 +391,8 @@ public class PulseApiImpl implements PulseApi {
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
         }
-        final PulseEntity pulseEntity = pulseExtractor.getPulseEntity();
-        synchronized (pulseEntity.getLock()) {
+        synchronized (pulseExtractor.getLock()) {
+            final PulseEntity pulseEntity = pulseExtractor.getPulseEntity();
             final PulseAgentAssets assets = PulseAgentAssets.fromPersistence(pulseEntity.getPulseAssetsEntity());
             final ManagedAssetList managedAssetList = PulseAgentAssetsConverter.INSTANCE.toRestEntity(assets);
             return Response.ok(managedAssetList).build();
@@ -422,8 +418,8 @@ public class PulseApiImpl implements PulseApi {
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
         }
-        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
-        synchronized (existingPulseEntity.getLock()) {
+        synchronized (pulseExtractor.getLock()) {
+            final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
             final @NotNull Optional<DataCombiner> optionalDataCombiner =
                     assetMappingExtractor.getCombinerById(combiner.getId());
             if (optionalDataCombiner.isEmpty()) {
@@ -488,8 +484,8 @@ public class PulseApiImpl implements PulseApi {
         if (optionalResponse.isPresent()) {
             return optionalResponse.get();
         }
-        final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
-        synchronized (existingPulseEntity.getLock()) {
+        synchronized (pulseExtractor.getLock()) {
+            final PulseEntity existingPulseEntity = pulseExtractor.getPulseEntity();
             final PulseAgentAssets assets =
                     PulseAgentAssets.fromPersistence(existingPulseEntity.getPulseAssetsEntity());
             final OptionalInt optionalAssetIndex = IntStream.range(0, assets.size())

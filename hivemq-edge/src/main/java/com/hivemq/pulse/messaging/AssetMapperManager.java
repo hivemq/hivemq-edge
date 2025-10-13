@@ -105,8 +105,8 @@ public final class AssetMapperManager {
 
     public void refresh(final @NotNull List<DataCombiner> assetMappers) {
         LOGGER.info("Refreshing Pulse Asset Mappers");
-        final PulseEntity pulseEntity = pulseExtractor.getPulseEntity();
-        synchronized (pulseEntity.getLock()) {
+        synchronized (pulseExtractor.getLock()) {
+            final PulseEntity pulseEntity = pulseExtractor.getPulseEntity();
             final Set<UUID> oldAssetMapperIdSet = idToAssetMapperTaskMap.keySet();
             // Let's filter out non-streaming asset mappers.
             final Map<String, PulseAssetEntity> assetEntityMap = PulseAgentAssetUtils.toAssetEntityMap(pulseEntity);
@@ -202,7 +202,7 @@ public final class AssetMapperManager {
     }
 
     public @NotNull CompletableFuture<Void> stopAll() {
-        synchronized (pulseExtractor.getPulseEntity().getLock()) {
+        synchronized (pulseExtractor.getLock()) {
             return CompletableFuture.runAsync(() -> {
                 idToAssetMapperTaskMap.values()
                         .stream()
@@ -245,7 +245,7 @@ public final class AssetMapperManager {
 
     private @NotNull CompletableFuture<Void> stop(
             final @NotNull AssetMapperManager.AssetMapperTask assetMapperTask) {
-        synchronized (pulseExtractor.getPulseEntity().getLock()) {
+        synchronized (pulseExtractor.getLock()) {
             // stopping is fast no reason for async
             assetMapperTask.dataCombiningRuntimes().forEach(DataCombiningRuntime::stop);
         }

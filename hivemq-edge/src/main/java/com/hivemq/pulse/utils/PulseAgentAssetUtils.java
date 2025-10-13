@@ -60,8 +60,8 @@ public class PulseAgentAssetUtils {
             final @NotNull AssetMappingExtractor assetMappingExtractor,
             final @NotNull PulseExtractor pulseExtractor,
             final @NotNull List<Asset> remoteAssets) {
-        final PulseEntity oldPulseEntity = pulseExtractor.getPulseEntity();
-        synchronized (oldPulseEntity.getLock()) {
+        synchronized (pulseExtractor.getLock()) {
+            final PulseEntity oldPulseEntity = pulseExtractor.getPulseEntity();
             final List<PulseAssetEntity> localAssets = oldPulseEntity.getPulseAssetsEntity().getPulseAssetEntities();
             final List<PulseAssetEntity> newLocalAssets = new ArrayList<>();
             final Map<String, Asset> remoteAssetMap = remoteAssets.stream()
