@@ -1030,6 +1030,17 @@
       "metadata": {
         "sample": "Load samples"
       }
+    },
+    "searchToolbox": {
+      "search": {
+        "label": "Search for",
+        "placeholder": "Search for ...",
+        "helper": "Search for an adapter, bridge or device",
+        "clear": "Clear the search",
+        "previous": "Previous entity",
+        "next": "Next entity",
+        "matches": "{{ index }} of {{ count }}"
+      }
     }
   },
   "modals": {
