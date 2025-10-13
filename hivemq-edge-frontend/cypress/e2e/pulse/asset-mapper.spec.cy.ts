@@ -94,7 +94,7 @@ describe('Pulse Assets', () => {
       assetsPage.toast.error.should('be.visible')
     })
 
-    it.only('should add an asset to an existing mapper', () => {
+    it('should add an asset to an existing mapper', () => {
       assetsPage.navLink.click()
       assetsPage.location.should('equal', '/app/pulse-assets')
 
