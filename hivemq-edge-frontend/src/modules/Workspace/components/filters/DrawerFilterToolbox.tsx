@@ -45,7 +45,12 @@ import type {
 import { KEY_FILTER_CURRENT } from '@/modules/Workspace/components/filters/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 
-const DrawerFilterToolbox: FC = () => {
+interface DrawerFilterToolboxProps {
+  onClearFilters?: () => void
+  onApplyFilters?: (currentState: FilterConfig) => void
+}
+
+const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onApplyFilters }) => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
   // const [currentState, setCurrentState] = useState<Filter>({})
@@ -74,6 +79,7 @@ const DrawerFilterToolbox: FC = () => {
     onNodesChange(changeContent)
     fitView({ padding: 0.25, duration: 750 })
     setCurrentState({})
+    onClearFilters?.()
   }
 
   const handleFilter = (state: Filter) => {
@@ -89,6 +95,7 @@ const DrawerFilterToolbox: FC = () => {
     })
     onNodesChange(changeContent)
     fitView({ padding: 0.25, duration: 750 })
+    onApplyFilters?.(state)
   }
 
   const handleChange = (id: keyof Filter) => {
@@ -148,7 +155,7 @@ const DrawerFilterToolbox: FC = () => {
             <OptionsFilter value={currentState.options} />
           </DrawerBody>
           <DrawerFooter mt={4}>
-            <ApplyFilter onClear={handleClearFilters} />
+            <ApplyFilter onClear={handleClearFilters} onSubmit={() => handleFilter(currentState)} />
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
