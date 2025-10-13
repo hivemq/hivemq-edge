@@ -145,7 +145,7 @@ const DrawerFilterToolbox: FC = () => {
                 <criteria.editor onChange={handleChange(criteria.id)} value={currentState[criteria.id]?.filter} />
               </WrapperCriteria>
             ))}
-            <OptionsFilter />
+            <OptionsFilter value={currentState.options} />
           </DrawerBody>
           <DrawerFooter mt={4}>
             <ApplyFilter onClear={handleClearFilters} />

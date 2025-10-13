@@ -1,3 +1,4 @@
+import type { FilterOperationOption } from '@/modules/Workspace/components/filters/types.ts'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -18,16 +19,15 @@ const FILTER_JOIN_OPTIONS = ['OR' /* 'AND' */] as const
 type FilterJoinOptions = (typeof FILTER_JOIN_OPTIONS)[number]
 
 interface FilterDynamicProps {
-  onChangeDynamic?: (value: boolean) => void
-  onChangeJoin?: (value: FilterJoinOptions) => void
+  value?: FilterOperationOption
+  onChange?: (
+    prop: keyof FilterOperationOption,
+    value: FilterOperationOption['joinOperator'] | FilterOperationOption['isLiveUpdate']
+  ) => void
 }
 
-const OptionsFilter: FC<FilterDynamicProps> = ({ onChangeDynamic, onChangeJoin }) => {
+const OptionsFilter: FC<FilterDynamicProps> = ({ value, onChange }) => {
   const { t } = useTranslation()
-
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    onChangeDynamic?.(event.target.checked)
-  }
 
   return (
     <Card
@@ -43,8 +43,8 @@ const OptionsFilter: FC<FilterDynamicProps> = ({ onChangeDynamic, onChangeJoin }
           </FormLabel>
           <VStack alignItems="flex-start">
             <RadioGroup
-              onChange={(value: FilterJoinOptions) => onChangeJoin?.(value)}
-              defaultValue={FILTER_JOIN_OPTIONS[0]}
+              onChange={(value: FilterJoinOptions) => onChange?.('joinOperator', value)}
+              defaultValue={value?.joinOperator || 'OR'}
               id="workspace-filter-join"
             >
               <Stack direction="row">
@@ -63,7 +63,11 @@ const OptionsFilter: FC<FilterDynamicProps> = ({ onChangeDynamic, onChangeJoin }
             {t('workspace.searchToolbox.liveUpdate.label')}
           </FormLabel>
           <VStack alignItems="flex-start">
-            <Switch id="workspace-filter-dynamic-update" onChange={handleChange} />
+            <Switch
+              id="workspace-filter-dynamic-update"
+              onChange={(e) => onChange?.('isLiveUpdate', e.target.checked)}
+              checked={value?.isLiveUpdate || false}
+            />
             <FormHelperText>{t('workspace.searchToolbox.liveUpdate.helper')}</FormHelperText>
           </VStack>
         </FormControl>
