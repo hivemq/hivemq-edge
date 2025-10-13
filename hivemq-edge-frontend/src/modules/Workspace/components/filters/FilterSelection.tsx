@@ -13,10 +13,10 @@ import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 interface FilterEntitiesProps {
   onChange?: (values: MultiValue<FilterSelectionOption>) => void
-  selection: MultiValue<FilterSelectionOption>
+  value?: MultiValue<FilterSelectionOption>
 }
 
-const FilterSelection: FC<FilterEntitiesProps> = ({ selection, onChange }) => {
+const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange }) => {
   const { t } = useTranslation()
   // const [selection, setSelection] = useState<string[]>([])
   const { nodes } = useWorkspaceStore()
@@ -42,9 +42,8 @@ const FilterSelection: FC<FilterEntitiesProps> = ({ selection, onChange }) => {
       </FormLabel>
       <HStack justifyContent="space-between">
         <Text id="workspace-filter-selection">
-          {Boolean(selection.length) &&
-            t('workspace.searchToolbox.bySelection.nodeFiltered', { count: selection.length })}
-          {!selection.length && t('workspace.searchToolbox.bySelection.nodeSelected', { count: selectedNodes.length })}
+          {Boolean(value?.length) && t('workspace.searchToolbox.bySelection.nodeFiltered', { count: value?.length })}
+          {!value?.length && t('workspace.searchToolbox.bySelection.nodeSelected', { count: selectedNodes.length })}
         </Text>
         <ButtonGroup isAttached size="sm">
           <IconButton
@@ -58,7 +57,7 @@ const FilterSelection: FC<FilterEntitiesProps> = ({ selection, onChange }) => {
             icon={<MdClear />}
             aria-label={t('workspace.searchToolbox.bySelection.clear')}
             onClick={handleClearSelect}
-            isDisabled={!selection.length}
+            isDisabled={!value?.length}
           />
         </ButtonGroup>
       </HStack>

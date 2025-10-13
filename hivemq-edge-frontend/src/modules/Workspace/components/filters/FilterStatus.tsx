@@ -9,9 +9,10 @@ import { filterContainerStyle } from '@/modules/Workspace/components/filters/fil
 
 interface FilterStatusProps {
   onChange?: (values: MultiValue<FilterStatusOption>) => void
+  value?: MultiValue<FilterStatusOption>
 }
 
-const FilterStatus: FC<FilterStatusProps> = ({ onChange }) => {
+const FilterStatus: FC<FilterStatusProps> = ({ onChange, value }) => {
   const { t } = useTranslation()
 
   const options: FilterStatusOption[] = [
@@ -38,15 +39,18 @@ const FilterStatus: FC<FilterStatusProps> = ({ onChange }) => {
   }
 
   return (
-    <FormControl variant="horizontal">
-      <FormLabel fontSize="sm" htmlFor="workspace-filter-status">
+    <FormControl variant="horizontal" id="workspace-filter-status">
+      <FormLabel fontSize="sm" htmlFor="workspace-filter-status-input">
         {t('workspace.searchToolbox.byStatus.label')}
       </FormLabel>
       <Select<FilterStatusOption, true>
         isClearable
         isMulti
-        inputId="workspace-filter-status"
+        id="workspace-filter-status-trigger"
+        inputId="workspace-filter-status-input"
+        instanceId="status"
         options={options}
+        value={value}
         getOptionValue={(option) => option.status}
         onChange={handleChange}
         placeholder={t('workspace.searchToolbox.byStatus.placeholder')}

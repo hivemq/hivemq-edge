@@ -11,11 +11,11 @@ import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 interface FilterEntitiesProps {
-  id?: string
   onChange?: (values: MultiValue<FilterEntitiesOption>) => void
+  value?: MultiValue<FilterEntitiesOption>
 }
 
-const FilterEntities: FC<FilterEntitiesProps> = ({ onChange }) => {
+const FilterEntities: FC<FilterEntitiesProps> = ({ onChange, value }) => {
   const { t } = useTranslation()
   const { nodes } = useWorkspaceStore()
 
@@ -39,15 +39,18 @@ const FilterEntities: FC<FilterEntitiesProps> = ({ onChange }) => {
   }
 
   return (
-    <FormControl variant="horizontal">
-      <FormLabel fontSize="sm" htmlFor="workspace-filter-entities">
+    <FormControl variant="horizontal" id="workspace-filter-entities">
+      <FormLabel fontSize="sm" htmlFor="workspace-filter-entities-input">
         {t('workspace.searchToolbox.byEntity.label')}
       </FormLabel>
       <Select<FilterEntitiesOption, true>
         isClearable
         isMulti
-        inputId="workspace-filter-entities"
+        id="workspace-filter-entities-trigger"
+        inputId="workspace-filter-entities-input"
+        instanceId="entities"
         options={options}
+        value={value}
         getOptionValue={(option) => option.value}
         onChange={handleChange}
         placeholder={t('workspace.searchToolbox.byEntity.placeholder')}

@@ -13,6 +13,7 @@ import type { FilterTopicsOption } from '@/modules/Workspace/components/filters/
 
 interface FilterTopicsProps {
   onChange?: (values: MultiValue<FilterTopicsOption>) => void
+  value?: MultiValue<FilterTopicsOption>
 }
 
 const Option = (props: OptionProps<FilterTopicsOption>) => {
@@ -26,7 +27,7 @@ const Option = (props: OptionProps<FilterTopicsOption>) => {
   )
 }
 
-const FilterTopics: FC<FilterTopicsProps> = ({ onChange }) => {
+const FilterTopics: FC<FilterTopicsProps> = ({ onChange, value }) => {
   const { t } = useTranslation()
 
   const { tags, northMappings, isLoading, isError } = useGetDomainOntology()
@@ -49,22 +50,24 @@ const FilterTopics: FC<FilterTopicsProps> = ({ onChange }) => {
   }, [northMappings.data?.items, tags.data?.items])
 
   const handleChange = (values: MultiValue<FilterTopicsOption>) => {
-    console.log('XXXXXXX', values)
     onChange?.(values)
   }
 
   return (
-    <FormControl variant="horizontal">
-      <FormLabel fontSize="sm" htmlFor="workspace-filter-topics">
+    <FormControl variant="horizontal" id="workspace-filter-topics">
+      <FormLabel fontSize="sm" htmlFor="workspace-filter-topics-input">
         {t('workspace.searchToolbox.byTopics.label')}
       </FormLabel>
       <Select<FilterTopicsOption, true>
         isClearable
         isMulti
+        id="workspace-filter-topics-trigger"
+        inputId="workspace-filter-topics-input"
+        instanceId="topics"
         isLoading={isLoading}
         isInvalid={isError}
-        inputId="workspace-filter-topics"
         options={options}
+        value={value}
         getOptionValue={(option) => option.value}
         onChange={handleChange}
         placeholder={t('workspace.searchToolbox.byTopics.placeholder')}
