@@ -24,16 +24,11 @@ const horizontal = definePartsStyle({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    // marginY: 3,
-    // ':last-child': {
-    //   // marginBottom: 0,
-    // },
     gap: 3,
     '> label': {
       flex: 1,
       marginBottom: 0,
       marginInlineEnd: 0,
-      // minWidth: 100,
     },
     '> label + *': {
       flex: 2,
