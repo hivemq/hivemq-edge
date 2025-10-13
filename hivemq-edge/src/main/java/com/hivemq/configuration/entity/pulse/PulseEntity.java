@@ -32,8 +32,6 @@ import java.util.Objects;
 @XmlRootElement(name = "pulse")
 @XmlAccessorType(XmlAccessType.NONE)
 public class PulseEntity implements EntityValidatable {
-    private final Object lock = new Object();
-
     @JsonProperty(value = "managedAssets", required = true)
     @XmlElement(name = "managed-assets", required = true)
     private @NotNull PulseAssetsEntity pulseAssetsEntity;
@@ -44,10 +42,6 @@ public class PulseEntity implements EntityValidatable {
 
     public PulseEntity(final @NotNull PulseAssetsEntity pulseAssetsEntity) {
         this.pulseAssetsEntity = pulseAssetsEntity;
-    }
-
-    public @NotNull Object getLock() {
-        return lock;
     }
 
     @Override

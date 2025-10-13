@@ -134,7 +134,7 @@ public abstract class AbstractPulseApiImplTest {
     public void setUp() {
         when(systemInformation.isConfigWriteable()).thenReturn(true);
         when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
-        when(pulseEntity.getLock()).thenReturn(new Object());
+        when(pulseExtractor.getLock()).thenReturn(new Object());
         when(pulseEntity.getPulseAssetsEntity()).thenReturn(pulseAssetsEntity);
         when(assetProviderRegistry.getAssetProviders()).thenReturn(Set.of(assetProvider));
         when(statusProviderRegistry.getStatusProviders()).thenReturn(Set.of(statusProvider));

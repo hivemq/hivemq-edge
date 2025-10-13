@@ -65,6 +65,7 @@ public class PulseAgentAssetUtilsTest {
 
     @BeforeEach
     public void setUp() {
+        when(pulseExtractor.getLock()).thenReturn(new Object());
         pulseEntityArgumentCaptor = ArgumentCaptor.forClass(PulseEntity.class);
         localAssets = IntStream.range(0, STATUSES.size()).mapToObj(this::createLocalAsset).toList();
         remoteAssets = IntStream.range(0, STATUSES.size()).mapToObj(this::createRemoteAsset).toList();

@@ -133,6 +133,7 @@ public class AssetMapperManagerTest {
                 assetMappingExtractor,
                 pulseExtractor);
         pulseEntity = new PulseEntity();
+        when(pulseExtractor.getLock()).thenReturn(new Object());
         when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
     }
 
