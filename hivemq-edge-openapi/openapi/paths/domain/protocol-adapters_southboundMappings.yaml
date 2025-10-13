@@ -8,6 +8,7 @@ get:
           schema:
             $ref: ../components/schemas/SouthboundMappingList.yaml
       description: Success
-  summary: Get all  southbound mappings.
+  summary: Get all the southbound mappings.
   tags:
     - Protocol Adapters
+    - Domain

@@ -4,6 +4,7 @@ get:
   operationId: get-managed-assets
   tags:
     - Pulse
+    - Domain
   responses:
     '200':
       content:
