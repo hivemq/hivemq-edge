@@ -266,7 +266,7 @@ export const loadDataPolicyPipelines = (
 ) => {
   const newNodes: (NodeAddChange | Connection)[] = []
 
-  if (policy.onSuccess && policy.onSuccess.pipeline) {
+  if (policy.onSuccess?.pipeline) {
     const res = loadPipeline(
       dataPolicyNode,
       policy.onSuccess.pipeline,
@@ -276,7 +276,7 @@ export const loadDataPolicyPipelines = (
     )
     newNodes.push(...res)
   }
-  if (policy.onFailure && policy.onFailure.pipeline) {
+  if (policy.onFailure?.pipeline) {
     const res = loadPipeline(
       dataPolicyNode,
       policy.onFailure.pipeline,

@@ -42,7 +42,7 @@ export const useGetChordMatrixData = () => {
     const keys = Array.from(
       new Set([...Object.keys(datum), ...bridgeSubscriptions.topics, ...bridgeSubscriptions.topicFilters])
     )
-    const matrix = Array.from(Array(keys.length), () => Array.from(Array(keys.length), () => 0))
+    const matrix = Array.from(new Array(keys.length), () => Array.from(new Array(keys.length), () => 0))
 
     if (!keys.length) {
       return {

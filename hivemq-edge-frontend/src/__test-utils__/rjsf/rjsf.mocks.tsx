@@ -12,7 +12,7 @@ import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate
 
 interface RjsfMocksProps {
   schema: RJSFSchema
-  uiSchema?: UiSchema | undefined
+  uiSchema?: UiSchema
   onSubmit?: (data: IChangeEvent, event: FormEvent) => void
   onError?: (errors: RJSFValidationError[]) => void
   formData?: unknown
