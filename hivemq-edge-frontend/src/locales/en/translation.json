@@ -1079,8 +1079,12 @@
       "bySelection": {
         "criteria": "By selection",
         "label": "Selection",
-        "nodeSelected": "{{ count }} entity selected",
-        "nodeFiltered": "{{ count }} entity filtered",
+        "nodeSelected_zero": "no entity selected",
+        "nodeSelected_one": "1 entity selected",
+        "nodeSelected_other": "{{ count }} entities selected",
+        "nodeFiltered_zero": "no entity filtered",
+        "nodeFiltered_one": "1 entity filtered",
+        "nodeFiltered_other": "{{ count }} entities filtered",
         "select": "Add selection",
         "clear": "Clear selection"
       },
