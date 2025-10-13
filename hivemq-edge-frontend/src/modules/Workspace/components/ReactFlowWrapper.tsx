@@ -18,7 +18,6 @@ import CanvasControls from '@/modules/Workspace/components/controls/CanvasContro
 import SelectionListener from '@/modules/Workspace/components/controls/SelectionListener.tsx'
 import CanvasToolbar from '@/modules/Workspace/components/controls/CanvasToolbar.tsx'
 import MonitoringEdge from '@/modules/Workspace/components/edges/MonitoringEdge.tsx'
-import CanvasToolbar from '@/modules/Workspace/components/controls/CanvasToolbar.tsx'
 import {
   NodeAdapter,
   NodeBridge,
@@ -120,7 +119,6 @@ const ReactFlowWrapper = () => {
         <CanvasToolbar />
         <SelectionListener />
         <StatusListener />
-        <Background />
         <CanvasControls />
         <MiniMap
           zoomable
@@ -142,6 +140,7 @@ const ReactFlowWrapper = () => {
           }}
         />
       </Box>
+      <Background />
       <SuspenseOutlet />
     </ReactFlow>
   )
