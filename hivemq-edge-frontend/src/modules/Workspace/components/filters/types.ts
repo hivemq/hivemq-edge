@@ -42,6 +42,7 @@ export interface FilterOperationOption {
   joinOperator: 'OR' | 'AND'
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ActiveFilter<T extends PropsValue<any>> {
   isActive: boolean
   filter?: T
