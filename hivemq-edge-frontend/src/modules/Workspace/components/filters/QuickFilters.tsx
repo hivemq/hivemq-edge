@@ -1,6 +1,3 @@
-import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
-import ConfigurationSelector from '@/modules/Workspace/components/filters/ConfigurationSelector.tsx'
-import { ChevronDownIcon } from '@chakra-ui/icons'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -11,8 +8,11 @@ import {
   CardFooter,
   CardHeader,
   FormControl,
+  Heading,
   HStack,
   IconButton,
+  List,
+  ListItem,
   Menu,
   MenuButton,
   MenuItem,
@@ -22,8 +22,11 @@ import {
   useDisclosure,
   VStack,
 } from '@chakra-ui/react'
+import { ChevronDownIcon } from '@chakra-ui/icons'
 
-import type { FilterConfigurationOption } from '@/modules/Workspace/components/filters/types.ts'
+import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
+import type { FilterConfig, FilterConfigurationOption } from '@/modules/Workspace/components/filters/types.ts'
+import { KEY_FILTER_CURRENT } from '@/modules/Workspace/components/filters/types.ts'
 import { KEY_FILTER_CONFIGURATIONS } from '@/modules/Workspace/components/filters/types.ts'
 import { ConfigurationSave } from '@/modules/Workspace/components/filters/index.ts'
 
@@ -66,39 +69,45 @@ const QuickFilters: FC<QuickFilterProps> = () => {
       >
         <CardHeader>
           <HStack alignItems="flex-start">
-            <Text>{t('workspace.searchToolbox.quickFilters.label')}</Text>
+            <Heading as="h2" size="sm">
+              {t('workspace.searchToolbox.quickFilters.label')}
+            </Heading>
           </HStack>
         </CardHeader>
         <CardBody as={VStack} gap={3}>
-          {configurations.map((config) => (
-            <FormControl key={config.label} as={HStack}>
-              <Switch
-                flex={1}
-                id={`workspace-filter-quick-${config.label}`}
-                // onChange={(e) => onChange?.(e.target.checked)}
-                // isChecked={isActive}
-              >
-                {config.label}
-              </Switch>
-              <Menu id="asset-actions">
-                <MenuButton
-                  variant="outline"
-                  size="xs"
-                  as={IconButton}
-                  icon={<ChevronDownIcon />}
-                  aria-label={t('pulse.assets.actions.aria-label')}
-                />
-                <MenuList>
-                  <MenuItem data-testid="assets-action-view">
-                    {t('workspace.searchToolbox.quickFilters.action.edit')}
-                  </MenuItem>
-                  <MenuItem data-testid="assets-action-view" onClick={() => handleOpenConfirmation(config.label)}>
-                    {t('workspace.searchToolbox.quickFilters.action.delete')}
-                  </MenuItem>
-                </MenuList>
-              </Menu>
-            </FormControl>
-          ))}
+          <List w="-webkit-fill-available">
+            {configurations.map((config) => (
+              <ListItem key={config.label} my={1}>
+                <FormControl as={HStack}>
+                  <Switch
+                    flex={1}
+                    id={`workspace-filter-quick-${config.label}`}
+                    onChange={(e) => handleQuickFilterActivate(config, e.target.checked)}
+                    isChecked={config.isActive}
+                  >
+                    {config.label}
+                  </Switch>
+                  <Menu id="asset-actions">
+                    <MenuButton
+                      variant="outline"
+                      size="xs"
+                      as={IconButton}
+                      icon={<ChevronDownIcon />}
+                      aria-label={t('pulse.assets.actions.aria-label')}
+                    />
+                    <MenuList>
+                      <MenuItem data-testid="assets-action-view">
+                        {t('workspace.searchToolbox.quickFilters.action.edit')}
+                      </MenuItem>
+                      <MenuItem data-testid="assets-action-view" onClick={() => handleOpenConfirmation(config.label)}>
+                        {t('workspace.searchToolbox.quickFilters.action.delete')}
+                      </MenuItem>
+                    </MenuList>
+                  </Menu>
+                </FormControl>
+              </ListItem>
+            ))}
+          </List>
         </CardBody>
         <CardFooter>
           <ConfigurationSave isFilterActive={isFilterActive} configurations={configurations} />
