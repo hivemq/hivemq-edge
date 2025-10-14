@@ -1046,10 +1046,13 @@
         "aria-label": "Filter Workspace"
       },
       "configuration": {
-        "label": "Save/Load filter",
-        "placeholder": "Select or create a configuration",
-        "createLabel": "Save configuration as '{{ name }}'",
-        "delete": "Delete configuration"
+        "label": "Save filter",
+        "placeholder": "Type a name",
+        "helper": "Save the current configuration as a new quick filter",
+        "save": "Save",
+        "error": {
+          "noDuplicateName": "The name is already in use"
+        }
       },
       "action": {
         "apply": "Apply filters",
