@@ -115,7 +115,7 @@ const ReactFlowWrapper = () => {
       role="region"
       aria-label={t('workspace.canvas.aria-label')}
     >
-      <Box role="toolbar" aria-label={t('workspace.controls.aria-label')} aria-controls="edge-workspace-canvas">
+      <Box role="group" aria-label={t('workspace.canvas.toolbar.container')} aria-controls="edge-workspace-canvas">
         <CanvasToolbar />
         <SelectionListener />
         <StatusListener />
