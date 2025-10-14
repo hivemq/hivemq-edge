@@ -1,6 +1,6 @@
-import ConfigurationSave from '@/modules/Workspace/components/filters/ConfigurationSave.tsx'
+import { ConfigurationSave } from '@/modules/Workspace/components/filters/index.ts'
 
-describe('ConfigurationSelector', () => {
+describe('ConfigurationSave', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
   })
@@ -31,8 +31,8 @@ describe('ConfigurationSelector', () => {
         isFilterActive={true}
         onSave={onSave}
         configurations={[
-          { label: 'test1', config: {} },
-          { label: 'test2', config: {} },
+          { label: 'test1', filter: {} },
+          { label: 'test2', filter: {} },
         ]}
       />
     )
@@ -76,7 +76,7 @@ describe('ConfigurationSelector', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(
-      <ConfigurationSave isFilterActive={true} configurations={[{ label: 'my first quick filter', config: {} }]} />
+      <ConfigurationSave isFilterActive={true} configurations={[{ label: 'my first quick filter', filter: {} }]} />
     )
 
     cy.checkAccessibility()

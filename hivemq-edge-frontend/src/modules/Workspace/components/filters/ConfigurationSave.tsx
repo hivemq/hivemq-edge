@@ -7,13 +7,13 @@ import { FaSave } from 'react-icons/fa'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import type { FilterConfigurationOption } from '@/modules/Workspace/components/filters/types.ts'
 
-interface ConfigurationSelectorProps {
+interface ConfigurationSaveProps {
   isFilterActive: boolean
   onSave?: (name: string) => void
   configurations: FilterConfigurationOption[]
 }
 
-const ConfigurationSave: FC<ConfigurationSelectorProps> = ({ isFilterActive, onSave, configurations }) => {
+const ConfigurationSave: FC<ConfigurationSaveProps> = ({ isFilterActive, onSave, configurations }) => {
   const { t } = useTranslation()
   // const [configurations] = useLocalStorage<FilterConfigurationOption[]>(KEY_FILTER_CONFIGURATIONS, [])
   const [filterName, setFilerName] = useState<string>('')

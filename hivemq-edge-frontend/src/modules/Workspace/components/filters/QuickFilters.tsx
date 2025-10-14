@@ -25,6 +25,7 @@ import {
 
 import type { FilterConfigurationOption } from '@/modules/Workspace/components/filters/types.ts'
 import { KEY_FILTER_CONFIGURATIONS } from '@/modules/Workspace/components/filters/types.ts'
+import { ConfigurationSave } from '@/modules/Workspace/components/filters/index.ts'
 
 interface QuickFilterProps {
   id?: string
@@ -100,7 +101,7 @@ const QuickFilters: FC<QuickFilterProps> = () => {
           ))}
         </CardBody>
         <CardFooter>
-          <ConfigurationSelector />
+          <ConfigurationSave isFilterActive={isFilterActive} configurations={configurations} />
         </CardFooter>
       </Card>
       <ConfirmationDialog

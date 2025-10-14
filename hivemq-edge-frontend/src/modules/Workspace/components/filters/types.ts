@@ -8,7 +8,7 @@ export const KEY_FILTER_CURRENT = 'edge.workspace.filter'
 
 export interface FilterConfigurationOption {
   label: string
-  config: string
+  filter: Filter
 }
 
 export interface FilterSelectionOption {
