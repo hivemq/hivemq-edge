@@ -134,7 +134,7 @@ describe('FilterSelection', () => {
       },
       {
         id: 'idCombiner',
-        type: 'ADAPTER_NODE',
+        type: 'COMBINER_NODE',
       },
     ])
   })
