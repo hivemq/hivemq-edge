@@ -36,7 +36,7 @@ interface QuickFilterProps {
   isFilterActive: boolean
 }
 
-const QuickFilters: FC<QuickFilterProps> = ({ onNewQuickFilter, isFilterActive }) => {
+const QuickFilters: FC<QuickFilterProps> = ({ onNewQuickFilter, onChange, isFilterActive }) => {
   const { t } = useTranslation()
   const [configurations, setConfigurations] = useLocalStorage<FilterConfigurationOption[]>(
     KEY_FILTER_CONFIGURATIONS,
@@ -76,13 +76,15 @@ const QuickFilters: FC<QuickFilterProps> = ({ onNewQuickFilter, isFilterActive }
   }
 
   const handleQuickFilterActivate = (config: FilterConfigurationOption, activate: boolean) => {
+    const newState: FilterConfigurationOption = { ...config, isActive: activate }
     setConfigurations((old) => {
       const state = old.findIndex((e) => e.label === config.label)
       if (state !== -1) {
-        old[state].isActive = activate
+        old[state] = newState
       }
       return old
     })
+    onChange?.(newState)
   }
 
   return (
@@ -104,28 +106,32 @@ const QuickFilters: FC<QuickFilterProps> = ({ onNewQuickFilter, isFilterActive }
           <List w="-webkit-fill-available">
             {configurations.map((config) => (
               <ListItem key={config.label} my={1}>
-                <FormControl as={HStack}>
+                <FormControl as={HStack} id="workspace-filter-quick">
                   <Switch
                     flex={1}
-                    id={`workspace-filter-quick-${config.label}`}
+                    data-testid="workspace-filter-quick-label"
+                    // id={`workspace-filter-quick-${config.label}`}
                     onChange={(e) => handleQuickFilterActivate(config, e.target.checked)}
                     isChecked={config.isActive}
                   >
                     {config.label}
                   </Switch>
-                  <Menu id="asset-actions">
+                  <Menu id="filter-quick">
                     <MenuButton
                       variant="outline"
                       size="xs"
                       as={IconButton}
                       icon={<ChevronDownIcon />}
-                      aria-label={t('pulse.assets.actions.aria-label')}
+                      aria-label={t('workspace.searchToolbox.quickFilters.action.aria-label')}
                     />
                     <MenuList>
-                      <MenuItem data-testid="assets-action-view">
+                      <MenuItem data-testid="workspace-filter-quick-view">
                         {t('workspace.searchToolbox.quickFilters.action.edit')}
                       </MenuItem>
-                      <MenuItem data-testid="assets-action-view" onClick={() => handleOpenConfirmation(config.label)}>
+                      <MenuItem
+                        data-testid="workspace-filter-quick-delete"
+                        onClick={() => handleOpenConfirmation(config.label)}
+                      >
                         {t('workspace.searchToolbox.quickFilters.action.delete')}
                       </MenuItem>
                     </MenuList>
