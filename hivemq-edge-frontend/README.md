@@ -1,6 +1,5 @@
 # hivemq-edge frontend
 
-
 HiveMQ Edge Edition
 
 ## Libraries
