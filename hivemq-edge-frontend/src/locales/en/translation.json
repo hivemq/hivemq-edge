@@ -847,10 +847,16 @@
   },
   "workspace": {
     "canvas": {
-      "aria-label": "Edge Workspace"
+      "aria-label": "Edge Workspace",
+      "toolbar": {
+        "container": "Workspace toolbars",
+        "search-filter": "Search & Filter toolbar",
+        "controls": "Canvas toolbar",
+        "minimap": "Mini Map toolbar"
+      }
     },
     "controls": {
-      "aria-label": "Workspace toolbar",
+      "aria-label": "Workspace toolbars",
       "zoomIn": "Zoom in",
       "zoomIOut": "Zoom out",
       "fitView": "Fit to the canvas",
