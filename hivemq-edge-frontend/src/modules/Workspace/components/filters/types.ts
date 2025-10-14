@@ -9,6 +9,7 @@ export const KEY_FILTER_CURRENT = 'edge.workspace.filter'
 export interface FilterConfigurationOption {
   label: string
   filter: Filter
+  isActive: boolean
 }
 
 export interface FilterSelectionOption {
