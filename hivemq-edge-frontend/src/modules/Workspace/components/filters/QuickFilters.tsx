@@ -2,6 +2,7 @@ import type { FC } from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '@uidotdev/usehooks'
+import type { SingleValue } from 'chakra-react-select'
 import {
   Card,
   CardBody,
@@ -18,7 +19,6 @@ import {
   MenuItem,
   MenuList,
   Switch,
-  Text,
   useDisclosure,
   VStack,
 } from '@chakra-ui/react'
@@ -31,15 +31,21 @@ import { KEY_FILTER_CONFIGURATIONS } from '@/modules/Workspace/components/filter
 import { ConfigurationSave } from '@/modules/Workspace/components/filters/index.ts'
 
 interface QuickFilterProps {
-  id?: string
+  onChange?: (values: SingleValue<FilterConfigurationOption>) => void
+  onNewQuickFilter?: (name: string) => void
+  isFilterActive: boolean
 }
 
-const QuickFilters: FC<QuickFilterProps> = () => {
+const QuickFilters: FC<QuickFilterProps> = ({ onNewQuickFilter, isFilterActive }) => {
   const { t } = useTranslation()
   const [configurations, setConfigurations] = useLocalStorage<FilterConfigurationOption[]>(
     KEY_FILTER_CONFIGURATIONS,
     []
   )
+  const [currentState] = useLocalStorage<FilterConfig>(KEY_FILTER_CURRENT, {
+    options: { isLiveUpdate: false, joinOperator: 'OR' },
+  })
+
   const [selectedFilter, setSelectedFilter] = useState<string>()
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
 
@@ -57,6 +63,26 @@ const QuickFilters: FC<QuickFilterProps> = () => {
   const handleCloseConfirmation = () => {
     onConfirmDeleteClose()
     setSelectedFilter(undefined)
+  }
+
+  const handleConfigSave = (name: string) => {
+    const newConfig: FilterConfigurationOption = {
+      label: name,
+      filter: currentState,
+      isActive: false,
+    }
+    setConfigurations((old) => [...old, newConfig])
+    onNewQuickFilter?.(name)
+  }
+
+  const handleQuickFilterActivate = (config: FilterConfigurationOption, activate: boolean) => {
+    setConfigurations((old) => {
+      const state = old.findIndex((e) => e.label === config.label)
+      if (state !== -1) {
+        old[state].isActive = activate
+      }
+      return old
+    })
   }
 
   return (
@@ -110,7 +136,11 @@ const QuickFilters: FC<QuickFilterProps> = () => {
           </List>
         </CardBody>
         <CardFooter>
-          <ConfigurationSave isFilterActive={isFilterActive} configurations={configurations} />
+          <ConfigurationSave
+            isFilterActive={isFilterActive}
+            configurations={configurations}
+            onSave={handleConfigSave}
+          />
         </CardFooter>
       </Card>
       <ConfirmationDialog
