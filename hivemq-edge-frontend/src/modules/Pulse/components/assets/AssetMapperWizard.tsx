@@ -2,7 +2,6 @@ import type { ComponentType, FC } from 'react'
 import { useMemo, useState } from 'react'
 import {
   FormControl,
-  FormLabel,
   FormHelperText,
   Modal,
   ModalOverlay,
@@ -37,6 +36,7 @@ import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { HqAssets } from '@/components/Icons'
 import MoreInfo from '@/components/MoreInfo.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import FormLabel from '@/components/Chakra/FormLabel.tsx'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import EntityReferencesWizard from '@/modules/Pulse/components/assets/EntityReferencesWizard.tsx'
@@ -123,7 +123,7 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
   if (!asset) return <ErrorMessage type={t('pulse.error.asset.notFound', { assetId })} />
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false}>
+    <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false} id="wizard-mapper">
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
@@ -134,12 +134,16 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
           <VStack spacing={4} alignItems="flex-start">
             <Text data-testid="wizard-mapper-instruction">{t('pulse.assets.operation.edit.overview')}</Text>
             <FormControl data-testid="wizard-mapper-selector-container">
-              <FormLabel htmlFor="asset-mapper">
+              <FormLabel
+                htmlFor="asset-mapper"
+                rightAddon={
+                  <MoreInfo
+                    description={t('pulse.assets.operation.edit.select.moreInfo.title')}
+                    link={t('pulse.assets.operation.edit.select.moreInfo.link')}
+                  />
+                }
+              >
                 {t('pulse.assets.operation.edit.select.title')}
-                <MoreInfo
-                  description={t('pulse.assets.operation.edit.select.moreInfo.title')}
-                  link={t('pulse.assets.operation.edit.select.moreInfo.link')}
-                />
               </FormLabel>
 
               <CreatableSelect<Combiner, false>
@@ -175,15 +179,12 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
                   })
                 }
               />
-              <FormHelperText>
+              <FormHelperText data-testid="wizard-mapper-selector-instruction">
                 {!selectedValue && t('pulse.assets.operation.edit.select.helper')}
-                {selectedValue && (
-                  <Text data-testid="wizard-mapper-selector-instruction">
-                    {t('pulse.assets.operation.edit.workspace', {
-                      context: selectedValue?.__isNew__ ? MAPPER_OPERATION.CREATE : MAPPER_OPERATION.EDIT,
-                    })}
-                  </Text>
-                )}
+                {selectedValue &&
+                  t('pulse.assets.operation.edit.workspace', {
+                    context: selectedValue?.__isNew__ ? MAPPER_OPERATION.CREATE : MAPPER_OPERATION.EDIT,
+                  })}
               </FormHelperText>
             </FormControl>
             {selectedValue && selectedValue.__isNew__ && (

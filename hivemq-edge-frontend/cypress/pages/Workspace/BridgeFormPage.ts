@@ -1,6 +1,6 @@
-import { RJSFomField } from '../RJSF/RJSFomField.ts'
+import { RJSFormField } from '../RJSF/RJSFormField.ts'
 
-export class BridgeFormPage extends RJSFomField {
+export class BridgeFormPage extends RJSFormField {
   get form() {
     return cy.get('[role="dialog"][aria-label="Bridge Overview"]')
   }

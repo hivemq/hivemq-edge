@@ -2,6 +2,7 @@ import { MOCK_SIMPLE_SCHEMA_URI } from '@/__test-utils__/rjsf/schema.mocks.ts'
 import type { Combiner, CombinerList, ManagedAsset, ManagedAssetList } from '@/api/__generated__'
 import { DataIdentifierReference, EntityType } from '@/api/__generated__'
 import { AssetMapping } from '@/api/__generated__'
+import { DEFAULT_ASSET_MAPPER_SOURCES } from '@/modules/Pulse/utils/assets.utils.ts'
 
 export const MOCK_PULSE_EXT_ASSET_UNMAPPED: ManagedAsset = {
   id: '3b028f58-1111-4de1-9b8b-c1a35b1643a4',
@@ -53,13 +54,12 @@ export const MOCK_PULSE_EXT_ASSET_REMAPPING: ManagedAsset = {
   },
 }
 
+export const MOCK_PULSE_EXT_UNMAPPED_ASSETS_LIST: ManagedAssetList = {
+  items: [MOCK_PULSE_EXT_ASSET_UNMAPPED, MOCK_PULSE_EXT_ASSET_UNMAPPED_2],
+}
+
 export const MOCK_PULSE_EXT_ASSETS_LIST: ManagedAssetList = {
-  items: [
-    MOCK_PULSE_EXT_ASSET_UNMAPPED,
-    MOCK_PULSE_EXT_ASSET_UNMAPPED_2,
-    MOCK_PULSE_EXT_ASSET_MAPPED,
-    MOCK_PULSE_EXT_ASSET_REMAPPING,
-  ],
+  items: [...MOCK_PULSE_EXT_UNMAPPED_ASSETS_LIST.items, MOCK_PULSE_EXT_ASSET_MAPPED, MOCK_PULSE_EXT_ASSET_REMAPPING],
 }
 
 export const MOCK_PULSE_EXT_ASSET_MAPPER: Combiner = {
@@ -72,10 +72,7 @@ export const MOCK_PULSE_EXT_ASSET_MAPPER: Combiner = {
         type: EntityType.ADAPTER,
         id: 'my-adapter',
       },
-      {
-        type: EntityType.PULSE_AGENT,
-        id: 'The Pulse Agent',
-      },
+      ...DEFAULT_ASSET_MAPPER_SOURCES,
     ],
   },
   mappings: {
@@ -122,10 +119,7 @@ export const MOCK_PULSE_EXT_ASSET_MAPPER_EMPTY: Combiner = {
         type: EntityType.ADAPTER,
         id: 'my-other-adapter',
       },
-      {
-        type: EntityType.PULSE_AGENT,
-        id: 'The Pulse Agent',
-      },
+      ...DEFAULT_ASSET_MAPPER_SOURCES,
     ],
   },
   mappings: {

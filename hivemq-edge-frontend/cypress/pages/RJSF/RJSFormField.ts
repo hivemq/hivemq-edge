@@ -1,5 +1,5 @@
 // MUST BE USED WITHIN a field element in a RJSF form
-export class RJSFomField {
+export class RJSFormField {
   get form() {
     return cy.get('[role="dialog"]')
   }
@@ -194,4 +194,4 @@ export class RJSFomField {
   }
 }
 
-export const rjsf = new RJSFomField()
+export const rjsf = new RJSFormField()

@@ -1,60 +1,19 @@
 import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
-import type { ProtocolAdapter } from '@/api/__generated__'
-import { MOCK_CAPABILITY_PERSISTENCE, MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
-import { drop, factory, primaryKey } from '@mswjs/data'
+import { drop } from '@mswjs/data'
 
-import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
 import { loginPage, homePage, pulseActivationPanel } from 'cypress/pages'
-import { ONBOARDING } from '../../utils/constants.utils.ts'
+import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
+import { cy_interceptPulseWithMockDB, getPulseFactory } from 'cypress/utils/intercept-pulse.utils.ts'
+import { ONBOARDING } from 'cypress/utils/constants.utils.ts'
 
 describe('Pulse Agent Activation', () => {
-  const mswDB = factory({
-    capabilities: {
-      id: primaryKey(String),
-      json: String,
-    },
-  })
+  const mswDB = getPulseFactory()
 
   beforeEach(() => {
     drop(mswDB)
 
     cy_interceptCoreE2E()
-
-    // Load the mock capabilities into the mock databases
-    mswDB.capabilities.create({
-      id: 'capabilities',
-      json: JSON.stringify({
-        items: [MOCK_CAPABILITY_PERSISTENCE],
-      }),
-    })
-
-    cy.intercept<ProtocolAdapter>('GET', '/api/v1/frontend/capabilities', (req) => {
-      const data = mswDB.capabilities.findFirst({
-        where: {
-          id: {
-            equals: 'capabilities',
-          },
-        },
-      })
-      req.reply(200, JSON.parse(data.json))
-    }).as('getCapabilities')
-
-    cy.intercept<ProtocolAdapter>('POST', '/api/v1/management/pulse/activation-token', (req) => {
-      mswDB.capabilities.update({
-        where: {
-          id: {
-            equals: 'capabilities',
-          },
-        },
-
-        data: {
-          json: JSON.stringify({
-            items: [MOCK_CAPABILITY_PERSISTENCE, MOCK_CAPABILITY_PULSE_ASSETS],
-          }),
-        },
-      })
-      req.reply(200)
-    })
+    cy_interceptPulseWithMockDB(mswDB)
 
     // There seems to be a bug in the CI without something in the path
     loginPage.visit('/app/workspace')

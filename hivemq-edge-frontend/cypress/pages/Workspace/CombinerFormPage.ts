@@ -1,6 +1,6 @@
-import { rjsf, RJSFomField } from '../RJSF/RJSFomField.ts'
+import { rjsf, RJSFormField } from '../RJSF/RJSFormField.ts'
 
-export class CombinerFormPage extends RJSFomField {
+export class CombinerFormPage extends RJSFormField {
   get form() {
     return cy.get('[role="dialog"][aria-label="Manage Data combining mappings"]')
   }

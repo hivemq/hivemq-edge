@@ -79,6 +79,18 @@ export class WorkspacePage extends ShellPage {
     return cy.get(`[role="group"][data-id="${id}"]`)
   }
 
+  combinerNodeContent(id: string) {
+    return {
+      get title() {
+        return cy.get(`[role="group"][data-id="${id}"] [data-testid="combiner-description"]`)
+      },
+
+      get topic() {
+        return cy.get(`[role="group"][data-id="${id}"] [data-testid="topic-wrapper"]`)
+      },
+    }
+  }
+
   act = {
     /**
      * @todo This "double-back" sequence is necessary to effectively select multiple nodes. Need to check for better alternative
