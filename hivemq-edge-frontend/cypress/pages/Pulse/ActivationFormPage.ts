@@ -1,6 +1,6 @@
-import { RJSFomField } from '../RJSF/RJSFomField.ts'
+import { RJSFormField } from '../RJSF/RJSFormField.ts'
 
-export class ActivationFormPage extends RJSFomField {
+export class ActivationFormPage extends RJSFormField {
   get trigger() {
     return cy.getByTestId('pulse-activation-trigger')
   }

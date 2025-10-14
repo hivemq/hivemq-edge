@@ -13,10 +13,6 @@ export class AssetMappingWizardForm {
     return cy.get('section[role="dialog"]#chakra-modal-wizard-mapper').find('footer button')
   }
 
-  // get selectMapper() {
-  //   return cy.getByTestId('wizard-mapper-selector-container')
-  // }
-
   get selectMapper() {
     return {
       get root() {
@@ -72,10 +68,6 @@ export class AssetMappingWizardForm {
       get values() {
         return cy.getByTestId('wizard-mapper-entities-container').find('[data-testid="multi-selected-value"]')
       }, //react-select-mapper-placeholder
-
-      // get placeholder() {
-      //   return cy.getByTestId('wizard-mapper-entities-container').find('#react-select-mapper-placeholder')
-      // },
 
       get helperText() {
         return cy.getByTestId('wizard-mapper-entities-container').find('#react-select-sources-helper')

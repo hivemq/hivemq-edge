@@ -1,6 +1,6 @@
-import { RJSFomField } from '../RJSF/RJSFomField.ts'
+import { RJSFormField } from '../RJSF/RJSFormField.ts'
 
-export class AssetMapperFormPage extends RJSFomField {
+export class AssetMapperFormPage extends RJSFormField {
   get formTabs() {
     return cy.get('[role="dialog"] form [role="tablist"]')
   }

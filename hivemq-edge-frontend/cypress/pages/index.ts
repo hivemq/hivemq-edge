@@ -1,6 +1,6 @@
 export { loginPage } from './Login/LoginPage.ts'
 export { adapterPage } from './Protocols/AdapterPage.ts'
-export { rjsf } from './RJSF/RJSFomField.ts'
+export { rjsf } from './RJSF/RJSFormField.ts'
 export { workspacePage } from './Workspace/WorkspacePage'
 export { bridgePage } from './Bridges/BridgePage.ts'
 export { eventLogPage } from './EventLog/EventLogPage.ts'

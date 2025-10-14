@@ -123,15 +123,6 @@ const interceptAssets = (factory: PulseFactory, isPreLoaded: boolean) => {
 }
 
 const interceptAssetMappers = (factory: PulseFactory, isPreLoaded: boolean) => {
-  // if (isPreLoaded) {
-  //   for (const assetMapper of MOCK_PULSE_EXT_ASSET_MAPPERS_LIST.items) {
-  //     factory.assetMappers.create({
-  //       id: assetMapper.id,
-  //       json: JSON.stringify(assetMapper),
-  //     })
-  //   }
-  // }
-
   // make sure we have the connected adapters
   cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_OPC_UA] }).as('getProtocols')
   cy.intercept('/api/v1/management/protocol-adapters/adapters', {
