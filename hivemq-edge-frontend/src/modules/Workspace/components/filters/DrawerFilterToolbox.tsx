@@ -53,7 +53,6 @@ interface DrawerFilterToolboxProps {
 const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onApplyFilters }) => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
-  // const [currentState, setCurrentState] = useState<Filter>({})
   const [currentState, setCurrentState] = useLocalStorage<FilterConfig>(KEY_FILTER_CURRENT, {
     options: { isLiveUpdate: false, joinOperator: 'OR' },
   })
@@ -106,17 +105,22 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
         | MultiValue<FilterTopicsOption>
         | MultiValue<FilterStatusOption>
     ) => {
-      const rnew = { ...currentState, [id]: { isActive: true, filter: value } }
-      setCurrentState(rnew)
-      handleFilter(rnew)
+      const newState = { ...currentState, [id]: { isActive: true, filter: value } }
+      setCurrentState(newState)
+      handleFilter(newState)
     }
   }
 
   const handleActive = (id: string) => (value: boolean) => {
     const current = currentState[id as keyof Filter]
-    const rnew = { ...currentState, [id]: { isActive: value, filter: current?.filter } }
-    setCurrentState(rnew)
-    handleFilter(rnew)
+    const newState = { ...currentState, [id]: { isActive: value, filter: current?.filter } }
+    setCurrentState(newState)
+    handleFilter(newState)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleNewQuickFiler = (_name: string) => {
+    handleClearFilters()
   }
 
   return (
@@ -140,7 +144,7 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
           <DrawerHeader>{t('workspace.searchToolbox.title')}</DrawerHeader>
 
           <DrawerBody as={VStack} gap={4}>
-            <QuickFilters />
+            <QuickFilters isFilterActive={isAnyFilterActive} onNewQuickFilter={handleNewQuickFiler} />
             {filterEditors.map((criteria) => (
               <WrapperCriteria
                 key={criteria.id}
