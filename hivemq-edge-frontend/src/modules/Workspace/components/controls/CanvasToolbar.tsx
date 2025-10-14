@@ -8,7 +8,7 @@ import DrawerFilterToolbox from '@/modules/Workspace/components/filters/DrawerFi
 const CanvasToolbar: FC = () => {
   return (
     <Panel position="top-right">
-      <HStack m={2}>
+      <HStack>
         <SearchEntities />
         <DrawerFilterToolbox />
       </HStack>
