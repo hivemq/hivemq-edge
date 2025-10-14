@@ -63,12 +63,11 @@ jobs:
 
 
   check-openapi:
-    needs: check-for-changes
     uses: ./.github/workflows/check-openapi.yml
     if: needs.check-for-changes.outputs.openapi-changed == 'true'
 
   check-frontend:
-    needs: [ check-for-changes, check-openapi ]
+    needs: check-for-changes
     uses: ./.github/workflows/check-frontend.yml
     if: needs.check-for-changes.outputs.frontend-changed == 'true'
     secrets:
@@ -76,7 +75,7 @@ jobs:
       PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
   check-backend:
-    needs: [ check-for-changes, check-openapi ]
+    needs: check-for-changes
     uses: ./.github/workflows/check-backend.yml
     if: needs.check-for-changes.outputs.backend-changed == 'true'
 
@@ -91,7 +90,7 @@ jobs:
         run: |
           if [[ "${{ needs.check-openapi.result }}" != "success" ]]; then
           echo "OpenAPI check failed"
-          exit 0
+          exit 1
           fi
 
       - name: Check if frontend job succeeded
@@ -99,7 +98,7 @@ jobs:
         run: |
           if [[ "${{ needs.check-frontend.result }}" != "success" ]]; then
             echo "Frontend check failed"
-            exit 0
+            exit 1
           fi
       
       - name: Check if backend job succeeded
