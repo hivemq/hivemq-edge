@@ -26,8 +26,7 @@ import { ChevronDownIcon } from '@chakra-ui/icons'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import type { FilterConfig, FilterConfigurationOption } from '@/modules/Workspace/components/filters/types.ts'
-import { KEY_FILTER_CURRENT } from '@/modules/Workspace/components/filters/types.ts'
-import { KEY_FILTER_CONFIGURATIONS } from '@/modules/Workspace/components/filters/types.ts'
+import { KEY_FILTER_CURRENT, KEY_FILTER_CONFIGURATIONS } from '@/modules/Workspace/components/filters/types.ts'
 import { ConfigurationSave } from '@/modules/Workspace/components/filters/index.ts'
 
 interface QuickFilterProps {
@@ -110,7 +109,6 @@ const QuickFilters: FC<QuickFilterProps> = ({ onNewQuickFilter, onChange, isFilt
                   <Switch
                     flex={1}
                     data-testid="workspace-filter-quick-label"
-                    // id={`workspace-filter-quick-${config.label}`}
                     onChange={(e) => handleQuickFilterActivate(config, e.target.checked)}
                     isChecked={config.isActive}
                   >

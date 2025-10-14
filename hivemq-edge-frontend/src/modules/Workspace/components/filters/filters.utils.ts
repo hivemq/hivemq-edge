@@ -79,5 +79,5 @@ export const hideNodeWithFilters = (node: Node, state: Filter) => {
 
   if (allTest.length === 0) return false
 
-  return !allTest.some((e) => e === true)
+  return !allTest.includes(true)
 }

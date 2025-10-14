@@ -2,8 +2,7 @@ import type { FC } from 'react'
 import type { MiniMapProps } from '@xyflow/react'
 import { MiniMap as ReactFlowMiniMap } from '@xyflow/react'
 import type { As } from '@chakra-ui/react'
-import { Box } from '@chakra-ui/react'
-import { chakra } from '@chakra-ui/react'
+import { Box, chakra } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 const MiniMapChakra = chakra<As, MiniMapProps>(ReactFlowMiniMap)
@@ -14,8 +13,6 @@ const MiniMap: FC<MiniMapProps> = (props) => {
     <Box role="group" aria-label={t('workspace.canvas.toolbar.minimap')}>
       <MiniMapChakra
         {...props}
-        role="group"
-        aria-label={t('workspace.canvas.toolbar.controls')}
         sx={{
           borderColor: 'var(--chakra-colors-chakra-border-color)',
           borderWidth: 1,

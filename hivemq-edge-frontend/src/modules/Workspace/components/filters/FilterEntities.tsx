@@ -1,8 +1,8 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { FormControl, FormLabel, Text } from '@chakra-ui/react'
-import { chakraComponents, type MultiValueProps, Select } from 'chakra-react-select'
-import type { MultiValue } from 'chakra-react-select'
+import { chakraComponents, Select } from 'chakra-react-select'
+import type { MultiValue, MultiValueProps } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 
 import { filterContainerStyle } from '@/modules/Workspace/components/filters/filters.utils.ts'

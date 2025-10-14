@@ -119,7 +119,7 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleNewQuickFiler = (_name: string) => {
+  const handleNewQuickFilter = (_name: string) => {
     handleClearFilters()
   }
 
@@ -144,7 +144,7 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
           <DrawerHeader>{t('workspace.searchToolbox.title')}</DrawerHeader>
 
           <DrawerBody as={VStack} gap={4}>
-            <QuickFilters isFilterActive={isAnyFilterActive} onNewQuickFilter={handleNewQuickFiler} />
+            <QuickFilters isFilterActive={isAnyFilterActive} onNewQuickFilter={handleNewQuickFilter} />
             {filterEditors.map((criteria) => (
               <WrapperCriteria
                 key={criteria.id}

@@ -9,7 +9,7 @@ import { MdClear } from 'react-icons/md'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import type { FilterSelectionOption } from '@/modules/Workspace/components/filters/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import { NodeTypes } from '@/modules/Workspace/types.ts'
+import type { NodeTypes } from '@/modules/Workspace/types.ts'
 
 interface FilterEntitiesProps {
   onChange?: (values: MultiValue<FilterSelectionOption>) => void
@@ -18,7 +18,6 @@ interface FilterEntitiesProps {
 
 const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange }) => {
   const { t } = useTranslation()
-  // const [selection, setSelection] = useState<string[]>([])
   const { nodes } = useWorkspaceStore()
 
   const selectedNodes = useMemo(() => {
@@ -26,12 +25,10 @@ const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange }) => {
   }, [nodes])
 
   const handleSelect = () => {
-    // setSelection(selectedNodes.map((e) => e.id))
-    onChange?.(selectedNodes.map<FilterSelectionOption>((e) => ({ id: e.id, type: NodeTypes.ADAPTER_NODE })))
+    onChange?.(selectedNodes.map<FilterSelectionOption>((e) => ({ id: e.id, type: e.type as NodeTypes })))
   }
 
   const handleClearSelect = () => {
-    // setSelection([])
     onChange?.([])
   }
 

@@ -66,7 +66,7 @@ const OptionsFilter: FC<FilterDynamicProps> = ({ value, onChange }) => {
             <Switch
               id="workspace-filter-dynamic-update"
               onChange={(e) => onChange?.('isLiveUpdate', e.target.checked)}
-              checked={value?.isLiveUpdate || false}
+              isChecked={value?.isLiveUpdate || false}
             />
             <FormHelperText>{t('workspace.searchToolbox.liveUpdate.helper')}</FormHelperText>
           </VStack>

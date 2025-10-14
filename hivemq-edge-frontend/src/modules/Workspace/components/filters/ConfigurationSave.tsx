@@ -15,15 +15,14 @@ interface ConfigurationSaveProps {
 
 const ConfigurationSave: FC<ConfigurationSaveProps> = ({ isFilterActive, onSave, configurations }) => {
   const { t } = useTranslation()
-  // const [configurations] = useLocalStorage<FilterConfigurationOption[]>(KEY_FILTER_CONFIGURATIONS, [])
-  const [filterName, setFilerName] = useState<string>('')
+  const [filterName, setFilterName] = useState<string>('')
 
   // TODO[NVL] Should we check for duplicate in filter criteria?
   const isDuplicateError = configurations.some((e) => e.label === filterName)
 
   const handleSave = () => {
     onSave?.(filterName)
-    setFilerName('')
+    setFilterName('')
   }
 
   return (
@@ -41,7 +40,7 @@ const ConfigurationSave: FC<ConfigurationSaveProps> = ({ isFilterActive, onSave,
           <Input
             id="workspace-filter-configuration-input"
             placeholder={t('workspace.searchToolbox.configuration.placeholder')}
-            onChange={(event) => setFilerName(event.target.value)}
+            onChange={(event) => setFilterName(event.target.value)}
             value={filterName}
           />
           <IconButton
