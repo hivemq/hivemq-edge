@@ -1071,6 +1071,7 @@
       "quickFilters": {
         "label": "Quick filters",
         "action": {
+          "aria-label": "Actions",
           "edit": "Edit",
           "delete": "Delete"
         },
