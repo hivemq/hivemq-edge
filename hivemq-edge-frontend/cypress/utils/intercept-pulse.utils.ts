@@ -4,7 +4,6 @@ import { MOCK_CAPABILITY_PERSISTENCE, MOCK_CAPABILITY_PULSE_ASSETS } from '@/api
 import { mockAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { MOCK_PULSE_STATUS_CONNECTED, MOCK_PULSE_STATUS_DISCONNECTED } from '@/api/hooks/usePulse/__handlers__'
 import {
-  MOCK_PULSE_EXT_ASSET_MAPPERS_LIST,
   MOCK_PULSE_EXT_ASSETS_LIST,
   MOCK_PULSE_EXT_UNMAPPED_ASSETS_LIST,
 } from '@/api/hooks/usePulse/__handlers__/pulse-mocks.ts'
