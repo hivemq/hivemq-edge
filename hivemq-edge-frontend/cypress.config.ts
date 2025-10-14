@@ -1,7 +1,8 @@
 import { defineConfig } from 'cypress'
-import codeCoverage from '@cypress/code-coverage/task.js'
 
 import installLogsPrinter from 'cypress-terminal-report/src/installLogsPrinter.js'
+
+import codeCoverage from '@cypress/code-coverage/task.js'
 
 export default defineConfig({
   env: {
