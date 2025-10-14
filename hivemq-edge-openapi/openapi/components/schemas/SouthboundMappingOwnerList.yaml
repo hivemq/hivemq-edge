@@ -11,7 +11,7 @@ properties:
       properties:
         adapterId:
           type: string
-          description: The id of the adapter.
+          description: The id of the adapter owning the mapping
         mapping:
           $ref: ./SouthboundMapping.yaml
 required:
