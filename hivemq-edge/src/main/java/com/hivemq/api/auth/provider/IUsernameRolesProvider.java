@@ -15,15 +15,23 @@
  */
 package com.hivemq.api.auth.provider;
 
+import com.hivemq.api.auth.ApiPrincipal;
 import org.jetbrains.annotations.NotNull;
-import com.hivemq.http.core.UsernamePasswordRoles;
 
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author Simon L Johnson
  */
-public interface IUsernamePasswordProvider extends ICredentialsProvider {
+public interface IUsernameRolesProvider extends ICredentialsProvider {
 
-    Optional<UsernamePasswordRoles> findByUsername(final @NotNull String userName);
+    record UsernameRoles(String username, Set<String> roles){
+        public ApiPrincipal toPrincipal(){
+            //decouple the password from the principal for the API
+            return new ApiPrincipal(username(), Set.copyOf(roles()));
+        }
+    }
+
+    Optional<UsernameRoles> findByUsernameAndPassword(final @NotNull String userName, final @NotNull String password);
 }

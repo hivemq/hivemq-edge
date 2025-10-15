@@ -21,7 +21,7 @@ import com.hivemq.api.auth.ApiPrincipal;
 import com.hivemq.api.auth.AuthenticationException;
 import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.auth.provider.ITokenVerifier;
-import com.hivemq.api.auth.provider.IUsernamePasswordProvider;
+import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.api.error.ApiException;
 import com.hivemq.api.errors.authentication.AuthenticationValidationError;
 import com.hivemq.api.errors.authentication.UnauthorizedError;
@@ -30,14 +30,13 @@ import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.edge.api.AuthenticationApi;
 import com.hivemq.edge.api.model.ApiBearerToken;
 import com.hivemq.edge.api.model.UsernamePasswordCredentials;
-import com.hivemq.http.core.UsernamePasswordRoles;
 import com.hivemq.util.ErrorResponseUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Optional;
 
 /**
@@ -48,11 +47,11 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
 
     private final @NotNull ITokenGenerator tokenGenerator;
     private final @NotNull ITokenVerifier tokenVerifier;
-    private final @NotNull IUsernamePasswordProvider usernamePasswordProvider;
+    private final @NotNull IUsernameRolesProvider usernamePasswordProvider;
 
     @Inject
     public AuthenticationResourceImpl(
-            final @NotNull IUsernamePasswordProvider usernamePasswordProvider,
+            final @NotNull IUsernameRolesProvider usernamePasswordProvider,
             final @NotNull ITokenGenerator tokenGenerator,
             final @NotNull ITokenVerifier tokenVerifier) {
         this.usernamePasswordProvider = usernamePasswordProvider;
@@ -74,24 +73,22 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
         } else {
             final String userName = credentials.getUserName();
             final String password = credentials.getPassword();
-            final Optional<UsernamePasswordRoles> usernamePasswordRoles = usernamePasswordProvider.findByUsername(userName);
-            if (usernamePasswordRoles.isPresent()) {
-                final UsernamePasswordRoles user = usernamePasswordRoles.get();
-                if (user.getPassword().equals(password)) {
-                    try {
-                        final ApiBearerToken token = new ApiBearerToken().token(tokenGenerator.generateToken(user.toPrincipal()));
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("Bearer authentication was success, token generated for {}",
-                                    user.getUserName());
+            return usernamePasswordProvider
+                    .findByUsernameAndPassword(userName, password)
+                    .map(user -> {
+                        try {
+                            final ApiBearerToken token = new ApiBearerToken().token(tokenGenerator.generateToken(user.toPrincipal()));
+                            if (logger.isTraceEnabled()) {
+                                logger.trace("Bearer authentication was success, token generated for {}",
+                                        userName);
+                            }
+                            return Response.ok(token).build();
+                        } catch (final AuthenticationException e) {
+                            logger.warn("Authentication failed with error", e);
+                            throw new ApiException("error encountered during authentication", e);
                         }
-                        return Response.ok(token).build();
-                    } catch (final AuthenticationException e) {
-                        logger.warn("Authentication failed with error", e);
-                        throw new ApiException("error encountered during authentication", e);
-                    }
-                }
-            }
-            return ErrorResponseUtil.errorResponse(new UnauthorizedError("Invalid username and/or password"));
+                    })
+                    .orElse(ErrorResponseUtil.errorResponse(new UnauthorizedError("Invalid username and/or password")));
         }
     }
 

@@ -31,7 +31,7 @@ import java.util.Objects;
 
 @XmlRootElement(name = "admin-api")
 @XmlAccessorType(XmlAccessType.NONE)
-@SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
+@SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal", "deprecation"})
 public class AdminApiEntity extends EnabledEntity {
 
     @XmlElementWrapper(name = "listeners")
@@ -46,6 +46,9 @@ public class AdminApiEntity extends EnabledEntity {
     @XmlElementWrapper(name = "users")
     @XmlElementRef(required = false)
     private @NotNull List<UserEntity> users;
+
+    @XmlElementRef(required = false)
+    private @Nullable LdapBasedUsernameRolesSourceEntity usernameRolesSource;
 
     @XmlElementRef(required = false)
     private @Nullable ApiTlsEntity tls;
@@ -72,6 +75,10 @@ public class AdminApiEntity extends EnabledEntity {
         return users;
     }
 
+    public @Nullable LdapBasedUsernameRolesSourceEntity getLdap() {
+        return usernameRolesSource;
+    }
+
     public @Nullable ApiTlsEntity getTls() {
         return tls;
     }
@@ -93,6 +100,7 @@ public class AdminApiEntity extends EnabledEntity {
                     Objects.equals(tls, that.tls) &&
                     Objects.equals(jws, that.jws) &&
                     Objects.equals(users, that.users) &&
+                    Objects.equals(usernameRolesSource, that.usernameRolesSource) &&
                     Objects.equals(preLoginNotice, that.preLoginNotice);
         }
         return false;
@@ -100,6 +108,6 @@ public class AdminApiEntity extends EnabledEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), listeners, tls, jws, users, preLoginNotice);
+        return Objects.hash(super.hashCode(), listeners, tls, jws, users, usernameRolesSource, preLoginNotice);
     }
 }

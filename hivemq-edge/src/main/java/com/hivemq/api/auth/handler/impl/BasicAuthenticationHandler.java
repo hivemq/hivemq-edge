@@ -16,18 +16,17 @@
 package com.hivemq.api.auth.handler.impl;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.api.auth.ApiPrincipal;
 import com.hivemq.api.auth.handler.AuthenticationResult;
-import com.hivemq.api.auth.provider.IUsernamePasswordProvider;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.UsernamePasswordRoles;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Base64;
 import java.util.Optional;
 
@@ -39,27 +38,26 @@ public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHand
 
     static final String SEP = ":";
     static final String METHOD = "Basic";
-    private final IUsernamePasswordProvider provider;
+    private final IUsernameRolesProvider provider;
 
     @Inject
-    public BasicAuthenticationHandler(final @NotNull IUsernamePasswordProvider provider) {
+    public BasicAuthenticationHandler(final @NotNull IUsernameRolesProvider provider) {
         this.provider = provider;
     }
 
     @Override
-    protected AuthenticationResult authenticateInternal(final @NotNull ContainerRequestContext requestContext, String authValue) {
-        Optional<UsernamePasswordRoles> usernamePassword = parseValue(authValue);
-        if(usernamePassword.isPresent()){
-            UsernamePasswordRoles supplied = usernamePassword.get();
-            Optional<UsernamePasswordRoles> record = provider.findByUsername(supplied.getUserName());
-            if(record.isPresent() && record.get().getPassword().equals(supplied.getPassword())){
-                AuthenticationResult result = AuthenticationResult.allowed(this);
-                ApiPrincipal principal = new ApiPrincipal(supplied.getUserName(), record.get().getRoles());
-                result.setPrincipal(principal);
-                return result;
-            }
-        }
-        return AuthenticationResult.denied(this);
+    protected AuthenticationResult authenticateInternal(final @NotNull ContainerRequestContext requestContext,
+                                                        final @NotNull String authValue) {
+        return parseValue(authValue)
+                .flatMap(supplied ->
+                        provider.findByUsernameAndPassword(
+                            supplied.getUserName(),
+                            supplied.getPassword()))
+                .map(record -> {
+                    final var result = AuthenticationResult.allowed(this);
+                    result.setPrincipal(record.toPrincipal());
+                    return result;
+                }).orElseGet(() -> AuthenticationResult.denied(this));
     }
 
     @Override
@@ -72,12 +70,11 @@ public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHand
 
     protected static Optional<UsernamePasswordRoles> parseValue(final @NotNull String headerValue){
         Preconditions.checkNotNull(headerValue);
-        String userPass = headerValue.trim();
-        userPass = new String(Base64.getDecoder().decode(userPass));
+        final var userPass = new String(Base64.getDecoder().decode(headerValue.trim()));
         if(userPass.contains(SEP)){
-            String[] userNamePassword = userPass.split(SEP);
+            final var userNamePassword = userPass.split(SEP);
             if(userNamePassword.length == 2){
-                UsernamePasswordRoles usernamePassword = new UsernamePasswordRoles();
+                final var usernamePassword = new UsernamePasswordRoles();
                 usernamePassword.setUserName(userNamePassword[0]);
                 usernamePassword.setPassword(userNamePassword[1]);
                 return Optional.of(usernamePassword);
