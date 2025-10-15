@@ -15,7 +15,7 @@ const getWrapperWith = (status?: DesignerStatus) => {
         }}
       >
         <Routes>
-          <Route path="/node/:type/:nodeId" element={children}></Route>
+          <Route path="/node/:type/:nodeId" element={children} />
         </Routes>
       </MockStoreWrapper>
     )

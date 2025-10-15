@@ -201,7 +201,7 @@ const ExportDrawer: FC = () => {
                     />
                   )
                 }}
-              ></Controller>
+              />
             </FormControl>
           </Chakra.form>
         </DrawerBody>

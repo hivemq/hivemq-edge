@@ -11,7 +11,10 @@ describe('CanvasToolbar', () => {
       wrapper: ({ children }: { children: JSX.Element }) => <ReactFlowProvider>{children}</ReactFlowProvider>,
     })
 
-    cy.getByTestId('canvas-toolbar').should('be.visible')
-    cy.getByTestId('workspace-search').should('be.visible')
+    cy.getByTestId('content-toolbar').should('have.attr', 'aria-label', 'Search & Filter toolbar')
+    cy.getByTestId('content-toolbar').within(() => {
+      cy.getByTestId('toolbox-search').should('be.visible')
+      cy.getByTestId('toolbox-filter').should('be.visible')
+    })
   })
 })
