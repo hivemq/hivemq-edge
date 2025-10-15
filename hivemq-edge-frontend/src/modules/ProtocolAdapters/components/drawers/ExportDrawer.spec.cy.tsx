@@ -7,7 +7,7 @@ import ExportDrawer from '@/modules/ProtocolAdapters/components/drawers/ExportDr
 const Wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <Routes>
-      <Route path="/protocol-adapters/:adapterId/export" element={children}></Route>
+      <Route path="/protocol-adapters/:adapterId/export" element={children} />
     </Routes>
   )
 }

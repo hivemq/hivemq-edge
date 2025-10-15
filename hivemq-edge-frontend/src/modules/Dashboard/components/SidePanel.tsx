@@ -57,7 +57,7 @@ const SidePanel: FC = () => {
           ))}
         </Flex>
 
-        <Flex flexDirection="column" flex={1}></Flex>
+        <Flex flexDirection="column" flex={1} />
         <Flex p={4} flexDirection="row" alignItems="center" justifyContent="space-between" ml={2}>
           <Button leftIcon={<FiLogOut />} variant="link" onClick={() => auth.logout(() => navigate('/login'))}>
             {t('translation:action.logout')}

@@ -150,7 +150,7 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
             onClick={handleSchemaDownload}
             isDisabled={!isDestSchemaDefined}
             aria-label={t('combiner.schema.schemaManager.action.download')}
-          ></IconButton>
+          />
         </ButtonGroup>
       </HStack>
 

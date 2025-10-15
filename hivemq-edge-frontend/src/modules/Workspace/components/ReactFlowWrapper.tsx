@@ -16,8 +16,8 @@ import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import StatusListener from '@/modules/Workspace/components/controls/StatusListener.tsx'
 import CanvasControls from '@/modules/Workspace/components/controls/CanvasControls.tsx'
 import SelectionListener from '@/modules/Workspace/components/controls/SelectionListener.tsx'
-import MonitoringEdge from '@/modules/Workspace/components/edges/MonitoringEdge.tsx'
 import CanvasToolbar from '@/modules/Workspace/components/controls/CanvasToolbar.tsx'
+import MonitoringEdge from '@/modules/Workspace/components/edges/MonitoringEdge.tsx'
 import {
   NodeAdapter,
   NodeBridge,
@@ -115,11 +115,10 @@ const ReactFlowWrapper = () => {
       role="region"
       aria-label={t('workspace.canvas.aria-label')}
     >
-      <Box role="toolbar" aria-label={t('workspace.controls.aria-label')} aria-controls="edge-workspace-canvas">
+      <Box role="group" aria-label={t('workspace.canvas.toolbar.container')} aria-controls="edge-workspace-canvas">
         <CanvasToolbar />
         <SelectionListener />
         <StatusListener />
-        <Background />
         <CanvasControls />
         <MiniMap
           zoomable
@@ -141,6 +140,7 @@ const ReactFlowWrapper = () => {
           }}
         />
       </Box>
+      <Background />
       <SuspenseOutlet />
     </ReactFlow>
   )

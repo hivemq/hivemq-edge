@@ -160,6 +160,6 @@ export const ReactFlowRenderer: FC<FiniteStateMachine> = (props) => {
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       fitView
-    ></ReactFlow>
+    />
   )
 }

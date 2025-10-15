@@ -847,10 +847,16 @@
   },
   "workspace": {
     "canvas": {
-      "aria-label": "Edge Workspace"
+      "aria-label": "Edge Workspace",
+      "toolbar": {
+        "container": "Workspace toolbars",
+        "search-filter": "Search & Filter toolbar",
+        "controls": "Canvas toolbar",
+        "minimap": "Mini Map toolbar"
+      }
     },
     "controls": {
-      "aria-label": "Workspace toolbar",
+      "aria-label": "Workspace toolbars",
       "zoomIn": "Zoom in",
       "zoomIOut": "Zoom out",
       "fitView": "Fit to the canvas",
@@ -1040,6 +1046,93 @@
         "previous": "Previous entity",
         "next": "Next entity",
         "matches": "{{ index }} of {{ count }}"
+      },
+      "title": "Filter Workspace",
+      "trigger": {
+        "aria-label": "Filter Workspace"
+      },
+      "configuration": {
+        "label": "Save filter",
+        "placeholder": "Type a name",
+        "helper": "Save the current configuration as a new quick filter",
+        "save": "Save",
+        "error": {
+          "noDuplicateName": "The name is already in use"
+        }
+      },
+      "action": {
+        "apply": "Apply filters",
+        "clear": "Clear filters"
+      },
+      "join": {
+        "label": "Join filters using",
+        "option_AND": "AND",
+        "option_OR": "OR",
+        "helper": "Choose how multiple filter criteria are combined"
+      },
+      "liveUpdate": {
+        "label": "Live updating",
+        "helper": "Turn on if you wish the filters to be automatically updated"
+      },
+      "quickFilters": {
+        "label": "Quick filters",
+        "action": {
+          "aria-label": "Actions",
+          "edit": "Edit",
+          "delete": "Delete"
+        },
+        "delete": {
+          "header": "Delete the quick filter",
+          "message": "Do you really want to delete the quick filter? The action cannot be reverted."
+        }
+      },
+      "bySelection": {
+        "criteria": "By selection",
+        "label": "Selection",
+        "nodeSelected_zero": "no entity selected",
+        "nodeSelected_one": "1 entity selected",
+        "nodeSelected_other": "{{ count }} entities selected",
+        "nodeFiltered_zero": "no entity filtered",
+        "nodeFiltered_one": "1 entity filtered",
+        "nodeFiltered_other": "{{ count }} entities filtered",
+        "select": "Add selection",
+        "clear": "Clear selection"
+      },
+      "byEntity": {
+        "criteria": "By entity types",
+        "label": "Entities",
+        "placeholder": "Select entities to filter ...",
+        "noOptions": "No matching entity",
+        "categories": {
+          "ADAPTER_NODE": "Adapters",
+          "DEVICE_NODE": "Devices",
+          "BRIDGE_NODE": "Bridges",
+          "HOST_NODE": "Hosts",
+          "PULSE_NODE": "Pulse Agents",
+          "EDGE_NODE": "Edge Broker",
+          "COMBINER_NODE": "Combiners",
+          "ASSETS_NODE": "Assets",
+
+          "CLUSTER_NODE": "Groups"
+        }
+      },
+      "byProtocol": {
+        "criteria": "By Protocol",
+        "label": "Protocols",
+        "placeholder": "Select Protocols to filter ...",
+        "noOptions": "No matching protocol"
+      },
+      "byTopics": {
+        "criteria": "By Integration points",
+        "label": "Topics",
+        "placeholder": "Select topics to trace ...",
+        "noOptions": "No matching topic"
+      },
+      "byStatus": {
+        "criteria": "By Status",
+        "label": "Status",
+        "placeholder": "Select statuses to trace ...",
+        "noOptions": "No matching status"
       }
     }
   },
