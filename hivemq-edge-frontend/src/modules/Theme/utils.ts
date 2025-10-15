@@ -11,6 +11,7 @@ export const getDropZoneBorder = (color: string) => {
 
 export const ANIMATION = {
   FIT_VIEW_DURATION_MS: 500,
+  TOOLBAR_ANIMATION_DURATION_MS: 400,
 }
 
 export const Z_INDICES = {
