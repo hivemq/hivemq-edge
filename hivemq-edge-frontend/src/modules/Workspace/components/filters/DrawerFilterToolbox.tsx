@@ -128,7 +128,6 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
       <Button
         size="sm"
         leftIcon={<Icon as={GoSidebarExpand} boxSize="24px" />}
-        // rightIcon={<Icon as={TbFilter} boxSize="24px" />}
         onClick={onOpen}
         data-testid="toolbox-filter-open"
       >

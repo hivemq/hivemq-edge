@@ -34,9 +34,8 @@ const getWrapperWith = (initialNodes?: Node[], initialEdges?: Edge[]) => {
 
 const cy_localStorage_should = (chainer: 'equal', value: unknown) => {
   cy.getAllLocalStorage().then((localStorage) => {
-    const g = Object.values(localStorage)[0]['edge.workspace.filter']
-    console.log(Object.values(localStorage))
-    cy.wrap(g).should(chainer, JSON.stringify(value))
+    const storage = Object.values(localStorage)[0]['edge.workspace.filter']
+    cy.wrap(storage).should(chainer, JSON.stringify(value))
   })
 }
 

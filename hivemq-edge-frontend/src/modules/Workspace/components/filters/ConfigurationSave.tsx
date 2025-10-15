@@ -49,7 +49,7 @@ const ConfigurationSave: FC<ConfigurationSaveProps> = ({ isFilterActive, onSave,
             aria-label={t('workspace.searchToolbox.configuration.save')}
             isDisabled={!(filterName && !isDuplicateError)}
             onClick={handleSave}
-          ></IconButton>
+          />
         </InputGroup>
 
         {!isDuplicateError && <FormHelperText>{t('workspace.searchToolbox.configuration.helper')}</FormHelperText>}
