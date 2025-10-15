@@ -21,16 +21,21 @@ const hivemq = definePartsStyle({
 
 const horizontal = definePartsStyle({
   container: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 3,
-    '> label': {
+    display: 'grid',
+    gridTemplateColumns: 'max-content 1fr',
+    alignItems: 'start',
+    columnGap: '2',
+    // Ensure children stack vertically in the second column
+    '& > label': {
+      gridColumn: 1,
+      gridRow: 1,
+      alignSelf: 'center',
+      width: '4rem',
+      textAlign: 'right',
       marginBottom: 0,
-      marginInlineEnd: 0,
     },
-    '> label + *': {
-      flex: 2,
+    '& > *:not(label)': {
+      gridColumn: 2,
     },
   },
 })
