@@ -17,7 +17,7 @@ const WrapperCriteria: FC<PropsWithChildren<WrapperFilterProps>> = ({ id, isActi
       data-testid={`workspace-filter-${id}-container`}
     >
       <CardHeader>
-        <FormControl variant="horizontal">
+        <FormControl>
           <Switch
             id={`workspace-filter-${id}-switch`}
             onChange={(e) => onChange?.(e.target.checked)}
