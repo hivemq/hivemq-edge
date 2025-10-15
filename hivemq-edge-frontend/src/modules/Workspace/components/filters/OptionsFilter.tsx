@@ -20,10 +20,7 @@ type FilterJoinOptions = (typeof FILTER_JOIN_OPTIONS)[number]
 
 interface FilterDynamicProps {
   value?: FilterOperationOption
-  onChange?: (
-    prop: keyof FilterOperationOption,
-    value: FilterOperationOption['joinOperator'] | FilterOperationOption['isLiveUpdate']
-  ) => void
+  onChange?: <K extends keyof FilterOperationOption>(prop: K, value: FilterOperationOption[K]) => void
 }
 
 const OptionsFilter: FC<FilterDynamicProps> = ({ value, onChange }) => {
