@@ -7,6 +7,7 @@ import {
   ButtonGroup,
   FormControl,
   FormLabel,
+  HStack,
   Icon,
   Input,
   InputGroup,
@@ -104,54 +105,62 @@ const SearchEntities: FC<SearchEntitiesProps> = ({ onChange, onNavigate }) => {
       <FormLabel fontSize="sm" htmlFor="workspace-search" whiteSpace="nowrap" hidden>
         {t('workspace.searchToolbox.search.label')}
       </FormLabel>
-      <InputGroup size="sm">
-        <InputLeftElement>
-          <Icon as={SearchIcon} boxSize="3" />
-        </InputLeftElement>
-        <Input
-          data-testid="workspace-search"
-          placeholder={t('workspace.searchToolbox.search.placeholder')}
-          size="sm"
-          id="workspace-search"
-          value={search}
-          onChange={(e) => handleChange(e.target.value)}
-        />
-        {search && (
-          <InputRightElement>
-            <IconButton
-              size="sm"
-              variant="ghost"
-              data-testid="workspace-search-clear"
-              aria-label={t('workspace.searchToolbox.search.clear')}
-              icon={<MdClear />}
-              onClick={() => {
-                handleClear(true)
-              }}
-            />
-          </InputRightElement>
-        )}
-      </InputGroup>
-      <ButtonGroup size="sm" isAttached isDisabled={!hasSearchStarted}>
-        <IconButton
-          data-testid="workspace-search-prev"
-          icon={<MdArrowBack />}
-          aria-label={t('workspace.searchToolbox.search.previous')}
-          onClick={() => handleNavigate('prev')}
-        />
-        <Text alignContent="center" marginX={2} data-testid="workspace-search-counter" userSelect="none">
-          {t('workspace.searchToolbox.search.matches', {
-            index: hasSearchStarted ? current + 1 : 0,
-            count: hasSearchStarted ? selectedNodes.length : 0,
-          })}
-        </Text>
+      <HStack>
+        <InputGroup size="sm">
+          <InputLeftElement>
+            <Icon as={SearchIcon} boxSize="3" />
+          </InputLeftElement>
+          <Input
+            data-testid="workspace-search"
+            placeholder={t('workspace.searchToolbox.search.placeholder')}
+            size="sm"
+            id="workspace-search"
+            value={search}
+            onChange={(e) => handleChange(e.target.value)}
+          />
+          {search && (
+            <InputRightElement>
+              <IconButton
+                size="sm"
+                variant="ghost"
+                data-testid="workspace-search-clear"
+                aria-label={t('workspace.searchToolbox.search.clear')}
+                icon={<MdClear />}
+                onClick={() => {
+                  handleClear(true)
+                }}
+              />
+            </InputRightElement>
+          )}
+        </InputGroup>
+        <ButtonGroup size="sm" isAttached isDisabled={!hasSearchStarted}>
+          <IconButton
+            data-testid="workspace-search-prev"
+            icon={<MdArrowBack />}
+            aria-label={t('workspace.searchToolbox.search.previous')}
+            onClick={() => handleNavigate('prev')}
+          />
+          <Text
+            whiteSpace="nowrap"
+            alignContent="center"
+            marginX={2}
+            data-testid="workspace-search-counter"
+            userSelect="none"
+          >
+            {t('workspace.searchToolbox.search.matches', {
+              index: hasSearchStarted ? current + 1 : 0,
+              count: hasSearchStarted ? selectedNodes.length : 0,
+            })}
+          </Text>
 
-        <IconButton
-          data-testid="workspace-search-next"
-          icon={<MdArrowForward />}
-          aria-label={t('workspace.searchToolbox.search.next')}
-          onClick={() => handleNavigate('next')}
-        />
-      </ButtonGroup>
+          <IconButton
+            data-testid="workspace-search-next"
+            icon={<MdArrowForward />}
+            aria-label={t('workspace.searchToolbox.search.next')}
+            onClick={() => handleNavigate('next')}
+          />
+        </ButtonGroup>
+      </HStack>
     </FormControl>
   )
 }
