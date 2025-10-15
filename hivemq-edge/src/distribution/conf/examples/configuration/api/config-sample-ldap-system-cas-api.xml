@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright 2025-present HiveMQ GmbH
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="config.xsd">
+
+    <!--
+        Example: Admin API with LDAP Authentication using System CA Certificates
+
+        This configuration uses the system's default CA certificates for TLS validation.
+        This is suitable when your LDAP server uses certificates signed by well-known
+        certificate authorities (e.g., Let's Encrypt, DigiCert, etc.).
+
+        No custom truststore configuration is needed.
+    -->
+
+    <admin-api>
+        <enabled>true</enabled>
+
+        <ldap>
+            <ldap-authentication>
+                <!-- LDAP Server Configuration -->
+                <host>ldap.example.com</host>
+                <port>636</port>
+                <tls-mode>LDAPS</tls-mode>
+
+                <!-- No <tls> section needed - system CA certificates will be used -->
+
+                <!-- User DN Template for Active Directory -->
+                <user-dn-template>cn={username},cn=Users,{baseDn}</user-dn-template>
+
+                <!-- Base DN -->
+                <base-dn>dc=company,dc=local</base-dn>
+            </ldap-authentication>
+        </ldap>
+    </admin-api>
+
+</hivemq>

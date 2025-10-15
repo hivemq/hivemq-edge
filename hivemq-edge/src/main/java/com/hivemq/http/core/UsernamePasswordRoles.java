@@ -68,9 +68,4 @@ public class UsernamePasswordRoles {
     public Set<String> getRoles() {
         return roles;
     }
-
-    public ApiPrincipal toPrincipal(){
-        //decouple the password from the principal for the API
-        return new ApiPrincipal(getUserName(), Set.copyOf(getRoles()));
-    }
 }

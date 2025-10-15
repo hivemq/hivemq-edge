@@ -24,7 +24,7 @@ import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BasicAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
-import com.hivemq.api.auth.provider.IUsernamePasswordProvider;
+import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.edge.api.model.ApiBearerToken;
@@ -78,7 +78,7 @@ public class ChainedAuthTests {
         final ApiJwtConfiguration configuration = new ApiJwtConfiguration(2048, "Test-Issuer", "Test-Audience", 10, 2);
         final JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(configuration);
 
-        final IUsernamePasswordProvider usernamePasswordProvider = AuthTestUtils.createTestUsernamePasswordProvider();
+        final IUsernameRolesProvider usernamePasswordProvider = AuthTestUtils.createTestUsernamePasswordProvider();
         final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
         authenticationHandlers.add(new BearerTokenAuthenticationHandler(jwtAuthenticationProvider));
         authenticationHandlers.add(new BasicAuthenticationHandler(usernamePasswordProvider));

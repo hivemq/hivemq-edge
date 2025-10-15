@@ -15,6 +15,7 @@
  */
 package com.hivemq.configuration.service;
 
+import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.ApiStaticResourcePath;
@@ -49,6 +50,10 @@ public interface ApiConfigurationService {
     @NotNull List<UsernamePasswordRoles> getUserList();
 
     void setUserList(final @NotNull List<UsernamePasswordRoles> userList);
+
+    void setLdapConnectionProperties(final @NotNull LdapConnectionProperties connectionProperties);
+
+    @Nullable LdapConnectionProperties getLdapConnectionProperties();
 
     @NotNull PreLoginNotice getPreLoginNotice();
 

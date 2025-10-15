@@ -15,6 +15,7 @@
  */
 package com.hivemq.configuration.service.impl;
 
+import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.ApiStaticResourcePath;
@@ -37,6 +38,7 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
     private @NotNull List<ApiListener> listeners = new CopyOnWriteArrayList<>();
     private @Nullable ApiJwtConfiguration apiJwtConfiguration;
     private @NotNull PreLoginNotice preLoginNotice = new PreLoginNotice();
+    private @Nullable LdapConnectionProperties ldapConnectionProperties;
 
     @Override
     public @NotNull List<ApiListener> getListeners() {
@@ -81,6 +83,16 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
 
     public void setUserList(final @NotNull List<UsernamePasswordRoles> userList) {
         this.userList = userList;
+    }
+
+    @Override
+    public void setLdapConnectionProperties(final @NotNull LdapConnectionProperties connectionProperties) {
+        this.ldapConnectionProperties = connectionProperties;
+    }
+
+    @Override
+    public @Nullable LdapConnectionProperties getLdapConnectionProperties() {
+        return ldapConnectionProperties;
     }
 
     @Override

@@ -15,8 +15,8 @@
  */
 package com.hivemq.api;
 
-import com.hivemq.api.auth.provider.IUsernamePasswordProvider;
-import com.hivemq.api.auth.provider.impl.SimpleUsernamePasswordProviderImpl;
+import com.hivemq.api.auth.provider.IUsernameRolesProvider;
+import com.hivemq.api.auth.provider.impl.simple.SimpleUsernameRolesProviderImpl;
 import com.hivemq.http.core.UsernamePasswordRoles;
 
 import java.util.Set;
@@ -26,9 +26,9 @@ import java.util.Set;
  */
 public class AuthTestUtils {
 
-    public static IUsernamePasswordProvider createTestUsernamePasswordProvider(){
+    public static IUsernameRolesProvider createTestUsernamePasswordProvider(){
 
-        return new SimpleUsernamePasswordProviderImpl().
+        return new SimpleUsernameRolesProviderImpl().
                 add(new UsernamePasswordRoles("testadmin", "test", Set.of("ADMIN"))).
                 add(new UsernamePasswordRoles("testuser", "test", Set.of("USER"))).
                 add(new UsernamePasswordRoles("testnorole", "test", Set.of()));

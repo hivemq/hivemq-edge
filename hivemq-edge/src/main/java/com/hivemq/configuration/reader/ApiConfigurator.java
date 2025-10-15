@@ -16,6 +16,7 @@
 package com.hivemq.configuration.reader;
 
 import com.google.common.collect.ImmutableList;
+import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.HttpListener;
@@ -28,8 +29,10 @@ import com.hivemq.configuration.entity.api.ApiListenerEntity;
 import com.hivemq.configuration.entity.api.ApiTlsEntity;
 import com.hivemq.configuration.entity.api.HttpListenerEntity;
 import com.hivemq.configuration.entity.api.HttpsListenerEntity;
+import com.hivemq.configuration.entity.api.LdapBasedUsernameRolesSourceEntity;
 import com.hivemq.configuration.entity.api.PreLoginNoticeEntity;
 import com.hivemq.configuration.entity.api.UserEntity;
+import com.hivemq.configuration.entity.api.UserlistBasedUsernameRolesSourceEntity;
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.exceptions.UnrecoverableException;
@@ -84,11 +87,17 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
         apiCfgService.setEnabled(entity.isEnabled());
 
         // Users
-        final List<UserEntity> users = entity.getUsers();
-        if (!users.isEmpty()) {
-            apiCfgService.setUserList(users.stream().map(ApiConfigurator::fromModel).toList());
+        if(entity.getLdap() != null) {
+            apiCfgService.setLdapConnectionProperties(LdapConnectionProperties.fromEntity(entity.getLdap().getLdapAuthentication()));
         } else {
-            apiCfgService.setUserList(DEFAULT_USERS);
+            final List<UserEntity> users = entity.getUsers();
+            if (!users.isEmpty()) {
+                log.warn("The <users> element in the <api> configuration is deprecated and will be removed in future versions. " +
+                        "Please use the <username-roles-source> element instead.");
+                apiCfgService.setUserList(users.stream().map(ApiConfigurator::fromModel).toList());
+            } else {
+                apiCfgService.setUserList(DEFAULT_USERS);
+            }
         }
 
         // JWT
