@@ -208,7 +208,7 @@ dependencies {
     compileOnly("com.hivemq:hivemq-edge-module-file")
 
     //FIXME: should be in module instead
-    implementation("com.google.protobuf:protobuf-java:4.29.3")
+    implementation("com.google.protobuf:protobuf-java:4.32.1")
 }
 
 /* ******************** test ******************** */
