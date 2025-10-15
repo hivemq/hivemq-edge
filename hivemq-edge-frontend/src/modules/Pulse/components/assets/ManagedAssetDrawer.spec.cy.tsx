@@ -11,8 +11,8 @@ import ManagedAssetDrawer from '@/modules/Pulse/components/assets/ManagedAssetDr
 const wrapper: FC<PropsWithChildren> = ({ children }) => (
   <WrapperTestRoute>
     <Routes>
-      <Route path="/pulse-assets" element={<div>Home</div>}></Route>
-      <Route path="/pulse-assets/:assetId" element={children}></Route>
+      <Route path="/pulse-assets" element={<div>Home</div>} />
+      <Route path="/pulse-assets/:assetId" element={children} />
     </Routes>
   </WrapperTestRoute>
 )

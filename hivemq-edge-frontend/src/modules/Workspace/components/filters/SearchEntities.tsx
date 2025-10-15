@@ -100,7 +100,7 @@ const SearchEntities: FC<SearchEntitiesProps> = ({ onChange, onNavigate }) => {
   const hasSearchStarted = current !== null && search !== ''
 
   return (
-    <FormControl variant="horizontal">
+    <FormControl variant="horizontal" data-testid="toolbox-search">
       <FormLabel fontSize="sm" htmlFor="workspace-search" whiteSpace="nowrap" hidden>
         {t('workspace.searchToolbox.search.label')}
       </FormLabel>

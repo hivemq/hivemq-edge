@@ -26,7 +26,6 @@ const horizontal = definePartsStyle({
     justifyContent: 'space-between',
     gap: 3,
     '> label': {
-      flex: 1,
       marginBottom: 0,
       marginInlineEnd: 0,
     },
