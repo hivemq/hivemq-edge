@@ -860,7 +860,9 @@
       "zoomIn": "Zoom in",
       "zoomIOut": "Zoom out",
       "fitView": "Fit to the canvas",
-      "toggleInteractivity": "Lock the canvas"
+      "toggleInteractivity": "Lock the canvas",
+      "expand": "Expand Toolbox",
+      "collapse": "Collapse Toolbox"
     },
     "configuration": {
       "header": "Workspace configuration",
