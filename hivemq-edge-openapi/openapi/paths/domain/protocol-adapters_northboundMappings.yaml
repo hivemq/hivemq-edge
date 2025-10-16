@@ -6,8 +6,9 @@ get:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/NorthboundMappingList.yaml
+            $ref: ../../components/schemas/NorthboundMappingOwnerList.yaml
       description: Success
-  summary: Get the mappings for northbound messages.
+  summary: Get all the northbound mappings.
   tags:
     - Protocol Adapters
+    - Domain
