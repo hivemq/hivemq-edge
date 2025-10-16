@@ -133,7 +133,7 @@ const SearchEntities: FC<SearchEntitiesProps> = ({ onChange, onNavigate }) => {
             </InputRightElement>
           )}
         </InputGroup>
-        <ButtonGroup size="sm" isAttached isDisabled={!hasSearchStarted}>
+        <ButtonGroup size="sm" isAttached isDisabled={!hasSearchStarted} data-testid="toolbox-search-navigate">
           <IconButton
             data-testid="workspace-search-prev"
             icon={<MdArrowBack />}

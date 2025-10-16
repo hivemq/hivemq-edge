@@ -47,7 +47,7 @@ describe('SearchEntities', () => {
     cy.get('[role="group"] > label').should('not.be.visible').should('have.text', 'Search for')
     cy.getByTestId('workspace-search').should('have.attr', 'placeholder', 'Search for ...')
     cy.getByTestId('workspace-search-clear').should('not.exist')
-    cy.get('[role="group"] > [role="group"] ').within(() => {
+    cy.getByTestId('toolbox-search-navigate').within(() => {
       cy.getByTestId('workspace-search-prev').should('have.attr', 'aria-label', 'Previous entity').should('be.disabled')
       cy.getByTestId('workspace-search-next').should('have.attr', 'aria-label', 'Next entity').should('be.disabled')
       cy.getByTestId('workspace-search-counter').should('have.text', '0 of 0')
