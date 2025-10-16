@@ -208,6 +208,7 @@ dependencies {
     compileOnly("com.hivemq:hivemq-edge-module-file")
 
     //FIXME: should be in module instead
+    // we need better module isolation for that as the modules pick up Netty from the app class loader
     implementation("com.google.protobuf:protobuf-java:4.32.1")
 }
 
