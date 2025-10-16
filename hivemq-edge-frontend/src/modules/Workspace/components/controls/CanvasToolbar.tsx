@@ -8,7 +8,7 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 import Panel from '@/components/react-flow/Panel.tsx'
 import SearchEntities from '@/modules/Workspace/components/filters/SearchEntities.tsx'
 import DrawerFilterToolbox from '@/modules/Workspace/components/filters/DrawerFilterToolbox.tsx'
-import { ANIMATION } from '@/modules/Theme/utils.ts'
+import { ANIMATION, TOOLBAR } from '@/modules/Theme/utils.ts'
 
 const CanvasToolbar: FC = () => {
   const { t } = useTranslation()
@@ -37,7 +37,7 @@ const CanvasToolbar: FC = () => {
         display="flex"
         alignItems="center"
         transition="max-width 0.4s cubic-bezier(0.4,0,0.2,1)"
-        maxWidth={expanded ? '1280px' : '80px'}
+        maxWidth={expanded ? TOOLBAR.MAX_WIDTH : TOOLBAR.MIN_WIDTH}
         width="auto"
         minHeight="40px"
         boxShadow="md"

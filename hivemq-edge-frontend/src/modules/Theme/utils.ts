@@ -18,3 +18,8 @@ export const Z_INDICES = {
   // Must be higher than the modal overlay (--chakra-zIndices-modal)
   ACCESSIBLE_DRAG_N_DROP: 1450,
 }
+
+export const TOOLBAR = {
+  MIN_WIDTH: '80px',
+  MAX_WIDTH: '1280px',
+}
