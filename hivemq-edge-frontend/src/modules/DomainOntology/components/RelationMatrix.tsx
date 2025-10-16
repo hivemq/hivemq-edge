@@ -16,7 +16,7 @@ const RelationMatrix: FC = () => {
 
   return (
     <ChartWrapper data-testid="edge-panel-relation-matrix">
-      <ChordChart matrix={matrixData.matrix} keys={matrixData.keys}></ChordChart>
+      <ChordChart matrix={matrixData.matrix} keys={matrixData.keys} />
     </ChartWrapper>
   )
 }

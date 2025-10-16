@@ -68,7 +68,7 @@ const LoginPage: FC = () => {
             )}
             {!showNotice && data && <Login first={data?.firstUseInformation} preLoadError={error} />}
           </div>
-          <Box flex={1}></Box>
+          <Box flex={1} />
         </Flex>
       </Stack>
     </main>

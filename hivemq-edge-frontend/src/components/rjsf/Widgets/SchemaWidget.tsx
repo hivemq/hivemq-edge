@@ -34,7 +34,7 @@ const SchemaWidget: FC<WidgetProps<ManagedAsset['schema']>> = ({ id, value, requ
             onClick={handleSchemaDownload}
             isDisabled={isInvalid || !schemaHandler.schema}
             aria-label={t('rjsf.SchemaWidget.download')}
-          ></IconButton>
+          />
         </ButtonGroup>
       </HStack>
       {!schemaHandler.schema && (

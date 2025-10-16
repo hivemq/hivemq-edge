@@ -7,7 +7,7 @@ import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import type { DeviceMetadata } from '@/modules/Workspace/types.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { WorkspaceNavigationCommand } from '@/modules/Workspace/types.ts'
-import { addSelectedNodesState } from '@/modules/Workspace/utils/react-flow.utils.ts'
+import { addSelectedNodesState, CONFIG_FITVIEW_OPTION } from '@/modules/Workspace/utils/react-flow.utils.ts'
 
 const SelectionListener = () => {
   const { state, pathname } = useLocation()
@@ -22,7 +22,7 @@ const SelectionListener = () => {
 
     const focusOnNodes = (nodesIds: string[]) => {
       addSelectedNodes(nodesIds)
-      fitView({ nodes: nodesIds.map((e) => ({ id: e })), duration: 750 })
+      fitView({ nodes: nodesIds.map((e) => ({ id: e })), ...CONFIG_FITVIEW_OPTION })
       navigate(pathname, { state: null, replace: true })
     }
 

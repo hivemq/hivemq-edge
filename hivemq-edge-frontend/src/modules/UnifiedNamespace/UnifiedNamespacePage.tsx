@@ -32,7 +32,7 @@ const UnifiedNamespacePage: FC = () => {
   // if (isLoading || !data) {
   //   return (
   //     <Flex flexDirection={'row'} flexWrap={'wrap'} gap={'20px'}>
-  //       <Skeleton width={250} height={100}></Skeleton>
+  //       <Skeleton width={250} height={100}/>
   //     </Flex>
   //   )
   // }
