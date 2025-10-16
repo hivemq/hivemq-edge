@@ -63,13 +63,13 @@ describe('QuickFilters', () => {
 
     cy.get('@fistItem').within(() => {
       cy.getByTestId('workspace-filter-quick-label').should('have.text', 'test')
-      cy.getByTestId('workspace-filter-quick-label').should('not.have.attr', 'data-checked')
+      cy.getByTestId('workspace-filter-quick-label').should('have.attr', 'data-checked')
 
       cy.getByTestId('workspace-filter-quick-label').click()
-      cy.getByTestId('workspace-filter-quick-label').should('have.attr', 'data-checked')
+      cy.getByTestId('workspace-filter-quick-label').should('not.have.attr', 'data-checked')
       cy.get('@onChange').should('have.been.calledWithMatch', {
         label: 'test',
-        isActive: true,
+        isActive: false,
       })
     })
   })
@@ -85,10 +85,10 @@ describe('QuickFilters', () => {
 
     cy.get('@fistItem').within(() => {
       cy.getByTestId('workspace-filter-quick-label').should('have.text', 'test')
-      cy.getByTestId('workspace-filter-quick-label').should('not.have.attr', 'data-checked')
+      cy.getByTestId('workspace-filter-quick-label').should('have.attr', 'data-checked')
 
       cy.getByTestId('workspace-filter-quick-label').click()
-      cy.getByTestId('workspace-filter-quick-label').should('have.attr', 'data-checked')
+      cy.getByTestId('workspace-filter-quick-label').should('not.have.attr', 'data-checked')
       cy.get('button#menu-button-filter-quick').click()
 
       cy.get('[role="menu"] button').should('have.length', 2)

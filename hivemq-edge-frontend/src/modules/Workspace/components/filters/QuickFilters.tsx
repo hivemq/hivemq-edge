@@ -2,7 +2,6 @@ import type { FC } from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '@uidotdev/usehooks'
-import type { SingleValue } from 'chakra-react-select'
 import {
   Card,
   CardBody,
@@ -30,7 +29,7 @@ import { KEY_FILTER_CURRENT, KEY_FILTER_CONFIGURATIONS } from '@/modules/Workspa
 import { ConfigurationSave } from '@/modules/Workspace/components/filters/index.ts'
 
 interface QuickFilterProps {
-  onChange?: (values: SingleValue<FilterConfigurationOption>) => void
+  onChange?: (values: FilterConfigurationOption) => void
   onNewQuickFilter?: (name: string) => void
   isFilterActive: boolean
 }
@@ -68,9 +67,12 @@ const QuickFilters: FC<QuickFilterProps> = ({ onNewQuickFilter, onChange, isFilt
     const newConfig: FilterConfigurationOption = {
       label: name,
       filter: currentState,
-      isActive: false,
+      isActive: true,
     }
-    setConfigurations((old) => [...old, newConfig])
+    setConfigurations((old) => {
+      const oldState = [...old].map((e) => ({ ...e, isActive: false }))
+      return [...oldState, newConfig]
+    })
     onNewQuickFilter?.(name)
   }
 
@@ -123,7 +125,7 @@ const QuickFilters: FC<QuickFilterProps> = ({ onNewQuickFilter, onChange, isFilt
                       aria-label={t('workspace.searchToolbox.quickFilters.action.aria-label')}
                     />
                     <MenuList>
-                      <MenuItem data-testid="workspace-filter-quick-view">
+                      <MenuItem data-testid="workspace-filter-quick-view" isDisabled>
                         {t('workspace.searchToolbox.quickFilters.action.edit')}
                       </MenuItem>
                       <MenuItem

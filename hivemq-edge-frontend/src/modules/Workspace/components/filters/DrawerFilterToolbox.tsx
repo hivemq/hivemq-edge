@@ -41,7 +41,9 @@ import type {
   FilterSelectionOption,
   FilterStatusOption,
   FilterTopicsOption,
+  FilterConfigurationOption,
 } from '@/modules/Workspace/components/filters/types.ts'
+import { KEY_FILTER_CONFIGURATIONS } from '@/modules/Workspace/components/filters/types.ts'
 import { KEY_FILTER_CURRENT } from '@/modules/Workspace/components/filters/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 
@@ -56,6 +58,7 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
   const [currentState, setCurrentState] = useLocalStorage<FilterConfig>(KEY_FILTER_CURRENT, {
     options: { isLiveUpdate: false, joinOperator: 'OR' },
   })
+  const [configurations] = useLocalStorage<FilterConfigurationOption[]>(KEY_FILTER_CONFIGURATIONS, [])
   const { nodes, onNodesChange } = useWorkspaceStore()
   const { fitView } = useReactFlow()
 
@@ -81,13 +84,13 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
     onClearFilters?.()
   }
 
-  const handleFilter = (state: Filter) => {
+  const handleFilter = (state: Filter, quickFilters: FilterConfigurationOption[]) => {
     const changeContent = nodes.map<NodeReplaceChange>((node) => {
       return {
         id: node.id,
         item: {
           ...node,
-          hidden: hideNodeWithFilters(node, state),
+          hidden: hideNodeWithFilters(node, state, quickFilters),
         },
         type: 'replace',
       }
@@ -107,20 +110,27 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
     ) => {
       const newState = { ...currentState, [id]: { isActive: true, filter: value } }
       setCurrentState(newState)
-      handleFilter(newState)
+      handleFilter(newState, configurations)
     }
   }
 
-  const handleActive = (id: string) => (value: boolean) => {
+  const handleActiveCriteria = (id: string) => (value: boolean) => {
     const current = currentState[id as keyof Filter]
     const newState = { ...currentState, [id]: { isActive: value, filter: current?.filter } }
     setCurrentState(newState)
-    handleFilter(newState)
+    handleFilter(newState, configurations)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleNewQuickFilter = (_name: string) => {
     handleClearFilters()
+  }
+
+  const handleActiveQuickFilter = (newState: FilterConfigurationOption) => {
+    const index = configurations.findIndex((e) => e.label === newState.label)
+    const newConf = [...configurations]
+    if (index !== -1) newConf[index] = newState
+    handleFilter(currentState, newConf)
   }
 
   return (
@@ -143,14 +153,18 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
           <DrawerHeader>{t('workspace.searchToolbox.title')}</DrawerHeader>
 
           <DrawerBody as={VStack} gap={4}>
-            <QuickFilters isFilterActive={isAnyFilterActive} onNewQuickFilter={handleNewQuickFilter} />
+            <QuickFilters
+              isFilterActive={isAnyFilterActive}
+              onNewQuickFilter={handleNewQuickFilter}
+              onChange={handleActiveQuickFilter}
+            />
             {filterEditors.map((criteria) => (
               <WrapperCriteria
                 key={criteria.id}
                 label={criteria.label}
                 id={criteria.id}
                 isActive={currentState[criteria.id]?.isActive || false}
-                onChange={handleActive(criteria.id)}
+                onChange={handleActiveCriteria(criteria.id)}
               >
                 <criteria.editor onChange={handleChange(criteria.id)} value={currentState[criteria.id]?.filter} />
               </WrapperCriteria>
@@ -158,7 +172,7 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
             <OptionsFilter value={currentState.options} />
           </DrawerBody>
           <DrawerFooter mt={4}>
-            <ApplyFilter onClear={handleClearFilters} onSubmit={() => handleFilter(currentState)} />
+            <ApplyFilter onClear={handleClearFilters} onSubmit={() => handleFilter(currentState, configurations)} />
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
