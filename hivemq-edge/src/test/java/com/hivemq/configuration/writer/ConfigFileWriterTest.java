@@ -54,8 +54,6 @@ public class ConfigFileWriterTest extends AbstractConfigWriterTest {
 
         final String copiedFileContent = FileUtils.readFileToString(tempCopyFile, UTF_8);
 
-        System.out.println(originalXml);
-        System.out.println(copiedFileContent);
 
         final Diff diff = XMLUnit.compareXML(originalXml, copiedFileContent);
         if (!diff.identical()) {
