@@ -450,9 +450,51 @@ describe('hideNodeWithFilters', () => {
     expect(hideNodeWithFilters(adapterNode, filter)).toBe(false)
   })
 
-  it('should return true when multiple filters and not all match', () => {
+  it('should return false when any filter matches (OR logic)', () => {
     const filter: Filter = {
       entities: { isActive: true, filter: [{ value: NodeTypes.ADAPTER_NODE, label: 'Adapter' }] },
+      protocols: { isActive: true, filter: [{ type: 'mqtt', label: 'MQTT' }] },
+    }
+    expect(hideNodeWithFilters(adapterNode, filter)).toBe(false)
+  })
+
+  it('should return true only when all filters are active and none match', () => {
+    const filter: Filter = {
+      entities: { isActive: true, filter: [{ value: NodeTypes.BRIDGE_NODE, label: 'Bridge' }] },
+      protocols: { isActive: true, filter: [{ type: 'mqtt', label: 'MQTT' }] },
+    }
+    expect(hideNodeWithFilters(adapterNode, filter)).toBe(true)
+  })
+
+  it('should return false when one of multiple filters matches (OR logic)', () => {
+    const nodeWithStatus: Node = {
+      id: 'adapter-2',
+      type: NodeTypes.ADAPTER_NODE,
+      data: {
+        type: 'mqtt', // Changed from 'opcua' to 'mqtt' to test a different scenario
+        status: { connection: 'connected', runtime: 'stopped' },
+      },
+      position: { x: 0, y: 0 },
+    }
+    const filter: Filter = {
+      entities: { isActive: true, filter: [{ value: NodeTypes.BRIDGE_NODE, label: 'Bridge' }] },
+      protocols: { isActive: true, filter: [{ type: 'mqtt', label: 'MQTT' }] }, // Now matches!
+      status: { isActive: true, filter: [{ status: 'connected', label: 'Connected' }] },
+    }
+    expect(hideNodeWithFilters(nodeWithStatus, filter)).toBe(false)
+  })
+
+  it('should return false when selection filter matches even if other filters do not', () => {
+    const filter: Filter = {
+      selection: { isActive: true, filter: [{ id: 'adapter-1', type: NodeTypes.ADAPTER_NODE }] },
+      protocols: { isActive: true, filter: [{ type: 'mqtt', label: 'MQTT' }] },
+    }
+    expect(hideNodeWithFilters(adapterNode, filter)).toBe(false)
+  })
+
+  it('should return true when selection filter does not match and other filters do not match', () => {
+    const filter: Filter = {
+      selection: { isActive: true, filter: [{ id: 'adapter-2', type: NodeTypes.ADAPTER_NODE }] },
       protocols: { isActive: true, filter: [{ type: 'mqtt', label: 'MQTT' }] },
     }
     expect(hideNodeWithFilters(adapterNode, filter)).toBe(true)
