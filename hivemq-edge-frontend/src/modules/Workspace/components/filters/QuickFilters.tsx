@@ -67,9 +67,12 @@ const QuickFilters: FC<QuickFilterProps> = ({ onNewQuickFilter, onChange, isFilt
     const newConfig: FilterConfigurationOption = {
       label: name,
       filter: currentState,
-      isActive: false,
+      isActive: true,
     }
-    setConfigurations((old) => [...old, newConfig])
+    setConfigurations((old) => {
+      const oldState = [...old].map((e) => ({ ...e, isActive: false }))
+      return [...oldState, newConfig]
+    })
     onNewQuickFilter?.(name)
   }
 
