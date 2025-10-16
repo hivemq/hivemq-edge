@@ -47,6 +47,7 @@ const CanvasToolbar: FC = () => {
         _focusWithin={{ boxShadow: 'outline' }}
       >
         <IconButton
+          data-testid="toolbox-search-expand"
           aria-label={t('workspace.controls.expand')}
           icon={
             <>
@@ -72,6 +73,7 @@ const CanvasToolbar: FC = () => {
           <SearchEntities />
           <DrawerFilterToolbox />
           <IconButton
+            data-testid="toolbox-search-collapse"
             aria-label={t('workspace.controls.collapse')}
             icon={<Icon as={ChevronRightIcon} boxSize="24px" />}
             onClick={() => setExpanded(false)}
