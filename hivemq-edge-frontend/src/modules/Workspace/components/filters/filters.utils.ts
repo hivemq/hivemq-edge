@@ -65,7 +65,6 @@ export const applyStatusFilter = (node: Node, criteria?: ActiveFilter<MultiValue
 }
 
 export const applyQuickFilters = (node: Node, quickFilters: FilterConfigurationOption[]) => {
-  console.log('XXXXXX quickFilters', quickFilters)
   const coverage = quickFilters.reduce<boolean[]>((acc, quickFilter) => {
     if (!quickFilter.isActive) {
       // acc.push(false)
@@ -75,8 +74,6 @@ export const applyQuickFilters = (node: Node, quickFilters: FilterConfigurationO
     acc.push(!isHidden)
     return acc
   }, [])
-
-  console.log('XXXXXX coverage', node.type, coverage)
 
   if (coverage.length === 0) return undefined
   return coverage.includes(true)
@@ -98,7 +95,6 @@ export const hideNodeWithFilters = (node: Node, state: Filter, quickFilters?: Fi
   if (isInSelection !== undefined) allTest.push(isInSelection)
   if (isInStatus !== undefined) allTest.push(isInStatus)
 
-  // if (quickFilters) console.log('XXXXXX isInQuickFilters', node.type, isInQuickFilters, allTest)
   if (allTest.length === 0) return false
 
   return !allTest.includes(true)
