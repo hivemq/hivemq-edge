@@ -15,7 +15,6 @@
  */
 package com.hivemq.security.ssl;
 
-import com.google.common.collect.ImmutableSet;
 import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.security.exception.SslException;
 import org.jetbrains.annotations.NotNull;
@@ -24,8 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -34,16 +31,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.Base64;
-import java.util.Enumeration;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -127,7 +120,7 @@ public final class SslUtil {
             //in containers the keystore might arrive base64 encoded
             try {
                 loaded = Base64.getDecoder().decode(loaded);
-            } catch (IllegalArgumentException e) {
+            } catch (final IllegalArgumentException e) {
                 //ignored, just means the content isn't base64 encoded
             }
             keystoreContent = loaded;
@@ -170,96 +163,6 @@ public final class SslUtil {
                     trustStoreType), e);
         } catch (final NoSuchAlgorithmException | CertificateException e) {
             throw new SslException("Not able to read the certificate from TrustStore '" + trustStorePath + "'", e);
-        }
-    }
-
-    public static @NotNull ImmutableSet<X509Certificate> loadCertificatesFromTruststore(final @Nullable String password,
-                                                                                       final @Nullable String type,
-                                                                                       final @Nullable Path path)
-            throws SslException {
-        try (final FileInputStream fileInputStream = new FileInputStream(path.toFile())) {
-            //load keystore from TLS config
-            final KeyStore keyStore = KeyStore.getInstance(type);
-            keyStore.load(fileInputStream,
-                    password != null ? password.toCharArray() : new char[]{});
-            final Enumeration<String> aliases = keyStore.aliases();
-
-            final ImmutableSet.Builder<X509Certificate> builder = ImmutableSet.builder();
-
-            while (aliases.hasMoreElements()) {
-                final String alias = aliases.nextElement();
-                final Certificate certificate = keyStore.getCertificate(alias);
-                if (certificate instanceof X509Certificate) {
-                    builder.add((X509Certificate) certificate);
-                }
-
-                final Certificate[] certificateChain = keyStore.getCertificateChain(alias);
-
-                if (certificateChain != null) {
-                    for (final Certificate certificateInChain : certificateChain) {
-                        if (certificateInChain instanceof X509Certificate) {
-                            builder.add((X509Certificate) certificateInChain);
-                        }
-                    }
-                }
-            }
-
-            return builder.build();
-        } catch (final FileNotFoundException e1) {
-            throw new SslException("Cannot find TrustStore at path " + path, e1);
-        } catch (final KeyStoreException | IOException e2) {
-            throw new SslException("Not able to open or read TrustStore '" +
-                    path +
-                    "' with type '" +
-                    type +
-                    "'", e2);
-        } catch (final NoSuchAlgorithmException | CertificateException e3) {
-            throw new SslException("Not able to read certificate from TrustStore '" +
-                    path, e3);
-        }
-    }
-
-    public static @NotNull SSLContext loadSSLContextFromTruststore(final @Nullable String password,
-                                                                   final @Nullable String type,
-                                                                   final @Nullable Path path)
-            throws SslException {
-
-        //TODO kinda weird, make nicer
-        if (password == null && type == null && path == null) {
-            try {
-                return SSLContext.getDefault();
-            } catch (final NoSuchAlgorithmException e) {
-                throw new SslException("Not able to initialize default ssl context.", e);
-            }
-        }
-        return loadSSLContextFromTruststore(path, password, type);
-    }
-
-    private static @NotNull SSLContext loadSSLContextFromTruststore(
-            final @NotNull Path path, final @NotNull String type, final @Nullable String password)
-            throws SslException {
-
-        try (final FileInputStream fileInputStream = new FileInputStream(path.toFile())) {
-            //We're expecting PKIX format
-            final TrustManagerFactory trustMgrFactory = TrustManagerFactory.getInstance("PKIX");
-            final KeyStore keyStore = KeyStore.getInstance(type);
-            keyStore.load(fileInputStream, password != null ? password.toCharArray() : new char[]{});
-
-            trustMgrFactory.init(keyStore);
-            final TrustManager[] customTrustManagers = trustMgrFactory.getTrustManagers();
-            final SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, customTrustManagers, null);
-            return sslContext;
-
-        } catch (final FileNotFoundException e1) {
-            throw new SslException("Cannot find TrustStore at path " + path, e1);
-        } catch (final KeyStoreException | IOException e2) {
-            throw new SslException("Not able to open or read TrustStore '" + path + "' with type '" + type + "'",
-                    e2);
-        } catch (final NoSuchAlgorithmException | CertificateException e3) {
-            throw new SslException("Not able to read certificate from TrustStore '" + path + "'", e3);
-        } catch (final KeyManagementException e4) {
-            throw new SslException("Not able to initialize KeyManagement from TrustStore '" + path + "'", e4);
         }
     }
 
