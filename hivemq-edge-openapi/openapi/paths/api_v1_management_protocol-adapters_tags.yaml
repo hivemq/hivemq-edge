@@ -18,7 +18,7 @@ get:
                       node: ns=2;i=test2
                     name: tag2
           schema:
-            $ref: ../../components/schemas/DomainTagOwnerList.yaml
+            $ref: ../components/schemas/DomainTagOwnerList.yaml
       description: Success
   summary: Get the list of all tags created in this Edge instance
   tags:
