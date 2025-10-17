@@ -30,5 +30,5 @@ public interface IUsernameRolesProvider extends ICredentialsProvider {
         }
     }
 
-    Optional<UsernameRoles> findByUsernameAndPassword(final @NotNull String userName, final @NotNull String password);
+    Optional<UsernameRoles> findByUsernameAndPassword(final @NotNull String userName, final @NotNull byte[] password);
 }

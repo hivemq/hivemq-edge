@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Optional;
 
@@ -140,7 +141,7 @@ class LdapUsernameRolesProviderIntegrationTest {
     void testSuccessfulAuthentication() {
         // Act
         final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(TEST_USERNAME, TEST_PASSWORD);
+                provider.findByUsernameAndPassword(TEST_USERNAME, TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(result)
@@ -171,7 +172,7 @@ class LdapUsernameRolesProviderIntegrationTest {
 
         // Act
         final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(TEST_USERNAME, wrongPassword);
+                provider.findByUsernameAndPassword(TEST_USERNAME, wrongPassword.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(result)
@@ -194,7 +195,7 @@ class LdapUsernameRolesProviderIntegrationTest {
 
         // Act
         final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(nonExistentUser, somePassword);
+                provider.findByUsernameAndPassword(nonExistentUser, somePassword.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(result)
@@ -211,7 +212,7 @@ class LdapUsernameRolesProviderIntegrationTest {
     void testUsernameRolesToPrincipalConversion() {
         // Arrange & Act
         final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(TEST_USERNAME, TEST_PASSWORD);
+                provider.findByUsernameAndPassword(TEST_USERNAME, TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         assertThat(result).isPresent();
 
@@ -241,7 +242,7 @@ class LdapUsernameRolesProviderIntegrationTest {
 
         // Act
         final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(TEST_USERNAME, emptyPassword);
+                provider.findByUsernameAndPassword(TEST_USERNAME, emptyPassword.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(result)
@@ -261,7 +262,7 @@ class LdapUsernameRolesProviderIntegrationTest {
 
         // Act
         final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(emptyUsername, TEST_PASSWORD);
+                provider.findByUsernameAndPassword(emptyUsername, TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(result)

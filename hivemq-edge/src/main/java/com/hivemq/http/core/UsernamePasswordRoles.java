@@ -26,7 +26,7 @@ public class UsernamePasswordRoles {
     public static final String DEFAULT_PASSWORD = "hivemq";
 
     private String userName;
-    private String password;
+    private byte[] password;
     private String realm;
     private Set<String> roles = Set.of();
 
@@ -34,7 +34,7 @@ public class UsernamePasswordRoles {
     }
 
 
-    public UsernamePasswordRoles(final @NotNull String userName, final @NotNull String password, Set<String> roles) {
+    public UsernamePasswordRoles(final @NotNull String userName, final @NotNull byte[] password, Set<String> roles) {
         this();
         this.userName = userName;
         this.password = password;
@@ -49,11 +49,11 @@ public class UsernamePasswordRoles {
         this.userName = userName;
     }
 
-    public String getPassword() {
+    public byte[] getPassword() {
         return password;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(byte[] password) {
         this.password = password;
     }
 

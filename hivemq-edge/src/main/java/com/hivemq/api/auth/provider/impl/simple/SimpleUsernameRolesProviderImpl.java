@@ -19,6 +19,7 @@ import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -53,12 +54,12 @@ public class SimpleUsernameRolesProviderImpl implements IUsernameRolesProvider {
     }
 
     @Override
-    public Optional<UsernameRoles> findByUsernameAndPassword(final @NotNull String userName, final @NotNull String password) {
+    public Optional<UsernameRoles> findByUsernameAndPassword(final @NotNull String userName, final byte @NotNull [] password) {
         checkNotNull(userName);
         return Optional
                 .ofNullable(usernamePasswordMap.get(userName))
                 .map(user -> {
-                    if(!user.getPassword().equals(password)) {
+                    if(!Arrays.equals(user.getPassword(), password)) {
                         return null;
                     } else {
                         return new UsernameRoles(user.getUserName(), Set.copyOf(user.getRoles()));
