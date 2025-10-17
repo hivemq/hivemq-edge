@@ -29,10 +29,8 @@ import com.hivemq.configuration.entity.api.ApiListenerEntity;
 import com.hivemq.configuration.entity.api.ApiTlsEntity;
 import com.hivemq.configuration.entity.api.HttpListenerEntity;
 import com.hivemq.configuration.entity.api.HttpsListenerEntity;
-import com.hivemq.configuration.entity.api.LdapBasedUsernameRolesSourceEntity;
 import com.hivemq.configuration.entity.api.PreLoginNoticeEntity;
 import com.hivemq.configuration.entity.api.UserEntity;
-import com.hivemq.configuration.entity.api.UserlistBasedUsernameRolesSourceEntity;
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.exceptions.UnrecoverableException;
@@ -88,7 +86,7 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
 
         // Users
         if(entity.getLdap() != null) {
-            apiCfgService.setLdapConnectionProperties(LdapConnectionProperties.fromEntity(entity.getLdap().getLdapAuthentication()));
+            apiCfgService.setLdapConnectionProperties(LdapConnectionProperties.fromEntity(entity.getLdap()));
         } else {
             final List<UserEntity> users = entity.getUsers();
             if (!users.isEmpty()) {

@@ -33,7 +33,7 @@ import java.util.Objects;
  * <p>
  * Example configuration:
  * <pre>{@code
- * <ldap-authentication>
+ * <ldap>
  *     <host>ldap.example.com</host>
  *     <port>636</port>
  *     <tls-mode>LDAPS</tls-mode>
@@ -44,10 +44,10 @@ import java.util.Objects;
  *     </tls>
  *     <user-dn-template>uid={username},ou=people,{baseDn}</user-dn-template>
  *     <base-dn>dc=example,dc=com</base-dn>
- * </ldap-authentication>
+ * </ldap>
  * }</pre>
  */
-@XmlRootElement(name = "ldap-authentication")
+@XmlRootElement(name = "ldap")
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 public class LdapAuthenticationEntity {

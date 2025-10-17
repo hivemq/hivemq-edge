@@ -48,7 +48,7 @@ public class AdminApiEntity extends EnabledEntity {
     private @NotNull List<UserEntity> users;
 
     @XmlElementRef(required = false)
-    private @Nullable LdapBasedUsernameRolesSourceEntity usernameRolesSource;
+    private @Nullable LdapAuthenticationEntity ldapAuthentication;
 
     @XmlElementRef(required = false)
     private @Nullable ApiTlsEntity tls;
@@ -75,8 +75,8 @@ public class AdminApiEntity extends EnabledEntity {
         return users;
     }
 
-    public @Nullable LdapBasedUsernameRolesSourceEntity getLdap() {
-        return usernameRolesSource;
+    public @Nullable LdapAuthenticationEntity getLdap() {
+        return ldapAuthentication;
     }
 
     public @Nullable ApiTlsEntity getTls() {
@@ -100,7 +100,7 @@ public class AdminApiEntity extends EnabledEntity {
                     Objects.equals(tls, that.tls) &&
                     Objects.equals(jws, that.jws) &&
                     Objects.equals(users, that.users) &&
-                    Objects.equals(usernameRolesSource, that.usernameRolesSource) &&
+                    Objects.equals(ldapAuthentication, that.ldapAuthentication) &&
                     Objects.equals(preLoginNotice, that.preLoginNotice);
         }
         return false;
@@ -108,6 +108,6 @@ public class AdminApiEntity extends EnabledEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), listeners, tls, jws, users, usernameRolesSource, preLoginNotice);
+        return Objects.hash(super.hashCode(), listeners, tls, jws, users, ldapAuthentication, preLoginNotice);
     }
 }
