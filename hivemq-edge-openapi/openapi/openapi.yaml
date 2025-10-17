@@ -156,6 +156,9 @@ tags:
 
     name: Data Hub - State
   - description: >+
+      These endpoints can be used to retrieve the different elements of the Edge topology
+    name: Domain
+  - description: >+
       These endpoints can be used to manage Pulse and its assets.
     name: Pulse
 paths:
@@ -193,6 +196,14 @@ paths:
     $ref: paths/api_v1_data-hub_scripts.yaml
   /api/v1/data-hub/scripts/{scriptId}:
     $ref: paths/api_v1_data-hub_scripts_{scriptId}.yaml
+  /api/v1/domain/protocol-adapters/northboundMappings:
+    $ref: paths/domain/protocol-adapters_northboundMappings.yaml
+  /api/v1/domain/protocol-adapters/southboundMappings:
+    $ref: paths/domain/protocol-adapters_southboundMappings.yaml
+  /api/v1/domain/protocol-adapters/tags:
+    $ref: paths/domain/protocol-adapters_tags.yaml
+  /api/v1/domain/edge/topic-filters:
+    $ref: "paths/domain/edge_topic-filters.yaml"
   /api/v1/frontend/capabilities:
     $ref: paths/api_v1_frontend_capabilities.yaml
   /api/v1/frontend/configuration:
@@ -239,16 +250,10 @@ paths:
     $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_tags_{tagName}.yaml
   /api/v1/management/protocol-adapters/adapters/{adapterType}:
     $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterType}.yaml
-  /api/v1/management/protocol-adapters/northboundMappings:
-    $ref: paths/api_v1_management_protocol-adapters_northboundMappings.yaml
-  /api/v1/management/protocol-adapters/southboundMappings:
-    $ref: paths/api_v1_management_protocol-adapters_southboundMappings.yaml
   /api/v1/management/protocol-adapters/status:
     $ref: paths/api_v1_management_protocol-adapters_status.yaml
   /api/v1/management/protocol-adapters/tag-schemas/{protocolId}:
     $ref: paths/api_v1_management_protocol-adapters_tag-schemas_{protocolId}.yaml
-  /api/v1/management/protocol-adapters/tags:
-    $ref: paths/api_v1_management_protocol-adapters_tags.yaml
   /api/v1/management/protocol-adapters/tags/{tagName}:
     $ref: paths/api_v1_management_protocol-adapters_tags_{tagName}.yaml
   /api/v1/management/protocol-adapters/types:
