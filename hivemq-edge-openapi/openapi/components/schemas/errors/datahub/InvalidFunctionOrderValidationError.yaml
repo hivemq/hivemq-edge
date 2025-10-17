@@ -1,0 +1,28 @@
+allOf:
+  - $ref: "../validation/ValidationError.yaml"
+  - type: object
+    properties:
+      function:
+        type: string
+        description: The function.
+        example: "transform"
+      path:
+        type: string
+        format: json-path
+        description: The json path.
+        example: "$.path"
+      previousFunction:
+        type: string
+        description: The previous function.
+        example: "init"
+    required:
+      - function
+      - path
+      - previousFunction
+example:
+  general:
+    detail: "The operation at '$.path' with the functionId 'transform' must be after a 'init' operation."
+    function: "transform"
+    path: "$.path"
+    previousFunction: "init"
+    type: "https://hivemq.com/edge/api/model/InvalidFunctionOrderValidationError"

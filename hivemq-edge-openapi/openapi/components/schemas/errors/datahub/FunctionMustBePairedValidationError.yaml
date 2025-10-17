@@ -1,0 +1,21 @@
+allOf:
+  - $ref: "../validation/ValidationError.yaml"
+  - type: object
+    properties:
+      existingFunction:
+        type: string
+        description: The existing function.
+        example: "function1"
+      missingFunction:
+        type: string
+        description: The missing function.
+        example: "function2"
+    required:
+      - existingFunction
+      - missingFunction
+example:
+  general:
+    detail: "If 'function1' function is present in the pipeline, 'function2' function must be present as well."
+    existingFunction: "function1"
+    missingFunction: "function2"
+    type: "https://hivemq.com/edge/api/model/FunctionMustBePairedValidationError"

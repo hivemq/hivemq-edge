@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The script ID.
+        example: "abc"
+    required:
+      - id
+example:
+  general:
+    status: 400
+    title: "Script Referenced"
+    detail: "Script with ID 'abc' is referenced."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/ScriptReferencedError"
