@@ -63,6 +63,9 @@ export const useHttpClient = () => {
       {
         BASE: config.apiBaseUrl,
         TOKEN: credentials?.token,
+        HEADERS: {
+          Accept: 'application/json, application/problem+json',
+        },
       },
       AxiosHttpRequestWithInterceptors
     )
