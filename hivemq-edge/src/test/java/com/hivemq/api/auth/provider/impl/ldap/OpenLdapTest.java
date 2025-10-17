@@ -394,12 +394,12 @@ class OpenLdapTest {
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 
             // Verify ou=people exists
-            SearchRequest peopleSeanrch = new SearchRequest(
+            SearchRequest peopleSearch = new SearchRequest(
                     "ou=people," + OPENLDAP_CONTAINER.getBaseDn(),
                     SearchScope.BASE,
                     "(objectClass=organizationalUnit)");
 
-            SearchResult peopleResult = connection.search(peopleSeanrch);
+            SearchResult peopleResult = connection.search(peopleSearch);
             assertThat(peopleResult.getEntryCount())
                     .as("ou=people should exist")
                     .isEqualTo(1);
