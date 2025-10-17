@@ -31,16 +31,9 @@ class LdapConnectionPropertiesTest {
 
     @Test
     void testTlsModeDefaults() {
-        Assertions.assertThat(TlsMode.NONE.getDefaultPort()).isEqualTo(389);
-        assertThat(TlsMode.START_TLS.getDefaultPort()).isEqualTo(389);
-        assertThat(TlsMode.LDAPS.getDefaultPort()).isEqualTo(636);
-    }
-
-    @Test
-    void testTlsModeRequiresTlsConfiguration() {
-        assertThat(TlsMode.NONE.requiresTlsConfiguration()).isFalse();
-        assertThat(TlsMode.START_TLS.requiresTlsConfiguration()).isTrue();
-        assertThat(TlsMode.LDAPS.requiresTlsConfiguration()).isTrue();
+        Assertions.assertThat(TlsMode.NONE.defaultPort).isEqualTo(389);
+        assertThat(TlsMode.START_TLS.defaultPort).isEqualTo(389);
+        assertThat(TlsMode.LDAPS.defaultPort).isEqualTo(636);
     }
 
     @Test
