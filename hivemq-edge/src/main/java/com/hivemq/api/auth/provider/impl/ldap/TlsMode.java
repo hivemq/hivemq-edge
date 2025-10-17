@@ -25,7 +25,7 @@ public enum TlsMode {
      * Uses port 389 by default. Not recommended for production use as credentials
      * and data are transmitted in clear text.
      */
-    NONE,
+    NONE(389),
 
     /**
      * LDAPS - LDAP over TLS/SSL.
@@ -33,7 +33,7 @@ public enum TlsMode {
      * Establishes TLS connection from the start. Uses port 636 by default.
      * Most secure option as the entire connection is encrypted.
      */
-    LDAPS,
+    LDAPS(636),
 
     /**
      * StartTLS - Upgrade plain connection to TLS.
@@ -41,26 +41,11 @@ public enum TlsMode {
      * Starts as plain LDAP on port 389, then upgrades to TLS using the StartTLS
      * extended operation. Common in production environments.
      */
-    START_TLS;
+    START_TLS(389);
 
-    /**
-     * Returns the default port for this TLS mode.
-     *
-     * @return The default LDAP port for this mode
-     */
-    public int getDefaultPort() {
-        return switch (this) {
-            case LDAPS -> 636;
-            case NONE, START_TLS -> 389;
-        };
-    }
+    public final int defaultPort;
 
-    /**
-     * Returns whether this mode requires TLS configuration.
-     *
-     * @return {@code true} if TLS configuration is needed, {@code false} otherwise
-     */
-    public boolean requiresTlsConfiguration() {
-        return this != NONE;
+    TlsMode(final int defaultPort) {
+        this.defaultPort = defaultPort;
     }
 }

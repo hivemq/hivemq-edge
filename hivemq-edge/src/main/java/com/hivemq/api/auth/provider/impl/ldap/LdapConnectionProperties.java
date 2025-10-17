@@ -143,7 +143,7 @@ public record LdapConnectionProperties(
         }
 
         // Determine port: use configured port, or default based on TLS mode if 0
-        final int port = entity.getPort() > 0 ? entity.getPort() : tlsMode.getDefaultPort();
+        final int port = entity.getPort() > 0 ? entity.getPort() : tlsMode.defaultPort;
 
         // Extract TLS configuration if present
         final String trustStorePath;
@@ -232,7 +232,7 @@ public record LdapConnectionProperties(
      * @throws IllegalStateException    if called when TLS mode is NONE
      */
     public @NotNull SSLContext createSSLContext() throws GeneralSecurityException {
-        if (!tlsMode.requiresTlsConfiguration()) {
+        if (!tlsMode.equals(TlsMode.NONE)) {
             throw new IllegalStateException("SSLContext is not needed for TLS mode: " + tlsMode);
         }
 
