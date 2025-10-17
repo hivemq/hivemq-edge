@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright 2025-present HiveMQ GmbH
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="config.xsd">
+
+    <!--
+        Example: Admin API with LDAP Authentication
+
+        This configuration enables LDAP-based authentication for the Admin API.
+        Instead of managing users in the config file, users are authenticated
+        against an LDAP directory server.
+
+        Supported TLS modes:
+        - NONE: Plain LDAP (port 389, not recommended for production)
+        - LDAPS: LDAP over TLS from connection start (port 636, recommended)
+        - START_TLS: Plain connection upgraded to TLS (port 389)
+    -->
+
+    <admin-api>
+        <enabled>true</enabled>
+
+        <!-- LDAP Authentication Configuration -->
+        <ldap>
+            <ldap-authentication>
+                <!-- LDAP Server Configuration -->
+                <host>ldap.example.com</host>
+                <port>636</port>  <!-- 636 for LDAPS, 389 for plain LDAP or START_TLS -->
+                <tls-mode>LDAPS</tls-mode>  <!-- Options: NONE, LDAPS, START_TLS -->
+
+                <!-- TLS/SSL Configuration (required for LDAPS and START_TLS) -->
+                <tls>
+                    <!-- Path to truststore containing CA certificates -->
+                    <truststore-path>/path/to/truststore.jks</truststore-path>
+                    <truststore-password>changeit</truststore-password>
+                    <truststore-type>JKS</truststore-type>  <!-- JKS or PKCS12 -->
+                </tls>
+
+                <!-- Optional: Connection Timeouts (in milliseconds) -->
+                <connect-timeout-millis>5000</connect-timeout-millis>    <!-- 5 seconds -->
+                <response-timeout-millis>10000</response-timeout-millis>  <!-- 10 seconds -->
+
+                <!--
+                    User DN Template
+                    Defines how usernames are mapped to LDAP Distinguished Names.
+                    Placeholders:
+                    - {username}: The username entered in the login form
+                    - {baseDn}: The base DN specified below
+
+                    Examples:
+                    - OpenLDAP: uid={username},ou=people,{baseDn}
+                    - Active Directory: cn={username},cn=Users,{baseDn}
+                    - Email-based: mail={username},ou=staff,{baseDn}
+                -->
+                <user-dn-template>uid={username},ou=people,{baseDn}</user-dn-template>
+
+                <!-- Base DN: The root of your LDAP directory tree -->
+                <base-dn>dc=example,dc=com</base-dn>
+            </ldap-authentication>
+        </ldap>
+    </admin-api>
+
+</hivemq>

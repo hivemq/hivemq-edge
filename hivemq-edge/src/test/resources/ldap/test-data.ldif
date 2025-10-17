@@ -1,0 +1,95 @@
+# Test LDIF file for OpenLDAP container seeding
+# This file demonstrates how to populate an LDAP directory with test data
+#
+# Structure:
+# dc=example,dc=org
+#   ├── ou=people (organizational unit for users)
+#   │   ├── uid=alice (user)
+#   │   ├── uid=bob (user)
+#   │   └── uid=charlie (user)
+#   └── ou=groups (organizational unit for groups)
+#       ├── cn=developers (group)
+#       └── cn=administrators (group)
+
+# Create organizational unit for people
+dn: ou=people,dc=example,dc=org
+objectClass: organizationalUnit
+objectClass: top
+ou: people
+description: Container for user accounts
+
+# Create organizational unit for groups
+dn: ou=groups,dc=example,dc=org
+objectClass: organizationalUnit
+objectClass: top
+ou: groups
+description: Container for group definitions
+
+# User: Alice (Software Engineer)
+dn: uid=alice,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: top
+uid: alice
+cn: Alice Anderson
+sn: Anderson
+givenName: Alice
+mail: alice@example.org
+userPassword: alice123
+uidNumber: 10001
+gidNumber: 10001
+homeDirectory: /home/alice
+loginShell: /bin/bash
+description: Software Engineer
+
+# User: Bob (DevOps Engineer)
+dn: uid=bob,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: top
+uid: bob
+cn: Bob Builder
+sn: Builder
+givenName: Bob
+mail: bob@example.org
+userPassword: bob456
+uidNumber: 10002
+gidNumber: 10002
+homeDirectory: /home/bob
+loginShell: /bin/bash
+description: DevOps Engineer
+
+# User: Charlie (System Administrator)
+dn: uid=charlie,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: top
+uid: charlie
+cn: Charlie Chen
+sn: Chen
+givenName: Charlie
+mail: charlie@example.org
+userPassword: charlie789
+uidNumber: 10003
+gidNumber: 10003
+homeDirectory: /home/charlie
+loginShell: /bin/bash
+description: System Administrator
+
+# Group: Developers
+dn: cn=developers,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+objectClass: top
+cn: developers
+description: Software Development Team
+member: uid=alice,ou=people,dc=example,dc=org
+member: uid=bob,ou=people,dc=example,dc=org
+
+# Group: Administrators
+dn: cn=administrators,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+objectClass: top
+cn: administrators
+description: System Administrators
+member: uid=charlie,ou=people,dc=example,dc=org
+member: uid=bob,ou=people,dc=example,dc=org

@@ -82,7 +82,9 @@ public final class SslUtil {
     }
 
     private static @NotNull KeyStore getKeyStore(
-            @NotNull String keyStoreType, @NotNull String keyStorePassword, String keyStorePath)
+            final @NotNull String keyStoreType,
+            final @NotNull String keyStorePassword,
+            final String keyStorePath)
             throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
         //First try to load keystore as is
         try (final InputStream fileInputStream = new FileInputStream(keyStorePath)) {
@@ -109,14 +111,16 @@ public final class SslUtil {
 
     }
 
-    private static byte[] loadFileContentAndConvertIfBase64Encoded(@NotNull String keyStoreType, @NotNull String keyStorePath) {
+    private static byte[] loadFileContentAndConvertIfBase64Encoded(
+            final @NotNull String keyStoreType,
+            final @NotNull String keyStorePath) {
         final byte[] keystoreContent;
         try {
             byte[] loaded = Files.readAllBytes(Path.of(keyStorePath));
             //in containers the keystore might arrive base64 encoded
             try {
                 loaded = Base64.getDecoder().decode(loaded);
-            } catch (IllegalArgumentException e) {
+            } catch (final IllegalArgumentException e) {
                 //ignored, just means the content isn't base64 encoded
             }
             keystoreContent = loaded;
@@ -161,6 +165,7 @@ public final class SslUtil {
             throw new SslException("Not able to read the certificate from TrustStore '" + trustStorePath + "'", e);
         }
     }
+
 
     private SslUtil() {
     }
