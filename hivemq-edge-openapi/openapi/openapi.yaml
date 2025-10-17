@@ -164,12 +164,16 @@ tags:
 paths:
   /:
     $ref: paths/root.yaml
+
+  # Authentication paths
   /api/v1/auth/authenticate:
     $ref: paths/api_v1_auth_authenticate.yaml
   /api/v1/auth/refresh-token:
     $ref: paths/api_v1_auth_refresh-token.yaml
   /api/v1/auth/validate-token:
     $ref: paths/api_v1_auth_validate-token.yaml
+
+  # Data hub paths
   /api/v1/data-hub/behavior-validation/policies:
     $ref: paths/api_v1_data-hub_behavior-validation_policies.yaml
   /api/v1/data-hub/behavior-validation/policies/{policyId}:
@@ -196,28 +200,28 @@ paths:
     $ref: paths/api_v1_data-hub_scripts.yaml
   /api/v1/data-hub/scripts/{scriptId}:
     $ref: paths/api_v1_data-hub_scripts_{scriptId}.yaml
-  /api/v1/domain/protocol-adapters/northboundMappings:
-    $ref: paths/domain/protocol-adapters_northboundMappings.yaml
-  /api/v1/domain/protocol-adapters/southboundMappings:
-    $ref: paths/domain/protocol-adapters_southboundMappings.yaml
-  /api/v1/domain/protocol-adapters/tags:
-    $ref: paths/domain/protocol-adapters_tags.yaml
-  /api/v1/domain/edge/topic-filters:
-    $ref: "paths/domain/edge_topic-filters.yaml"
+
+  # Frontend management paths
   /api/v1/frontend/capabilities:
     $ref: paths/api_v1_frontend_capabilities.yaml
   /api/v1/frontend/configuration:
     $ref: paths/api_v1_frontend_configuration.yaml
   /api/v1/frontend/notifications:
     $ref: paths/api_v1_frontend_notifications.yaml
+
+  # Gateway paths
   /api/v1/gateway/configuration:
     $ref: paths/api_v1_gateway_configuration.yaml
   /api/v1/gateway/listeners:
     $ref: paths/api_v1_gateway_listeners.yaml
+
+  # Health paths
   /api/v1/health/liveness:
     $ref: paths/api_v1_health_liveness.yaml
   /api/v1/health/readiness:
     $ref: paths/api_v1_health_readiness.yaml
+
+  # Bridge paths
   /api/v1/management/bridges:
     $ref: paths/api_v1_management_bridges.yaml
   /api/v1/management/bridges/status:
@@ -228,8 +232,12 @@ paths:
     $ref: paths/api_v1_management_bridges_{bridgeId}_connection-status.yaml
   /api/v1/management/bridges/{bridgeId}/status:
     $ref: paths/api_v1_management_bridges_{bridgeId}_status.yaml
+
+  # Event Log paths
   /api/v1/management/events:
     $ref: paths/api_v1_management_events.yaml
+
+  # Protocol Adapter paths
   /api/v1/management/protocol-adapters/adapterconfigs/{adaptertype}/{adaptername}:
     $ref: paths/api_v1_management_protocol-adapters_adapterconfigs_{adaptertype}_{adaptername}.yaml
   /api/v1/management/protocol-adapters/adapters:
@@ -250,10 +258,16 @@ paths:
     $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_tags_{tagName}.yaml
   /api/v1/management/protocol-adapters/adapters/{adapterType}:
     $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterType}.yaml
+  /api/v1/management/protocol-adapters/adapters/northboundMappings:
+    $ref: paths/api_v1_management_protocol-adapters_adapters_northboundMappings.yaml
+  /api/v1/management/protocol-adapters/adapters/southboundMappings:
+    $ref: paths/api_v1_management_protocol-adapters_adapters_southboundMappings.yaml
   /api/v1/management/protocol-adapters/status:
     $ref: paths/api_v1_management_protocol-adapters_status.yaml
   /api/v1/management/protocol-adapters/tag-schemas/{protocolId}:
     $ref: paths/api_v1_management_protocol-adapters_tag-schemas_{protocolId}.yaml
+  /api/v1/management/protocol-adapters/tags:
+    $ref: paths/api_v1_management_protocol-adapters_tags.yaml
   /api/v1/management/protocol-adapters/tags/{tagName}:
     $ref: paths/api_v1_management_protocol-adapters_tags_{tagName}.yaml
   /api/v1/management/protocol-adapters/types:
@@ -262,22 +276,32 @@ paths:
     $ref: paths/api_v1_management_protocol-adapters_types_{adapterType}.yaml
   /api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}:
     $ref: paths/api_v1_management_protocol-adapters_writing-schema_{adapterId}_{tagName}.yaml
+
+  # Sampling paths
   /api/v1/management/sampling/schema/{topic}:
     $ref: paths/api_v1_management_sampling_schema_{topic}.yaml
   /api/v1/management/sampling/topic/{topic}:
     $ref: paths/api_v1_management_sampling_topic_{topic}.yaml
+
+  # Topic Filters paths
   /api/v1/management/topic-filters:
     $ref: paths/api_v1_management_topic-filters.yaml
   /api/v1/management/topic-filters/{filter}:
     $ref: paths/api_v1_management_topic-filters_{filter}.yaml
   /api/v1/management/topic-filters/{filter}/schema:
     $ref: paths/api_v1_management_topic-filters_{filter}_schema.yaml
+
+  # UNS paths
   /api/v1/management/uns/isa95:
     $ref: paths/api_v1_management_uns_isa95.yaml
+
+  # Metrics paths
   /api/v1/metrics:
     $ref: paths/api_v1_metrics.yaml
   /api/v1/metrics/{metricName}/latest:
     $ref: paths/api_v1_metrics_{metricName}_latest.yaml
+
+  # Data Combiner paths
   /api/v1/management/combiners:
     $ref: paths/api_v1_management_combiners.yaml
   /api/v1/management/combiners/{combinerId}:
@@ -286,6 +310,8 @@ paths:
     $ref: paths/api_v1_management_combiners_{combinerId}_mappings.yaml
   /api/v1/management/combiners/{combinerId}/mappings/{mappingId}/instructions:
     $ref: paths/api_v1_management_combiners_{combinerId}_mappings_{mappingId}_instructions.yaml
+
+  # Pulse Agent paths
   /api/v1/management/pulse/activation-token:
     $ref: paths/pulse/activation_token.yaml
   /api/v1/management/pulse/status:
