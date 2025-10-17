@@ -232,7 +232,7 @@ public record LdapConnectionProperties(
      * @throws IllegalStateException    if called when TLS mode is NONE
      */
     public @NotNull SSLContext createSSLContext() throws GeneralSecurityException {
-        if (!tlsMode.equals(TlsMode.NONE)) {
+        if (tlsMode.equals(TlsMode.NONE)) {
             throw new IllegalStateException("SSLContext is not needed for TLS mode: " + tlsMode);
         }
 
