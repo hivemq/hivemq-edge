@@ -340,7 +340,7 @@ public record LdapConnectionProperties(
             }
 
             return connection;
-        } catch (final LDAPException | GeneralSecurityException e) {
+        } catch (final Exception e) {
             // Close the connection if StartTLS fails
             connection.close();
             throw e;
