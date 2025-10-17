@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -202,25 +203,25 @@ class OpenLdapTest {
     @Test
     void testAuthenticationWithLdifUsers() throws Exception {
         // Test alice
-        boolean aliceAuth = ldapClient.authenticateUser("alice", "alice123");
+        boolean aliceAuth = ldapClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
         assertThat(aliceAuth)
                 .as("Alice should authenticate with correct password")
                 .isTrue();
 
         // Test bob
-        boolean bobAuth = ldapClient.authenticateUser("bob", "bob456");
+        boolean bobAuth = ldapClient.authenticateUser("bob", "bob456".getBytes(StandardCharsets.UTF_8));
         assertThat(bobAuth)
                 .as("Bob should authenticate with correct password")
                 .isTrue();
 
         // Test charlie
-        boolean charlieAuth = ldapClient.authenticateUser("charlie", "charlie789");
+        boolean charlieAuth = ldapClient.authenticateUser("charlie", "charlie789".getBytes(StandardCharsets.UTF_8));
         assertThat(charlieAuth)
                 .as("Charlie should authenticate with correct password")
                 .isTrue();
 
         // Test wrong password
-        boolean wrongAuth = ldapClient.authenticateUser("alice", "wrongpassword");
+        boolean wrongAuth = ldapClient.authenticateUser("alice", "wrongpassword".getBytes(StandardCharsets.UTF_8));
         assertThat(wrongAuth)
                 .as("Authentication should fail with wrong password")
                 .isFalse();
@@ -468,19 +469,19 @@ class OpenLdapTest {
 
         try {
             // Authenticate alice over START_TLS
-            final boolean aliceAuth = startTlsClient.authenticateUser("alice", "alice123");
+            final boolean aliceAuth = startTlsClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
             assertThat(aliceAuth)
                     .as("Alice should authenticate with correct password over START_TLS")
                     .isTrue();
 
             // Authenticate bob over START_TLS
-            final boolean bobAuth = startTlsClient.authenticateUser("bob", "bob456");
+            final boolean bobAuth = startTlsClient.authenticateUser("bob", "bob456".getBytes(StandardCharsets.UTF_8));
             assertThat(bobAuth)
                     .as("Bob should authenticate with correct password over START_TLS")
                     .isTrue();
 
             // Verify wrong password fails even over START_TLS
-            final boolean wrongPasswordAuth = startTlsClient.authenticateUser("alice", "wrongpassword");
+            final boolean wrongPasswordAuth = startTlsClient.authenticateUser("alice", "wrongpassword".getBytes(StandardCharsets.UTF_8));
             assertThat(wrongPasswordAuth)
                     .as("Authentication should fail with wrong password even over START_TLS")
                     .isFalse();
@@ -530,18 +531,18 @@ class OpenLdapTest {
         try {
             // Multiple authentication attempts to verify encryption stays active
             for (int i = 0; i < 3; i++) {
-                final boolean authenticated = startTlsClient.authenticateUser("alice", "alice123");
+                final boolean authenticated = startTlsClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
                 assertThat(authenticated)
                         .as("Authentication attempt %d should succeed over encrypted connection", i + 1)
                         .isTrue();
             }
 
             // Also test with different users
-            assertThat(startTlsClient.authenticateUser("bob", "bob456"))
+            assertThat(startTlsClient.authenticateUser("bob", "bob456".getBytes(StandardCharsets.UTF_8)))
                     .as("Bob should authenticate over encrypted connection")
                     .isTrue();
 
-            assertThat(startTlsClient.authenticateUser("charlie", "charlie789"))
+            assertThat(startTlsClient.authenticateUser("charlie", "charlie789".getBytes(StandardCharsets.UTF_8)))
                     .as("Charlie should authenticate over encrypted connection")
                     .isTrue();
 
@@ -590,8 +591,8 @@ class OpenLdapTest {
             startTlsClient.start();
 
             // Both should authenticate successfully
-            final boolean plainAuth = plainClient.authenticateUser("alice", "alice123");
-            final boolean startTlsAuth = startTlsClient.authenticateUser("alice", "alice123");
+            final boolean plainAuth = plainClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
+            final boolean startTlsAuth = startTlsClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
 
             assertThat(plainAuth)
                     .as("Plain LDAP authentication should succeed")

@@ -41,6 +41,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
@@ -52,7 +53,7 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
     private static final @NotNull List<ApiListener> DEFAULT_LISTENERS = List.of(new HttpListener(8080, "127.0.0.1"));
     private static final @NotNull Logger log = LoggerFactory.getLogger(ApiConfigurator.class);
     private static final @NotNull List<UsernamePasswordRoles> DEFAULT_USERS =
-            List.of(new UsernamePasswordRoles(DEFAULT_USERNAME, DEFAULT_PASSWORD, Set.of("ADMIN")));
+            List.of(new UsernamePasswordRoles(DEFAULT_USERNAME, DEFAULT_PASSWORD.getBytes(StandardCharsets.UTF_8), Set.of("ADMIN")));
 
     private final @NotNull ApiConfigurationService apiCfgService;
     private volatile @Nullable AdminApiEntity configEntity;
@@ -64,7 +65,7 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
 
     private static @NotNull UsernamePasswordRoles fromModel(final @NotNull UserEntity userEntity) {
         return new UsernamePasswordRoles(userEntity.getUserName(),
-                userEntity.getPassword(),
+                userEntity.getPassword().getBytes(StandardCharsets.UTF_8),
                 Set.copyOf(userEntity.getRoles()));
     }
 

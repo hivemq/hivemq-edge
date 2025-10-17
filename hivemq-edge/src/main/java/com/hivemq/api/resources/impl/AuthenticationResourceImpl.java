@@ -37,6 +37,7 @@ import jakarta.ws.rs.core.Response;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
@@ -74,7 +75,7 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
             final String userName = credentials.getUserName();
             final String password = credentials.getPassword();
             return usernamePasswordProvider
-                    .findByUsernameAndPassword(userName, password)
+                    .findByUsernameAndPassword(userName, password.getBytes(StandardCharsets.UTF_8))
                     .map(user -> {
                         try {
                             final ApiBearerToken token = new ApiBearerToken().token(tokenGenerator.generateToken(user.toPrincipal()));

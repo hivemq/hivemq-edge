@@ -44,7 +44,7 @@ public class LdapUsernameRolesProvider implements IUsernameRolesProvider {
     @Override
     public Optional<UsernameRoles> findByUsernameAndPassword(
             final @NotNull String userName,
-            final @NotNull String password) {
+            final @NotNull byte[] password) {
         try {
             if(ldapClient.authenticateUser(userName, password)) {
                 return Optional.of(new UsernameRoles(userName, Set.of("ADMIN"))); //TODO MAKE CONFIGURABLE!!!!!

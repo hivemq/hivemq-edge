@@ -48,6 +48,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.io.File;
 import java.io.FileWriter;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
@@ -286,7 +287,7 @@ class LdapIntegrationTest {
     @Test
     void testSuccessfulBind() throws LDAPException {
         // Act
-        final boolean authenticated = ldapClient.authenticateUser(TEST_USERNAME, TEST_PASSWORD);
+        final boolean authenticated = ldapClient.authenticateUser(TEST_USERNAME, TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(authenticated)
@@ -308,7 +309,7 @@ class LdapIntegrationTest {
         final String wrongPassword = "wrong_password";
 
         // Act
-        final boolean authenticated = ldapClient.authenticateUser(TEST_USERNAME, wrongPassword);
+        final boolean authenticated = ldapClient.authenticateUser(TEST_USERNAME, wrongPassword.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(authenticated)
@@ -358,7 +359,7 @@ class LdapIntegrationTest {
                         .isEqualTo("uid=" + TEST_USERNAME + ",ou=people," + LLDAP_CONTAINER.getBaseDn());
 
                 // Verify we can authenticate with the resolved DN
-                final boolean authenticated = ldapClient.bindUser(resolvedDn, TEST_PASSWORD);
+                final boolean authenticated = ldapClient.bindUser(resolvedDn, TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
                 assertThat(authenticated)
                         .as("Should authenticate with resolved DN")
                         .isTrue();

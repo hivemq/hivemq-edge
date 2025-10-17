@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -76,7 +77,7 @@ public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHand
             if(userNamePassword.length == 2){
                 final var usernamePassword = new UsernamePasswordRoles();
                 usernamePassword.setUserName(userNamePassword[0]);
-                usernamePassword.setPassword(userNamePassword[1]);
+                usernamePassword.setPassword(userNamePassword[1].getBytes(StandardCharsets.UTF_8));
                 return Optional.of(usernamePassword);
             }
         }

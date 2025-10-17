@@ -127,7 +127,7 @@ public class LdapClient {
      * @throws LDAPException            if there's an LDAP protocol error (not authentication failure)
      * @throws IllegalStateException    if the client is not started
      */
-    public boolean bindUser(final @NotNull String userDn, final @NotNull String password) throws LDAPException {
+    public boolean bindUser(final @NotNull String userDn, final byte @NotNull [] password) throws LDAPException {
         ensureStarted();
 
         log.debug("Attempting to bind user: {}", userDn);
@@ -174,7 +174,7 @@ public class LdapClient {
      * @throws LDAPException            if there's an LDAP protocol error (not authentication failure)
      * @throws IllegalStateException    if the client is not started
      */
-    public boolean authenticateUser(final @NotNull String username, final @NotNull String password)
+    public boolean authenticateUser(final @NotNull String username, final byte @NotNull [] password)
             throws LDAPException {
         final String userDn = userDnResolver.resolveDn(username);
         return bindUser(userDn, password);

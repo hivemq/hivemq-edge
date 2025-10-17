@@ -46,6 +46,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.io.File;
 import java.io.FileWriter;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
@@ -246,7 +247,7 @@ class LdapTlsModesIntegrationTest {
     @Test
     void testPlainLdapAuthentication() throws LDAPException {
         // Act
-        final boolean authenticated = ldapClient.authenticateUser(TEST_USERNAME, TEST_PASSWORD);
+        final boolean authenticated = ldapClient.authenticateUser(TEST_USERNAME, TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(authenticated)
@@ -260,7 +261,7 @@ class LdapTlsModesIntegrationTest {
     @Test
     void testPlainLdapAuthenticationFailsWithWrongPassword() throws LDAPException {
         // Act
-        final boolean authenticated = ldapClient.authenticateUser(TEST_USERNAME, "wrongpassword");
+        final boolean authenticated = ldapClient.authenticateUser(TEST_USERNAME, "wrongpassword".getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(authenticated)
@@ -328,7 +329,7 @@ class LdapTlsModesIntegrationTest {
         defaultTimeoutClient.start();
 
         try {
-            final boolean authenticated = defaultTimeoutClient.authenticateUser(TEST_USERNAME, TEST_PASSWORD);
+            final boolean authenticated = defaultTimeoutClient.authenticateUser(TEST_USERNAME, TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
             // Assert
             assertThat(authenticated)
