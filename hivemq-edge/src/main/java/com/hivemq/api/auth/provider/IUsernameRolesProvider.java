@@ -21,9 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * @author Simon L Johnson
- */
 public interface IUsernameRolesProvider extends ICredentialsProvider {
 
     record UsernameRoles(String username, Set<String> roles){
