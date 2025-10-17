@@ -30,9 +30,11 @@ public class LdapUsernameRolesProvider implements IUsernameRolesProvider {
     private static final @NotNull Logger log = LoggerFactory.getLogger(LdapUsernameRolesProvider.class);
 
     private final @NotNull LdapClient ldapClient;
+    private final @NotNull Set<String> assignedRole;
 
     public LdapUsernameRolesProvider(final @NotNull LdapConnectionProperties ldapConnectionProperties) {
         this.ldapClient = new LdapClient(ldapConnectionProperties);
+        this.assignedRole = Set.of(ldapConnectionProperties.assignedRole());
         try {
             this.ldapClient.start();
         } catch (final LDAPException | GeneralSecurityException e) {
@@ -47,7 +49,7 @@ public class LdapUsernameRolesProvider implements IUsernameRolesProvider {
             final @NotNull byte[] password) {
         try {
             if(ldapClient.authenticateUser(userName, password)) {
-                return Optional.of(new UsernameRoles(userName, Set.of("ADMIN"))); //TODO MAKE CONFIGURABLE!!!!!
+                return Optional.of(new UsernameRoles(userName, assignedRole));
             } else {
                 return Optional.empty();
             }

@@ -55,7 +55,8 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN))
+                DEFAULT_BASE_DN,
+                "ADMIN"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Port must be between 1 and 65535");
 
@@ -69,7 +70,8 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN))
+                DEFAULT_BASE_DN,
+                "ADMIN"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Port must be between 1 and 65535");
     }
@@ -86,7 +88,8 @@ class LdapConnectionPropertiesTest {
                 -1,
                 0,
                 DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN))
+                DEFAULT_BASE_DN,
+                "ADMIN"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Connect timeout cannot be negative");
 
@@ -100,7 +103,8 @@ class LdapConnectionPropertiesTest {
                 0,
                 -1,
                 DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN))
+                DEFAULT_BASE_DN,
+                "ADMIN"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Response timeout cannot be negative");
     }
@@ -118,7 +122,8 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN);
+                DEFAULT_BASE_DN,
+                "ADMIN");
         assertThat(ldapsProps.trustStorePath()).isNull();
 
         // START_TLS allows null truststore (will use system CAs)
@@ -132,7 +137,8 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN);
+                DEFAULT_BASE_DN,
+                "ADMIN");
         assertThat(startTlsProps.trustStorePath()).isNull();
 
         // NONE doesn't need truststore
@@ -146,7 +152,8 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN);
+                DEFAULT_BASE_DN,
+                "ADMIN");
         assertThat(noneProps.trustStorePath()).isNull();
     }
 
@@ -160,7 +167,8 @@ class LdapConnectionPropertiesTest {
                 "password",
                 "JKS",
                 DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN);
+                DEFAULT_BASE_DN,
+                "ADMIN");
 
         assertThat(props.connectTimeoutMillis()).isEqualTo(0);
         assertThat(props.responseTimeoutMillis()).isEqualTo(0);
@@ -178,7 +186,8 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN);
+                DEFAULT_BASE_DN,
+                "ADMIN");
 
         assertThatThrownBy(props::createSSLContext)
                 .isInstanceOf(IllegalStateException.class)
@@ -198,7 +207,8 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN);
+                DEFAULT_BASE_DN,
+                "ADMIN");
 
         final javax.net.ssl.SSLContext sslContext = ldapsProps.createSSLContext();
         assertThat(sslContext)
@@ -216,7 +226,8 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN);
+                DEFAULT_BASE_DN,
+                "ADMIN");
 
         final javax.net.ssl.SSLContext startTlsSslContext = startTlsProps.createSSLContext();
         assertThat(startTlsSslContext)
@@ -237,7 +248,8 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN);
+                DEFAULT_BASE_DN,
+                "ADMIN");
 
         assertThat(props.trustStorePath())
                 .as("Custom truststore path should be stored")
@@ -266,7 +278,8 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 "uid=fixed,ou=people,{baseDn}", // missing {username}
-                DEFAULT_BASE_DN))
+                DEFAULT_BASE_DN,
+                "ADMIN"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("User DN template must contain {username} placeholder");
     }
@@ -283,7 +296,8 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 "uid={username},ou=people,{baseDn}",
-                "dc=example,dc=com");
+                "dc=example,dc=com",
+                "ADMIN");
 
         final var resolver = props.createUserDnResolver();
         assertThat(resolver).isNotNull();

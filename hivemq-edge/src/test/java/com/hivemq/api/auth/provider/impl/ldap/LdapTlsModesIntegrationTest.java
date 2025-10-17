@@ -118,7 +118,8 @@ class LdapTlsModesIntegrationTest {
                 5000,  // 5 second connect timeout
                 10000, // 10 second response timeout
                 LDAP_DN_TEMPLATE,
-                LLDAP_CONTAINER.getBaseDn());
+                LLDAP_CONTAINER.getBaseDn(),
+                "ADMIN");
 
         // Create and start LDAP client
         ldapClient = new LdapClient(ldapConnectionProperties);
@@ -285,7 +286,8 @@ class LdapTlsModesIntegrationTest {
                 1000,  // 1 second timeout - should fail quickly
                 5000,
                 LDAP_DN_TEMPLATE,
-                LLDAP_CONTAINER.getBaseDn());
+                LLDAP_CONTAINER.getBaseDn(),
+                "ADMIN");
 
         final LdapClient timeoutClient = new LdapClient(timeoutProps);
 
@@ -321,7 +323,8 @@ class LdapTlsModesIntegrationTest {
                 0,  // Use default timeout
                 0,  // Use default timeout
                 LDAP_DN_TEMPLATE,
-                LLDAP_CONTAINER.getBaseDn());
+                LLDAP_CONTAINER.getBaseDn(),
+                "ADMIN");
 
         final LdapClient defaultTimeoutClient = new LdapClient(defaultTimeoutProps);
 

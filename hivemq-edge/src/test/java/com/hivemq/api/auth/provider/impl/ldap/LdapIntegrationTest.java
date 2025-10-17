@@ -125,7 +125,8 @@ class LdapIntegrationTest {
                 10000, // 10 second connect timeout
                 30000, // 30 second response timeout
                 LDAP_DN_TEMPLATE,
-                LLDAP_CONTAINER.getBaseDn());
+                LLDAP_CONTAINER.getBaseDn(),
+                "ADMIN");
 
         // Create and start LDAP client
         ldapClient = new LdapClient(ldapConnectionProperties);

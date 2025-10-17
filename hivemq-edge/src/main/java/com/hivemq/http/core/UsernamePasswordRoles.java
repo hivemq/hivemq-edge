@@ -15,7 +15,6 @@
  */
 package com.hivemq.http.core;
 
-import com.hivemq.api.auth.ApiPrincipal;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
@@ -34,7 +33,7 @@ public class UsernamePasswordRoles {
     }
 
 
-    public UsernamePasswordRoles(final @NotNull String userName, final @NotNull byte[] password, Set<String> roles) {
+    public UsernamePasswordRoles(final @NotNull String userName, final byte @NotNull [] password, final @NotNull Set<String> roles) {
         this();
         this.userName = userName;
         this.password = password;
@@ -45,7 +44,7 @@ public class UsernamePasswordRoles {
         return userName;
     }
 
-    public void setUserName(String userName) {
+    public void setUserName(final @NotNull String userName) {
         this.userName = userName;
     }
 
@@ -53,7 +52,7 @@ public class UsernamePasswordRoles {
         return password;
     }
 
-    public void setPassword(byte[] password) {
+    public void setPassword(final byte[] password) {
         this.password = password;
     }
 
@@ -61,7 +60,7 @@ public class UsernamePasswordRoles {
         return realm;
     }
 
-    public void setRealm(String realm) {
+    public void setRealm(final @NotNull String realm) {
         this.realm = realm;
     }
 

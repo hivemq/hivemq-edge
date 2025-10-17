@@ -63,6 +63,7 @@ public record LdapConnectionProperties(
         int responseTimeoutMillis,
         @NotNull String userDnTemplate,
         @NotNull String baseDn,
+        @NotNull String assignedRole,
         boolean acceptAnyCertificateForTesting) {
 
     /**
@@ -85,8 +86,9 @@ public record LdapConnectionProperties(
             final @Nullable String trustStorePassword,
             final @Nullable String trustStoreType,
             final @NotNull String userDnTemplate,
-            final @NotNull String baseDn) {
-        this(host, port, tlsMode, trustStorePath, trustStorePassword, trustStoreType, 0, 0, userDnTemplate, baseDn, false);
+            final @NotNull String baseDn,
+            final @NotNull String assignedRole) {
+        this(host, port, tlsMode, trustStorePath, trustStorePassword, trustStoreType, 0, 0, userDnTemplate, baseDn, assignedRole, false);
     }
 
     /**
@@ -102,6 +104,7 @@ public record LdapConnectionProperties(
      * @param responseTimeoutMillis Response timeout in milliseconds (0 = use default)
      * @param userDnTemplate        The DN template for resolving usernames
      * @param baseDn                The base DN of the LDAP directory
+     * @param assignedRole                The base DN of the LDAP directory
      */
     public LdapConnectionProperties(
             final @NotNull String host,
@@ -113,8 +116,9 @@ public record LdapConnectionProperties(
             final int connectTimeoutMillis,
             final int responseTimeoutMillis,
             final @NotNull String userDnTemplate,
-            final @NotNull String baseDn) {
-        this(host, port, tlsMode, trustStorePath, trustStorePassword, trustStoreType, connectTimeoutMillis, responseTimeoutMillis, userDnTemplate, baseDn, false);
+            final @NotNull String baseDn,
+            final @NotNull String assignedRole) {
+        this(host, port, tlsMode, trustStorePath, trustStorePassword, trustStoreType, connectTimeoutMillis, responseTimeoutMillis, userDnTemplate, baseDn, assignedRole, false);
     }
 
     /**
@@ -166,6 +170,7 @@ public record LdapConnectionProperties(
                 entity.getResponseTimeoutMillis(),
                 entity.getUserDnTemplate(),
                 entity.getBaseDn(),
+                entity.getAssignedRole(),
                 false  // Never allow test-only certificate acceptance from XML config
         );
     }
@@ -193,6 +198,9 @@ public record LdapConnectionProperties(
         }
         if (baseDn.isBlank()) {
             throw new IllegalArgumentException("Base DN cannot be empty");
+        }
+        if (assignedRole.isBlank()) {
+            throw new IllegalArgumentException("Assigned Role cannot be empty");
         }
     }
 
