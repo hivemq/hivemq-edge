@@ -108,7 +108,8 @@ class OpenLdapTest {
                 5000,
                 10000,
                 LDAP_DN_TEMPLATE,
-                OPENLDAP_CONTAINER.getBaseDn());
+                OPENLDAP_CONTAINER.getBaseDn(),
+                "ADMIN");
 
         // Create and start LDAP client
         ldapClient = new LdapClient(connectionProperties);
@@ -138,7 +139,7 @@ class OpenLdapTest {
     @Test
     void testBasicConnectivity() throws Exception {
         // Act - Connect and bind as admin
-        try (LDAPConnection connection = connectionProperties.createConnection()) {
+        try (final LDAPConnection connection = connectionProperties.createConnection()) {
             final BindRequest bindRequest = new SimpleBindRequest(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
             final BindResult bindResult = connection.bind(bindRequest);
 
@@ -164,7 +165,7 @@ class OpenLdapTest {
      */
     @Test
     void testLdifDataLoaded() throws Exception {
-        try (LDAPConnection connection = connectionProperties.createConnection()) {
+        try (final LDAPConnection connection = connectionProperties.createConnection()) {
             // Bind as admin
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 
@@ -203,25 +204,25 @@ class OpenLdapTest {
     @Test
     void testAuthenticationWithLdifUsers() throws Exception {
         // Test alice
-        boolean aliceAuth = ldapClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
+        final boolean aliceAuth = ldapClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
         assertThat(aliceAuth)
                 .as("Alice should authenticate with correct password")
                 .isTrue();
 
         // Test bob
-        boolean bobAuth = ldapClient.authenticateUser("bob", "bob456".getBytes(StandardCharsets.UTF_8));
+        final boolean bobAuth = ldapClient.authenticateUser("bob", "bob456".getBytes(StandardCharsets.UTF_8));
         assertThat(bobAuth)
                 .as("Bob should authenticate with correct password")
                 .isTrue();
 
         // Test charlie
-        boolean charlieAuth = ldapClient.authenticateUser("charlie", "charlie789".getBytes(StandardCharsets.UTF_8));
+        final boolean charlieAuth = ldapClient.authenticateUser("charlie", "charlie789".getBytes(StandardCharsets.UTF_8));
         assertThat(charlieAuth)
                 .as("Charlie should authenticate with correct password")
                 .isTrue();
 
         // Test wrong password
-        boolean wrongAuth = ldapClient.authenticateUser("alice", "wrongpassword".getBytes(StandardCharsets.UTF_8));
+        final boolean wrongAuth = ldapClient.authenticateUser("alice", "wrongpassword".getBytes(StandardCharsets.UTF_8));
         assertThat(wrongAuth)
                 .as("Authentication should fail with wrong password")
                 .isFalse();
@@ -234,7 +235,7 @@ class OpenLdapTest {
      */
     @Test
     void testGroupsFromLdif() throws Exception {
-        try (LDAPConnection connection = connectionProperties.createConnection()) {
+        try (final LDAPConnection connection = connectionProperties.createConnection()) {
             // Bind as admin
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 
@@ -250,7 +251,7 @@ class OpenLdapTest {
             assertThat(searchResult.getResultCode()).isEqualTo(ResultCode.SUCCESS);
             assertThat(searchResult.getEntryCount()).isEqualTo(1);
 
-            final SearchResultEntry developersGroup = searchResult.getSearchEntries().get(0);
+            final SearchResultEntry developersGroup = searchResult.getSearchEntries().getFirst();
 
             // Verify group members
             final String[] members = developersGroup.getAttributeValues("member");
@@ -274,57 +275,44 @@ class OpenLdapTest {
      */
     @Test
     void testSearchFilterDnResolver() throws Exception {
-        try (LDAPConnection connection = connectionProperties.createConnection()) {
+        try (final LDAPConnection connection = connectionProperties.createConnection()) {
             // Bind as admin to create authenticated pool
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 
-            final LDAPConnectionPool pool = new LDAPConnectionPool(connection, 1, 5);
-
-            try {
+            try (final LDAPConnectionPool pool = new LDAPConnectionPool(connection, 1, 5)) {
                 // Test 1: Search by UID
-                final SearchFilterDnResolver uidResolver = new SearchFilterDnResolver(
-                        pool,
+                final SearchFilterDnResolver uidResolver = new SearchFilterDnResolver(pool,
                         OPENLDAP_CONTAINER.getBaseDn(),
                         "(uid={username})",
                         SearchScope.SUB,
-                        5
-                );
+                        5);
 
                 String dn = uidResolver.resolveDn("alice");
-                assertThat(dn)
-                        .as("Should resolve alice's DN by UID")
+                assertThat(dn).as("Should resolve alice's DN by UID")
                         .isEqualTo("uid=alice,ou=people," + OPENLDAP_CONTAINER.getBaseDn());
 
                 // Test 2: Search by email
-                final SearchFilterDnResolver emailResolver = new SearchFilterDnResolver(
-                        pool,
+                final SearchFilterDnResolver emailResolver = new SearchFilterDnResolver(pool,
                         OPENLDAP_CONTAINER.getBaseDn(),
                         "(mail={username})",
                         SearchScope.SUB,
-                        5
-                );
+                        5);
 
                 dn = emailResolver.resolveDn("bob@example.org");
-                assertThat(dn)
-                        .as("Should resolve bob's DN by email")
+                assertThat(dn).as("Should resolve bob's DN by email")
                         .isEqualTo("uid=bob,ou=people," + OPENLDAP_CONTAINER.getBaseDn());
 
                 // Test 3: Search by common name
-                final SearchFilterDnResolver cnResolver = new SearchFilterDnResolver(
-                        pool,
+                final SearchFilterDnResolver cnResolver = new SearchFilterDnResolver(pool,
                         OPENLDAP_CONTAINER.getBaseDn(),
                         "(cn={username})",
                         SearchScope.SUB,
-                        5
-                );
+                        5);
 
                 dn = cnResolver.resolveDn("Charlie Chen");
-                assertThat(dn)
-                        .as("Should resolve charlie's DN by common name")
+                assertThat(dn).as("Should resolve charlie's DN by common name")
                         .isEqualTo("uid=charlie,ou=people," + OPENLDAP_CONTAINER.getBaseDn());
 
-            } finally {
-                pool.close();
             }
         }
     }
@@ -336,39 +324,39 @@ class OpenLdapTest {
      */
     @Test
     void testComplexSearchQueries() throws Exception {
-        try (LDAPConnection connection = connectionProperties.createConnection()) {
+        try (final LDAPConnection connection = connectionProperties.createConnection()) {
             // Bind as admin
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 
             // Search 1: Find all users with email ending in @example.org
-            SearchRequest search1 = new SearchRequest(
+            final SearchRequest search1 = new SearchRequest(
                     OPENLDAP_CONTAINER.getBaseDn(),
                     SearchScope.SUB,
                     "(mail=*@example.org)");
 
-            SearchResult result1 = connection.search(search1);
+            final SearchResult result1 = connection.search(search1);
             assertThat(result1.getEntryCount())
                     .as("All users should have @example.org email")
                     .isEqualTo(3);
 
             // Search 2: Find users with uidNumber >= 10002
-            SearchRequest search2 = new SearchRequest(
+            final SearchRequest search2 = new SearchRequest(
                     OPENLDAP_CONTAINER.getBaseDn(),
                     SearchScope.SUB,
                     "(uidNumber>=10002)");
 
-            SearchResult result2 = connection.search(search2);
+            final SearchResult result2 = connection.search(search2);
             assertThat(result2.getEntryCount())
                     .as("Bob and Charlie have uidNumber >= 10002")
                     .isEqualTo(2);
 
             // Search 3: Find all groups
-            SearchRequest search3 = new SearchRequest(
+            final SearchRequest search3 = new SearchRequest(
                     "ou=groups," + OPENLDAP_CONTAINER.getBaseDn(),
                     SearchScope.ONE,
                     "(objectClass=groupOfNames)");
 
-            SearchResult result3 = connection.search(search3);
+            final SearchResult result3 = connection.search(search3);
             assertThat(result3.getEntryCount())
                     .as("Should have 2 groups from LDIF")
                     .isEqualTo(2);
@@ -390,36 +378,36 @@ class OpenLdapTest {
      */
     @Test
     void testOrganizationalStructure() throws Exception {
-        try (LDAPConnection connection = connectionProperties.createConnection()) {
+        try (final LDAPConnection connection = connectionProperties.createConnection()) {
             // Bind as admin
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 
             // Verify ou=people exists
-            SearchRequest peopleSearch = new SearchRequest(
+            final SearchRequest peopleSearch = new SearchRequest(
                     "ou=people," + OPENLDAP_CONTAINER.getBaseDn(),
                     SearchScope.BASE,
                     "(objectClass=organizationalUnit)");
 
-            SearchResult peopleResult = connection.search(peopleSearch);
+            final SearchResult peopleResult = connection.search(peopleSearch);
             assertThat(peopleResult.getEntryCount())
                     .as("ou=people should exist")
                     .isEqualTo(1);
 
-            assertThat(peopleResult.getSearchEntries().get(0).getAttributeValue("description"))
+            assertThat(peopleResult.getSearchEntries().getFirst().getAttributeValue("description"))
                     .isEqualTo("Container for user accounts");
 
             // Verify ou=groups exists
-            SearchRequest groupsSearch = new SearchRequest(
+            final SearchRequest groupsSearch = new SearchRequest(
                     "ou=groups," + OPENLDAP_CONTAINER.getBaseDn(),
                     SearchScope.BASE,
                     "(objectClass=organizationalUnit)");
 
-            SearchResult groupsResult = connection.search(groupsSearch);
+            final SearchResult groupsResult = connection.search(groupsSearch);
             assertThat(groupsResult.getEntryCount())
                     .as("ou=groups should exist")
                     .isEqualTo(1);
 
-            assertThat(groupsResult.getSearchEntries().get(0).getAttributeValue("description"))
+            assertThat(groupsResult.getSearchEntries().getFirst().getAttributeValue("description"))
                     .isEqualTo("Container for group definitions");
         }
     }
@@ -460,6 +448,7 @@ class OpenLdapTest {
                 10000,
                 LDAP_DN_TEMPLATE,
                 OPENLDAP_CONTAINER.getBaseDn(),
+                "ADMIN",
                 true);  // TEST ONLY: Accept any certificate
 
         final LdapClient startTlsClient = new LdapClient(startTlsProps);
@@ -521,6 +510,7 @@ class OpenLdapTest {
                 10000,
                 LDAP_DN_TEMPLATE,
                 OPENLDAP_CONTAINER.getBaseDn(),
+                "ADMIN",
                 true);  // TEST ONLY: Accept any certificate
 
         final LdapClient startTlsClient = new LdapClient(startTlsProps);
@@ -574,14 +564,32 @@ class OpenLdapTest {
 
         // Plain LDAP client
         final LdapConnectionProperties plainProps = new LdapConnectionProperties(
-                host, port, TlsMode.NONE, null, null, null,
-                5000, 10000, LDAP_DN_TEMPLATE, OPENLDAP_CONTAINER.getBaseDn());
+                host,
+                port,
+                TlsMode.NONE,
+                null,
+                null,
+                null,
+                5000,
+                10000,
+                LDAP_DN_TEMPLATE,
+                OPENLDAP_CONTAINER.getBaseDn(),
+                "ADMIN");
         final LdapClient plainClient = new LdapClient(plainProps);
 
         // START_TLS client
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
-                host, port, TlsMode.START_TLS, null, null, null,
-                5000, 10000, LDAP_DN_TEMPLATE, OPENLDAP_CONTAINER.getBaseDn(), true);  // TEST ONLY: Accept any certificate
+                host,
+                port,
+                TlsMode.START_TLS,
+                null,
+                null,
+                null,
+                5000,
+                10000,
+                LDAP_DN_TEMPLATE, OPENLDAP_CONTAINER.getBaseDn(),
+                "ADMIN",
+                true);  // TEST ONLY: Accept any certificate
         final LdapClient startTlsClient = new LdapClient(startTlsProps);
 
         // Act & Assert
@@ -643,24 +651,21 @@ class OpenLdapTest {
                 10000,
                 LDAP_DN_TEMPLATE,
                 OPENLDAP_CONTAINER.getBaseDn(),
+                "ADMIN",
                 true);  // TEST ONLY: Accept any certificate
 
         // Create a START_TLS connection and bind as admin to enable searches
-        try (LDAPConnection connection = startTlsProps.createConnection()) {
+        try (final LDAPConnection connection = startTlsProps.createConnection()) {
             // Bind as admin to create authenticated pool
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 
-            final LDAPConnectionPool pool = new LDAPConnectionPool(connection, 1, 5);
-
-            try {
+            try (final LDAPConnectionPool pool = new LDAPConnectionPool(connection, 1, 5)) {
                 // Test search operations over encrypted connection
-                final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
-                        pool,
+                final SearchFilterDnResolver resolver = new SearchFilterDnResolver(pool,
                         OPENLDAP_CONTAINER.getBaseDn(),
                         "(uid={username})",
                         SearchScope.SUB,
-                        5
-                );
+                        5);
 
                 // Act - Perform searches over START_TLS
                 final String aliceDn = resolver.resolveDn("alice");
@@ -668,20 +673,15 @@ class OpenLdapTest {
                 final String charlieDn = resolver.resolveDn("charlie");
 
                 // Assert - All searches should work over encrypted connection
-                assertThat(aliceDn)
-                        .as("Should resolve alice's DN over START_TLS")
+                assertThat(aliceDn).as("Should resolve alice's DN over START_TLS")
                         .isEqualTo("uid=alice,ou=people," + OPENLDAP_CONTAINER.getBaseDn());
 
-                assertThat(bobDn)
-                        .as("Should resolve bob's DN over START_TLS")
+                assertThat(bobDn).as("Should resolve bob's DN over START_TLS")
                         .isEqualTo("uid=bob,ou=people," + OPENLDAP_CONTAINER.getBaseDn());
 
-                assertThat(charlieDn)
-                        .as("Should resolve charlie's DN over START_TLS")
+                assertThat(charlieDn).as("Should resolve charlie's DN over START_TLS")
                         .isEqualTo("uid=charlie,ou=people," + OPENLDAP_CONTAINER.getBaseDn());
 
-            } finally {
-                pool.close();
             }
         }
     }

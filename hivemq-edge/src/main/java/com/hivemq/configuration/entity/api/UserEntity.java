@@ -46,7 +46,7 @@ public class UserEntity {
         return password;
     }
 
-    public List<String> getRoles() {
+    public @NotNull List<String> getRoles() {
         return roles;
     }
 

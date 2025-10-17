@@ -76,6 +76,9 @@ public class LdapAuthenticationEntity {
     @XmlElement(name = "base-dn", required = true)
     private @NotNull String baseDn = "";
 
+    @XmlElement(name = "assigned-role", required = true, defaultValue = "ADMIN")
+    private @NotNull String assignedRole = "";
+
     public @NotNull String getHost() {
         return host;
     }
@@ -108,27 +111,35 @@ public class LdapAuthenticationEntity {
         return baseDn;
     }
 
+    public @NotNull String getAssignedRole() {
+        return assignedRole;
+    }
+
     @Override
-    public boolean equals(final @Nullable Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
         final LdapAuthenticationEntity that = (LdapAuthenticationEntity) o;
-        return port == that.port &&
-                connectTimeoutMillis == that.connectTimeoutMillis &&
-                responseTimeoutMillis == that.responseTimeoutMillis &&
-                Objects.equals(host, that.host) &&
-                Objects.equals(tlsMode, that.tlsMode) &&
-                Objects.equals(tls, that.tls) &&
-                Objects.equals(userDnTemplate, that.userDnTemplate) &&
-                Objects.equals(baseDn, that.baseDn);
+        return getPort() == that.getPort() &&
+                getConnectTimeoutMillis() == that.getConnectTimeoutMillis() &&
+                getResponseTimeoutMillis() == that.getResponseTimeoutMillis() &&
+                Objects.equals(getHost(), that.getHost()) &&
+                Objects.equals(getTlsMode(), that.getTlsMode()) &&
+                Objects.equals(getTls(), that.getTls()) &&
+                Objects.equals(getUserDnTemplate(), that.getUserDnTemplate()) &&
+                Objects.equals(getBaseDn(), that.getBaseDn()) &&
+                Objects.equals(getAssignedRole(), that.getAssignedRole());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(host, port, tlsMode, tls, connectTimeoutMillis, responseTimeoutMillis, userDnTemplate, baseDn);
+        return Objects.hash(getHost(),
+                getPort(),
+                getTlsMode(),
+                getTls(),
+                getConnectTimeoutMillis(),
+                getResponseTimeoutMillis(),
+                getUserDnTemplate(),
+                getBaseDn(),
+                getAssignedRole());
     }
 }

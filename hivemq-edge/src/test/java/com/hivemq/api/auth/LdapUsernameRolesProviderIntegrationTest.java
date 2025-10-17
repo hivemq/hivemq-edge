@@ -79,7 +79,8 @@ class LdapUsernameRolesProviderIntegrationTest {
                 5000,  // 5 second connect timeout
                 10000, // 10 second response timeout
                 LDAP_DN_TEMPLATE,
-                LLDAP_CONTAINER.getBaseDn());
+                LLDAP_CONTAINER.getBaseDn(),
+                "ADMIN");
 
         // Create test user in LLDAP
         createTestUser();

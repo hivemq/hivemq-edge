@@ -26,10 +26,10 @@ import com.hivemq.api.auth.provider.impl.ldap.LdapUsernameRolesProvider;
 import com.hivemq.api.auth.provider.impl.ldap.TlsMode;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LldapContainer;
 import com.hivemq.bootstrap.ioc.Injector;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
-import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import com.hivemq.http.core.HttpUtils;
 import com.unboundid.ldap.sdk.AddRequest;
@@ -44,7 +44,6 @@ import com.unboundid.ldap.sdk.ModifyRequest;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -91,8 +90,8 @@ public class LdapAuthenticationTests {
     @BeforeAll
     static void setUp() throws Exception {
         // Get the dynamically mapped port from the container
-        final String host = LLDAP_CONTAINER.getHost();
-        final int port = LLDAP_CONTAINER.getLdapPort();
+        final var host = LLDAP_CONTAINER.getHost();
+        final var port = LLDAP_CONTAINER.getLdapPort();
 
         // Create connection properties for plain LDAP (no TLS for simplicity)
         ldapConnectionProperties = new LdapConnectionProperties(
@@ -105,17 +104,18 @@ public class LdapAuthenticationTests {
                 5000,  // 5 second connect timeout
                 10000, // 10 second response timeout
                 LDAP_DN_TEMPLATE,
-                LLDAP_CONTAINER.getBaseDn());
+                LLDAP_CONTAINER.getBaseDn(),
+                "ADMIN");
 
         // Create test user in LLDAP
         createTestUser();
 
-        JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
+        final JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
 
         final Set<IAuthenticationHandler > authenticationHandlers = new HashSet<>();
         authenticationHandlers.add(new BasicAuthenticationHandler(new LdapUsernameRolesProvider(ldapConnectionProperties)));
-        ResourceConfig conf = new ResourceConfig(){{
+        final ResourceConfig conf = new ResourceConfig(){{
             register(new ApiAuthenticationFeature(authenticationHandlers));
         }
         };
@@ -123,7 +123,7 @@ public class LdapAuthenticationTests {
         conf.register(TestPermitAllApiResource.class);
         conf.register(TestResourceLevelRolesApiResource.class);
         //-- ensure we supplied our own test mapper as this can effect output
-        ObjectMapper mapper = new ObjectMapper();
+        final var mapper = new ObjectMapper();
         config.setObjectMapper(mapper);
         server = new JaxrsHttpServer(mock(), List.of(config), conf);
         server.startServer();
@@ -134,60 +134,68 @@ public class LdapAuthenticationTests {
         server.stopServer();
     }
 
-    protected static String getTestServerAddress(String protocol, int port, String uri){
-        String url = String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
-        return url;
+    protected static String getTestServerAddress(final @NotNull String protocol, final @NotNull int port, final @NotNull String uri){
+        return String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
     }
 
     @Test
     public void testGetSecuredResourceWithoutCreds() throws IOException {
-        HttpResponse response =
+        final var response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be denied", 401, response.getStatusCode());
+        assertThat(response.getStatusCode())
+                .as("Resource should be denied")
+                .isEqualTo(401);
     }
 
     @Test
     public void testGetSecuredResourceWithInvalidUsername() throws IOException {
-        Map<String, String> headers = Map.of(HttpConstants.AUTH_HEADER,
+        final var headers = Map.of(HttpConstants.AUTH_HEADER,
                 HttpUtils.getBasicAuthenticationHeaderValue("testaWRONG", "test"));
-        HttpResponse response =
+        final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be denied", 401, response.getStatusCode());
+        assertThat(response.getStatusCode())
+                .as("Resource should be denied")
+                .isEqualTo(401);
     }
 
     @Test
     public void testGetSecuredResourceWithInvalidPassword() throws IOException {
-        Map<String, String> headers = Map.of(HttpConstants.AUTH_HEADER,
+        final var headers = Map.of(HttpConstants.AUTH_HEADER,
                 HttpUtils.getBasicAuthenticationHeaderValue("testadmin", "incorrect"));
-        HttpResponse response =
+        final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be denied", 401, response.getStatusCode());
+        assertThat(response.getStatusCode())
+                .as("Resource should be denied")
+                .isEqualTo(401);
     }
 
     @Test
     public void testGetSecuredResourceWithValidCreds() throws IOException {
-        Map<String, String> headers = Map.of(HttpConstants.AUTH_HEADER,
+        final var headers = Map.of(HttpConstants.AUTH_HEADER,
                 HttpUtils.getBasicAuthenticationHeaderValue("testadmin", "test"));
-        HttpResponse response =
+        final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
+        assertThat(response.getStatusCode())
+                .as("Resource should be accepted")
+                .isEqualTo(200);
     }
 
     /**
      * Creates a test user in LLDAP using the admin account.
      */
     private static void createTestUser() throws LDAPException, GeneralSecurityException {
-        try (LDAPConnection adminConnection = ldapConnectionProperties.createConnection()) {
+        try (final LDAPConnection adminConnection = ldapConnectionProperties.createConnection()) {
             // Bind as admin
             final String adminUserDn = "uid=" + LLDAP_CONTAINER.getAdminUsername() + ",ou=people," + LLDAP_CONTAINER.getBaseDn();
             final BindRequest bindRequest = new SimpleBindRequest(adminUserDn, LLDAP_CONTAINER.getAdminPassword());
             final BindResult bindResult = adminConnection.bind(bindRequest);
 
-            assertThat(bindResult.getResultCode()).isEqualTo(ResultCode.SUCCESS);
+            assertThat(bindResult.getResultCode())
+                    .isEqualTo(ResultCode.SUCCESS);
 
             // Add test user
             final String testUserDnString = "uid=" + TEST_USERNAME + ",ou=people," + LLDAP_CONTAINER.getBaseDn();
