@@ -90,7 +90,7 @@ public class LdapClient {
             started = true;
             log.info("LDAP client started successfully, connected to {}:{}",
                     connectionProperties.host(), connectionProperties.port());
-        } catch (final LDAPException e) {
+        } catch (final Exception e) {
             // Close the connection if pool creation fails
             connection.close();
             throw e;
