@@ -17,6 +17,8 @@ package com.hivemq.edge.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hivemq.edge.utils.HiveMQEdgeEnvironmentUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -28,6 +30,67 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class HiveMQEdgeRemoteEvent {
 
+    public final @NotNull Map<String, String> userData;
+    public final @NotNull Date created;
+    public final @NotNull EVENT_TYPE eventType;
+    public final @NotNull String installationToken;
+    public final @NotNull String sessionToken;
+    public @Nullable String edgeVersion;
+    public HiveMQEdgeRemoteEvent(final @NotNull EVENT_TYPE eventType) {
+        this.eventType = eventType;
+        this.userData = new HashMap<>();
+        this.created = new Date();
+        this.installationToken = HiveMQEdgeEnvironmentUtils.generateInstallationToken();
+        this.sessionToken = HiveMQEdgeEnvironmentUtils.getSessionToken();
+    }
+
+    public @NotNull Date getCreated() {
+        return created;
+    }
+
+    public @NotNull EVENT_TYPE getEventType() {
+        return eventType;
+    }
+
+    public @Nullable String getEdgeVersion() {
+        return edgeVersion;
+    }
+
+    public void setEdgeVersion(final @NotNull String edgeVersion) {
+        this.edgeVersion = edgeVersion;
+    }
+
+    public @NotNull String getSessionToken() {
+        return sessionToken;
+    }
+
+    public @NotNull Map<String, String> getUserData() {
+        return userData;
+    }
+
+    public void addUserData(final @NotNull String propertyName, final @Nullable String propertyValue) {
+        this.userData.put(propertyName, propertyValue);
+    }
+
+    public void addAll(final @NotNull Map<String, String> map) {
+        this.userData.putAll(map);
+    }
+
+    @Override
+    public @NotNull String toString() {
+        return "HiveMQEdgeEvent{" +
+                "userData=" +
+                userData +
+                ", created=" +
+                created +
+                ", eventType=" +
+                eventType +
+                ", installationToken='" +
+                installationToken +
+                '\'' +
+                '}';
+    }
+
     public enum EVENT_TYPE {
         EDGE_STARTED,
         EDGE_PING,
@@ -35,61 +98,5 @@ public class HiveMQEdgeRemoteEvent {
         ADAPTER_ERROR,
         BRIDGE_STARTED,
         BRIDGE_ERROR
-    }
-
-    public final Map<String, String> userData = new HashMap<>();
-    public final Date created = new Date();
-    public final EVENT_TYPE eventType;
-    public String installationToken;
-    public String edgeVersion;
-    public String sessionToken;
-
-    public HiveMQEdgeRemoteEvent(final EVENT_TYPE eventType) {
-        this.eventType = eventType;
-        this.installationToken = HiveMQEdgeEnvironmentUtils.generateInstallationToken();
-        this.sessionToken = HiveMQEdgeEnvironmentUtils.getSessionToken();
-    }
-
-    public Date getCreated() {
-        return created;
-    }
-
-    public EVENT_TYPE getEventType() {
-        return eventType;
-    }
-
-    public String getEdgeVersion() {
-        return edgeVersion;
-    }
-
-    public String getSessionToken() {
-        return sessionToken;
-    }
-
-    public void setEdgeVersion(final String edgeVersion) {
-        this.edgeVersion = edgeVersion;
-    }
-
-    public Map<String, String> getUserData() {
-        return userData;
-    }
-
-    public void addUserData(final String propertyName, final String propertyValue) {
-        this.userData.put(propertyName, propertyValue);
-    }
-
-    public void addAll(Map<String, String> map) {
-        this.userData.putAll(map);
-    }
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("HiveMQEdgeEvent{");
-        sb.append("userData=").append(userData);
-        sb.append(", created=").append(created);
-        sb.append(", eventType=").append(eventType);
-        sb.append(", installationToken='").append(installationToken).append('\'');
-        sb.append('}');
-        return sb.toString();
     }
 }
