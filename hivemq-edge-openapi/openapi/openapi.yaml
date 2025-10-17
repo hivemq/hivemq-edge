@@ -258,9 +258,9 @@ paths:
     $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_tags_{tagName}.yaml
   /api/v1/management/protocol-adapters/adapters/{adapterType}:
     $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterType}.yaml
-  /api/v1/management/protocol-adapters/adapters/northboundMappings:
+  /api/v1/management/protocol-adapters/mappings/northboundMappings:
     $ref: paths/api_v1_management_protocol-adapters_adapters_northboundMappings.yaml
-  /api/v1/management/protocol-adapters/adapters/southboundMappings:
+  /api/v1/management/protocol-adapters/mappings/southboundMappings:
     $ref: paths/api_v1_management_protocol-adapters_adapters_southboundMappings.yaml
   /api/v1/management/protocol-adapters/status:
     $ref: paths/api_v1_management_protocol-adapters_status.yaml
