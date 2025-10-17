@@ -240,7 +240,7 @@ public class BridgeMqttClient {
         final var connectFuture = mqtt5Client.connectWith()
                 .cleanStart(bridge.isCleanStart())
                 .keepAlive(bridge.getKeepAlive())
-                .userProperties(mqtt5UserPropertiesBuilder.build())
+                //.userProperties(mqtt5UserPropertiesBuilder.build())
                 .sessionExpiryInterval(bridge.getSessionExpiry())
                 .send();
 
