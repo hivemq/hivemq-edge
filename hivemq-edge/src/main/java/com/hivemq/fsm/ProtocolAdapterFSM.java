@@ -44,14 +44,15 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     }
 
     public static final @NotNull Map<StateEnum, Set<StateEnum>> possibleTransitions = Map.of(
-            StateEnum.DISCONNECTED, Set.of(StateEnum.CONNECTING, StateEnum.CONNECTED, StateEnum.CLOSED), //for compatibility, we allow to go from CONNECTING to CONNECTED directly, and allow testing transition to CLOSED
+            StateEnum.DISCONNECTED, Set.of(StateEnum.CONNECTING, StateEnum.CONNECTED, StateEnum.CLOSED, StateEnum.NOT_SUPPORTED), //for compatibility, we allow to go from CONNECTING to CONNECTED directly, and allow testing transition to CLOSED; NOT_SUPPORTED for adapters without southbound
             StateEnum.CONNECTING, Set.of(StateEnum.CONNECTED, StateEnum.ERROR, StateEnum.DISCONNECTED), // can go back to DISCONNECTED
             StateEnum.CONNECTED, Set.of(StateEnum.DISCONNECTING, StateEnum.CONNECTING, StateEnum.CLOSING, StateEnum.ERROR_CLOSING, StateEnum.DISCONNECTED), // transition to CONNECTING in case of recovery, DISCONNECTED for direct transition
             StateEnum.DISCONNECTING, Set.of(StateEnum.DISCONNECTED, StateEnum.CLOSING), // can go to DISCONNECTED or CLOSING
             StateEnum.CLOSING, Set.of(StateEnum.CLOSED),
             StateEnum.ERROR_CLOSING, Set.of(StateEnum.ERROR),
             StateEnum.ERROR, Set.of(StateEnum.CONNECTING, StateEnum.DISCONNECTED), // can recover from error
-            StateEnum.CLOSED, Set.of(StateEnum.DISCONNECTED, StateEnum.CLOSING) // can restart from closed or go to closing
+            StateEnum.CLOSED, Set.of(StateEnum.DISCONNECTED, StateEnum.CLOSING), // can restart from closed or go to closing
+            StateEnum.NOT_SUPPORTED, Set.of() // Terminal state for adapters without southbound support
     );
 
     public enum AdapterStateEnum {
