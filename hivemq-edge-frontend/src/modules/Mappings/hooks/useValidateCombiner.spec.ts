@@ -725,4 +725,154 @@ describe('useValidateCombiner', () => {
       expect(errors).toStrictEqual([])
     })
   })
+
+  describe('validateCombiner - top level', () => {
+    const sources: EntityReference[] = [
+      {
+        id: 'the edge name',
+        type: EntityType.EDGE_BROKER,
+      },
+      {
+        id: 'opcua-1',
+        type: EntityType.ADAPTER,
+      },
+    ]
+
+    it('should validate undefined combiner payload at top level', async () => {
+      const errors = await renderValidateHook(undefined, [], sources)
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: 'The combiner payload must be defined',
+        }),
+      ])
+    })
+
+    it('should validate combiner with multiple mappings', async () => {
+      const result = await loadingEntities(sources)
+
+      const errors = await renderValidateHook(
+        {
+          id: mockCombinerId,
+          name: 'my-combiner',
+          sources: {
+            items: sources,
+          },
+          mappings: {
+            items: [
+              {
+                id: uuidv4(),
+                sources: {
+                  tags: ['opcua-1/log/event'],
+                  topicFilters: ['a/topic/+/filter'],
+                  // @ts-ignore TODO[NVL] Needs to be nullable
+                  primary: {},
+                },
+                destination: {
+                  topic: 'test/ss',
+                  schema: MOCK_SIMPLE_SCHEMA_URI,
+                },
+                instructions: [
+                  {
+                    source: 'description',
+                    destination: 'value',
+                    sourceRef: {
+                      id: 'a/topic/+/filter',
+                      type: DataIdentifierReference.type.TOPIC_FILTER,
+                    },
+                  },
+                ],
+              },
+              {
+                id: uuidv4(),
+                sources: {
+                  tags: ['opcua-1/log/event'],
+                  topicFilters: [],
+                  // @ts-ignore TODO[NVL] Needs to be nullable
+                  primary: {},
+                },
+                destination: {
+                  topic: 'test/ss2',
+                  schema: MOCK_SIMPLE_SCHEMA_URI,
+                },
+                instructions: [],
+              },
+            ],
+          },
+        },
+        result.current,
+        sources
+      )
+      expect(errors).toStrictEqual([])
+    })
+  })
+
+  describe('validateCombining - individual mapping', () => {
+    const sources: EntityReference[] = [
+      {
+        id: 'the edge name',
+        type: EntityType.EDGE_BROKER,
+      },
+      {
+        id: 'opcua-1',
+        type: EntityType.ADAPTER,
+      },
+    ]
+
+    const renderValidateCombiningHook = async (
+      formData: DataCombining | undefined,
+      queries?: UseQueryResult<DomainTagList | TopicFilterList, Error>[],
+      entities?: EntityReference[]
+    ) => {
+      const errors = createErrorHandler<DataCombining>(formData || ({} as DataCombining))
+      const { result } = renderHook(() => useValidateCombiner(queries || [], entities || []), { wrapper })
+      await waitFor(() => {
+        expect(result.current).not.toBeUndefined()
+      })
+
+      const formValidation = result.current?.validateCombining(formData, errors)
+      return toErrorList(formValidation)
+    }
+
+    it('should validate undefined combining payload', async () => {
+      const errors = await renderValidateCombiningHook(undefined, [], sources)
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: 'The combiner payload must be defined',
+        }),
+      ])
+    })
+
+    it('should validate combining with all validators', async () => {
+      const result = await loadingEntities(sources)
+
+      const errors = await renderValidateCombiningHook(
+        {
+          id: uuidv4(),
+          sources: {
+            tags: ['opcua-1/log/event'],
+            topicFilters: ['a/topic/+/filter'],
+            // @ts-ignore TODO[NVL] Needs to be nullable
+            primary: {},
+          },
+          destination: {
+            topic: 'test/ss',
+            schema: MOCK_SIMPLE_SCHEMA_URI,
+          },
+          instructions: [
+            {
+              source: 'description',
+              destination: 'value',
+              sourceRef: {
+                id: 'a/topic/+/filter',
+                type: DataIdentifierReference.type.TOPIC_FILTER,
+              },
+            },
+          ],
+        },
+        result.current,
+        sources
+      )
+      expect(errors).toStrictEqual([])
+    })
+  })
 })
