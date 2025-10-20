@@ -6,7 +6,7 @@ get:
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/NorthboundMappingOwnerList.yaml
+            $ref: ../components/schemas/NorthboundMappingOwnerList.yaml
       description: Success
   summary: Get all the northbound mappings.
   tags:
