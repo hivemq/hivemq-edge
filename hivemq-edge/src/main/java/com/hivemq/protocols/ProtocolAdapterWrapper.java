@@ -94,14 +94,14 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         this.config = config;
         this.northboundConsumerFactory = northboundConsumerFactory;
         this.tagManager = tagManager;
-
-        // Register FSM state transition listener for debugging
-        registerStateTransitionListener(state -> log.debug(
-                "Adapter {} FSM state transition: adapter={}, northbound={}, southbound={}",
-                adapter.getId(),
-                state.state(),
-                state.northbound(),
-                state.southbound()));
+        if (log.isDebugEnabled()) {
+            registerStateTransitionListener(state -> log.debug(
+                    "Adapter {} FSM state transition: adapter={}, northbound={}, southbound={}",
+                    adapter.getId(),
+                    state.state(),
+                    state.northbound(),
+                    state.southbound()));
+        }
     }
 
     @Override
@@ -183,7 +183,8 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                     //we still return the initial error since that's the most significant information
                     return CompletableFuture.failedFuture(error);
                 } else {
-                    return attemptStartingConsumers(writingEnabled, moduleServices.eventService()).map(startException -> {
+                    return attemptStartingConsumers(writingEnabled,
+                            moduleServices.eventService()).map(startException -> {
                         log.error("Failed to start adapter with id {}", adapter.getId(), startException);
                         stopAfterFailedStart();
                         //we still return the initial error since that's the most significant information
@@ -257,7 +258,6 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     }
 
     public @NotNull CompletableFuture<Void> stopAsync(final boolean destroy) {
-
         // Atomically check state and claim the operation in a single step
         while (true) {
             final var existingFuture = stopFutureRef.get();
@@ -414,7 +414,6 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     private void startPolling(
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
             final @NotNull EventService eventService) {
-
         if (isBatchPolling()) {
             log.debug("Schedule batch polling for protocol adapter with id '{}'", getId());
             final PerAdapterSampler sampler = new PerAdapterSampler(this, eventService, tagManager);
