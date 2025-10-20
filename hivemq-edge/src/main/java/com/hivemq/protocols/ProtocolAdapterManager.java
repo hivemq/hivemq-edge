@@ -84,6 +84,7 @@ public class ProtocolAdapterManager {
     private final @NotNull TagManager tagManager;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
     private final @NotNull ExecutorService executorService;
+    private final @NotNull ExecutorService sharedAdapterExecutor;
 
     @Inject
     public ProtocolAdapterManager(
@@ -99,7 +100,8 @@ public class ProtocolAdapterManager {
             final @NotNull ProtocolAdapterFactoryManager protocolAdapterFactoryManager,
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
             final @NotNull TagManager tagManager,
-            final @NotNull ProtocolAdapterExtractor protocolAdapterConfig) {
+            final @NotNull ProtocolAdapterExtractor protocolAdapterConfig,
+            final @NotNull ExecutorService sharedAdapterExecutor) {
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
         this.remoteService = remoteService;
@@ -113,6 +115,7 @@ public class ProtocolAdapterManager {
         this.northboundConsumerFactory = northboundConsumerFactory;
         this.tagManager = tagManager;
         this.protocolAdapterConfig = protocolAdapterConfig;
+        this.sharedAdapterExecutor = sharedAdapterExecutor;
         this.protocolAdapters = new ConcurrentHashMap<>();
         this.executorService = Executors.newSingleThreadExecutor();
         Runtime.getRuntime().addShutdownHook(new Thread(executorService::shutdown));
@@ -343,7 +346,8 @@ public class ProtocolAdapterManager {
                         factory.getInformation(),
                         state,
                         northboundConsumerFactory,
-                        tagManager);
+                        tagManager,
+                        sharedAdapterExecutor);
             });
         });
     }

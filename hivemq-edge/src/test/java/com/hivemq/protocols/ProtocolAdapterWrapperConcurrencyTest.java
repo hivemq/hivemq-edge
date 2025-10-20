@@ -171,6 +171,8 @@ class ProtocolAdapterWrapperConcurrencyTest {
 
     @BeforeEach
     void setUp() {
+        executor = Executors.newCachedThreadPool();
+
         final ProtocolAdapter mockAdapter = mock(ProtocolAdapter.class);
         when(mockAdapter.getId()).thenReturn("test-adapter");
         when(mockAdapter.getProtocolAdapterInformation()).thenReturn(mock(ProtocolAdapterInformation.class));
@@ -217,7 +219,8 @@ class ProtocolAdapterWrapperConcurrencyTest {
                 adapterInformation,
                 adapterState,
                 consumerFactory,
-                tagManager);
+                tagManager,
+                executor);
     }
 
     @AfterEach

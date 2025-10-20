@@ -75,7 +75,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     private final @NotNull TagManager tagManager;
     private final @NotNull List<NorthboundTagConsumer> consumers;
     private final @NotNull ReentrantLock operationLock;
-    private final @NotNull ExecutorService adapterExecutor;
+    private final @NotNull ExecutorService sharedAdapterExecutor;
     protected volatile @Nullable Long lastStartAttemptTime;
     private @Nullable CompletableFuture<Void> currentStartFuture;
     private @Nullable CompletableFuture<Void> currentStopFuture;
@@ -91,7 +91,8 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterStateImpl protocolAdapterState,
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
-            final @NotNull TagManager tagManager) {
+            final @NotNull TagManager tagManager,
+            final @NotNull ExecutorService sharedAdapterExecutor) {
         super(config.getAdapterId());
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.protocolAdapterPollingService = protocolAdapterPollingService;
@@ -105,14 +106,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         this.tagManager = tagManager;
         this.consumers = new CopyOnWriteArrayList<>();
         this.operationLock = new ReentrantLock();
-
-        // Create a named executor for this adapter to help with debugging and monitoring
-        this.adapterExecutor = Executors.newCachedThreadPool(runnable -> {
-            final Thread thread = new Thread(runnable);
-            thread.setName("adapter-" + adapter.getId() + "-worker");
-            thread.setDaemon(true);
-            return thread;
-        });
+        this.sharedAdapterExecutor = sharedAdapterExecutor;
 
         if (log.isDebugEnabled()) {
             registerStateTransitionListener(state -> log.debug(
@@ -203,7 +197,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                             output.getStartFuture().completeExceptionally(throwable);
                         }
                         return output.getStartFuture();
-                    }, adapterExecutor)  // Use named executor for better monitoring
+                    }, sharedAdapterExecutor)  // Use shared executor to reduce thread overhead
                     .thenCompose(Function.identity()).handle((ignored, error) -> {
                         if (error != null) {
                             log.error("Error starting adapter", error);
@@ -368,7 +362,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                             output.getOutputFuture().completeExceptionally(throwable);
                         }
                         return output.getOutputFuture();
-                    }, adapterExecutor)  // Use named executor for better monitoring
+                    }, sharedAdapterExecutor)  // Use shared executor to reduce thread overhead
                     .thenCompose(Function.identity()).whenComplete((result, throwable) -> {
                         // Always call destroy() to ensure all resources are properly released
                         // This prevents resource leaks from underlying client libraries
