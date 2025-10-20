@@ -43,10 +43,14 @@ import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -76,9 +80,11 @@ class ProtocolAdapterManagerTest {
     private final @NotNull ProtocolAdapterConfigConverter protocolAdapterConfigConverter = mock();
 
     private @NotNull ProtocolAdapterManager protocolAdapterManager;
+    private @NotNull ExecutorService testExecutor;
 
     @BeforeEach
     void setUp() {
+        testExecutor = Executors.newCachedThreadPool();
         protocolAdapterManager = new ProtocolAdapterManager(
                 metricRegistry,
                 moduleServices,
@@ -92,7 +98,16 @@ class ProtocolAdapterManagerTest {
                 protocolAdapterFactoryManager,
                 northboundConsumerFactory,
                 tagManager,
-                protocolAdapterExtractor);
+                protocolAdapterExtractor,
+                testExecutor);
+    }
+
+    @AfterEach
+    void tearDown() throws InterruptedException {
+        if (testExecutor != null && !testExecutor.isShutdown()) {
+            testExecutor.shutdown();
+            testExecutor.awaitTermination(5, TimeUnit.SECONDS);
+        }
     }
 
     @Test
@@ -114,7 +129,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                testExecutor);
 
         protocolAdapterManager.startAsync(adapterWrapper).get();
 
@@ -139,7 +155,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                testExecutor);
 
         protocolAdapterManager.startAsync(adapterWrapper).get();
 
@@ -169,7 +186,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                testExecutor);
 
         protocolAdapterManager.startAsync(adapterWrapper).get();
 
@@ -200,7 +218,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                testExecutor);
 
         protocolAdapterManager.startAsync(adapterWrapper).get();
 
@@ -227,7 +246,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                testExecutor);
 
         // Start the adapter first to transition FSM state to STARTED
         protocolAdapterManager.startAsync(adapterWrapper).get();
@@ -256,7 +276,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                testExecutor);
 
         // Start the adapter first to transition FSM state to STARTED
         protocolAdapterManager.startAsync(adapterWrapper).get();
