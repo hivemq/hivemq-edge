@@ -15,12 +15,12 @@ runs:
       name: Install pnpm
       id: pnpm-install
       with:
-        version: 9
+        version: 10
         run_install: ${{ inputs.run-install }}
 
     - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
-        node-version: 18.16.0
+        node-version: 22.20.0
         cache: 'pnpm'
         cache-dependency-path: '**/pnpm-lock.yaml'
 
