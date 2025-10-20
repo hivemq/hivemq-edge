@@ -138,7 +138,7 @@ public class ProtocolAdapter {
         return logoUrl;
     }
 
-    public @Nullable String getProvisioningUrl() {
+    public @NotNull String getProvisioningUrl() {
         return provisioningUrl;
     }
 
@@ -154,25 +154,25 @@ public class ProtocolAdapter {
         return capabilities;
     }
 
-    public @Nullable Boolean getInstalled() {
+    public @NotNull Boolean getInstalled() {
         return installed;
     }
 
-    public @Nullable List<String> getTags() {
+    public @NotNull List<String> getTags() {
         return tags;
     }
 
-    public @Nullable ProtocolAdapterCategory getCategory() {
+    public @NotNull ProtocolAdapterCategory getCategory() {
         return category;
     }
 
-    public @Nullable JsonNode getUiSchema() {
+    public @NotNull JsonNode getUiSchema() {
         return uiSchema;
     }
 
     @Override
     public boolean equals(final @Nullable Object o) {
-        return this == o || o instanceof final ProtocolAdapter that && Objects.equals(id, that.id);
+        return this == o || (o instanceof final ProtocolAdapter that && Objects.equals(id, that.id));
     }
 
     @Override

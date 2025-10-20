@@ -214,6 +214,7 @@ class ProtocolAdapterManagerTest {
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
+        when(protocolAdapterWritingService.startWriting(any(), any(), any())).thenReturn(true);
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
@@ -228,7 +229,8 @@ class ProtocolAdapterManagerTest {
                 northboundConsumerFactory,
                 tagManager);
 
-        adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
+        // Start the adapter first to transition FSM state to STARTED
+        protocolAdapterManager.startAsync(adapterWrapper).get();
 
         protocolAdapterManager.stopAsync(adapterWrapper, false).get();
 
@@ -240,21 +242,24 @@ class ProtocolAdapterManagerTest {
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
+        when(protocolAdapterWritingService.startWriting(any(), any(), any())).thenReturn(true);
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
+        // Use an adapter that succeeds on start but fails on stop
         final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
-                new TestWritingAdapter(false, adapterState),
+                new TestWritingAdapterFailOnStop(adapterState),
                 mock(),
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
                 tagManager);
 
-        adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
+        // Start the adapter first to transition FSM state to STARTED
+        protocolAdapterManager.startAsync(adapterWrapper).get();
 
         assertThatThrownBy(() -> protocolAdapterManager.stopAsync(adapterWrapper, false).get())
                 .rootCause()
@@ -383,6 +388,49 @@ class ProtocolAdapterManagerTest {
             } else {
                 output.failStop(new RuntimeException("failed"), "could not stop");
             }
+        }
+
+        @Override
+        public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+            return new TestWritingProtocolAdapterInformation();
+        }
+    }
+
+    static class TestWritingAdapterFailOnStop implements WritingProtocolAdapter {
+
+        final ProtocolAdapterState adapterState;
+
+        TestWritingAdapterFailOnStop(final @NotNull ProtocolAdapterState adapterState) {
+            this.adapterState = adapterState;
+        }
+
+        @Override
+        public void write(
+                final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {
+
+        }
+
+        @Override
+        public @NotNull Class<? extends WritingPayload> getMqttPayloadClass() {
+            return null;
+        }
+
+        @Override
+        public @NotNull String getId() {
+            return "test-writing";
+        }
+
+        @Override
+        public void start(
+                final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+            adapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
+            output.startedSuccessfully();
+        }
+
+        @Override
+        public void stop(
+                final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
+            output.failStop(new RuntimeException("failed"), "could not stop");
         }
 
         @Override
