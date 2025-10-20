@@ -232,7 +232,7 @@ class ProtocolAdapterManagerTest {
         // Start the adapter first to transition FSM state to STARTED
         protocolAdapterManager.startAsync(adapterWrapper).get();
 
-        protocolAdapterManager.stopAsync(adapterWrapper, false).get();
+        protocolAdapterManager.stopAsync(adapterWrapper).get();
 
         assertThat(adapterWrapper.getRuntimeStatus()).isEqualTo(ProtocolAdapterState.RuntimeStatus.STOPPED);
     }
@@ -261,7 +261,7 @@ class ProtocolAdapterManagerTest {
         // Start the adapter first to transition FSM state to STARTED
         protocolAdapterManager.startAsync(adapterWrapper).get();
 
-        assertThatThrownBy(() -> protocolAdapterManager.stopAsync(adapterWrapper, false).get())
+        assertThatThrownBy(() -> protocolAdapterManager.stopAsync(adapterWrapper).get())
                 .rootCause()
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("failed");
