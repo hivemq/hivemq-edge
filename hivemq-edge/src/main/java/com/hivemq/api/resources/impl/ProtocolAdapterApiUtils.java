@@ -39,26 +39,23 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Utilities that handle the display, sort and filter logic relating to
- * protocol adapters.
- *
- * @author Simon L Johnson
+ * Utilities that handle the display, sort and filter logic relating to protocol adapters.
  */
 public class ProtocolAdapterApiUtils {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ProtocolAdapterApiUtils.class);
-    private static final String DEFAULT_SCHEMA = "{\n" +
-            "  \"ui:tabs\": [],\n" +
-            "  \"id\": {\n" +
-            "    \"ui:disabled\": true\n" +
-            "  },\n" +
-            "  \"ui:order\": [\"id\",  \"*\"]\n" +
-            "}";
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterApiUtils.class);
+    private static final @NotNull String DEFAULT_SCHEMA = """
+            {
+              "ui:tabs": [],
+              "id": {
+                "ui:disabled": true
+              },
+              "ui:order": ["id",  "*"]
+            }""";
 
     /**
      * Convert between the internal system representation of a ProtocolAdapter type and its API based sibling.
@@ -66,7 +63,7 @@ public class ProtocolAdapterApiUtils {
      *
      * @return The instance to be sent across the API
      */
-    public static ProtocolAdapter convertInstalledAdapterType(
+    public static @Nullable ProtocolAdapter convertInstalledAdapterType(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterManager adapterManager,
             final @NotNull ProtocolAdapterInformation info,
@@ -77,6 +74,110 @@ public class ProtocolAdapterApiUtils {
         Preconditions.checkNotNull(adapterManager);
         Preconditions.checkNotNull(info);
         Preconditions.checkNotNull(configurationService);
+
+        if (!adapterManager.protocolAdapterFactoryExists(info.getProtocolId())) {
+            // this can only happen if the adapter somehow got removed from
+            // the manager concurrently, which is not possible right now
+            log.error("Factory for adapter '{}' was not found while conversion of adapter to information for REST API.",
+                    info.getDisplayName());
+            return null;
+        }
+
+        return new ProtocolAdapter(info.getProtocolId(),
+                info.getProtocolName(),
+                info.getDisplayName(),
+                info.getDescription(),
+                info.getUrl(),
+                info.getVersion().replace("${edge-version}", versionProvider.getVersion()),
+                getLogoUrl(info, configurationService, xOriginalURI),
+                null,
+                info.getAuthor(),
+                true,
+                info.getCapabilities()
+                        .stream()
+                        .filter(cap -> cap != ProtocolAdapterCapability.WRITE || adapterManager.writingEnabled())
+                        .map(ProtocolAdapter.Capability::from)
+                        .collect(Collectors.toSet()),
+                convertApiCategory(info.getCategory()),
+                info.getTags() != null ? info.getTags().stream().map(Enum::toString).toList() : null,
+                new ProtocolAdapterSchemaManager(objectMapper,
+                        adapterManager.writingEnabled() ?
+                                info.configurationClassNorthAndSouthbound() :
+                                info.configurationClassNorthbound()).generateSchemaNode(),
+                getUiSchemaForAdapter(objectMapper, info));
+    }
+
+
+    @VisibleForTesting
+    protected static @NotNull JsonNode getUiSchemaForAdapter(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull ProtocolAdapterInformation info) {
+        final String uiSchemaAsString = info.getUiSchema();
+        if (uiSchemaAsString != null) {
+            try {
+                return objectMapper.reader().withFeatures(JsonParser.Feature.ALLOW_COMMENTS).readTree(uiSchemaAsString);
+            } catch (final JsonProcessingException e) {
+                log.warn("Ui schema for adapter '{}' is not parsable, the default schema will be applied. ",
+                        info.getDisplayName(),
+                        e);
+                // fall through to parsing the DEFAULT SCHEMA
+            }
+        }
+
+        try {
+            return objectMapper.readTree(DEFAULT_SCHEMA);
+        } catch (final JsonProcessingException e) {
+            log.error("Exception during parsing of default schema: ", e);
+            // this should never happen as we control the input (default schema)
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Convert between the internal system representation of a Module type and its API protocol adapter type.
+     *
+     * @return The instance to be sent across the API
+     */
+    public static @NotNull ProtocolAdapter convertModuleAdapterType(
+            final @NotNull Module module,
+            final @NotNull ConfigurationService configurationService) {
+        Preconditions.checkNotNull(module);
+        Preconditions.checkNotNull(configurationService);
+        return new ProtocolAdapter(module.getId(),
+                module.getId(),
+                module.getName(),
+                module.getDescription(),
+                module.getDocumentationLink() != null ? module.getDocumentationLink().getUrl() : null,
+                module.getVersion(),
+                getLogoUrl(module, configurationService),
+                module.getProvisioningLink() != null ? module.getProvisioningLink().getUrl() : null,
+                module.getAuthor(),
+                false,
+                Set.of(),
+                null,
+                null,
+                null,
+                null);
+    }
+
+    private static @Nullable String getLogoUrl(
+            final @NotNull Module module,
+            final @NotNull ConfigurationService configurationService) {
+        String logoUrl = null;
+        if (module.getLogoUrl() != null) {
+            logoUrl = module.getLogoUrl().getUrl();
+            if (logoUrl != null) {
+                logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : logoUrl;
+                logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
+            }
+        }
+        return logoUrl;
+    }
+
+    private static @NotNull String getLogoUrl(
+            final @NotNull ProtocolAdapterInformation info,
+            final @NotNull ConfigurationService configurationService,
+            final @Nullable String xOriginalURI) {
         String logoUrl = info.getLogoUrl();
         if (StringUtils.isNotBlank(logoUrl)) {
             while (logoUrl.startsWith(HttpConstants.SLASH)) {
@@ -98,120 +199,12 @@ public class ProtocolAdapterApiUtils {
         } else {
             // although it is marked as not null it is input from outside (possible customer adapter),
             // so we should trust but validate and at least log.
-            LOG.warn("Logo url for adapter '{}' was null. ", info.getDisplayName());
+            log.warn("Logo url for adapter '{}' was null. ", info.getDisplayName());
         }
-        if (!adapterManager.protocolAdapterFactoryExists(info.getProtocolId())) {
-            // this can only happen if the adapter somehow got removed from the manager concurrently, which is not possible right now
-            LOG.error("Factory for adapter '{}' was not found while conversion of adapter to information for REST API.",
-                    info.getDisplayName());
-            return null;
-        }
-
-        final ProtocolAdapterSchemaManager protocolAdapterSchemaManager = new ProtocolAdapterSchemaManager(objectMapper,
-                adapterManager.writingEnabled() ?
-                        info.configurationClassNorthAndSouthbound() :
-                        info.configurationClassNorthbound());
-
-
-        final String rawVersion = info.getVersion();
-        final String version = rawVersion.replace("${edge-version}", versionProvider.getVersion());
-        final JsonNode uiSchema = getUiSchemaForAdapter(objectMapper, info);
-        return new ProtocolAdapter(info.getProtocolId(),
-                info.getProtocolName(),
-                info.getDisplayName(),
-                info.getDescription(),
-                info.getUrl(),
-                version,
-                logoUrl,
-                null,
-                info.getAuthor(),
-                true,
-                getCapabilities(adapterManager, info),
-                convertApiCategory(info.getCategory()),
-                info.getTags() == null ?
-                        null :
-                        info.getTags().stream().map(Enum::toString).collect(Collectors.toList()),
-                protocolAdapterSchemaManager.generateSchemaNode(),
-                uiSchema);
+        return logoUrl;
     }
 
     @VisibleForTesting
-    protected static @NotNull JsonNode getUiSchemaForAdapter(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull ProtocolAdapterInformation info) {
-        final String uiSchemaAsString = info.getUiSchema();
-        if (uiSchemaAsString != null) {
-            try {
-                return objectMapper.reader().withFeatures(JsonParser.Feature.ALLOW_COMMENTS).readTree(uiSchemaAsString);
-            } catch (final JsonProcessingException e) {
-                LOG.warn("Ui schema for adapter '{}' is not parsable, the default schema will be applied. ",
-                        info.getDisplayName(),
-                        e);
-                // fall through to parsing the DEFAULT SCHEMA
-            }
-        }
-
-        try {
-            return objectMapper.readTree(DEFAULT_SCHEMA);
-        } catch (final JsonProcessingException e) {
-            LOG.error("Exception during parsing of default schema: ", e);
-            // this should never happen as we control the input (default schema)
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static @NotNull Set<ProtocolAdapter.Capability> getCapabilities(
-            final @NotNull ProtocolAdapterManager adapterManager,
-            final @NotNull ProtocolAdapterInformation info) {
-        final Set<ProtocolAdapter.Capability> capabilities = new HashSet<>();
-        for (final ProtocolAdapterCapability capability : info.getCapabilities()) {
-            if (capability == ProtocolAdapterCapability.WRITE && adapterManager.writingEnabled()) {
-                capabilities.add(ProtocolAdapter.Capability.from(capability));
-            }
-            if (capability != ProtocolAdapterCapability.WRITE) {
-                capabilities.add(ProtocolAdapter.Capability.from(capability));
-            }
-        }
-        return capabilities;
-    }
-
-    /**
-     * Convert between the internal system representation of a Module type and its API protocol adapter type.
-     *
-     * @return The instance to be sent across the API
-     */
-    public static ProtocolAdapter convertModuleAdapterType(
-            final @NotNull Module module,
-            final @NotNull ConfigurationService configurationService) {
-
-        Preconditions.checkNotNull(module);
-        Preconditions.checkNotNull(configurationService);
-        String logoUrl = module.getLogoUrl() == null ? null : module.getLogoUrl().getUrl();
-        final String documentationUrl =
-                module.getDocumentationLink() == null ? null : module.getDocumentationLink().getUrl();
-        final String provisioningUrl =
-                module.getProvisioningLink() == null ? null : module.getProvisioningLink().getUrl();
-        if (logoUrl != null) {
-            logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : logoUrl;
-            logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
-        }
-        return new ProtocolAdapter(module.getId(),
-                module.getId(),
-                module.getName(),
-                module.getDescription(),
-                documentationUrl,
-                module.getVersion(),
-                logoUrl,
-                provisioningUrl,
-                module.getAuthor(),
-                false,
-                Set.of(),
-                null,
-                null,
-                null,
-                null);
-    }
-
     public static @NotNull String applyAbsoluteServerAddressInDeveloperMode(
             final @NotNull String logoUrl,
             final @NotNull ConfigurationService configurationService) {
@@ -233,6 +226,7 @@ public class ProtocolAdapterApiUtils {
      *
      * @param category the category enum to convert
      */
+    @org.jetbrains.annotations.VisibleForTesting
     public static @Nullable ProtocolAdapterCategory convertApiCategory(final @Nullable com.hivemq.adapter.sdk.api.ProtocolAdapterCategory category) {
         if (category == null) {
             return null;

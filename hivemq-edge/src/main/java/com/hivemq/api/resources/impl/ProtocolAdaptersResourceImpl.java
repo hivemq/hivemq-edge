@@ -106,12 +106,14 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.hivemq.api.resources.impl.ProtocolAdapterApiUtils.convertInstalledAdapterType;
 import static com.hivemq.api.resources.impl.ProtocolAdapterApiUtils.convertModuleAdapterType;
 import static com.hivemq.api.utils.ApiErrorUtils.addValidationError;
 import static com.hivemq.api.utils.ApiErrorUtils.hasRequestErrors;
 import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredEntity;
 import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredField;
 import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredFieldRegex;
+import static com.hivemq.protocols.ProtocolAdapterManager.runWithContextLoader;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static com.hivemq.util.ErrorResponseUtil.errorResponse;
 
@@ -182,7 +184,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Set<ProtocolAdapter> installed =
                 protocolAdapterManager.getAllAvailableAdapterTypes().values().stream().map(adapter -> {
                     try {
-                        return ProtocolAdapterApiUtils.convertInstalledAdapterType(objectMapper,
+                        return convertInstalledAdapterType(objectMapper,
                                 protocolAdapterManager,
                                 adapter,
                                 configurationService,
@@ -232,7 +234,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @NotNull String adapterId,
             final @Nullable String rootNode,
             final @Nullable Integer depth) {
-
         final Optional<ProtocolAdapterWrapper> maybeWrapper =
                 protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
         if (maybeWrapper.isEmpty()) {
@@ -243,41 +244,36 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (!wrapper.getAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.DISCOVER)) {
             return errorResponse(new AdapterFailedValidationError("Adapter does not support discovery"));
         }
+
         final ProtocolAdapterDiscoveryOutputImpl output = new ProtocolAdapterDiscoveryOutputImpl();
+        return runWithContextLoader(wrapper.getAdapterFactory().getClass().getClassLoader(), () -> {
+            try {
+                wrapper.discoverValues(new ProtocolAdapterDiscoveryInput() {
+                    @Override
+                    public @Nullable String getRootNode() {
+                        return rootNode;
+                    }
 
-        final Thread currentThread = Thread.currentThread();
-        final ClassLoader ctxClassLoader = currentThread.getContextClassLoader();
-        try {
-            currentThread.setContextClassLoader(wrapper.getAdapterFactory().getClass().getClassLoader());
-
-            wrapper.discoverValues(new ProtocolAdapterDiscoveryInput() {
-                @Override
-                public @Nullable String getRootNode() {
-                    return rootNode;
-                }
-
-                @Override
-                public int getDepth() {
-                    return (depth != null && depth > 0) ? depth : 1;
-                }
-            }, output);
-            output.getOutputFuture().orTimeout(1, TimeUnit.MINUTES).get();
-
-            return Response.ok(new ValuesTree(output.getNodeTree().getRootNode().getChildren())).build();
-        } catch (final @NotNull ExecutionException e) {
-            final Throwable cause = e.getCause();
-            log.warn("Exception occurred during discovery for adapter '{}'", adapterId, cause);
-            return errorResponse(new InternalServerError("Exception during discovery."));
-        } catch (final @NotNull InterruptedException e) {
-            currentThread.interrupt();
-            log.warn("Thread was interrupted during discovery for adapter '{}'", adapterId);
-            return errorResponse(new InternalServerError("Exception during discovery."));
-        } catch (final @NotNull Throwable e) {
-            log.warn("Exception was thrown during discovery for adapter '{}'.", adapterId);
-            return errorResponse(new InternalServerError("Exception during discovery."));
-        } finally {
-            currentThread.setContextClassLoader(ctxClassLoader);
-        }
+                    @Override
+                    public int getDepth() {
+                        return (depth != null && depth > 0) ? depth : 1;
+                    }
+                }, output);
+                output.getOutputFuture().orTimeout(1, TimeUnit.MINUTES).get();
+                return Response.ok(new ValuesTree(output.getNodeTree().getRootNode().getChildren())).build();
+            } catch (final @NotNull ExecutionException e) {
+                final Throwable cause = e.getCause();
+                log.warn("Exception occurred during discovery for adapter '{}'", adapterId, cause);
+                return errorResponse(new InternalServerError("Exception during discovery."));
+            } catch (final @NotNull InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("Thread was interrupted during discovery for adapter '{}'", adapterId);
+                return errorResponse(new InternalServerError("Exception during discovery."));
+            } catch (final @NotNull Throwable e) {
+                log.warn("Exception was thrown during discovery for adapter '{}'.", adapterId);
+                return errorResponse(new InternalServerError("Exception during discovery."));
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")
