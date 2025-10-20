@@ -11,7 +11,9 @@ All task-related documentation is located in the `.tasks/` directory:
 ## Current Tasks
 
 ### 37542-code-coverage
+
 Code coverage improvements for HiveMQ Edge Frontend
+
 - **Status**: Active
 - **Location**: `.tasks/37542-code-coverage/`
 - **Progress**: 3 subtasks completed, 42 tests added, 11 files improved
@@ -19,6 +21,7 @@ Code coverage improvements for HiveMQ Edge Frontend
 ## For AI Agents
 
 When a user mentions a task:
+
 1. Read `.tasks/ACTIVE_TASKS.md` to find the task
 2. Navigate to `.tasks/{task-id}-{task-name}/`
 3. Load context from TASK_BRIEF.md and TASK_SUMMARY.md
@@ -39,7 +42,8 @@ When a user mentions a task:
 
 ---
 
-*This file provides quick context for AI assistants working in this codebase.*
+_This file provides quick context for AI assistants working in this codebase._
+
 # Task Documentation & AI Context
 
 This directory contains comprehensive task documentation, progress tracking, and AI work guidelines.
@@ -47,4 +51,3 @@ This directory contains comprehensive task documentation, progress tracking, and
 **When working on tasks, AI agents should consult this directory first.**
 
 See [README.md](.tasks/README.md) for full documentation structure.
-

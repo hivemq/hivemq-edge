@@ -7,21 +7,25 @@
 When starting a new conversation to continue work on a task, simply say:
 
 ### Option 1: Simple Task Reference
+
 ```
 We're working on task 37542-code-coverage
 ```
 
 ### Option 2: Even Simpler
+
 ```
 Continue task 37542
 ```
 
 ### Option 3: With Context Request
+
 ```
 We're working on task 37542. Please review the progress so far.
 ```
 
 That's it! The AI will automatically:
+
 - Look in the `.tasks/` directory
 - Find the task in `.tasks/ACTIVE_TASKS.md`
 - Load all task files from `.tasks/{task-id}-{task-name}/`
@@ -55,11 +59,13 @@ The AI agent will automatically:
 ## Tips for Effective Task Resumption
 
 ### ✅ DO:
+
 - Mention the task ID (e.g., "37542") or full name ("37542-code-coverage")
 - Let the AI load the context first before diving into work
 - Ask for a summary if you need a refresher
 
 ### ❌ DON'T:
+
 - Explain the entire history yourself (it's in the docs!)
 - Assume the AI remembers previous conversations
 - Skip mentioning which task you're on

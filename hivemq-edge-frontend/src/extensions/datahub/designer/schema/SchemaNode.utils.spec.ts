@@ -314,9 +314,7 @@ describe('loadSchema', () => {
         version: '1',
       }
 
-      expect(() => loadSchema(MOCK_PARENT_NODE, 'target-handle', 0, schemaRef, [])).toThrow(
-        /Cannot find/
-      )
+      expect(() => loadSchema(MOCK_PARENT_NODE, 'target-handle', 0, schemaRef, [])).toThrow(/Cannot find/)
     })
 
     it('should throw an error if specific version is not found', () => {
@@ -341,7 +339,9 @@ describe('loadSchema', () => {
         version: '1',
       }
 
-      expect(() => loadSchema(MOCK_PARENT_NODE, 'target-handle', 0, schemaRef, [unknownSchema])).toThrow(/Cannot identify/)
+      expect(() => loadSchema(MOCK_PARENT_NODE, 'target-handle', 0, schemaRef, [unknownSchema])).toThrow(
+        /Cannot identify/
+      )
     })
   })
 

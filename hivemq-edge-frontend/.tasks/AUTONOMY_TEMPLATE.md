@@ -1,6 +1,7 @@
 # Autonomy Template
 
 ## Document Purpose
+
 This document captures key learnings, patterns, and guidelines discovered while working on autonomous tasks for the HiveMQ Edge frontend. These findings should inform future autonomous work on similar tasks.
 
 ---
@@ -10,6 +11,7 @@ This document captures key learnings, patterns, and guidelines discovered while 
 **RULE #1: ALL task documentation, history, and context files are located in the `.tasks/` directory.**
 
 When a user mentions working on a task:
+
 1. **ALWAYS** start by reading `.tasks/ACTIVE_TASKS.md`
 2. **NEVER** look for task files at the project root
 3. **ALL** task files follow the pattern: `.tasks/{task-id}-{task-name}/`
@@ -44,10 +46,13 @@ When a user mentions working on a task:
 **For the User:**
 
 In a new conversation, simply state:
+
 ```
 We're working on task 37542-code-coverage
 ```
+
 or
+
 ```
 Continue work on task 37542
 ```
@@ -57,6 +62,7 @@ Continue work on task 37542
 When the user mentions a task ID, immediately:
 
 1. **Read the task index** (it's ALWAYS in `.tasks/`):
+
    ```
    read_file(".tasks/ACTIVE_TASKS.md")
    ```
@@ -64,6 +70,7 @@ When the user mentions a task ID, immediately:
 2. **Navigate to the task directory** (under `.tasks/`) based on the index entry
 
 3. **Load context in this order** (all files under `.tasks/{task-id}/`):
+
    - `TASK_BRIEF.md` - Understand the task objective and approach
    - `TASK_SUMMARY.md` - Review all completed subtasks
    - Latest `CONVERSATION_SUBTASK_N.md` - Check most recent work
@@ -80,6 +87,7 @@ When the user mentions a task ID, immediately:
 **File:** `.tasks/ACTIVE_TASKS.md` ← ALWAYS HERE
 
 This file maintains a registry of all active tasks with:
+
 - Task ID and name
 - Directory location (always under `.tasks/`)
 - Quick summary
@@ -95,8 +103,8 @@ Agent Actions:
 1. read_file(".tasks/ACTIVE_TASKS.md")                          ← In .tasks/
 2. read_file(".tasks/37542-code-coverage/TASK_BRIEF.md")       ← In .tasks/
 3. read_file(".tasks/37542-code-coverage/TASK_SUMMARY.md")     ← In .tasks/
-4. Summarize: "I can see we're working on code coverage improvements. 
-   You've completed 3 subtasks covering 11 files with 42 new tests. 
+4. Summarize: "I can see we're working on code coverage improvements.
+   You've completed 3 subtasks covering 11 files with 42 new tests.
    Ready to continue with the next subtask."
 ```
 
@@ -109,23 +117,27 @@ Agent Actions:
 ### Required Documents
 
 1. **TASK_BRIEF.md** - Initial task description and objectives
+
    - Contains the task's primary goal and context
    - Lists all subtasks with their completion status
    - References related documentation files
 
 2. **TASK_SUMMARY.md** - Comprehensive tracking of ALL subtasks across different discussion threads
+
    - Each subtask has its own section with detailed outcomes
    - Maintains summary statistics across all subtasks
    - Updated after each subtask completion
    - Provides a complete historical record of task progress
 
 3. **CONVERSATION_SUBTASK_N.md** - Full conversation history for subtask N
+
    - One file per subtask (where N is the subtask number from TASK_SUMMARY)
    - Contains the complete dialogue and decision-making process
    - Records all feedback, iterations, and problem-solving steps
    - Preserves context for understanding how subtask was completed
 
 4. **SESSION_FEEDBACK.md** - Lessons learned and retrospective notes
+
    - High-level observations and improvements identified
    - Process improvements for future tasks
    - Team collaboration insights
@@ -163,43 +175,51 @@ Agent Actions:
 **Finding:** Subtasks may be created by the user in different discussion threads, requiring careful tracking
 
 **Best Practice:**
+
 1. **Always check** existing TASK_SUMMARY.md for prior subtasks before starting new work
 2. **Maintain consistency** in subtask format across all entries in TASK_SUMMARY.md
 3. **Record conversations** in dedicated CONVERSATION_SUBTASK_N.md files
 4. **Use standardized format** for each subtask in TASK_SUMMARY.md:
+
    ```markdown
    ## Subtask N: {Descriptive Name} ✅ COMPLETED
-   
+
    **Completion Date:** October XX, 2025
-   
+
    **Files Modified:**
+
    1. File path 1
    2. File path 2
-   
+
    **Uncovered Lines by File:**
+
    1. **File1** - Lines X-Y, Z
    2. **File2** - Lines A-B
-   
+
    **Test Metrics:**
+
    - **Total Tests Added:** N new test cases
    - **Test Files Modified:** N
    - **Final Test Results:** X passed, Y skipped
    - **Success Rate:** 100% passing
    - **TypeScript Errors:** 0
-   
+
    **Coverage Improvements by File:**
-   
-   | File | Lines Covered | Tests Added | Status |
-   |------|--------------|-------------|---------|
-   | file1.spec.ts | X-Y | N | ✅ |
-   
+
+   | File          | Lines Covered | Tests Added | Status |
+   | ------------- | ------------- | ----------- | ------ |
+   | file1.spec.ts | X-Y           | N           | ✅     |
+
    **Key Test Scenarios Covered:**
+
    - Scenario descriptions
-   
+
    **Technical Achievements:**
+
    - ✅ Achievement list
-   
+
    **Issues Resolved:**
+
    - Issue descriptions
    ```
 
@@ -213,18 +233,20 @@ Agent Actions:
 **Finding:** Must check TypeScript validity before declaring a subtask complete
 
 **Mandatory Step:**
+
 ```typescript
 // Always run before marking subtask as complete:
-get_errors(["/path/to/modified/file.ts"])
+get_errors(['/path/to/modified/file.ts'])
 ```
 
 **Common TypeScript Issues Encountered:**
 
 1. **Union Type Property Access:**
+
    ```typescript
    // ❌ WRONG - Property may not exist on all union members
    result.current.treeData.children
-   
+
    // ✅ CORRECT - Use type guard first
    expect(result.current.treeData.type).toBe('node')
    const treeData = result.current.treeData as TreeNode
@@ -232,10 +254,11 @@ get_errors(["/path/to/modified/file.ts"])
    ```
 
 2. **Implicit Any Types in Callbacks:**
+
    ```typescript
    // ❌ WRONG - Implicit any type
    .find((child) => child.name === 'Tags')
-   
+
    // ✅ CORRECT - Explicit type annotation
    .find((child: Tree) => child.name === 'Tags')
    ```
@@ -247,6 +270,7 @@ get_errors(["/path/to/modified/file.ts"])
    ```
 
 **Validation Checklist:**
+
 - [ ] Run `get_errors()` on all modified test files
 - [ ] Verify 0 TypeScript compile errors (severity ERROR)
 - [ ] Warnings (severity WARNING) about test assertions are acceptable
@@ -258,6 +282,7 @@ get_errors(["/path/to/modified/file.ts"])
 ### 4. Test Coverage Patterns for React Hooks
 
 **Pattern 1: MSW Mock Handler Override**
+
 ```typescript
 it('should test specific scenario', async () => {
   // Override default handlers with specific test data
@@ -266,18 +291,19 @@ it('should test specific scenario', async () => {
       return HttpResponse.json({ items: [...] }, { status: 200 })
     })
   )
-  
+
   const { result } = renderHook(useCustomHook, { wrapper })
-  
+
   await waitFor(() => {
     expect(result.current.isLoading).toBeFalsy()
   })
-  
+
   // Assertions
 })
 ```
 
 **Pattern 2: Testing Error Paths**
+
 ```typescript
 it('should handle error state', async () => {
   server.use(
@@ -285,9 +311,9 @@ it('should handle error state', async () => {
       return HttpResponse.json({}, { status: 500 })
     })
   )
-  
+
   const { result } = renderHook(useCustomHook, { wrapper })
-  
+
   await waitFor(() => {
     expect(result.current.isError).toBeTruthy()
   })
@@ -295,6 +321,7 @@ it('should handle error state', async () => {
 ```
 
 **Pattern 3: Testing Conditional Logic**
+
 ```typescript
 // When testing conditional checks (e.g., "if (x !== -1 && y !== -1 && value)")
 // Create test cases for:
@@ -304,17 +331,18 @@ it('should handle error state', async () => {
 ```
 
 **Pattern 4: Matching Mock Data Across Endpoints**
+
 ```typescript
 // ✅ CRITICAL: Ensure related endpoints return matching data
 server.use(
   http.get('*/northboundMappings', () => {
     return HttpResponse.json({
-      items: [{ tagName: 'test/tag1', topic: 'my/topic' }]
+      items: [{ tagName: 'test/tag1', topic: 'my/topic' }],
     })
   }),
   http.get('*/domain-tags', () => {
     return HttpResponse.json({
-      items: [{ name: 'test/tag1' }] // Must match tagName above!
+      items: [{ name: 'test/tag1' }], // Must match tagName above!
     })
   })
 )
@@ -325,6 +353,7 @@ server.use(
 ### 5. Common Coverage Gaps and Solutions
 
 **Gap Type 1: Early Return/Guard Clauses**
+
 ```typescript
 // Source code:
 if (isLoading) return emptyStateData
@@ -336,6 +365,7 @@ it('should return empty state when loading', () => {
 ```
 
 **Gap Type 2: Error Handling in useEffect**
+
 ```typescript
 // Source code:
 useEffect(() => {
@@ -350,6 +380,7 @@ it('should not set up interval when there are errors', () => {
 ```
 
 **Gap Type 3: Conditional Data Processing**
+
 ```typescript
 // Source code:
 if (x !== -1 && y !== -1 && value) {
@@ -363,6 +394,7 @@ if (x !== -1 && y !== -1 && value) {
 ```
 
 **Gap Type 4: MQTT Topic Matching**
+
 ```typescript
 // Source code uses mqtt-match library for wildcard matching
 const matched = mqttTopicMatch(filter, topic)
@@ -378,6 +410,7 @@ it('should match topics against wildcard filters', () => {
 ### 6. Test File Organization
 
 **Standard Structure:**
+
 ```typescript
 describe('hookName or utilityName', () => {
   beforeEach(() => {
@@ -408,16 +441,19 @@ describe('hookName or utilityName', () => {
 **When Test Assertion Fails:**
 
 1. **Check Mock Data Completeness**
+
    - Are all required endpoints mocked?
    - Does mock data match what the code expects?
    - Are there relationships between endpoints that need matching data?
 
 2. **Verify Type Safety**
+
    - Run `get_errors()` to catch TypeScript issues
    - Check for implicit `any` types
    - Verify union type handling
 
 3. **Inspect Actual vs Expected**
+
    - Use `console.log()` or `waitFor()` to inspect actual data
    - Check if the code path is actually being executed
    - Verify mock handlers are being used (not default handlers)
@@ -433,6 +469,7 @@ describe('hookName or utilityName', () => {
 ### 8. Documentation Requirements
 
 **After Each Subtask:**
+
 1. ✅ Update TASK_SUMMARY.md with complete subtask entry
 2. ✅ Verify all tests passing with `npm test`
 3. ✅ Check TypeScript validity with `get_errors()`
@@ -440,6 +477,7 @@ describe('hookName or utilityName', () => {
 5. ✅ Document any issues encountered and resolutions
 
 **Session Summary Format Requirements:**
+
 - Consistent table formatting for coverage improvements
 - Clear metrics (tests added, lines covered, success rate)
 - Technical achievements and issues resolved sections
@@ -450,6 +488,7 @@ describe('hookName or utilityName', () => {
 ### 9. Tools and Commands
 
 **Essential Tools:**
+
 ```bash
 # Run specific test files
 npm test -- path/to/test.spec.ts --run
@@ -465,6 +504,7 @@ rm -rf node_modules/.vite
 ```
 
 **File Operations:**
+
 - Use `file_search` to locate files
 - Use `read_file` to examine code
 - Use `grep_search` to find patterns
@@ -475,6 +515,7 @@ rm -rf node_modules/.vite
 ### 10. Quality Checklist Before Subtask Completion
 
 **Pre-Completion Checklist:**
+
 - [ ] All identified uncovered lines have corresponding tests
 - [ ] All tests passing (100% success rate)
 - [ ] TypeScript errors = 0 (excluding test assertion warnings)
@@ -493,11 +534,13 @@ rm -rf node_modules/.vite
 ### DomainOntology Module Characteristics
 
 **Data Flow Pattern:**
+
 ```
 API Data → Hook Processing → Visualization Format
 ```
 
 **Common Transformations:**
+
 1. **Chord Matrix** - Adjacency matrix for relationship visualization
 2. **Sankey Diagram** - Flow diagram with links between nodes
 3. **Sunburst Chart** - Hierarchical data in circular layout
@@ -505,6 +548,7 @@ API Data → Hook Processing → Visualization Format
 5. **Cluster** - Grouped hierarchical data
 
 **Key Functions:**
+
 - `mqttTopicMatch` - Critical for filter matching
 - Link building between tags, topics, and filters
 - Empty state handling for visualization components

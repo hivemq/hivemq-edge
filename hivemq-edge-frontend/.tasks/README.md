@@ -7,8 +7,9 @@
 ## Directory Purpose
 
 This directory contains:
+
 - ✅ Task registry and index
-- ✅ AI work guidelines and patterns  
+- ✅ AI work guidelines and patterns
 - ✅ Individual task subdirectories
 - ✅ Task briefs, summaries, and conversation histories
 - ✅ Feedback and retrospectives
@@ -17,10 +18,12 @@ This directory contains:
 ## Quick Links
 
 ### For Getting Started
+
 - **[QUICK_START.md](./QUICK_START.md)** - How to resume tasks in new conversations
 - **[WEBSTORM_SETUP.md](./WEBSTORM_SETUP.md)** - Configure your IDE for task work
 
 ### For AI Agents
+
 - **[ACTIVE_TASKS.md](./ACTIVE_TASKS.md)** - START HERE: Registry of all tasks
 - **[AUTONOMY_TEMPLATE.md](./AUTONOMY_TEMPLATE.md)** - Work patterns and best practices
 
@@ -57,6 +60,7 @@ This directory contains:
 ## For AI Agents
 
 When a user mentions working on a task:
+
 1. ✅ Read `.tasks/ACTIVE_TASKS.md` first
 2. ✅ Navigate to `.tasks/{task-id}-{task-name}/`
 3. ✅ Load task context from files in that directory
@@ -65,11 +69,13 @@ When a user mentions working on a task:
 ## For Users
 
 ### Starting a New Task
+
 ```bash
 ./tools/create-task.sh CARD-37542 code-coverage
 ```
 
 ### Resuming Work in New Conversation
+
 Just say: "We're working on task CARD-37542"
 
 The AI knows to look in `.tasks/` automatically.
@@ -79,6 +85,7 @@ See [QUICK_START.md](./QUICK_START.md) for details.
 ## Integration with Your Tools
 
 This task system integrates with:
+
 - ✅ **Kanbanize** - Link cards to task docs
 - ✅ **Figma** - Reference designs in TASK_BRIEF
 - ✅ **MIRO** - Link architecture diagrams

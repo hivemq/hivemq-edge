@@ -12,11 +12,13 @@
 ### Session Trace
 
 #### 1. Initial Request
+
 **User:** "Check the codecoverage report and add the missing tests in this file"
 
 #### 2. Coverage Analysis Phase
 
 #### Command: Examined coverage reports
+
 ```bash
 # Checked overall coverage
 cat coverage-vitest/index.html
@@ -31,23 +33,27 @@ cat coverage-vitest/modules/Workspace/utils/status-utils.ts.html
 ```
 
 **Coverage Report Findings:**
+
 - Statement Coverage: 64.58% (62/96)
 - Branch Coverage: 52.54% (31/59)
 - Function Coverage: 60% (9/15)
 - Line Coverage: 63.29% (50/79)
 
 **Uncovered Areas Identified:**
+
 1. `getEdgeStatus` function - line ~144: `hasMarker` false branch returning `undefined`
 2. `updateEdgesStatus` function - lines ~166-217: Almost entirely uncovered
-  - Group edge handling (lines 166-183)
-  - Edge source parsing and status lookup (lines 185-190)
-  - Adapter node edge handling (lines 196-209)
-  - Bridge node edge handling (lines 211-216)
-  - Default fallback (line 217)
+
+- Group edge handling (lines 166-183)
+- Edge source parsing and status lookup (lines 185-190)
+- Adapter node edge handling (lines 196-209)
+- Bridge node edge handling (lines 211-216)
+- Default fallback (line 217)
 
 ### 3. Source Code Analysis
 
 #### Read source file to understand implementation
+
 ```typescript
 // File: src/modules/Workspace/utils/status-utils.ts
 
@@ -61,11 +67,11 @@ export const getEdgeStatus = (
   const edge: EdgeStyle<EdgeStatus> = {}
   edge.style = { strokeWidth: 1.5, stroke: themeForStatus }
   edge.animated = isConnected && hasTopics
-  
+
   edge.markerEnd = hasMarker
     ? { type: MarkerType.ArrowClosed, width: 20, height: 20, color: themeForStatus }
-    : undefined  // ⚠️ UNCOVERED BRANCH
-  
+    : undefined // ⚠️ UNCOVERED BRANCH
+
   edge.data = { isConnected, hasTopics }
   return edge
 }
@@ -79,7 +85,7 @@ export const updateEdgesStatus = (
   theme: Partial<WithCSSVar<Dict>>
 ): Edge[] => {
   const newEdges: Edge[] = []
-  
+
   currentEdges.forEach((edge) => {
     // Group edge handling - UNCOVERED
     if (edge.id.startsWith('connect-edge-group')) {
@@ -87,7 +93,7 @@ export const updateEdgesStatus = (
       if (!group || group.type !== NodeTypes.CLUSTER_NODE) return edge
       // ... aggregation logic
     }
-    
+
     // Parse edge source - UNCOVERED
     const [a, b] = edge.source.split('@')
     const status = updates.find((e) => e.id === b && e.type === a)
@@ -95,22 +101,22 @@ export const updateEdgesStatus = (
       newEdges.push(edge)
       return
     }
-    
+
     // Adapter node handling - UNCOVERED
     if (source && source.type === NodeTypes.ADAPTER_NODE) {
       // ... adapter logic
     }
-    
+
     // Bridge node handling - UNCOVERED
     if (source && source.type === NodeTypes.BRIDGE_NODE) {
       const { remote } = getBridgeTopics(source.data as Bridge)
       newEdges.push({ ...edge, ...getEdgeStatus(isConnected, !!remote.length, true, getThemeForStatus(theme, status)) })
       return
     }
-    
+
     newEdges.push(edge)
   })
-  
+
   return newEdges
 }
 ```
@@ -118,22 +124,25 @@ export const updateEdgesStatus = (
 ### 4. Test Implementation Phase
 
 #### Attempt 1: Initial Test Structure
+
 Added imports for missing mocks:
+
 ```typescript
 import {
   MOCK_NODE_ADAPTER,
   MOCK_NODE_BRIDGE,
   MOCK_NODE_LISTENER,
   MOCK_NODE_PULSE,
-  MOCK_NODE_DEVICE,    // ✅ Added
-  MOCK_NODE_GROUP,      // ✅ Added
+  MOCK_NODE_DEVICE, // ✅ Added
+  MOCK_NODE_GROUP, // ✅ Added
 } from '@/__test-utils__/react-flow/nodes.ts'
 
-import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'  // ✅ Added
-import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'  // ✅ Added
+import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__' // ✅ Added
+import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__' // ✅ Added
 ```
 
 #### Attempt 2: Test for getEdgeStatus with hasMarker: false
+
 ```typescript
 it('should return correct style when hasMarker is false', () => {
   const color = MOCK_THEME.colors.status.connected[500]
@@ -142,12 +151,13 @@ it('should return correct style when hasMarker is false', () => {
     data: { hasTopics: true, isConnected: true },
     animated: true,
     style: { strokeWidth: 1.5, stroke: color },
-    markerEnd: undefined,  // ✅ Tests the uncovered branch
+    markerEnd: undefined, // ✅ Tests the uncovered branch
   })
 })
 ```
 
 #### Attempt 3: Tests for updateEdgesStatus - Initial Failures
+
 ```bash
 npm test -- status-utils.spec.ts --run
 
@@ -162,15 +172,17 @@ npm test -- status-utils.spec.ts --run
 ### 5. Debugging and Fixes
 
 #### Issue 1: Edge Source ID Format
+
 **Problem:** Tests used source IDs like `'idAdapter@adapter-id'` but status type was `NodeTypes.ADAPTER_NODE`
 
 **Fix:** Changed status type to match the split pattern
+
 ```typescript
 // BEFORE
 const updates: Status[] = [
   {
     id: 'adapter-id',
-    type: NodeTypes.ADAPTER_NODE,  // ❌ Wrong - enum value
+    type: NodeTypes.ADAPTER_NODE, // ❌ Wrong - enum value
     connection: Status.connection.CONNECTED,
     runtime: Status.runtime.STARTED,
   },
@@ -180,7 +192,7 @@ const updates: Status[] = [
 const updates: Status[] = [
   {
     id: 'adapter-id',
-    type: 'idAdapter',  // ✅ Correct - matches split('@')[0]
+    type: 'idAdapter', // ✅ Correct - matches split('@')[0]
     connection: Status.connection.CONNECTED,
     runtime: Status.runtime.STARTED,
   },
@@ -188,21 +200,24 @@ const updates: Status[] = [
 ```
 
 #### Issue 2: Bridge Subscription Structure
+
 **Problem:** Used incorrect structure `remoteSubscriptions: [{ topic: 'test/topic', filters: [] }]`
 
 **Investigation:**
+
 ```bash
 # Read mock bridge handler to understand structure
 cat src/api/hooks/useGetBridges/__handlers__/index.ts
 ```
 
 **Found correct structure:**
+
 ```typescript
 export const mockBridge: Bridge = {
   // ...
   remoteSubscriptions: [
     {
-      filters: [MOCK_TOPIC_REF1],  // ✅ Array of topic strings
+      filters: [MOCK_TOPIC_REF1], // ✅ Array of topic strings
       destination: MOCK_TOPIC_BRIDGE_DESTINATION,
       maxQoS: 0,
     },
@@ -211,21 +226,26 @@ export const mockBridge: Bridge = {
 ```
 
 **Fix:**
+
 ```typescript
 const bridgeWithTopics = {
   ...mockBridge,
-  remoteSubscriptions: [{ 
-    filters: ['test/topic'],  // ✅ Correct structure
-    destination: 'dest', 
-    maxQoS: 0 
-  }],
+  remoteSubscriptions: [
+    {
+      filters: ['test/topic'], // ✅ Correct structure
+      destination: 'dest',
+      maxQoS: 0,
+    },
+  ],
 }
 ```
 
 #### Issue 3: Node Type Property Missing
+
 **Problem:** Mock nodes didn't have `type` property set, so `source.type === NodeTypes.ADAPTER_NODE` failed
 
 **Fix:**
+
 ```typescript
 const mockGetNode = (id: string): Node | undefined => {
   const nodes: Record<string, Node> = {
@@ -233,13 +253,13 @@ const mockGetNode = (id: string): Node | undefined => {
       ...MOCK_NODE_ADAPTER,
       id: 'idAdapter@adapter-id',
       position: { x: 0, y: 0 },
-      type: NodeTypes.ADAPTER_NODE,  // ✅ Added type property
+      type: NodeTypes.ADAPTER_NODE, // ✅ Added type property
     },
     'idBridge@bridge-id': {
       ...MOCK_NODE_BRIDGE,
       id: 'idBridge@bridge-id',
       position: { x: 0, y: 0 },
-      type: NodeTypes.BRIDGE_NODE,  // ✅ Added type property
+      type: NodeTypes.BRIDGE_NODE, // ✅ Added type property
     },
     // ...
   }
@@ -248,29 +268,33 @@ const mockGetNode = (id: string): Node | undefined => {
 ```
 
 #### Issue 4: Group Edge Early Return
+
 **Problem:** Test expected edge to be pushed when source is not a CLUSTER_NODE, but function returns early without pushing
 
 **Analysis:**
+
 ```typescript
 if (edge.id.startsWith('connect-edge-group')) {
   const group = getNode(edge.source)
-  if (!group || group.type !== NodeTypes.CLUSTER_NODE) return edge  // Returns edge object, doesn't push
+  if (!group || group.type !== NodeTypes.CLUSTER_NODE) return edge // Returns edge object, doesn't push
   // ...
 }
 ```
 
 **Fix:** Updated test expectation
+
 ```typescript
 it('should handle group edges with non-group node', () => {
   // ...
   const result = updateEdgesStatus([], edges, [], mockGetNodeNonGroup, MOCK_THEME)
-  expect(result).toEqual([])  // ✅ Correct - nothing gets pushed
+  expect(result).toEqual([]) // ✅ Correct - nothing gets pushed
 })
 ```
 
 ### 6. Final Test Suite
 
 #### Test 1: getEdgeStatus with hasMarker: false
+
 ```typescript
 it('should return correct style when hasMarker is false', () => {
   const color = MOCK_THEME.colors.status.connected[500]
@@ -285,12 +309,23 @@ it('should return correct style when hasMarker is false', () => {
 ```
 
 #### Test 2-12: updateEdgesStatus comprehensive suite
+
 ```typescript
 describe('updateEdgesStatus', () => {
   const mockGetNode = (id: string): Node | undefined => {
     const nodes: Record<string, Node> = {
-      'idAdapter@adapter-id': { ...MOCK_NODE_ADAPTER, id: 'idAdapter@adapter-id', position: { x: 0, y: 0 }, type: NodeTypes.ADAPTER_NODE },
-      'idBridge@bridge-id': { ...MOCK_NODE_BRIDGE, id: 'idBridge@bridge-id', position: { x: 0, y: 0 }, type: NodeTypes.BRIDGE_NODE },
+      'idAdapter@adapter-id': {
+        ...MOCK_NODE_ADAPTER,
+        id: 'idAdapter@adapter-id',
+        position: { x: 0, y: 0 },
+        type: NodeTypes.ADAPTER_NODE,
+      },
+      'idBridge@bridge-id': {
+        ...MOCK_NODE_BRIDGE,
+        id: 'idBridge@bridge-id',
+        position: { x: 0, y: 0 },
+        type: NodeTypes.BRIDGE_NODE,
+      },
       idListener: { ...MOCK_NODE_LISTENER, position: { x: 0, y: 0 } },
       idDevice: { ...MOCK_NODE_DEVICE, position: { x: 0, y: 0 }, type: NodeTypes.DEVICE_NODE },
       idGroup: { ...MOCK_NODE_GROUP, position: { x: 0, y: 0 } },
@@ -298,17 +333,39 @@ describe('updateEdgesStatus', () => {
     return nodes[id]
   }
 
-  it('should return empty array for empty edges', () => { /* ... */ })
-  it('should handle edges without status updates', () => { /* ... */ })
-  it('should update adapter node edges to device node', () => { /* ... */ })
-  it('should update adapter node edges to non-device node', () => { /* ... */ })
-  it('should update bridge node edges with topics', () => { /* ... */ })
-  it('should update bridge node edges without topics', () => { /* ... */ })
-  it('should handle group edges correctly', () => { /* ... */ })
-  it('should handle group edges with non-group node', () => { /* ... */ })
-  it('should handle stateless connection status', () => { /* ... */ })
-  it('should handle disconnected adapter nodes', () => { /* ... */ })
-  it('should push edge as-is when source is not adapter or bridge', () => { /* ... */ })
+  it('should return empty array for empty edges', () => {
+    /* ... */
+  })
+  it('should handle edges without status updates', () => {
+    /* ... */
+  })
+  it('should update adapter node edges to device node', () => {
+    /* ... */
+  })
+  it('should update adapter node edges to non-device node', () => {
+    /* ... */
+  })
+  it('should update bridge node edges with topics', () => {
+    /* ... */
+  })
+  it('should update bridge node edges without topics', () => {
+    /* ... */
+  })
+  it('should handle group edges correctly', () => {
+    /* ... */
+  })
+  it('should handle group edges with non-group node', () => {
+    /* ... */
+  })
+  it('should handle stateless connection status', () => {
+    /* ... */
+  })
+  it('should handle disconnected adapter nodes', () => {
+    /* ... */
+  })
+  it('should push edge as-is when source is not adapter or bridge', () => {
+    /* ... */
+  })
 })
 ```
 
@@ -331,7 +388,9 @@ npm test -- status-utils.spec.ts --run
 **Status:** ✅ COMPLETED
 
 ### Objective
+
 Improve test coverage for 5 files with uncovered lines identified in the coverage report:
+
 1. TransitionNode.utils.ts (lines 125-126, 131-139)
 2. usePolicyDryRun.ts (lines 63-73, 122-130, 168-169)
 3. useValidateCombiner.ts (lines 188, 283-293)
@@ -341,6 +400,7 @@ Improve test coverage for 5 files with uncovered lines identified in the coverag
 ### Implementation Details
 
 #### 1. TransitionNode.utils.spec.ts
+
 **Lines Covered:** 125-126, 131-139  
 **Tests Added:** 3 new tests
 
@@ -356,19 +416,19 @@ it('should load transitions with multiple onTransitions', () => {
         fromState: 'NotDuplicated',
         toState: 'Violated',
         'Mqtt.OnInboundPublish': {
-          pipeline: [{ id: 'operation-1', functionId: 'System.log', arguments: { message: 'test' } }]
-        }
+          pipeline: [{ id: 'operation-1', functionId: 'System.log', arguments: { message: 'test' } }],
+        },
       },
       {
         fromState: 'Violated',
         toState: 'NotDuplicated',
-        'Mqtt.OnInboundDisconnect': { pipeline: [] }
-      }
-    ]
+        'Mqtt.OnInboundDisconnect': { pipeline: [] },
+      },
+    ],
   }
-  
+
   const result = loadTransitions(behaviorPolicy, schemas, scripts, MOCK_NODE_BEHAVIOR)
-  
+
   // Verifies: transition nodes created, connections established
   expect(result.length).toBeGreaterThanOrEqual(4)
   const transitionNodes = result.filter((item) => 'item' in item && item.item.type === DataHubNodeType.TRANSITION)
@@ -382,6 +442,7 @@ it('should load transitions with multiple onTransitions', () => {
 **Coverage Achievement:** Lines 125-139 now fully covered including the for loop, position calculations, and node creation logic.
 
 #### 2. usePolicyDryRun.spec.ts
+
 **Lines Covered:** 63-73, 122-130, 168-169  
 **Tests Added:** 5 new tests
 
@@ -390,15 +451,15 @@ it('should load transitions with multiple onTransitions', () => {
 it('should update node status to RUNNING and then FAILURE', async () => {
   const storeHook = renderHook(() => useDataHubDraftStore(), { wrapper })
   const policyHook = renderHook(usePolicyDryRun, { wrapper })
-  
+
   act(() => {
     storeHook.result.current.onAddNodes([{ item: MOCK_NODE_DATA_POLICY, type: 'add' }])
   })
-  
+
   await act(async () => {
     await policyHook.result.current.checkPolicyAsync(MOCK_NODE_DATA_POLICY)
   })
-  
+
   const updatedNode = storeHook.result.current.nodes.find((n) => n.id === MOCK_NODE_DATA_POLICY.id)
   expect(updatedNode?.data.dryRunStatus).toBe(PolicyDryRunStatus.FAILURE)
 })
@@ -412,11 +473,13 @@ it('should update node status to RUNNING and then FAILURE', async () => {
 **Key Fix:** Used `onAddNodes` (plural) instead of `onAddNode` after consulting the actual DataHub store implementation.
 
 **Coverage Achievement:**
+
 - Lines 63-73: Node not found handling and early return
 - Lines 122-130: Status update logic including getStatus() conditional logic
 - Lines 168-169: Behavior policy validation completion path
 
 #### 3. useValidateCombiner.spec.ts
+
 **Lines Covered:** 188, 283-293  
 **Tests Added:** 4 new tests
 
@@ -424,24 +487,30 @@ it('should update node status to RUNNING and then FAILURE', async () => {
 // Test 1: Validate undefined combiner payload at top level (line 188)
 it('should validate undefined combiner payload at top level', async () => {
   const errors = await renderValidateHook(undefined, [], sources)
-  expect(errors).toStrictEqual([
-    expect.objectContaining({ message: 'The combiner payload must be defined' })
-  ])
+  expect(errors).toStrictEqual([expect.objectContaining({ message: 'The combiner payload must be defined' })])
 })
 
 // Test 2: Validate combiner with multiple mappings (lines 283-293)
 it('should validate combiner with multiple mappings', async () => {
-  const errors = await renderValidateHook({
-    id: mockCombinerId,
-    name: 'my-combiner',
-    sources: { items: sources },
-    mappings: {
-      items: [
-        { /* mapping 1 */ },
-        { /* mapping 2 */ }
-      ]
-    }
-  }, result.current, sources)
+  const errors = await renderValidateHook(
+    {
+      id: mockCombinerId,
+      name: 'my-combiner',
+      sources: { items: sources },
+      mappings: {
+        items: [
+          {
+            /* mapping 1 */
+          },
+          {
+            /* mapping 2 */
+          },
+        ],
+      },
+    },
+    result.current,
+    sources
+  )
   expect(errors).toStrictEqual([])
 })
 
@@ -452,6 +521,7 @@ it('should validate combiner with multiple mappings', async () => {
 **Coverage Achievement:** The validateCombiner and validateCombining functions now have complete test coverage for their top-level validation logic and iteration over mappings.
 
 #### 4. json-schema.utils.spec.ts
+
 **Lines Covered:** 118-130  
 **Tests Added:** 7 new tests
 
@@ -466,17 +536,17 @@ it('should handle array properties with arrayType', async () => {
       path: [],
       type: 'array',
       arrayType: 'string',
-      title: 'Tags Array'
-    }
+      title: 'Tags Array',
+    },
   ]
-  
+
   const result = getSchemaFromPropertyList(properties)
   expect(result.properties).toEqual({
     tags: {
       type: 'array',
       title: 'Tags Array',
-      items: { type: 'string' }
-    }
+      items: { type: 'string' },
+    },
   })
 })
 
@@ -489,6 +559,7 @@ it('should handle array properties with arrayType', async () => {
 **Coverage Achievement:** Complete coverage of the getSchemaFromPropertyList function including array handling, nested structures, and property filtering logic (lines 118-135).
 
 #### 5. useWorkspaceStore.spec.ts
+
 **Lines Covered:** 96-104  
 **Tests Added:** 3 new tests
 
@@ -496,22 +567,20 @@ it('should handle array properties with arrayType', async () => {
 // Test 1: Update node data with onUpdateNode
 it('should update node data with onUpdateNode', async () => {
   const { result } = renderHook<WorkspaceState & WorkspaceAction, unknown>(useWorkspaceStore)
-  
+
   act(() => {
     const { onAddNodes } = result.current
     const item: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
     onAddNodes([{ item, type: 'add' }])
   })
-  
+
   act(() => {
     const { onUpdateNode } = result.current
     const updatedData = { ...MOCK_NODE_ADAPTER.data, name: 'Updated Adapter Name' }
     onUpdateNode(MOCK_NODE_ADAPTER.id, updatedData)
   })
-  
-  expect(result.current.nodes[0].data).toEqual(
-    expect.objectContaining({ name: 'Updated Adapter Name' })
-  )
+
+  expect(result.current.nodes[0].data).toEqual(expect.objectContaining({ name: 'Updated Adapter Name' }))
 })
 
 // Test 2: Should not update other nodes when using onUpdateNode
@@ -533,14 +602,17 @@ Duration: ~4.3 seconds
 ### Technical Challenges & Solutions
 
 #### Challenge 1: Vitest Cache Issues
+
 **Problem:** Tests showed stale results with old code  
 **Solution:** Cleared vitest cache with `rm -rf node_modules/.vite && npx vitest run --no-cache`
 
 #### Challenge 2: Incorrect Store Method Usage
+
 **Problem:** Used `onAddNode` (singular) which doesn't exist  
 **Solution:** Consulted actual useDataHubDraftStore implementation, found correct method is `onAddNodes` (plural)
 
 #### Challenge 3: Test Expectations vs Reality
+
 **Problem:** Expected SUCCESS status but got FAILURE  
 **Solution:** Adjusted expectations to match actual validation behavior - unconfigured policies correctly return FAILURE status
 
