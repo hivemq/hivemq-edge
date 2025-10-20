@@ -443,7 +443,7 @@ class ProtocolAdapterWrapperConcurrencyTest {
         runConcurrentOperations(SMALL_THREAD_COUNT,
                 () -> {
                     try {
-                        requireNonNull(wrapper).startAsync(false, requireNonNull(mockModuleServices)).get();
+                        requireNonNull(wrapper).startAsync(requireNonNull(mockModuleServices)).get();
                     } catch (final Exception e) {
                         // Expected - concurrent operations may fail
                     }
@@ -457,10 +457,10 @@ class ProtocolAdapterWrapperConcurrencyTest {
     @Test
     @Timeout(10)
     void test_concurrentStopAsync_properSerialization() throws Exception {
-        requireNonNull(wrapper).startAsync(false, requireNonNull(mockModuleServices));
+        requireNonNull(wrapper).startAsync(requireNonNull(mockModuleServices));
         Thread.sleep(100);
 
-        runConcurrentOperations(SMALL_THREAD_COUNT, () -> requireNonNull(wrapper).stopAsync(false));
+        runConcurrentOperations(SMALL_THREAD_COUNT, () -> requireNonNull(wrapper).stopAsync());
 
         final var state = requireNonNull(wrapper).currentState();
         assertNotNull(state);

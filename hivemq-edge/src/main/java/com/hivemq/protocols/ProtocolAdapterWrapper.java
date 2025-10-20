@@ -49,13 +49,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
 
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterWrapper.class);
+    private static final long STOP_TIMEOUT_SECONDS = 30;
 
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ProtocolAdapter adapter;
@@ -67,10 +73,13 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     private final @NotNull ProtocolAdapterConfig config;
     private final @NotNull NorthboundConsumerFactory northboundConsumerFactory;
     private final @NotNull TagManager tagManager;
-    private final List<NorthboundTagConsumer> consumers = new CopyOnWriteArrayList<>();
-    private final AtomicReference<CompletableFuture<Void>> startFutureRef = new AtomicReference<>(null);
-    private final AtomicReference<CompletableFuture<Void>> stopFutureRef = new AtomicReference<>(null);
+    private final @NotNull List<NorthboundTagConsumer> consumers;
+    private final @NotNull ReentrantLock operationLock;
+    private final @NotNull ExecutorService adapterExecutor;
     protected volatile @Nullable Long lastStartAttemptTime;
+    private @Nullable CompletableFuture<Void> currentStartFuture;
+    private @Nullable CompletableFuture<Void> currentStopFuture;
+    private @Nullable Consumer<ProtocolAdapterState.ConnectionStatus> connectionStatusListener;
 
     public ProtocolAdapterWrapper(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -94,6 +103,17 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         this.config = config;
         this.northboundConsumerFactory = northboundConsumerFactory;
         this.tagManager = tagManager;
+        this.consumers = new CopyOnWriteArrayList<>();
+        this.operationLock = new ReentrantLock();
+
+        // Create a named executor for this adapter to help with debugging and monitoring
+        this.adapterExecutor = Executors.newCachedThreadPool(runnable -> {
+            final Thread thread = new Thread(runnable);
+            thread.setName("adapter-" + adapter.getId() + "-worker");
+            thread.setDaemon(true);
+            return thread;
+        });
+
         if (log.isDebugEnabled()) {
             registerStateTransitionListener(state -> log.debug(
                     "Adapter {} FSM state transition: adapter={}, northbound={}, southbound={}",
@@ -139,88 +159,85 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     }
 
     public @NotNull CompletableFuture<Void> startAsync(
-            final boolean writingEnabled,
             final @NotNull ModuleServices moduleServices) {
 
-        // Atomically check state and claim the operation in a single step
-        while (true) {
-            final var existingFuture = startFutureRef.get();
-
-            // If there's already a start operation in progress, return it
-            if (existingFuture != null && !existingFuture.isDone()) {
+        // Use lock to ensure exclusive access during state checks and future creation
+        // This prevents race conditions between concurrent start/stop calls
+        operationLock.lock();
+        try {
+            // 1. Check if start already in progress - return existing future
+            if (currentStartFuture != null && !currentStartFuture.isDone()) {
                 log.info("Start operation already in progress for adapter '{}'", getId());
-                return existingFuture;
+                return currentStartFuture;
             }
 
-            // Check if adapter is already started - make start operation idempotent
+            // 2. Check if adapter is already started - idempotent operation
             final var currentState = currentState();
             if (currentState.state() == AdapterStateEnum.STARTED) {
                 log.info("Adapter '{}' is already started, returning success", getId());
                 return CompletableFuture.completedFuture(null);
             }
 
-            // Check if stop operation is in progress
-            final var stopFuture = stopFutureRef.get();
-            if (stopFuture != null && !stopFuture.isDone()) {
+            // 3. Check if stop operation is in progress - prevent overlap
+            if (currentStopFuture != null && !currentStopFuture.isDone()) {
                 log.warn("Cannot start adapter '{}' while stop operation is in progress", getId());
                 return CompletableFuture.failedFuture(new IllegalStateException("Cannot start adapter '" +
                         getId() +
                         "' while stop operation is in progress"));
             }
 
-            // Create a placeholder future and try to claim ownership atomically
-            // This ensures only one thread proceeds to actually start the adapter
-            final CompletableFuture<Void> placeholderFuture = new CompletableFuture<>();
-
-            if (!startFutureRef.compareAndSet(existingFuture, placeholderFuture)) {
-                // CAS failed - another thread won the race, loop back to get their future
-                continue;
-            }
-
-            // We won the CAS - we now own the start operation
-            // Create the actual future and execute the start sequence
+            // 4. All checks passed - record start attempt time
             initStartAttempt();
+
+            // 5. Create and execute the start operation
             final var output = new ProtocolAdapterStartOutputImpl();
             final var input = new ProtocolAdapterStartInputImpl(moduleServices);
 
-            final var startFuture = CompletableFuture.supplyAsync(() -> {
-                // Signal FSM to start (calls onStarting() internally)
-                startAdapter();
+            final CompletableFuture<Void> startFuture = CompletableFuture.supplyAsync(() -> {
+                        // Signal FSM to start (calls onStarting() internally)
+                        startAdapter();
 
-                try {
-                    adapter.start(input, output);
-                } catch (final Throwable throwable) {
-                    output.getStartFuture().completeExceptionally(throwable);
-                }
-                return output.getStartFuture();
-            }).thenCompose(Function.identity()).handle((ignored, error) -> {
-                if (error != null) {
-                    log.error("Error starting adapter", error);
-                    stopAfterFailedStart();
-                    //we still return the initial error since that's the most significant information
-                    return CompletableFuture.failedFuture(error);
-                } else {
-                    return attemptStartingConsumers(writingEnabled,
-                            moduleServices.eventService()).map(startException -> {
-                        log.error("Failed to start adapter with id {}", adapter.getId(), startException);
-                        stopAfterFailedStart();
-                        //we still return the initial error since that's the most significant information
-                        return CompletableFuture.failedFuture(startException);
-                    }).orElseGet(() -> CompletableFuture.completedFuture(null));
-                }
-            }).thenApply(ignored -> (Void) null).whenComplete((result, throwable) -> startFutureRef.set(null));
+                        try {
+                            adapter.start(input, output);
+                        } catch (final Throwable throwable) {
+                            output.getStartFuture().completeExceptionally(throwable);
+                        }
+                        return output.getStartFuture();
+                    }, adapterExecutor)  // Use named executor for better monitoring
+                    .thenCompose(Function.identity()).handle((ignored, error) -> {
+                        if (error != null) {
+                            log.error("Error starting adapter", error);
+                            stopAfterFailedStart();
+                            // Return null - cleanup done, adapter in STOPPED state
+                            // Callers should check getRuntimeStatus() to determine if start succeeded
+                            return null;
+                        } else {
+                            return attemptStartingConsumers(moduleServices.eventService()).map(
+                                    startException -> {
+                                        log.error("Failed to start adapter with id {}",
+                                                adapter.getId(),
+                                                startException);
+                                        stopAfterFailedStart();
+                                        // Return null - cleanup done, adapter in STOPPED state
+                                        return (Void) null;
+                                    }).orElse(null);
+                        }
+                    }).whenComplete((result, throwable) -> {
+                        // Clear the current operation when complete
+                        operationLock.lock();
+                        try {
+                            currentStartFuture = null;
+                        } finally {
+                            operationLock.unlock();
+                        }
+                    });
 
-            // Replace the placeholder with the actual future and complete the placeholder to unblock any waiters
-            startFutureRef.set(startFuture);
-            startFuture.whenComplete((result, throwable) -> {
-                if (throwable != null) {
-                    placeholderFuture.completeExceptionally(throwable);
-                } else {
-                    placeholderFuture.complete(result);
-                }
-            });
+            // 6. Store the future before returning - ensures visibility to other threads
+            currentStartFuture = startFuture;
+            return startFuture;
 
-            return placeholderFuture;
+        } finally {
+            operationLock.unlock();
         }
     }
 
@@ -232,19 +249,27 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         // Transition FSM state back to STOPPED
         stopAdapter();
 
+        // Clean up listeners to prevent memory leaks
+        cleanupConnectionStatusListener();
+
         stopPolling(protocolAdapterPollingService);
         stopWriting(protocolAdapterWritingService);
+
         try {
             adapter.stop(stopInput, stopOutput);
         } catch (final Throwable throwable) {
             log.error("Stopping adapter after a start error failed", throwable);
         }
-        //force waiting for the stop future to complete, we are in a separate thread so no harm caused
+
+        // Wait for stop to complete, but with a timeout to prevent indefinite blocking
         try {
-            stopOutput.getOutputFuture().get();
+            stopOutput.getOutputFuture().get(STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (final TimeoutException e) {
+            log.error("Timeout waiting for adapter {} to stop after failed start", adapter.getId());
         } catch (final Throwable throwable) {
             log.error("Stopping adapter after a start error failed", throwable);
         }
+
         // Always destroy to clean up resources after failed start
         try {
             log.info("Destroying adapter with id '{}' after failed start to release all resources", getId());
@@ -255,23 +280,23 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     }
 
     private @NotNull Optional<Throwable> attemptStartingConsumers(
-            final boolean writingEnabled,
             final @NotNull EventService eventService) {
         try {
-            //Adapter started successfully, now start the consumers
+            // Adapter started successfully, now start the consumers
             createAndSubscribeTagConsumer();
             startPolling(protocolAdapterPollingService, eventService);
 
-            // Wire connection status events to FSM for all adapters
+            // Create and register connection status listener
             // FSM's accept() method handles:
             // 1. Transitioning northbound state
             // 2. Triggering startSouthbound() when CONNECTED (only for writing adapters)
-            protocolAdapterState.setConnectionStatusListener(status -> {
-                this.accept(status);
-
+            connectionStatusListener = status -> {
+                accept(status);
                 // For non-writing adapters that are only polling, southbound is not applicable
                 // but we still need to track northbound connection status
-            });
+            };
+            protocolAdapterState.setConnectionStatusListener(connectionStatusListener);
+
         } catch (final Throwable e) {
             log.error("Protocol adapter start failed", e);
             return Optional.of(e);
@@ -279,89 +304,102 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         return Optional.empty();
     }
 
-    public @NotNull CompletableFuture<Void> stopAsync(final boolean destroy) {
-        // Atomically check state and claim the operation in a single step
-        while (true) {
-            final var existingFuture = stopFutureRef.get();
+    /**
+     * Cleanup the connection status listener to prevent memory leaks.
+     * Should be called during stop operations.
+     */
+    private void cleanupConnectionStatusListener() {
+        if (connectionStatusListener != null) {
+            // Replace with no-op listener instead of null (API doesn't accept null)
+            protocolAdapterState.setConnectionStatusListener(status -> {
+                // No-op - adapter is stopping/stopped
+            });
+            connectionStatusListener = null;
+        }
+    }
 
-            // If there's already a stop operation in progress, return it
-            if (existingFuture != null && !existingFuture.isDone()) {
+    public @NotNull CompletableFuture<Void> stopAsync() {
+
+        // Use lock to ensure exclusive access during state checks and future creation
+        // This prevents race conditions between concurrent start/stop calls
+        operationLock.lock();
+        try {
+            // 1. Check if stop already in progress - return existing future
+            if (currentStopFuture != null && !currentStopFuture.isDone()) {
                 log.info("Stop operation already in progress for adapter '{}'", getId());
-                return existingFuture;
+                return currentStopFuture;
             }
 
-            // Check if adapter is already stopped - make stop operation idempotent
+            // 2. Check if adapter is already stopped - idempotent operation
             final var currentState = currentState();
             if (currentState.state() == AdapterStateEnum.STOPPED) {
                 log.info("Adapter '{}' is already stopped, returning success", getId());
                 return CompletableFuture.completedFuture(null);
             }
 
-            // Check if start operation is in progress
-            final var startFuture = startFutureRef.get();
-            if (startFuture != null && !startFuture.isDone()) {
+            // 3. Check if start operation is in progress - prevent overlap
+            if (currentStartFuture != null && !currentStartFuture.isDone()) {
                 log.warn("Cannot stop adapter '{}' while start operation is in progress", getId());
                 return CompletableFuture.failedFuture(new IllegalStateException("Cannot stop adapter '" +
                         getId() +
                         "' while start operation is in progress"));
             }
 
-            // Create a placeholder future and try to claim ownership atomically
-            // This ensures only one thread proceeds to actually stop the adapter
-            final CompletableFuture<Void> placeholderFuture = new CompletableFuture<>();
-
-            if (!stopFutureRef.compareAndSet(existingFuture, placeholderFuture)) {
-                // CAS failed - another thread won the race, loop back to get their future
-                continue;
-            }
-
-            // We won the CAS - we now own the stop operation
-            // Create the actual future and execute the stop sequence
-            consumers.forEach(tagManager::removeConsumer);
+            // 4. Create and execute the stop operation
             final var input = new ProtocolAdapterStopInputImpl();
             final var output = new ProtocolAdapterStopOutputImpl();
 
             final var stopFuture = CompletableFuture.supplyAsync(() -> {
-                // Signal FSM to stop (calls onStopping() internally)
-                stopAdapter();
+                        // Signal FSM to stop (calls onStopping() internally)
+                        stopAdapter();
 
-                stopPolling(protocolAdapterPollingService);
-                stopWriting(protocolAdapterWritingService);
-                try {
-                    adapter.stop(input, output);
-                } catch (final Throwable throwable) {
-                    output.getOutputFuture().completeExceptionally(throwable);
-                }
-                return output.getOutputFuture();
-            }).thenCompose(Function.identity()).whenComplete((result, throwable) -> {
-                // Always call destroy() to ensure all resources (threads, connections, etc.) are properly released
-                // This prevents resource leaks from underlying client libraries (OPC UA Milo, database drivers, etc.)
-                try {
-                    log.info("Destroying adapter with id '{}' to release all resources", getId());
-                    adapter.destroy();
-                } catch (final Exception destroyException) {
-                    log.error("Error destroying adapter with id {}", adapter.getId(), destroyException);
-                }
+                        // Clean up listeners to prevent memory leaks
+                        cleanupConnectionStatusListener();
 
-                if (throwable == null) {
-                    log.info("Stopped adapter with id {}", adapter.getId());
-                } else {
-                    log.error("Error stopping adapter with id {}", adapter.getId(), throwable);
-                }
-                stopFutureRef.set(null);
-            });
+                        // Remove consumers - must be done within async context
+                        consumers.forEach(tagManager::removeConsumer);
 
-            // Replace the placeholder with the actual future and complete the placeholder to unblock any waiters
-            stopFutureRef.set(stopFuture);
-            stopFuture.whenComplete((result, throwable) -> {
-                if (throwable != null) {
-                    placeholderFuture.completeExceptionally(throwable);
-                } else {
-                    placeholderFuture.complete(result);
-                }
-            });
+                        stopPolling(protocolAdapterPollingService);
+                        stopWriting(protocolAdapterWritingService);
 
-            return placeholderFuture;
+                        try {
+                            adapter.stop(input, output);
+                        } catch (final Throwable throwable) {
+                            output.getOutputFuture().completeExceptionally(throwable);
+                        }
+                        return output.getOutputFuture();
+                    }, adapterExecutor)  // Use named executor for better monitoring
+                    .thenCompose(Function.identity()).whenComplete((result, throwable) -> {
+                        // Always call destroy() to ensure all resources are properly released
+                        // This prevents resource leaks from underlying client libraries
+                        try {
+                            log.info("Destroying adapter with id '{}' to release all resources", getId());
+                            adapter.destroy();
+                        } catch (final Exception destroyException) {
+                            log.error("Error destroying adapter with id {}", adapter.getId(), destroyException);
+                        }
+
+                        if (throwable == null) {
+                            log.info("Stopped adapter with id {}", adapter.getId());
+                        } else {
+                            log.error("Error stopping adapter with id {}", adapter.getId(), throwable);
+                        }
+
+                        // Clear the current operation when complete
+                        operationLock.lock();
+                        try {
+                            currentStopFuture = null;
+                        } finally {
+                            operationLock.unlock();
+                        }
+                    });
+
+            // 5. Store the future before returning - ensures visibility to other threads
+            currentStopFuture = stopFuture;
+            return stopFuture;
+
+        } finally {
+            operationLock.unlock();
         }
     }
 

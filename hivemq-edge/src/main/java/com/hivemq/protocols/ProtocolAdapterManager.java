@@ -179,7 +179,7 @@ public class ProtocolAdapterManager {
                     if (log.isDebugEnabled()) {
                         log.debug("Deleting adapter '{}'", name);
                     }
-                    stopAsync(name, true).whenComplete((ignored, t) -> deleteAdapterInternal(name)).get();
+                    stopAsync(name).whenComplete((ignored, t) -> deleteAdapterInternal(name)).get();
                 } catch (final InterruptedException e) {
                     Thread.currentThread().interrupt();
                     failedAdapters.add(name);
@@ -219,7 +219,7 @@ public class ProtocolAdapterManager {
                         if (log.isDebugEnabled()) {
                             log.debug("Updating adapter '{}'", name);
                         }
-                        stopAsync(name, true).thenApply(v -> {
+                        stopAsync(name).thenApply(v -> {
                                     deleteAdapterInternal(name);
                                     return null;
                                 })
@@ -270,9 +270,9 @@ public class ProtocolAdapterManager {
                         "'not found.")));
     }
 
-    public @NotNull CompletableFuture<Void> stopAsync(final @NotNull String protocolAdapterId, final boolean destroy) {
+    public @NotNull CompletableFuture<Void> stopAsync(final @NotNull String protocolAdapterId) {
         Preconditions.checkNotNull(protocolAdapterId);
-        return getProtocolAdapterWrapperByAdapterId(protocolAdapterId).map(wrapper -> stopAsync(wrapper, destroy))
+        return getProtocolAdapterWrapperByAdapterId(protocolAdapterId).map(this::stopAsync)
                 .orElseGet(() -> CompletableFuture.failedFuture(new ProtocolAdapterException("Adapter '" +
                         protocolAdapterId +
                         "'not found.")));
@@ -366,7 +366,7 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(wrapper);
         final String wid = wrapper.getId();
         log.info("Starting protocol-adapter '{}'.", wid);
-        return wrapper.startAsync(writingEnabled(), moduleServices).whenComplete((result, throwable) -> {
+        return wrapper.startAsync(moduleServices).whenComplete((result, throwable) -> {
             if (throwable == null) {
                 log.info("Protocol-adapter '{}' started successfully.", wid);
                 fireEvent(wrapper,
@@ -396,11 +396,11 @@ public class ProtocolAdapterManager {
     }
 
     @VisibleForTesting
-    @NotNull CompletableFuture<Void> stopAsync(final @NotNull ProtocolAdapterWrapper wrapper, final boolean destroy) {
+    @NotNull CompletableFuture<Void> stopAsync(final @NotNull ProtocolAdapterWrapper wrapper) {
         Preconditions.checkNotNull(wrapper);
         log.info("Stopping protocol-adapter '{}'.", wrapper.getId());
 
-        return wrapper.stopAsync(destroy).whenComplete((result, throwable) -> {
+        return wrapper.stopAsync().whenComplete((result, throwable) -> {
             final Event.SEVERITY severity;
             final String message;
             final String wid = wrapper.getId();
