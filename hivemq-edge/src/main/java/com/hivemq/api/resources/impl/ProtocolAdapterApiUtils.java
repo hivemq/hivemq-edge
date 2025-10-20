@@ -42,6 +42,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNullElse;
+
 /**
  * Utilities that handle the display, sort and filter logic relating to protocol adapters.
  */
@@ -146,7 +148,7 @@ public class ProtocolAdapterApiUtils {
         return new ProtocolAdapter(module.getId(),
                 module.getId(),
                 module.getName(),
-                module.getDescription(),
+                requireNonNullElse(module.getDescription(), ""),
                 module.getDocumentationLink() != null ? module.getDocumentationLink().getUrl() : null,
                 module.getVersion(),
                 getLogoUrl(module, configurationService),
@@ -226,14 +228,13 @@ public class ProtocolAdapterApiUtils {
      *
      * @param category the category enum to convert
      */
-    @org.jetbrains.annotations.VisibleForTesting
+    @VisibleForTesting
     public static @Nullable ProtocolAdapterCategory convertApiCategory(final @Nullable com.hivemq.adapter.sdk.api.ProtocolAdapterCategory category) {
-        if (category == null) {
-            return null;
-        }
-        return new ProtocolAdapterCategory(category.name(),
-                category.getDisplayName(),
-                category.getDescription(),
-                category.getImage());
+        return category != null ?
+                new ProtocolAdapterCategory(category.name(),
+                        category.getDisplayName(),
+                        category.getDescription(),
+                        category.getImage()) :
+                null;
     }
 }

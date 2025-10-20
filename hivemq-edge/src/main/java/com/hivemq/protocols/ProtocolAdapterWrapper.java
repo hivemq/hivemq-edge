@@ -205,6 +205,10 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         log.warn("Stopping adapter with id {} after a failed start", adapter.getId());
         final var stopInput = new ProtocolAdapterStopInputImpl();
         final var stopOutput = new ProtocolAdapterStopOutputImpl();
+
+        // Transition FSM state back to STOPPED
+        stopAdapter();
+
         stopPolling(protocolAdapterPollingService);
         stopWriting(protocolAdapterWritingService);
         try {

@@ -115,5 +115,4 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
         this.connectionStatusListener.set(connectionStatusListener);
         connectionStatusListener.accept(connectionStatus.get());
     }
-
 }

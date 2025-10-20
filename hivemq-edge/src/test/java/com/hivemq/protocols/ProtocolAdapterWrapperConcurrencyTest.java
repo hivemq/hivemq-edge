@@ -44,6 +44,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -171,6 +174,23 @@ class ProtocolAdapterWrapperConcurrencyTest {
         final ProtocolAdapter mockAdapter = mock(ProtocolAdapter.class);
         when(mockAdapter.getId()).thenReturn("test-adapter");
         when(mockAdapter.getProtocolAdapterInformation()).thenReturn(mock(ProtocolAdapterInformation.class));
+
+        // Mock adapter.start() to complete the output future immediately
+        doAnswer(invocation -> {
+            final com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput output = invocation.getArgument(1);
+            output.startedSuccessfully();
+            return null;
+        }).when(mockAdapter).start(any(), any());
+
+        // Mock adapter.stop() to complete the output future immediately
+        doAnswer(invocation -> {
+            final com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput output = invocation.getArgument(1);
+            output.stoppedSuccessfully();
+            return null;
+        }).when(mockAdapter).stop(any(), any());
+
+        // Mock adapter.destroy() to do nothing
+        doNothing().when(mockAdapter).destroy();
 
         final ProtocolAdapterMetricsService metricsService = mock(ProtocolAdapterMetricsService.class);
         final InternalProtocolAdapterWritingService writingService = mock(InternalProtocolAdapterWritingService.class);
@@ -421,7 +441,13 @@ class ProtocolAdapterWrapperConcurrencyTest {
     @Timeout(10)
     void test_concurrentStartAsync_properSerialization() throws Exception {
         runConcurrentOperations(SMALL_THREAD_COUNT,
-                () -> requireNonNull(wrapper).startAsync(false, requireNonNull(mockModuleServices)));
+                () -> {
+                    try {
+                        requireNonNull(wrapper).startAsync(false, requireNonNull(mockModuleServices)).get();
+                    } catch (final Exception e) {
+                        // Expected - concurrent operations may fail
+                    }
+                });
 
         final var state = requireNonNull(wrapper).currentState();
         assertNotNull(state);
