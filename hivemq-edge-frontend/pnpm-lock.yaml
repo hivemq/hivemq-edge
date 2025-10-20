@@ -159,8 +159,8 @@ importers:
         specifier: 3.1.3
         version: 3.1.3
       cypress-real-events:
-        specifier: 1.14.0
-        version: 1.14.0(cypress@14.0.2)
+        specifier: 1.15.0
+        version: 1.15.0(cypress@15.5.0)
       d3-array:
         specifier: 3.2.4
         version: 3.2.4
@@ -260,13 +260,13 @@ importers:
     devDependencies:
       '@4tw/cypress-drag-drop':
         specifier: 2.3.0
-        version: 2.3.0(cypress@14.0.2)
+        version: 2.3.0(cypress@15.5.0)
       '@chakra-ui/cli':
         specifier: 2.4.1
         version: 2.4.1(react@18.3.1)(ws@8.18.3)
       '@cypress/code-coverage':
         specifier: 3.13.11
-        version: 3.13.11(@babel/core@7.28.4)(@babel/preset-env@7.28.3(@babel/core@7.28.4))(babel-loader@9.2.1(@babel/core@7.28.4)(webpack@5.102.1))(cypress@14.0.2)(webpack@5.102.1)
+        version: 3.13.11(@babel/core@7.28.4)(@babel/preset-env@7.28.3(@babel/core@7.28.4))(babel-loader@9.2.1(@babel/core@7.28.4)(webpack@5.102.1))(cypress@15.5.0)(webpack@5.102.1)
       '@eslint/js':
         specifier: 9.26.0
         version: 9.26.0
@@ -281,7 +281,7 @@ importers:
         version: 1.28.5(typescript@5.7.3)
       '@percy/cypress':
         specifier: 3.1.6
-        version: 3.1.6(cypress@14.0.2)
+        version: 3.1.6(cypress@15.5.0)
       '@tanstack/eslint-plugin-query':
         specifier: 5.74.7
         version: 5.74.7(eslint@9.26.0)(typescript@5.7.3)
@@ -328,17 +328,17 @@ importers:
         specifier: 2.4.1
         version: 2.4.1
       cypress:
-        specifier: 14.0.2
-        version: 14.0.2
+        specifier: 15.5.0
+        version: 15.5.0
       cypress-axe:
         specifier: 1.7.0
-        version: 1.7.0(axe-core@4.10.3)(cypress@14.0.2)
+        version: 1.7.0(axe-core@4.10.3)(cypress@15.5.0)
       cypress-each:
         specifier: 1.14.1
         version: 1.14.1
       cypress-terminal-report:
-        specifier: 7.1.0
-        version: 7.1.0(cypress@14.0.2)
+        specifier: 7.3.3
+        version: 7.3.3(cypress@15.5.0)
       d3-scale-cluster:
         specifier: 2.0.1
         version: 2.0.1
@@ -1486,10 +1486,6 @@ packages:
 
   '@chevrotain/utils@11.0.3':
     resolution: {integrity: sha512-YslZMgtJUyuMbZ+aKvfF3x1f5liK4mWNxghFRv7jqRR9C3R3fAOGTTKvxXDa2Y1s9zSbcpuO0cAxDYsc9SrXoQ==}
-
-  '@colors/colors@1.5.0':
-    resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
-    engines: {node: '>=0.1.90'}
 
   '@csstools/color-helpers@5.1.0':
     resolution: {integrity: sha512-S11EXWJyy0Mz5SYvRmY8nJYTFFd1LCNV+7cXyAgQtOOuzb4EsgfqDufL+9esx72/eLhsRdGZwaldu/h+E4t4BA==}
@@ -2955,6 +2951,9 @@ packages:
   '@types/statuses@2.0.6':
     resolution: {integrity: sha512-xMAgYwceFhRA2zY+XbEA7mxYbA093wdiW8Vu6gZPGWy9cmOyU9XesH1tNcEWsKFd5Vzrqx5T3D38PWx1FIIXkA==}
 
+  '@types/tmp@0.2.6':
+    resolution: {integrity: sha512-chhaNf2oKHlRkDGt+tiKE2Z5aJ6qalm7Z9rlLdBwmOiAAf09YQvvoLXjWK4HWPF1xU/fqvMgfNfpVoBscA/tKA==}
+
   '@types/tough-cookie@4.0.5':
     resolution: {integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==}
 
@@ -3366,9 +3365,6 @@ packages:
     resolution: {integrity: sha512-hsU18Ae8CDTR6Kgu9DYf0EbCr/a5iGL0rytQDobUcdpYOKokk8LEjVphnXkDkgpi0wYVsqrXuP0bZxJaTqdgoA==}
     engines: {node: '>= 0.4'}
 
-  async@3.2.6:
-    resolution: {integrity: sha512-htCUDlxyyCLMgaM3xXg0C0LW2xqfuQ6p05pCEIsXuyQ+a1koYKTuBMzRNwmybfLgvJDMd0r1LTn4+E0Ti6C2AA==}
-
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
 
@@ -3582,10 +3578,6 @@ packages:
     resolution: {integrity: sha512-OAlb+T7V4Op9OwdkjmguYRqncdlx5JiofwOAUkmTF+jNdHwzTaTs4sRAGpzLF3oOz5xAyDGrPgeIDFQmDOTiJw==}
     engines: {node: '>= 16'}
 
-  check-more-types@2.24.0:
-    resolution: {integrity: sha512-Pj779qHxV2tuapviy1bSZNEL1maXr13bPYpsvSDB68HlYcYuhlDrmGd63i0JHMCLKzc7rUSNIrpdJlhVlNwrxA==}
-    engines: {node: '>= 0.8.0'}
-
   chevrotain-allstar@0.3.1:
     resolution: {integrity: sha512-b7g+y9A0v4mxCW1qUhf3BSVPg+/NvGErk/dOkrDaHA0nQIQGAtrOjlX//9OQtRlSCy+x9rfB5N8yC71lH1nvMw==}
     peerDependencies:
@@ -3635,8 +3627,8 @@ packages:
   cli-handle-unhandled@1.1.2:
     resolution: {integrity: sha512-tLOdMkEfs4k2bSxQlpvCjnHSm5b78Jv3HJ/o14mPibr6IWoHZL0IZdGa0Nih9iY85pNwOFoUzD5T++T8PL4Wjw==}
 
-  cli-table3@0.6.5:
-    resolution: {integrity: sha512-+W/5efTR7y5HRD7gACw9yQjqMVvEMLBHmboM/kPWam+H+Hmyrgjh6YncVKK122YZkXrLudzTuAukUw9FnMf7IQ==}
+  cli-table3@0.6.1:
+    resolution: {integrity: sha512-w0q/enDHhPLq44ovMGdQeeDLvwxwavsJX7oQGYt/LrBlYsyaxyDnp6z3QzFut/6kLLKnlcUVJLrpB7KBfgG/RA==}
     engines: {node: 10.* || >= 12.*}
 
   cli-truncate@2.1.0:
@@ -3685,6 +3677,10 @@ packages:
 
   colorette@2.0.20:
     resolution: {integrity: sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==}
+
+  colors@1.4.0:
+    resolution: {integrity: sha512-a+UqTh4kgZg/SlGvfbzDHpgRu7AAQOmmqRHJnxhRZICKFUT91brVhNNt58CMWU9PsBbv3PDCZUHbVxuDiH2mtA==}
+    engines: {node: '>=0.1.90'}
 
   combined-stream@1.0.8:
     resolution: {integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==}
@@ -3875,20 +3871,20 @@ packages:
   cypress-each@1.14.1:
     resolution: {integrity: sha512-evywTv0Gid5J24C2W6ajYsVoBpoXIkvNo6L5a5+6QabtKOG1pn9Fq4zO/EwrdfktDZ9PWRRWFbJBMoRh3NlrYg==}
 
-  cypress-real-events@1.14.0:
-    resolution: {integrity: sha512-XmI8y3OZLh6cjRroPalzzS++iv+pGCaD9G9kfIbtspgv7GVsDt30dkZvSXfgZb4rAN+3pOkMVB7e0j4oXydW7Q==}
+  cypress-real-events@1.15.0:
+    resolution: {integrity: sha512-in98xxTnnM9Z7lZBvvVozm99PBT2eEOjXRG5LKWyYvQnj9mGWXMiPNpfw7e7WiraBFh7XlXIxnE9Cu5o+52kQQ==}
     peerDependencies:
-      cypress: ^4.x || ^5.x || ^6.x || ^7.x || ^8.x || ^9.x || ^10.x || ^11.x || ^12.x || ^13.x || ^14.x
+      cypress: ^4.x || ^5.x || ^6.x || ^7.x || ^8.x || ^9.x || ^10.x || ^11.x || ^12.x || ^13.x || ^14.x || ^15.x
 
-  cypress-terminal-report@7.1.0:
-    resolution: {integrity: sha512-CBXxY19HNX2VFcZ0uifomzs0kuYKCTb2pPgJmluiHI5XHvvbHPFufHAAacM8z/pSOtHoovo/WU+fxE5KcZ8C4Q==}
+  cypress-terminal-report@7.3.3:
+    resolution: {integrity: sha512-fj543YnOrA3B7gTQEOLvcnvxzmYDNpdO2IOgoY518o+x8Z3foknE4nnZLTa4kOHWD6aOMdOvGSls8moAUglMOA==}
     engines: {node: '>= 12'}
     peerDependencies:
       cypress: '>=10.0.0'
 
-  cypress@14.0.2:
-    resolution: {integrity: sha512-3qqTU2JoVY262qkYg9I2nohwxcfsJk0dSVp/LXAjD94Jz2y6411Mf/l5uHEHiaANrOmMcHbzYgOd/ueDsZlS7A==}
-    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
+  cypress@15.5.0:
+    resolution: {integrity: sha512-7jXBsh5hTfjxr9QQONC2IbdTj0nxSyU8x4eiarMZBzXzCj3pedKviUx8JnLcE4vL8e0TsOzp70WSLRORjEssRA==}
+    engines: {node: ^20.1.0 || ^22.0.0 || >=24.0.0}
     hasBin: true
 
   cytoscape-cose-bilkent@4.1.0:
@@ -4652,10 +4648,6 @@ packages:
   fromentries@1.3.2:
     resolution: {integrity: sha512-cHEpEQHUg0f8XdtZCc2ZAhrHzKzT0MrFUTcvx+hfxYu7rGMDc5SKoXFh+n4YigxsHXRzc6OrCshdR1bWH6HHyg==}
 
-  fs-extra@10.1.0:
-    resolution: {integrity: sha512-oRXApq54ETRj4eMiFzGnHWGy+zo5raudjuxN0b8H7s/RU2oW0Wvsx9O0ACRN/kRq9E8Vu/ReskGB5o3ji+FzHQ==}
-    engines: {node: '>=12'}
-
   fs-extra@11.3.1:
     resolution: {integrity: sha512-eXvGGwZ5CL17ZSwHWd3bbgk7UUpF6IFHtP57NYYakPvHOs8GDgDe5KJI36jIJzDkJ6eJjuzRA8eBQb6SkKue0g==}
     engines: {node: '>=14.14'}
@@ -4720,9 +4712,6 @@ packages:
   get-symbol-description@1.1.0:
     resolution: {integrity: sha512-w9UMqWwJxHNOvoNzSJ2oPF5wvYcvP7jUvYzhp67yEhTi17ZDBBC1z9pTdGuzjD+EFIqLSYRweZjqfiPzQ06Ebg==}
     engines: {node: '>= 0.4'}
-
-  getos@3.2.1:
-    resolution: {integrity: sha512-U56CfOK17OKgTVqozZjUKNdkfEv6jk5WISBJ8SHoagjE6L69zOwl3Z+O8myjY9MEW3i2HPWQBt/LTbCgcC973Q==}
 
   getpass@0.1.7:
     resolution: {integrity: sha512-0fzj9JxOLfJ+XGLhR8ze3unN0KZCgZwiSSDz168VERjK8Wl8kVSdcu2kspd4s4wtAa1y/qrVRiAA0WclVsu0ng==}
@@ -5332,10 +5321,6 @@ packages:
 
   layout-base@2.0.1:
     resolution: {integrity: sha512-dp3s92+uNI1hWIpPGH3jK2kxE2lMjdXdr+DH8ynZHpd6PUlH6x6cbuXnoMmiNumznqaNO31xu9e79F0uuZ0JFg==}
-
-  lazy-ass@1.6.0:
-    resolution: {integrity: sha512-cc8oEVoctTvsFZ/Oje/kGnHbpWHYBe8IAJe4C0QNc3t8uM/0Y8+erSz/7Y1ALuXTEZTMvxXwO6YbX1ey3ujiZw==}
-    engines: {node: '> 0.8'}
 
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
@@ -6753,6 +6738,12 @@ packages:
   symbol-tree@3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
 
+  systeminformation@5.27.7:
+    resolution: {integrity: sha512-saaqOoVEEFaux4v0K8Q7caiauRwjXC4XbD2eH60dxHXbpKxQ8kH9Rf7Jh+nryKpOUSEFxtCdBlSUx0/lO6rwRg==}
+    engines: {node: '>=8.0.0'}
+    os: [darwin, linux, win32, freebsd, openbsd, netbsd, sunos, android]
+    hasBin: true
+
   table@6.9.0:
     resolution: {integrity: sha512-9kY+CygyYM6j02t5YFHbNz2FN5QmYGv9zAjVp4lCDjlCw7amdckXlEt/bjMhUIfj4ThGRE4gCUH5+yGnNuPo5A==}
     engines: {node: '>=10.0.0'}
@@ -7450,9 +7441,9 @@ packages:
 
 snapshots:
 
-  '@4tw/cypress-drag-drop@2.3.0(cypress@14.0.2)':
+  '@4tw/cypress-drag-drop@2.3.0(cypress@15.5.0)':
     dependencies:
-      cypress: 14.0.2
+      cypress: 15.5.0
 
   '@adobe/css-tools@4.4.4': {}
 
@@ -8948,9 +8939,6 @@ snapshots:
 
   '@chevrotain/utils@11.0.3': {}
 
-  '@colors/colors@1.5.0':
-    optional: true
-
   '@csstools/color-helpers@5.1.0': {}
 
   '@csstools/css-calc@2.1.4(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)':
@@ -8980,14 +8968,14 @@ snapshots:
     dependencies:
       postcss-selector-parser: 7.1.0
 
-  '@cypress/code-coverage@3.13.11(@babel/core@7.28.4)(@babel/preset-env@7.28.3(@babel/core@7.28.4))(babel-loader@9.2.1(@babel/core@7.28.4)(webpack@5.102.1))(cypress@14.0.2)(webpack@5.102.1)':
+  '@cypress/code-coverage@3.13.11(@babel/core@7.28.4)(@babel/preset-env@7.28.3(@babel/core@7.28.4))(babel-loader@9.2.1(@babel/core@7.28.4)(webpack@5.102.1))(cypress@15.5.0)(webpack@5.102.1)':
     dependencies:
       '@babel/core': 7.28.4
       '@babel/preset-env': 7.28.3(@babel/core@7.28.4)
       '@cypress/webpack-preprocessor': 6.0.4(@babel/core@7.28.4)(@babel/preset-env@7.28.3(@babel/core@7.28.4))(babel-loader@9.2.1(@babel/core@7.28.4)(webpack@5.102.1))(webpack@5.102.1)
       babel-loader: 9.2.1(@babel/core@7.28.4)(webpack@5.102.1)
       chalk: 4.1.2
-      cypress: 14.0.2
+      cypress: 15.5.0
       dayjs: 1.11.13
       debug: 4.4.0
       execa: 4.1.0
@@ -9892,10 +9880,10 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@percy/cypress@3.1.6(cypress@14.0.2)':
+  '@percy/cypress@3.1.6(cypress@15.5.0)':
     dependencies:
       '@percy/sdk-utils': 1.30.9
-      cypress: 14.0.2
+      cypress: 15.5.0
 
   '@percy/dom@1.28.5': {}
 
@@ -10623,6 +10611,8 @@ snapshots:
 
   '@types/statuses@2.0.6': {}
 
+  '@types/tmp@0.2.6': {}
+
   '@types/tough-cookie@4.0.5': {}
 
   '@types/trusted-types@2.0.7':
@@ -11176,8 +11166,6 @@ snapshots:
 
   async-function@1.0.0: {}
 
-  async@3.2.6: {}
-
   asynckit@0.4.0: {}
 
   at-least-node@1.0.0: {}
@@ -11415,8 +11403,6 @@ snapshots:
 
   check-error@2.1.1: {}
 
-  check-more-types@2.24.0: {}
-
   chevrotain-allstar@0.3.1(chevrotain@11.0.3):
     dependencies:
       chevrotain: 11.0.3
@@ -11491,11 +11477,11 @@ snapshots:
       - react
       - ws
 
-  cli-table3@0.6.5:
+  cli-table3@0.6.1:
     dependencies:
       string-width: 4.2.3
     optionalDependencies:
-      '@colors/colors': 1.5.0
+      colors: 1.4.0
 
   cli-truncate@2.1.0:
     dependencies:
@@ -11550,6 +11536,9 @@ snapshots:
   colord@2.9.3: {}
 
   colorette@2.0.20: {}
+
+  colors@1.4.0:
+    optional: true
 
   combined-stream@1.0.8:
     dependencies:
@@ -11718,44 +11707,42 @@ snapshots:
 
   csstype@3.1.3: {}
 
-  cypress-axe@1.7.0(axe-core@4.10.3)(cypress@14.0.2):
+  cypress-axe@1.7.0(axe-core@4.10.3)(cypress@15.5.0):
     dependencies:
       axe-core: 4.10.3
-      cypress: 14.0.2
+      cypress: 15.5.0
 
   cypress-each@1.14.1:
     dependencies:
       format-util: 1.0.5
 
-  cypress-real-events@1.14.0(cypress@14.0.2):
+  cypress-real-events@1.15.0(cypress@15.5.0):
     dependencies:
-      cypress: 14.0.2
+      cypress: 15.5.0
 
-  cypress-terminal-report@7.1.0(cypress@14.0.2):
+  cypress-terminal-report@7.3.3(cypress@15.5.0):
     dependencies:
       chalk: 4.1.2
       compare-versions: 6.1.1
-      cypress: 14.0.2
-      fs-extra: 10.1.0
-      process: 0.11.10
+      cypress: 15.5.0
       superstruct: 0.14.2
 
-  cypress@14.0.2:
+  cypress@15.5.0:
     dependencies:
       '@cypress/request': 3.0.9
       '@cypress/xvfb': 1.2.4(supports-color@8.1.1)
       '@types/sinonjs__fake-timers': 8.1.1
       '@types/sizzle': 2.3.10
+      '@types/tmp': 0.2.6
       arch: 2.2.0
       blob-util: 2.0.2
       bluebird: 3.7.2
       buffer: 5.7.1
       cachedir: 2.4.0
       chalk: 4.1.2
-      check-more-types: 2.24.0
       ci-info: 4.3.1
       cli-cursor: 3.1.0
-      cli-table3: 0.6.5
+      cli-table3: 0.6.1
       commander: 6.2.1
       common-tags: 1.8.2
       dayjs: 1.11.18
@@ -11767,9 +11754,8 @@ snapshots:
       extract-zip: 2.0.1(supports-color@8.1.1)
       figures: 3.2.0
       fs-extra: 9.1.0
-      getos: 3.2.1
+      hasha: 5.2.2
       is-installed-globally: 0.4.0
-      lazy-ass: 1.6.0
       listr2: 3.14.0(enquirer@2.4.1)
       lodash: 4.17.21
       log-symbols: 4.1.0
@@ -11781,6 +11767,7 @@ snapshots:
       request-progress: 3.0.0
       semver: 7.7.3
       supports-color: 8.1.1
+      systeminformation: 5.27.7
       tmp: 0.2.5
       tree-kill: 1.2.2
       untildify: 4.0.0
@@ -12720,12 +12707,6 @@ snapshots:
 
   fromentries@1.3.2: {}
 
-  fs-extra@10.1.0:
-    dependencies:
-      graceful-fs: 4.2.11
-      jsonfile: 6.2.0
-      universalify: 2.0.1
-
   fs-extra@11.3.1:
     dependencies:
       graceful-fs: 4.2.11
@@ -12796,10 +12777,6 @@ snapshots:
       call-bound: 1.0.4
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
-
-  getos@3.2.1:
-    dependencies:
-      async: 3.2.6
 
   getpass@0.1.7:
     dependencies:
@@ -13441,8 +13418,6 @@ snapshots:
   layout-base@1.0.2: {}
 
   layout-base@2.0.1: {}
-
-  lazy-ass@1.6.0: {}
 
   levn@0.4.1:
     dependencies:
@@ -15121,6 +15096,8 @@ snapshots:
   svg-tags@1.0.0: {}
 
   symbol-tree@3.2.4: {}
+
+  systeminformation@5.27.7: {}
 
   table@6.9.0:
     dependencies:
