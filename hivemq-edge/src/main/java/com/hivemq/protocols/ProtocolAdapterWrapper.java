@@ -152,6 +152,13 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                 return existingFuture;
             }
 
+            // Check if adapter is already started - make start operation idempotent
+            final var currentState = currentState();
+            if (currentState.state() == AdapterStateEnum.STARTED) {
+                log.info("Adapter '{}' is already started, returning success", getId());
+                return CompletableFuture.completedFuture(null);
+            }
+
             // Check if stop operation is in progress
             final var stopFuture = stopFutureRef.get();
             if (stopFuture != null && !stopFuture.isDone()) {
@@ -161,7 +168,17 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                         "' while stop operation is in progress"));
             }
 
-            // Create the new future before setting it to avoid race condition
+            // Create a placeholder future and try to claim ownership atomically
+            // This ensures only one thread proceeds to actually start the adapter
+            final CompletableFuture<Void> placeholderFuture = new CompletableFuture<>();
+
+            if (!startFutureRef.compareAndSet(existingFuture, placeholderFuture)) {
+                // CAS failed - another thread won the race, loop back to get their future
+                continue;
+            }
+
+            // We won the CAS - we now own the start operation
+            // Create the actual future and execute the start sequence
             initStartAttempt();
             final var output = new ProtocolAdapterStartOutputImpl();
             final var input = new ProtocolAdapterStartInputImpl(moduleServices);
@@ -193,12 +210,17 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                 }
             }).thenApply(ignored -> (Void) null).whenComplete((result, throwable) -> startFutureRef.set(null));
 
-            // Atomically set the future reference if it's still null or completed
-            // This prevents race conditions where multiple threads try to start simultaneously
-            if (startFutureRef.compareAndSet(existingFuture, startFuture)) {
-                return startFuture;
-            }
-            // If CAS failed, another thread won the race - loop back and return their future
+            // Replace the placeholder with the actual future and complete the placeholder to unblock any waiters
+            startFutureRef.set(startFuture);
+            startFuture.whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    placeholderFuture.completeExceptionally(throwable);
+                } else {
+                    placeholderFuture.complete(result);
+                }
+            });
+
+            return placeholderFuture;
         }
     }
 
@@ -268,6 +290,13 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                 return existingFuture;
             }
 
+            // Check if adapter is already stopped - make stop operation idempotent
+            final var currentState = currentState();
+            if (currentState.state() == AdapterStateEnum.STOPPED) {
+                log.info("Adapter '{}' is already stopped, returning success", getId());
+                return CompletableFuture.completedFuture(null);
+            }
+
             // Check if start operation is in progress
             final var startFuture = startFutureRef.get();
             if (startFuture != null && !startFuture.isDone()) {
@@ -277,7 +306,17 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                         "' while start operation is in progress"));
             }
 
-            // Create the new future before setting it to avoid race condition
+            // Create a placeholder future and try to claim ownership atomically
+            // This ensures only one thread proceeds to actually stop the adapter
+            final CompletableFuture<Void> placeholderFuture = new CompletableFuture<>();
+
+            if (!stopFutureRef.compareAndSet(existingFuture, placeholderFuture)) {
+                // CAS failed - another thread won the race, loop back to get their future
+                continue;
+            }
+
+            // We won the CAS - we now own the stop operation
+            // Create the actual future and execute the stop sequence
             consumers.forEach(tagManager::removeConsumer);
             final var input = new ProtocolAdapterStopInputImpl();
             final var output = new ProtocolAdapterStopOutputImpl();
@@ -312,12 +351,17 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                 stopFutureRef.set(null);
             });
 
-            // Atomically set the future reference if it's still null or completed
-            // This prevents race conditions where multiple threads try to stop simultaneously
-            if (stopFutureRef.compareAndSet(existingFuture, stopFuture)) {
-                return stopFuture;
-            }
-            // If CAS failed, another thread won the race - loop back and return their future
+            // Replace the placeholder with the actual future and complete the placeholder to unblock any waiters
+            stopFutureRef.set(stopFuture);
+            stopFuture.whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    placeholderFuture.completeExceptionally(throwable);
+                } else {
+                    placeholderFuture.complete(result);
+                }
+            });
+
+            return placeholderFuture;
         }
     }
 
