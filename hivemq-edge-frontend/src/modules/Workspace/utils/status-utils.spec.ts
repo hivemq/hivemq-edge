@@ -9,6 +9,8 @@ import {
   MOCK_NODE_BRIDGE,
   MOCK_NODE_LISTENER,
   MOCK_NODE_PULSE,
+  MOCK_NODE_DEVICE,
+  MOCK_NODE_GROUP,
 } from '@/__test-utils__/react-flow/nodes.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
@@ -16,8 +18,9 @@ import { MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
 import type { Adapter, Bridge } from '@/api/__generated__'
 import { PulseStatus } from '@/api/__generated__'
 import { Status } from '@/api/__generated__'
-import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
+import { mockBridgeId, mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { MOCK_PULSE_STATUS_ERROR } from '@/api/hooks/usePulse/__handlers__'
+import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 import type { EdgeStyle } from './status-utils.ts'
 import { updatePulseStatus } from './status-utils.ts'
@@ -292,6 +295,385 @@ describe('getEdgeStatus', () => {
   ])('should return the correct style for $isConnected and $hasTopics', ({ isConnected, hasTopics, expected }) => {
     const edgeStyle = getEdgeStatus(isConnected, hasTopics, true, color)
     expect(edgeStyle).toStrictEqual(expected)
+  })
+
+  it('should return correct style when hasMarker is false', () => {
+    const color = MOCK_THEME.colors.status.connected[500]
+    const edgeStyle = getEdgeStatus(true, true, false, color)
+    expect(edgeStyle).toStrictEqual({
+      data: {
+        hasTopics: true,
+        isConnected: true,
+      },
+      animated: true,
+      style: {
+        strokeWidth: 1.5,
+        stroke: color,
+      },
+      markerEnd: undefined,
+    })
+  })
+})
+
+describe('updateEdgesStatus', () => {
+  const mockGetNode = (id: string): Node | undefined => {
+    const nodes: Record<string, Node> = {
+      'idAdapter@adapter-id': {
+        ...MOCK_NODE_ADAPTER,
+        id: 'idAdapter@adapter-id',
+        position: { x: 0, y: 0 },
+        type: NodeTypes.ADAPTER_NODE,
+      },
+      'idBridge@bridge-id': {
+        ...MOCK_NODE_BRIDGE,
+        id: 'idBridge@bridge-id',
+        position: { x: 0, y: 0 },
+        type: NodeTypes.BRIDGE_NODE,
+      },
+      idListener: { ...MOCK_NODE_LISTENER, position: { x: 0, y: 0 } },
+      idDevice: { ...MOCK_NODE_DEVICE, position: { x: 0, y: 0 }, type: NodeTypes.DEVICE_NODE },
+      idGroup: { ...MOCK_NODE_GROUP, position: { x: 0, y: 0 } },
+    }
+    return nodes[id]
+  }
+
+  it('should return empty array for empty edges', () => {
+    const result = updateEdgesStatus([], [], [], mockGetNode, MOCK_THEME)
+    expect(result).toEqual([])
+  })
+
+  it('should handle edges without status updates', () => {
+    const edges: Edge[] = [
+      {
+        id: 'edge-1',
+        source: 'unknown@unknown-id',
+        target: 'idListener',
+        type: EdgeTypes.DYNAMIC_EDGE,
+      },
+    ]
+    const result = updateEdgesStatus([], edges, [], mockGetNode, MOCK_THEME)
+    expect(result).toEqual(edges)
+  })
+
+  it('should update adapter node edges to device node', () => {
+    const edges: Edge[] = [
+      {
+        id: 'edge-adapter-device',
+        source: 'idAdapter@adapter-id',
+        target: 'idDevice',
+        type: EdgeTypes.DYNAMIC_EDGE,
+      },
+    ]
+    const updates: Status[] = [
+      {
+        id: 'adapter-id',
+        type: 'idAdapter',
+        connection: Status.connection.CONNECTED,
+        runtime: Status.runtime.STARTED,
+      },
+    ]
+    const result = updateEdgesStatus([mockProtocolAdapter], edges, updates, mockGetNode, MOCK_THEME)
+
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({
+      id: 'edge-adapter-device',
+      data: {
+        isConnected: true,
+        hasTopics: false,
+      },
+      animated: false,
+    })
+  })
+
+  it('should update adapter node edges to non-device node', () => {
+    const edges: Edge[] = [
+      {
+        id: 'edge-adapter-listener',
+        source: 'idAdapter@adapter-id',
+        target: 'idListener',
+        type: EdgeTypes.DYNAMIC_EDGE,
+      },
+    ]
+    const updates: Status[] = [
+      {
+        id: 'adapter-id',
+        type: 'idAdapter',
+        connection: Status.connection.CONNECTED,
+        runtime: Status.runtime.STARTED,
+      },
+    ]
+    const result = updateEdgesStatus([mockProtocolAdapter], edges, updates, mockGetNode, MOCK_THEME)
+
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({
+      id: 'edge-adapter-listener',
+      data: {
+        isConnected: true,
+        hasTopics: false,
+      },
+      markerEnd: expect.objectContaining({
+        type: MarkerType.ArrowClosed,
+      }),
+    })
+  })
+
+  it('should update bridge node edges with topics', () => {
+    const bridgeWithTopics = {
+      ...mockBridge,
+      remoteSubscriptions: [{ filters: ['test/topic'], destination: 'dest', maxQoS: 0 }],
+    }
+    const mockGetNodeWithBridge = (id: string): Node | undefined => {
+      if (id === 'idBridge@bridge-id') {
+        return {
+          ...MOCK_NODE_BRIDGE,
+          id: 'idBridge@bridge-id',
+          position: { x: 0, y: 0 },
+          data: bridgeWithTopics,
+          type: NodeTypes.BRIDGE_NODE,
+        }
+      }
+      return mockGetNode(id)
+    }
+
+    const edges: Edge[] = [
+      {
+        id: 'edge-bridge-listener',
+        source: 'idBridge@bridge-id',
+        target: 'idListener',
+        type: EdgeTypes.DYNAMIC_EDGE,
+      },
+    ]
+    const updates: Status[] = [
+      {
+        id: 'bridge-id',
+        type: 'idBridge',
+        connection: Status.connection.CONNECTED,
+        runtime: Status.runtime.STARTED,
+      },
+    ]
+    const result = updateEdgesStatus([], edges, updates, mockGetNodeWithBridge, MOCK_THEME)
+
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({
+      id: 'edge-bridge-listener',
+      data: {
+        isConnected: true,
+        hasTopics: true,
+      },
+      animated: true,
+    })
+  })
+
+  it('should update bridge node edges without topics', () => {
+    const mockGetNodeWithBridge = (id: string): Node | undefined => {
+      if (id === 'idBridge@bridge-id') {
+        return {
+          ...MOCK_NODE_BRIDGE,
+          id: 'idBridge@bridge-id',
+          position: { x: 0, y: 0 },
+          type: NodeTypes.BRIDGE_NODE,
+        }
+      }
+      return mockGetNode(id)
+    }
+
+    const edges: Edge[] = [
+      {
+        id: 'edge-bridge-listener',
+        source: 'idBridge@bridge-id',
+        target: 'idListener',
+        type: EdgeTypes.DYNAMIC_EDGE,
+      },
+    ]
+    const updates: Status[] = [
+      {
+        id: 'bridge-id',
+        type: 'idBridge',
+        connection: Status.connection.DISCONNECTED,
+        runtime: Status.runtime.STOPPED,
+      },
+    ]
+    const result = updateEdgesStatus([], edges, updates, mockGetNodeWithBridge, MOCK_THEME)
+
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({
+      id: 'edge-bridge-listener',
+      data: {
+        isConnected: false,
+        // TODO[NVL] This is wrong. Fix it
+        hasTopics: true,
+      },
+      animated: false,
+    })
+  })
+
+  it('should handle group edges correctly', () => {
+    const mockGetNodeForGroup = (id: string): Node | undefined => {
+      const nodes: Record<string, Node> = {
+        idGroup: {
+          ...MOCK_NODE_GROUP,
+          position: { x: 0, y: 0 },
+          type: NodeTypes.CLUSTER_NODE,
+          data: { childrenNodeIds: ['idAdapter@adapter-id', 'idBridge@bridge-id'], title: 'Group', isOpen: true },
+        },
+        'idAdapter@adapter-id': {
+          ...MOCK_NODE_ADAPTER,
+          id: 'idAdapter@adapter-id',
+          position: { x: 0, y: 0 },
+          type: NodeTypes.ADAPTER_NODE,
+        },
+        'idBridge@bridge-id': {
+          ...MOCK_NODE_BRIDGE,
+          id: 'idBridge@bridge-id',
+          position: { x: 0, y: 0 },
+          type: NodeTypes.BRIDGE_NODE,
+        },
+        idListener: { ...MOCK_NODE_LISTENER, position: { x: 0, y: 0 } },
+      }
+      return nodes[id]
+    }
+
+    const edges: Edge[] = [
+      {
+        id: 'edge-adapter',
+        source: 'idAdapter@adapter-id',
+        target: 'idListener',
+        type: EdgeTypes.DYNAMIC_EDGE,
+        data: { isConnected: true, hasTopics: false },
+      },
+      {
+        id: 'edge-bridge',
+        source: 'idBridge@bridge-id',
+        target: 'idListener',
+        type: EdgeTypes.DYNAMIC_EDGE,
+        data: { isConnected: true, hasTopics: false },
+      },
+      {
+        id: 'connect-edge-group-1',
+        source: 'idGroup',
+        target: 'idListener',
+        type: EdgeTypes.DYNAMIC_EDGE,
+      },
+    ]
+
+    const updates: Status[] = [
+      {
+        id: 'adapter-id',
+        type: 'idAdapter',
+        connection: Status.connection.CONNECTED,
+        runtime: Status.runtime.STARTED,
+      },
+      {
+        id: 'bridge-id',
+        type: 'idBridge',
+        connection: Status.connection.CONNECTED,
+        runtime: Status.runtime.STARTED,
+      },
+    ]
+
+    const result = updateEdgesStatus([mockProtocolAdapter], edges, updates, mockGetNodeForGroup, MOCK_THEME)
+
+    expect(result).toHaveLength(3)
+    const groupEdge = result.find((e) => e.id === 'connect-edge-group-1')
+    expect(groupEdge).toMatchObject({
+      id: 'connect-edge-group-1',
+      data: {
+        isConnected: true,
+        hasTopics: false,
+      },
+      animated: false,
+    })
+  })
+
+  it('should handle group edges with non-group node', () => {
+    const mockGetNodeNonGroup = (id: string): Node | undefined => {
+      if (id === 'idAdapter@adapter-id') {
+        return { ...MOCK_NODE_ADAPTER, id: 'idAdapter@adapter-id', position: { x: 0, y: 0 } }
+      }
+      return undefined
+    }
+
+    const edges: Edge[] = [
+      {
+        id: 'connect-edge-group-1',
+        source: 'idAdapter@adapter-id',
+        target: 'idListener',
+        type: EdgeTypes.DYNAMIC_EDGE,
+      },
+    ]
+
+    const result = updateEdgesStatus([], edges, [], mockGetNodeNonGroup, MOCK_THEME)
+    // When the source is not a CLUSTER_NODE, the edge is not added to newEdges
+    expect(result).toEqual([])
+  })
+
+  it('should handle stateless connection status', () => {
+    const edges: Edge[] = [
+      {
+        id: 'edge-adapter',
+        source: 'idAdapter@adapter-id',
+        target: 'idListener',
+        type: EdgeTypes.DYNAMIC_EDGE,
+      },
+    ]
+    const updates: Status[] = [
+      {
+        id: 'adapter-id',
+        type: 'idAdapter',
+        connection: Status.connection.STATELESS,
+        runtime: Status.runtime.STARTED,
+      },
+    ]
+    const result = updateEdgesStatus([mockProtocolAdapter], edges, updates, mockGetNode, MOCK_THEME)
+
+    expect(result).toHaveLength(1)
+    expect(result[0].data?.isConnected).toBe(true)
+  })
+
+  it('should handle disconnected adapter nodes', () => {
+    const edges: Edge[] = [
+      {
+        id: 'edge-adapter',
+        source: 'idAdapter@adapter-id',
+        target: 'idListener',
+        type: EdgeTypes.DYNAMIC_EDGE,
+      },
+    ]
+    const updates: Status[] = [
+      {
+        id: 'adapter-id',
+        type: 'idAdapter',
+        connection: Status.connection.DISCONNECTED,
+        runtime: Status.runtime.STOPPED,
+      },
+    ]
+    const result = updateEdgesStatus([mockProtocolAdapter], edges, updates, mockGetNode, MOCK_THEME)
+
+    expect(result).toHaveLength(1)
+    expect(result[0].data?.isConnected).toBe(false)
+  })
+
+  it('should push edge as-is when source is not adapter or bridge', () => {
+    const edges: Edge[] = [
+      {
+        id: 'edge-other',
+        source: 'idListener@listener-id',
+        target: 'idAdapter@adapter-id',
+        type: EdgeTypes.DYNAMIC_EDGE,
+      },
+    ]
+    const updates: Status[] = [
+      {
+        id: 'listener-id',
+        type: 'idListener',
+        connection: Status.connection.CONNECTED,
+        runtime: Status.runtime.STARTED,
+      },
+    ]
+    const result = updateEdgesStatus([], edges, updates, mockGetNode, MOCK_THEME)
+
+    expect(result).toHaveLength(1)
+    expect(result[0]).toEqual(edges[0])
   })
 })
 

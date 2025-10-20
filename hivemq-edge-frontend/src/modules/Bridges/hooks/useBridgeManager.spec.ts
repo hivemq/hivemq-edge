@@ -27,7 +27,9 @@ vi.mock('@chakra-ui/react', async (importOriginal) => {
 describe('useBridgeManager', () => {
   const mutateAsyncMock = vi.fn()
   const toastPromiseMock = vi.fn()
-  const toastMock = { promise: toastPromiseMock, isActive: vi.fn() }
+  const toastCallMock = vi.fn()
+  const isActiveMock = vi.fn()
+  const toastMock = Object.assign(toastCallMock, { promise: toastPromiseMock, isActive: isActiveMock })
 
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -43,6 +45,8 @@ describe('useBridgeManager', () => {
 
     mutateAsyncMock.mockReset()
     toastPromiseMock.mockReset()
+    toastCallMock.mockReset()
+    isActiveMock.mockReset()
   })
 
   it('should return the manager', async () => {
@@ -83,10 +87,85 @@ describe('useBridgeManager', () => {
     expect(toastPromiseMock).toHaveBeenCalled()
   })
 
-  it.skip('should show error toast on onError', () => {
-    // Skip: Cannot mock the constructor of the toast
-    const { result } = renderHook(() => useBridgeManager(), { wrapper })
-    result.current.onError(new Error('fail'), { id: 'toast-id', description: 'desc' })
-    expect(toastPromiseMock).toHaveBeenCalled()
+  describe('onError', () => {
+    it('should show error toast with Error instance', () => {
+      isActiveMock.mockReturnValue(false)
+      const { result } = renderHook(() => useBridgeManager(), { wrapper })
+      act(() => {
+        result.current.onError(new Error('Test error'), { id: 'toast-id' })
+      })
+      expect(toastCallMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          description: 'Test error',
+        })
+      )
+    })
+
+    it('should show error toast with route error response', () => {
+      isActiveMock.mockReturnValue(false)
+      const routeError = Object.assign(new Error(), { statusText: 'Not Found', status: 404 })
+      const { result } = renderHook(() => useBridgeManager(), { wrapper })
+      act(() => {
+        result.current.onError(routeError, { id: 'toast-id' })
+      })
+      expect(toastCallMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+        })
+      )
+      // Just verify the toast was called, as the description can vary
+      expect(toastCallMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('should show error toast with string error', () => {
+      isActiveMock.mockReturnValue(false)
+      const { result } = renderHook(() => useBridgeManager(), { wrapper })
+      act(() => {
+        result.current.onError('String error' as unknown as Error, { id: 'toast-id' })
+      })
+      expect(toastCallMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          description: 'String error',
+        })
+      )
+    })
+
+    it('should use custom description when provided', () => {
+      isActiveMock.mockReturnValue(false)
+      const { result } = renderHook(() => useBridgeManager(), { wrapper })
+      act(() => {
+        result.current.onError(new Error('Test error'), { id: 'toast-id', description: 'Custom description' })
+      })
+      expect(toastCallMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          description: 'Custom description',
+        })
+      )
+    })
+
+    it('should not show toast if already active with id', () => {
+      isActiveMock.mockReturnValue(true)
+      const { result } = renderHook(() => useBridgeManager(), { wrapper })
+      act(() => {
+        result.current.onError(new Error('Test error'), { id: 'toast-id' })
+      })
+      expect(toastCallMock).not.toHaveBeenCalled()
+    })
+
+    it('should show toast if no id provided', () => {
+      const { result } = renderHook(() => useBridgeManager(), { wrapper })
+      act(() => {
+        result.current.onError(new Error('Test error'))
+      })
+      expect(toastCallMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          description: 'Test error',
+        })
+      )
+    })
   })
 })
