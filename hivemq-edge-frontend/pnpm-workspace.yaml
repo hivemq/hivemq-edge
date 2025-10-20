@@ -1,0 +1,7 @@
+onlyBuiltDependencies:
+  - '@percy/core'
+  - '@sentry/cli'
+  - cypress
+  - esbuild
+  - msw
+  - protobufjs
