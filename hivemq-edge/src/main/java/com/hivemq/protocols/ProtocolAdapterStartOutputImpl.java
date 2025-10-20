@@ -20,23 +20,29 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ProtocolAdapterStartOutputImpl implements ProtocolAdapterStartOutput {
 
-    private @Nullable volatile String message = null;
-    private @Nullable volatile Throwable throwable = null;
+    private @Nullable volatile String message;
+    private @Nullable volatile Throwable throwable;
     private final @NotNull CompletableFuture<Void> startFuture = new CompletableFuture<>();
+    private final @NotNull AtomicBoolean completed = new AtomicBoolean(false);
 
     @Override
     public void startedSuccessfully() {
-        this.startFuture.complete(null);
+        if (completed.compareAndSet(false, true)) {
+            startFuture.complete(null);
+        }
     }
 
     @Override
     public void failStart(final @NotNull Throwable t, final @Nullable String errorMessage) {
-        this.throwable = t;
-        this.message = errorMessage;
-        this.startFuture.completeExceptionally(t);
+        if (completed.compareAndSet(false, true)) {
+            throwable = t;
+            message = errorMessage;
+            startFuture.completeExceptionally(t);
+        }
     }
 
     public @Nullable Throwable getThrowable() {
