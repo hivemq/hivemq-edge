@@ -117,45 +117,54 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     }
 
     public boolean transitionAdapterState(final @NotNull AdapterStateEnum newState) {
-        final var currentState = adapterState.get();
-        if(canTransition(currentState, newState)) {
-            if(adapterState.compareAndSet(currentState, newState)) {
-                log.debug("Adapter state transition from {} to {} for adapter {}", currentState, newState, adapterId);
-                notifyListenersAboutStateTransition(currentState());
-                return true;
+        while (true) {
+            final var currentState = adapterState.get();
+            if (canTransition(currentState, newState)) {
+                if (adapterState.compareAndSet(currentState, newState)) {
+                    log.debug("Adapter state transition from {} to {} for adapter {}", currentState, newState, adapterId);
+                    notifyListenersAboutStateTransition(currentState());
+                    return true;
+                }
+                // CAS failed due to concurrent modification, retry
+            } else {
+                // Transition not allowed from current state
+                throw new IllegalStateException("Cannot transition adapter state to " + newState);
             }
-        } else {
-            throw new IllegalStateException("Cannot transition adapter state to " + newState);
         }
-        return false;
     }
 
     public boolean transitionNorthboundState(final @NotNull StateEnum newState) {
-        final var currentState = northboundState.get();
-        if(canTransition(currentState, newState)) {
-            if(northboundState.compareAndSet(currentState, newState)) {
-                log.debug("Northbound state transition from {} to {} for adapter {}", currentState, newState, adapterId);
-                notifyListenersAboutStateTransition(currentState());
-                return true;
+        while (true) {
+            final var currentState = northboundState.get();
+            if (canTransition(currentState, newState)) {
+                if (northboundState.compareAndSet(currentState, newState)) {
+                    log.debug("Northbound state transition from {} to {} for adapter {}", currentState, newState, adapterId);
+                    notifyListenersAboutStateTransition(currentState());
+                    return true;
+                }
+                // CAS failed due to concurrent modification, retry
+            } else {
+                // Transition not allowed from current state
+                throw new IllegalStateException("Cannot transition northbound state to " + newState);
             }
-        } else {
-            throw new IllegalStateException("Cannot transition northbound state to " + newState);
         }
-        return false;
     }
 
     public boolean transitionSouthboundState(final @NotNull StateEnum newState) {
-        final var currentState = southboundState.get();
-        if(canTransition(currentState, newState)) {
-            if(southboundState.compareAndSet(currentState, newState)) {
-                log.debug("Southbound state transition from {} to {} for adapter {}", currentState, newState, adapterId);
-                notifyListenersAboutStateTransition(currentState());
-                return true;
+        while (true) {
+            final var currentState = southboundState.get();
+            if (canTransition(currentState, newState)) {
+                if (southboundState.compareAndSet(currentState, newState)) {
+                    log.debug("Southbound state transition from {} to {} for adapter {}", currentState, newState, adapterId);
+                    notifyListenersAboutStateTransition(currentState());
+                    return true;
+                }
+                // CAS failed due to concurrent modification, retry
+            } else {
+                // Transition not allowed from current state
+                throw new IllegalStateException("Cannot transition southbound state to " + newState);
             }
-        } else {
-            throw new IllegalStateException("Cannot transition southbound state to " + newState);
         }
-        return false;
     }
 
     @Override
