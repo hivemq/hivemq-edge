@@ -52,7 +52,7 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
             StateEnum.ERROR_CLOSING, Set.of(StateEnum.ERROR),
             StateEnum.ERROR, Set.of(StateEnum.ERROR, StateEnum.CONNECTING, StateEnum.DISCONNECTED), // allow idempotent ERROR->ERROR; can recover from error
             StateEnum.CLOSED, Set.of(StateEnum.DISCONNECTED, StateEnum.CLOSING), // can restart from closed or go to closing
-            StateEnum.NOT_SUPPORTED, Set.of() // Terminal state for adapters without southbound support
+            StateEnum.NOT_SUPPORTED, Set.of(StateEnum.NOT_SUPPORTED) // Terminal state for adapters without southbound support; allow idempotent transitions
     );
 
     public enum AdapterStateEnum {
