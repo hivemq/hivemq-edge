@@ -122,12 +122,12 @@ public class SearchFilterDnResolver implements UserDnResolver {
         }
 
         // Replace {username} placeholder with actual username and create LDAP filter
-        final String filterString = searchFilterTemplate.replace(USERNAME_PLACEHOLDER, escapeFilterValue(username));
+        final var filterString = searchFilterTemplate.replace(USERNAME_PLACEHOLDER, escapeFilterValue(username));
 
         try {
-            final Filter filter = Filter.create(filterString);
+            final var filter = Filter.create(filterString);
 
-            final SearchRequest searchRequest = new SearchRequest(
+            final var searchRequest = new SearchRequest(
                     searchBase,
                     searchScope,
                     DereferencePolicy.NEVER,
@@ -140,7 +140,7 @@ public class SearchFilterDnResolver implements UserDnResolver {
 
             log.debug("Searching for user DN with filter: {} in base: {}", filterString, searchBase);
 
-            final SearchResult searchResult = connectionPool.search(searchRequest);
+            final var searchResult = connectionPool.search(searchRequest);
 
             if (searchResult.getResultCode() != ResultCode.SUCCESS) {
                 throw new DnResolutionException(
@@ -149,7 +149,7 @@ public class SearchFilterDnResolver implements UserDnResolver {
                         username);
             }
 
-            final int entryCount = searchResult.getEntryCount();
+            final var entryCount = searchResult.getEntryCount();
             if (entryCount == 0) {
                 log.debug("No LDAP entry found for username: {} with filter: {}", username, filterString);
                 throw new DnResolutionException(
@@ -162,8 +162,8 @@ public class SearchFilterDnResolver implements UserDnResolver {
                         entryCount, username, filterString);
             }
 
-            final SearchResultEntry entry = searchResult.getSearchEntries().getFirst();
-            final String dn = entry.getDN();
+            final var entry = searchResult.getSearchEntries().getFirst();
+            final var dn = entry.getDN();
 
             log.debug("Resolved username '{}' to DN: {}", username, dn);
             return dn;

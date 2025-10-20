@@ -15,6 +15,7 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap;
 
+import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.OpenLdapContainer;
 import com.unboundid.ldap.sdk.BindRequest;
 import com.unboundid.ldap.sdk.BindResult;
@@ -97,19 +98,25 @@ class OpenLdapTest {
         final String host = OPENLDAP_CONTAINER.getHost();
         final int port = OPENLDAP_CONTAINER.getLdapPort();
 
+        // Create LdapSimpleBind for OpenLDAP admin authentication
+        // OpenLDAP admin DN: cn=admin,{baseDn}
+        final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
+                new LdapConnectionProperties.LdapSimpleBind(
+                        "cn=admin",
+                        OPENLDAP_CONTAINER.getAdminPassword());
+
         // Create connection properties
         connectionProperties = new LdapConnectionProperties(
-                host,
-                port,
+                new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
                 TlsMode.NONE, // Plain LDAP for this test
-                null,
-                null,
                 null,
                 5000,
                 10000,
+                1,
                 LDAP_DN_TEMPLATE,
                 OPENLDAP_CONTAINER.getBaseDn(),
-                "ADMIN");
+                "ADMIN",
+                ldapSimpleBind);
 
         // Create and start LDAP client
         ldapClient = new LdapClient(connectionProperties);
@@ -139,7 +146,8 @@ class OpenLdapTest {
     @Test
     void testBasicConnectivity() throws Exception {
         // Act - Connect and bind as admin
-        try (final LDAPConnection connection = connectionProperties.createConnection()) {
+        final var testconnection = new LdapTestConnection(connectionProperties);
+        try (final LDAPConnection connection = testconnection.createConnection()) {
             final BindRequest bindRequest = new SimpleBindRequest(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
             final BindResult bindResult = connection.bind(bindRequest);
 
@@ -165,7 +173,8 @@ class OpenLdapTest {
      */
     @Test
     void testLdifDataLoaded() throws Exception {
-        try (final LDAPConnection connection = connectionProperties.createConnection()) {
+        final var testconnection = new LdapTestConnection(connectionProperties);
+        try (final LDAPConnection connection = testconnection.createConnection()) {
             // Bind as admin
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 
@@ -235,7 +244,8 @@ class OpenLdapTest {
      */
     @Test
     void testGroupsFromLdif() throws Exception {
-        try (final LDAPConnection connection = connectionProperties.createConnection()) {
+        final var testconnection = new LdapTestConnection(connectionProperties);
+        try (final LDAPConnection connection = testconnection.createConnection()) {
             // Bind as admin
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 
@@ -275,7 +285,8 @@ class OpenLdapTest {
      */
     @Test
     void testSearchFilterDnResolver() throws Exception {
-        try (final LDAPConnection connection = connectionProperties.createConnection()) {
+        final var testconnection = new LdapTestConnection(connectionProperties);
+        try (final LDAPConnection connection = testconnection.createConnection()) {
             // Bind as admin to create authenticated pool
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 
@@ -324,7 +335,8 @@ class OpenLdapTest {
      */
     @Test
     void testComplexSearchQueries() throws Exception {
-        try (final LDAPConnection connection = connectionProperties.createConnection()) {
+        final var testconnection = new LdapTestConnection(connectionProperties);
+        try (final LDAPConnection connection = testconnection.createConnection()) {
             // Bind as admin
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 
@@ -378,7 +390,8 @@ class OpenLdapTest {
      */
     @Test
     void testOrganizationalStructure() throws Exception {
-        try (final LDAPConnection connection = connectionProperties.createConnection()) {
+        final var testconnection = new LdapTestConnection(connectionProperties);
+        try (final LDAPConnection connection = testconnection.createConnection()) {
             // Bind as admin
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 
@@ -437,19 +450,23 @@ class OpenLdapTest {
 
         // Note: Using acceptAnyCertificateForTesting to trust self-signed cert from OpenLDAP container
         // In production, use proper CA-signed certificates and validate them
+        final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
+                new LdapConnectionProperties.LdapSimpleBind(
+                        "cn=admin",
+                        OPENLDAP_CONTAINER.getAdminPassword());
+
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
-                host,
-                port,
+                new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
                 TlsMode.START_TLS,
                 null,  // No truststore needed
-                null,
-                null,
                 5000,
                 10000,
+                1,
                 LDAP_DN_TEMPLATE,
                 OPENLDAP_CONTAINER.getBaseDn(),
                 "ADMIN",
-                true);  // TEST ONLY: Accept any certificate
+                true,  // TEST ONLY: Accept any certificate
+                ldapSimpleBind);
 
         final LdapClient startTlsClient = new LdapClient(startTlsProps);
 
@@ -499,19 +516,23 @@ class OpenLdapTest {
         final String host = OPENLDAP_CONTAINER.getHost();
         final int port = OPENLDAP_CONTAINER.getLdapPort();
 
+        final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
+                new LdapConnectionProperties.LdapSimpleBind(
+                        "cn=admin",
+                        OPENLDAP_CONTAINER.getAdminPassword());
+
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
-                host,
-                port,
+                new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
                 TlsMode.START_TLS,
-                null,
-                null,
                 null,
                 5000,
                 10000,
+                1,
                 LDAP_DN_TEMPLATE,
                 OPENLDAP_CONTAINER.getBaseDn(),
                 "ADMIN",
-                true);  // TEST ONLY: Accept any certificate
+                true,  // TEST ONLY: Accept any certificate
+                ldapSimpleBind);
 
         final LdapClient startTlsClient = new LdapClient(startTlsProps);
 
@@ -562,34 +583,38 @@ class OpenLdapTest {
         final String host = OPENLDAP_CONTAINER.getHost();
         final int port = OPENLDAP_CONTAINER.getLdapPort();
 
+        final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
+                new LdapConnectionProperties.LdapSimpleBind(
+                        "cn=admin",
+                        OPENLDAP_CONTAINER.getAdminPassword());
+
         // Plain LDAP client
         final LdapConnectionProperties plainProps = new LdapConnectionProperties(
-                host,
-                port,
+                new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
                 TlsMode.NONE,
-                null,
-                null,
                 null,
                 5000,
                 10000,
+                1,
                 LDAP_DN_TEMPLATE,
                 OPENLDAP_CONTAINER.getBaseDn(),
-                "ADMIN");
+                "ADMIN",
+                ldapSimpleBind);
         final LdapClient plainClient = new LdapClient(plainProps);
 
         // START_TLS client
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
-                host,
-                port,
+                new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
                 TlsMode.START_TLS,
-                null,
-                null,
                 null,
                 5000,
                 10000,
-                LDAP_DN_TEMPLATE, OPENLDAP_CONTAINER.getBaseDn(),
+                1,
+                LDAP_DN_TEMPLATE,
+                OPENLDAP_CONTAINER.getBaseDn(),
                 "ADMIN",
-                true);  // TEST ONLY: Accept any certificate
+                true,  // TEST ONLY: Accept any certificate
+                ldapSimpleBind);
         final LdapClient startTlsClient = new LdapClient(startTlsProps);
 
         // Act & Assert
@@ -640,22 +665,27 @@ class OpenLdapTest {
         final String host = OPENLDAP_CONTAINER.getHost();
         final int port = OPENLDAP_CONTAINER.getLdapPort();
 
+        final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
+                new LdapConnectionProperties.LdapSimpleBind(
+                        "cn=admin",
+                        OPENLDAP_CONTAINER.getAdminPassword());
+
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
-                host,
-                port,
+                new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
                 TlsMode.START_TLS,
-                null,
-                null,
                 null,
                 5000,
                 10000,
+                1,
                 LDAP_DN_TEMPLATE,
                 OPENLDAP_CONTAINER.getBaseDn(),
                 "ADMIN",
-                true);  // TEST ONLY: Accept any certificate
+                true,  // TEST ONLY: Accept any certificate
+                ldapSimpleBind);
 
         // Create a START_TLS connection and bind as admin to enable searches
-        try (final LDAPConnection connection = startTlsProps.createConnection()) {
+        final var testconnection = new LdapTestConnection(connectionProperties);
+        try (final LDAPConnection connection = testconnection.createConnection()) {
             // Bind as admin to create authenticated pool
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 

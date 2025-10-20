@@ -1059,14 +1059,26 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="ldap" minOccurs="0">
+            <xs:element name="ldap" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:all>
-                        <xs:element name="host" type="nonEmptyString"/>
-                        <xs:element name="port" type="port" minOccurs="0">
-                            <xs:annotation>
-                                <xs:documentation>LDAP server port. If not specified, defaults to 389 for NONE/START_TLS or 636 for LDAPS.</xs:documentation>
-                            </xs:annotation>
+                        <xs:element name="servers" minOccurs="1" maxOccurs="1">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="ldap-server" minOccurs="1">
+                                        <xs:complexType>
+                                            <xs:all>
+                                                <xs:element name="host" type="nonEmptyString"/>
+                                                <xs:element name="port" type="port" minOccurs="0">
+                                                    <xs:annotation>
+                                                        <xs:documentation>LDAP server port. If not specified, defaults to 389 for NONE/START_TLS or 636 for LDAPS.</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:element>
+                                            </xs:all>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                            </xs:complexType>
                         </xs:element>
                         <xs:element name="tls-mode" minOccurs="0">
                             <xs:annotation>
@@ -1098,6 +1110,14 @@
                                             <xs:documentation>Type of truststore (e.g., JKS, PKCS12).</xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
+                                </xs:all>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="simple-bind" minOccurs="1" maxOccurs="1">
+                            <xs:complexType>
+                                <xs:all>
+                                    <xs:element name="rdns" type="nonEmptyString"/>
+                                    <xs:element name="userPassword" type="nonEmptyString"/>
                                 </xs:all>
                             </xs:complexType>
                         </xs:element>

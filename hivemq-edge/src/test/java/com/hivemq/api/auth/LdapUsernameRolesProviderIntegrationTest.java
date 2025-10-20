@@ -19,18 +19,8 @@ import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.auth.provider.impl.ldap.LdapUsernameRolesProvider;
 import com.hivemq.api.auth.provider.impl.ldap.TlsMode;
+import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LldapContainer;
-import com.unboundid.ldap.sdk.AddRequest;
-import com.unboundid.ldap.sdk.Attribute;
-import com.unboundid.ldap.sdk.BindRequest;
-import com.unboundid.ldap.sdk.BindResult;
-import com.unboundid.ldap.sdk.LDAPConnection;
-import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.Modification;
-import com.unboundid.ldap.sdk.ModificationType;
-import com.unboundid.ldap.sdk.ModifyRequest;
-import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.ldap.sdk.SimpleBindRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -38,7 +28,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,38 +41,40 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 class LdapUsernameRolesProviderIntegrationTest {
 
-    private static final String TEST_USERNAME = "testuser";
-    private static final String TEST_PASSWORD = "testpassword123";
     private static final String LDAP_DN_TEMPLATE = "uid={username},ou=people,{baseDn}";
 
     @Container
     private static final LldapContainer LLDAP_CONTAINER = new LldapContainer();
 
     private static LdapUsernameRolesProvider provider;
-    private static LdapConnectionProperties ldapConnectionProperties;
 
     @BeforeAll
     static void setUp() throws Exception {
         // Get the dynamically mapped port from the container
-        final String host = LLDAP_CONTAINER.getHost();
-        final int port = LLDAP_CONTAINER.getLdapPort();
+        final var host = LLDAP_CONTAINER.getHost();
+        final var port = LLDAP_CONTAINER.getLdapPort();
+
+        // Create LdapSimpleBind for LLDAP admin authentication
+        // LLDAP admin DN: uid=admin,ou=people,{baseDn}
+        final var ldapSimpleBind =
+                new LdapConnectionProperties.LdapSimpleBind(
+                        "uid=" + LLDAP_CONTAINER.getAdminUsername() + ",ou=people",
+                        LLDAP_CONTAINER.getAdminPassword());
 
         // Create connection properties for plain LDAP (no TLS for simplicity)
-        ldapConnectionProperties = new LdapConnectionProperties(
-                host,
-                port,
-                TlsMode.NONE,
-                null,
-                null,
-                null,
-                5000,  // 5 second connect timeout
-                10000, // 10 second response timeout
-                LDAP_DN_TEMPLATE,
-                LLDAP_CONTAINER.getBaseDn(),
-                "ADMIN");
+        // 5 second connect timeout
+        // 10 second response timeout
+        final var ldapConnectionProperties =
+                new LdapConnectionProperties(new LdapConnectionProperties.LdapServers(new String[]{host},
+                        new int[]{port}), TlsMode.NONE, null, 5000,  // 5 second connect timeout
+                        10000, // 10 second response timeout
+                        1, LDAP_DN_TEMPLATE, LLDAP_CONTAINER.getBaseDn(), "ADMIN", ldapSimpleBind);
 
         // Create test user in LLDAP
-        createTestUser();
+        new LdapTestConnection(ldapConnectionProperties).createTestUser(
+                LLDAP_CONTAINER.getAdminDn(),
+                LLDAP_CONTAINER.getAdminPassword(),
+                LLDAP_CONTAINER.getBaseDn());
 
         // Create the LdapUsernameRolesProvider
         provider = new LdapUsernameRolesProvider(ldapConnectionProperties);
@@ -92,42 +83,6 @@ class LdapUsernameRolesProviderIntegrationTest {
     @AfterAll
     static void tearDown() {
         LLDAP_CONTAINER.stop();
-    }
-
-    /**
-     * Creates a test user in LLDAP using the admin account.
-     */
-    private static void createTestUser() throws LDAPException, GeneralSecurityException {
-        try (final LDAPConnection adminConnection = ldapConnectionProperties.createConnection()) {
-            // Bind as admin
-            final String adminUserDn = "uid=" + LLDAP_CONTAINER.getAdminUsername() + ",ou=people," + LLDAP_CONTAINER.getBaseDn();
-            final BindRequest bindRequest = new SimpleBindRequest(adminUserDn, LLDAP_CONTAINER.getAdminPassword());
-            final BindResult bindResult = adminConnection.bind(bindRequest);
-
-            assertThat(bindResult.getResultCode()).isEqualTo(ResultCode.SUCCESS);
-
-            // Add test user
-            final String testUserDnString = "uid=" + TEST_USERNAME + ",ou=people," + LLDAP_CONTAINER.getBaseDn();
-
-            final AddRequest addRequest = new AddRequest(testUserDnString,
-                    new Attribute("objectClass", "inetOrgPerson", "posixAccount"),
-                    new Attribute("uid", TEST_USERNAME),
-                    new Attribute("cn", TEST_USERNAME),
-                    new Attribute("sn", "User"),
-                    new Attribute("mail", TEST_USERNAME + "@example.com"),
-                    new Attribute("uidNumber", "2000"),
-                    new Attribute("gidNumber", "2000"),
-                    new Attribute("homeDirectory", "/home/" + TEST_USERNAME)
-            );
-
-            adminConnection.add(addRequest);
-
-            // Set password
-            final ModifyRequest modifyRequest = new ModifyRequest(testUserDnString,
-                    new Modification(ModificationType.REPLACE, "userPassword", TEST_PASSWORD));
-
-            adminConnection.modify(modifyRequest);
-        }
     }
 
     /**
@@ -142,7 +97,7 @@ class LdapUsernameRolesProviderIntegrationTest {
     void testSuccessfulAuthentication() {
         // Act
         final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(TEST_USERNAME, TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
+                provider.findByUsernameAndPassword(LdapTestConnection.TEST_USERNAME, LdapTestConnection.TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(result)
@@ -151,7 +106,7 @@ class LdapUsernameRolesProviderIntegrationTest {
 
         assertThat(result.get().username())
                 .as("Username should match the authenticated user")
-                .isEqualTo(TEST_USERNAME);
+                .isEqualTo(LdapTestConnection.TEST_USERNAME);
 
         assertThat(result.get().roles())
                 .as("User should have ADMIN role (hardcoded for now)")
@@ -173,7 +128,7 @@ class LdapUsernameRolesProviderIntegrationTest {
 
         // Act
         final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(TEST_USERNAME, wrongPassword.getBytes(StandardCharsets.UTF_8));
+                provider.findByUsernameAndPassword(LdapTestConnection.TEST_USERNAME, wrongPassword.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(result)
@@ -213,7 +168,7 @@ class LdapUsernameRolesProviderIntegrationTest {
     void testUsernameRolesToPrincipalConversion() {
         // Arrange & Act
         final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(TEST_USERNAME, TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
+                provider.findByUsernameAndPassword(LdapTestConnection.TEST_USERNAME, LdapTestConnection.TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         assertThat(result).isPresent();
 
@@ -223,7 +178,7 @@ class LdapUsernameRolesProviderIntegrationTest {
         // Assert
         assertThat(principal.getName())
                 .as("Principal name should match username")
-                .isEqualTo(TEST_USERNAME);
+                .isEqualTo(LdapTestConnection.TEST_USERNAME);
 
         assertThat(principal.getRoles())
                 .as("Principal roles should match user roles")
@@ -243,7 +198,7 @@ class LdapUsernameRolesProviderIntegrationTest {
 
         // Act
         final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(TEST_USERNAME, emptyPassword.getBytes(StandardCharsets.UTF_8));
+                provider.findByUsernameAndPassword(LdapTestConnection.TEST_USERNAME, emptyPassword.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(result)
@@ -263,7 +218,7 @@ class LdapUsernameRolesProviderIntegrationTest {
 
         // Act
         final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(emptyUsername, TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
+                provider.findByUsernameAndPassword(emptyUsername, LdapTestConnection.TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(result)

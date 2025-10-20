@@ -28,6 +28,8 @@ class LdapConnectionPropertiesTest {
 
     private static final String DEFAULT_DN_TEMPLATE = "uid={username},ou=people,{baseDn}";
     private static final String DEFAULT_BASE_DN = "dc=example,dc=com";
+    private static final LdapConnectionProperties.LdapSimpleBind DEFAULT_SIMPLE_BIND =
+            new LdapConnectionProperties.LdapSimpleBind("cn=admin", "admin");
 
     @Test
     void testTlsModeDefaults() {
@@ -39,32 +41,30 @@ class LdapConnectionPropertiesTest {
     @Test
     void testValidationRejectsInvalidPort() {
         assertThatThrownBy(() -> new LdapConnectionProperties(
-                "localhost",
-                0,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{0}),
                 TlsMode.NONE,
                 null,
-                null,
-                null,
                 0,
                 0,
+                1,
                 DEFAULT_DN_TEMPLATE,
                 DEFAULT_BASE_DN,
-                "ADMIN"))
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Port must be between 1 and 65535");
 
         assertThatThrownBy(() -> new LdapConnectionProperties(
-                "localhost",
-                65536,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{65536}),
                 TlsMode.NONE,
                 null,
-                null,
-                null,
                 0,
                 0,
+                1,
                 DEFAULT_DN_TEMPLATE,
                 DEFAULT_BASE_DN,
-                "ADMIN"))
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Port must be between 1 and 65535");
     }
@@ -72,32 +72,30 @@ class LdapConnectionPropertiesTest {
     @Test
     void testValidationRejectsNegativeTimeouts() {
         assertThatThrownBy(() -> new LdapConnectionProperties(
-                "localhost",
-                389,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
                 TlsMode.NONE,
-                null,
-                null,
                 null,
                 -1,
                 0,
+                1,
                 DEFAULT_DN_TEMPLATE,
                 DEFAULT_BASE_DN,
-                "ADMIN"))
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Connect timeout cannot be negative");
 
         assertThatThrownBy(() -> new LdapConnectionProperties(
-                "localhost",
-                389,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
                 TlsMode.NONE,
-                null,
-                null,
                 null,
                 0,
                 -1,
+                1,
                 DEFAULT_DN_TEMPLATE,
                 DEFAULT_BASE_DN,
-                "ADMIN"))
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Response timeout cannot be negative");
     }
@@ -106,62 +104,57 @@ class LdapConnectionPropertiesTest {
     void testTlsModesAllowNullTruststore() {
         // LDAPS allows null truststore (will use system CAs)
         final LdapConnectionProperties ldapsProps = new LdapConnectionProperties(
-                "localhost",
-                636,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{636}),
                 TlsMode.LDAPS,
                 null, // no custom truststore - will use system CAs
-                null,
-                null,
                 0,
                 0,
+                1,
                 DEFAULT_DN_TEMPLATE,
                 DEFAULT_BASE_DN,
-                "ADMIN");
-        assertThat(ldapsProps.trustStorePath()).isNull();
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND);
+        assertThat(ldapsProps.trustStore()).isNull();
 
         // START_TLS allows null truststore (will use system CAs)
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
-                "localhost",
-                389,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
                 TlsMode.START_TLS,
                 null, // no custom truststore - will use system CAs
-                null,
-                null,
                 0,
                 0,
+                1,
                 DEFAULT_DN_TEMPLATE,
                 DEFAULT_BASE_DN,
-                "ADMIN");
-        assertThat(startTlsProps.trustStorePath()).isNull();
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND);
+        assertThat(startTlsProps.trustStore()).isNull();
 
         // NONE doesn't need truststore
         final LdapConnectionProperties noneProps = new LdapConnectionProperties(
-                "localhost",
-                389,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
                 TlsMode.NONE,
                 null,
-                null,
-                null,
                 0,
                 0,
+                1,
                 DEFAULT_DN_TEMPLATE,
                 DEFAULT_BASE_DN,
-                "ADMIN");
-        assertThat(noneProps.trustStorePath()).isNull();
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND);
+        assertThat(noneProps.trustStore()).isNull();
     }
 
     @Test
     void testConvenienceConstructorUsesDefaultTimeouts() {
         final LdapConnectionProperties props = new LdapConnectionProperties(
-                "localhost",
-                636,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{636}),
                 TlsMode.LDAPS,
-                "/path/to/truststore",
-                "password",
-                "JKS",
+                new LdapConnectionProperties.TrustStore("/path/to/truststore", "password", "JKS"),
                 DEFAULT_DN_TEMPLATE,
                 DEFAULT_BASE_DN,
-                "ADMIN");
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND);
 
         assertThat(props.connectTimeoutMillis()).isEqualTo(0);
         assertThat(props.responseTimeoutMillis()).isEqualTo(0);
@@ -170,17 +163,16 @@ class LdapConnectionPropertiesTest {
     @Test
     void testCreateSSLContextThrowsForNoneTlsMode() {
         final LdapConnectionProperties props = new LdapConnectionProperties(
-                "localhost",
-                389,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
                 TlsMode.NONE,
                 null,
-                null,
-                null,
                 0,
                 0,
+                1,
                 DEFAULT_DN_TEMPLATE,
                 DEFAULT_BASE_DN,
-                "ADMIN");
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND);
 
         assertThatThrownBy(props::createSSLContext)
                 .isInstanceOf(IllegalStateException.class)
@@ -191,17 +183,16 @@ class LdapConnectionPropertiesTest {
     void testCreateSSLContextWithSystemCAs() throws Exception {
         // LDAPS with null truststore should use system CAs
         final LdapConnectionProperties ldapsProps = new LdapConnectionProperties(
-                "localhost",
-                636,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{636}),
                 TlsMode.LDAPS,
                 null, // Use system default CAs
-                null,
-                null,
                 0,
                 0,
+                1,
                 DEFAULT_DN_TEMPLATE,
                 DEFAULT_BASE_DN,
-                "ADMIN");
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND);
 
         final javax.net.ssl.SSLContext sslContext = ldapsProps.createSSLContext();
         assertThat(sslContext)
@@ -210,17 +201,16 @@ class LdapConnectionPropertiesTest {
 
         // START_TLS with null truststore should use system CAs
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
-                "localhost",
-                389,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
                 TlsMode.START_TLS,
                 null, // Use system default CAs
-                null,
-                null,
                 0,
                 0,
+                1,
                 DEFAULT_DN_TEMPLATE,
                 DEFAULT_BASE_DN,
-                "ADMIN");
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND);
 
         final javax.net.ssl.SSLContext startTlsSslContext = startTlsProps.createSSLContext();
         assertThat(startTlsSslContext)
@@ -232,25 +222,24 @@ class LdapConnectionPropertiesTest {
     void testCreateSSLContextWithCustomTruststore() {
         // Verify that custom truststore path is stored correctly
         final LdapConnectionProperties props = new LdapConnectionProperties(
-                "localhost",
-                636,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{636}),
                 TlsMode.LDAPS,
-                "/path/to/custom/truststore.jks",
-                "password",
-                "JKS",
+                new LdapConnectionProperties.TrustStore("/path/to/custom/truststore.jks", "password", "JKS"),
                 0,
                 0,
+                1,
                 DEFAULT_DN_TEMPLATE,
                 DEFAULT_BASE_DN,
-                "ADMIN");
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND);
 
-        assertThat(props.trustStorePath())
+        assertThat(props.trustStore().trustStorePath())
                 .as("Custom truststore path should be stored")
                 .isEqualTo("/path/to/custom/truststore.jks");
-        assertThat(props.trustStorePassword())
+        assertThat(props.trustStore().trustStorePassword())
                 .as("Truststore password should be stored")
                 .isNotNull();
-        assertThat(props.trustStoreType())
+        assertThat(props.trustStore().trustStoreType())
                 .as("Truststore type should be stored")
                 .isEqualTo("JKS");
 
@@ -262,17 +251,16 @@ class LdapConnectionPropertiesTest {
     @Test
     void testValidationRejectsDnTemplateWithoutPlaceholder() {
         assertThatThrownBy(() -> new LdapConnectionProperties(
-                "localhost",
-                389,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
                 TlsMode.NONE,
                 null,
-                null,
-                null,
                 0,
                 0,
+                1,
                 "uid=fixed,ou=people,{baseDn}", // missing {username}
                 DEFAULT_BASE_DN,
-                "ADMIN"))
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("User DN template must contain {username} placeholder");
     }
@@ -280,17 +268,16 @@ class LdapConnectionPropertiesTest {
     @Test
     void testCreateUserDnResolver() {
         final LdapConnectionProperties props = new LdapConnectionProperties(
-                "localhost",
-                389,
+                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
                 TlsMode.NONE,
                 null,
-                null,
-                null,
                 0,
                 0,
+                1,
                 "uid={username},ou=people,{baseDn}",
                 "dc=example,dc=com",
-                "ADMIN");
+                "ADMIN",
+                DEFAULT_SIMPLE_BIND);
 
         final var resolver = props.createUserDnResolver();
         assertThat(resolver).isNotNull();

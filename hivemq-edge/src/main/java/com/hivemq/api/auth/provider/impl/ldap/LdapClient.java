@@ -15,17 +15,26 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap;
 
+import com.google.common.collect.ImmutableList;
 import com.unboundid.ldap.sdk.BindRequest;
 import com.unboundid.ldap.sdk.BindResult;
+import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
+import com.unboundid.ldap.sdk.LDAPConnectionPoolHealthCheck;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.PruneUnneededConnectionsLDAPConnectionPoolHealthCheck;
+import com.unboundid.ldap.sdk.RDN;
 import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.ldap.sdk.RoundRobinServerSet;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
+import com.unboundid.ldap.sdk.StartTLSPostConnectProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
 import java.security.GeneralSecurityException;
 
 /**
@@ -78,21 +87,69 @@ public class LdapClient {
         }
 
         log.debug("Starting LDAP client, connecting to {}:{}",
-                connectionProperties.host(), connectionProperties.port());
+                connectionProperties.servers().hosts()[0], connectionProperties.servers().ports()[0]);
 
-        // Create initial connection
-        final LDAPConnection connection = connectionProperties.createConnection();
+        final var connectionOptions = connectionProperties.createConnectionOptions();
+
+        SocketFactory socketFactory = null;
+        StartTLSPostConnectProcessor startTlsProcessor = null;
+        switch (connectionProperties.tlsMode()) {
+            case NONE -> {} //NOOP
+            case LDAPS -> {
+                final SSLContext sslContext = connectionProperties.createSSLContext();
+                socketFactory = sslContext.getSocketFactory();
+            }
+            case START_TLS -> {
+                final SSLContext sslContext = connectionProperties.createSSLContext();
+                startTlsProcessor = new StartTLSPostConnectProcessor(sslContext);
+            }
+        };
+
+        final var simpleBindEntity = connectionProperties.ldapSimpleBind();
+        final var baseDn = new DN(connectionProperties.baseDn());
+
+
+        final var bindDn = new DN(ImmutableList.<RDN>builder()
+                .add(new DN(simpleBindEntity.rdns()).getRDNs())
+                .add(baseDn.getRDNs())
+                .build());
+
+        final var bindRequest = new SimpleBindRequest(bindDn, simpleBindEntity.userPassword());
+
+        final int maxConnections = connectionProperties.maxConnections();
+        final int minConnections = Math.min(1, maxConnections);
+
+        final var serverSet = new RoundRobinServerSet(
+                connectionProperties.servers().hosts(),
+                connectionProperties.servers().ports(),
+                socketFactory,
+                connectionOptions,
+                bindRequest,
+                startTlsProcessor);
+
+        final var ldapConnectionPoolHealthCheck =
+                new PruneUnneededConnectionsLDAPConnectionPoolHealthCheck(
+                        minConnections, 1_000L); //TODO configurable??
 
         try {
-            // Create connection pool with initial connection
-            // Pool size: initial=1, max=10 (can be made configurable later)
-            connectionPool = new LDAPConnectionPool(connection, 1, 10);
+            connectionPool = new LDAPConnectionPool( //
+                    serverSet,
+                    bindRequest,
+                    minConnections,
+                    maxConnections,
+                    minConnections,
+                    null,
+                    false,
+                    ldapConnectionPoolHealthCheck);
+
             started = true;
             log.info("LDAP client started successfully, connected to {}:{}",
-                    connectionProperties.host(), connectionProperties.port());
+                    connectionProperties.servers().hosts()[0], connectionProperties.servers().ports()[0]);
         } catch (final Exception e) {
             // Close the connection if pool creation fails
-            connection.close();
+            if(connectionPool != null) {
+                connectionPool.close();
+            }
             throw e;
         }
     }
@@ -103,10 +160,6 @@ public class LdapClient {
      * @throws IllegalStateException if the client is not started
      */
     public synchronized void stop() {
-        if (!started) {
-            throw new IllegalStateException("LDAP client is not started");
-        }
-
         log.debug("Stopping LDAP client");
 
         if (connectionPool != null) {
@@ -135,8 +188,8 @@ public class LdapClient {
         LDAPConnection connection = null;
         try {
             connection = connectionPool.getConnection();
-            final BindRequest bindRequest = new SimpleBindRequest(userDn, password);
-            final BindResult bindResult = connection.bind(bindRequest);
+            final var bindRequest = new SimpleBindRequest(userDn, password);
+            final var bindResult = connection.bind(bindRequest);
 
             final boolean success = bindResult.getResultCode() == ResultCode.SUCCESS;
             if (success) {
@@ -176,8 +229,7 @@ public class LdapClient {
      */
     public boolean authenticateUser(final @NotNull String username, final byte @NotNull [] password)
             throws LDAPException {
-        final String userDn = userDnResolver.resolveDn(username);
-        return bindUser(userDn, password);
+        return bindUser(userDnResolver.resolveDn(username), password);
     }
 
     /**

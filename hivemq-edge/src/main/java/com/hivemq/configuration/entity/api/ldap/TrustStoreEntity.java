@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.configuration.entity.api;
+package com.hivemq.configuration.entity.api.ldap;
 
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -32,10 +33,10 @@ import java.util.Objects;
 @XmlRootElement(name = "tls")
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
-public class LdapTlsEntity {
+public class TrustStoreEntity {
 
-    @XmlElement(name = "truststore-path")
-    private @Nullable String trustStorePath = null;
+    @XmlElement(name = "truststore-path", required = true, defaultValue = "")
+    private @NotNull String trustStorePath = "";
 
     @XmlElement(name = "truststore-password")
     private @Nullable String trustStorePassword = null;
@@ -43,7 +44,7 @@ public class LdapTlsEntity {
     @XmlElement(name = "truststore-type")
     private @Nullable String trustStoreType = null;
 
-    public @Nullable String getTrustStorePath() {
+    public @NotNull String getTrustStorePath() {
         return trustStorePath;
     }
 
@@ -63,7 +64,7 @@ public class LdapTlsEntity {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        final LdapTlsEntity that = (LdapTlsEntity) o;
+        final TrustStoreEntity that = (TrustStoreEntity) o;
         return Objects.equals(trustStorePath, that.trustStorePath) &&
                 Objects.equals(trustStorePassword, that.trustStorePassword) &&
                 Objects.equals(trustStoreType, that.trustStoreType);

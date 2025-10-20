@@ -16,6 +16,7 @@
 package com.hivemq.configuration.entity.api;
 
 import com.hivemq.configuration.entity.EnabledEntity;
+import com.hivemq.configuration.entity.api.ldap.LdapAuthenticationEntity;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElementRef;

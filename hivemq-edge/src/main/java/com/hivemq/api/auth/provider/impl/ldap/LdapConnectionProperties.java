@@ -15,13 +15,11 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap;
 
-import com.hivemq.configuration.entity.api.LdapAuthenticationEntity;
-import com.unboundid.ldap.sdk.ExtendedResult;
-import com.unboundid.ldap.sdk.LDAPConnection;
+import com.hivemq.configuration.entity.api.ldap.LdapAuthenticationEntity;
+import com.hivemq.configuration.entity.api.ldap.LdapServerEntity;
+import com.hivemq.configuration.entity.api.ldap.LdapSimpleBindEntity;
+import com.hivemq.configuration.entity.api.ldap.TrustStoreEntity;
 import com.unboundid.ldap.sdk.LDAPConnectionOptions;
-import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.ldap.sdk.extensions.StartTLSExtendedRequest;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
 import com.unboundid.util.ssl.TrustStoreTrustManager;
@@ -30,6 +28,9 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.SSLContext;
 import java.security.GeneralSecurityException;
+import java.util.List;
+
+import static java.util.Arrays.stream;
 
 /**
  * Record representing LDAP connection properties.
@@ -37,14 +38,12 @@ import java.security.GeneralSecurityException;
  * Encapsulates all the connection details needed to connect to an LDAP server,
  * including TLS configuration, timeouts, truststore information, and DN resolution.
  *
- * @param host                           The LDAP server hostname
- * @param port                           The LDAP server port
+ * @param servers                        List of LDapServers to connect to
  * @param tlsMode                        The TLS/SSL mode to use
- * @param trustStorePath                 The path to the truststore file (null to use system default CA certificates for TLS)
- * @param trustStorePassword             The password for the truststore (null if not needed)
- * @param trustStoreType                 The type of the truststore (e.g., "JKS", "PKCS12", null if not needed)
+ * @param trustStore                     An optional truststore for connecting to an LDAP server
  * @param connectTimeoutMillis           Connection timeout in milliseconds (0 = use default)
  * @param responseTimeoutMillis          Response timeout in milliseconds (0 = use default)
+ * @param maxConnections                 Maximum number of connections in the connection pool
  * @param userDnTemplate                 The DN template for resolving usernames to DNs (e.g., "uid={username},ou=people,{baseDn}")
  * @param baseDn                         The base DN of the LDAP directory (e.g., "dc=example,dc=com")
  * @param acceptAnyCertificateForTesting <strong>⚠️ TEST ONLY</strong> - When true, disables all certificate validation
@@ -53,53 +52,78 @@ import java.security.GeneralSecurityException;
  *                                       testcontainers. Default: false
  */
 public record LdapConnectionProperties(
-        @NotNull String host,
-        int port,
+        @NotNull LdapServers servers,
         @NotNull TlsMode tlsMode,
-        @Nullable String trustStorePath,
-        @Nullable String trustStorePassword,
-        @Nullable String trustStoreType,
+        @Nullable TrustStore trustStore,
         int connectTimeoutMillis,
         int responseTimeoutMillis,
+        int maxConnections,
         @NotNull String userDnTemplate,
         @NotNull String baseDn,
         @NotNull String assignedRole,
-        boolean acceptAnyCertificateForTesting) {
+        boolean acceptAnyCertificateForTesting,
+        @NotNull LdapSimpleBind ldapSimpleBind) {
+
+    /**
+     * This class represents the simple bind credentials for an LDAP connection.
+     */
+    public record LdapSimpleBind (@NotNull String rdns, @NotNull String userPassword){
+        public static LdapSimpleBind fromEntity(final @NotNull LdapSimpleBindEntity ldapSimpleBindEntity) {
+            return new LdapSimpleBind(
+                    ldapSimpleBindEntity.getRdns(),
+                    ldapSimpleBindEntity.getUserPassword());
+        }
+    }
+
+    /**
+     * This class represents the simple bind credentials for an LDAP connection.
+     */
+    public record LdapServers (@NotNull String[] hosts, int @NotNull [] ports){
+        public static LdapServers fromEntity(final @NotNull List<LdapServerEntity> ldapServerEntities) {
+            final String[] hosts = ldapServerEntities.stream().map(LdapServerEntity::getHost).toArray(String[]::new);
+            final int[] ports = ldapServerEntities.stream().mapToInt(LdapServerEntity::getPort).toArray();
+            return new LdapServers(hosts, ports);
+        }
+    }
+
+    /**
+     * This class represents the simple bind credentials for an LDAP connection.
+     */
+    public record TrustStore (@NotNull String trustStorePath, @Nullable String trustStorePassword, @Nullable String trustStoreType){
+        public static TrustStore fromEntity(final @NotNull TrustStoreEntity trustStoreEntity) {
+            return new TrustStore(
+                    trustStoreEntity.getTrustStorePath(),
+                    trustStoreEntity.getTrustStorePassword(),
+                    trustStoreEntity.getTrustStoreType());
+        }
+    }
 
     /**
      * Creates connection properties with default timeouts and secure certificate validation.
      *
-     * @param host               The LDAP server hostname
-     * @param port               The LDAP server port
+     * @param servers            List of LDapServers to connect to
      * @param tlsMode            The TLS/SSL mode to use
-     * @param trustStorePath     The path to the truststore file
-     * @param trustStorePassword The password for the truststore
-     * @param trustStoreType     The type of the truststore
+     * @param trustStore         An optional truststore for connecting to an LDAP server
      * @param userDnTemplate     The DN template for resolving usernames
      * @param baseDn             The base DN of the LDAP directory
      */
     public LdapConnectionProperties(
-            final @NotNull String host,
-            final int port,
+            final @NotNull LdapServers servers,
             final @NotNull TlsMode tlsMode,
-            final @Nullable String trustStorePath,
-            final @Nullable String trustStorePassword,
-            final @Nullable String trustStoreType,
+            final @Nullable TrustStore trustStore,
             final @NotNull String userDnTemplate,
             final @NotNull String baseDn,
-            final @NotNull String assignedRole) {
-        this(host, port, tlsMode, trustStorePath, trustStorePassword, trustStoreType, 0, 0, userDnTemplate, baseDn, assignedRole, false);
+            final @NotNull String assignedRole,
+            final @NotNull LdapSimpleBind ldapSimpleBind) {
+        this(servers, tlsMode, trustStore, 0, 0, 10, userDnTemplate, baseDn, assignedRole, false, ldapSimpleBind);
     }
 
     /**
      * Creates connection properties with explicit timeouts and secure certificate validation.
      *
-     * @param host                  The LDAP server hostname
-     * @param port                  The LDAP server port
+     * @param servers               List of LDapServers to connect to
      * @param tlsMode               The TLS/SSL mode to use
-     * @param trustStorePath        The path to the truststore file
-     * @param trustStorePassword    The password for the truststore
-     * @param trustStoreType        The type of the truststore
+     * @param trustStore            An optional truststore for connecting to an LDAP server
      * @param connectTimeoutMillis  Connection timeout in milliseconds (0 = use default)
      * @param responseTimeoutMillis Response timeout in milliseconds (0 = use default)
      * @param userDnTemplate        The DN template for resolving usernames
@@ -107,24 +131,23 @@ public record LdapConnectionProperties(
      * @param assignedRole                The base DN of the LDAP directory
      */
     public LdapConnectionProperties(
-            final @NotNull String host,
-            final int port,
+            final @NotNull LdapServers servers,
             final @NotNull TlsMode tlsMode,
-            final @Nullable String trustStorePath,
-            final @Nullable String trustStorePassword,
-            final @Nullable String trustStoreType,
+            final @Nullable TrustStore trustStore,
             final int connectTimeoutMillis,
             final int responseTimeoutMillis,
+            final int maxConnections,
             final @NotNull String userDnTemplate,
             final @NotNull String baseDn,
-            final @NotNull String assignedRole) {
-        this(host, port, tlsMode, trustStorePath, trustStorePassword, trustStoreType, connectTimeoutMillis, responseTimeoutMillis, userDnTemplate, baseDn, assignedRole, false);
+            final @NotNull String assignedRole,
+            final @NotNull LdapSimpleBind ldapSimpleBind) {
+        this(servers, tlsMode, trustStore, connectTimeoutMillis, responseTimeoutMillis, maxConnections, userDnTemplate, baseDn, assignedRole, false, ldapSimpleBind);
     }
 
     /**
      * Creates LdapConnectionProperties from XML configuration entity.
      * <p>
-     * This factory method converts an {@link com.hivemq.configuration.entity.api.LdapAuthenticationEntity}
+     * This factory method converts an {@link LdapAuthenticationEntity}
      * (loaded from config.xml) into runtime connection properties.
      *
      * @param entity The LDAP authentication configuration from XML
@@ -142,36 +165,17 @@ public record LdapConnectionProperties(
                     "Invalid TLS mode: " + entity.getTlsMode() + ". Must be one of: NONE, LDAPS, START_TLS", e);
         }
 
-        // Determine port: use configured port, or default based on TLS mode if 0
-        final int port = entity.getPort() > 0 ? entity.getPort() : tlsMode.defaultPort;
-
-        // Extract TLS configuration if present
-        final String trustStorePath;
-        final String trustStorePassword;
-        final String trustStoreType;
-        if (entity.getTls() != null) {
-            trustStorePath = entity.getTls().getTrustStorePath();
-            trustStorePassword = entity.getTls().getTrustStorePassword();
-            trustStoreType = entity.getTls().getTrustStoreType();
-        } else {
-            trustStorePath = null;
-            trustStorePassword = null;
-            trustStoreType = null;
-        }
-
         return new LdapConnectionProperties(
-                entity.getHost(),
-                port,
+                LdapServers.fromEntity(entity.getServers()),
                 tlsMode,
-                trustStorePath,
-                trustStorePassword,
-                trustStoreType,
+                entity.getTrustStore() != null ? TrustStore.fromEntity(entity.getTrustStore()) : null,
                 entity.getConnectTimeoutMillis(),
-                entity.getResponseTimeoutMillis(),
+                entity.getResponseTimeoutMillis(), entity.getMaxConnections(),
                 entity.getUserDnTemplate(),
                 entity.getBaseDn(),
                 entity.getAssignedRole(),
-                false  // Never allow test-only certificate acceptance from XML config
+                false,  // Never allow test-only certificate acceptance from XML config
+                LdapSimpleBind.fromEntity(entity.getSimpleBindEntity())
         );
     }
 
@@ -181,9 +185,11 @@ public record LdapConnectionProperties(
      * @throws IllegalArgumentException if the configuration is invalid
      */
     public LdapConnectionProperties {
-        if (port < 1 || port > 65535) {
-            throw new IllegalArgumentException("Port must be between 1 and 65535, got: " + port);
-        }
+        stream(servers.ports()).forEach(port -> {
+            if (port < 1 || port > 65535) {
+                throw new IllegalArgumentException("Port must be between 1 and 65535, got: " + port);
+            }
+        });
         if (connectTimeoutMillis < 0) {
             throw new IllegalArgumentException("Connect timeout cannot be negative: " + connectTimeoutMillis);
         }
@@ -245,7 +251,7 @@ public record LdapConnectionProperties(
             return sslUtil.createSSLContext("TLS");
         }
 
-        if (trustStorePath == null) {
+        if (trustStore() == null || trustStore().trustStorePath().isBlank()) {
             // Use system default CA certificates (Java's default truststore)
             final SSLUtil sslUtil = new SSLUtil();
             return sslUtil.createSSLContext();
@@ -253,9 +259,9 @@ public record LdapConnectionProperties(
 
         // Use custom truststore for self-signed certificates or internal CAs
         final SSLUtil sslUtil = new SSLUtil(new TrustStoreTrustManager(
-                trustStorePath,
-                trustStorePassword != null ? trustStorePassword.toCharArray() : null,
-                trustStoreType,
+                trustStore().trustStorePath(),
+                trustStore().trustStorePassword() != null ? trustStore().trustStorePassword().toCharArray() : null,
+                trustStore().trustStoreType(),
                 true));
         return sslUtil.createSSLContext();
     }
@@ -265,85 +271,21 @@ public record LdapConnectionProperties(
      *
      * @return Configured LDAPConnectionOptions
      */
-    private @NotNull LDAPConnectionOptions createConnectionOptions() {
+    public @NotNull LDAPConnectionOptions createConnectionOptions() {
         final LDAPConnectionOptions options = new LDAPConnectionOptions();
 
-        if (connectTimeoutMillis > 0) {
-            options.setConnectTimeoutMillis(connectTimeoutMillis);
+        if (connectTimeoutMillis() > 0) {
+            options.setConnectTimeoutMillis(connectTimeoutMillis());
         }
 
-        if (responseTimeoutMillis > 0) {
-            options.setResponseTimeoutMillis(responseTimeoutMillis);
+        if (connectTimeoutMillis() > 0) {
+            options.setResponseTimeoutMillis(connectTimeoutMillis());
+        }
+
+        if (responseTimeoutMillis() > 0) {
+            options.setResponseTimeoutMillis(responseTimeoutMillis());
         }
 
         return options;
-    }
-
-    /**
-     * Creates a new LDAP connection using the configured properties.
-     * <p>
-     * The connection type depends on the configured TLS mode:
-     * <ul>
-     *     <li>NONE: Plain LDAP connection without encryption</li>
-     *     <li>LDAPS: TLS connection established from the start</li>
-     *     <li>START_TLS: Plain connection upgraded to TLS using StartTLS</li>
-     * </ul>
-     *
-     * @return A new LDAPConnection instance
-     * @throws LDAPException            if the connection fails
-     * @throws GeneralSecurityException if there's an SSL/TLS issue
-     */
-    public @NotNull LDAPConnection createConnection() throws LDAPException, GeneralSecurityException {
-        final LDAPConnectionOptions connectionOptions = createConnectionOptions();
-
-        return switch (tlsMode) {
-            case NONE -> createPlainConnection(connectionOptions);
-            case LDAPS -> createLdapsConnection(connectionOptions);
-            case START_TLS -> createStartTlsConnection(connectionOptions);
-        };
-    }
-
-    /**
-     * Creates a plain LDAP connection without encryption.
-     */
-    private @NotNull LDAPConnection createPlainConnection(final @NotNull LDAPConnectionOptions options)
-            throws LDAPException {
-        return new LDAPConnection(options, host, port);
-    }
-
-    /**
-     * Creates an LDAPS connection (TLS from start).
-     */
-    private @NotNull LDAPConnection createLdapsConnection(final @NotNull LDAPConnectionOptions options)
-            throws LDAPException, GeneralSecurityException {
-        final SSLContext sslContext = createSSLContext();
-        return new LDAPConnection(sslContext.getSocketFactory(), options, host, port);
-    }
-
-    /**
-     * Creates a connection and upgrades it to TLS using StartTLS.
-     */
-    private @NotNull LDAPConnection createStartTlsConnection(final @NotNull LDAPConnectionOptions options)
-            throws LDAPException, GeneralSecurityException {
-        // First create plain connection
-        final LDAPConnection connection = new LDAPConnection(options, host, port);
-
-        try {
-            // Upgrade to TLS using StartTLS extended operation
-            final SSLContext sslContext = createSSLContext();
-            final StartTLSExtendedRequest startTLSRequest = new StartTLSExtendedRequest(sslContext);
-            final ExtendedResult startTLSResult = connection.processExtendedOperation(startTLSRequest);
-
-            if (startTLSResult.getResultCode() != ResultCode.SUCCESS) {
-                throw new LDAPException(startTLSResult.getResultCode(),
-                        "StartTLS failed: " + startTLSResult.getDiagnosticMessage());
-            }
-
-            return connection;
-        } catch (final Exception e) {
-            // Close the connection if StartTLS fails
-            connection.close();
-            throw e;
-        }
     }
 }

@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.configuration.entity.api;
+package com.hivemq.configuration.entity.api.ldap;
 
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementRef;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -52,23 +55,24 @@ import java.util.Objects;
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 public class LdapAuthenticationEntity {
 
-    @XmlElement(name = "host", required = true)
-    private @NotNull String host = "";
-
-    @XmlElement(name = "port")
-    private int port = 0;
+    @XmlElementWrapper(name = "servers", required = true)
+    @XmlElement(name = "ldap-server")
+    private @NotNull List<LdapServerEntity> servers = new ArrayList<>();
 
     @XmlElement(name = "tls-mode")
     private @NotNull String tlsMode = "NONE";
 
     @XmlElementRef(required = false)
-    private @Nullable LdapTlsEntity tls = null;
+    private @Nullable TrustStoreEntity trustStore = null;
 
     @XmlElement(name = "connect-timeout-millis")
     private int connectTimeoutMillis = 0;
 
     @XmlElement(name = "response-timeout-millis")
     private int responseTimeoutMillis = 0;
+
+    @XmlElement(name = "max-connections", required = true, defaultValue = "1")
+    private int maxConnections = 1;
 
     @XmlElement(name = "user-dn-template", required = true)
     private @NotNull String userDnTemplate = "";
@@ -77,22 +81,17 @@ public class LdapAuthenticationEntity {
     private @NotNull String baseDn = "";
 
     @XmlElement(name = "assigned-role", required = true, defaultValue = "ADMIN")
-    private @NotNull String assignedRole = "";
+    private @NotNull String assignedRole = "ADMIN";
 
-    public @NotNull String getHost() {
-        return host;
-    }
-
-    public int getPort() {
-        return port;
-    }
+    @XmlElement(name = "simple-bind", required = true)
+    private @NotNull LdapSimpleBindEntity simpleBindEntity = new LdapSimpleBindEntity();
 
     public @NotNull String getTlsMode() {
         return tlsMode;
     }
 
-    public @Nullable LdapTlsEntity getTls() {
-        return tls;
+    public @Nullable TrustStoreEntity getTrustStore() {
+        return trustStore;
     }
 
     public int getConnectTimeoutMillis() {
@@ -101,6 +100,10 @@ public class LdapAuthenticationEntity {
 
     public int getResponseTimeoutMillis() {
         return responseTimeoutMillis;
+    }
+
+    public int getMaxConnections() {
+        return maxConnections;
     }
 
     public @NotNull String getUserDnTemplate() {
@@ -115,31 +118,41 @@ public class LdapAuthenticationEntity {
         return assignedRole;
     }
 
+    public @NotNull LdapSimpleBindEntity getSimpleBindEntity() {
+        return simpleBindEntity;
+    }
+
+    public @NotNull List<LdapServerEntity> getServers() {
+        return servers;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         final LdapAuthenticationEntity that = (LdapAuthenticationEntity) o;
-        return getPort() == that.getPort() &&
-                getConnectTimeoutMillis() == that.getConnectTimeoutMillis() &&
+        return getConnectTimeoutMillis() == that.getConnectTimeoutMillis() &&
                 getResponseTimeoutMillis() == that.getResponseTimeoutMillis() &&
-                Objects.equals(getHost(), that.getHost()) &&
+                getMaxConnections() == that.getMaxConnections() &&
+                Objects.equals(servers, that.servers) &&
                 Objects.equals(getTlsMode(), that.getTlsMode()) &&
-                Objects.equals(getTls(), that.getTls()) &&
+                Objects.equals(getTrustStore(), that.getTrustStore()) &&
                 Objects.equals(getUserDnTemplate(), that.getUserDnTemplate()) &&
                 Objects.equals(getBaseDn(), that.getBaseDn()) &&
-                Objects.equals(getAssignedRole(), that.getAssignedRole());
+                Objects.equals(getAssignedRole(), that.getAssignedRole()) &&
+                Objects.equals(getSimpleBindEntity(), that.getSimpleBindEntity());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getHost(),
-                getPort(),
+        return Objects.hash(servers,
                 getTlsMode(),
-                getTls(),
+                getTrustStore(),
                 getConnectTimeoutMillis(),
                 getResponseTimeoutMillis(),
+                getMaxConnections(),
                 getUserDnTemplate(),
                 getBaseDn(),
-                getAssignedRole());
+                getAssignedRole(),
+                getSimpleBindEntity());
     }
 }
