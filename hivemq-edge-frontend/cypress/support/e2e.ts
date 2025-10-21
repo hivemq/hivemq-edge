@@ -8,5 +8,7 @@ import '@4tw/cypress-drag-drop'
 import './commands'
 
 import installLogsCollector from 'cypress-terminal-report/src/installLogsCollector'
+import { register as registerCypressGrep } from '@cypress/grep'
 
 installLogsCollector()
+registerCypressGrep()
