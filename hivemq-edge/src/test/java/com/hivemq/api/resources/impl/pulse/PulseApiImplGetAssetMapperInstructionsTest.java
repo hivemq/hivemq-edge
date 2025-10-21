@@ -22,6 +22,7 @@ import com.hivemq.edge.api.model.Combiner;
 import com.hivemq.edge.api.model.DataIdentifierReference;
 import com.hivemq.edge.api.model.EntityType;
 import jakarta.ws.rs.core.Response;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -40,12 +41,12 @@ public class PulseApiImplGetAssetMapperInstructionsTest extends AbstractPulseApi
         try (final Response response = pulseApi.getAssetMapperInstructions(combiner.getId(),
                 combiner.getMappings().getItems().getFirst().getId())) {
             assertThat(response.getStatus()).isEqualTo(200);
-            assertThat(response.getEntity()).isInstanceOf(List.class);
-            assertThat((List) response.getEntity()).isEqualTo(combiner.getMappings()
-                    .getItems()
-                    .stream()
-                    .flatMap(mappings -> mappings.getInstructions().stream())
-                    .toList());
+            assertThat(response.getEntity()).isInstanceOf(List.class)
+                    .isEqualTo(combiner.getMappings()
+                            .getItems()
+                            .stream()
+                            .flatMap(mappings -> mappings.getInstructions().stream())
+                            .toList());
         }
     }
 
@@ -55,8 +56,9 @@ public class PulseApiImplGetAssetMapperInstructionsTest extends AbstractPulseApi
         when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
         try (final Response response = pulseApi.getAssetMapperInstructions(combiner.getId(), UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(200);
-            assertThat(response.getEntity()).isInstanceOf(List.class);
-            assertThat((List) response.getEntity()).isEmpty();
+            assertThat(response.getEntity()).isInstanceOf(List.class)
+                    .asInstanceOf(InstanceOfAssertFactories.LIST)
+                    .isEmpty();
         }
     }
 
