@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import static java.util.Objects.requireNonNullElse;
+
 /**
  * The API representation of a Protocol Adapter type.
  */
@@ -54,7 +56,7 @@ public class ProtocolAdapter {
     private final @NotNull String logoUrl;
     @JsonProperty("provisioningUrl")
     @Schema(description = "The provisioning url of the adapter")
-    private final @NotNull String provisioningUrl;
+    private final @Nullable String provisioningUrl;
     @JsonProperty("author")
     @Schema(description = "The author of the adapter")
     private final @NotNull String author;
@@ -63,7 +65,7 @@ public class ProtocolAdapter {
     private final @NotNull Boolean installed;
     @JsonProperty("category")
     @Schema(description = "The category of the adapter")
-    private final @NotNull ProtocolAdapterCategory category;
+    private final @Nullable ProtocolAdapterCategory category;
     @JsonProperty("tags")
     @Schema(description = "The search tags associated with this adapter")
     private final @NotNull List<String> tags;
@@ -72,10 +74,10 @@ public class ProtocolAdapter {
     private final @NotNull Set<Capability> capabilities;
     @JsonProperty("configSchema")
     @Schema(description = "JSONSchema in the 'https://json-schema.org/draft/2020-12/schema' format, which describes the configuration requirements for the adapter.")
-    private final @NotNull JsonNode configSchema;
+    private final @Nullable JsonNode configSchema;
     @JsonProperty("uiSchema")
     @Schema(description = "UISchema (see https://rjsf-team.github.io/react-jsonschema-form/docs/api-reference/uiSchema/), which describes the UI rendering of the configuration for the adapter.")
-    private final @NotNull JsonNode uiSchema;
+    private final @Nullable JsonNode uiSchema;
 
     public ProtocolAdapter(
             @JsonProperty("id") final @NotNull String id,
@@ -90,9 +92,9 @@ public class ProtocolAdapter {
             @JsonProperty("installed") final @Nullable Boolean installed,
             @JsonProperty("capabilities") final @NotNull Set<Capability> capabilities,
             @JsonProperty("category") final @Nullable ProtocolAdapterCategory category,
-            @JsonProperty("tags") final @Nullable List<String> tags,
-            @JsonProperty("configSchema") final @NotNull JsonNode configSchema,
-            @JsonProperty("uiSchema") final @NotNull JsonNode uiSchema) {
+            @JsonProperty("tags") final @NotNull List<String> tags,
+            @JsonProperty("configSchema") final @Nullable JsonNode configSchema,
+            @JsonProperty("uiSchema") final @Nullable JsonNode uiSchema) {
         this.id = id;
         this.protocol = protocol;
         this.name = name;
@@ -103,7 +105,7 @@ public class ProtocolAdapter {
         this.provisioningUrl = provisioningUrl;
         this.author = author;
         this.capabilities = capabilities;
-        this.installed = installed;
+        this.installed = requireNonNullElse(installed, Boolean.FALSE);
         this.category = category;
         this.tags = tags;
         this.configSchema = configSchema;
@@ -138,7 +140,7 @@ public class ProtocolAdapter {
         return logoUrl;
     }
 
-    public @NotNull String getProvisioningUrl() {
+    public @Nullable String getProvisioningUrl() {
         return provisioningUrl;
     }
 
@@ -146,7 +148,7 @@ public class ProtocolAdapter {
         return author;
     }
 
-    public @NotNull JsonNode getConfigSchema() {
+    public @Nullable JsonNode getConfigSchema() {
         return configSchema;
     }
 
@@ -162,11 +164,11 @@ public class ProtocolAdapter {
         return tags;
     }
 
-    public @NotNull ProtocolAdapterCategory getCategory() {
+    public @Nullable ProtocolAdapterCategory getCategory() {
         return category;
     }
 
-    public @NotNull JsonNode getUiSchema() {
+    public @Nullable JsonNode getUiSchema() {
         return uiSchema;
     }
 

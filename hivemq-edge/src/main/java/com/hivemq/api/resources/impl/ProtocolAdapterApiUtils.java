@@ -39,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -101,7 +102,7 @@ public class ProtocolAdapterApiUtils {
                         .map(ProtocolAdapter.Capability::from)
                         .collect(Collectors.toSet()),
                 convertApiCategory(info.getCategory()),
-                info.getTags() != null ? info.getTags().stream().map(Enum::toString).toList() : null,
+                info.getTags() != null ? info.getTags().stream().map(Enum::toString).toList() : List.of(),
                 new ProtocolAdapterSchemaManager(objectMapper,
                         adapterManager.writingEnabled() ?
                                 info.configurationClassNorthAndSouthbound() :
@@ -149,31 +150,31 @@ public class ProtocolAdapterApiUtils {
                 module.getId(),
                 module.getName(),
                 requireNonNullElse(module.getDescription(), ""),
-                module.getDocumentationLink() != null ? module.getDocumentationLink().getUrl() : null,
+                module.getDocumentationLink() != null ? module.getDocumentationLink().getUrl() : "",
                 module.getVersion(),
                 getLogoUrl(module, configurationService),
                 module.getProvisioningLink() != null ? module.getProvisioningLink().getUrl() : null,
                 module.getAuthor(),
-                false,
+                Boolean.FALSE,
                 Set.of(),
                 null,
-                null,
+                List.of(),
                 null,
                 null);
     }
 
-    private static @Nullable String getLogoUrl(
+    private static @NotNull String getLogoUrl(
             final @NotNull Module module,
             final @NotNull ConfigurationService configurationService) {
-        String logoUrl = null;
         if (module.getLogoUrl() != null) {
-            logoUrl = module.getLogoUrl().getUrl();
+            final String logoUrl = module.getLogoUrl().getUrl();
             if (logoUrl != null) {
-                logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : logoUrl;
-                logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
+                return applyAbsoluteServerAddressInDeveloperMode(
+                        logoUrl.startsWith("/") ? "/module" + logoUrl : logoUrl,
+                        configurationService);
             }
         }
-        return logoUrl;
+        return "";
     }
 
     private static @NotNull String getLogoUrl(

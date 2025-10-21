@@ -50,7 +50,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
@@ -206,15 +205,12 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                             // Callers should check getRuntimeStatus() to determine if start succeeded
                             return null;
                         } else {
-                            return attemptStartingConsumers(moduleServices.eventService()).map(
-                                    startException -> {
-                                        log.error("Failed to start adapter with id {}",
-                                                adapter.getId(),
-                                                startException);
-                                        stopAfterFailedStart();
-                                        // Return null - cleanup done, adapter in STOPPED state
-                                        return (Void) null;
-                                    }).orElse(null);
+                            return attemptStartingConsumers(moduleServices.eventService()).map(startException -> {
+                                log.error("Failed to start adapter with id {}", adapter.getId(), startException);
+                                stopAfterFailedStart();
+                                // Return null - cleanup done, adapter in STOPPED state
+                                return (Void) null;
+                            }).orElse(null);
                         }
                     }).whenComplete((result, throwable) -> {
                         // Clear the current operation when complete

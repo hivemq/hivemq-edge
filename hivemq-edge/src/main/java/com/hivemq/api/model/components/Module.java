@@ -18,16 +18,14 @@ package com.hivemq.api.model.components;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Objects;
 
 /**
  * Bean to transport module details across the API
- *
- * @author Simon L Johnson
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Module {
@@ -148,10 +146,7 @@ public class Module {
 
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Module extension = (Module) o;
-        return Objects.equals(id, extension.id);
+        return this == o || (o instanceof final Module that && Objects.equals(id, that.id));
     }
 
     @Override
@@ -161,17 +156,30 @@ public class Module {
 
     @Override
     public @NotNull String toString() {
-        final StringBuilder sb = new StringBuilder("Module{");
-        sb.append("id='").append(id).append('\'');
-        sb.append(", version='").append(version).append('\'');
-        sb.append(", name='").append(name).append('\'');
-        sb.append(", description='").append(description).append('\'');
-        sb.append(", author='").append(author).append('\'');
-        sb.append(", priority=").append(priority);
-        sb.append(", installed=").append(installed);
-        sb.append(", documentationLink=").append(documentationLink);
-        sb.append(", provisioningLink=").append(provisioningLink);
-        sb.append('}');
-        return sb.toString();
+        return "Module{" +
+                "id='" +
+                id +
+                '\'' +
+                ", version='" +
+                version +
+                '\'' +
+                ", name='" +
+                name +
+                '\'' +
+                ", description='" +
+                description +
+                '\'' +
+                ", author='" +
+                author +
+                '\'' +
+                ", priority=" +
+                priority +
+                ", installed=" +
+                installed +
+                ", documentationLink=" +
+                documentationLink +
+                ", provisioningLink=" +
+                provisioningLink +
+                '}';
     }
 }
