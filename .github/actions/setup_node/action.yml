@@ -24,11 +24,6 @@ runs:
         cache: 'pnpm'
         cache-dependency-path: '**/pnpm-lock.yaml'
 
-    - name: Approve build scripts
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: pnpm approve-builds cypress esbuild
-
     - name: Install dependencies
       shell: bash
       working-directory: ${{ inputs.working-directory }}
