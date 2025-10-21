@@ -17,14 +17,15 @@
 package com.hivemq.api.resources.impl.pulse;
 
 import com.hivemq.api.errors.pulse.AssetMapperNotFoundError;
-import com.hivemq.api.resources.impl.PulseApiImpl;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.edge.api.model.Combiner;
 import com.hivemq.edge.api.model.DataIdentifierReference;
 import com.hivemq.edge.api.model.EntityType;
 import jakarta.ws.rs.core.Response;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,11 +35,18 @@ import static org.mockito.Mockito.when;
 
 public class PulseApiImplGetAssetMapperInstructionsTest extends AbstractPulseApiImplTest {
     @Test
-    public void whenCombinerNotFound_thenReturnsAssetMapperNotFoundError() {
-        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
-        try (final Response response = pulseApi.getAssetMapperInstructions(UUID.randomUUID(), UUID.randomUUID())) {
-            assertThat(response.getStatus()).isEqualTo(404);
-            assertThat(response.getEntity()).isInstanceOf(AssetMapperNotFoundError.class);
+    public void whenCombinerAndMappingIdExist_thenReturnsOK() {
+        final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
+        try (final Response response = pulseApi.getAssetMapperInstructions(combiner.getId(),
+                combiner.getMappings().getItems().getFirst().getId())) {
+            assertThat(response.getStatus()).isEqualTo(200);
+            assertThat(response.getEntity()).isInstanceOf(List.class)
+                    .isEqualTo(combiner.getMappings()
+                            .getItems()
+                            .stream()
+                            .flatMap(mappings -> mappings.getInstructions().stream())
+                            .toList());
         }
     }
 
@@ -48,26 +56,18 @@ public class PulseApiImplGetAssetMapperInstructionsTest extends AbstractPulseApi
         when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
         try (final Response response = pulseApi.getAssetMapperInstructions(combiner.getId(), UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(200);
-            assertThat(response.getEntity()).isInstanceOf(PulseApiImpl.InstructionList.class);
-            final PulseApiImpl.InstructionList instructionList = (PulseApiImpl.InstructionList) response.getEntity();
-            assertThat(instructionList.getItems()).isEmpty();
+            assertThat(response.getEntity()).isInstanceOf(List.class)
+                    .asInstanceOf(InstanceOfAssertFactories.LIST)
+                    .isEmpty();
         }
     }
 
     @Test
-    public void whenCombinerAndMappingIdExist_thenReturnsOK() {
-        final Combiner combiner = createCombiner(EntityType.PULSE_AGENT, DataIdentifierReference.TypeEnum.PULSE_ASSET);
-        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(DataCombiner.fromModel(combiner)));
-        try (final Response response = pulseApi.getAssetMapperInstructions(combiner.getId(),
-                combiner.getMappings().getItems().getFirst().getId())) {
-            assertThat(response.getStatus()).isEqualTo(200);
-            assertThat(response.getEntity()).isInstanceOf(PulseApiImpl.InstructionList.class);
-            final PulseApiImpl.InstructionList instructionList = (PulseApiImpl.InstructionList) response.getEntity();
-            assertThat(instructionList.getItems()).isEqualTo(combiner.getMappings()
-                    .getItems()
-                    .stream()
-                    .flatMap(mappings -> mappings.getInstructions().stream())
-                    .toList());
+    public void whenCombinerNotFound_thenReturnsAssetMapperNotFoundError() {
+        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.empty());
+        try (final Response response = pulseApi.getAssetMapperInstructions(UUID.randomUUID(), UUID.randomUUID())) {
+            assertThat(response.getStatus()).isEqualTo(404);
+            assertThat(response.getEntity()).isInstanceOf(AssetMapperNotFoundError.class);
         }
     }
 }

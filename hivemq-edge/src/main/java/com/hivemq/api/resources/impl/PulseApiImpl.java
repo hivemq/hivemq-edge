@@ -35,7 +35,6 @@ import com.hivemq.api.errors.pulse.ManagedAssetNotFoundError;
 import com.hivemq.api.errors.pulse.MissingEntityTypePulseAgentForAssetMapperError;
 import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
 import com.hivemq.api.errors.pulse.PulseAgentNotConnectedError;
-import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.combining.model.EntityType;
 import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
@@ -354,7 +353,7 @@ public class PulseApiImpl implements PulseApi {
                     .flatMap(dataCombining -> dataCombining.instructions().stream())
                     .map(com.hivemq.persistence.mappings.fieldmapping.Instruction::toModel)
                     .toList();
-            return Response.ok().entity(new InstructionList(instructions)).build();
+            return Response.ok().entity(instructions).build();
         }
     }
 
@@ -678,11 +677,5 @@ public class PulseApiImpl implements PulseApi {
                         .stream()
                         .anyMatch(dataCombining -> Objects.equals(asset.getMapping().getId(), dataCombining.id())))
                 .forEach(assetMappingExtractor::updateDataCombiner);
-    }
-
-    public static class InstructionList extends ItemsResponse<Instruction> {
-        public InstructionList(final @NotNull List<com.hivemq.edge.api.model.Instruction> items) {
-            super(items);
-        }
     }
 }
