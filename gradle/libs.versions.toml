@@ -1,7 +1,7 @@
 [versions]
-apache-commons-compress = "1.27.1"
-apache-commons-io = "2.19.0"
-apache-commons-lang = "3.17.0"
+apache-commons-compress = "1.28.0"
+apache-commons-io = "2.20.0"
+apache-commons-lang = "3.19.0"
 apache-plc4x = "0.11.0"
 assertj = "3.27.3"
 awaitility = "4.3.0"
