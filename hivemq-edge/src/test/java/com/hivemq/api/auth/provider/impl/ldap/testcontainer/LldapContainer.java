@@ -94,7 +94,7 @@ public class LldapContainer extends GenericContainer<LldapContainer> {
 
     public static final String KEYSTORE_PASSWORD = "changeit";
 
-    private static final String DEFAULT_IMAGE_NAME = "lldap/lldap:v0.5.0";
+    private static final String DEFAULT_IMAGE_NAME = "lldap/lldap:v0.6.2";
     private static final int DEFAULT_LDAP_PORT = 3890;
     private static final int DEFAULT_LDAPS_PORT = 6360;
     private static final int DEFAULT_HTTP_PORT = 17170;
