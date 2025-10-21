@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -37,7 +38,7 @@ public class SimpleUsernameRolesProviderImpl implements IUsernameRolesProvider {
     private final @NotNull Map<String, UsernamePasswordRoles> usernamePasswordMap;
 
     public SimpleUsernameRolesProviderImpl() {
-        this.usernamePasswordMap = Collections.synchronizedMap(new HashMap<>());
+        this.usernamePasswordMap = new ConcurrentHashMap<>();
     }
 
     public SimpleUsernameRolesProviderImpl add(final @NotNull UsernamePasswordRoles usernamePassword){
