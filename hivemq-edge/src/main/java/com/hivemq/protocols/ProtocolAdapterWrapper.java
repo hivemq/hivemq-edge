@@ -197,20 +197,17 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                         }
                         return output.getStartFuture();
                     }, sharedAdapterExecutor)  // Use shared executor to reduce thread overhead
-                    .thenCompose(Function.identity()).handle((ignored, error) -> {
+                    .thenCompose(Function.identity()).whenComplete((ignored, error) -> {
                         if (error != null) {
                             log.error("Error starting adapter", error);
                             stopAfterFailedStart();
-                            // Return null - cleanup done, adapter in STOPPED state
-                            // Callers should check getRuntimeStatus() to determine if start succeeded
-                            return null;
                         } else {
-                            return attemptStartingConsumers(moduleServices.eventService()).map(startException -> {
+                            attemptStartingConsumers(moduleServices.eventService()).ifPresent(startException -> {
                                 log.error("Failed to start adapter with id {}", adapter.getId(), startException);
                                 stopAfterFailedStart();
-                                // Return null - cleanup done, adapter in STOPPED state
-                                return (Void) null;
-                            }).orElse(null);
+                                // Propagate the exception - this will fail the future
+                                throw new RuntimeException("Failed to start consumers", startException);
+                            });
                         }
                     }).whenComplete((result, throwable) -> {
                         // Clear the current operation when complete
