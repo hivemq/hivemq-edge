@@ -325,21 +325,37 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull Response updateAdapter(final @NotNull String adapterId, final @NotNull Adapter adapter) {
-        return systemInformation.isConfigWriteable() ?
-                configExtractor.getAdapterByAdapterId(adapterId).map(oldInstance -> {
-                    final ProtocolAdapterEntity newConfig = new ProtocolAdapterEntity(oldInstance.getAdapterId(),
-                            oldInstance.getProtocolId(),
-                            oldInstance.getConfigVersion(),
-                            (Map<String, Object>) adapter.getConfig(),
-                            oldInstance.getNorthboundMappings(),
-                            oldInstance.getSouthboundMappings(),
-                            oldInstance.getTags());
-                    if (!configExtractor.updateAdapter(newConfig)) {
-                        return adapterCannotBeUpdatedError(adapterId);
-                    }
-                    return Response.ok().build();
-                }).orElseGet(adapterNotFoundError(adapterId)) :
-                errorResponse(new ConfigWritingDisabled());
+        if (!systemInformation.isConfigWriteable()) {
+            return errorResponse(new ConfigWritingDisabled());
+        }
+
+        // Validate adapter configuration before updating
+        final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
+        validateAdapterSchema(errorMessages, adapter);
+        if (hasRequestErrors(errorMessages)) {
+            return errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
+        }
+
+        return configExtractor.getAdapterByAdapterId(adapterId).map(oldInstance -> {
+            try {
+                final ProtocolAdapterEntity newConfig = new ProtocolAdapterEntity(oldInstance.getAdapterId(),
+                        oldInstance.getProtocolId(),
+                        oldInstance.getConfigVersion(),
+                        (Map<String, Object>) adapter.getConfig(),
+                        oldInstance.getNorthboundMappings(),
+                        oldInstance.getSouthboundMappings(),
+                        oldInstance.getTags());
+                if (!configExtractor.updateAdapter(newConfig)) {
+                    return adapterCannotBeUpdatedError(adapterId);
+                }
+                return Response.ok().build();
+            } catch (final @NotNull IllegalArgumentException e) {
+                if (e.getCause() instanceof final UnrecognizedPropertyException pe) {
+                    addValidationError(errorMessages, pe.getPropertyName(), "Unknown field on adapter configuration");
+                }
+                return errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
+            }
+        }).orElseGet(adapterNotFoundError(adapterId));
     }
 
     @Override
@@ -388,12 +404,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 }
             });
             case RESTART -> protocolAdapterManager.stopAsync(adapterId)
-                    .thenRun(() -> protocolAdapterManager.startAsync(adapterId))
+                    .thenCompose(ignored -> protocolAdapterManager.startAsync(adapterId))
                     .whenComplete((result, throwable) -> {
                         if (throwable != null) {
                             log.error("Failed to restart adapter '{}'.", adapterId, throwable);
                         } else {
-                            log.trace("Adapter '{}' was restarted successfully.", adapterId);
+                            log.info("Adapter '{}' was restarted successfully.", adapterId);
                         }
                     });
         }
@@ -894,17 +910,15 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     private @NotNull Adapter toAdapter(final @NotNull ProtocolAdapterWrapper value) {
-        final Thread currentThread = Thread.currentThread();
-        final ClassLoader ctxClassLoader = currentThread.getContextClassLoader();
-        final Map<String, Object> config;
-        try {
-            currentThread.setContextClassLoader(value.getAdapterFactory().getClass().getClassLoader());
-            config = value.getAdapterFactory().unconvertConfigObject(objectMapper, value.getConfigObject());
-            config.put("id", value.getId());
-        } finally {
-            currentThread.setContextClassLoader(ctxClassLoader);
-        }
         final String adapterId = value.getId();
+        final Map<String, Object> config = runWithContextLoader(
+                value.getAdapterFactory().getClass().getClassLoader(),
+                () -> {
+                    final Map<String, Object> cfg = value.getAdapterFactory()
+                            .unconvertConfigObject(objectMapper, value.getConfigObject());
+                    cfg.put("id", value.getId());
+                    return cfg;
+                });
         return new Adapter(adapterId).type(value.getAdapterInformation().getProtocolId())
                 .config(objectMapper.valueToTree(config))
                 .status(getAdapterStatusInternal(adapterId));
