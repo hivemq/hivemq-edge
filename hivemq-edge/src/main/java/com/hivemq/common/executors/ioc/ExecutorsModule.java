@@ -31,11 +31,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Module
 public abstract class ExecutorsModule {
 
-    private static final Logger log = LoggerFactory.getLogger(ExecutorsModule.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ExecutorsModule.class);
 
-    static final @NotNull String GROUP_NAME = "hivemq-edge-group";
-    static final @NotNull String SCHEDULED_WORKER_GROUP_NAME = "hivemq-edge-scheduled-group";
-    static final @NotNull String CACHED_WORKER_GROUP_NAME = "hivemq-edge-cached-group";
+    private static final @NotNull String GROUP_NAME = "hivemq-edge-group";
+    private static final @NotNull String SCHEDULED_WORKER_GROUP_NAME = "hivemq-edge-scheduled-group";
+    private static final @NotNull String CACHED_WORKER_GROUP_NAME = "hivemq-edge-cached-group";
     private static final @NotNull ThreadGroup coreGroup = new ThreadGroup(GROUP_NAME);
 
     @Provides
@@ -50,15 +50,17 @@ public abstract class ExecutorsModule {
     @Provides
     @Singleton
     static @NotNull ExecutorService executorService() {
-        final ExecutorService executor =
-                Executors.newCachedThreadPool(new HiveMQEdgeThreadFactory(CACHED_WORKER_GROUP_NAME));
-        registerShutdownHook(executor, CACHED_WORKER_GROUP_NAME);
-        return executor;
+        return registerShutdownHook(Executors.newCachedThreadPool(new HiveMQEdgeThreadFactory(CACHED_WORKER_GROUP_NAME)),
+                CACHED_WORKER_GROUP_NAME);
     }
 
-    private static void registerShutdownHook(final @NotNull ExecutorService executor, final @NotNull String name) {
+    private static @NotNull ExecutorService registerShutdownHook(
+            final @NotNull ExecutorService executor,
+            final @NotNull String name) {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.debug("Shutting down executor service: {}", name);
+            if (log.isDebugEnabled()) {
+                log.debug("Shutting down executor service: {}", name);
+            }
             executor.shutdown();
             try {
                 if (!executor.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS)) {
@@ -66,14 +68,15 @@ public abstract class ExecutorsModule {
                     executor.shutdownNow();
                 }
             } catch (final InterruptedException e) {
-                log.warn("Interrupted while waiting for executor service {} to terminate", name);
                 Thread.currentThread().interrupt();
+                log.warn("Interrupted while waiting for executor service {} to terminate", name);
                 executor.shutdownNow();
             }
         }, "shutdown-hook-" + name));
+        return executor;
     }
 
-    static class HiveMQEdgeThreadFactory implements ThreadFactory {
+    private static class HiveMQEdgeThreadFactory implements ThreadFactory {
         private final @NotNull String factoryName;
         private final @NotNull ThreadGroup group;
         private final @NotNull AtomicInteger counter = new AtomicInteger(0);
@@ -87,8 +90,7 @@ public abstract class ExecutorsModule {
         public @NotNull Thread newThread(final @NotNull Runnable r) {
             final Thread thread = new Thread(group, r, factoryName + "-" + counter.getAndIncrement());
             thread.setDaemon(true);
-            thread.setUncaughtExceptionHandler((t, e) ->
-                log.error("Uncaught exception in thread {}", t.getName(), e));
+            thread.setUncaughtExceptionHandler((t, e) -> log.error("Uncaught exception in thread {}", t.getName(), e));
             return thread;
         }
     }
