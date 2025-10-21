@@ -69,18 +69,21 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
             AdapterStateEnum.STOPPING, Set.of(AdapterStateEnum.STOPPED)
     );
 
-    private final AtomicReference<StateEnum> northboundState = new AtomicReference<>(StateEnum.DISCONNECTED);
-    private final AtomicReference<StateEnum> southboundState = new AtomicReference<>(StateEnum.DISCONNECTED);
-    private final AtomicReference<AdapterStateEnum> adapterState = new AtomicReference<>(AdapterStateEnum.STOPPED);
-
-    private final List<Consumer<State>> stateTransitionListeners = new CopyOnWriteArrayList<>();
+    private final @NotNull AtomicReference<StateEnum> northboundState;
+    private final @NotNull AtomicReference<StateEnum> southboundState;
+    private final @NotNull AtomicReference<AdapterStateEnum> adapterState;
+    private final @NotNull List<Consumer<State>> stateTransitionListeners;
 
     public record State(AdapterStateEnum state, StateEnum northbound, StateEnum southbound) { }
 
-    private final String adapterId;
+    private final @NotNull String adapterId;
 
     public ProtocolAdapterFSM(final @NotNull String adapterId) {
         this.adapterId = adapterId;
+        this.northboundState = new AtomicReference<>(StateEnum.DISCONNECTED);
+        this.southboundState = new AtomicReference<>(StateEnum.DISCONNECTED);
+        this.adapterState = new AtomicReference<>(AdapterStateEnum.STOPPED);
+        this.stateTransitionListeners = new CopyOnWriteArrayList<>();
     }
 
     public abstract boolean onStarting();
@@ -172,7 +175,6 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
         final var transitionResult = switch (connectionStatus) {
             case CONNECTED ->
                 transitionNorthboundState(StateEnum.CONNECTED)  && startSouthbound();
-
             case CONNECTING -> transitionNorthboundState(StateEnum.CONNECTING);
             case DISCONNECTED -> transitionNorthboundState(StateEnum.DISCONNECTED);
             case ERROR -> transitionNorthboundState(StateEnum.ERROR);
@@ -243,7 +245,7 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
         stateTransitionListeners.remove(stateTransitionListener);
     }
 
-    public State currentState() {
+    public @NotNull State currentState() {
         return new State(adapterState.get(), northboundState.get(), southboundState.get());
     }
 
