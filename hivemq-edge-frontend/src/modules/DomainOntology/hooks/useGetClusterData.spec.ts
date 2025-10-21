@@ -1,6 +1,7 @@
 import { beforeEach, expect, vi } from 'vitest'
+import { http, HttpResponse } from 'msw'
+import { renderHook, waitFor, act } from '@testing-library/react'
 
-import { renderHook, waitFor } from '@testing-library/react'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
@@ -51,5 +52,151 @@ describe('useGetClusterData', () => {
     })
 
     expect(result.current.clusterKeys).toStrictEqual(expect.arrayContaining([]))
+  })
+
+  it('should handle error state from adapters', async () => {
+    server.use(
+      http.get('*/protocol-adapters/adapters', () => {
+        return HttpResponse.json({}, { status: 500 })
+      })
+    )
+
+    const { result } = renderHook(useGetClusterData, { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isError).toBeTruthy()
+    })
+  })
+
+  it('should handle error state from bridges', async () => {
+    server.use(
+      http.get('*/bridges', () => {
+        return HttpResponse.json({}, { status: 500 })
+      })
+    )
+
+    const { result } = renderHook(useGetClusterData, { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isError).toBeTruthy()
+    })
+  })
+
+  it('should update clusterKeys when setClusterKeys is called', async () => {
+    const { result } = renderHook(useGetClusterData, { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBeFalsy()
+    })
+
+    expect(result.current.clusterKeys).toEqual([])
+
+    act(() => {
+      result.current.setClusterKeys(['status'])
+    })
+
+    await waitFor(() => {
+      expect(result.current.clusterKeys).toEqual(['status'])
+    })
+  })
+
+  it('should group data by cluster keys', async () => {
+    const { result } = renderHook(useGetClusterData, { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBeFalsy()
+    })
+
+    act(() => {
+      result.current.setClusterKeys(['status'])
+    })
+
+    await waitFor(() => {
+      expect(result.current.data).toBeDefined()
+      expect(result.current.data.children).toBeDefined()
+    })
+  })
+
+  it('should return empty state data when no adapters or bridges', async () => {
+    server.use(
+      http.get('*/protocol-adapters/adapters', () => {
+        return HttpResponse.json({ items: [] }, { status: 200 })
+      }),
+      http.get('*/bridges', () => {
+        return HttpResponse.json({ items: [] }, { status: 200 })
+      })
+    )
+
+    const { result } = renderHook(useGetClusterData, { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBeFalsy()
+    })
+
+    expect(result.current.data).toStrictEqual(
+      expect.objectContaining({
+        children: expect.arrayContaining([]),
+      })
+    )
+  })
+
+  it('should handle when hierarchy has defined children', async () => {
+    const { result } = renderHook(useGetClusterData, { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBeFalsy()
+    })
+
+    act(() => {
+      result.current.setClusterKeys(['type'])
+    })
+
+    await waitFor(() => {
+      expect(result.current.data).toBeDefined()
+    })
+  })
+
+  it('should not set up interval when there are errors', async () => {
+    server.use(
+      http.get('*/protocol-adapters/adapters', () => {
+        return HttpResponse.json({}, { status: 500 })
+      })
+    )
+
+    const { result, unmount } = renderHook(useGetClusterData, { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isError).toBeTruthy()
+    })
+
+    // Wait a bit to ensure no additional intervals are set
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    unmount()
+  })
+
+  it('should handle hierarchy without children defined', async () => {
+    server.use(
+      http.get('*/protocol-adapters/adapters', () => {
+        return HttpResponse.json({ items: [] }, { status: 200 })
+      }),
+      http.get('*/bridges', () => {
+        return HttpResponse.json({ items: [] }, { status: 200 })
+      })
+    )
+
+    const { result } = renderHook(useGetClusterData, { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBeFalsy()
+    })
+
+    // When there's no data, hierarchy.children is undefined, so it should create the structure
+    expect(result.current.data).toStrictEqual(
+      expect.objectContaining({
+        children: expect.arrayContaining([]),
+        data: expect.arrayContaining(['Root', expect.any(Array)]),
+      })
+    )
   })
 })

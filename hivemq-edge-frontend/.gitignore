@@ -44,3 +44,6 @@ test-results
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Keep task documentation in version control
+# DO NOT ignore .tasks/ directory - it contains important task tracking

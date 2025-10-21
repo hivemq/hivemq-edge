@@ -307,4 +307,108 @@ describe('loadTransitions', () => {
       'Something is wrong with the transition model'
     )
   })
+
+  it('should load transitions with multiple onTransitions', () => {
+    const behaviorPolicy: BehaviorPolicy = {
+      behavior: { id: 'Mqtt.events' },
+      id: 'my-policy-id',
+      matching: { clientIdRegex: '*.*' },
+      onTransitions: [
+        {
+          fromState: 'NotDuplicated',
+          toState: 'Violated',
+          'Mqtt.OnInboundPublish': {
+            pipeline: [
+              {
+                id: 'operation-1',
+                functionId: 'System.log',
+                arguments: { message: 'test' },
+              },
+            ],
+          },
+        },
+        {
+          fromState: 'Violated',
+          toState: 'NotDuplicated',
+          'Mqtt.OnInboundDisconnect': {
+            pipeline: [],
+          },
+        },
+      ],
+    }
+    const schemas: PolicySchema[] = []
+    const scripts: Script[] = []
+
+    const result = loadTransitions(behaviorPolicy, schemas, scripts, MOCK_NODE_BEHAVIOR)
+
+    // Should have 2 transitions + 2 connections = 4 items minimum
+    expect(result.length).toBeGreaterThanOrEqual(4)
+
+    // Check that transitions are created
+    const transitionNodes = result.filter((item) => 'item' in item && item.item.type === DataHubNodeType.TRANSITION)
+    expect(transitionNodes).toHaveLength(2)
+
+    // Verify first transition data
+    const firstTransition = transitionNodes[0] as NodeAddChange
+    expect(firstTransition.item.data).toEqual(
+      expect.objectContaining({
+        model: BehaviorPolicyType.MQTT_EVENT,
+        from: StateType.NotDuplicated,
+        to: StateType.Violated,
+        event: BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_PUBLISH,
+      })
+    )
+
+    // Verify second transition data
+    const secondTransition = transitionNodes[1] as NodeAddChange
+    expect(secondTransition.item.data).toEqual(
+      expect.objectContaining({
+        model: BehaviorPolicyType.MQTT_EVENT,
+        from: StateType.Violated,
+        to: StateType.NotDuplicated,
+        event: BehaviorPolicyTransitionEvent.MQTT_ON_INBOUND_DISCONNECT,
+      })
+    )
+
+    // Verify connections exist
+    const connections = result.filter((item) => 'source' in item && 'target' in item)
+    expect(connections.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('should adjust positions for multiple transitions', () => {
+    const behaviorPolicy: BehaviorPolicy = {
+      behavior: { id: 'Mqtt.events' },
+      id: 'my-policy-id',
+      matching: { clientIdRegex: '*.*' },
+      onTransitions: [
+        {
+          fromState: 'A',
+          toState: 'B',
+          'Event.OnAny': { pipeline: [] },
+        },
+        {
+          fromState: 'B',
+          toState: 'C',
+          'Event.OnAny': { pipeline: [] },
+        },
+        {
+          fromState: 'C',
+          toState: 'A',
+          'Event.OnAny': { pipeline: [] },
+        },
+      ],
+    }
+    const schemas: PolicySchema[] = []
+    const scripts: Script[] = []
+
+    const result = loadTransitions(behaviorPolicy, schemas, scripts, MOCK_NODE_BEHAVIOR)
+    const transitionNodes = result.filter((item) => 'item' in item && item.item.type === DataHubNodeType.TRANSITION)
+
+    expect(transitionNodes).toHaveLength(3)
+
+    // Verify that positions are different for each transition
+    const positions = transitionNodes.map((node) => (node as NodeAddChange).item.position.y)
+    const uniquePositions = new Set(positions)
+    expect(uniquePositions.size).toBe(3)
+  })
 })

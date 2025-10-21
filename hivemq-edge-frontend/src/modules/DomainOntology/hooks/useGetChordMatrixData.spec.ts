@@ -1,4 +1,5 @@
 import { beforeEach, expect, vi } from 'vitest'
+import { http, HttpResponse } from 'msw'
 
 import { renderHook, waitFor } from '@testing-library/react'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
@@ -11,6 +12,7 @@ import { handlers as topicFilterHandlers } from '@/api/hooks/useTopicFilters/__h
 import { handlers as bridgeHandlers } from '@/api/hooks/useGetBridges/__handlers__'
 import type { ChordMatrixData } from '@/modules/DomainOntology/types.ts'
 import { useGetChordMatrixData } from '@/modules/DomainOntology/hooks/useGetChordMatrixData.ts'
+import type { TopicFilterList } from '@/api/__generated__'
 
 describe('useGetChordMatrixData', () => {
   beforeEach(() => {
@@ -49,5 +51,39 @@ describe('useGetChordMatrixData', () => {
         ],
       })
     )
+  })
+
+  it('should handle topic filter matching with mqttTopicMatch', async () => {
+    server.use(
+      http.get('*/management/protocol-adapters/northboundMappings', () => {
+        return HttpResponse.json(
+          { items: [{ tagName: 'test/tag1', topic: 'sensor/temperature/room1' }] },
+          { status: 200 }
+        )
+      }),
+      http.get('*/management/domain-tags', () => {
+        return HttpResponse.json({ items: [{ name: 'test/tag1' }] }, { status: 200 })
+      }),
+      http.get('*/management/topic-filters', () => {
+        return HttpResponse.json<TopicFilterList>(
+          { items: [{ topicFilter: 'sensor/+/room1' }, { topicFilter: 'sensor/#' }] },
+          { status: 200 }
+        )
+      }),
+      http.get('*/bridges', () => {
+        return HttpResponse.json({ items: [] }, { status: 200 })
+      })
+    )
+
+    const { result } = renderHook(useGetChordMatrixData, { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBeFalsy()
+    })
+
+    // Should have matches between topic and filters
+    expect(result.current.matrixData.keys).toContain('sensor/+/room1')
+    expect(result.current.matrixData.keys).toContain('sensor/#')
+    expect(result.current.matrixData.keys).toContain('sensor/temperature/room1')
   })
 })
