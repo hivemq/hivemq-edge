@@ -48,8 +48,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -81,10 +83,12 @@ class ProtocolAdapterManagerTest {
 
     private @NotNull ProtocolAdapterManager protocolAdapterManager;
     private @NotNull ExecutorService testExecutor;
+    private @NotNull ScheduledExecutorService testScheduledExecutor;
 
     @BeforeEach
     void setUp() {
         testExecutor = Executors.newCachedThreadPool();
+        testScheduledExecutor = Executors.newScheduledThreadPool(2);
         protocolAdapterManager = new ProtocolAdapterManager(
                 metricRegistry,
                 moduleServices,
@@ -99,7 +103,8 @@ class ProtocolAdapterManagerTest {
                 northboundConsumerFactory,
                 tagManager,
                 protocolAdapterExtractor,
-                testExecutor);
+                testExecutor,
+                testScheduledExecutor);
     }
 
     @AfterEach
@@ -107,6 +112,10 @@ class ProtocolAdapterManagerTest {
         if (testExecutor != null && !testExecutor.isShutdown()) {
             testExecutor.shutdown();
             testExecutor.awaitTermination(5, TimeUnit.SECONDS);
+        }
+        if (testScheduledExecutor != null && !testScheduledExecutor.isShutdown()) {
+            testScheduledExecutor.shutdown();
+            testScheduledExecutor.awaitTermination(5, TimeUnit.SECONDS);
         }
     }
 
@@ -189,8 +198,13 @@ class ProtocolAdapterManagerTest {
                 tagManager,
                 testExecutor);
 
-        protocolAdapterManager.startAsync(adapterWrapper).get();
+        // Start will fail, but we expect cleanup to happen
+        assertThatThrownBy(() -> protocolAdapterManager.startAsync(adapterWrapper).get())
+                .isInstanceOf(ExecutionException.class)
+                .hasCauseInstanceOf(RuntimeException.class)
+                .hasMessageContaining("failed");
 
+        // Even though start failed, cleanup should have occurred
         assertThat(adapterWrapper.getRuntimeStatus()).isEqualTo(ProtocolAdapterState.RuntimeStatus.STOPPED);
         verify(remoteService).fireUsageEvent(any());
         verify(protocolAdapterWritingService).stopWriting(eq((WritingProtocolAdapter) adapterWrapper.getAdapter()),
@@ -221,8 +235,13 @@ class ProtocolAdapterManagerTest {
                 tagManager,
                 testExecutor);
 
-        protocolAdapterManager.startAsync(adapterWrapper).get();
+        // Start will fail, but we expect cleanup to happen
+        assertThatThrownBy(() -> protocolAdapterManager.startAsync(adapterWrapper).get())
+                .isInstanceOf(ExecutionException.class)
+                .hasCauseInstanceOf(RuntimeException.class)
+                .hasMessageContaining("failed");
 
+        // Even though start failed, cleanup should have occurred
         assertThat(adapterWrapper.getRuntimeStatus()).isEqualTo(ProtocolAdapterState.RuntimeStatus.STOPPED);
         verify(protocolAdapterWritingService).stopWriting(eq((WritingProtocolAdapter) adapterWrapper.getAdapter()),
                 any());

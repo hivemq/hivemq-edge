@@ -57,6 +57,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -88,6 +89,7 @@ public class ProtocolAdapterManager {
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
     private final @NotNull ExecutorService executorService;
     private final @NotNull ExecutorService sharedAdapterExecutor;
+    private final @NotNull ScheduledExecutorService scheduledExecutor;
     private final @NotNull AtomicBoolean shutdownInitiated;
 
     @Inject
@@ -105,7 +107,8 @@ public class ProtocolAdapterManager {
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
             final @NotNull TagManager tagManager,
             final @NotNull ProtocolAdapterExtractor protocolAdapterConfig,
-            final @NotNull ExecutorService sharedAdapterExecutor) {
+            final @NotNull ExecutorService sharedAdapterExecutor,
+            final @NotNull ScheduledExecutorService scheduledExecutor) {
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
         this.remoteService = remoteService;
@@ -120,6 +123,7 @@ public class ProtocolAdapterManager {
         this.tagManager = tagManager;
         this.protocolAdapterConfig = protocolAdapterConfig;
         this.sharedAdapterExecutor = sharedAdapterExecutor;
+        this.scheduledExecutor = scheduledExecutor;
         this.protocolAdapters = new ConcurrentHashMap<>();
         this.executorService = Executors.newSingleThreadExecutor();
         this.shutdownInitiated = new AtomicBoolean(false);
@@ -587,43 +591,38 @@ public class ProtocolAdapterManager {
 
     /**
      * Shutdown executors gracefully after adapters have stopped.
-     * This ensures a clean shutdown sequence.
+     * This ensures a clean shutdown sequence where adapters stop BEFORE
+     * the executors they depend on are shut down.
+     * <p>
+     * Shutdown order:
+     * 1. Protocol adapter manager's internal executor (used for refresh operations)
+     * 2. Shared adapter executor (used by all adapters for lifecycle operations)
+     * 3. Scheduled executor (used for scheduled tasks)
      */
     private void shutdownExecutorsGracefully() {
-        log.debug("Shutting down protocol adapter manager executors");
+        log.info("Shutting down protocol adapter manager executors");
 
-        // Shutdown the single-threaded executor used for adapter refresh
-        executorService.shutdown();
-        try {
-            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
-                log.warn("Executor service did not terminate in time, forcing shutdown");
-                executorService.shutdownNow();
-            }
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("Interrupted while waiting for executor service to terminate");
-            executorService.shutdownNow();
-        }
+        // 1. Shutdown the single-threaded executor used for adapter refresh
+        com.hivemq.common.executors.ioc.ExecutorsModule.shutdownExecutor(
+                executorService,
+                "protocol-adapter-manager-executor",
+                5);
 
-        // Shutdown the shared adapter executor
-        // Note: This may also be shut down by ExecutorsModule shutdown hook,
-        // but calling shutdown() multiple times is safe (idempotent)
-        sharedAdapterExecutor.shutdown();
-        try {
-            if (!sharedAdapterExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
-                log.warn("Shared adapter executor did not terminate in time, forcing shutdown");
-                sharedAdapterExecutor.shutdownNow();
-                // Wait a bit more after forced shutdown
-                if (!sharedAdapterExecutor.awaitTermination(2, TimeUnit.SECONDS)) {
-                    log.error("Shared adapter executor still has running tasks after forced shutdown");
-                }
-            }
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("Interrupted while waiting for shared adapter executor to terminate");
-            sharedAdapterExecutor.shutdownNow();
-        }
+        // 2. Shutdown the shared adapter executor
+        // This is the critical executor that was causing the race condition.
+        // By shutting it down here AFTER all adapters have stopped, we ensure
+        // no adapter stop operations are rejected with RejectedExecutionException
+        com.hivemq.common.executors.ioc.ExecutorsModule.shutdownExecutor(
+                sharedAdapterExecutor,
+                "hivemq-edge-cached-group",
+                10);
 
-        log.debug("Protocol adapter manager executors shutdown completed");
+        // 3. Shutdown the scheduled executor
+        com.hivemq.common.executors.ioc.ExecutorsModule.shutdownExecutor(
+                scheduledExecutor,
+                "hivemq-edge-scheduled-group",
+                5);
+
+        log.info("Protocol adapter manager executors shutdown completed");
     }
 }
