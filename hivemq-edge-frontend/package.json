@@ -103,7 +103,7 @@
     "protobufjs": "7.2.6",
     "react": "18.3.1",
     "react-accessible-treeview": "2.9.1",
-    "react-dom": "18.2.0",
+    "react-dom": "18.3.1",
     "react-dropzone": "14.2.3",
     "react-hook-form": "7.43.9",
     "react-hotkeys-hook": "4.5.0",
