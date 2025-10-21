@@ -1,4 +1,5 @@
 import { beforeEach, expect, vi } from 'vitest'
+import { http, HttpResponse } from 'msw'
 
 import { renderHook, waitFor } from '@testing-library/react'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
@@ -66,5 +67,83 @@ describe('useGetSankeyData', () => {
         },
       })
     )
+  })
+
+  it('should handle southbound mappings with valid indices', async () => {
+    server.use(
+      http.get('*/management/protocol-adapters/southboundMappings', () => {
+        return HttpResponse.json(
+          {
+            items: [{ topicFilter: 'sensor/+/data', tagName: 'test/tag1' }],
+          },
+          { status: 200 }
+        )
+      }),
+      http.get('*/management/protocol-adapters/northboundMappings', () => {
+        return HttpResponse.json({ items: [] }, { status: 200 })
+      }),
+      http.get('*/management/topic-filters', () => {
+        return HttpResponse.json({ items: [{ topicFilter: 'sensor/+/data' }] }, { status: 200 })
+      }),
+      http.get('*/management/domain-tags', () => {
+        return HttpResponse.json({ items: [{ name: 'test/tag1' }] }, { status: 200 })
+      }),
+      http.get('*/bridges', () => {
+        return HttpResponse.json({ items: [] }, { status: 200 })
+      })
+    )
+
+    const { result } = renderHook(useGetSankeyData, { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBeFalsy()
+    })
+
+    expect(result.current.sankeyData.data.links).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: 'sensor/+/data',
+          target: 'test/tag1',
+          value: 1,
+        }),
+      ])
+    )
+  })
+
+  it('should skip southbound mappings with missing tagName', async () => {
+    server.use(
+      http.get('*/management/protocol-adapters/southboundMappings', () => {
+        return HttpResponse.json(
+          {
+            items: [{ topicFilter: 'sensor/+/data', tagName: null }, { topicFilter: 'device/#' }],
+          },
+          { status: 200 }
+        )
+      }),
+      http.get('*/management/protocol-adapters/northboundMappings', () => {
+        return HttpResponse.json({ items: [] }, { status: 200 })
+      }),
+      http.get('*/management/topic-filters', () => {
+        return HttpResponse.json({ items: [] }, { status: 200 })
+      }),
+      http.get('*/management/domain-tags', () => {
+        return HttpResponse.json({ items: [] }, { status: 200 })
+      }),
+      http.get('*/bridges', () => {
+        return HttpResponse.json({ items: [] }, { status: 200 })
+      })
+    )
+
+    const { result } = renderHook(useGetSankeyData, { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBeFalsy()
+    })
+
+    // Links should be empty because tagName is missing and items aren't in the arrays
+    const southboundLinks = result.current.sankeyData.data.links.filter(
+      (link) => link.source === 'sensor/+/data' || link.source === 'device/#'
+    )
+    expect(southboundLinks).toHaveLength(0)
   })
 })

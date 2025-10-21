@@ -86,6 +86,7 @@ describe('useWorkspaceStore', () => {
       const { onInsertGroupNode } = result.current
       const group: Node<Group, NodeTypes.CLUSTER_NODE> = {
         id: 'group1',
+        type: NodeTypes.CLUSTER_NODE,
         position: { x: 0, y: 0 },
         data: { childrenNodeIds: ['idAdapter', 'idBridge'], title: 'my title', isOpen: true },
       }
@@ -267,5 +268,94 @@ describe('useWorkspaceStore', () => {
         }),
       })
     )
+  })
+
+  it('should update node data with onUpdateNode', async () => {
+    const { result } = renderHook<WorkspaceState & WorkspaceAction, unknown>(useWorkspaceStore)
+    expect(result.current.nodes).toHaveLength(0)
+
+    act(() => {
+      const { onAddNodes } = result.current
+      const item: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
+      onAddNodes([{ item, type: 'add' }])
+    })
+
+    expect(result.current.nodes).toHaveLength(1)
+    expect(result.current.nodes[0].data).toEqual(MOCK_NODE_ADAPTER.data)
+
+    act(() => {
+      const { onUpdateNode } = result.current
+      const updatedData = { ...MOCK_NODE_ADAPTER.data, name: 'Updated Adapter Name' }
+      onUpdateNode(MOCK_NODE_ADAPTER.id, updatedData)
+    })
+
+    expect(result.current.nodes).toHaveLength(1)
+    expect(result.current.nodes[0].data).toEqual(
+      expect.objectContaining({
+        name: 'Updated Adapter Name',
+      })
+    )
+    expect(result.current.nodes[0].id).toBe(MOCK_NODE_ADAPTER.id)
+  })
+
+  it('should not update other nodes when using onUpdateNode', async () => {
+    const { result } = renderHook<WorkspaceState & WorkspaceAction, unknown>(useWorkspaceStore)
+
+    act(() => {
+      const { onAddNodes } = result.current
+      const item1: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
+      const item2: Node = { ...MOCK_NODE_BRIDGE, position: { x: 100, y: 100 } }
+      onAddNodes([
+        { item: item1, type: 'add' },
+        { item: item2, type: 'add' },
+      ])
+    })
+
+    expect(result.current.nodes).toHaveLength(2)
+
+    const originalBridgeData = result.current.nodes.find((n) => n.id === MOCK_NODE_BRIDGE.id)?.data
+
+    act(() => {
+      const { onUpdateNode } = result.current
+      const updatedData = { ...MOCK_NODE_ADAPTER.data, customField: 'new value' }
+      onUpdateNode(MOCK_NODE_ADAPTER.id, updatedData)
+    })
+
+    expect(result.current.nodes).toHaveLength(2)
+
+    // Check that the adapter was updated
+    const updatedAdapter = result.current.nodes.find((n) => n.id === MOCK_NODE_ADAPTER.id)
+    expect(updatedAdapter?.data).toEqual(
+      expect.objectContaining({
+        customField: 'new value',
+      })
+    )
+
+    // Check that the bridge was NOT updated
+    const unchangedBridge = result.current.nodes.find((n) => n.id === MOCK_NODE_BRIDGE.id)
+    expect(unchangedBridge?.data).toEqual(originalBridgeData)
+  })
+
+  it('should handle onUpdateNode with non-existent node id gracefully', async () => {
+    const { result } = renderHook<WorkspaceState & WorkspaceAction, unknown>(useWorkspaceStore)
+
+    act(() => {
+      const { onAddNodes } = result.current
+      const item: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
+      onAddNodes([{ item, type: 'add' }])
+    })
+
+    expect(result.current.nodes).toHaveLength(1)
+    const originalData = result.current.nodes[0].data
+
+    act(() => {
+      const { onUpdateNode } = result.current
+      onUpdateNode('non-existent-id', { some: 'data' })
+    })
+
+    // Node count should remain the same
+    expect(result.current.nodes).toHaveLength(1)
+    // Original node should not be affected
+    expect(result.current.nodes[0].data).toEqual(originalData)
   })
 })

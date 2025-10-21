@@ -205,4 +205,185 @@ describe('getSchemaFromPropertyList', () => {
       type: 'object',
     })
   })
+
+  it('should handle root level properties with different types', async () => {
+    const properties: FlatJSONSchema7[] = [
+      {
+        key: 'stringProp',
+        path: [],
+        type: 'string',
+        title: 'String Property',
+      },
+      {
+        key: 'numberProp',
+        path: [],
+        type: 'number',
+        title: 'Number Property',
+      },
+      {
+        key: 'booleanProp',
+        path: [],
+        type: 'boolean',
+        title: 'Boolean Property',
+      },
+    ]
+
+    const result = getSchemaFromPropertyList(properties)
+    expect(result.properties).toEqual({
+      stringProp: {
+        type: 'string',
+        title: 'String Property',
+      },
+      numberProp: {
+        type: 'number',
+        title: 'Number Property',
+      },
+      booleanProp: {
+        type: 'boolean',
+        title: 'Boolean Property',
+      },
+    })
+  })
+
+  it('should handle object properties with nested properties', async () => {
+    const properties: FlatJSONSchema7[] = [
+      {
+        key: 'parent',
+        path: [],
+        type: 'object',
+        title: 'Parent Object',
+      },
+      {
+        key: 'child',
+        path: ['parent'],
+        type: 'string',
+        title: 'Child Property',
+      },
+    ]
+
+    const result = getSchemaFromPropertyList(properties)
+    expect(result.properties).toEqual({
+      parent: {
+        type: 'object',
+        title: 'Parent Object',
+        properties: {
+          child: {
+            type: 'string',
+            title: 'Child Property',
+          },
+        },
+      },
+    })
+  })
+
+  it('should handle array properties with arrayType', async () => {
+    const properties: FlatJSONSchema7[] = [
+      {
+        key: 'tags',
+        path: [],
+        type: 'array',
+        arrayType: 'string',
+        title: 'Tags Array',
+      },
+      {
+        key: 'scores',
+        path: [],
+        type: 'array',
+        arrayType: 'number',
+        title: 'Scores Array',
+      },
+    ]
+
+    const result = getSchemaFromPropertyList(properties)
+    expect(result.properties).toEqual({
+      tags: {
+        type: 'array',
+        title: 'Tags Array',
+        items: { type: 'string' },
+      },
+      scores: {
+        type: 'array',
+        title: 'Scores Array',
+        items: { type: 'number' },
+      },
+    })
+  })
+
+  it('should handle nested array properties', async () => {
+    const properties: FlatJSONSchema7[] = [
+      {
+        key: 'container',
+        path: [],
+        type: 'object',
+        title: 'Container',
+      },
+      {
+        key: 'items',
+        path: ['container'],
+        type: 'array',
+        arrayType: 'string',
+        title: 'Items',
+      },
+    ]
+
+    const result = getSchemaFromPropertyList(properties)
+    expect(result.properties).toEqual({
+      container: {
+        type: 'object',
+        title: 'Container',
+        properties: {
+          items: {
+            type: 'array',
+            title: 'Items',
+            items: { type: 'string' },
+          },
+        },
+      },
+    })
+  })
+
+  it('should handle properties with additional metadata', async () => {
+    const properties: FlatJSONSchema7[] = [
+      {
+        key: 'email',
+        path: [],
+        type: 'string',
+        title: 'Email Address',
+        description: 'User email address',
+        examples: ['user@example.com'],
+      },
+    ]
+
+    const result = getSchemaFromPropertyList(properties)
+    expect(result.properties).toEqual({
+      email: {
+        type: 'string',
+        title: 'Email Address',
+        description: 'User email address',
+        examples: ['user@example.com'],
+      },
+    })
+  })
+
+  it('should filter out internal properties like path, key, arrayType, origin', async () => {
+    const properties: FlatJSONSchema7[] = [
+      {
+        key: 'testProp',
+        path: [],
+        type: 'string',
+        title: 'Test Property',
+        arrayType: 'object',
+        origin: 'some-origin',
+      },
+    ]
+
+    const result = getSchemaFromPropertyList(properties)
+    const testProp = result.properties?.['testProp'] as RJSFSchema
+
+    expect(testProp).toBeDefined()
+    expect(testProp).not.toHaveProperty('path')
+    expect(testProp).not.toHaveProperty('key')
+    expect(testProp).not.toHaveProperty('arrayType')
+    expect(testProp).not.toHaveProperty('origin')
+  })
 })
