@@ -61,11 +61,21 @@ public abstract class ExecutorsModule {
             if (log.isDebugEnabled()) {
                 log.debug("Shutting down executor service: {}", name);
             }
-            executor.shutdown();
+            // Only initiate shutdown if not already shutting down
+            // This allows ProtocolAdapterManager to shut down executors first
+            if (!executor.isShutdown()) {
+                executor.shutdown();
+            }
             try {
-                if (!executor.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                // Reduced timeout since ProtocolAdapterManager should have already
+                // initiated shutdown for adapters
+                if (!executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
                     log.warn("Executor service {} did not terminate in time, forcing shutdown", name);
                     executor.shutdownNow();
+                    // Give a final grace period after forced shutdown
+                    if (!executor.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)) {
+                        log.error("Executor service {} still has running tasks after forced shutdown", name);
+                    }
                 }
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();

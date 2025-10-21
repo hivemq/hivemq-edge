@@ -38,6 +38,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 
@@ -50,7 +52,8 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     protected final @NotNull AdapterFactories adapterFactories;
     private final @NotNull String adapterId;
-    private volatile @Nullable EtherNetIP etherNetIP;
+    private final @NotNull Lock connectionLock;
+    private @Nullable EtherNetIP etherNetIP;  // GuardedBy connectionLock
     private final @NotNull PublishChangedDataOnlyHandler lastSamples = new PublishChangedDataOnlyHandler();
     private final @NotNull DataPointFactory dataPointFactory;
 
@@ -69,6 +72,7 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
                 .collect(Collectors.toMap(tag -> tag.getDefinition().getAddress(), tag -> tag));
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
+        this.connectionLock = new ReentrantLock();
     }
 
     @Override
@@ -80,14 +84,24 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
     public void start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         // any setup which should be done before the adapter starts polling comes here.
+        connectionLock.lock();
         try {
-            final EtherNetIP etherNetIP = new EtherNetIP(adapterConfig.getHost(), adapterConfig.getSlot());
-            etherNetIP.connectTcp();
-            this.etherNetIP = etherNetIP;
-            output.startedSuccessfully();
+            if (etherNetIP != null) {
+                log.warn("Adapter {} is already started, ignoring start request", adapterId);
+                output.startedSuccessfully();
+                return;
+            }
+
+            final EtherNetIP newConnection = new EtherNetIP(adapterConfig.getHost(), adapterConfig.getSlot());
+            newConnection.connectTcp();
+            this.etherNetIP = newConnection;
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+            output.startedSuccessfully();
         } catch (final Exception e) {
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             output.failStart(e, null);
+        } finally {
+            connectionLock.unlock();
         }
     }
 
@@ -95,20 +109,28 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
     public void stop(
             final @NotNull ProtocolAdapterStopInput protocolAdapterStopInput,
             final @NotNull ProtocolAdapterStopOutput protocolAdapterStopOutput) {
+        connectionLock.lock();
         try {
             final EtherNetIP etherNetIPTemp = etherNetIP;
             etherNetIP = null;
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+
             if (etherNetIPTemp != null) {
-                etherNetIPTemp.close();
-                protocolAdapterStopOutput.stoppedSuccessfully();
-                log.info("Stopped");
+                try {
+                    etherNetIPTemp.close();
+                    log.info("Stopped adapter {}", adapterId);
+                } catch (final Exception e) {
+                    log.warn("Error closing EtherNetIP connection for adapter {}", adapterId, e);
+                }
             } else {
-                protocolAdapterStopOutput.stoppedSuccessfully();
-                log.info("Stopped without an open connection");
+                log.info("Stopped adapter {} without an open connection", adapterId);
             }
+            protocolAdapterStopOutput.stoppedSuccessfully();
         } catch (final Exception e) {
             protocolAdapterStopOutput.failStop(e, "Unable to stop Ethernet IP connection");
-            log.error("Unable to stop", e);
+            log.error("Unable to stop adapter {}", adapterId, e);
+        } finally {
+            connectionLock.unlock();
         }
     }
 
@@ -121,10 +143,16 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
     @Override
     public void poll(
             final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
-        final var client = etherNetIP;
-        if (client == null) {
-            pollingOutput.fail("Polling failed because adapter wasn't started.");
-            return;
+        final EtherNetIP client;
+        connectionLock.lock();
+        try {
+            client = etherNetIP;
+            if (client == null) {
+                pollingOutput.fail("Polling failed because adapter wasn't started.");
+                return;
+            }
+        } finally {
+            connectionLock.unlock();
         }
 
         final var tagAddresses = tags.values().stream().map(v -> v.getDefinition().getAddress()).toArray(String[]::new);
@@ -148,14 +176,14 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
             pollingOutput.finish();
         } catch (final CipException e) {
             if (e.getStatusCode() == 0x04) {
-                log.warn("A Tag doesn't exist on device.", e);
+                log.warn("A Tag doesn't exist on device for adapter {}", adapterId, e);
                 pollingOutput.fail(e, "Tag doesn't exist on device");
             } else {
-                log.warn("Problem accessing tag on device.", e);
+                log.warn("Problem accessing tag on device for adapter {}", adapterId, e);
                 pollingOutput.fail(e, "Problem accessing tag on device.");
             }
         } catch (final Exception e) {
-            log.warn("An exception occurred while reading tags '{}'.", tagAddresses, e);
+            log.warn("An exception occurred while reading tags '{}' for adapter {}", tagAddresses, adapterId, e);
             pollingOutput.fail(e, "An exception occurred while reading tags '" + tagAddresses + "'.");
         }
     }
