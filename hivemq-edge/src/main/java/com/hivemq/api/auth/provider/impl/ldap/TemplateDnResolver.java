@@ -15,6 +15,8 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap;
 
+import com.unboundid.ldap.sdk.DN;
+import com.unboundid.util.ByteStringBuffer;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -70,10 +72,11 @@ public class TemplateDnResolver implements UserDnResolver {
         if (username.isBlank()) {
             throw new IllegalArgumentException("Username cannot be empty");
         }
-
+        final var escaped = new ByteStringBuffer();
+        DN.getDNEscapingStrategy().escape(username, escaped);
         // Replace placeholders in template
         return template
-                .replace(USERNAME_PLACEHOLDER, username)
+                .replace(USERNAME_PLACEHOLDER, escaped.toString())
                 .replace(BASE_DN_PLACEHOLDER, baseDn);
     }
 
