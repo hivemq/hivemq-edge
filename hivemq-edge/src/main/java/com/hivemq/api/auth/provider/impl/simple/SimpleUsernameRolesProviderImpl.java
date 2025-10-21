@@ -43,7 +43,7 @@ public class SimpleUsernameRolesProviderImpl implements IUsernameRolesProvider {
 
     public SimpleUsernameRolesProviderImpl add(final @NotNull UsernamePasswordRoles usernamePassword){
         checkNotNull(usernamePassword);
-        checkArgument(usernamePassword.getUserName() != null, "Username must not be <null>");
+        checkArgument(usernamePassword.getUserName() != null && !usernamePassword.getUserName().isBlank(), "Username must not be <null>");
         usernamePasswordMap.put(usernamePassword.getUserName(), usernamePassword);
         return this;
     }
