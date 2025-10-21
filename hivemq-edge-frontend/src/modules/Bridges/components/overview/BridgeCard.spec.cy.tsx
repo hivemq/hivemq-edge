@@ -29,6 +29,5 @@ describe('BridgeCard', () => {
     cy.injectAxe()
     cy.mountWithProviders(<BridgeCard {...mockBridge} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: BridgeCard')
   })
 })

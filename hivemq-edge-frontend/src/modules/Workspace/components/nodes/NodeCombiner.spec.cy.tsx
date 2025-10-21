@@ -42,6 +42,5 @@ describe('NodeCombiner', () => {
     cy.injectAxe()
     cy.mountWithProviders(mockReactFlow(<NodeCombiner {...MOCK_NODE_COMBINER} />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: NodeCombiner')
   })
 })

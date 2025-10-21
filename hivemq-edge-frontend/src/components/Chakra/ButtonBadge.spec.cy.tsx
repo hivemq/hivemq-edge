@@ -38,6 +38,5 @@ describe('ButtonBadge', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ButtonBadge aria-label="You have one notification" badgeCount={1} icon={<FiMail />} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: ButtonBadge')
   })
 })

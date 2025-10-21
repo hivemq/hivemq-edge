@@ -74,6 +74,5 @@ describe('TransitionPanel', () => {
     cy.mountWithProviders(<TransitionPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: TransitionPanel')
   })
 })

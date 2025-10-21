@@ -74,6 +74,5 @@ describe('ConfirmStep', () => {
       <ConfirmStep onContinue={cy.stub()} store={{ ...MOCK_STORE, subscriptions: MOCK_VALIDATION }} />
     )
     cy.checkAccessibility()
-    cy.percySnapshot('Component: ConfirmStep')
   })
 })

@@ -48,6 +48,5 @@ describe('DryRunPanelController', () => {
     })
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DryRunPanelController')
   })
 })

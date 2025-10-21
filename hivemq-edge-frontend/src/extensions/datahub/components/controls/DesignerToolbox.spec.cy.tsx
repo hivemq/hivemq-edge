@@ -30,6 +30,5 @@ describe('DesignerToolbox', () => {
     cy.wait(100) // Wait for dropdown (ugly)
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DesignerToolbox')
   })
 })

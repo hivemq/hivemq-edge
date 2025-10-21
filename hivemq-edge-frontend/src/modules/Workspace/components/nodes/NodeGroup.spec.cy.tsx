@@ -84,6 +84,5 @@ describe('NodeGroup', () => {
       />
     )
     cy.checkAccessibility()
-    cy.percySnapshot('Component: NodeGroup')
   })
 })

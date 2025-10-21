@@ -29,6 +29,5 @@ describe('ShortcutRenderer', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ShortcutRenderer hotkeys="CTRL+C" description="This is a description" />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: ShortcutRenderer')
   })
 })

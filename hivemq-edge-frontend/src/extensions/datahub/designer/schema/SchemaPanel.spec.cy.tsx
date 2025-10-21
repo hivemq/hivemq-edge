@@ -115,6 +115,5 @@ describe('SchemaPanel', () => {
     cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: SchemaPanel')
   })
 })

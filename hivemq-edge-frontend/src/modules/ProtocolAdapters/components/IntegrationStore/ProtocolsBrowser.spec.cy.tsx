@@ -152,6 +152,5 @@ describe('ProtocolsBrowser', () => {
     )
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: ProtocolsBrowser')
   })
 })

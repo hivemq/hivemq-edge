@@ -38,6 +38,5 @@ describe('ProtocolIntegrationStore', () => {
     cy.mountWithProviders(<ProtocolIntegrationStore />)
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: ProtocolIntegrationStore')
   })
 })

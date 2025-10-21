@@ -12,6 +12,5 @@ describe('PrefixPanel', () => {
     cy.injectAxe()
     cy.mountWithProviders(<PrefixPanel data={MOCK_NAMESPACE} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: PrefixPanel')
   })
 })

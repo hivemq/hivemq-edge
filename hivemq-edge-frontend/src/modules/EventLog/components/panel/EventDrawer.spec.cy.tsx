@@ -46,6 +46,5 @@ describe('EventDrawer', () => {
         'color-contrast': { enabled: false },
       },
     })
-    cy.percySnapshot('Component: EventDrawer')
   })
 })

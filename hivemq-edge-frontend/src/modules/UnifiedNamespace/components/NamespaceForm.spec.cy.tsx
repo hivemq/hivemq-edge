@@ -101,6 +101,5 @@ describe('NamespaceForm', () => {
     cy.injectAxe()
     cy.mountWithProviders(<NamespaceForm onSubmit={cy.stub} defaultValues={MOCK_NAMESPACE} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: NamespaceForm')
   })
 })

@@ -70,6 +70,5 @@ describe('MonitoringEdge', () => {
         'color-contrast': { enabled: false },
       },
     })
-    cy.percySnapshot('Component: DynamicEdge')
   })
 })

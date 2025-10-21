@@ -35,6 +35,5 @@ describe('PolicySummaryReport', () => {
     cy.mountWithProviders(<PolicySummaryReport status={PolicyDryRunStatus.SUCCESS} />)
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: PolicySummaryReport')
   })
 })

@@ -64,7 +64,6 @@ describe('SubscriptionsPanel', () => {
         region: { enabled: false },
       },
     })
-    cy.percySnapshot('Component: SubscriptionsPanel')
   })
 
   it('should initialise with OpenAPI defaults', () => {

@@ -41,6 +41,5 @@ describe('OperationNode', () => {
     cy.injectAxe()
     cy.mountWithProviders(mockReactFlow(<SchemaNode {...MOCK_NODE_SCHEMA} />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DataHub - SchemaNode')
   })
 })

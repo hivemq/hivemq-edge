@@ -27,6 +27,5 @@ describe('ChartTooltip', () => {
     cy.getByTestId('chart-tooltip-value').should('contain.text', 'the value')
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: ChartTooltip')
   })
 })

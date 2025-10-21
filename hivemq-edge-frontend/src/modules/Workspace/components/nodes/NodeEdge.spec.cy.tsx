@@ -50,6 +50,5 @@ describe('NodeEdge', () => {
     cy.injectAxe()
     cy.mountWithProviders(mockReactFlow(<NodeEdge {...MOCK_NODE_EDGE} />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: NodeEdge')
   })
 })

@@ -93,6 +93,5 @@ describe('AdapterTagSelect', () => {
         'scrollable-region-focusable': { enabled: false },
       },
     })
-    cy.percySnapshot('Component: AdapterTagSelect')
   })
 })

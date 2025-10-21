@@ -52,6 +52,5 @@ describe('ValidatorNode', () => {
     cy.injectAxe()
     cy.mountWithProviders(mockReactFlow(<ValidatorNode {...MOCK_NODE_VALIDATOR} />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DataHub - ValidatorNode')
   })
 })

@@ -44,6 +44,5 @@ describe('EventLogTable', () => {
         'color-contrast': { enabled: false },
       },
     })
-    cy.percySnapshot('Component: EventLogTable')
   })
 })

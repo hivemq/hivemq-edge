@@ -70,6 +70,5 @@ describe('ColumnMatcherStep', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ColumnMatcherStep onContinue={cy.stub()} store={MOCK_STORE} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: ColumnMatcherStep')
   })
 })

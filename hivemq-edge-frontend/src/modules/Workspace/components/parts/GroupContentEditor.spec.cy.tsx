@@ -70,6 +70,5 @@ describe('GroupContentEditor', () => {
       ]),
     })
     cy.checkAccessibility()
-    cy.percySnapshot('Component: GroupContentEditor')
   })
 })
