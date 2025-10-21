@@ -39,7 +39,9 @@ public class PublishChangedDataOnlyHandler {
             }
         });
 
-        return newValue != computedValue;
+        // Return true if the value was actually replaced (i.e., computedValue is the new value)
+        // When values are equal, compute() returns the old value, so references will differ
+        return computedValue == newValue;
     }
 
     public void clear() {

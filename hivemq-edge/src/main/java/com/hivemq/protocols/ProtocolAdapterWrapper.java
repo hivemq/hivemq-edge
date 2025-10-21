@@ -336,38 +336,54 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
             final var input = new ProtocolAdapterStopInputImpl();
             final var output = new ProtocolAdapterStopOutputImpl();
 
+            log.debug("Adapter '{}': Creating stop operation future", getId());
+
             final var stopFuture = CompletableFuture.supplyAsync(() -> {
+                        log.debug("Adapter '{}': Stop operation executing in thread '{}'", getId(), Thread.currentThread().getName());
+
                         // Signal FSM to stop (calls onStopping() internally)
+                        log.debug("Adapter '{}': Stopping adapter FSM", getId());
                         stopAdapter();
 
                         // Clean up listeners to prevent memory leaks
+                        log.debug("Adapter '{}': Cleaning up connection status listener", getId());
                         cleanupConnectionStatusListener();
 
                         // Remove consumers - must be done within async context
+                        log.debug("Adapter '{}': Removing {} consumers", getId(), consumers.size());
                         consumers.forEach(tagManager::removeConsumer);
 
+                        log.debug("Adapter '{}': Stopping polling", getId());
                         stopPolling(protocolAdapterPollingService);
+
+                        log.debug("Adapter '{}': Stopping writing", getId());
                         stopWriting(protocolAdapterWritingService);
 
                         try {
+                            log.debug("Adapter '{}': Calling adapter.stop()", getId());
                             adapter.stop(input, output);
                         } catch (final Throwable throwable) {
+                            log.error("Adapter '{}': Exception during adapter.stop()", getId(), throwable);
                             output.getOutputFuture().completeExceptionally(throwable);
                         }
+                        log.debug("Adapter '{}': Waiting for stop output future", getId());
                         return output.getOutputFuture();
                     }, sharedAdapterExecutor)  // Use shared executor to reduce thread overhead
                     .thenCompose(Function.identity()).whenComplete((result, throwable) -> {
+                        log.debug("Adapter '{}': Stop operation completed, starting cleanup", getId());
+
                         // Always call destroy() to ensure all resources are properly released
                         // This prevents resource leaks from underlying client libraries
                         try {
                             log.info("Destroying adapter with id '{}' to release all resources", getId());
                             adapter.destroy();
+                            log.debug("Adapter '{}': destroy() completed successfully", getId());
                         } catch (final Exception destroyException) {
                             log.error("Error destroying adapter with id {}", adapter.getId(), destroyException);
                         }
 
                         if (throwable == null) {
-                            log.info("Stopped adapter with id {}", adapter.getId());
+                            log.info("Stopped adapter with id '{}' successfully", adapter.getId());
                         } else {
                             log.error("Error stopping adapter with id {}", adapter.getId(), throwable);
                         }
@@ -376,6 +392,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                         operationLock.lock();
                         try {
                             currentStopFuture = null;
+                            log.debug("Adapter '{}': Cleared currentStopFuture reference", getId());
                         } finally {
                             operationLock.unlock();
                         }

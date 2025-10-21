@@ -57,6 +57,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -85,6 +88,7 @@ public class ProtocolAdapterManager {
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
     private final @NotNull ExecutorService executorService;
     private final @NotNull ExecutorService sharedAdapterExecutor;
+    private final @NotNull AtomicBoolean shutdownInitiated;
 
     @Inject
     public ProtocolAdapterManager(
@@ -118,7 +122,18 @@ public class ProtocolAdapterManager {
         this.sharedAdapterExecutor = sharedAdapterExecutor;
         this.protocolAdapters = new ConcurrentHashMap<>();
         this.executorService = Executors.newSingleThreadExecutor();
-        Runtime.getRuntime().addShutdownHook(new Thread(executorService::shutdown));
+        this.shutdownInitiated = new AtomicBoolean(false);
+
+        // Register coordinated shutdown hook that stops adapters BEFORE executors shutdown
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (shutdownInitiated.compareAndSet(false, true)) {
+                log.info("Initiating coordinated shutdown of Protocol Adapter Manager");
+                stopAllAdaptersOnShutdown();
+                shutdownExecutorsGracefully();
+                log.info("Protocol Adapter Manager shutdown completed");
+            }
+        }, "protocol-adapter-manager-shutdown"));
+
         protocolAdapterWritingService.addWritingChangedCallback(() -> protocolAdapterFactoryManager.writingEnabledChanged(
                 protocolAdapterWritingService.writingEnabled()));
     }
@@ -518,5 +533,97 @@ public class ProtocolAdapterManager {
                         tag.getDescription(),
                         configConverter.convertTagDefinitionToJsonNode(tag.getDefinition())))
                 .toList());
+    }
+
+    /**
+     * Stop all adapters during shutdown in a coordinated manner.
+     * This method is called by the shutdown hook BEFORE executors are shut down,
+     * ensuring adapters can complete their stop operations cleanly.
+     */
+    private void stopAllAdaptersOnShutdown() {
+        final List<ProtocolAdapterWrapper> adaptersToStop = new ArrayList<>(protocolAdapters.values());
+
+        if (adaptersToStop.isEmpty()) {
+            log.debug("No adapters to stop during shutdown");
+            return;
+        }
+
+        log.info("Stopping {} protocol adapters during shutdown", adaptersToStop.size());
+        final List<CompletableFuture<Void>> stopFutures = new ArrayList<>();
+
+        // Initiate stop for all adapters
+        for (final ProtocolAdapterWrapper wrapper : adaptersToStop) {
+            try {
+                log.debug("Initiating stop for adapter '{}'", wrapper.getId());
+                final CompletableFuture<Void> stopFuture = wrapper.stopAsync();
+                stopFutures.add(stopFuture);
+            } catch (final Exception e) {
+                log.error("Error initiating stop for adapter '{}' during shutdown", wrapper.getId(), e);
+            }
+        }
+
+        // Wait for all adapters to stop, with timeout
+        final CompletableFuture<Void> allStops = CompletableFuture.allOf(stopFutures.toArray(new CompletableFuture[0]));
+
+        try {
+            // Give adapters 20 seconds to stop gracefully
+            allStops.get(20, TimeUnit.SECONDS);
+            log.info("All adapters stopped successfully during shutdown");
+        } catch (final TimeoutException e) {
+            log.warn("Timeout waiting for adapters to stop during shutdown (waited 20s). Proceeding with executor shutdown.");
+            // Log which adapters failed to stop
+            for (int i = 0; i < stopFutures.size(); i++) {
+                if (!stopFutures.get(i).isDone()) {
+                    log.warn("Adapter '{}' did not complete stop operation within timeout", adaptersToStop.get(i).getId());
+                }
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Interrupted while waiting for adapters to stop during shutdown", e);
+        } catch (final ExecutionException e) {
+            log.error("Error occurred while stopping adapters during shutdown", e.getCause());
+        }
+    }
+
+    /**
+     * Shutdown executors gracefully after adapters have stopped.
+     * This ensures a clean shutdown sequence.
+     */
+    private void shutdownExecutorsGracefully() {
+        log.debug("Shutting down protocol adapter manager executors");
+
+        // Shutdown the single-threaded executor used for adapter refresh
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                log.warn("Executor service did not terminate in time, forcing shutdown");
+                executorService.shutdownNow();
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while waiting for executor service to terminate");
+            executorService.shutdownNow();
+        }
+
+        // Shutdown the shared adapter executor
+        // Note: This may also be shut down by ExecutorsModule shutdown hook,
+        // but calling shutdown() multiple times is safe (idempotent)
+        sharedAdapterExecutor.shutdown();
+        try {
+            if (!sharedAdapterExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+                log.warn("Shared adapter executor did not terminate in time, forcing shutdown");
+                sharedAdapterExecutor.shutdownNow();
+                // Wait a bit more after forced shutdown
+                if (!sharedAdapterExecutor.awaitTermination(2, TimeUnit.SECONDS)) {
+                    log.error("Shared adapter executor still has running tasks after forced shutdown");
+                }
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while waiting for shared adapter executor to terminate");
+            sharedAdapterExecutor.shutdownNow();
+        }
+
+        log.debug("Protocol adapter manager executors shutdown completed");
     }
 }
