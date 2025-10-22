@@ -218,8 +218,6 @@ describe('Bridges', () => {
     cy_AddNewBridge('my-bridge', 'my-host', 'my-client-id')
     cy_AddNewBridge('my-bridge-2', 'my-host-2', 'my-client-id-2')
 
-    bridgePage.toast.close()
-
     cy.checkAccessibility(undefined, {
       rules: {
         'color-contrast': { enabled: false },
