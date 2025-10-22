@@ -43,8 +43,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.requireNonNullElse;
-
 /**
  * Utilities that handle the display, sort and filter logic relating to protocol adapters.
  */
@@ -149,8 +147,8 @@ public class ProtocolAdapterApiUtils {
         return new ProtocolAdapter(module.getId(),
                 module.getId(),
                 module.getName(),
-                requireNonNullElse(module.getDescription(), ""),
-                module.getDocumentationLink() != null ? module.getDocumentationLink().getUrl() : "",
+                module.getDescription(),
+                module.getDocumentationLink() != null ? module.getDocumentationLink().getUrl() : null,
                 module.getVersion(),
                 getLogoUrl(module, configurationService),
                 module.getProvisioningLink() != null ? module.getProvisioningLink().getUrl() : null,
@@ -163,7 +161,7 @@ public class ProtocolAdapterApiUtils {
                 null);
     }
 
-    private static @NotNull String getLogoUrl(
+    private static @Nullable String getLogoUrl(
             final @NotNull Module module,
             final @NotNull ConfigurationService configurationService) {
         if (module.getLogoUrl() != null) {
@@ -174,10 +172,10 @@ public class ProtocolAdapterApiUtils {
                         configurationService);
             }
         }
-        return "";
+        return null;
     }
 
-    private static @NotNull String getLogoUrl(
+    private static @Nullable String getLogoUrl(
             final @NotNull ProtocolAdapterInformation info,
             final @NotNull ConfigurationService configurationService,
             final @Nullable String xOriginalURI) {
@@ -199,12 +197,13 @@ public class ProtocolAdapterApiUtils {
                 }
             }
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
+            return logoUrl;
         } else {
             // although it is marked as not null it is input from outside (possible customer adapter),
             // so we should trust but validate and at least log.
             log.warn("Logo url for adapter '{}' was null. ", info.getDisplayName());
+            return null;
         }
-        return logoUrl;
     }
 
     @VisibleForTesting

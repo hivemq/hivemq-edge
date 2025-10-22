@@ -21,8 +21,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static java.util.Objects.requireNonNullElse;
-
 /**
  * A category is a unique entity and represents a curated grouping of a protocol adapter. A protocol adapter
  * maybe in 1 category.
@@ -49,11 +47,11 @@ public class ProtocolAdapterCategory {
 
     @JsonProperty("description")
     @Schema(name = "description", description = "The description associated with the category.", format = "string")
-    private final @NotNull String description;
+    private final @Nullable String description;
 
     @JsonProperty("image")
     @Schema(name = "image", description = "The image associated with the category.", format = "string")
-    private final @NotNull String image;
+    private final @Nullable String image;
 
     public ProtocolAdapterCategory(
             @JsonProperty("name") final @NotNull String name,
@@ -62,8 +60,8 @@ public class ProtocolAdapterCategory {
             @JsonProperty("image") final @Nullable String image) {
         this.name = name;
         this.displayName = displayName;
-        this.description = requireNonNullElse(description, "");
-        this.image = requireNonNullElse(image, "");
+        this.description = description;
+        this.image = image;
     }
 
     public @NotNull String getName() {
@@ -74,11 +72,11 @@ public class ProtocolAdapterCategory {
         return displayName;
     }
 
-    public @NotNull String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public @NotNull String getImage() {
+    public @Nullable String getImage() {
         return image;
     }
 }

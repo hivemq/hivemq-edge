@@ -115,7 +115,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
             final @NotNull ProtocolAdapterStartInput input,
             final @NotNull ProtocolAdapterStartOutput output) {
         try {
-            protocolAdapterState.setConnectionStatus(STATELESS);
+            // Don't manually set connection status - FSM manages this automatically
             if (httpClient == null) {
                 final HttpClient.Builder builder = HttpClient.newBuilder();
                 builder.version(HttpClient.Version.HTTP_1_1)
@@ -136,6 +136,13 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         httpClient = null;
         output.stoppedSuccessfully();
+    }
+
+    @Override
+    public void destroy() {
+        log.debug("Destroying HTTP adapter with id '{}'", adapterId);
+        // Clear the HTTP client reference to allow GC to clean up the internal executor
+        httpClient = null;
     }
 
     @Override
@@ -164,11 +171,11 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                         try {
                             for (final CompletableFuture<HttpData> future : pollingFutures) {
                                     final var data = future.get();
-                                    if (data.isSuccessStatusCode()) {
-                                        protocolAdapterState.setConnectionStatus(STATELESS);
-                                    } else {
+                                    // Update connection status to ERROR if HTTP request failed
+                                    if (!data.isSuccessStatusCode()) {
                                         protocolAdapterState.setConnectionStatus(ERROR);
                                     }
+                                    // FSM manages STATELESS/CONNECTED status automatically
                                     if (data.isSuccessStatusCode() ||
                                             !adapterConfig.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()) {
                                         data.getDataPoints().forEach(pollingOutput::addDataPoint);
