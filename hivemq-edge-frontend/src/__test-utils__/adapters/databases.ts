@@ -1,0 +1,137 @@
+import type { ProtocolAdapter } from '@/api/__generated__'
+
+export const MOCK_PROTOCOL_DATABASES: ProtocolAdapter = {
+  id: 'databases',
+  protocol: 'Databases',
+  name: 'Databases Protocol Adapter',
+  description:
+    'This protocol adapter allow you to execute database query on a database (PostgreSQL, MySQL, MSSQL), retrieve the result and send it via MQTT.',
+  url: 'https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#databases-protocol-adapter',
+  version: 'Development Version-ALPHA',
+  logoUrl: '/module/images/database.png',
+  author: 'HiveMQ',
+  installed: true,
+  capabilities: ['READ'],
+  category: {
+    name: 'CONNECTIVITY',
+    displayName: 'Connectivity',
+    description: 'A standard connectivity based protocol, typically web standard.',
+  },
+  tags: ['INTERNET', 'TCP', 'AUTOMATION'],
+  configSchema: {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        title: 'Identifier',
+        description: 'Unique identifier for this protocol adapter',
+        minLength: 1,
+        maxLength: 1024,
+        format: 'identifier',
+        pattern: '^([a-zA-Z_0-9-_])*$',
+      },
+      type: {
+        type: 'string',
+        enum: ['POSTGRESQL', 'MYSQL', 'MSSQL'],
+        title: 'Type',
+        description: 'Database type',
+        minLength: 1,
+        maxLength: 1024,
+      },
+      server: {
+        type: 'string',
+        title: 'Server',
+        description: 'Server address',
+        minLength: 1,
+        maxLength: 1024,
+      },
+      port: {
+        type: 'integer',
+        title: 'Port',
+        description: 'Server port (Default --> PostgreSQL: 5432, MySQL: 3306, MS SQL: 1433)',
+        default: 5432,
+        minLength: 1,
+        maxLength: 6,
+        pattern: '^([a-zA-Z_0-9-_])*$',
+      },
+      database: {
+        type: 'string',
+        title: 'Database',
+        description: 'Database name',
+        minLength: 1,
+        maxLength: 1024,
+        pattern: '^([a-zA-Z_0-9-_])*$',
+      },
+      username: {
+        type: 'string',
+        title: 'Username',
+        description: 'Username for the connection to the database',
+        minLength: 1,
+        maxLength: 1024,
+      },
+      password: {
+        type: 'string',
+        title: 'Password',
+        description: 'Password for the connection to the database',
+        minLength: 1,
+        maxLength: 1024,
+      },
+      encrypt: {
+        type: 'boolean',
+        title: 'Encrypt',
+        description: 'Use TLS to communicate with the remote database',
+        format: 'boolean',
+      },
+      trustCertificate: {
+        type: 'boolean',
+        title: 'Trust Certificate',
+        description: 'Do you want to trust remote certificate',
+        format: 'boolean',
+      },
+      connectionTimeoutSeconds: {
+        type: 'integer',
+        title: 'connectionTimeoutSeconds',
+        description: 'The timeout for connection establishment to the database.',
+        default: 30,
+        maximum: 180,
+      },
+      pollingIntervalMillis: {
+        type: 'integer',
+        title: 'Polling Interval [ms]',
+        description: 'Time in millisecond that this endpoint will be polled',
+        default: 1000,
+        minimum: 1,
+      },
+      maxPollingErrorsBeforeRemoval: {
+        type: 'integer',
+        title: 'Max. Polling Errors',
+        description: 'Max. errors polling the endpoint before the polling daemon is stopped',
+        default: 10,
+        minimum: -1,
+      },
+    },
+    required: ['id', 'type', 'server', 'port', 'database', 'username', 'password'],
+  },
+  uiSchema: {
+    'ui:tabs': [
+      {
+        id: 'coreFields',
+        title: 'Settings',
+        properties: ['id', 'type', 'server', 'port', 'database', 'username', 'password'],
+      },
+      {
+        id: 'publishing',
+        title: 'Publishing',
+        properties: ['maxPollingErrorsBeforeRemoval', 'pollingIntervalMillis'],
+      },
+    ],
+    port: {
+      type: 'integer',
+    },
+    password: {
+      'ui:widget': 'password',
+    },
+    'ui:order': ['id', 'type', 'server', 'port', '*'],
+  },
+}
