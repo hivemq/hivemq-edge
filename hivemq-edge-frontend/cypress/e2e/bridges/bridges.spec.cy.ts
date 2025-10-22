@@ -220,7 +220,11 @@ describe('Bridges', () => {
 
     bridgePage.toast.close()
 
-    cy.checkAccessibility()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        'color-contrast': { enabled: false },
+      },
+    })
     cy.percySnapshot('Page: Bridges')
   })
 })

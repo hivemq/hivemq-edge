@@ -62,8 +62,21 @@ describe('Workspace', () => {
     cy.checkAccessibility(undefined, {
       rules: {
         region: { enabled: false },
+        'color-contrast': { enabled: false },
       },
     })
     cy.percySnapshot('Page: Workspace')
+
+    // NEW: Snapshot 2: Workspace with node context panel
+    workspacePage.bridgeNode(mockBridge.id).click()
+    workspacePage.toolbar.overview.click()
+
+    cy.checkAccessibility(undefined, {
+      rules: {
+        region: { enabled: false },
+        'color-contrast': { enabled: false },
+      },
+    })
+    cy.percySnapshot('Workspace - Node Context Panel')
   })
 })

@@ -82,7 +82,7 @@ describe('Data Hub', () => {
     datahubDesignerPage.designer.mode('TOPIC_FILTER').type(datahubDesignerPage.leftArrows)
   })
 
-  describe('Data Hub', () => {
+  describe('Data Policy', () => {
     beforeEach(() => {
       const dateNow = Date.now()
       const formattedDate = DateTime.fromMillis(dateNow).minus({ minutes: 20 }).toISO({ format: 'basic' }) as string
@@ -110,7 +110,8 @@ describe('Data Hub', () => {
       })
     })
 
-    it('should load and render a data policy', () => {
+    it('should capture complex policy design', { tags: ['@percy'] }, () => {
+      cy.injectAxe()
       datahubPage.pageHeader.should('have.text', 'Data Hub on Edge')
       datahubPage.policiesTable.rows.should('have.length', 1)
 
@@ -140,6 +141,55 @@ describe('Data Hub', () => {
       })
 
       cy_checkDataPolicyGraph()
+
+      cy.checkAccessibility(undefined, {
+        rules: {
+          region: { enabled: false },
+          'color-contrast': { enabled: false },
+        },
+      })
+      // Snapshot 3: Complex loaded policy with multiple nodes
+      cy.percySnapshot('DataHub - Designer Complex')
     })
+  })
+
+  describe.skip('Behaviour Policy', () => {
+    // Need to be done
+  })
+
+  it('should be accessible', { tags: ['@percy'] }, () => {
+    cy.injectAxe()
+
+    // Snapshot 1: Empty state landing page
+    datahubPage.pageHeader.should('have.text', 'Data Hub on Edge')
+    datahubPage.policiesTable.status.should('have.text', 'No data received yet.')
+    cy.checkAccessibility(undefined, {
+      rules: {
+        region: { enabled: false },
+        'color-contrast': { enabled: false },
+      },
+    })
+    cy.percySnapshot('DataHub - Empty State')
+
+    // Snapshot 2: Designer with basic policy structure
+    datahubPage.addNewPolicy.click()
+    datahubDesignerPage.toolbox.trigger.click()
+    datahubDesignerPage.toolbox.dataPolicy.drag('[role="application"][data-testid="rf__wrapper"]')
+    datahubDesignerPage.controls.fit.click()
+
+    datahubDesignerPage.toolbox.trigger.click()
+    datahubDesignerPage.toolbox.topicFilter.drag('[role="application"][data-testid="rf__wrapper"]')
+    datahubDesignerPage.controls.fit.click()
+
+    datahubDesignerPage.designer.connectNodes('TOPIC_FILTER', 'topic-0', 'DATA_POLICY', 'topicFilter')
+    datahubDesignerPage.controls.fit.click()
+
+    cy.checkAccessibility(undefined, {
+      rules: {
+        region: { enabled: false },
+        'color-contrast': { enabled: false },
+      },
+    })
+    cy.percySnapshot('DataHub - Designer Basic')
   })
 })

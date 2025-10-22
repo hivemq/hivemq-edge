@@ -54,6 +54,22 @@ describe('Pulse Assets', () => {
       assetsPage.table.action(0, 'map').click()
     })
     it.skip('should relate assets to asset mappers', () => {})
+
+    it('should be accessible', { tags: ['@percy'] }, () => {
+      cy.injectAxe()
+      homePage.taskSectionTitle(ONBOARDING.TASK_PULSE, 0).should('contain.text', 'Pulse is currently active.')
+      homePage.pulseOnboarding.todos.eq(0).find('a').click()
+
+      assetsPage.location.should('equal', '/app/pulse-assets')
+      assetsPage.table.rows.should('have.length', 2)
+
+      cy.checkAccessibility(undefined, {
+        rules: {
+          region: { enabled: false },
+        },
+      })
+      cy.percySnapshot('Pulse - Assets Table')
+    })
   })
 
   describe('Asset Mapping', () => {
