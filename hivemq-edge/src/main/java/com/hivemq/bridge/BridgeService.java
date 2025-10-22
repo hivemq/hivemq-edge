@@ -245,39 +245,34 @@ public class BridgeService {
         final var start = System.currentTimeMillis();
         final var bridgeId = bridge.getId();
         final ListenableFuture<Void> future = bridgeMqttClient.start();
-        try {
-            Futures.addCallback(future, new FutureCallback<>() {
-                public void onSuccess(@Nullable final Void result) {
-                    log.info("Bridge '{}' to remote broker {}:{} started in {}ms.",
-                            bridge.getId(),
-                            bridge.getHost(),
-                            bridge.getPort(),
-                            (System.currentTimeMillis() - start));
-                    bridgeNameToLastError.remove(bridge.getId());
-                    final HiveMQEdgeRemoteEvent startedEvent =
-                            new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.BRIDGE_STARTED);
-                    startedEvent.addUserData("cloudBridge", String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
-                    startedEvent.addUserData("name", bridgeId);
-                    remoteService.fireUsageEvent(startedEvent);
-                    Checkpoints.checkpoint("mqtt-bridge-connected");
-                }
+        Futures.addCallback(future, new FutureCallback<>() {
+            public void onSuccess(@Nullable final Void result) {
+                log.info("Bridge '{}' to remote broker {}:{} started in {}ms.",
+                        bridge.getId(),
+                        bridge.getHost(),
+                        bridge.getPort(),
+                        (System.currentTimeMillis() - start));
+                bridgeNameToLastError.remove(bridge.getId());
+                final HiveMQEdgeRemoteEvent startedEvent =
+                        new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.BRIDGE_STARTED);
+                startedEvent.addUserData("cloudBridge", String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
+                startedEvent.addUserData("name", bridgeId);
+                remoteService.fireUsageEvent(startedEvent);
+                Checkpoints.checkpoint("mqtt-bridge-connected");
+            }
 
-                @Override
-                public void onFailure(final @NotNull Throwable t) {
-                    log.error("Unable oo start bridge '{}'.", bridge.getId(), t);
-                    bridgeNameToLastError.put(bridge.getId(), t);
-                    final HiveMQEdgeRemoteEvent errorEvent =
-                            new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.BRIDGE_ERROR);
-                    errorEvent.addUserData("cloudBridge", String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
-                    errorEvent.addUserData("cause", t.getMessage());
-                    errorEvent.addUserData("name", bridgeId);
-                    remoteService.fireUsageEvent(errorEvent);
-                }
-            }, executorService);
-        } catch (final RejectedExecutionException e) {
-            // Executor is shutting down - callback will not run, which is acceptable during shutdown
-            log.debug("Bridge callback rejected during shutdown for bridge '{}'", bridgeId, e);
-        }
+            @Override
+            public void onFailure(final @NotNull Throwable t) {
+                log.error("Unable oo start bridge '{}'.", bridge.getId(), t);
+                bridgeNameToLastError.put(bridge.getId(), t);
+                final HiveMQEdgeRemoteEvent errorEvent =
+                        new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.BRIDGE_ERROR);
+                errorEvent.addUserData("cloudBridge", String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
+                errorEvent.addUserData("cause", t.getMessage());
+                errorEvent.addUserData("name", bridgeId);
+                remoteService.fireUsageEvent(errorEvent);
+            }
+        }, executorService);
 
         return bridgeMqttClient;
     }
