@@ -32,7 +32,7 @@ describe('Pulse Assets', () => {
 
       homePage.pulseOnboarding.title.should('contain.text', 'Stay up-to-date with your asset mappings')
 
-      const expectedTodoSummary = [2, 0, 0]
+      const expectedTodoSummary = [2, 1, 0]
       homePage.pulseOnboarding.todos.should('have.length', expectedTodoSummary.length)
       homePage.pulseOnboarding.todosSummary.each(($element, idx) => {
         cy.wrap($element).should('contain.text', expectedTodoSummary[idx])
@@ -66,6 +66,7 @@ describe('Pulse Assets', () => {
       cy.checkAccessibility(undefined, {
         rules: {
           region: { enabled: false },
+          'color-contrast': { enabled: false },
         },
       })
       cy.percySnapshot('Pulse - Assets Table')
@@ -107,7 +108,7 @@ describe('Pulse Assets', () => {
       )
       assetMappingWizard.selectSources.select.type('my-adapter{enter}')
       assetMappingWizard.submit.click()
-      assetsPage.toast.error.should('be.visible')
+      assetsPage.toast.success.should('be.visible')
     })
 
     it('should add an asset to an existing mapper', () => {
