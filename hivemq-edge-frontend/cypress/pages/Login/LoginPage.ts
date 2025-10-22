@@ -24,6 +24,10 @@ export class LoginPage extends Page {
   get loginButton() {
     return cy.getByTestId('loginPage-submit')
   }
+
+  get errorMessage() {
+    return cy.get('[role="alert"][data-status="error"]')
+  }
 }
 
 export const loginPage = new LoginPage()
