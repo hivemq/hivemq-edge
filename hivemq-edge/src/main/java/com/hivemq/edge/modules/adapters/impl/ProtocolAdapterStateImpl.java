@@ -76,19 +76,15 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
         reportErrorMessage(t, errorMessage, setConnectionStatus(ConnectionStatus.ERROR));
     }
 
-    /**
-     * Sets the last error message associated with the adapter runtime. This is can be sent through the API to
-     * give an indication of the status of an adapter runtime.
-     *
-     * @param errorMessage
-     */
     @Override
     public void reportErrorMessage(
             final @Nullable Throwable throwable,
             final @Nullable String errorMessage,
             final boolean sendEvent) {
-        final String msg = errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage;
-        this.lastErrorMessage.set(msg);
+        // Sets the last error message associated with the adapter runtime.
+        // This is can be sent through the API to give an indication of the
+        // status of an adapter runtime.
+        lastErrorMessage.set(errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage);
         if (sendEvent) {
             final var eventBuilder = eventService.createAdapterEvent(adapterId, protocolId)
                     .withSeverity(EventImpl.SEVERITY.ERROR)
@@ -104,12 +100,12 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
 
     @Override
     public @NotNull RuntimeStatus getRuntimeStatus() {
-        return this.runtimeStatus.get();
+        return runtimeStatus.get();
     }
 
     @Override
-    public void setRuntimeStatus(final @NotNull RuntimeStatus runtimeStatus) {
-        this.runtimeStatus.set(runtimeStatus);
+    public void setRuntimeStatus(final @NotNull RuntimeStatus status) {
+        runtimeStatus.set(status);
     }
 
     @Override
@@ -118,7 +114,6 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     }
 
     public void setConnectionStatusListener(final @NotNull Consumer<ConnectionStatus> listener) {
-        // Capture current status before setting listener to reduce race window
         final ConnectionStatus currentStatus = connectionStatus.get();
         connectionStatusListener.set(listener);
         listener.accept(currentStatus);

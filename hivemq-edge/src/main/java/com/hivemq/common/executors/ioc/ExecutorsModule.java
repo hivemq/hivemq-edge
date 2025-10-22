@@ -34,43 +34,31 @@ public abstract class ExecutorsModule {
     private static final @NotNull Logger log = LoggerFactory.getLogger(ExecutorsModule.class);
 
     private static final @NotNull String GROUP_NAME = "hivemq-edge-group";
-    private static final @NotNull String SCHEDULED_WORKER_GROUP_NAME = "hivemq-edge-scheduled-group";
+    public static final @NotNull String SCHEDULED_WORKER_GROUP_NAME = "hivemq-edge-scheduled-group";
     private static final int SCHEDULED_WORKER_GROUP_THREAD_COUNT = 4;
-    private static final @NotNull String CACHED_WORKER_GROUP_NAME = "hivemq-edge-cached-group";
+    public static final @NotNull String CACHED_WORKER_GROUP_NAME = "hivemq-edge-cached-group";
     private static final @NotNull ThreadGroup coreGroup = new ThreadGroup(GROUP_NAME);
 
     @Provides
     @Singleton
     static @NotNull ScheduledExecutorService scheduledExecutor() {
-        final var executor = Executors.newScheduledThreadPool(SCHEDULED_WORKER_GROUP_THREAD_COUNT,
+        // ProtocolAdapterManager handles coordinated shutdown
+        return Executors.newScheduledThreadPool(SCHEDULED_WORKER_GROUP_THREAD_COUNT,
                 new HiveMQEdgeThreadFactory(SCHEDULED_WORKER_GROUP_NAME));
-        // Shutdown hook removed - ProtocolAdapterManager now handles coordinated shutdown
-        return executor;
     }
 
     @Provides
     @Singleton
     static @NotNull ExecutorService executorService() {
-        // Shutdown hook removed - ProtocolAdapterManager now handles coordinated shutdown
+        // ProtocolAdapterManager handles coordinated shutdown
         return Executors.newCachedThreadPool(new HiveMQEdgeThreadFactory(CACHED_WORKER_GROUP_NAME));
     }
 
-    /**
-     * Utility method for shutting down an executor service gracefully.
-     * This is called by ProtocolAdapterManager's shutdown hook to ensure
-     * executors are shut down AFTER adapters have stopped.
-     *
-     * @param executor the executor to shutdown
-     * @param name the name of the executor for logging
-     * @param timeoutSeconds how long to wait for termination
-     */
     public static void shutdownExecutor(
             final @NotNull ExecutorService executor,
             final @NotNull String name,
             final int timeoutSeconds) {
-        if (log.isDebugEnabled()) {
-            log.debug("Shutting down executor service: {}", name);
-        }
+        log.debug("Shutting down executor service: {}", name);
 
         if (!executor.isShutdown()) {
             executor.shutdown();
@@ -80,7 +68,6 @@ public abstract class ExecutorsModule {
             if (!executor.awaitTermination(timeoutSeconds, java.util.concurrent.TimeUnit.SECONDS)) {
                 log.warn("Executor service {} did not terminate in {}s, forcing shutdown", name, timeoutSeconds);
                 executor.shutdownNow();
-                // Give a final grace period after forced shutdown
                 if (!executor.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)) {
                     log.error("Executor service {} still has running tasks after forced shutdown", name);
                 }

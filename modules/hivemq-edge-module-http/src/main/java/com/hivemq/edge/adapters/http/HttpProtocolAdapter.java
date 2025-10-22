@@ -63,13 +63,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.JSON_MIME_TYPE;
 import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.PLAIN_MIME_TYPE;
 
-/**
- * @author HiveMQ Adapter Generator
- */
 public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
@@ -359,5 +355,4 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
             throw new RuntimeException(e);
         }
     }
-
 }

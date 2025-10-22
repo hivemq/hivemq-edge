@@ -212,6 +212,20 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
             final long startTime = System.currentTimeMillis();
 
             try {
+                // Shutdown protocol adapter manager and its executors BEFORE stopping HiveMQ
+                // This ensures clean shutdown of all executor thread pools
+                if (hiveMQServer != null && hiveMQServer.getInjector() != null) {
+                    try {
+                        final com.hivemq.protocols.ProtocolAdapterManager protocolAdapterManager =
+                                hiveMQServer.getInjector().protocolAdapterManager();
+                        if (protocolAdapterManager != null) {
+                            protocolAdapterManager.shutdown();
+                        }
+                    } catch (final Exception ex) {
+                        log.warn("Exception during protocol adapter manager shutdown", ex);
+                    }
+                }
+
                 hiveMQServer.stop();
             } catch (final Exception ex) {
                 if (desiredState == State.CLOSED) {

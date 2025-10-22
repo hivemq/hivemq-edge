@@ -54,7 +54,7 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull String adapterId;
     private final @NotNull Lock connectionLock;
     private @Nullable EtherNetIP etherNetIP;  // GuardedBy connectionLock
-    private final @NotNull PublishChangedDataOnlyHandler lastSamples = new PublishChangedDataOnlyHandler();
+    private final @NotNull PublishChangedDataOnlyHandler lastSamples;
     private final @NotNull DataPointFactory dataPointFactory;
 
     private final @NotNull Map<String, EipTag> tags;
@@ -73,6 +73,7 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
         this.connectionLock = new ReentrantLock();
+        this.lastSamples = new PublishChangedDataOnlyHandler();
     }
 
     @Override
@@ -83,7 +84,6 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
     @Override
     public void start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
-        // any setup which should be done before the adapter starts polling comes here.
         connectionLock.lock();
         try {
             if (etherNetIP != null) {
@@ -94,7 +94,7 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
             final EtherNetIP newConnection = new EtherNetIP(adapterConfig.getHost(), adapterConfig.getSlot());
             newConnection.connectTcp();
-            this.etherNetIP = newConnection;
+            etherNetIP = newConnection;
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
             output.startedSuccessfully();
         } catch (final Exception e) {
@@ -114,7 +114,6 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
             final EtherNetIP etherNetIPTemp = etherNetIP;
             etherNetIP = null;
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-
             if (etherNetIPTemp != null) {
                 try {
                     etherNetIPTemp.close();
@@ -197,5 +196,4 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
     public int getMaxPollingErrorsBeforeRemoval() {
         return adapterConfig.getEipToMqttConfig().getMaxPollingErrorsBeforeRemoval();
     }
-
 }
