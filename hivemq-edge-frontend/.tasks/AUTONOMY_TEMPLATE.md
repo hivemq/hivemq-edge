@@ -275,11 +275,13 @@ Some accessibility checks can be flaky due to timing issues:
 - **region**: May fail in complex canvas/graph components
 
 When you encounter consistent failures:
+
 1. Identify if it's a timing issue (animations, transitions)
 2. Disable the specific rule locally in the test
 3. Document why with a comment
 
 Example:
+
 ```typescript
 cy.checkAccessibility(undefined, {
   rules: {

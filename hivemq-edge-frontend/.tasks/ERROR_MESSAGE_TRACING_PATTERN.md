@@ -44,6 +44,7 @@ Each layer adds or transforms error information. Understanding this flow is crit
 **Location:** `src/api/__generated__/services/[ServiceName].ts`
 
 **What to find:**
+
 - The HTTP method and endpoint
 - The `errors` object which defines status codes and messages
 - These are generated from OpenAPI specs and define the contract
@@ -74,6 +75,7 @@ public addBridge(requestBody: Bridge): CancelablePromise<any> {
 **Location:** `src/api/hooks/[useHookName]/[useHookName].ts`
 
 **What to find:**
+
 - The mutation or query function
 - The return type: `useMutation<SuccessType, ApiError, InputType>`
 - How errors are typed (`ApiError`)
@@ -90,7 +92,8 @@ export const useCreateBridge = () => {
     return appClient.bridges.addBridge(requestBody)
   }
 
-  return useMutation<unknown, ApiError, Bridge>({  // ← ApiError type
+  return useMutation<unknown, ApiError, Bridge>({
+    // ← ApiError type
     mutationFn: createBridge,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BRIDGES] })
@@ -100,6 +103,7 @@ export const useCreateBridge = () => {
 ```
 
 **Key Insight:** React Query wraps the API error in an `ApiError` type which includes:
+
 - `message`: Error status text
 - `body`: Response body (often contains `title` with human-readable error)
 - `status`: HTTP status code
@@ -111,6 +115,7 @@ export const useCreateBridge = () => {
 **Location:** `src/api/hooks/[useHookName]/__handlers__/index.ts`
 
 **What to find:**
+
 - The MSW `http` handler for the endpoint
 - What the mock returns on success
 - What error responses are mocked (if any)
@@ -121,9 +126,9 @@ export const useCreateBridge = () => {
 // src/api/hooks/useGetBridges/__handlers__/index.ts
 export const handlers = [
   http.post('*/bridges', () => {
-    return HttpResponse.json({}, { status: 200 })  // ← Success only
+    return HttpResponse.json({}, { status: 200 }) // ← Success only
   }),
-  
+
   // No error handler defined yet - could add:
   // http.post('*/bridges', () => {
   //   return HttpResponse.json(
@@ -135,6 +140,7 @@ export const handlers = [
 ```
 
 **Key Insight:** MSW handlers control what errors appear in tests. You can:
+
 - Add error scenarios by creating additional handlers
 - Return specific error messages in the response body
 - Use conditional logic to trigger errors based on request data
@@ -146,6 +152,7 @@ export const handlers = [
 **Location:** `src/modules/[ModuleName]/components/[ComponentName].tsx`
 
 **What to find:**
+
 - How the hook is called
 - Error handling in `.catch()` or error state
 - How errors are displayed (Toast, Alert, inline messages)
@@ -170,14 +177,15 @@ createBridge
     errorToast(
       {
         title: t('bridge.toast.create.title'),
-        description: t('bridge.toast.create.error'),  // ← Generic message
+        description: t('bridge.toast.create.error'), // ← Generic message
       },
-      err  // ← Actual ApiError passed to toast
+      err // ← Actual ApiError passed to toast
     )
   )
 ```
 
 **Key Insight:** Components often show:
+
 - **Generic user-facing messages** via i18n keys
 - **Detailed error info** from the `ApiError` object
 - Different UI patterns: toasts (transient), alerts (persistent), inline errors
@@ -191,6 +199,7 @@ createBridge
 **Location:** Form components using RJSF (React JSON Schema Form)
 
 **What to find:**
+
 - JSON Schema definitions (often from OpenAPI models)
 - Required fields in the schema
 - Custom validation rules
@@ -201,19 +210,21 @@ createBridge
 ```typescript
 // Bridge schema (from OpenAPI)
 export type Bridge = {
-    id: string;              // Required
-    host: string;            // Required
-    clientId?: string;       // Optional in type, but form requires it
-    // ... other fields
+  id: string // Required
+  host: string // Required
+  clientId?: string // Optional in type, but form requires it
+  // ... other fields
 }
 ```
 
 **RJSF Error Messages:**
+
 - Format: `"[fieldName] is a required property"`
 - Generated automatically from JSON Schema
 - Displayed in error summary panel before API submission
 
 **Key Insight:** Client-side validation errors appear **before** any API call, so:
+
 - They don't appear in MSW handlers
 - They come from JSON Schema validation
 - Test these by asserting on the error summary panel content
@@ -225,6 +236,7 @@ export type Bridge = {
 **Location:** `cypress/pages/[PageName]/[PageName].ts`
 
 **What to create:**
+
 - Getters for error containers (alerts, panels, toasts)
 - Getters for specific error messages
 - Methods to access error text at different indices
@@ -249,6 +261,7 @@ config = {
 ```
 
 **Key Insight:** Page objects provide:
+
 - Reusable selectors for error UI
 - Type-safe access to error elements
 - Abstraction over DOM structure changes
@@ -260,6 +273,7 @@ config = {
 **Location:** `cypress/e2e/[module]/[module].spec.cy.ts`
 
 **What to test:**
+
 1. **Trigger the error** (submit invalid data, use wrong credentials, etc.)
 2. **Verify error UI appears** (panel visible, correct number of errors)
 3. **Assert on specific error messages** (use exact or partial text matching)
@@ -282,10 +296,10 @@ it('should capture bridge validation errors', { tags: ['@percy'] }, () => {
   // Assert on specific error messages (from RJSF validation)
   bridgePage.config.errorSummaryItem(0).should('contain.text', 'id')
   bridgePage.config.errorSummaryItem(0).should('contain.text', 'required property')
-  
+
   bridgePage.config.errorSummaryItem(1).should('contain.text', 'host')
   bridgePage.config.errorSummaryItem(1).should('contain.text', 'required property')
-  
+
   bridgePage.config.errorSummaryItem(2).should('contain.text', 'clientId')
   bridgePage.config.errorSummaryItem(2).should('contain.text', 'required property')
 
@@ -342,15 +356,15 @@ export const usePostAuthentication = () => {
 export const mockAuthApi = (credentials: UsernamePasswordCredentials) => {
   if (credentials.userName === 'admin' && credentials.password === 'password')
     return (req) => req.reply({ token: TOKEN })
-  
+
   return (req) => {
-    req.reply({ 
-      statusCode: 401, 
-      status: 401, 
-      body: { 
-        title: 'Invalid username and/or password',  // ← Mock error message
-        code: 401 
-      } 
+    req.reply({
+      statusCode: 401,
+      status: 401,
+      body: {
+        title: 'Invalid username and/or password', // ← Mock error message
+        code: 401,
+      },
     })
   }
 }
@@ -366,8 +380,8 @@ const onSubmit: SubmitHandler<UsernamePasswordCredentials> = (data) => {
   submitCredentials({ password: data.password, userName: data.userName })
     .then(verifyCredential)
     .catch((e: ApiError) => {
-      setError('root.ApiError', { 
-        type: e.message, 
+      setError('root.ApiError', {
+        type: e.message,
         message: e.body.title  // ← Error displayed: "Invalid username and/or password"
       })
     })
@@ -375,8 +389,8 @@ const onSubmit: SubmitHandler<UsernamePasswordCredentials> = (data) => {
 
 // In JSX:
 {errors.root?.ApiError && (
-  <ErrorMessage 
-    type={errors.root?.ApiError.type} 
+  <ErrorMessage
+    type={errors.root?.ApiError.type}
     message={errors.root?.ApiError.message}  // ← Shows in Alert component
   />
 )}
@@ -405,7 +419,7 @@ get errorAlertMessage() {
 // cypress/e2e/Login/login.spec.cy.ts
 it('should capture login error state', { tags: ['@percy'] }, () => {
   cy.injectAxe()
-  
+
   // Trigger error with invalid credentials
   loginPage.usernameInput.type('admin')
   loginPage.passwordInput.type('wrong-password')
@@ -427,14 +441,14 @@ it('should capture login error state', { tags: ['@percy'] }, () => {
 
 Use this table to identify where different types of error messages come from:
 
-| Error Type | Source | Example Message | When It Appears |
-|------------|--------|----------------|-----------------|
-| **Client-Side Validation** | RJSF/JSON Schema | `"id is a required property"` | Before API call, form validation |
-| **API Error (Success Response)** | OpenAPI spec | `"Bridge is invalid"` | API returns error status code |
-| **API Error (Body Title)** | MSW mock handler | `"Invalid username and/or password"` | Test environment API response |
-| **User-Facing Message** | i18n translation keys | `"Unable to create bridge"` | Generic UI message for users |
-| **Network Error** | Axios/Fetch | `"Network Error"` | Connection failure |
-| **Timeout Error** | React Query | `"Request timed out"` | Long-running request |
+| Error Type                       | Source                | Example Message                      | When It Appears                  |
+| -------------------------------- | --------------------- | ------------------------------------ | -------------------------------- |
+| **Client-Side Validation**       | RJSF/JSON Schema      | `"id is a required property"`        | Before API call, form validation |
+| **API Error (Success Response)** | OpenAPI spec          | `"Bridge is invalid"`                | API returns error status code    |
+| **API Error (Body Title)**       | MSW mock handler      | `"Invalid username and/or password"` | Test environment API response    |
+| **User-Facing Message**          | i18n translation keys | `"Unable to create bridge"`          | Generic UI message for users     |
+| **Network Error**                | Axios/Fetch           | `"Network Error"`                    | Connection failure               |
+| **Timeout Error**                | React Query           | `"Request timed out"`                | Long-running request             |
 
 ---
 
@@ -515,4 +529,3 @@ This systematic approach provides:
 ---
 
 **This pattern was developed during task 37074-percy-optimisation and represents a key insight into multi-technology stack integration testing.**
-
