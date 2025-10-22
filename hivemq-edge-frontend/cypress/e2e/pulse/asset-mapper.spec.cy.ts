@@ -1,7 +1,7 @@
 import { formatTopicString } from '@/components/MQTT/topic-utils.ts'
 import { drop } from '@mswjs/data'
 
-import { loginPage, homePage, assetsPage, workspacePage, rjsf } from 'cypress/pages'
+import { loginPage, homePage, assetsPage, workspacePage } from 'cypress/pages'
 import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
 import {
   cy_interceptPulseWithMockDB,
