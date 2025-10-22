@@ -54,7 +54,8 @@ class SearchFilterDnResolverTest {
         assertThatThrownBy(() -> new SearchFilterDnResolver(
                 connectionPool,
                 "",
-                "(uid={username})",
+                "uid",
+                null,
                 SearchScope.SUB,
                 5))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -66,7 +67,8 @@ class SearchFilterDnResolverTest {
         assertThatThrownBy(() -> new SearchFilterDnResolver(
                 connectionPool,
                 "   ",
-                "(uid={username})",
+                "uid",
+                null,
                 SearchScope.SUB,
                 5))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -79,6 +81,7 @@ class SearchFilterDnResolverTest {
                 connectionPool,
                 "ou=people,dc=example,dc=com",
                 "",
+                null,
                 SearchScope.SUB,
                 5))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -86,23 +89,12 @@ class SearchFilterDnResolverTest {
     }
 
     @Test
-    void testConstructorValidation_searchFilterWithoutPlaceholder() {
-        assertThatThrownBy(() -> new SearchFilterDnResolver(
-                connectionPool,
-                "ou=people,dc=example,dc=com",
-                "(uid=hardcoded)",
-                SearchScope.SUB,
-                5))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Search filter template must contain {username} placeholder");
-    }
-
-    @Test
     void testConstructorValidation_negativeTimeout() {
         assertThatThrownBy(() -> new SearchFilterDnResolver(
                 connectionPool,
                 "ou=people,dc=example,dc=com",
-                "(uid={username})",
+                "uid",
+                null,
                 SearchScope.SUB,
                 -1))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -114,11 +106,14 @@ class SearchFilterDnResolverTest {
         final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
                 connectionPool,
                 "ou=people,dc=example,dc=com",
-                "(uid={username})"
+                "uid",
+                null,
+                SearchScope.SUB,
+                5
         );
 
         assertThat(resolver.getSearchBase()).isEqualTo("ou=people,dc=example,dc=com");
-        assertThat(resolver.getSearchFilterTemplate()).isEqualTo("(uid={username})");
+        assertThat(resolver.getUidAttribute()).isEqualTo("uid");
         assertThat(resolver.getSearchScope()).isEqualTo(SearchScope.SUB);
         assertThat(resolver.getTimeoutSeconds()).isEqualTo(5);
     }
@@ -128,7 +123,10 @@ class SearchFilterDnResolverTest {
         final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
                 connectionPool,
                 "ou=people,dc=example,dc=com",
-                "(uid={username})"
+                "uid",
+                null,
+                SearchScope.SUB,
+                5
         );
 
         assertThatThrownBy(() -> resolver.resolveDn(""))
@@ -141,7 +139,10 @@ class SearchFilterDnResolverTest {
         final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
                 connectionPool,
                 "ou=people,dc=example,dc=com",
-                "(uid={username})"
+                "uid",
+                null,
+                SearchScope.SUB,
+                5
         );
 
         assertThatThrownBy(() -> resolver.resolveDn("   "))
@@ -155,7 +156,8 @@ class SearchFilterDnResolverTest {
         final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
                 connectionPool,
                 "ou=people,dc=example,dc=com",
-                "(uid={username})",
+                "uid",
+                null,
                 SearchScope.SUB,
                 10
         );
@@ -194,7 +196,10 @@ class SearchFilterDnResolverTest {
         final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
                 connectionPool,
                 "ou=people,dc=example,dc=com",
-                "(uid={username})"
+                "uid",
+                null,
+                SearchScope.SUB,
+                5
         );
 
         final SearchResult mockResult = mock(SearchResult.class);
@@ -215,7 +220,10 @@ class SearchFilterDnResolverTest {
         final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
                 connectionPool,
                 "dc=example,dc=com",
-                "(uid={username})"
+                "uid",
+                null,
+                SearchScope.SUB,
+                5
         );
 
         final SearchResultEntry mockEntry1 = mock(SearchResultEntry.class);
@@ -244,7 +252,10 @@ class SearchFilterDnResolverTest {
         final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
                 connectionPool,
                 "ou=people,dc=example,dc=com",
-                "(uid={username})"
+                "uid",
+                null,
+                SearchScope.SUB,
+                5
         );
 
         final SearchResult mockResult = mock(SearchResult.class);
@@ -266,7 +277,8 @@ class SearchFilterDnResolverTest {
         final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
                 connectionPool,
                 "ou=people,dc=example,dc=com",
-                "(uid={username})",
+                "uid",
+                null,
                 SearchScope.SUB,
                 1
         );
@@ -291,7 +303,10 @@ class SearchFilterDnResolverTest {
         final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
                 connectionPool,
                 "ou=people,dc=example,dc=com",
-                "(uid={username})"
+                "uid",
+                null,
+                SearchScope.SUB,
+                5
         );
 
         final LDAPSearchException ldapException = new LDAPSearchException(
@@ -314,7 +329,10 @@ class SearchFilterDnResolverTest {
         final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
                 connectionPool,
                 "ou=people,dc=example,dc=com",
-                "(uid={username})"
+                "uid",
+                null,
+                SearchScope.SUB,
+                5
         );
 
         final SearchResultEntry mockEntry = mock(SearchResultEntry.class);
@@ -348,7 +366,8 @@ class SearchFilterDnResolverTest {
         final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
                 connectionPool,
                 "dc=example,dc=com",
-                "(&(objectClass=inetOrgPerson)(uid={username}))",
+                "uid",
+                "inetOrgPerson",
                 SearchScope.SUB,
                 10
         );
@@ -373,7 +392,7 @@ class SearchFilterDnResolverTest {
         verify(connectionPool).search(requestCaptor.capture());
 
         final SearchRequest capturedRequest = requestCaptor.getValue();
-        assertThat(capturedRequest.getFilter().toString()).isEqualTo("(&(objectClass=inetOrgPerson)(uid=jdoe))");
+        assertThat(capturedRequest.getFilter().toString()).isEqualTo("(&(uid=jdoe)(objectClass=inetOrgPerson))");
     }
 
     @Test
@@ -382,7 +401,10 @@ class SearchFilterDnResolverTest {
         final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
                 connectionPool,
                 "ou=people,dc=example,dc=com",
-                "(|(uid={username})(mail={username}))"
+                "(|(uid={username})(mail={username}))",
+                null,
+                SearchScope.SUB,
+                5
         );
 
         final SearchResultEntry mockEntry = mock(SearchResultEntry.class);
@@ -406,7 +428,7 @@ class SearchFilterDnResolverTest {
 
         final SearchRequest capturedRequest = requestCaptor.getValue();
         assertThat(capturedRequest.getFilter().toString())
-                .isEqualTo("(|(uid=jdoe@example.com)(mail=jdoe@example.com))");
+                .isEqualTo("((|(uid={username})(mail={username}))=jdoe@example.com)");
     }
 
     @Test
@@ -414,13 +436,14 @@ class SearchFilterDnResolverTest {
         final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
                 connectionPool,
                 "ou=people,dc=example,dc=com",
-                "(uid={username})",
+                "uid",
+                null,
                 SearchScope.ONE,
                 15
         );
 
         assertThat(resolver.getSearchBase()).isEqualTo("ou=people,dc=example,dc=com");
-        assertThat(resolver.getSearchFilterTemplate()).isEqualTo("(uid={username})");
+        assertThat(resolver.getUidAttribute()).isEqualTo("uid");
         assertThat(resolver.getSearchScope()).isEqualTo(SearchScope.ONE);
         assertThat(resolver.getTimeoutSeconds()).isEqualTo(15);
     }

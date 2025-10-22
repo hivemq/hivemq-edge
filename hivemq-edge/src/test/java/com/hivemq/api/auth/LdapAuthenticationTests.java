@@ -33,6 +33,7 @@ import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import com.hivemq.http.core.HttpUtils;
+import com.unboundid.ldap.sdk.SearchScope;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -60,8 +61,6 @@ public class LdapAuthenticationTests {
     @Container
     private static final LldapContainer LLDAP_CONTAINER = new LldapContainer();
 
-    private static final String LDAP_DN_TEMPLATE = "uid={username},ou=people,{baseDn}";
-
     protected final Logger logger = LoggerFactory.getLogger(LdapAuthenticationTests.class);
 
     static final int TEST_HTTP_PORT = 8088;
@@ -81,19 +80,32 @@ public class LdapAuthenticationTests {
         final var port = LLDAP_CONTAINER.getLdapPort();
 
         // Create LdapSimpleBind for LLDAP admin authentication
+        // Note: The RDN should be just the user's identifier, the organizational unit
+        // will be added from the rdns parameter (getBaseDn() returns "ou=people,{baseDn}")
         final var ldapSimpleBind =
                 new LdapConnectionProperties.LdapSimpleBind(
-                        "uid=" + LLDAP_CONTAINER.getAdminUsername() + ",ou=people",
+                        "uid=" + LLDAP_CONTAINER.getAdminUsername(),
                         LLDAP_CONTAINER.getAdminPassword());
 
         // Create connection properties for plain LDAP (no TLS for simplicity)
         // 5 second connect timeout
         // 10 second response timeout
         final var ldapConnectionProperties =
-                new LdapConnectionProperties(new LdapConnectionProperties.LdapServers(new String[]{host},
-                        new int[]{port}), TlsMode.NONE, null, 5000,  // 5 second connect timeout
+                new LdapConnectionProperties(new LdapConnectionProperties.LdapServers(
+                        new String[]{host}, new int[]{port}),
+                        TlsMode.NONE,
+                        null,
+                        5000,  // 5 second connect timeout
                         10000, // 10 second response timeout
-                        1, LDAP_DN_TEMPLATE, LLDAP_CONTAINER.getBaseDn(), "ADMIN", ldapSimpleBind);
+                        1,
+                        "uid",
+                        getBaseDn(),
+                        null,
+                        SearchScope.SUB,
+                        5,
+                        "ADMIN",
+                        false,
+                        ldapSimpleBind);
 
         // Create test user in LLDAP
         new LdapTestConnection(ldapConnectionProperties).createTestUser(
@@ -118,6 +130,10 @@ public class LdapAuthenticationTests {
         config.setObjectMapper(mapper);
         server = new JaxrsHttpServer(mock(), List.of(config), conf);
         server.startServer();
+    }
+
+    public static String getBaseDn() {
+        return "ou=people," + LLDAP_CONTAINER.getBaseDn();
     }
 
     @AfterAll

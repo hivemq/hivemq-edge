@@ -28,8 +28,8 @@ class TemplateDnResolverTest {
     @Test
     void testOpenLdapTemplate() {
         final TemplateDnResolver resolver = new TemplateDnResolver(
-                "uid={username},ou=people,{baseDn}",
-                "dc=example,dc=com"
+                "uid",
+                "ou=people,dc=example,dc=com"
         );
 
         assertThat(resolver.resolveDn("jdoe"))
@@ -39,8 +39,8 @@ class TemplateDnResolverTest {
     @Test
     void testActiveDirectoryTemplate() {
         final TemplateDnResolver resolver = new TemplateDnResolver(
-                "cn={username},cn=Users,{baseDn}",
-                "dc=company,dc=com"
+                "cn",
+                "cn=Users,dc=company,dc=com"
         );
 
         assertThat(resolver.resolveDn("John Doe"))
@@ -50,8 +50,8 @@ class TemplateDnResolverTest {
     @Test
     void testEmailBasedTemplate() {
         final TemplateDnResolver resolver = new TemplateDnResolver(
-                "mail={username},ou=staff,{baseDn}",
-                "dc=company,dc=com"
+                "mail",
+                "ou=staff,dc=company,dc=com"
         );
 
         assertThat(resolver.resolveDn("jdoe@company.com"))
@@ -61,8 +61,8 @@ class TemplateDnResolverTest {
     @Test
     void testCustomAttributeTemplate() {
         final TemplateDnResolver resolver = new TemplateDnResolver(
-                "employeeNumber={username},ou=employees,{baseDn}",
-                "dc=corp,dc=com"
+                "employeeNumber",
+                "ou=employees,dc=corp,dc=com"
         );
 
         assertThat(resolver.resolveDn("12345"))
@@ -72,8 +72,8 @@ class TemplateDnResolverTest {
     @Test
     void testMultipleOuTemplate() {
         final TemplateDnResolver resolver = new TemplateDnResolver(
-                "uid={username},ou=engineering,ou=staff,{baseDn}",
-                "dc=company,dc=com"
+                "uid",
+                "ou=engineering,ou=staff,dc=company,dc=com"
         );
 
         assertThat(resolver.resolveDn("jdoe"))
@@ -81,43 +81,22 @@ class TemplateDnResolverTest {
     }
 
     @Test
-    void testTemplateWithoutBaseDnPlaceholder() {
-        // Template doesn't use {baseDn} placeholder - should work fine
-        final TemplateDnResolver resolver = new TemplateDnResolver(
-                "uid={username},ou=people,dc=example,dc=com",
-                "dc=ignored,dc=com"
-        );
-
-        assertThat(resolver.resolveDn("jdoe"))
-                .isEqualTo("uid={username},ou=people,dc=example,dc=com".replace("{username}", "jdoe"));
-    }
-
-    @Test
     void testValidationRejectsEmptyTemplate() {
         assertThatThrownBy(() -> new TemplateDnResolver("", "dc=example,dc=com"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("DN template cannot be empty");
+                .hasMessageContaining("uidAttribute cannot be empty");
     }
 
     @Test
     void testValidationRejectsBlankTemplate() {
         assertThatThrownBy(() -> new TemplateDnResolver("   ", "dc=example,dc=com"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("DN template cannot be empty");
-    }
-
-    @Test
-    void testValidationRejectsTemplateWithoutUsernamePlaceholder() {
-        assertThatThrownBy(() -> new TemplateDnResolver(
-                "uid=hardcoded,ou=people,{baseDn}",
-                "dc=example,dc=com"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("DN template must contain {username} placeholder");
+                .hasMessageContaining("uidAttribute cannot be empty");
     }
 
     @Test
     void testValidationRejectsEmptyBaseDn() {
-        assertThatThrownBy(() -> new TemplateDnResolver("uid={username},ou=people,{baseDn}", ""))
+        assertThatThrownBy(() -> new TemplateDnResolver("uid", ""))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Base DN cannot be empty");
     }
@@ -125,7 +104,7 @@ class TemplateDnResolverTest {
     @Test
     void testResolveDnRejectsEmptyUsername() {
         final TemplateDnResolver resolver = new TemplateDnResolver(
-                "uid={username},ou=people,{baseDn}",
+                "uid",
                 "dc=example,dc=com"
         );
 
@@ -137,7 +116,7 @@ class TemplateDnResolverTest {
     @Test
     void testResolveDnRejectsBlankUsername() {
         final TemplateDnResolver resolver = new TemplateDnResolver(
-                "uid={username},ou=people,{baseDn}",
+                "uid",
                 "dc=example,dc=com"
         );
 
@@ -147,11 +126,11 @@ class TemplateDnResolverTest {
     }
 
     @Test
-    void testGetTemplate() {
-        final String template = "uid={username},ou=people,{baseDn}";
-        final TemplateDnResolver resolver = new TemplateDnResolver(template, "dc=example,dc=com");
+    void testGetUidAttribute() {
+        final String uidAttribute = "uid";
+        final TemplateDnResolver resolver = new TemplateDnResolver(uidAttribute, "dc=example,dc=com");
 
-        assertThat(resolver.getTemplate()).isEqualTo(template);
+        assertThat(resolver.getUidAttribute()).isEqualTo(uidAttribute);
     }
 
     @Test

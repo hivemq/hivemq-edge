@@ -18,6 +18,7 @@ package com.hivemq.api.auth.provider.impl.ldap;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LldapContainer;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.SearchScope;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -61,19 +62,32 @@ class LdapTlsModesIntegrationTest {
 
         // Create LdapSimpleBind for LLDAP admin authentication
         // LLDAP admin DN: uid=admin,ou=people,{baseDn}
+        // Note: The RDN should be just the user's identifier, the organizational unit
+        // will be added from the rdns parameter in LdapConnectionProperties
         final var ldapSimpleBind =
                 new LdapConnectionProperties.LdapSimpleBind(
-                        "uid=" + LLDAP_CONTAINER.getAdminUsername() + ",ou=people",
+                        "uid=" + LLDAP_CONTAINER.getAdminUsername(),
                         LLDAP_CONTAINER.getAdminPassword());
 
         // Create connection properties for plain LDAP (no TLS)
         // 5 second connect timeout
         // 10 second response timeout
         final var ldapConnectionProperties =
-                new LdapConnectionProperties(new LdapConnectionProperties.LdapServers(new String[]{host},
-                        new int[]{port}), TlsMode.NONE, null, 5000,  // 5 second connect timeout
+                new LdapConnectionProperties(
+                        new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
+                        TlsMode.NONE,
+                        null,
+                        5000,  // 5 second connect timeout
                         10000, // 10 second response timeout
-                        1, LDAP_DN_TEMPLATE, LLDAP_CONTAINER.getBaseDn(), "ADMIN", ldapSimpleBind);
+                        1,
+                        "uid",       // uidAttribute
+                        "ou=people," + LLDAP_CONTAINER.getBaseDn(),  // rdns
+                        null,
+                        SearchScope.SUB,
+                        5,
+                        "ADMIN",  // assignedRole
+                        false,
+                        ldapSimpleBind);
 
         // Create and start LDAP client
         ldapClient = new LdapClient(ldapConnectionProperties);
@@ -130,7 +144,7 @@ class LdapTlsModesIntegrationTest {
         // Arrange - use a non-routable IP that will timeout
         final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
                 new LdapConnectionProperties.LdapSimpleBind(
-                        "uid=" + LLDAP_CONTAINER.getAdminUsername() + ",ou=people",
+                        "uid=" + LLDAP_CONTAINER.getAdminUsername(),
                         LLDAP_CONTAINER.getAdminPassword());
 
         final LdapConnectionProperties timeoutProps = new LdapConnectionProperties(
@@ -140,9 +154,13 @@ class LdapTlsModesIntegrationTest {
                 1000,  // 1 second timeout - should fail quickly
                 5000,
                 1,
-                LDAP_DN_TEMPLATE,
-                LLDAP_CONTAINER.getBaseDn(),
-                "ADMIN",
+                "uid",    // uidAttribute
+                "ou=people," + LLDAP_CONTAINER.getBaseDn(),  // rdns
+                null,
+                SearchScope.SUB,
+                5,
+                "ADMIN",  // assignedRole
+                false,
                 ldapSimpleBind);
 
         final LdapClient timeoutClient = new LdapClient(timeoutProps);
@@ -151,8 +169,11 @@ class LdapTlsModesIntegrationTest {
         timeoutClient.start();
 
         final long startTime = System.currentTimeMillis();
+        // With Directory Descent enabled by default, the timeout occurs during DN resolution
+        // which wraps the LDAPException in a DnResolutionException
         assertThatThrownBy(() -> timeoutClient.authenticateUser("test", "test".getBytes(StandardCharsets.UTF_8)))
-                .isInstanceOf(LDAPException.class);
+                .isInstanceOf(SearchFilterDnResolver.DnResolutionException.class)
+                .hasCauseInstanceOf(LDAPException.class);
         final long duration = System.currentTimeMillis() - startTime;
 
         // Should timeout within reasonable time (less than 5 seconds)
@@ -173,7 +194,7 @@ class LdapTlsModesIntegrationTest {
 
         final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
                 new LdapConnectionProperties.LdapSimpleBind(
-                        "uid=" + LLDAP_CONTAINER.getAdminUsername() + ",ou=people",
+                        "uid=" + LLDAP_CONTAINER.getAdminUsername(),
                         LLDAP_CONTAINER.getAdminPassword());
 
         final LdapConnectionProperties defaultTimeoutProps = new LdapConnectionProperties(
@@ -183,9 +204,13 @@ class LdapTlsModesIntegrationTest {
                 0,  // Use default timeout
                 0,  // Use default timeout
                 1,
-                LDAP_DN_TEMPLATE,
-                LLDAP_CONTAINER.getBaseDn(),
-                "ADMIN",
+                "uid",    // uidAttribute
+                "ou=people," + LLDAP_CONTAINER.getBaseDn(),  // rdns
+                null,
+                SearchScope.SUB,
+                5,
+                "ADMIN",  // assignedRole
+                false,
                 ldapSimpleBind);
 
         final LdapClient defaultTimeoutClient = new LdapClient(defaultTimeoutProps);

@@ -39,31 +39,25 @@ import org.jetbrains.annotations.NotNull;
  */
 public class TemplateDnResolver implements UserDnResolver {
 
-    private static final @NotNull String USERNAME_PLACEHOLDER = "{username}";
-    private static final @NotNull String BASE_DN_PLACEHOLDER = "{baseDn}";
-
-    private final @NotNull String template;
+    private final @NotNull String uidAttribute;
     private final @NotNull String baseDn;
 
     /**
      * Creates a new template-based DN resolver.
      *
-     * @param template The DN template with placeholders (e.g., "uid={username},ou=people,{baseDn}")
-     * @param baseDn   The base DN of the LDAP directory (e.g., "dc=example,dc=com")
+     * @param uidAttribute  The uidAttribeut to use for resolution (e.g., "uid")
+     * @param baseDn        The base DN of the LDAP directory (e.g., "dc=example,dc=com")
      * @throws IllegalArgumentException if template or baseDn is null or empty
      */
-    public TemplateDnResolver(final @NotNull String template, final @NotNull String baseDn) {
-        if (template.isBlank()) {
-            throw new IllegalArgumentException("DN template cannot be empty");
+    public TemplateDnResolver(final @NotNull String uidAttribute, final @NotNull String baseDn) {
+        if (uidAttribute.isBlank()) {
+            throw new IllegalArgumentException("uidAttribute cannot be empty");
         }
         if (baseDn.isBlank()) {
             throw new IllegalArgumentException("Base DN cannot be empty");
         }
-        if (!template.contains(USERNAME_PLACEHOLDER)) {
-            throw new IllegalArgumentException("DN template must contain {username} placeholder");
-        }
 
-        this.template = template;
+        this.uidAttribute = uidAttribute;
         this.baseDn = baseDn;
     }
 
@@ -74,19 +68,17 @@ public class TemplateDnResolver implements UserDnResolver {
         }
         final var escaped = new ByteStringBuffer();
         DN.getDNEscapingStrategy().escape(username, escaped);
-        // Replace placeholders in template
-        return template
-                .replace(USERNAME_PLACEHOLDER, escaped.toString())
-                .replace(BASE_DN_PLACEHOLDER, baseDn);
+
+        return uidAttribute + "=" + escaped.toString() + "," + baseDn;
     }
 
     /**
-     * Returns the template used by this resolver.
+     * Returns the uidAttribute used by this resolver.
      *
-     * @return The DN template string
+     * @return The uidAttribute string
      */
-    public @NotNull String getTemplate() {
-        return template;
+    public @NotNull String getUidAttribute() {
+        return uidAttribute;
     }
 
     /**

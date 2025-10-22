@@ -20,6 +20,8 @@ import com.hivemq.configuration.entity.api.ldap.LdapServerEntity;
 import com.hivemq.configuration.entity.api.ldap.LdapSimpleBindEntity;
 import com.hivemq.configuration.entity.api.ldap.TrustStoreEntity;
 import com.unboundid.ldap.sdk.LDAPConnectionOptions;
+import com.unboundid.ldap.sdk.LDAPConnectionPool;
+import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
 import com.unboundid.util.ssl.TrustStoreTrustManager;
@@ -44,12 +46,16 @@ import static java.util.Arrays.stream;
  * @param connectTimeoutMillis           Connection timeout in milliseconds (0 = use default)
  * @param responseTimeoutMillis          Response timeout in milliseconds (0 = use default)
  * @param maxConnections                 Maximum number of connections in the connection pool
- * @param userDnTemplate                 The DN template for resolving usernames to DNs (e.g., "uid={username},ou=people,{baseDn}")
- * @param baseDn                         The base DN of the LDAP directory (e.g., "dc=example,dc=com")
+ * @param uidAttribute                   The unique LDAP attribute that is used to identify every entry in the subtree of client RDNs. The default setting is uid
+ * @param rdns                           The base DN for Directory Descent searches (defaults to baseDn if null)
+ * @param searchScope                    The search scope for Directory Descent (ONE, SUB, or BASE)
+ * @param searchTimeoutSeconds           The timeout for Directory Descent searches in seconds
+ * @param assignedRole                   The role assigned to authenticated users
  * @param acceptAnyCertificateForTesting <strong>⚠️ TEST ONLY</strong> - When true, disables all certificate validation
  *                                       and accepts any certificate including self-signed and expired certificates.
  *                                       <strong>NEVER use in production!</strong> Only for integration tests with
  *                                       testcontainers. Default: false
+ * @param ldapSimpleBind                 The simple bind credentials for service account
  */
 public record LdapConnectionProperties(
         @NotNull LdapServers servers,
@@ -58,8 +64,11 @@ public record LdapConnectionProperties(
         int connectTimeoutMillis,
         int responseTimeoutMillis,
         int maxConnections,
-        @NotNull String userDnTemplate,
-        @NotNull String baseDn,
+        @Nullable String uidAttribute,
+        @NotNull String rdns,
+        @Nullable String requiredObjectClass,
+        @NotNull SearchScope searchScope,
+        int searchTimeoutSeconds,
         @NotNull String assignedRole,
         boolean acceptAnyCertificateForTesting,
         @NotNull LdapSimpleBind ldapSimpleBind) {
@@ -99,52 +108,6 @@ public record LdapConnectionProperties(
     }
 
     /**
-     * Creates connection properties with default timeouts and secure certificate validation.
-     *
-     * @param servers            List of LDapServers to connect to
-     * @param tlsMode            The TLS/SSL mode to use
-     * @param trustStore         An optional truststore for connecting to an LDAP server
-     * @param userDnTemplate     The DN template for resolving usernames
-     * @param baseDn             The base DN of the LDAP directory
-     */
-    public LdapConnectionProperties(
-            final @NotNull LdapServers servers,
-            final @NotNull TlsMode tlsMode,
-            final @Nullable TrustStore trustStore,
-            final @NotNull String userDnTemplate,
-            final @NotNull String baseDn,
-            final @NotNull String assignedRole,
-            final @NotNull LdapSimpleBind ldapSimpleBind) {
-        this(servers, tlsMode, trustStore, 0, 0, 10, userDnTemplate, baseDn, assignedRole, false, ldapSimpleBind);
-    }
-
-    /**
-     * Creates connection properties with explicit timeouts and secure certificate validation.
-     *
-     * @param servers               List of LDapServers to connect to
-     * @param tlsMode               The TLS/SSL mode to use
-     * @param trustStore            An optional truststore for connecting to an LDAP server
-     * @param connectTimeoutMillis  Connection timeout in milliseconds (0 = use default)
-     * @param responseTimeoutMillis Response timeout in milliseconds (0 = use default)
-     * @param userDnTemplate        The DN template for resolving usernames
-     * @param baseDn                The base DN of the LDAP directory
-     * @param assignedRole                The base DN of the LDAP directory
-     */
-    public LdapConnectionProperties(
-            final @NotNull LdapServers servers,
-            final @NotNull TlsMode tlsMode,
-            final @Nullable TrustStore trustStore,
-            final int connectTimeoutMillis,
-            final int responseTimeoutMillis,
-            final int maxConnections,
-            final @NotNull String userDnTemplate,
-            final @NotNull String baseDn,
-            final @NotNull String assignedRole,
-            final @NotNull LdapSimpleBind ldapSimpleBind) {
-        this(servers, tlsMode, trustStore, connectTimeoutMillis, responseTimeoutMillis, maxConnections, userDnTemplate, baseDn, assignedRole, false, ldapSimpleBind);
-    }
-
-    /**
      * Creates LdapConnectionProperties from XML configuration entity.
      * <p>
      * This factory method converts an {@link LdapAuthenticationEntity}
@@ -170,9 +133,13 @@ public record LdapConnectionProperties(
                 tlsMode,
                 entity.getTrustStore() != null ? TrustStore.fromEntity(entity.getTrustStore()) : null,
                 entity.getConnectTimeoutMillis(),
-                entity.getResponseTimeoutMillis(), entity.getMaxConnections(),
-                entity.getUserDnTemplate(),
-                entity.getBaseDn(),
+                entity.getResponseTimeoutMillis(),
+                entity.getMaxConnections(),
+                entity.getUidAttribute(),
+                entity.getRdns(),
+                entity.getRequiredObjectClass(),
+                entity.getDirecoryDescent() ? SearchScope.SUB : SearchScope.BASE,
+                entity.getSearchTimeoutSeconds(),
                 entity.getAssignedRole(),
                 false,  // Never allow test-only certificate acceptance from XML config
                 LdapSimpleBind.fromEntity(entity.getSimpleBindEntity())
@@ -196,27 +163,55 @@ public record LdapConnectionProperties(
         if (responseTimeoutMillis < 0) {
             throw new IllegalArgumentException("Response timeout cannot be negative: " + responseTimeoutMillis);
         }
-        if (userDnTemplate.isBlank()) {
-            throw new IllegalArgumentException("User DN template cannot be empty");
+
+        if(uidAttribute == null || uidAttribute.isBlank()) {
+            throw new IllegalArgumentException(
+                    "uidAttribute must be set to a non-blank value");
         }
-        if (!userDnTemplate.contains("{username}")) {
-            throw new IllegalArgumentException("User DN template must contain {username} placeholder");
+
+        if (searchTimeoutSeconds < 0) {
+            throw new IllegalArgumentException("Search timeout cannot be negative: " + searchTimeoutSeconds);
         }
-        if (baseDn.isBlank()) {
-            throw new IllegalArgumentException("Base DN cannot be empty");
-        }
+
         if (assignedRole.isBlank()) {
             throw new IllegalArgumentException("Assigned Role cannot be empty");
         }
     }
 
     /**
-     * Creates a DN resolver using the configured template and base DN.
+     * Creates a DN resolver using either Direct Reference or Directory Descent mode.
+     * <p>
+     * The resolver type is determined by configuration:
+     * <ul>
+     *     <li>If {@code userDnTemplate} is set: Creates {@link TemplateDnResolver} (Direct Reference)</li>
+     *     <li>If {@code uidAttribute} is set: Creates {@link SearchFilterDnResolver} (Directory Descent)</li>
+     * </ul>
+     * <p>
+     * For Directory Descent mode, a connection pool is required to perform LDAP searches.
      *
-     * @return A UserDnResolver configured with the template from this properties object
+     * @param connectionPool The LDAP connection pool (required for Directory Descent, ignored for Direct Reference)
+     * @return A UserDnResolver configured based on this properties object
+     * @throws IllegalStateException if Directory Descent is configured but no connection pool is provided
      */
-    public @NotNull UserDnResolver createUserDnResolver() {
-        return new TemplateDnResolver(userDnTemplate, baseDn);
+    public @NotNull UserDnResolver createUserDnResolver(final @Nullable LDAPConnectionPool connectionPool) {
+        if (searchScope.equals(SearchScope.SUB)) {
+            if (connectionPool == null) {
+                throw new IllegalStateException(
+                    "Connection pool is required for Directory Descent (search-based DN resolution). " +
+                    "Ensure the LDAP client is started before creating the resolver.");
+            }
+            return new SearchFilterDnResolver(
+                connectionPool,
+                rdns,
+                uidAttribute,
+                requiredObjectClass,
+                searchScope,
+                searchTimeoutSeconds
+            );
+        } else {
+            return new TemplateDnResolver(uidAttribute, rdns);
+        }
+
     }
 
     /**

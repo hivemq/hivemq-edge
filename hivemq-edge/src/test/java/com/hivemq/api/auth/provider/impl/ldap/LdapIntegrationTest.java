@@ -76,9 +76,11 @@ class LdapIntegrationTest {
 
         // Create LdapSimpleBind for LLDAP admin authentication
         // LLDAP admin DN: uid=admin,ou=people,{baseDn}
+        // Note: The RDN should be just the user's identifier, the organizational unit
+        // will be added from the rdns parameter in LdapConnectionProperties
         final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
                 new LdapConnectionProperties.LdapSimpleBind(
-                        "uid=" + LLDAP_CONTAINER.getAdminUsername() + ",ou=people",
+                        "uid=" + LLDAP_CONTAINER.getAdminUsername(),
                         LLDAP_CONTAINER.getAdminPassword());
 
         // Create connection properties for LDAPS
@@ -89,9 +91,13 @@ class LdapIntegrationTest {
                 10000, // 10 second connect timeout
                 30000, // 30 second response timeout
                 1,
-                LDAP_DN_TEMPLATE,
-                LLDAP_CONTAINER.getBaseDn(),
-                "ADMIN",
+                "uid",    // uidAttribute
+                "ou=people," + LLDAP_CONTAINER.getBaseDn(),  // rdns
+                null,
+                SearchScope.SUB,
+                5,
+                "ADMIN",  // assignedRole
+                false,
                 ldapSimpleBind);
 
         // Create and start LDAP client
@@ -189,7 +195,8 @@ class LdapIntegrationTest {
                 // Test 1: Simple UID search
                 final SearchFilterDnResolver uidResolver = new SearchFilterDnResolver(authenticatedPool,
                         "ou=people," + LLDAP_CONTAINER.getBaseDn(),
-                        "(uid={username})",
+                        "uid",
+                        null,
                         SearchScope.ONE,
                         5);
 
@@ -205,7 +212,8 @@ class LdapIntegrationTest {
                 // Test 2: Email search
                 final SearchFilterDnResolver emailResolver = new SearchFilterDnResolver(authenticatedPool,
                         LLDAP_CONTAINER.getBaseDn(),
-                        "(mail={username})",
+                        "mail",
+                        null,
                         SearchScope.SUB,
                         5);
 
@@ -216,23 +224,13 @@ class LdapIntegrationTest {
                 // Test 3: Complex filter
                 final SearchFilterDnResolver complexResolver = new SearchFilterDnResolver(authenticatedPool,
                         LLDAP_CONTAINER.getBaseDn(),
-                        "(&(objectClass=inetOrgPerson)(uid={username}))",
+                        "uid",
+                        "inetOrgPerson",
                         SearchScope.SUB,
                         5);
 
                 resolvedDn = complexResolver.resolveDn(TEST_USERNAME);
                 assertThat(resolvedDn).as("Should resolve DN with complex filter")
-                        .isEqualTo("uid=" + TEST_USERNAME + ",ou=people," + LLDAP_CONTAINER.getBaseDn());
-
-                // Test 4: OR filter
-                final SearchFilterDnResolver orResolver = new SearchFilterDnResolver(authenticatedPool,
-                        LLDAP_CONTAINER.getBaseDn(),
-                        "(|(uid={username})(mail={username}))",
-                        SearchScope.SUB,
-                        5);
-
-                resolvedDn = orResolver.resolveDn(TEST_USERNAME);
-                assertThat(resolvedDn).as("Should resolve DN with OR filter")
                         .isEqualTo("uid=" + TEST_USERNAME + ",ou=people," + LLDAP_CONTAINER.getBaseDn());
 
                 // Test 5: User not found

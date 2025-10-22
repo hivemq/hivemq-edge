@@ -74,11 +74,20 @@ public class LdapAuthenticationEntity {
     @XmlElement(name = "max-connections", required = true, defaultValue = "1")
     private int maxConnections = 1;
 
-    @XmlElement(name = "user-dn-template", required = true)
-    private @NotNull String userDnTemplate = "";
+    @XmlElement(name = "uid-attribute")
+    private @Nullable String uidAttribute = "uid";
 
-    @XmlElement(name = "base-dn", required = true)
-    private @NotNull String baseDn = "";
+    @XmlElement(name = "rdns")
+    private @Nullable String rdns = null;
+
+    @XmlElement(name = "required-object-class")
+    private @Nullable String requiredObjectClass = null;
+
+    @XmlElement(name = "directory-descent")
+    private boolean directoryDescent = false;
+
+    @XmlElement(name = "search-timeout-seconds")
+    private int searchTimeoutSeconds = 5;
 
     @XmlElement(name = "assigned-role", required = true, defaultValue = "ADMIN")
     private @NotNull String assignedRole = "ADMIN";
@@ -106,12 +115,24 @@ public class LdapAuthenticationEntity {
         return maxConnections;
     }
 
-    public @NotNull String getUserDnTemplate() {
-        return userDnTemplate;
+    public @Nullable String getUidAttribute() {
+        return uidAttribute;
     }
 
-    public @NotNull String getBaseDn() {
-        return baseDn;
+    public @Nullable String getRdns() {
+        return rdns;
+    }
+
+    public @Nullable String getRequiredObjectClass() {
+        return requiredObjectClass;
+    }
+
+    public boolean getDirecoryDescent() {
+        return directoryDescent;
+    }
+
+    public int getSearchTimeoutSeconds() {
+        return searchTimeoutSeconds;
     }
 
     public @NotNull String getAssignedRole() {
@@ -133,25 +154,31 @@ public class LdapAuthenticationEntity {
         return getConnectTimeoutMillis() == that.getConnectTimeoutMillis() &&
                 getResponseTimeoutMillis() == that.getResponseTimeoutMillis() &&
                 getMaxConnections() == that.getMaxConnections() &&
-                Objects.equals(servers, that.servers) &&
+                directoryDescent == that.directoryDescent &&
+                getSearchTimeoutSeconds() == that.getSearchTimeoutSeconds() &&
+                Objects.equals(getServers(), that.getServers()) &&
                 Objects.equals(getTlsMode(), that.getTlsMode()) &&
                 Objects.equals(getTrustStore(), that.getTrustStore()) &&
-                Objects.equals(getUserDnTemplate(), that.getUserDnTemplate()) &&
-                Objects.equals(getBaseDn(), that.getBaseDn()) &&
+                Objects.equals(getUidAttribute(), that.getUidAttribute()) &&
+                Objects.equals(getRdns(), that.getRdns()) &&
+                Objects.equals(getRequiredObjectClass(), that.getRequiredObjectClass()) &&
                 Objects.equals(getAssignedRole(), that.getAssignedRole()) &&
                 Objects.equals(getSimpleBindEntity(), that.getSimpleBindEntity());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(servers,
+        return Objects.hash(getServers(),
                 getTlsMode(),
                 getTrustStore(),
                 getConnectTimeoutMillis(),
                 getResponseTimeoutMillis(),
                 getMaxConnections(),
-                getUserDnTemplate(),
-                getBaseDn(),
+                getUidAttribute(),
+                getRdns(),
+                getRequiredObjectClass(),
+                directoryDescent,
+                getSearchTimeoutSeconds(),
                 getAssignedRole(),
                 getSimpleBindEntity());
     }

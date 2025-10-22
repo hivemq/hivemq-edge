@@ -16,12 +16,9 @@
 package com.hivemq.api.auth.provider.impl.ldap;
 
 import com.google.common.collect.ImmutableList;
-import com.unboundid.ldap.sdk.BindRequest;
-import com.unboundid.ldap.sdk.BindResult;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
-import com.unboundid.ldap.sdk.LDAPConnectionPoolHealthCheck;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.PruneUnneededConnectionsLDAPConnectionPoolHealthCheck;
 import com.unboundid.ldap.sdk.RDN;
@@ -60,18 +57,23 @@ public class LdapClient {
     private static final @NotNull Logger log = LoggerFactory.getLogger(LdapClient.class);
 
     private final @NotNull LdapConnectionProperties connectionProperties;
-    private final @NotNull UserDnResolver userDnResolver;
+    private volatile UserDnResolver userDnResolver;
     private volatile LDAPConnectionPool connectionPool;
+    private volatile SimpleBindRequest adminBindRequest;
     private volatile boolean started = false;
 
     /**
      * Creates a new LDAP client with the specified connection properties.
+     * <p>
+     * Note: The DN resolver is created lazily during {@link #start()} to ensure
+     * the connection pool is available for Directory Descent (search-based) resolution.
      *
      * @param connectionProperties The connection configuration
      */
     public LdapClient(final @NotNull LdapConnectionProperties connectionProperties) {
         this.connectionProperties = connectionProperties;
-        this.userDnResolver = connectionProperties.createUserDnResolver();
+        // Resolver will be created after connection pool is established in start()
+        this.userDnResolver = null;
     }
 
     /**
@@ -103,10 +105,10 @@ public class LdapClient {
                 final SSLContext sslContext = connectionProperties.createSSLContext();
                 startTlsProcessor = new StartTLSPostConnectProcessor(sslContext);
             }
-        };
+        }
 
         final var simpleBindEntity = connectionProperties.ldapSimpleBind();
-        final var baseDn = new DN(connectionProperties.baseDn());
+        final var baseDn = new DN(connectionProperties.rdns());
 
 
         final var bindDn = new DN(ImmutableList.<RDN>builder()
@@ -115,6 +117,8 @@ public class LdapClient {
                 .build());
 
         final var bindRequest = new SimpleBindRequest(bindDn, simpleBindEntity.userPassword());
+        // Store admin bind request for re-authenticating connections after user authentication
+        this.adminBindRequest = bindRequest;
 
         final int maxConnections = connectionProperties.maxConnections();
         final int minConnections = Math.min(1, maxConnections);
@@ -142,6 +146,10 @@ public class LdapClient {
                     false,
                     ldapConnectionPoolHealthCheck);
 
+            // Create the DN resolver now that the connection pool is available
+            // This is required for Directory Descent (search-based) resolution
+            userDnResolver = connectionProperties.createUserDnResolver(connectionPool);
+
             started = true;
             log.info("LDAP client started successfully, connected to {}:{}",
                     connectionProperties.servers().hosts()[0], connectionProperties.servers().ports()[0]);
@@ -167,12 +175,18 @@ public class LdapClient {
             connectionPool = null;
         }
 
+        userDnResolver = null;
+        adminBindRequest = null;
         started = false;
         log.info("LDAP client stopped successfully");
     }
 
     /**
      * Authenticates a user by performing an LDAP bind operation.
+     * <p>
+     * <strong>Important:</strong> After testing the user's credentials, this method re-authenticates
+     * the connection as admin before returning it to the pool. This ensures that subsequent operations
+     * requiring admin privileges (like DN resolution searches) work correctly.
      *
      * @param userDn   The user's Distinguished Name
      * @param password The user's password
@@ -210,7 +224,17 @@ public class LdapClient {
             throw e;
         } finally {
             if (connection != null) {
-                connectionPool.releaseConnection(connection);
+                // Re-authenticate connection as admin before returning to pool
+                // After binding as user to test credentials, the connection remains authenticated as that user.
+                // We must re-bind as admin so subsequent operations (DN resolution searches, etc.) have proper permissions.
+                try {
+                    connection.bind(adminBindRequest);
+                    connectionPool.releaseConnection(connection);
+                } catch (final LDAPException e) {
+                    // If re-authentication fails, mark connection as defunct so pool doesn't reuse it
+                    log.warn("Failed to re-authenticate connection as admin after user bind, marking connection as defunct: {}", e.getMessage());
+                    connectionPool.releaseDefunctConnection(connection);
+                }
             }
         }
     }

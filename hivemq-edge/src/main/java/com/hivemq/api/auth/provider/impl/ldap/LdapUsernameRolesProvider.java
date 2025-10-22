@@ -56,6 +56,10 @@ public class LdapUsernameRolesProvider implements IUsernameRolesProvider {
         } catch (final LDAPException e) {
             log.error("Error during LDAP authentication for user {}", userName, e);
             return Optional.empty();
+        } catch (final SearchFilterDnResolver.DnResolutionException e) {
+            // User's DN could not be resolved (user doesn't exist or search failed)
+            log.debug("DN resolution failed for user {}: {}", userName, e.getMessage());
+            return Optional.empty();
         } catch (final IllegalArgumentException e) {
             log.debug("Invalid username or password format for user {}: {}", userName, e.getMessage());
             return Optional.empty();

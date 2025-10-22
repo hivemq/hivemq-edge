@@ -68,8 +68,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 class OpenLdapTest {
 
-    private static final String LDAP_DN_TEMPLATE = "uid={username},ou=people,{baseDn}";
-
     /**
      * OpenLDAP container with test data seeded from LDIF file and TLS enabled.
      * <p>
@@ -113,9 +111,13 @@ class OpenLdapTest {
                 5000,
                 10000,
                 1,
-                LDAP_DN_TEMPLATE,
+                "uid",
                 OPENLDAP_CONTAINER.getBaseDn(),
+                null,
+                SearchScope.SUB,
+                5,
                 "ADMIN",
+                false,
                 ldapSimpleBind);
 
         // Create and start LDAP client
@@ -292,9 +294,11 @@ class OpenLdapTest {
 
             try (final LDAPConnectionPool pool = new LDAPConnectionPool(connection, 1, 5)) {
                 // Test 1: Search by UID
-                final SearchFilterDnResolver uidResolver = new SearchFilterDnResolver(pool,
+                final SearchFilterDnResolver uidResolver = new SearchFilterDnResolver(
+                        pool,
                         OPENLDAP_CONTAINER.getBaseDn(),
-                        "(uid={username})",
+                        "uid",
+                        null,
                         SearchScope.SUB,
                         5);
 
@@ -305,7 +309,8 @@ class OpenLdapTest {
                 // Test 2: Search by email
                 final SearchFilterDnResolver emailResolver = new SearchFilterDnResolver(pool,
                         OPENLDAP_CONTAINER.getBaseDn(),
-                        "(mail={username})",
+                        "mail",
+                        null,
                         SearchScope.SUB,
                         5);
 
@@ -316,7 +321,8 @@ class OpenLdapTest {
                 // Test 3: Search by common name
                 final SearchFilterDnResolver cnResolver = new SearchFilterDnResolver(pool,
                         OPENLDAP_CONTAINER.getBaseDn(),
-                        "(cn={username})",
+                        "cn",
+                        null,
                         SearchScope.SUB,
                         5);
 
@@ -462,8 +468,11 @@ class OpenLdapTest {
                 5000,
                 10000,
                 1,
-                LDAP_DN_TEMPLATE,
+                "uid",
                 OPENLDAP_CONTAINER.getBaseDn(),
+                null,
+                SearchScope.SUB,
+                5,
                 "ADMIN",
                 true,  // TEST ONLY: Accept any certificate
                 ldapSimpleBind);
@@ -524,15 +533,19 @@ class OpenLdapTest {
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
                 new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
                 TlsMode.START_TLS,
-                null,
+                null,  // No truststore needed
                 5000,
                 10000,
                 1,
-                LDAP_DN_TEMPLATE,
+                "uid",
                 OPENLDAP_CONTAINER.getBaseDn(),
+                null,
+                SearchScope.SUB,
+                5,
                 "ADMIN",
                 true,  // TEST ONLY: Accept any certificate
                 ldapSimpleBind);
+
 
         final LdapClient startTlsClient = new LdapClient(startTlsProps);
 
@@ -592,29 +605,38 @@ class OpenLdapTest {
         final LdapConnectionProperties plainProps = new LdapConnectionProperties(
                 new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
                 TlsMode.NONE,
-                null,
+                null,  // No truststore needed
                 5000,
                 10000,
                 1,
-                LDAP_DN_TEMPLATE,
+                "uid",
                 OPENLDAP_CONTAINER.getBaseDn(),
+                null,
+                SearchScope.SUB,
+                5,
                 "ADMIN",
+                true,  // TEST ONLY: Accept any certificate
                 ldapSimpleBind);
+
         final LdapClient plainClient = new LdapClient(plainProps);
 
         // START_TLS client
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
                 new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
                 TlsMode.START_TLS,
-                null,
+                null,  // No truststore needed
                 5000,
                 10000,
                 1,
-                LDAP_DN_TEMPLATE,
+                "uid",
                 OPENLDAP_CONTAINER.getBaseDn(),
+                null,
+                SearchScope.SUB,
+                5,
                 "ADMIN",
                 true,  // TEST ONLY: Accept any certificate
                 ldapSimpleBind);
+
         final LdapClient startTlsClient = new LdapClient(startTlsProps);
 
         // Act & Assert
@@ -661,28 +683,6 @@ class OpenLdapTest {
      */
     @Test
     void testStartTlsWithSearchFilterDnResolver() throws Exception {
-        // Arrange
-        final String host = OPENLDAP_CONTAINER.getHost();
-        final int port = OPENLDAP_CONTAINER.getLdapPort();
-
-        final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
-                new LdapConnectionProperties.LdapSimpleBind(
-                        "cn=admin",
-                        OPENLDAP_CONTAINER.getAdminPassword());
-
-        final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
-                TlsMode.START_TLS,
-                null,
-                5000,
-                10000,
-                1,
-                LDAP_DN_TEMPLATE,
-                OPENLDAP_CONTAINER.getBaseDn(),
-                "ADMIN",
-                true,  // TEST ONLY: Accept any certificate
-                ldapSimpleBind);
-
         // Create a START_TLS connection and bind as admin to enable searches
         final var testconnection = new LdapTestConnection(connectionProperties);
         try (final LDAPConnection connection = testconnection.createConnection()) {
@@ -693,7 +693,8 @@ class OpenLdapTest {
                 // Test search operations over encrypted connection
                 final SearchFilterDnResolver resolver = new SearchFilterDnResolver(pool,
                         OPENLDAP_CONTAINER.getBaseDn(),
-                        "(uid={username})",
+                        "uid",
+                        null,
                         SearchScope.SUB,
                         5);
 

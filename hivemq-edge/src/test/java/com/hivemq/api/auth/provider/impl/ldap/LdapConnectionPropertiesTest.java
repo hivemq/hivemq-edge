@@ -15,6 +15,7 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap;
 
+import com.unboundid.ldap.sdk.SearchScope;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -26,8 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class LdapConnectionPropertiesTest {
 
-    private static final String DEFAULT_DN_TEMPLATE = "uid={username},ou=people,{baseDn}";
-    private static final String DEFAULT_BASE_DN = "dc=example,dc=com";
+    private static final String DEFAULT_BASE_DN = "ou=people,dc=example,dc=com";
     private static final LdapConnectionProperties.LdapSimpleBind DEFAULT_SIMPLE_BIND =
             new LdapConnectionProperties.LdapSimpleBind("cn=admin", "admin");
 
@@ -47,9 +47,13 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 1,
-                DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN,
+                "uid",
+                "ou=people,dc=example,dc=com",
+                null,
+                SearchScope.BASE,
+                5,
                 "ADMIN",
+                false,
                 DEFAULT_SIMPLE_BIND))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Port must be between 1 and 65535");
@@ -61,9 +65,13 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 1,
-                DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN,
+                "uid",
+                "ou=people,dc=example,dc=com",
+                null,
+                SearchScope.BASE,
+                5,
                 "ADMIN",
+                false,
                 DEFAULT_SIMPLE_BIND))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Port must be between 1 and 65535");
@@ -78,9 +86,13 @@ class LdapConnectionPropertiesTest {
                 -1,
                 0,
                 1,
-                DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN,
+                "uid",
+                "ou=people,dc=example,dc=com",
+                null,
+                SearchScope.BASE,
+                5,
                 "ADMIN",
+                false,
                 DEFAULT_SIMPLE_BIND))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Connect timeout cannot be negative");
@@ -92,9 +104,13 @@ class LdapConnectionPropertiesTest {
                 0,
                 -1,
                 1,
-                DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN,
+                "uid",
+                "ou=people,dc=example,dc=com",
+                null,
+                SearchScope.BASE,
+                5,
                 "ADMIN",
+                false,
                 DEFAULT_SIMPLE_BIND))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Response timeout cannot be negative");
@@ -110,9 +126,13 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 1,
-                DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN,
+                "uid",
+                "ou=people,dc=example,dc=com",
+                null,
+                SearchScope.BASE,
+                5,
                 "ADMIN",
+                false,
                 DEFAULT_SIMPLE_BIND);
         assertThat(ldapsProps.trustStore()).isNull();
 
@@ -124,9 +144,13 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 1,
-                DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN,
+                "uid",
+                "ou=people,dc=example,dc=com",
+                null,
+                SearchScope.BASE,
+                5,
                 "ADMIN",
+                false,
                 DEFAULT_SIMPLE_BIND);
         assertThat(startTlsProps.trustStore()).isNull();
 
@@ -138,9 +162,13 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 1,
-                DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN,
+                "uid",
+                "ou=people,dc=example,dc=com",
+                null,
+                SearchScope.BASE,
+                5,
                 "ADMIN",
+                false,
                 DEFAULT_SIMPLE_BIND);
         assertThat(noneProps.trustStore()).isNull();
     }
@@ -151,9 +179,16 @@ class LdapConnectionPropertiesTest {
                 new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{636}),
                 TlsMode.LDAPS,
                 new LdapConnectionProperties.TrustStore("/path/to/truststore", "password", "JKS"),
-                DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN,
+                0,
+                0,
+                1,
+                "uid",
+                "ou=people,dc=example,dc=com",
+                null,
+                SearchScope.BASE,
+                5,
                 "ADMIN",
+                false,
                 DEFAULT_SIMPLE_BIND);
 
         assertThat(props.connectTimeoutMillis()).isEqualTo(0);
@@ -169,9 +204,13 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 1,
-                DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN,
+                "uid",
+                "ou=people,dc=example,dc=com",
+                null,
+                SearchScope.BASE,
+                5,
                 "ADMIN",
+                false,
                 DEFAULT_SIMPLE_BIND);
 
         assertThatThrownBy(props::createSSLContext)
@@ -189,9 +228,13 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 1,
-                DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN,
+                "uid",
+                "ou=people,dc=example,dc=com",
+                null,
+                SearchScope.BASE,
+                5,
                 "ADMIN",
+                false,
                 DEFAULT_SIMPLE_BIND);
 
         final javax.net.ssl.SSLContext sslContext = ldapsProps.createSSLContext();
@@ -207,9 +250,13 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 1,
-                DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN,
+                "uid",
+                "ou=people,dc=example,dc=com",
+                null,
+                SearchScope.BASE,
+                5,
                 "ADMIN",
+                false,
                 DEFAULT_SIMPLE_BIND);
 
         final javax.net.ssl.SSLContext startTlsSslContext = startTlsProps.createSSLContext();
@@ -228,9 +275,13 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 1,
-                DEFAULT_DN_TEMPLATE,
-                DEFAULT_BASE_DN,
+                "uid",
+                "ou=people,dc=example,dc=com",
+                null,
+                SearchScope.BASE,
+                5,
                 "ADMIN",
+                false,
                 DEFAULT_SIMPLE_BIND);
 
         assertThat(props.trustStore().trustStorePath())
@@ -249,23 +300,6 @@ class LdapConnectionPropertiesTest {
     }
 
     @Test
-    void testValidationRejectsDnTemplateWithoutPlaceholder() {
-        assertThatThrownBy(() -> new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
-                TlsMode.NONE,
-                null,
-                0,
-                0,
-                1,
-                "uid=fixed,ou=people,{baseDn}", // missing {username}
-                DEFAULT_BASE_DN,
-                "ADMIN",
-                DEFAULT_SIMPLE_BIND))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("User DN template must contain {username} placeholder");
-    }
-
-    @Test
     void testCreateUserDnResolver() {
         final LdapConnectionProperties props = new LdapConnectionProperties(
                 new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
@@ -274,12 +308,16 @@ class LdapConnectionPropertiesTest {
                 0,
                 0,
                 1,
-                "uid={username},ou=people,{baseDn}",
-                "dc=example,dc=com",
+                "uid",
+                "ou=people,dc=example,dc=com",
+                null,
+                SearchScope.BASE,
+                5,
                 "ADMIN",
+                false,
                 DEFAULT_SIMPLE_BIND);
 
-        final var resolver = props.createUserDnResolver();
+        final var resolver = props.createUserDnResolver(null); // null pool for Direct Reference mode
         assertThat(resolver).isNotNull();
         assertThat(resolver.resolveDn("jdoe"))
                 .isEqualTo("uid=jdoe,ou=people,dc=example,dc=com");
