@@ -42,7 +42,7 @@ mariadb = "3.5.6"
 milo = "1.0.6"
 mockito = "5.17.0"
 mqtt-sn-codec = "838f51d691"
-mssql="12.8.1.jre11"
+mssql = "12.8.1.jre11"
 mtconnect-protocol = "1.0.0"
 netty = "4.2.6.Final"
 pmd = "6.55.0"
@@ -130,7 +130,7 @@ milo-encoding-xml = { module = "org.eclipse.milo:milo-encoding-xml", version.ref
 milo-server = { module = "org.eclipse.milo:milo-sdk-server", version.ref = "milo" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 mqtt-sn-codec = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn-codec" }
-mssql= { module = "com.microsoft.sqlserver:mssql-jdbc", version.ref = "mssql" }
+mssql = { module = "com.microsoft.sqlserver:mssql-jdbc", version.ref = "mssql" }
 mtconnect-protocol = { module = "com.hivemq:hivemq-mtconnect-protocol", version.ref = "mtconnect-protocol"}
 netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
 netty-codec = { module = "io.netty:netty-codec", version.ref = "netty" }
