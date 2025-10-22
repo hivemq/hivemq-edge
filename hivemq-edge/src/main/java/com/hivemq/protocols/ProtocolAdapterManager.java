@@ -72,7 +72,7 @@ import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatu
 @SuppressWarnings("unchecked")
 @Singleton
 public class ProtocolAdapterManager {
-    private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
 
     private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters;
     private final @NotNull MetricRegistry metricRegistry;
@@ -90,7 +90,6 @@ public class ProtocolAdapterManager {
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
     private final @NotNull ExecutorService executorService;
     private final @NotNull ExecutorService sharedAdapterExecutor;
-    private final @NotNull ScheduledExecutorService scheduledExecutor;
     private final @NotNull AtomicBoolean shutdownInitiated;
 
     @Inject
@@ -108,8 +107,7 @@ public class ProtocolAdapterManager {
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
             final @NotNull TagManager tagManager,
             final @NotNull ProtocolAdapterExtractor protocolAdapterConfig,
-            final @NotNull ExecutorService sharedAdapterExecutor,
-            final @NotNull ScheduledExecutorService scheduledExecutor) {
+            final @NotNull ExecutorService sharedAdapterExecutor) {
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
         this.remoteService = remoteService;
@@ -124,7 +122,6 @@ public class ProtocolAdapterManager {
         this.tagManager = tagManager;
         this.protocolAdapterConfig = protocolAdapterConfig;
         this.sharedAdapterExecutor = sharedAdapterExecutor;
-        this.scheduledExecutor = scheduledExecutor;
         this.protocolAdapters = new ConcurrentHashMap<>();
         this.executorService = Executors.newSingleThreadExecutor();
         this.shutdownInitiated = new AtomicBoolean(false);
@@ -327,8 +324,9 @@ public class ProtocolAdapterManager {
                 final ProtocolAdapterMetricsService metricsService =
                         new ProtocolAdapterMetricsServiceImpl(configProtocolId, config.getAdapterId(), metricRegistry);
 
-                final ProtocolAdapterStateImpl state =
-                        new ProtocolAdapterStateImpl(moduleServices.eventService(), config.getAdapterId(), configProtocolId);
+                final ProtocolAdapterStateImpl state = new ProtocolAdapterStateImpl(moduleServices.eventService(),
+                        config.getAdapterId(),
+                        configProtocolId);
 
                 final ModuleServicesPerModuleImpl perModule =
                         new ModuleServicesPerModuleImpl(moduleServices.adapterPublishService(),
@@ -534,20 +532,18 @@ public class ProtocolAdapterManager {
     }
 
     /**
-     * Performs a coordinated shutdown of all adapters and executors.
-     * This method ensures a clean shutdown sequence:
-     * 1. Stops all protocol adapters
-     * 2. Shuts down executor thread pools
+     * Initiates shutdown of the Protocol Adapter Manager.
+     * <p>
+     * This method stops all running protocol adapters gracefully.
+     * Executor shutdown is handled separately by EmbeddedHiveMQ after all shutdown hooks complete,
+     * ensuring no race conditions occur between async operations and executor termination.
      * <p>
      * This method is idempotent - it can be called multiple times safely.
-     * It is automatically called via shutdown hook when the JVM exits,
-     * but can also be called explicitly (e.g., during test cleanup).
      */
     public void shutdown() {
         if (shutdownInitiated.compareAndSet(false, true)) {
-            log.info("Initiating coordinated shutdown of Protocol Adapter Manager");
+            log.info("Initiating shutdown of Protocol Adapter Manager");
             stopAllAdaptersOnShutdown();
-            shutdownExecutorsGracefully();
             log.info("Protocol Adapter Manager shutdown completed");
         } else {
             log.debug("Protocol Adapter Manager shutdown already initiated, skipping");
@@ -556,8 +552,7 @@ public class ProtocolAdapterManager {
 
     /**
      * Stop all adapters during shutdown in a coordinated manner.
-     * This method is called by shutdown() BEFORE executors are shut down,
-     * ensuring adapters can complete their stop operations cleanly.
+     * Adapters are given time to complete their stop operations gracefully.
      */
     private void stopAllAdaptersOnShutdown() {
         final List<ProtocolAdapterWrapper> adaptersToStop = new ArrayList<>(protocolAdapters.values());
@@ -589,11 +584,13 @@ public class ProtocolAdapterManager {
             allStops.get(20, TimeUnit.SECONDS);
             log.info("All adapters stopped successfully during shutdown");
         } catch (final TimeoutException e) {
-            log.warn("Timeout waiting for adapters to stop during shutdown (waited 20s). Proceeding with executor shutdown.");
+            log.warn(
+                    "Timeout waiting for adapters to stop during shutdown (waited 20s). Proceeding with executor shutdown.");
             // Log which adapters failed to stop
             for (int i = 0; i < stopFutures.size(); i++) {
                 if (!stopFutures.get(i).isDone()) {
-                    log.warn("Adapter '{}' did not complete stop operation within timeout", adaptersToStop.get(i).getId());
+                    log.warn("Adapter '{}' did not complete stop operation within timeout",
+                            adaptersToStop.get(i).getId());
                 }
             }
         } catch (final InterruptedException e) {
@@ -604,28 +601,4 @@ public class ProtocolAdapterManager {
         }
     }
 
-    /**
-     * Shutdown order:
-     * 1. Protocol adapter manager's internal executor (used for refresh operations)
-     * 2. Shared adapter executor (used by all adapters for lifecycle operations)
-     * 3. Scheduled executor (used for scheduled tasks)
-     */
-    private void shutdownExecutorsGracefully() {
-        log.info("Shutting down protocol adapter manager executors");
-
-        ExecutorsModule.shutdownExecutor(
-                executorService,
-                "protocol-adapter-manager-executor",
-                5);
-        ExecutorsModule.shutdownExecutor(
-                sharedAdapterExecutor,
-                ExecutorsModule.CACHED_WORKER_GROUP_NAME,
-                10);
-        ExecutorsModule.shutdownExecutor(
-                scheduledExecutor,
-                ExecutorsModule.SCHEDULED_WORKER_GROUP_NAME,
-                5);
-
-        log.info("Protocol adapter manager executors shutdown completed");
-    }
 }
