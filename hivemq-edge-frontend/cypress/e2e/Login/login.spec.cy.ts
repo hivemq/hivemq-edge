@@ -3,6 +3,9 @@ import { mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__hand
 import { loginPage } from 'cypress/pages'
 
 describe('Login Page', () => {
+  const userName = 'mock'
+  const password = 'incorrect'
+
   beforeEach(() => {
     cy.intercept('/api/v1/frontend/capabilities', { statusCode: 203, log: false })
     cy.intercept('/api/v1/frontend/notifications', { statusCode: 203, log: false })
@@ -20,12 +23,6 @@ describe('Login Page', () => {
     loginPage.visit()
   })
 
-  it('should be accessible', () => {
-    cy.injectAxe()
-    cy.checkAccessibility()
-    cy.percySnapshot('The login page on loading')
-  })
-
   it('should redirect to login', () => {
     cy.visit('/app/')
     cy.url().should('contain', '/login')
@@ -39,9 +36,6 @@ describe('Login Page', () => {
   })
 
   it('should display an error message with wrong credentials', () => {
-    const userName = 'mock'
-    const password = 'incorrect'
-
     cy.intercept('/api/v1/auth/authenticate', mockAuthApi({ userName, password }))
 
     cy.url().should('contain', '/login')
@@ -49,5 +43,16 @@ describe('Login Page', () => {
     loginPage.passwordInput.type(password)
     loginPage.loginButton.click()
     cy.url().should('contain', '/login')
+  })
+
+  it('should be accessible', { tags: ['@percy'] }, () => {
+    cy.injectAxe()
+
+    loginPage.userInput.type(userName)
+    loginPage.passwordInput.type(password)
+    loginPage.showPassword.click()
+
+    cy.checkAccessibility()
+    cy.percySnapshot('Page: Onboarding')
   })
 })
