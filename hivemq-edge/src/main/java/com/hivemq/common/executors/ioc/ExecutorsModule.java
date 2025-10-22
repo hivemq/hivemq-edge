@@ -31,18 +31,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Module
 public abstract class ExecutorsModule {
 
+    public static final @NotNull String SCHEDULED_WORKER_GROUP_NAME = "hivemq-edge-scheduled-group";
+    public static final @NotNull String CACHED_WORKER_GROUP_NAME = "hivemq-edge-cached-group";
+
     private static final @NotNull Logger log = LoggerFactory.getLogger(ExecutorsModule.class);
 
     private static final @NotNull String GROUP_NAME = "hivemq-edge-group";
-    public static final @NotNull String SCHEDULED_WORKER_GROUP_NAME = "hivemq-edge-scheduled-group";
     private static final int SCHEDULED_WORKER_GROUP_THREAD_COUNT = 4;
-    public static final @NotNull String CACHED_WORKER_GROUP_NAME = "hivemq-edge-cached-group";
     private static final @NotNull ThreadGroup coreGroup = new ThreadGroup(GROUP_NAME);
 
     @Provides
     @Singleton
     static @NotNull ScheduledExecutorService scheduledExecutor() {
-        // ProtocolAdapterManager handles coordinated shutdown
         return Executors.newScheduledThreadPool(SCHEDULED_WORKER_GROUP_THREAD_COUNT,
                 new HiveMQEdgeThreadFactory(SCHEDULED_WORKER_GROUP_NAME));
     }
@@ -50,7 +50,6 @@ public abstract class ExecutorsModule {
     @Provides
     @Singleton
     static @NotNull ExecutorService executorService() {
-        // ProtocolAdapterManager handles coordinated shutdown
         return Executors.newCachedThreadPool(new HiveMQEdgeThreadFactory(CACHED_WORKER_GROUP_NAME));
     }
 

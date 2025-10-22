@@ -20,6 +20,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.HiveMQEdgeMain;
 import com.hivemq.bootstrap.ioc.Injector;
+import com.hivemq.common.executors.ioc.ExecutorsModule;
 import com.hivemq.configuration.ConfigurationBootstrap;
 import com.hivemq.configuration.info.SystemInformationImpl;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -27,9 +28,10 @@ import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.embedded.EmbeddedHiveMQ;
+import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.util.ThreadFactoryUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.util.ThreadFactoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,22 +45,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
-/**
- * @author Georg Held
- */
 class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(EmbeddedHiveMQImpl.class);
-
-    private final @NotNull SystemInformationImpl systemInformation;
-    private final @NotNull MetricRegistry metricRegistry;
     @VisibleForTesting
     final @NotNull ExecutorService stateChangeExecutor;
+    private final @NotNull SystemInformationImpl systemInformation;
+    private final @NotNull MetricRegistry metricRegistry;
     private final @Nullable EmbeddedExtension embeddedExtension;
+    private final @NotNull Function<SystemInformationImpl, ModuleLoader> moduleLoaderFactory;
     private @Nullable ConfigurationService configurationService;
     private @Nullable HiveMQEdgeMain hiveMQServer;
-    private final @NotNull Function<SystemInformationImpl, ModuleLoader> moduleLoaderFactory;
-
     private @NotNull State currentState = State.STOPPED;
     private @NotNull State desiredState = State.STOPPED;
     private @Nullable Exception failedException;
@@ -120,13 +117,6 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
         shutDownFuture.get();
     }
 
-    private enum State {
-        RUNNING,
-        STOPPED,
-        FAILED,
-        CLOSED
-    }
-
     private void stateChange() {
         final List<CompletableFuture<Void>> localStartFutures;
         final List<CompletableFuture<Void>> localStopFutures;
@@ -169,9 +159,8 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
 
                     final ModuleLoader moduleLoader = moduleLoaderFactory.apply(systemInformation);
                     moduleLoader.loadModules();
-                    hiveMQServer = new HiveMQEdgeMain(systemInformation,
-                            metricRegistry,
-                            configurationService, moduleLoader);
+                    hiveMQServer =
+                            new HiveMQEdgeMain(systemInformation, metricRegistry, configurationService, moduleLoader);
                     hiveMQServer.bootstrap();
                     hiveMQServer.start(embeddedExtension);
 
@@ -212,11 +201,11 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
             final long startTime = System.currentTimeMillis();
 
             try {
-                // Shutdown protocol adapter manager and its executors BEFORE stopping HiveMQ
-                // This ensures clean shutdown of all executor thread pools
+                // Step 1: Shutdown protocol adapters BEFORE stopping HiveMQ
+                // This allows adapters to complete their stop operations cleanly
                 if (hiveMQServer != null && hiveMQServer.getInjector() != null) {
                     try {
-                        final com.hivemq.protocols.ProtocolAdapterManager protocolAdapterManager =
+                        final ProtocolAdapterManager protocolAdapterManager =
                                 hiveMQServer.getInjector().protocolAdapterManager();
                         if (protocolAdapterManager != null) {
                             protocolAdapterManager.shutdown();
@@ -226,7 +215,23 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
                     }
                 }
 
+                // Step 2: Stop HiveMQ, running all shutdown hooks (including BridgeService)
                 hiveMQServer.stop();
+
+                // Step 3: NOW shut down executors after all shutdown hooks have completed
+                // This prevents race conditions where callbacks try to execute on terminated executors
+                if (hiveMQServer != null && hiveMQServer.getInjector() != null) {
+                    try {
+                        ExecutorsModule.shutdownExecutor(hiveMQServer.getInjector().executorService(),
+                                ExecutorsModule.CACHED_WORKER_GROUP_NAME,
+                                10);
+                        ExecutorsModule.shutdownExecutor(hiveMQServer.getInjector().scheduledExecutor(),
+                                ExecutorsModule.SCHEDULED_WORKER_GROUP_NAME,
+                                5);
+                    } catch (final Exception ex) {
+                        log.warn("Exception during executor shutdown", ex);
+                    }
+                }
             } catch (final Exception ex) {
                 if (desiredState == State.CLOSED) {
                     log.error("Exception during running shutdown hook.", ex);
@@ -257,7 +262,8 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     }
 
     private void failFutureList(
-            final @NotNull Exception exception, final @NotNull List<CompletableFuture<Void>> futures) {
+            final @NotNull Exception exception,
+            final @NotNull List<CompletableFuture<Void>> futures) {
         for (final CompletableFuture<Void> future : futures) {
             future.completeExceptionally(exception);
         }
@@ -305,6 +311,13 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     @VisibleForTesting
     @Nullable Injector getInjector() {
         return hiveMQServer != null ? hiveMQServer.getInjector() : null;
+    }
+
+    private enum State {
+        RUNNING,
+        STOPPED,
+        FAILED,
+        CLOSED
     }
 
     private static class AbortedStateChangeException extends Exception {

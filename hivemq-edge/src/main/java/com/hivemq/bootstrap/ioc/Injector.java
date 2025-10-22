@@ -60,6 +60,8 @@ import dagger.Component;
 
 import jakarta.inject.Singleton;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 @SuppressWarnings({"NullabilityAnnotations", "UnusedReturnValue"})
 @Component(modules = {
@@ -121,7 +123,10 @@ public interface Injector {
 
 //    UnsServiceModule uns();
 
-//    ExecutorsModule executors();
+    // Executor accessors for coordinated shutdown
+    ExecutorService executorService();
+
+    ScheduledExecutorService scheduledExecutor();
 
     @Component.Builder
     interface Builder {
