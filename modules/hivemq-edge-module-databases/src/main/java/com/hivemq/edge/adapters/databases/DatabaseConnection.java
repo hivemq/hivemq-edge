@@ -96,8 +96,17 @@ public class DatabaseConnection {
     }
 
     public void close() {
-        if (ds != null) {
-            ds.close();
+        if (ds != null && !ds.isClosed()) {
+            log.debug("Closing HikariCP datasource");
+            try {
+                // Hard shutdown of HikariCP to ensure threads are terminated
+                ds.close();
+                log.debug("HikariCP datasource closed successfully");
+            } catch (final Exception e) {
+                log.error("Error closing HikariCP datasource", e);
+            } finally {
+                ds = null;  // Clear reference to allow GC
+            }
         }
     }
 }

@@ -151,6 +151,12 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
         protocolAdapterStopOutput.stoppedSuccessfully();
     }
 
+    @Override
+    public void destroy() {
+        log.debug("Destroying database adapter with id '{}'", adapterId);
+        // Ensure connection pool is fully closed to prevent thread leaks
+        databaseConnection.close();
+    }
 
     @Override
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
@@ -163,7 +169,7 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
         log.debug("Handling tags for the adapter");
         tags.forEach(tag -> loadDataFromDB(pollingOutput, (DatabasesAdapterTag) tag));
 
-        protocolAdapterState.setConnectionStatus(STATELESS);
+        // Don't manually set connection status - FSM manages this automatically
         pollingOutput.finish();
     }
 

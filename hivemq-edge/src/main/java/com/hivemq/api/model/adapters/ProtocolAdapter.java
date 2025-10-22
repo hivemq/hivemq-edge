@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import static java.util.Objects.requireNonNullElse;
-
 /**
  * The API representation of a Protocol Adapter type.
  */
@@ -44,16 +42,16 @@ public class ProtocolAdapter {
     private final @NotNull String name;
     @JsonProperty("description")
     @Schema(description = "The description")
-    private final @NotNull String description;
+    private final @Nullable String description;
     @JsonProperty("url")
     @Schema(description = "The url of the adapter")
-    private final @NotNull String url;
+    private final @Nullable String url;
     @JsonProperty("version")
     @Schema(description = "The installed version of the adapter")
     private final @NotNull String version;
     @JsonProperty("logoUrl")
     @Schema(description = "The logo of the adapter")
-    private final @NotNull String logoUrl;
+    private final @Nullable String logoUrl;
     @JsonProperty("provisioningUrl")
     @Schema(description = "The provisioning url of the adapter")
     private final @Nullable String provisioningUrl;
@@ -62,7 +60,7 @@ public class ProtocolAdapter {
     private final @NotNull String author;
     @JsonProperty("installed")
     @Schema(description = "Is the adapter installed?")
-    private final @NotNull Boolean installed;
+    private final @Nullable Boolean installed;
     @JsonProperty("category")
     @Schema(description = "The category of the adapter")
     private final @Nullable ProtocolAdapterCategory category;
@@ -83,10 +81,10 @@ public class ProtocolAdapter {
             @JsonProperty("id") final @NotNull String id,
             @JsonProperty("protocol") final @NotNull String protocol,
             @JsonProperty("name") final @NotNull String name,
-            @JsonProperty("description") final @NotNull String description,
-            @JsonProperty("url") final @NotNull String url,
+            @JsonProperty("description") final @Nullable String description,
+            @JsonProperty("url") final @Nullable String url,
             @JsonProperty("version") final @NotNull String version,
-            @JsonProperty("logoUrl") final @NotNull String logoUrl,
+            @JsonProperty("logoUrl") final @Nullable String logoUrl,
             @JsonProperty("provisioningUrl") final @Nullable String provisioningUrl,
             @JsonProperty("author") final @NotNull String author,
             @JsonProperty("installed") final @Nullable Boolean installed,
@@ -105,7 +103,7 @@ public class ProtocolAdapter {
         this.provisioningUrl = provisioningUrl;
         this.author = author;
         this.capabilities = capabilities;
-        this.installed = requireNonNullElse(installed, Boolean.FALSE);
+        this.installed = installed;
         this.category = category;
         this.tags = tags;
         this.configSchema = configSchema;
@@ -124,11 +122,11 @@ public class ProtocolAdapter {
         return name;
     }
 
-    public @NotNull String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public @NotNull String getUrl() {
+    public @Nullable String getUrl() {
         return url;
     }
 
@@ -136,7 +134,7 @@ public class ProtocolAdapter {
         return version;
     }
 
-    public @NotNull String getLogoUrl() {
+    public @Nullable String getLogoUrl() {
         return logoUrl;
     }
 
@@ -156,7 +154,7 @@ public class ProtocolAdapter {
         return capabilities;
     }
 
-    public @NotNull Boolean getInstalled() {
+    public @Nullable Boolean getInstalled() {
         return installed;
     }
 
