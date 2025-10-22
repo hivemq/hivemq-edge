@@ -50,8 +50,6 @@ import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENC
  * This service is used to remove full remove tombstones that are older than a certain amount of time
  * It is also used to check if the time to live of publishes, retained messages or client session is expired and mark
  * those that are expired as tombstones
- *
- * @author Lukas Brandl
  */
 @Singleton
 public class ScheduledCleanUpService {
@@ -210,7 +208,10 @@ public class ScheduledCleanUpService {
                 // Note that the "cancelled" CleanUpTask is expected to continue running because the implementation
                 // currently doesn't react to a set thread interrupt flag. But we expect this to be a rare case and want
                 // to ensure the progress of other cleanup procedures despite the potential additional load.
-                Futures.withTimeout(future, cleanUpTaskTimeoutSec, TimeUnit.SECONDS, scheduledExecutorService);
+                // Only schedule timeout task if executor is not shutting down to avoid RejectedExecutionException
+                if (!scheduledExecutorService.isShutdown()) {
+                    Futures.withTimeout(future, cleanUpTaskTimeoutSec, TimeUnit.SECONDS, scheduledExecutorService);
+                }
             } catch (final Throwable throwable) {
                 log.error("Exception in clean up job ", throwable);
                 scheduledCleanUpService.scheduleCleanUpTask();
