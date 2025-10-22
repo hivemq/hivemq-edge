@@ -38,23 +38,26 @@ This directory contains:
 ## Structure Overview
 
 ```
-.tasks/                           ← YOU ARE HERE
+.tasks/                                ← YOU ARE HERE
 │
-├── README.md                    ← This file
-├── ACTIVE_TASKS.md              ← Master index of all tasks
-├── AUTONOMY_TEMPLATE.md         ← AI guidelines & best practices
-├── QUICK_START.md               ← User guide for resuming work
-├── WEBSTORM_SETUP.md            ← IDE configuration guide
-├── WEBSTORM_TEMPLATES.md        ← Live templates for WebStorm
-├── FOR_CONSIDERATION.md         ← Future improvements
+├── README.md                          ← This file
+├── ACTIVE_TASKS.md                    ← Master index of all tasks
+├── AUTONOMY_TEMPLATE.md               ← AI guidelines & best practices
+├── CYPRESS_BEST_PRACTICES.md          ← Cypress guidelines & best practices
+├── ERROR_MESSAGE_TRACING_PATTERN.md   ← Full-Stack Error Tracing guidelines
+├── MONACO_TESTING_GUIDE.md            ← Monaco Editor Testing Guide for Cypress
+├── QUICK_START.md                     ← User guide for resuming work
+├── WEBSTORM_SETUP.md                  ← IDE configuration guide
+├── WEBSTORM_TEMPLATES.md              ← Live templates for WebStorm
+├── FOR_CONSIDERATION.md               ← Future improvements
 │
-└── {task-id}-{task-name}/       ← Individual task directories
+└── {task-id}-{task-name}/             ← Individual task directories
     ├── TASK_BRIEF.md
     ├── TASK_SUMMARY.md
     ├── CONVERSATION_SUBTASK_1.md
     ├── CONVERSATION_SUBTASK_N.md
     ├── SESSION_FEEDBACK.md
-    └── assets/                  ← Screenshots, diagrams, etc.
+    └── assets/                       ← Screenshots, diagrams, etc.
 ```
 
 ## For AI Agents
