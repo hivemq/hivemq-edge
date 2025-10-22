@@ -55,4 +55,19 @@ describe('Login Page', () => {
     cy.checkAccessibility()
     cy.percySnapshot('Page: Onboarding')
   })
+
+  it('should capture login error state', { tags: ['@percy'] }, () => {
+    cy.injectAxe()
+    cy.intercept('/api/v1/auth/authenticate', mockAuthApi({ userName, password }))
+
+    loginPage.userInput.type(userName)
+    loginPage.passwordInput.type(password)
+    loginPage.loginButton.click()
+
+    // Wait for error message to appear
+    loginPage.errorMessage.should('be.visible')
+
+    cy.checkAccessibility()
+    cy.percySnapshot('Login - Error State')
+  })
 })

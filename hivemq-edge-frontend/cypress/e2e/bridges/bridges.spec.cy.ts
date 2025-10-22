@@ -227,4 +227,20 @@ describe('Bridges', () => {
     })
     cy.percySnapshot('Page: Bridges')
   })
+
+  it('should capture bridge validation errors', { tags: ['@percy'] }, () => {
+    cy.injectAxe()
+    bridgePage.table.status.should('have.text', 'No bridges currently created')
+
+    bridgePage.addNewBridge.click()
+
+    // Trigger validation by clicking submit without required fields
+    bridgePage.config.submitButton.click()
+
+    // Error summary should be visible
+    bridgePage.config.errorSummary.should('have.length', 3)
+
+    cy.checkAccessibility()
+    cy.percySnapshot('Bridges - Validation Errors')
+  })
 })
