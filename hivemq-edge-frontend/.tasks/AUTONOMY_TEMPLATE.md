@@ -147,6 +147,164 @@ Agent Actions:
    - Technical learnings and solutions
    - Guidelines for maintaining quality and consistency
 
+### Document Formatting Requirements ⚠️ CRITICAL
+
+**RULE: Always run prettier on task documents after creation or modification**
+
+```bash
+# After creating or modifying any .tasks/ documents, ALWAYS run:
+npx prettier --write .tasks/{task-id}-{task-name}/*.md
+```
+
+**Why this matters:**
+
+- Maintains consistency with project linting standards
+- Prevents formatting-related merge conflicts
+- Ensures all task documentation follows the same style
+- Required for all markdown files in `.tasks/` directory
+
+**When to run prettier:**
+
+- After creating TASK_BRIEF.md
+- After creating or updating TASK_SUMMARY.md
+- After creating CONVERSATION_SUBTASK_N.md
+- After creating SESSION_FEEDBACK.md
+- After creating COVERAGE_MATRIX.md or any other task-specific documents
+- Before committing changes to task documentation
+
+**Example workflow:**
+
+```bash
+# 1. Create/modify task documents
+create_file(".tasks/37074-percy-optimisation/TASK_BRIEF.md", content)
+
+# 2. ALWAYS format before finishing
+npx prettier --write .tasks/37074-percy-optimisation/*.md
+```
+
+### E2E Test Verification Requirements ⚠️ CRITICAL
+
+**RULE: Always run verification tests after creating or modifying E2E tests**
+
+After modifying E2E test files (especially for Percy, visual regression, or accessibility), ALWAYS run a verification test to catch issues early before the user runs the full suite.
+
+**For Percy Visual Regression Tests:**
+
+```bash
+# Run only Percy-tagged tests to verify snapshots work
+npx cypress run --e2e --env grepTags="@percy",grepFilterSpecs=true
+```
+
+**For General E2E Tests:**
+
+```bash
+# Run specific test file
+npx cypress run --e2e --spec "cypress/e2e/path/to/test.spec.cy.ts"
+```
+
+**Why this matters:**
+
+- E2E tests can take significant time to run (5-15 minutes)
+- Catches syntax errors, missing imports, or broken test logic early
+- Verifies test setup (intercepts, mocks, page objects) works correctly
+- Prevents wasting user's time with broken tests
+- Provides immediate feedback on test stability
+
+**When to run verification:**
+
+- After adding new Percy snapshots
+- After modifying existing E2E test flows
+- After adding new test cases to E2E suites
+- After changing test setup (beforeEach, intercepts, etc.)
+- Before marking a subtask as complete
+
+**Example workflow:**
+
+```bash
+# 1. Modify E2E tests
+insert_edit_into_file("cypress/e2e/datahub/datahub.spec.cy.ts", ...)
+
+# 2. ALWAYS verify tests run successfully
+npx cypress run --e2e --env grepTags="@percy",grepFilterSpecs=true
+
+# 3. Check for errors and fix if needed
+# 4. Only then mark subtask as complete
+```
+
+**What to check in test results:**
+
+- ✅ All tests pass (green)
+- ✅ No syntax errors or import issues
+- ✅ Percy snapshots are captured (if applicable)
+- ✅ No unexpected timeouts or flaky behavior
+- ⚠️ If tests fail, fix issues before proceeding
+
+**Common E2E Test Patterns:**
+
+```typescript
+// ✅ GOOD - Use proper selectors and wait for elements
+loginPage.errorMessage.should('be.visible')
+cy.percySnapshot('Login - Error State')
+
+// ❌ BAD - Arbitrary waits are forbidden by ESLint
+cy.wait(500) // cypress/no-unnecessary-waiting
+cy.percySnapshot('Login - Error State')
+
+// ✅ GOOD - Use page object getters
+get errorMessage() {
+  return cy.get('[role="alert"][data-status="error"]')
+}
+
+// ✅ GOOD - Wait for specific UI states
+bridgePage.config.errorSummary.should('have.length', 3)
+cy.percySnapshot('Bridges - Validation Errors')
+
+// ✅ GOOD - Disable flaky accessibility rules when needed
+cy.checkAccessibility(undefined, {
+  rules: {
+    'color-contrast': { enabled: false }, // Flaky due to toast animations
+  },
+})
+```
+
+**Handling Flaky Accessibility Rules:**
+
+Some accessibility checks can be flaky due to timing issues:
+
+- **color-contrast**: Can fail during toast animations or transitions
+- **region**: May fail in complex canvas/graph components
+
+When you encounter consistent failures:
+1. Identify if it's a timing issue (animations, transitions)
+2. Disable the specific rule locally in the test
+3. Document why with a comment
+
+Example:
+```typescript
+cy.checkAccessibility(undefined, {
+  rules: {
+    'color-contrast': { enabled: false }, // Toast animation causes flaky contrast
+  },
+})
+```
+
+**Finding Proper Selectors:**
+
+When you need to wait for an element but don't have a page object getter:
+
+1. **Find the component** in `src/` directory
+2. **Identify the rendered element** (look for data-testid, role, or stable attributes)
+3. **Add getter to page object** in `cypress/pages/`
+4. **Use the getter** in your test
+
+Example: For login error messages, found `ErrorMessage.tsx` renders:
+
+```typescript
+<Alert status="error" role="alert">
+```
+
+So the selector is: `[role="alert"][data-status="error"]`
+
 ### Directory Structure Pattern
 
 ```
