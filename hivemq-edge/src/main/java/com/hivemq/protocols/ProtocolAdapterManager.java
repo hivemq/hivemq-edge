@@ -26,6 +26,7 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.common.executors.ioc.ExecutorsModule;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
@@ -129,14 +130,7 @@ public class ProtocolAdapterManager {
         this.shutdownInitiated = new AtomicBoolean(false);
 
         // Register coordinated shutdown hook that stops adapters BEFORE executors shutdown
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            if (shutdownInitiated.compareAndSet(false, true)) {
-                log.info("Initiating coordinated shutdown of Protocol Adapter Manager");
-                stopAllAdaptersOnShutdown();
-                shutdownExecutorsGracefully();
-                log.info("Protocol Adapter Manager shutdown completed");
-            }
-        }, "protocol-adapter-manager-shutdown"));
+        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown, "protocol-adapter-manager-shutdown"));
 
         protocolAdapterWritingService.addWritingChangedCallback(() -> protocolAdapterFactoryManager.writingEnabledChanged(
                 protocolAdapterWritingService.writingEnabled()));
@@ -540,8 +534,29 @@ public class ProtocolAdapterManager {
     }
 
     /**
+     * Performs a coordinated shutdown of all adapters and executors.
+     * This method ensures a clean shutdown sequence:
+     * 1. Stops all protocol adapters
+     * 2. Shuts down executor thread pools
+     * <p>
+     * This method is idempotent - it can be called multiple times safely.
+     * It is automatically called via shutdown hook when the JVM exits,
+     * but can also be called explicitly (e.g., during test cleanup).
+     */
+    public void shutdown() {
+        if (shutdownInitiated.compareAndSet(false, true)) {
+            log.info("Initiating coordinated shutdown of Protocol Adapter Manager");
+            stopAllAdaptersOnShutdown();
+            shutdownExecutorsGracefully();
+            log.info("Protocol Adapter Manager shutdown completed");
+        } else {
+            log.debug("Protocol Adapter Manager shutdown already initiated, skipping");
+        }
+    }
+
+    /**
      * Stop all adapters during shutdown in a coordinated manner.
-     * This method is called by the shutdown hook BEFORE executors are shut down,
+     * This method is called by shutdown() BEFORE executors are shut down,
      * ensuring adapters can complete their stop operations cleanly.
      */
     private void stopAllAdaptersOnShutdown() {
@@ -590,10 +605,6 @@ public class ProtocolAdapterManager {
     }
 
     /**
-     * Shutdown executors gracefully after adapters have stopped.
-     * This ensures a clean shutdown sequence where adapters stop BEFORE
-     * the executors they depend on are shut down.
-     * <p>
      * Shutdown order:
      * 1. Protocol adapter manager's internal executor (used for refresh operations)
      * 2. Shared adapter executor (used by all adapters for lifecycle operations)
@@ -602,25 +613,17 @@ public class ProtocolAdapterManager {
     private void shutdownExecutorsGracefully() {
         log.info("Shutting down protocol adapter manager executors");
 
-        // 1. Shutdown the single-threaded executor used for adapter refresh
-        com.hivemq.common.executors.ioc.ExecutorsModule.shutdownExecutor(
+        ExecutorsModule.shutdownExecutor(
                 executorService,
                 "protocol-adapter-manager-executor",
                 5);
-
-        // 2. Shutdown the shared adapter executor
-        // This is the critical executor that was causing the race condition.
-        // By shutting it down here AFTER all adapters have stopped, we ensure
-        // no adapter stop operations are rejected with RejectedExecutionException
-        com.hivemq.common.executors.ioc.ExecutorsModule.shutdownExecutor(
+        ExecutorsModule.shutdownExecutor(
                 sharedAdapterExecutor,
-                "hivemq-edge-cached-group",
+                ExecutorsModule.CACHED_WORKER_GROUP_NAME,
                 10);
-
-        // 3. Shutdown the scheduled executor
-        com.hivemq.common.executors.ioc.ExecutorsModule.shutdownExecutor(
+        ExecutorsModule.shutdownExecutor(
                 scheduledExecutor,
-                "hivemq-edge-scheduled-group",
+                ExecutorsModule.SCHEDULED_WORKER_GROUP_NAME,
                 5);
 
         log.info("Protocol adapter manager executors shutdown completed");
