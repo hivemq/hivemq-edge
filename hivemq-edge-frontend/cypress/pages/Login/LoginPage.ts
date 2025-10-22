@@ -17,6 +17,10 @@ export class LoginPage extends Page {
     return cy.get('#password')
   }
 
+  get showPassword() {
+    return cy.getByAriaLabel('Show password')
+  }
+
   get loginButton() {
     return cy.getByTestId('loginPage-submit')
   }
