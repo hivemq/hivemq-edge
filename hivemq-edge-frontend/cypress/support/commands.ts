@@ -36,8 +36,8 @@ Cypress.Commands.add('getByTestId', getByTestId)
 Cypress.Commands.add('getByAriaLabel', getByAriaLabel)
 Cypress.Commands.add('checkAccessibility', checkAccessibility)
 Cypress.Commands.add('clearInterceptList', clearInterceptList)
-Cypress.Commands.add('setMonacoEditorValue', { prevSubject: 'element' }, setMonacoEditorValue )
-Cypress.Commands.add('getMonacoEditorValue', { prevSubject: 'element' }, getMonacoEditorValue )
+Cypress.Commands.add('setMonacoEditorValue', { prevSubject: 'element' }, setMonacoEditorValue)
+Cypress.Commands.add('getMonacoEditorValue', { prevSubject: 'element' }, getMonacoEditorValue)
 
 // eslint-disable-next-line @typescript-eslint/no-namespace, @typescript-eslint/no-unused-vars
 declare namespace Chai {
