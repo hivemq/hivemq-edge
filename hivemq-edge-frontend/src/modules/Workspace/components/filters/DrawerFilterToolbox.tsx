@@ -43,8 +43,7 @@ import type {
   FilterTopicsOption,
   FilterConfigurationOption,
 } from '@/modules/Workspace/components/filters/types.ts'
-import { KEY_FILTER_CONFIGURATIONS } from '@/modules/Workspace/components/filters/types.ts'
-import { KEY_FILTER_CURRENT } from '@/modules/Workspace/components/filters/types.ts'
+import { KEY_FILTER_CONFIGURATIONS, KEY_FILTER_CURRENT } from '@/modules/Workspace/components/filters/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 
 interface DrawerFilterToolboxProps {
@@ -164,9 +163,14 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
                 label={criteria.label}
                 id={criteria.id}
                 isActive={currentState[criteria.id]?.isActive || false}
+                isDisabled={criteria.disabled}
                 onChange={handleActiveCriteria(criteria.id)}
               >
-                <criteria.editor onChange={handleChange(criteria.id)} value={currentState[criteria.id]?.filter} />
+                <criteria.editor
+                  onChange={handleChange(criteria.id)}
+                  value={currentState[criteria.id]?.filter}
+                  isDisabled={criteria.disabled}
+                />
               </WrapperCriteria>
             ))}
             <OptionsFilter value={currentState.options} />
