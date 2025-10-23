@@ -9,12 +9,9 @@ import { SelectEntityType } from '@/components/MQTT/types.ts'
 import { useGetDomainOntology } from '@/modules/DomainOntology/hooks/useGetDomainOntology.ts'
 
 import { filterContainerStyle } from '@/modules/Workspace/components/filters/filters.utils.ts'
-import type { FilterTopicsOption } from '@/modules/Workspace/components/filters/types.ts'
+import type { FilterCriteriaProps, FilterTopicsOption } from '@/modules/Workspace/components/filters/types.ts'
 
-interface FilterTopicsProps {
-  onChange?: (values: MultiValue<FilterTopicsOption>) => void
-  value?: MultiValue<FilterTopicsOption>
-}
+type FilterTopicsProps = FilterCriteriaProps<MultiValue<FilterTopicsOption>>
 
 const Option = (props: OptionProps<FilterTopicsOption>) => {
   const { type, value } = props.data

@@ -7,14 +7,11 @@ import { BiSelection } from 'react-icons/bi'
 import { MdClear } from 'react-icons/md'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
-import type { FilterSelectionOption } from '@/modules/Workspace/components/filters/types.ts'
+import type { FilterCriteriaProps, FilterSelectionOption } from '@/modules/Workspace/components/filters/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import type { NodeTypes } from '@/modules/Workspace/types.ts'
 
-interface FilterEntitiesProps {
-  onChange?: (values: MultiValue<FilterSelectionOption>) => void
-  value?: MultiValue<FilterSelectionOption>
-}
+type FilterEntitiesProps = FilterCriteriaProps<MultiValue<FilterSelectionOption>>
 
 const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange }) => {
   const { t } = useTranslation()
