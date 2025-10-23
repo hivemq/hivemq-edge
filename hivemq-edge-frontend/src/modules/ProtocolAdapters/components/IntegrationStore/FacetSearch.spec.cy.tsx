@@ -76,6 +76,5 @@ describe('FacetSearch', () => {
     )
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: FacetSearch')
   })
 })

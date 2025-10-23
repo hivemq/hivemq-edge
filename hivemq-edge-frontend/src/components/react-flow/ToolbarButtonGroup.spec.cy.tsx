@@ -54,6 +54,5 @@ describe('ToolbarButtonGroup', () => {
       }
     )
     cy.checkAccessibility()
-    cy.percySnapshot('The login page on loading')
   })
 })

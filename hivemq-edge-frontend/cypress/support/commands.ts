@@ -7,6 +7,7 @@ import { getByTestId } from './commands/getByTestId'
 import { getByAriaLabel } from './commands/getByAriaLabel'
 import { checkAccessibility } from './commands/checkAccessibility'
 import { clearInterceptList } from './commands/clearInterceptList'
+import { setMonacoEditorValue, getMonacoEditorValue } from './commands/monacoEditor'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -23,6 +24,10 @@ declare global {
       ): Chainable<JQuery<HTMLElement>>
 
       clearInterceptList(interceptAlias: string): Chainable<JQuery<HTMLElement>>
+
+      setMonacoEditorValue(value: string): Chainable<JQuery<HTMLElement>>
+
+      getMonacoEditorValue(): Chainable<string>
     }
   }
 }
@@ -31,6 +36,8 @@ Cypress.Commands.add('getByTestId', getByTestId)
 Cypress.Commands.add('getByAriaLabel', getByAriaLabel)
 Cypress.Commands.add('checkAccessibility', checkAccessibility)
 Cypress.Commands.add('clearInterceptList', clearInterceptList)
+Cypress.Commands.add('setMonacoEditorValue', { prevSubject: 'element' }, setMonacoEditorValue)
+Cypress.Commands.add('getMonacoEditorValue', { prevSubject: 'element' }, getMonacoEditorValue)
 
 // eslint-disable-next-line @typescript-eslint/no-namespace, @typescript-eslint/no-unused-vars
 declare namespace Chai {

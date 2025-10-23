@@ -23,6 +23,5 @@ describe('InfoPanel', () => {
     cy.injectAxe()
     cy.mountWithProviders(<InfoPanel />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: InfoPanel')
   })
 })

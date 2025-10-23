@@ -39,7 +39,6 @@ describe('SecurityPanel', () => {
     cy.injectAxe()
     cy.mountWithProviders(<TestingComponent onSubmit={cy.stub} defaultValues={mockBridge} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: SecurityPanel')
   })
 
   it('should render unexpanded', () => {

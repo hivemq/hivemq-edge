@@ -41,6 +41,5 @@ describe('NodeDevice', () => {
     cy.injectAxe()
     cy.mountWithProviders(mockReactFlow(<NodeDevice {...MOCK_NODE_DEVICE} />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: NodeDevice')
   })
 })

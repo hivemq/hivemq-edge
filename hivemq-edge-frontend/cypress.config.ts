@@ -1,5 +1,6 @@
 import { defineConfig } from 'cypress'
 import installLogsPrinter from 'cypress-terminal-report/src/installLogsPrinter.js'
+import { plugin as cypressGrepPlugin } from '@cypress/grep/plugin'
 
 import codeCoverage from '@cypress/code-coverage/task.js'
 
@@ -15,6 +16,8 @@ export default defineConfig({
     baseUrl: 'http://localhost:3000',
     setupNodeEvents(on, config) {
       codeCoverage(on, config)
+      cypressGrepPlugin(config)
+
       installLogsPrinter(on, {
         printLogsToConsole: 'onFail',
         includeSuccessfulHookLogs: false,
@@ -32,6 +35,7 @@ export default defineConfig({
         printLogsToConsole: 'onFail',
         includeSuccessfulHookLogs: false,
       })
+      cypressGrepPlugin(config)
       return config
     },
 

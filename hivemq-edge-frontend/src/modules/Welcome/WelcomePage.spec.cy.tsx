@@ -12,7 +12,6 @@ describe('WelcomePage', () => {
     cy.injectAxe()
     cy.mountWithProviders(<WelcomePage />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: Onboarding')
   })
 
   it('should render properly', () => {

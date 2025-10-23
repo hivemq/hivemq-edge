@@ -49,6 +49,5 @@ describe('TransitionNode', () => {
     cy.injectAxe()
     cy.mountWithProviders(mockReactFlow(<TransitionNode {...MOCK_NODE_TRANSITION} />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DataHub - TransitionNode')
   })
 })

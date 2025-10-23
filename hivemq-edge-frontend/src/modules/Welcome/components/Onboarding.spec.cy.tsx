@@ -44,7 +44,6 @@ describe('Onboarding', () => {
     cy.injectAxe()
     cy.mountWithProviders(<Onboarding tasks={MOCK_ONBOARDING} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: Onboarding')
   })
 
   it('should render properly', () => {

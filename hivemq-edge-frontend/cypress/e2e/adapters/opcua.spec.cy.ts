@@ -104,5 +104,60 @@ describe('OPCUA adapter', () => {
       adapterPage.config.submitButton.click()
       cy.checkAccessibility()
     })
+
+    it('should capture OPC-UA form', { tags: ['@percy'] }, () => {
+      cy.injectAxe()
+
+      // Fill in the form to show a realistic state
+      rjsf.field('id').input.type('my-opcua-adapter')
+      rjsf.field('uri').input.type('opc.tcp://localhost:53530/OPCUA/SimulationServer')
+
+      // Show some nested fields expanded
+      rjsf.field('overrideUri').checkBox.click()
+
+      adapterPage.config.formTab(1).click()
+      rjsf.field(['opcuaToMqtt', 'publishingInterval']).input.should('have.value', '1000')
+
+      // Go back to main tab for snapshot
+      adapterPage.config.formTab(0).click()
+
+      cy.checkAccessibility()
+      cy.percySnapshot('Adapters - OPC-UA Form')
+    })
+
+    it('should capture form validation errors', { tags: ['@percy'] }, () => {
+      cy.injectAxe()
+
+      // Trigger validation by clicking submit without filling required fields
+      adapterPage.config.submitButton.click()
+
+      // Validation errors should now be visible
+      rjsf.field('id').errors.should('be.visible')
+      rjsf.field('uri').errors.should('be.visible')
+
+      cy.checkAccessibility()
+      cy.percySnapshot('Adapters - Validation Errors')
+    })
+
+    it('should capture advanced configuration', { tags: ['@percy'] }, () => {
+      cy.injectAxe()
+
+      // Fill required fields
+      rjsf.field('id').input.type('advanced-adapter')
+      rjsf.field('uri').input.type('opc.tcp://secure-server:4840/OPCUA/Server')
+
+      // Expand advanced security settings
+      rjsf.field(['security', 'policy']).select.click()
+      rjsf.field(['security', 'policy']).select.type('{downarrow}{enter}')
+
+      // Enable TLS to show nested configuration
+      rjsf.field(['tls', 'enabled']).checkBox.click()
+
+      // Switch to second tab to show more configuration
+      adapterPage.config.formTab(1).click()
+
+      cy.checkAccessibility()
+      cy.percySnapshot('Adapters - Advanced Configuration')
+    })
   })
 })

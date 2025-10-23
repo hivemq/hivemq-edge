@@ -54,6 +54,5 @@ describe('OptionsPanel', () => {
     cy.get('@submit').should('have.been.calledWithMatch', { clientId: 'my-client-id-test123' })
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: OptionsPanel')
   })
 })

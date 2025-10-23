@@ -139,7 +139,7 @@ describe('ProtocolsBrowser', () => {
     cy.getByTestId('protocol-name').should('have.length', 3)
     cy.getByTestId('protocol-create-adapter').should('have.length', 2)
 
-    cy.get('[role="listitem"')
+    cy.get('[role="listitem"]')
       .eq(2)
       .find('a[data-testid="protocol-install-adapter"]')
       .should('contain', 'This adapter needs to be installed separately. Check the instructions')
@@ -152,6 +152,5 @@ describe('ProtocolsBrowser', () => {
     )
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: ProtocolsBrowser')
   })
 })

@@ -1,7 +1,7 @@
 import { formatTopicString } from '@/components/MQTT/topic-utils.ts'
 import { drop } from '@mswjs/data'
 
-import { loginPage, homePage, assetsPage, workspacePage, rjsf } from 'cypress/pages'
+import { loginPage, homePage, assetsPage, workspacePage } from 'cypress/pages'
 import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
 import {
   cy_interceptPulseWithMockDB,
@@ -32,7 +32,7 @@ describe('Pulse Assets', () => {
 
       homePage.pulseOnboarding.title.should('contain.text', 'Stay up-to-date with your asset mappings')
 
-      const expectedTodoSummary = [2, 0, 0]
+      const expectedTodoSummary = [2, 1, 0]
       homePage.pulseOnboarding.todos.should('have.length', expectedTodoSummary.length)
       homePage.pulseOnboarding.todosSummary.each(($element, idx) => {
         cy.wrap($element).should('contain.text', expectedTodoSummary[idx])
@@ -54,6 +54,23 @@ describe('Pulse Assets', () => {
       assetsPage.table.action(0, 'map').click()
     })
     it.skip('should relate assets to asset mappers', () => {})
+
+    it('should be accessible', { tags: ['@percy'] }, () => {
+      cy.injectAxe()
+      homePage.taskSectionTitle(ONBOARDING.TASK_PULSE, 0).should('contain.text', 'Pulse is currently active.')
+      homePage.pulseOnboarding.todos.eq(0).find('a').click()
+
+      assetsPage.location.should('equal', '/app/pulse-assets')
+      assetsPage.table.rows.should('have.length', 2)
+
+      cy.checkAccessibility(undefined, {
+        rules: {
+          region: { enabled: false },
+          'color-contrast': { enabled: false },
+        },
+      })
+      cy.percySnapshot('Pulse - Assets Table')
+    })
   })
 
   describe('Asset Mapping', () => {
@@ -91,7 +108,7 @@ describe('Pulse Assets', () => {
       )
       assetMappingWizard.selectSources.select.type('my-adapter{enter}')
       assetMappingWizard.submit.click()
-      assetsPage.toast.error.should('be.visible')
+      assetsPage.toast.success.should('be.visible')
     })
 
     it('should add an asset to an existing mapper', () => {

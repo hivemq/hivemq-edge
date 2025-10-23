@@ -36,6 +36,5 @@ describe('LineChart', () => {
     cy.get('text').should('contain.text', 'timestamp (seconds ago)')
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: LineChart')
   })
 })

@@ -42,6 +42,5 @@ describe('AdapterTypeSummary', () => {
     cy.injectAxe()
     cy.mountWithProviders(<AdapterTypeSummary adapter={mockProtocolAdapter} searchQuery="traffic from an edge" />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: AdapterTypeSummary')
   })
 })

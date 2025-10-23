@@ -92,6 +92,5 @@ describe('OperationNode', () => {
   //   cy.injectAxe()
   //   cy.mountWithProviders(mockReactFlow(<OperationNode {...MOCK_NODE_OPERATION} />))
   //   cy.checkAccessibility()
-  //   cy.percySnapshot('Component: DataHub - OperationNode')
-  // })
+  //     // })
 })

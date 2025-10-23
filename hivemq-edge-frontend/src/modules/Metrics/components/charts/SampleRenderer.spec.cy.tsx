@@ -75,6 +75,5 @@ describe('SampleRenderer', () => {
     cy.mountWithProviders(<SampleRenderer metricInfo={mockMetricInfo} series={mockSeries} isLoading={false} />)
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: SampleRenderer')
   })
 })

@@ -92,6 +92,5 @@ describe('TopicFilterPanel', () => {
     cy.mountWithProviders(<TopicFilterPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: TopicFilterPanel')
   })
 })

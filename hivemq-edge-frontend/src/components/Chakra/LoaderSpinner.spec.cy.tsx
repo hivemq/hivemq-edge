@@ -11,6 +11,5 @@ describe('LoaderSpinner', () => {
     cy.injectAxe()
     cy.mountWithProviders(<LoaderSpinner />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: Query Loader Spinner')
   })
 })

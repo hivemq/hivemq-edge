@@ -20,6 +20,5 @@ describe('DesignerCheatSheet', () => {
     cy.getByTestId('canvas-control-help').click()
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DesignerCheatSheet')
   })
 })

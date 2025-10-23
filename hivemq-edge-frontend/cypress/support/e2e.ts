@@ -8,5 +8,11 @@ import '@4tw/cypress-drag-drop'
 import './commands'
 
 import installLogsCollector from 'cypress-terminal-report/src/installLogsCollector'
+import { register as registerCypressGrep } from '@cypress/grep'
 
-installLogsCollector()
+installLogsCollector({
+  // Enable and cutomize to filter the verbose log when failing
+  //  collectTypes: ['cy:log', 'cy:command'],
+  // filterLog: ({ message }) => message.includes('a11y error!'),
+})
+registerCypressGrep()

@@ -40,6 +40,5 @@ describe('NodeBridge', () => {
     cy.injectAxe()
     cy.mountWithProviders(mockReactFlow(<NodeBridge {...MOCK_NODE_BRIDGE} />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: NodeBridge')
   })
 })

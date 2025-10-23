@@ -74,6 +74,10 @@ export class BridgePage extends Page {
       return cy.get('[role="dialog"][aria-label="Edit bridge configuration"]')
     },
 
+    get closeButton() {
+      return cy.get('[role="dialog"][aria-label="Edit bridge configuration"] > button[aria-label="Close"]')
+    },
+
     get title() {
       return cy.get('[role="dialog"] header')
     },

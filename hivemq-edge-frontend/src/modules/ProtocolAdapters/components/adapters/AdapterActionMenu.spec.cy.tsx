@@ -96,7 +96,6 @@ describe('AdapterActionMenu', () => {
         'color-contrast': { enabled: false },
       },
     })
-    cy.percySnapshot('Component: AdapterActionMenu')
   })
 
   describe('Workspace group', () => {
