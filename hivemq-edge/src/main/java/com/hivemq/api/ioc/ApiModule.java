@@ -22,8 +22,9 @@ import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.auth.provider.ITokenVerifier;
-import com.hivemq.api.auth.provider.IUsernamePasswordProvider;
-import com.hivemq.api.auth.provider.impl.SimpleUsernamePasswordProviderImpl;
+import com.hivemq.api.auth.provider.IUsernameRolesProvider;
+import com.hivemq.api.auth.provider.impl.ldap.LdapUsernameRolesProvider;
+import com.hivemq.api.auth.provider.impl.simple.SimpleUsernameRolesProviderImpl;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.api.resources.impl.BridgeResourceImpl;
@@ -51,6 +52,7 @@ import com.hivemq.edge.api.PayloadSamplingApi;
 import com.hivemq.edge.api.ProtocolAdaptersApi;
 import com.hivemq.edge.api.TopicFiltersApi;
 import com.hivemq.edge.api.UnsApi;
+import com.hivemq.logging.SecurityLog;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsBootstrapFactory;
@@ -125,12 +127,19 @@ public abstract class ApiModule {
 
     @Provides
     @Singleton
-    static IUsernamePasswordProvider usernamePasswordProvider(final @NotNull ApiConfigurationService apiConfigurationService) {
-        //Generic Credentials used by Both Authentication Handler
-        final SimpleUsernamePasswordProviderImpl provider = new SimpleUsernamePasswordProviderImpl();
-        log.trace("Applying {} users to API access list", apiConfigurationService.getUserList().size());
-        apiConfigurationService.getUserList().forEach(provider::add);
-        return provider;
+    static IUsernameRolesProvider usernamePasswordProvider(
+            final @NotNull ApiConfigurationService apiConfigurationService,
+            final @NotNull SecurityLog securityLog) {
+        final var ldap = apiConfigurationService.getLdapConnectionProperties();
+        if(ldap != null) {
+            return new LdapUsernameRolesProvider(ldap, securityLog);
+        } else {
+            //Generic Credentials used by Both Authentication Handler
+            final SimpleUsernameRolesProviderImpl provider = new SimpleUsernameRolesProviderImpl();
+            log.trace("Applying {} users to API access list", apiConfigurationService.getUserList().size());
+            apiConfigurationService.getUserList().forEach(provider::add);
+            return provider;
+        }
     }
 
     @Provides

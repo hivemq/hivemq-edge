@@ -31,6 +31,9 @@ import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
+import static com.hivemq.api.auth.ApiRoles.USER;
+
 /**
  * @author Simon L Johnson
  */
@@ -107,14 +110,14 @@ public class TestApiResource extends AbstractApi {
 
     @GET
     @Path("/get/auth/admin")
-    @RolesAllowed("ADMIN")
+    @RolesAllowed(ADMIN)
     public Response testGetAdminAuth() {
         return Response.ok().entity(securityContext.getUserPrincipal()).build();
     }
 
     @GET
     @Path("/get/auth/user")
-    @RolesAllowed({"ADMIN", "USER"})
+    @RolesAllowed({ADMIN, USER})
     public Response testGetUserAuth() {
         return Response.ok().entity(securityContext.getUserPrincipal()).build();
     }

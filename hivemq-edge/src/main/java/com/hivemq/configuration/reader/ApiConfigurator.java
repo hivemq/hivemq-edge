@@ -16,6 +16,7 @@
 package com.hivemq.configuration.reader;
 
 import com.google.common.collect.ImmutableList;
+import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.HttpListener;
@@ -40,9 +41,11 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
 import static com.hivemq.http.core.UsernamePasswordRoles.DEFAULT_PASSWORD;
 import static com.hivemq.http.core.UsernamePasswordRoles.DEFAULT_USERNAME;
 
@@ -51,7 +54,7 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
     private static final @NotNull List<ApiListener> DEFAULT_LISTENERS = List.of(new HttpListener(8080, "127.0.0.1"));
     private static final @NotNull Logger log = LoggerFactory.getLogger(ApiConfigurator.class);
     private static final @NotNull List<UsernamePasswordRoles> DEFAULT_USERS =
-            List.of(new UsernamePasswordRoles(DEFAULT_USERNAME, DEFAULT_PASSWORD, Set.of("ADMIN")));
+            List.of(new UsernamePasswordRoles(DEFAULT_USERNAME, DEFAULT_PASSWORD.getBytes(StandardCharsets.UTF_8), Set.of(ADMIN)));
 
     private final @NotNull ApiConfigurationService apiCfgService;
     private volatile @Nullable AdminApiEntity configEntity;
@@ -63,7 +66,7 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
 
     private static @NotNull UsernamePasswordRoles fromModel(final @NotNull UserEntity userEntity) {
         return new UsernamePasswordRoles(userEntity.getUserName(),
-                userEntity.getPassword(),
+                userEntity.getPassword().getBytes(StandardCharsets.UTF_8),
                 Set.copyOf(userEntity.getRoles()));
     }
 
@@ -84,11 +87,17 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
         apiCfgService.setEnabled(entity.isEnabled());
 
         // Users
-        final List<UserEntity> users = entity.getUsers();
-        if (!users.isEmpty()) {
-            apiCfgService.setUserList(users.stream().map(ApiConfigurator::fromModel).toList());
+        if(entity.getLdap() != null) {
+            apiCfgService.setLdapConnectionProperties(LdapConnectionProperties.fromEntity(entity.getLdap()));
         } else {
-            apiCfgService.setUserList(DEFAULT_USERS);
+            final List<UserEntity> users = entity.getUsers();
+            if (!users.isEmpty()) {
+                log.warn("The <users> element in the <api> configuration is deprecated and will be removed in future versions. " +
+                        "Please use the <username-roles-source> element instead.");
+                apiCfgService.setUserList(users.stream().map(ApiConfigurator::fromModel).toList());
+            } else {
+                apiCfgService.setUserList(DEFAULT_USERS);
+            }
         }
 
         // JWT

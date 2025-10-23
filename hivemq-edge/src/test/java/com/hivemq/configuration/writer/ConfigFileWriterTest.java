@@ -53,6 +53,8 @@ public class ConfigFileWriterTest extends AbstractConfigWriterTest {
         configFileReader.writeConfigToXML(new ConfigurationFile(tempCopyFile).file().get(), false, false);
 
         final String copiedFileContent = FileUtils.readFileToString(tempCopyFile, UTF_8);
+
+
         final Diff diff = XMLUnit.compareXML(originalXml, copiedFileContent);
         if (!diff.identical()) {
             System.err.println("xml diff found " + diff);

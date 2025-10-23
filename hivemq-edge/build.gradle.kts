@@ -188,6 +188,9 @@ dependencies {
     //JWT
     implementation(libs.jose4j)
 
+    //LDAP
+    implementation(libs.unboundid.ldap.sdk)
+
     //json schema
     implementation(libs.json.schema.validator)
     implementation(libs.victools.jsonschema.generator)
@@ -247,6 +250,8 @@ dependencies {
     testImplementation(libs.awaitility)
     testImplementation(libs.assertj)
     testImplementation(libs.systemstubs)
+    testImplementation(libs.testcontainers)
+    testImplementation(libs.testcontainers.junit.jupiter)
 }
 
 tasks.test {

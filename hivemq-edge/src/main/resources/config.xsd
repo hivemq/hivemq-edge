@@ -1059,6 +1059,101 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="ldap" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="servers" minOccurs="1" maxOccurs="1">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="ldap-server" minOccurs="1">
+                                        <xs:complexType>
+                                            <xs:all>
+                                                <xs:element name="host" type="nonEmptyString"/>
+                                                <xs:element name="port" type="port" minOccurs="0">
+                                                    <xs:annotation>
+                                                        <xs:documentation>LDAP server port. If not specified, defaults to 389 for NONE/START_TLS or 636 for LDAPS.</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:element>
+                                            </xs:all>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="tls-mode" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>TLS mode for LDAP connection. Default: NONE</xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="NONE"/>
+                                    <xs:enumeration value="LDAPS"/>
+                                    <xs:enumeration value="START_TLS"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:element>
+                        <xs:element name="tls" minOccurs="0">
+                            <xs:complexType>
+                                <xs:all>
+                                    <xs:element name="truststore-path" type="nonEmptyString" minOccurs="0">
+                                        <xs:annotation>
+                                            <xs:documentation>Path to truststore file. If not specified, system default CA certificates are used.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                    <xs:element name="truststore-password" type="xs:string" minOccurs="0">
+                                        <xs:annotation>
+                                            <xs:documentation>Password for the truststore.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                    <xs:element name="truststore-type" type="xs:string" minOccurs="0">
+                                        <xs:annotation>
+                                            <xs:documentation>Type of truststore (e.g., JKS, PKCS12).</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                </xs:all>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="simple-bind" minOccurs="1" maxOccurs="1">
+                            <xs:complexType>
+                                <xs:all>
+                                    <xs:element name="rdns" type="nonEmptyString"/>
+                                    <xs:element name="userPassword" type="nonEmptyString"/>
+                                </xs:all>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="connect-timeout-millis" type="xs:nonNegativeInteger" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>Connection timeout in milliseconds. 0 means use SDK default.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="response-timeout-millis" type="xs:nonNegativeInteger" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>Response timeout in milliseconds. 0 means use SDK default.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="uid-attribute" type="nonEmptyString" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>Attribute for the user id. Example: uid</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="rdns" type="nonEmptyString">
+                            <xs:annotation>
+                                <xs:documentation>BaseDN fo searches and tempalted requests.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="required-object-class" type="nonEmptyString" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>An optional object class to check for retrieved entries.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="directory-descent" type="xs:boolean" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>Enable directory descent instead of using direct binding.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="pre-login-notice" minOccurs="0">
                 <xs:complexType>
                     <xs:all>

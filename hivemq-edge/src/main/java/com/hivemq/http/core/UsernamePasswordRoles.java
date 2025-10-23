@@ -15,7 +15,6 @@
  */
 package com.hivemq.http.core;
 
-import com.hivemq.api.auth.ApiPrincipal;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
@@ -26,7 +25,7 @@ public class UsernamePasswordRoles {
     public static final String DEFAULT_PASSWORD = "hivemq";
 
     private String userName;
-    private String password;
+    private byte[] password;
     private String realm;
     private Set<String> roles = Set.of();
 
@@ -34,7 +33,7 @@ public class UsernamePasswordRoles {
     }
 
 
-    public UsernamePasswordRoles(final @NotNull String userName, final @NotNull String password, Set<String> roles) {
+    public UsernamePasswordRoles(final @NotNull String userName, final byte @NotNull [] password, final @NotNull Set<String> roles) {
         this();
         this.userName = userName;
         this.password = password;
@@ -45,15 +44,15 @@ public class UsernamePasswordRoles {
         return userName;
     }
 
-    public void setUserName(String userName) {
+    public void setUserName(final @NotNull String userName) {
         this.userName = userName;
     }
 
-    public String getPassword() {
+    public byte[] getPassword() {
         return password;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(final byte[] password) {
         this.password = password;
     }
 
@@ -61,16 +60,11 @@ public class UsernamePasswordRoles {
         return realm;
     }
 
-    public void setRealm(String realm) {
+    public void setRealm(final @NotNull String realm) {
         this.realm = realm;
     }
 
     public Set<String> getRoles() {
         return roles;
-    }
-
-    public ApiPrincipal toPrincipal(){
-        //decouple the password from the principal for the API
-        return new ApiPrincipal(getUserName(), Set.copyOf(getRoles()));
     }
 }

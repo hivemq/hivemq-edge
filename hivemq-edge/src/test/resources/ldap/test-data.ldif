@@ -1,0 +1,73 @@
+# OpenLDAP Test Data - Flat Structure
+# Users are directly in ou=people for testing Direct Reference (template-based DN resolution)
+
+# Organizational units
+dn: ou=people,dc=example,dc=org
+objectClass: organizationalUnit
+ou: people
+description: Container for user accounts
+
+dn: ou=groups,dc=example,dc=org
+objectClass: organizationalUnit
+ou: groups
+description: Container for group definitions
+
+# Users directly in ou=people (flat structure)
+dn: uid=alice,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: top
+uid: alice
+cn: Alice Anderson
+sn: Anderson
+givenName: Alice
+mail: alice@example.org
+userPassword: alice123
+uidNumber: 10001
+gidNumber: 10001
+homeDirectory: /home/alice
+description: Software Engineer
+
+dn: uid=bob,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: top
+uid: bob
+cn: Bob Brown
+sn: Brown
+givenName: Bob
+mail: bob@example.org
+userPassword: bob456
+uidNumber: 10002
+gidNumber: 10001
+homeDirectory: /home/bob
+description: DevOps Engineer
+
+dn: uid=charlie,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: top
+uid: charlie
+cn: Charlie Chen
+sn: Chen
+givenName: Charlie
+mail: charlie@example.org
+userPassword: charlie789
+uidNumber: 10003
+gidNumber: 10002
+homeDirectory: /home/charlie
+description: Sales Manager
+
+# Groups
+dn: cn=developers,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: developers
+description: Software Development Team
+member: uid=alice,ou=people,dc=example,dc=org
+member: uid=bob,ou=people,dc=example,dc=org
+
+dn: cn=administrators,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: administrators
+description: System Administrators
+member: uid=bob,ou=people,dc=example,dc=org

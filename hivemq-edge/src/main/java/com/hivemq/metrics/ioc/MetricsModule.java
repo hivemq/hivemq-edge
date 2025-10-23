@@ -16,9 +16,6 @@
 package com.hivemq.metrics.ioc;
 
 import com.codahale.metrics.MetricRegistry;
-import com.hivemq.bootstrap.ioc.Injector;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.metrics.MetricsShutdownHook;
@@ -28,13 +25,12 @@ import com.hivemq.metrics.gauges.SessionsGauge;
 import com.hivemq.metrics.jmx.JmxReporterBootstrap;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
-import dagger.BindsInstance;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
 import io.netty.channel.group.ChannelGroup;
-
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Module
 public class MetricsModule {

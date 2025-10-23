@@ -63,6 +63,23 @@
         </triggeringPolicy>
     </appender>
 
+    <appender name="SECURITY-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${hivemq.log.folder}/security.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%-24(%d)- %msg%n%ex</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${hivemq.log.folder}/event-%i.log.gz</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>5</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>100MB</maxFileSize>
+            <checkIncrement>10000</checkIncrement>
+        </triggeringPolicy>
+    </appender>
+
     <!-- appender for the script events of HiveMQ Data Hub -->
     <appender name="SCRIPT-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${hivemq.log.folder}/script.log</file>
@@ -95,6 +112,14 @@
 
     <logger name="event.client-session-expired" level="DEBUG" additivity="false">
         <appender-ref ref="EVENT-FILE"/>
+    </logger>
+
+    <logger name="security.authentication-failed" level="DEBUG" additivity="false">
+        <appender-ref ref="SECURITY-FILE"/>
+    </logger>
+
+    <logger name="security.authentication-succeeded" level="DEBUG" additivity="false">
+        <appender-ref ref="SECURITY-FILE"/>
     </logger>
 
     <logger name="migrations" level="DEBUG" additivity="false">
