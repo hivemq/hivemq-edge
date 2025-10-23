@@ -71,10 +71,10 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
 
     private final @NotNull AtomicReference<StateEnum> northboundState;
     private final @NotNull AtomicReference<StateEnum> southboundState;
-    private final @NotNull AtomicReference<AdapterStateEnum> adapterState;
+    protected final @NotNull AtomicReference<AdapterStateEnum> adapterState;
     private final @NotNull List<Consumer<State>> stateTransitionListeners;
 
-    public record State(AdapterStateEnum state, StateEnum northbound, StateEnum southbound) { }
+    public record State(AdapterStateEnum adapter, StateEnum northbound, StateEnum southbound) { }
 
     private final @NotNull String adapterId;
 

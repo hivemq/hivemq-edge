@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Module
@@ -58,22 +59,18 @@ public abstract class ExecutorsModule {
             final @NotNull String name,
             final int timeoutSeconds) {
         log.debug("Shutting down executor service: {}", name);
-
         if (!executor.isShutdown()) {
             executor.shutdown();
         }
-
         try {
-            if (!executor.awaitTermination(timeoutSeconds, java.util.concurrent.TimeUnit.SECONDS)) {
+            if (!executor.awaitTermination(timeoutSeconds, TimeUnit.SECONDS)) {
                 log.warn("Executor service {} did not terminate in {}s, forcing shutdown", name, timeoutSeconds);
                 executor.shutdownNow();
-                if (!executor.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)) {
+                if (!executor.awaitTermination(2, TimeUnit.SECONDS)) {
                     log.error("Executor service {} still has running tasks after forced shutdown", name);
                 }
             } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Executor service {} shut down successfully", name);
-                }
+                log.debug("Executor service {} shut down successfully", name);
             }
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();

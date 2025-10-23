@@ -96,13 +96,13 @@ public class ProtocolAdapterApiUtils {
                 true,
                 info.getCapabilities()
                         .stream()
-                        .filter(cap -> cap != ProtocolAdapterCapability.WRITE || adapterManager.writingEnabled())
+                        .filter(cap -> cap != ProtocolAdapterCapability.WRITE || adapterManager.isWritingEnabled())
                         .map(ProtocolAdapter.Capability::from)
                         .collect(Collectors.toSet()),
                 convertApiCategory(info.getCategory()),
                 info.getTags() != null ? info.getTags().stream().map(Enum::toString).toList() : List.of(),
                 new ProtocolAdapterSchemaManager(objectMapper,
-                        adapterManager.writingEnabled() ?
+                        adapterManager.isWritingEnabled() ?
                                 info.configurationClassNorthAndSouthbound() :
                                 info.configurationClassNorthbound()).generateSchemaNode(),
                 getUiSchemaForAdapter(objectMapper, info));
