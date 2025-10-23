@@ -65,12 +65,18 @@ export interface FilterConfig extends Filter {
 export interface FilterEditorProps {
   id: keyof Filter
   label: string
-  // TODO Fix the type for the filter component
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  editor: FC<any>
+  editor: FC<FilterCriteriaProps<any>>
+  disabled?: boolean
 }
 
 export interface FilterCriteriaEditorProps<T> {
   onChange?: (values: PropsValue<T>) => void
   selection?: PropsValue<FilterSelectionOption>
+}
+
+export interface FilterCriteriaProps<T> {
+  onChange?: (values: T) => void
+  value?: T
+  isDisabled?: boolean
 }
