@@ -43,7 +43,7 @@ const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange, isDisabled 
           <IconButton
             icon={<BiSelection />}
             aria-label={t('workspace.searchToolbox.bySelection.select')}
-            isDisabled={!selectedNodes.length}
+            isDisabled={!selectedNodes.length || isDisabled}
             onClick={handleSelect}
             data-testid="workspace-filter-selection-add"
           />
@@ -52,7 +52,7 @@ const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange, isDisabled 
             icon={<MdClear />}
             aria-label={t('workspace.searchToolbox.bySelection.clear')}
             onClick={handleClearSelect}
-            isDisabled={!value?.length}
+            isDisabled={!value?.length || isDisabled}
             data-testid="workspace-filter-selection-clear"
           />
         </ButtonGroup>
