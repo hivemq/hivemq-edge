@@ -274,10 +274,6 @@ public record LdapConnectionProperties(
             options.setConnectTimeoutMillis(connectTimeoutMillis());
         }
 
-        if (connectTimeoutMillis() > 0) {
-            options.setResponseTimeoutMillis(connectTimeoutMillis());
-        }
-
         if (responseTimeoutMillis() > 0) {
             options.setResponseTimeoutMillis(responseTimeoutMillis());
         }

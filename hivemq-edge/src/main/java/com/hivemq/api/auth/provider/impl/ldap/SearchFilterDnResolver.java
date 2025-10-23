@@ -212,7 +212,7 @@ public class SearchFilterDnResolver implements UserDnResolver {
         if (requiredObjectClass == null) {
             return keyFilter;
         }
-        return Filter.createANDFilter(keyFilter, //
+        return Filter.createANDFilter(keyFilter,
                 Filter.createEqualityFilter("objectClass", requiredObjectClass));
     }
 }

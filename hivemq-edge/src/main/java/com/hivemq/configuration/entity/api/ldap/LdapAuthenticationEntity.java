@@ -69,7 +69,7 @@ public class LdapAuthenticationEntity {
     private int connectTimeoutMillis = 0;
 
     @XmlElement(name = "response-timeout-millis")
-    private int responseTimeoutMillis = 0;
+    private int responseTimeoutMillis = 10_000;
 
     @XmlElement(name = "max-connections", required = true, defaultValue = "1")
     private int maxConnections = 1;
