@@ -9,12 +9,9 @@ import { SelectEntityType } from '@/components/MQTT/types.ts'
 import { useGetDomainOntology } from '@/modules/DomainOntology/hooks/useGetDomainOntology.ts'
 
 import { filterContainerStyle } from '@/modules/Workspace/components/filters/filters.utils.ts'
-import type { FilterTopicsOption } from '@/modules/Workspace/components/filters/types.ts'
+import type { FilterCriteriaProps, FilterTopicsOption } from '@/modules/Workspace/components/filters/types.ts'
 
-interface FilterTopicsProps {
-  onChange?: (values: MultiValue<FilterTopicsOption>) => void
-  value?: MultiValue<FilterTopicsOption>
-}
+type FilterTopicsProps = FilterCriteriaProps<MultiValue<FilterTopicsOption>>
 
 const Option = (props: OptionProps<FilterTopicsOption>) => {
   const { type, value } = props.data
@@ -27,7 +24,7 @@ const Option = (props: OptionProps<FilterTopicsOption>) => {
   )
 }
 
-const FilterTopics: FC<FilterTopicsProps> = ({ onChange, value }) => {
+const FilterTopics: FC<FilterTopicsProps> = ({ onChange, value, isDisabled }) => {
   const { t } = useTranslation()
 
   const { tags, northMappings, isLoading, isError } = useGetDomainOntology()
@@ -54,7 +51,7 @@ const FilterTopics: FC<FilterTopicsProps> = ({ onChange, value }) => {
   }
 
   return (
-    <FormControl variant="horizontal" id="workspace-filter-topics">
+    <FormControl variant="horizontal" id="workspace-filter-topics" isDisabled={isDisabled}>
       <FormLabel fontSize="sm" htmlFor="workspace-filter-topics-input">
         {t('workspace.searchToolbox.byTopics.label')}
       </FormLabel>

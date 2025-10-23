@@ -8,14 +8,11 @@ import { useTranslation } from 'react-i18next'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { filterContainerStyle } from '@/modules/Workspace/components/filters/filters.utils.ts'
-import type { FilterAdapterOption } from '@/modules/Workspace/components/filters/types.ts'
+import type { FilterAdapterOption, FilterCriteriaProps } from '@/modules/Workspace/components/filters/types.ts'
 
-interface FilterProtocolProps {
-  onChange?: (values: MultiValue<FilterAdapterOption>) => void
-  value?: MultiValue<FilterAdapterOption>
-}
+type FilterProtocolProps = FilterCriteriaProps<MultiValue<FilterAdapterOption>>
 
-const FilterProtocol: FC<FilterProtocolProps> = ({ onChange, value }) => {
+const FilterProtocol: FC<FilterProtocolProps> = ({ onChange, value, isDisabled }) => {
   const { t } = useTranslation()
   const { data } = useGetAdapterTypes()
   const { data: adapters } = useListProtocolAdapters()
@@ -38,7 +35,7 @@ const FilterProtocol: FC<FilterProtocolProps> = ({ onChange, value }) => {
   }
 
   return (
-    <FormControl variant="horizontal" id="workspace-filter-protocol">
+    <FormControl variant="horizontal" id="workspace-filter-protocol" isDisabled={isDisabled}>
       <FormLabel fontSize="sm" htmlFor="workspace-filter-protocol-input">
         {t('workspace.searchToolbox.byProtocol.label')}
       </FormLabel>

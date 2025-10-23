@@ -78,4 +78,17 @@ describe('FilterTopics', () => {
 
     cy.checkAccessibility()
   })
+
+  it('should render properly when disabled', () => {
+    const onChange = cy.stub().as('onChange')
+    cy.mountWithProviders(<FilterTopics onChange={onChange} isDisabled />)
+
+    cy.get('[role="group"] label#workspace-filter-topics-label').should('have.text', 'Topics')
+    cy.get('[role="group"] ').should('have.attr', 'data-disabled')
+
+    cy.get('[role="group"] #workspace-filter-topics-trigger').click({ force: true })
+    cy.get('#react-select-topics-listbox [role="listbox"]').should('not.exist')
+
+    cy.get('@onChange').should('not.have.been.called')
+  })
 })

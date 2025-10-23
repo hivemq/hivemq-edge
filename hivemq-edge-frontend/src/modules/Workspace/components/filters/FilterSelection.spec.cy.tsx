@@ -177,4 +177,25 @@ describe('FilterSelection', () => {
 
     cy.checkAccessibility()
   })
+
+  it('should render properly when disabled', () => {
+    const onChange = cy.stub().as('onChange')
+    cy.mountWithProviders(<FilterSelection onChange={onChange} isDisabled />, {
+      wrapper: getWrapperWith([
+        { ...MOCK_NODE_ADAPTER, position: { x: 50, y: 100 }, selected: true },
+        { ...MOCK_NODE_DEVICE, position: { x: 50, y: 100 }, selected: false },
+        { ...MOCK_NODE_COMBINER, position: { x: 50, y: 100 }, selected: false },
+      ]),
+    })
+
+    cy.get('[role="group"] ').should('have.attr', 'data-disabled')
+
+    cy.getByTestId('workspace-filter-selection-add').should('be.disabled')
+    cy.getByTestId('workspace-filter-selection-clear').should('be.disabled')
+
+    cy.getByTestId('workspace-filter-selection-add').click({ force: true })
+    cy.getByTestId('workspace-filter-selection-clear').click({ force: true })
+
+    cy.get('@onChange').should('not.have.been.called')
+  })
 })

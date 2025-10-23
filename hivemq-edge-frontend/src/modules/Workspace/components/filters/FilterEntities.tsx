@@ -6,16 +6,13 @@ import type { MultiValue, MultiValueProps } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 
 import { filterContainerStyle } from '@/modules/Workspace/components/filters/filters.utils.ts'
-import type { FilterEntitiesOption } from '@/modules/Workspace/components/filters/types.ts'
+import type { FilterCriteriaProps, FilterEntitiesOption } from '@/modules/Workspace/components/filters/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
-interface FilterEntitiesProps {
-  onChange?: (values: MultiValue<FilterEntitiesOption>) => void
-  value?: MultiValue<FilterEntitiesOption>
-}
+type FilterEntitiesProps = FilterCriteriaProps<MultiValue<FilterEntitiesOption>>
 
-const FilterEntities: FC<FilterEntitiesProps> = ({ onChange, value }) => {
+const FilterEntities: FC<FilterEntitiesProps> = ({ onChange, value, isDisabled }) => {
   const { t } = useTranslation()
   const { nodes } = useWorkspaceStore()
 
@@ -39,7 +36,7 @@ const FilterEntities: FC<FilterEntitiesProps> = ({ onChange, value }) => {
   }
 
   return (
-    <FormControl variant="horizontal" id="workspace-filter-entities">
+    <FormControl variant="horizontal" id="workspace-filter-entities" isDisabled={isDisabled}>
       <FormLabel fontSize="sm" htmlFor="workspace-filter-entities-input">
         {t('workspace.searchToolbox.byEntity.label')}
       </FormLabel>

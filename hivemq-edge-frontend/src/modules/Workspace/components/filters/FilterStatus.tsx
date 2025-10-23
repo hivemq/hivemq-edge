@@ -4,15 +4,12 @@ import { FormControl, FormLabel, Text } from '@chakra-ui/react'
 import { chakraComponents, type MultiValue, type MultiValueProps, Select } from 'chakra-react-select'
 
 import { Status } from '@/api/__generated__'
-import type { FilterStatusOption } from '@/modules/Workspace/components/filters/types.ts'
+import type { FilterCriteriaProps, FilterStatusOption } from '@/modules/Workspace/components/filters/types.ts'
 import { filterContainerStyle } from '@/modules/Workspace/components/filters/filters.utils.ts'
 
-interface FilterStatusProps {
-  onChange?: (values: MultiValue<FilterStatusOption>) => void
-  value?: MultiValue<FilterStatusOption>
-}
+type FilterStatusProps = FilterCriteriaProps<MultiValue<FilterStatusOption>>
 
-const FilterStatus: FC<FilterStatusProps> = ({ onChange, value }) => {
+const FilterStatus: FC<FilterStatusProps> = ({ onChange, value, isDisabled }) => {
   const { t } = useTranslation()
 
   const options: FilterStatusOption[] = [
@@ -43,7 +40,7 @@ const FilterStatus: FC<FilterStatusProps> = ({ onChange, value }) => {
   }
 
   return (
-    <FormControl variant="horizontal" id="workspace-filter-status">
+    <FormControl variant="horizontal" id="workspace-filter-status" isDisabled={isDisabled}>
       <FormLabel fontSize="sm" htmlFor="workspace-filter-status-input">
         {t('workspace.searchToolbox.byStatus.label')}
       </FormLabel>

@@ -7,16 +7,13 @@ import { BiSelection } from 'react-icons/bi'
 import { MdClear } from 'react-icons/md'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
-import type { FilterSelectionOption } from '@/modules/Workspace/components/filters/types.ts'
+import type { FilterCriteriaProps, FilterSelectionOption } from '@/modules/Workspace/components/filters/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import type { NodeTypes } from '@/modules/Workspace/types.ts'
 
-interface FilterEntitiesProps {
-  onChange?: (values: MultiValue<FilterSelectionOption>) => void
-  value?: MultiValue<FilterSelectionOption>
-}
+type FilterEntitiesProps = FilterCriteriaProps<MultiValue<FilterSelectionOption>>
 
-const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange }) => {
+const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange, isDisabled }) => {
   const { t } = useTranslation()
   const { nodes } = useWorkspaceStore()
 
@@ -33,7 +30,7 @@ const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange }) => {
   }
 
   return (
-    <FormControl variant="horizontal" id="workspace-filter-selection">
+    <FormControl variant="horizontal" id="workspace-filter-selection" isDisabled={isDisabled}>
       <FormLabel fontSize="sm" htmlFor="workspace-filter-selection-items">
         {t('workspace.searchToolbox.bySelection.label')}
       </FormLabel>
@@ -46,7 +43,7 @@ const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange }) => {
           <IconButton
             icon={<BiSelection />}
             aria-label={t('workspace.searchToolbox.bySelection.select')}
-            isDisabled={!selectedNodes.length}
+            isDisabled={!selectedNodes.length || isDisabled}
             onClick={handleSelect}
             data-testid="workspace-filter-selection-add"
           />
@@ -55,7 +52,7 @@ const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange }) => {
             icon={<MdClear />}
             aria-label={t('workspace.searchToolbox.bySelection.clear')}
             onClick={handleClearSelect}
-            isDisabled={!value?.length}
+            isDisabled={!value?.length || isDisabled}
             data-testid="workspace-filter-selection-clear"
           />
         </ButtonGroup>

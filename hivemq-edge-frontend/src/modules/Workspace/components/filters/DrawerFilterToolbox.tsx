@@ -43,8 +43,7 @@ import type {
   FilterTopicsOption,
   FilterConfigurationOption,
 } from '@/modules/Workspace/components/filters/types.ts'
-import { KEY_FILTER_CONFIGURATIONS } from '@/modules/Workspace/components/filters/types.ts'
-import { KEY_FILTER_CURRENT } from '@/modules/Workspace/components/filters/types.ts'
+import { KEY_FILTER_CONFIGURATIONS, KEY_FILTER_CURRENT } from '@/modules/Workspace/components/filters/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 
 interface DrawerFilterToolboxProps {
@@ -66,7 +65,7 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
     { id: 'selection', label: t('workspace.searchToolbox.bySelection.criteria'), editor: FilterSelection },
     { id: 'entities', label: t('workspace.searchToolbox.byEntity.criteria'), editor: FilterEntities },
     { id: 'protocols', label: t('workspace.searchToolbox.byProtocol.criteria'), editor: FilterProtocol },
-    { id: 'topic', label: t('workspace.searchToolbox.byTopics.criteria'), editor: FilterTopics },
+    { id: 'topic', label: t('workspace.searchToolbox.byTopics.criteria'), editor: FilterTopics, disabled: true },
     { id: 'status', label: t('workspace.searchToolbox.byStatus.criteria'), editor: FilterStatus },
   ]
 
@@ -164,9 +163,14 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
                 label={criteria.label}
                 id={criteria.id}
                 isActive={currentState[criteria.id]?.isActive || false}
+                isDisabled={criteria.disabled}
                 onChange={handleActiveCriteria(criteria.id)}
               >
-                <criteria.editor onChange={handleChange(criteria.id)} value={currentState[criteria.id]?.filter} />
+                <criteria.editor
+                  onChange={handleChange(criteria.id)}
+                  value={currentState[criteria.id]?.filter}
+                  isDisabled={criteria.disabled}
+                />
               </WrapperCriteria>
             ))}
             <OptionsFilter value={currentState.options} />
