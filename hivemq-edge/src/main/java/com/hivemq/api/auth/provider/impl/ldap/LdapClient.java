@@ -17,7 +17,6 @@ package com.hivemq.api.auth.provider.impl.ldap;
 
 import com.google.common.collect.ImmutableList;
 import com.unboundid.ldap.sdk.DN;
-import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.PruneUnneededConnectionsLDAPConnectionPoolHealthCheck;
@@ -199,11 +198,9 @@ public class LdapClient {
 
         log.debug("Attempting to bind user: {}", userDn);
 
-        LDAPConnection connection = null;
         try {
-            connection = connectionPool.getConnection();
             final var bindRequest = new SimpleBindRequest(userDn, password);
-            final var bindResult = connection.bind(bindRequest);
+            final var bindResult = connectionPool.bindAndRevertAuthentication(bindRequest);
 
             final boolean success = bindResult.getResultCode() == ResultCode.SUCCESS;
             if (success) {
@@ -222,20 +219,6 @@ public class LdapClient {
             // Other errors are unexpected, throw them
             log.error("LDAP error during bind operation for user {}: {}", userDn, e.getMessage());
             throw e;
-        } finally {
-            if (connection != null) {
-                // Re-authenticate connection as admin before returning to pool
-                // After binding as user to test credentials, the connection remains authenticated as that user.
-                // We must re-bind as admin so subsequent operations (DN resolution searches, etc.) have proper permissions.
-                try {
-                    connection.bind(adminBindRequest);
-                    connectionPool.releaseConnection(connection);
-                } catch (final LDAPException e) {
-                    // If re-authentication fails, mark connection as defunct so pool doesn't reuse it
-                    log.warn("Failed to re-authenticate connection as admin after user bind, marking connection as defunct: {}", e.getMessage());
-                    connectionPool.releaseDefunctConnection(connection);
-                }
-            }
         }
     }
 
