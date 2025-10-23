@@ -24,7 +24,7 @@ const Option = (props: OptionProps<FilterTopicsOption>) => {
   )
 }
 
-const FilterTopics: FC<FilterTopicsProps> = ({ onChange, value }) => {
+const FilterTopics: FC<FilterTopicsProps> = ({ onChange, value, isDisabled }) => {
   const { t } = useTranslation()
 
   const { tags, northMappings, isLoading, isError } = useGetDomainOntology()
@@ -51,7 +51,7 @@ const FilterTopics: FC<FilterTopicsProps> = ({ onChange, value }) => {
   }
 
   return (
-    <FormControl variant="horizontal" id="workspace-filter-topics">
+    <FormControl variant="horizontal" id="workspace-filter-topics" isDisabled={isDisabled}>
       <FormLabel fontSize="sm" htmlFor="workspace-filter-topics-input">
         {t('workspace.searchToolbox.byTopics.label')}
       </FormLabel>
