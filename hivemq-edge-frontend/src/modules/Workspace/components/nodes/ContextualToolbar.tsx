@@ -1,33 +1,33 @@
-import type { MouseEventHandler } from 'react'
-import { type FC, useMemo } from 'react'
-import type { Node } from '@xyflow/react'
-import { useStore, useReactFlow } from '@xyflow/react'
-import { getOutgoers, type NodeProps, type NodeToolbarProps, Position } from '@xyflow/react'
+import type { MouseEventHandler, FC } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Divider, Text, useTheme, useToast } from '@chakra-ui/react'
-import { LuPanelRightOpen } from 'react-icons/lu'
-import { ImMakeGroup } from 'react-icons/im'
-import { v4 as uuidv4 } from 'uuid'
 import { useNavigate } from 'react-router-dom'
+import { v4 as uuidv4 } from 'uuid'
+import type { Node, NodeProps, NodeToolbarProps } from '@xyflow/react'
+import { Position, getOutgoers, useStore, useReactFlow } from '@xyflow/react'
+
+import { Divider, Text, useTheme, useToast } from '@chakra-ui/react'
+import { ImMakeGroup } from 'react-icons/im'
+import { LuPanelRightOpen } from 'react-icons/lu'
 
 import type { Adapter, Bridge, Combiner, EntityReference } from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
-import { useCreateCombiner, useListCombiners } from '@/api/hooks/useCombiners'
+import { useCreateAssetMapper } from '@/api/hooks/useAssetMapper'
+import { useCreateCombiner } from '@/api/hooks/useCombiners'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes'
-import { useCreateAssetMapper, useListAssetMappers } from '@/api/hooks/useAssetMapper'
-
-import { HqCombiner, HqAssets } from '@/components/Icons'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import { HqAssets, HqCombiner } from '@/components/Icons'
 import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import { ANIMATION } from '@/modules/Theme/utils.ts'
-import type { NodeAdapterType, NodeDeviceType, NodePulseType } from '@/modules/Workspace/types.ts'
-import { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import type { NodeAdapterType, NodeCombinerType, NodeDeviceType, NodePulseType } from '@/modules/Workspace/types.ts'
+import { IdStubs } from '@/modules/Workspace/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
+import { arrayWithSameObjects } from '@/modules/Workspace/utils/combiner.utils'
 import { createGroup, getGroupBounds } from '@/modules/Workspace/utils/group.utils.ts'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
-import { arrayWithSameObjects } from '@/modules/Workspace/utils/combiner.utils'
 import { resetSelectedNodesState } from '@/modules/Workspace/utils/react-flow.utils.ts'
 
 // TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
@@ -58,8 +58,6 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
   const toast = useToast(BASE_TOAST_OPTION)
   const { data } = useGetAdapterTypes()
-  const { data: combiners } = useListCombiners()
-  const { data: mappers } = useListAssetMappers()
 
   const navigate = useNavigate()
   const { fitView, getNodesBounds } = useReactFlow()
@@ -177,9 +175,17 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
       return entity
     })
 
-    const isCombinerAlreadyDefined = isAssetManager
-      ? mappers?.items?.find((e) => arrayWithSameObjects<EntityReference>(links)(e.sources.items))
-      : combiners?.items?.find((e) => arrayWithSameObjects<EntityReference>(links)(e.sources.items))
+    links.push({ id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER })
+
+    const isCombinerAlreadyDefined = nodes.find((node) => {
+      if (node.type === NodeTypes.COMBINER_NODE) {
+        const items = (node as NodeCombinerType).data.sources.items
+        const init = arrayWithSameObjects<EntityReference>(links)(items)
+
+        return Boolean(init)
+      }
+      return false
+    }) as NodeCombinerType | undefined
 
     const areAllCandidatesConnected = selectedNodes.length - selectedCombinerCandidates.length === 0
 
