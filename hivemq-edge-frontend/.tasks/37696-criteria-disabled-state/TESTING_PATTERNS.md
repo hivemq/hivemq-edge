@@ -15,6 +15,7 @@ This project uses **two distinct types of Cypress tests**, each with specific pu
 **Purpose:** Test complete user journeys and integration between multiple components
 
 **Example structure:**
+
 ```
 cypress/e2e/
 ├── adapters/
@@ -37,6 +38,7 @@ cypress/e2e/
 **Purpose:** Test individual component behavior in isolation
 
 **Example:**
+
 ```
 src/modules/Workspace/components/filters/
 ├── FilterEntities.tsx
@@ -47,17 +49,18 @@ src/modules/Workspace/components/filters/
 
 ## Key Differences Summary
 
-| Aspect | E2E Tests | Component Tests |
-|--------|-----------|-----------------|
-| **Location** | `cypress/e2e/` | Co-located with component |
-| **Naming** | Flexible | `{ComponentName}.spec.cy.tsx` |
-| **API Mocking** | `cy.intercept()` | MSW |
-| **Scope** | Full user flows | Individual components |
-| **Organization** | By page/feature | By component hierarchy |
+| Aspect           | E2E Tests        | Component Tests               |
+| ---------------- | ---------------- | ----------------------------- |
+| **Location**     | `cypress/e2e/`   | Co-located with component     |
+| **Naming**       | Flexible         | `{ComponentName}.spec.cy.tsx` |
+| **API Mocking**  | `cy.intercept()` | MSW                           |
+| **Scope**        | Full user flows  | Individual components         |
+| **Organization** | By page/feature  | By component hierarchy        |
 
 ## Best Practices
 
 ### For Component Tests:
+
 1. Always name test files to match the component: `FilterStatus.tsx` → `FilterStatus.spec.cy.tsx`
 2. Use MSW handlers for API mocking
 3. Test component in isolation
@@ -65,6 +68,7 @@ src/modules/Workspace/components/filters/
 5. Include accessibility tests with `cy.checkAccessibility()`
 
 ### For E2E Tests:
+
 1. Organize by user flow or page
 2. Use `cy.intercept()` for API mocking
 3. Test realistic user scenarios
@@ -73,6 +77,7 @@ src/modules/Workspace/components/filters/
 ## Why This Matters
 
 This distinction is important because:
+
 - **Different mocking strategies** require different setup approaches
 - **File location** helps determine the test's purpose and scope
 - **Naming conventions** ensure tests are easy to find and maintain
@@ -81,4 +86,3 @@ This distinction is important because:
 ---
 
 **Last Updated:** October 23, 2025
-
