@@ -111,7 +111,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
             final @NotNull ProtocolAdapterStartInput input,
             final @NotNull ProtocolAdapterStartOutput output) {
         try {
-            // Don't manually set connection status - FSM manages this automatically
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
             if (httpClient == null) {
                 final HttpClient.Builder builder = HttpClient.newBuilder();
                 builder.version(HttpClient.Version.HTTP_1_1)
