@@ -363,7 +363,7 @@ public class ProtocolAdapterManager {
                 .toList());
     }
 
-    public void shutdown() {
+    private void shutdown() {
         if (shutdownInitiated.compareAndSet(false, true)) {
             shutdownExecutor(singleThreadRefreshExecutor, "protocol-adapter-manager-refresh", 5);
 
@@ -374,7 +374,7 @@ public class ProtocolAdapterManager {
                 return;
             }
 
-            // Initiate stop for all adapters
+            // initiate stop for all adapters
             log.info("Stopping {} protocol adapters during shutdown", adaptersToStop.size());
             final List<CompletableFuture<Void>> stopFutures = new ArrayList<>();
             for (final ProtocolAdapterWrapper wrapper : adaptersToStop) {
@@ -385,21 +385,15 @@ public class ProtocolAdapterManager {
                     log.error("Error initiating stop for adapter '{}' during shutdown", wrapper.getId(), e);
                 }
             }
-
-            // Wait for all adapters to stop, with timeout
-            final CompletableFuture<Void> allStops =
-                    CompletableFuture.allOf(stopFutures.toArray(new CompletableFuture[0]));
+            // wait for all adapters to stop, with timeout
             try {
-                allStops.get(20, TimeUnit.SECONDS);
+                CompletableFuture.allOf(stopFutures.toArray(new CompletableFuture[0])).get(20, TimeUnit.SECONDS);
                 log.info("All adapters stopped successfully during shutdown");
             } catch (final TimeoutException e) {
-                log.warn(
-                        "Timeout waiting for adapters to stop during shutdown (waited 20s). Proceeding with executor shutdown.");
-                // Log which adapters failed to stop
+                log.warn("Timeout waiting for adapters to stop during shutdown");
                 for (int i = 0; i < stopFutures.size(); i++) {
                     if (!stopFutures.get(i).isDone()) {
-                        log.warn("Adapter '{}' did not complete stop operation within timeout",
-                                adaptersToStop.get(i).getId());
+                        log.warn("Adapter '{}' did not complete stop operation", adaptersToStop.get(i).getId());
                     }
                 }
             } catch (final InterruptedException e) {
@@ -409,8 +403,6 @@ public class ProtocolAdapterManager {
                 log.error("Error occurred while stopping adapters during shutdown", e.getCause());
             }
             log.info("Protocol Adapter Manager shutdown completed");
-        } else {
-            log.debug("Protocol Adapter Manager shutdown already initiated, skipping");
         }
     }
 

@@ -20,7 +20,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.HiveMQEdgeMain;
 import com.hivemq.bootstrap.ioc.Injector;
-import com.hivemq.common.executors.ioc.ExecutorsModule;
 import com.hivemq.configuration.ConfigurationBootstrap;
 import com.hivemq.configuration.info.SystemInformationImpl;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -28,7 +27,6 @@ import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.embedded.EmbeddedHiveMQ;
-import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.util.ThreadFactoryUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -199,39 +197,8 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
 
         try {
             final long startTime = System.currentTimeMillis();
-
             try {
-                // Step 1: Shutdown protocol adapters BEFORE stopping HiveMQ
-                // This allows adapters to complete their stop operations cleanly
-                if (hiveMQServer != null && hiveMQServer.getInjector() != null) {
-                    try {
-                        final ProtocolAdapterManager protocolAdapterManager =
-                                hiveMQServer.getInjector().protocolAdapterManager();
-                        if (protocolAdapterManager != null) {
-                            protocolAdapterManager.shutdown();
-                        }
-                    } catch (final Exception ex) {
-                        log.warn("Exception during protocol adapter manager shutdown", ex);
-                    }
-                }
-
-                // Step 2: Stop HiveMQ, running all shutdown hooks (including BridgeService)
                 hiveMQServer.stop();
-
-                // Step 3: NOW shut down executors after all shutdown hooks have completed
-                // This prevents race conditions where callbacks try to execute on terminated executors
-                if (hiveMQServer != null && hiveMQServer.getInjector() != null) {
-                    try {
-                        ExecutorsModule.shutdownExecutor(hiveMQServer.getInjector().executorService(),
-                                ExecutorsModule.CACHED_WORKER_GROUP_NAME,
-                                10);
-                        ExecutorsModule.shutdownExecutor(hiveMQServer.getInjector().scheduledExecutor(),
-                                ExecutorsModule.SCHEDULED_WORKER_GROUP_NAME,
-                                5);
-                    } catch (final Exception ex) {
-                        log.warn("Exception during executor shutdown", ex);
-                    }
-                }
             } catch (final Exception ex) {
                 if (desiredState == State.CLOSED) {
                     log.error("Exception during running shutdown hook.", ex);
