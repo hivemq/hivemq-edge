@@ -437,7 +437,7 @@ class ProtocolAdapterFSMTest {
         fsm.startAdapter();
 
         assertThat(capturedState.get()).isNotNull();
-        assertThat(capturedState.get().state()).isEqualTo(AdapterStateEnum.STARTED);
+        assertThat(capturedState.get().adapter()).isEqualTo(AdapterStateEnum.STARTED);
     }
 
     @Test

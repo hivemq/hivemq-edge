@@ -32,6 +32,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -78,6 +79,7 @@ class ProtocolAdapterManagerTest {
     private final @NotNull NorthboundConsumerFactory northboundConsumerFactory = mock();
     private final @NotNull TagManager tagManager = mock();
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor = mock();
+    private final @NotNull ShutdownHooks shutdownHooks = mock();
 
     private final @NotNull ProtocolAdapterConfigConverter protocolAdapterConfigConverter = mock();
 
@@ -89,8 +91,7 @@ class ProtocolAdapterManagerTest {
     void setUp() {
         testExecutor = Executors.newCachedThreadPool();
         testScheduledExecutor = Executors.newScheduledThreadPool(2);
-        protocolAdapterManager = new ProtocolAdapterManager(
-                metricRegistry,
+        protocolAdapterManager = new ProtocolAdapterManager(metricRegistry,
                 moduleServices,
                 remoteService,
                 eventService,
@@ -104,7 +105,7 @@ class ProtocolAdapterManagerTest {
                 tagManager,
                 protocolAdapterExtractor,
                 testExecutor,
-                testScheduledExecutor);
+                shutdownHooks);
     }
 
     @AfterEach
@@ -124,9 +125,7 @@ class ProtocolAdapterManagerTest {
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService.startWriting(any(),
-                any(),
-                any())).thenReturn(true);
+        when(protocolAdapterWritingService.startWriting(any(), any(), any())).thenReturn(true);
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
         final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
@@ -175,13 +174,11 @@ class ProtocolAdapterManagerTest {
     }
 
     @Test
-    void test_startWriting_adapterFailedStart_resourcesCleanedUp() throws Exception{
+    void test_startWriting_adapterFailedStart_resourcesCleanedUp() throws Exception {
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService
-                .startWriting(any(), any(), any()))
-                .thenReturn(true);
+        when(protocolAdapterWritingService.startWriting(any(), any(), any())).thenReturn(true);
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
@@ -199,10 +196,8 @@ class ProtocolAdapterManagerTest {
                 testExecutor);
 
         // Start will fail, but we expect cleanup to happen
-        assertThatThrownBy(() -> protocolAdapterManager.startAsync(adapterWrapper).get())
-                .isInstanceOf(ExecutionException.class)
-                .hasCauseInstanceOf(RuntimeException.class)
-                .hasMessageContaining("failed");
+        assertThatThrownBy(() -> protocolAdapterManager.startAsync(adapterWrapper).get()).isInstanceOf(
+                ExecutionException.class).hasCauseInstanceOf(RuntimeException.class).hasMessageContaining("failed");
 
         // Even though start failed, cleanup should have occurred
         assertThat(adapterWrapper.getRuntimeStatus()).isEqualTo(ProtocolAdapterState.RuntimeStatus.STOPPED);
@@ -218,9 +213,7 @@ class ProtocolAdapterManagerTest {
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService.startWriting(any(),
-                any(),
-                any())).thenReturn(true);
+        when(protocolAdapterWritingService.startWriting(any(), any(), any())).thenReturn(true);
 
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
         final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
@@ -236,10 +229,8 @@ class ProtocolAdapterManagerTest {
                 testExecutor);
 
         // Start will fail, but we expect cleanup to happen
-        assertThatThrownBy(() -> protocolAdapterManager.startAsync(adapterWrapper).get())
-                .isInstanceOf(ExecutionException.class)
-                .hasCauseInstanceOf(RuntimeException.class)
-                .hasMessageContaining("failed");
+        assertThatThrownBy(() -> protocolAdapterManager.startAsync(adapterWrapper).get()).isInstanceOf(
+                ExecutionException.class).hasCauseInstanceOf(RuntimeException.class).hasMessageContaining("failed");
 
         // Even though start failed, cleanup should have occurred
         assertThat(adapterWrapper.getRuntimeStatus()).isEqualTo(ProtocolAdapterState.RuntimeStatus.STOPPED);
@@ -301,8 +292,7 @@ class ProtocolAdapterManagerTest {
         // Start the adapter first to transition FSM state to STARTED
         protocolAdapterManager.startAsync(adapterWrapper).get();
 
-        assertThatThrownBy(() -> protocolAdapterManager.stopAsync(adapterWrapper).get())
-                .rootCause()
+        assertThatThrownBy(() -> protocolAdapterManager.stopAsync(adapterWrapper).get()).rootCause()
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("failed");
 
@@ -393,8 +383,7 @@ class ProtocolAdapterManagerTest {
         }
 
         @Override
-        public void write(
-                final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {
+        public void write(final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {
 
         }
 
@@ -410,7 +399,8 @@ class ProtocolAdapterManagerTest {
 
         @Override
         public void start(
-                final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+                final @NotNull ProtocolAdapterStartInput input,
+                final @NotNull ProtocolAdapterStartOutput output) {
             if (success) {
                 adapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
                 output.startedSuccessfully();
@@ -421,7 +411,8 @@ class ProtocolAdapterManagerTest {
 
         @Override
         public void stop(
-                final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
+                final @NotNull ProtocolAdapterStopInput input,
+                final @NotNull ProtocolAdapterStopOutput output) {
             if (success) {
                 adapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
                 output.stoppedSuccessfully();
@@ -445,8 +436,7 @@ class ProtocolAdapterManagerTest {
         }
 
         @Override
-        public void write(
-                final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {
+        public void write(final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {
 
         }
 
@@ -462,14 +452,16 @@ class ProtocolAdapterManagerTest {
 
         @Override
         public void start(
-                final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+                final @NotNull ProtocolAdapterStartInput input,
+                final @NotNull ProtocolAdapterStartOutput output) {
             adapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
             output.startedSuccessfully();
         }
 
         @Override
         public void stop(
-                final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
+                final @NotNull ProtocolAdapterStopInput input,
+                final @NotNull ProtocolAdapterStopOutput output) {
             output.failStop(new RuntimeException("failed"), "could not stop");
         }
 
