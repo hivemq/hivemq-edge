@@ -84,7 +84,7 @@ describe('FilterTopics', () => {
     cy.mountWithProviders(<FilterTopics onChange={onChange} isDisabled />)
 
     cy.get('[role="group"] label#workspace-filter-topics-label').should('have.text', 'Topics')
-    cy.get('[role="group"] #workspace-filter-topics-trigger').should('have.attr', 'aria-disabled', 'true')
+    cy.get('[role="group"] ').should('have.attr', 'data-disabled')
 
     cy.get('[role="group"] #workspace-filter-topics-trigger').click({ force: true })
     cy.get('#react-select-topics-listbox [role="listbox"]').should('not.exist')

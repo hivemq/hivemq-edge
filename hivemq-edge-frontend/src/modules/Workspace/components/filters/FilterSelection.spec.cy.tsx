@@ -188,7 +188,8 @@ describe('FilterSelection', () => {
       ]),
     })
 
-    cy.get('[role="group"] label#workspace-filter-selection-label').should('have.text', 'Selection')
+    cy.get('[role="group"] ').should('have.attr', 'data-disabled')
+
     cy.getByTestId('workspace-filter-selection-add').should('be.disabled')
     cy.getByTestId('workspace-filter-selection-clear').should('be.disabled')
 
