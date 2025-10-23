@@ -170,6 +170,5 @@ describe('DataHubListAction', () => {
       />
     )
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DataHub - NodeDatahubToolbar')
   })
 })

@@ -55,6 +55,5 @@ describe('ExportDrawer', () => {
         'aria-input-field-name': { enabled: false },
       },
     })
-    cy.percySnapshot('Component: ExportDrawer')
   })
 })

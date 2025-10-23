@@ -54,6 +54,5 @@ describe('PolicyEditor', () => {
     )
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: PolicyEditor')
   })
 })

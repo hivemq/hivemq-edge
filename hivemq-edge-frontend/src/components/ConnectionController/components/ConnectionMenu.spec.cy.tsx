@@ -28,7 +28,6 @@ describe('ConnectionMenu', () => {
     )
     cy.checkAccessibility()
     cy.getByTestId('mock-trigger').click()
-    cy.percySnapshot('Component: ConnectionMenu')
   })
 
   it('should render stop CTAs when device is running', () => {

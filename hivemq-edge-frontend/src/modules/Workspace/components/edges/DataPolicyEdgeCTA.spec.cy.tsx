@@ -45,6 +45,5 @@ describe('DataPolicyEdgeCTA', () => {
     cy.injectAxe()
     cy.mountWithProviders(<DataPolicyEdgeCTA policyRoutes={['1', '2', '3', '4']} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DataPolicyEdgeCTA')
   })
 })

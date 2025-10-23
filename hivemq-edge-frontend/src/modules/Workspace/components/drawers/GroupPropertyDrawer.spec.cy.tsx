@@ -126,6 +126,5 @@ describe('GroupPropertyDrawer', () => {
     )
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: GroupPropertyDrawer')
   })
 })

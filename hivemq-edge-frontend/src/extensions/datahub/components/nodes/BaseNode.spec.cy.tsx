@@ -28,6 +28,5 @@ describe('BaseNode', () => {
     cy.injectAxe()
     cy.mountWithProviders(mockReactFlow(<BaseNode {...MOCK_TOPIC_FILTER} />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DataHub - BaseNode')
   })
 })

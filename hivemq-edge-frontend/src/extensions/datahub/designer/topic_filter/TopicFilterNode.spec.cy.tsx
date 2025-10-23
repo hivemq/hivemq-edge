@@ -42,6 +42,5 @@ describe('TopicFilterNode', () => {
     cy.injectAxe()
     cy.mountWithProviders(mockReactFlow(<TopicFilterNode {...MOCK_NODE_TOPIC_FILTER} />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DataHub - TopicFilterNode')
   })
 })

@@ -75,7 +75,6 @@ describe('AdapterInstanceDrawer', () => {
       />
     )
     cy.checkAccessibility()
-    cy.percySnapshot('Component: AdapterInstanceDrawer')
   })
 
   // Cannot be used in this context; missing the right form

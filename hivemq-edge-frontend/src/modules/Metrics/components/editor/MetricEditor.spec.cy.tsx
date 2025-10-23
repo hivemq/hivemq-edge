@@ -72,7 +72,6 @@ describe('MetricEditor', () => {
         />
       )
       cy.checkAccessibility()
-      cy.percySnapshot('Component: MetricEditor')
     })
   })
 

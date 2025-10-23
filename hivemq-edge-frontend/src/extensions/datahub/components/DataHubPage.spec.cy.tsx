@@ -19,6 +19,5 @@ describe('DataHubPage', () => {
     cy.mountWithProviders(<DataHubPage />)
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DataHubPage')
   })
 })

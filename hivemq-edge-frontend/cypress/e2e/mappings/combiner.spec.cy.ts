@@ -231,4 +231,30 @@ describe('Combiner', () => {
 
     workspacePage.closeToast.click()
   })
+
+  it('should be accessible', { tags: ['@percy'] }, () => {
+    cy.injectAxe()
+
+    // Create a combiner to capture in workspace
+    workspacePage.canvas.should('be.visible')
+    workspacePage.toolbox.fit.click()
+
+    workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
+    workspacePage.toolbar.combine.click()
+
+    cy.wait('@postCombiner')
+    cy.wait('@getCombiners')
+
+    workspacePage.closeToast.click()
+
+    workspacePage.combinerNode(COMBINER_ID).should('be.visible').should('contain.text', 'unnamed combiner')
+
+    cy.checkAccessibility(undefined, {
+      rules: {
+        region: { enabled: false },
+        'color-contrast': { enabled: false },
+      },
+    })
+    cy.percySnapshot('Workspace - With Combiner')
+  })
 })

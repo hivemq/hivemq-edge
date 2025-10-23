@@ -84,6 +84,5 @@ describe('PrivacyConsentBanner', () => {
     cy.mountWithProviders(<PrivacyConsentBanner />, { wrapper: Wrapper })
     cy.get('header').should('be.visible')
     cy.checkAccessibility()
-    cy.percySnapshot('Component: PrivacyConsentBanner')
   })
 })

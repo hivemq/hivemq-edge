@@ -259,14 +259,17 @@ importers:
         version: 4.4.7(@types/react@18.0.28)(react@18.3.1)
     devDependencies:
       '@4tw/cypress-drag-drop':
-        specifier: 2.3.0
-        version: 2.3.0(cypress@15.5.0)
+        specifier: 2.3.1
+        version: 2.3.1(cypress@15.5.0)
       '@chakra-ui/cli':
         specifier: 2.4.1
         version: 2.4.1(react@18.3.1)(ws@8.18.3)
       '@cypress/code-coverage':
         specifier: 3.13.11
         version: 3.13.11(@babel/core@7.28.4)(@babel/preset-env@7.28.3(@babel/core@7.28.4))(babel-loader@9.2.1(@babel/core@7.28.4)(webpack@5.102.1))(cypress@15.5.0)(webpack@5.102.1)
+      '@cypress/grep':
+        specifier: ^5.0.0
+        version: 5.0.0(@babel/core@7.28.4)(cypress@15.5.0)
       '@eslint/js':
         specifier: 9.26.0
         version: 9.26.0
@@ -414,10 +417,10 @@ importers:
 
 packages:
 
-  '@4tw/cypress-drag-drop@2.3.0':
-    resolution: {integrity: sha512-r6/Um+GLidi9mFTx8qiFf1ECMNmwLTLp+CgKVLpYZvJ2aV6mYoe1Uv8Iq1AwqRhhIAdf04aFJ0xzGEO1gnOm1g==}
+  '@4tw/cypress-drag-drop@2.3.1':
+    resolution: {integrity: sha512-ht9Mx0eK+j4UO7fZvHNyCGOQEIj4d5+CZDYdxUCHGL4yvEhdDBH6PT4Lt12Ct+O+8qK8K1K31p7iiOghA8ewxQ==}
     peerDependencies:
-      cypress: 2 - 14
+      cypress: '>=2'
 
   '@adobe/css-tools@4.4.4':
     resolution: {integrity: sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg==}
@@ -593,6 +596,12 @@ packages:
 
   '@babel/plugin-syntax-import-attributes@7.27.1':
     resolution: {integrity: sha512-oFT0FrKHgF53f4vOsZGi2Hh3I35PfSmVs4IBFLFj4dnafP+hIWDLg3VyKmUHfLoLHlyxY4C7DGtmHuJgn+IGww==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+
+  '@babel/plugin-syntax-jsx@7.27.1':
+    resolution: {integrity: sha512-y8YTNIeKoyhGd9O0Jiyzyyqk8gdjnumGTQPsz0xOZOQ2RmkVJeZ1vmmfIvFEKqucBG6axJGBZDE/7iI5suUI/w==}
     engines: {node: '>=6.9.0'}
     peerDependencies:
       '@babel/core': ^7.0.0-0
@@ -1536,6 +1545,11 @@ packages:
       babel-loader: ^8.3 || ^9
       cypress: '*'
       webpack: ^4 || ^5
+
+  '@cypress/grep@5.0.0':
+    resolution: {integrity: sha512-VVKGfZdIrKZef7Q/lDOE7nWoVyoctbNp34moMDtPhQFPbo9bcV2WAeaHZijMrE/Hyl9gvorFL/BXsvwMuTxqJw==}
+    peerDependencies:
+      cypress: '>=10'
 
   '@cypress/request@3.0.9':
     resolution: {integrity: sha512-I3l7FdGRXluAS44/0NguwWlO83J18p0vlr2FYHrJkWdNYhgVoiYo61IXPqaOsL+vNxU1ZqMACzItGK3/KKDsdw==}
@@ -3212,6 +3226,10 @@ packages:
     peerDependencies:
       acorn: ^6.0.0 || ^7.0.0 || ^8.0.0
 
+  acorn-walk@8.3.4:
+    resolution: {integrity: sha512-ueEepnujpqee2o5aIYnvHU6C0A42MNdsIDeqy5BydrkuC5R1ZuUFnm27EeFJGoEHJQgn3uleRvmTXaJgfXbt4g==}
+    engines: {node: '>=0.4.0'}
+
   acorn@8.15.0:
     resolution: {integrity: sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==}
     engines: {node: '>=0.4.0'}
@@ -4562,6 +4580,10 @@ packages:
 
   find-root@1.1.0:
     resolution: {integrity: sha512-NKfW6bec6GfKc0SGx1e07QZY9PE99u0Bft/0rzSD5k3sO/vwkVUpDUKVm5Gpp5Ue3YfShPFTX2070tDs5kB9Ng==}
+
+  find-test-names@1.29.19:
+    resolution: {integrity: sha512-fSO2GXgOU6dH+FdffmRXYN/kLdnd8zkBGIZrKsmAdfLSFUUDLpDFF7+F/h+wjmjDWQmMgD8hPfJZR+igiEUQHQ==}
+    hasBin: true
 
   find-up@4.1.0:
     resolution: {integrity: sha512-PpOwAdQ/YlXQ2vj8a3h8IipDuYRi3wceVQQGYWxNINccq40Anw7BlsEXCMbt1Zt+OLA6Fq9suIpIWD0OsnISlw==}
@@ -6511,6 +6533,10 @@ packages:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
 
+  simple-bin-help@1.8.0:
+    resolution: {integrity: sha512-0LxHn+P1lF5r2WwVB/za3hLRIsYoLaNq1CXqjbrs3ZvLuvlWnRKrUjEWzV7umZL7hpQ7xULiQMV+0iXdRa5iFg==}
+    engines: {node: '>=14.16'}
+
   sirv@3.0.2:
     resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
     engines: {node: '>=18'}
@@ -7445,7 +7471,7 @@ packages:
 
 snapshots:
 
-  '@4tw/cypress-drag-drop@2.3.0(cypress@15.5.0)':
+  '@4tw/cypress-drag-drop@2.3.1(cypress@15.5.0)':
     dependencies:
       cypress: 15.5.0
 
@@ -7687,6 +7713,11 @@ snapshots:
       '@babel/helper-plugin-utils': 7.27.1
 
   '@babel/plugin-syntax-import-attributes@7.27.1(@babel/core@7.28.4)':
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/helper-plugin-utils': 7.27.1
+
+  '@babel/plugin-syntax-jsx@7.27.1(@babel/core@7.28.4)':
     dependencies:
       '@babel/core': 7.28.4
       '@babel/helper-plugin-utils': 7.27.1
@@ -8989,6 +9020,16 @@ snapshots:
       nyc: 15.1.0
       webpack: 5.102.1
     transitivePeerDependencies:
+      - supports-color
+
+  '@cypress/grep@5.0.0(@babel/core@7.28.4)(cypress@15.5.0)':
+    dependencies:
+      cypress: 15.5.0
+      debug: 4.3.7(supports-color@8.1.1)
+      find-test-names: 1.29.19(@babel/core@7.28.4)
+      globby: 11.1.0
+    transitivePeerDependencies:
+      - '@babel/core'
       - supports-color
 
   '@cypress/request@3.0.9':
@@ -11003,6 +11044,10 @@ snapshots:
     dependencies:
       acorn: 8.15.0
 
+  acorn-walk@8.3.4:
+    dependencies:
+      acorn: 8.15.0
+
   acorn@8.15.0: {}
 
   agent-base@6.0.2:
@@ -12626,6 +12671,18 @@ snapshots:
       pkg-dir: 7.0.0
 
   find-root@1.1.0: {}
+
+  find-test-names@1.29.19(@babel/core@7.28.4):
+    dependencies:
+      '@babel/parser': 7.28.4
+      '@babel/plugin-syntax-jsx': 7.27.1(@babel/core@7.28.4)
+      acorn-walk: 8.3.4
+      debug: 4.3.7(supports-color@8.1.1)
+      simple-bin-help: 1.8.0
+      tinyglobby: 0.2.15
+    transitivePeerDependencies:
+      - '@babel/core'
+      - supports-color
 
   find-up@4.1.0:
     dependencies:
@@ -14818,6 +14875,8 @@ snapshots:
   signal-exit@3.0.7: {}
 
   signal-exit@4.1.0: {}
+
+  simple-bin-help@1.8.0: {}
 
   sirv@3.0.2:
     dependencies:

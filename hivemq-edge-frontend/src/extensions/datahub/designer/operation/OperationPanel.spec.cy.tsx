@@ -179,7 +179,6 @@ describe('OperationPanel', () => {
           'aria-input-field-name': { enabled: false },
         },
       })
-      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.SYSTEM_LOG}`)
     })
   })
 
@@ -214,7 +213,6 @@ describe('OperationPanel', () => {
         wrapper: getWrapperWith([node]),
       })
       cy.checkAccessibility()
-      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.DELIVERY_REDIRECT}`)
     })
   })
 
@@ -250,7 +248,6 @@ describe('OperationPanel', () => {
         wrapper: getWrapperWith([node]),
       })
       cy.checkAccessibility()
-      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.MQTT_USER_PROPERTY}`)
     })
   })
 
@@ -287,7 +284,6 @@ describe('OperationPanel', () => {
         wrapper: getWrapperWith([node]),
       })
       cy.checkAccessibility()
-      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.SERDES_DESERIALIZE}`)
     })
   })
 
@@ -324,7 +320,6 @@ describe('OperationPanel', () => {
         wrapper: getWrapperWith([node]),
       })
       cy.checkAccessibility()
-      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.SERDES_SERIALIZE}`)
     })
   })
 
@@ -364,7 +359,6 @@ describe('OperationPanel', () => {
         wrapper: getWrapperWith([node]),
       })
       cy.checkAccessibility()
-      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.METRICS_COUNTER_INC}`)
     })
   })
 
@@ -394,7 +388,6 @@ describe('OperationPanel', () => {
         wrapper: getWrapperWith([node]),
       })
       cy.checkAccessibility()
-      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.MQTT_DISCONNECT}`)
     })
   })
 
@@ -424,7 +417,6 @@ describe('OperationPanel', () => {
         wrapper: getWrapperWith([node]),
       })
       cy.checkAccessibility()
-      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.MQTT_DROP}`)
     })
   })
 
@@ -478,7 +470,6 @@ describe('OperationPanel', () => {
         wrapper: getWrapperWith([node]),
       })
       cy.checkAccessibility()
-      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.DATAHUB_TRANSFORM}`)
     })
   })
 })

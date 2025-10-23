@@ -37,6 +37,5 @@ describe('BarChart', () => {
     cy.get('svg > g > g > rect').eq(4).click()
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: BarChart')
   })
 })

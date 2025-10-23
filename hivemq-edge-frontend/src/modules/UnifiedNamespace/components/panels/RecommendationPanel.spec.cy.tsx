@@ -11,6 +11,5 @@ describe('RecommendationPanel', () => {
     cy.injectAxe()
     cy.mountWithProviders(<RecommendationPanel />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: RecommendationPanel')
   })
 })

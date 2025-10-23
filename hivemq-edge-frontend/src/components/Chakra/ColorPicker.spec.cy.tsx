@@ -55,6 +55,5 @@ describe('ColorPicker', () => {
   //
   //   cy.getByTestId('colorPicker-trigger').click()
   //   cy.checkAccessibility()
-  //   cy.percySnapshot('Component: ColorPicker')
-  // })
+  //     // })
 })

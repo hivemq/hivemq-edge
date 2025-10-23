@@ -47,6 +47,5 @@ describe('PersistencePanel', () => {
     cy.get('label').should('contain.text', 'MQTT Persistence')
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: PersistencePanel')
   })
 })

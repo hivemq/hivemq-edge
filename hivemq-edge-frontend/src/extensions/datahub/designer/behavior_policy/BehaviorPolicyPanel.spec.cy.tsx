@@ -92,7 +92,6 @@ describe('BehaviorPolicyPanel', () => {
     cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: BehaviorPolicyPanel')
   })
 
   context('Behaviour models', () => {

@@ -37,6 +37,5 @@ describe('SunburstChart', () => {
     cy.mountWithProviders(<SunburstChart data={MOCK_STRATIFY_TOPICS} />, { wrapper: Wrapper })
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: SunburstChart')
   })
 })

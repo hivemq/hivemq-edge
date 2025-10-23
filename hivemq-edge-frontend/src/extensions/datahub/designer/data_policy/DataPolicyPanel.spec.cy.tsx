@@ -81,6 +81,5 @@ describe('DataPolicyPanel', () => {
     cy.mountWithProviders(<DataPolicyPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DataPolicyPanel')
   })
 })

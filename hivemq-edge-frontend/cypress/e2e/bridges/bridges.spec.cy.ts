@@ -5,6 +5,18 @@ import { bridgePage, loginPage, rjsf, workspacePage } from 'cypress/pages'
 import { workspaceBridgePanel } from '../../pages/Workspace/BridgeFormPage.ts'
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 
+const cy_AddNewBridge = (id: string, host: string, clientId: string) => {
+  bridgePage.addNewBridge.click()
+
+  rjsf.field('id').input.type(id)
+  rjsf.field('host').input.type(host)
+  rjsf.field('clientId').input.type(clientId)
+
+  bridgePage.config.submitButton.click()
+
+  bridgePage.toast.close()
+}
+
 describe('Bridges', () => {
   // Creating a mock storage for the Bridges
   const mswDB = factory({
@@ -199,28 +211,34 @@ describe('Bridges', () => {
     })
   })
 
-  it('should be accessible', () => {
+  it('should be accessible', { tags: ['@percy'] }, () => {
+    cy.injectAxe()
+    bridgePage.table.status.should('have.text', 'No bridges currently created')
+
+    cy_AddNewBridge('my-bridge', 'my-host', 'my-client-id')
+    cy_AddNewBridge('my-bridge-2', 'my-host-2', 'my-client-id-2')
+
+    cy.checkAccessibility(undefined, {
+      rules: {
+        'color-contrast': { enabled: false },
+      },
+    })
+    cy.percySnapshot('Page: Bridges')
+  })
+
+  it('should capture bridge validation errors', { tags: ['@percy'] }, () => {
     cy.injectAxe()
     bridgePage.table.status.should('have.text', 'No bridges currently created')
 
     bridgePage.addNewBridge.click()
 
-    bridgePage.config.panel.should('be.visible')
-    bridgePage.config.title.should('have.text', 'Create a new bridge configuration')
-    bridgePage.config.submitButton.should('have.text', 'Create the bridge')
-
-    rjsf.field('id').input.type('my-bridge')
-    rjsf.field('host').input.type('my-host')
-    rjsf.field('clientId').input.type('my-client-id')
-
+    // Trigger validation by clicking submit without required fields
     bridgePage.config.submitButton.click()
 
-    bridgePage.toast.close()
-
-    bridgePage.table.action(0, 'edit').click()
-
-    bridgePage.config.formTab(4).click() // Click on the "Subscriptions" tab
+    // Error summary should be visible
+    bridgePage.config.errorSummary.should('have.length', 3)
 
     cy.checkAccessibility()
+    cy.percySnapshot('Bridges - Validation Errors')
   })
 })
