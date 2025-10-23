@@ -69,7 +69,7 @@ class ProtocolAdapterWrapperConcurrencyTest {
     private @Nullable ExecutorService executor;
 
     private static void verifyStateConsistency(final ProtocolAdapterFSM.State state) {
-        final ProtocolAdapterFSM.AdapterStateEnum adapterState = state.state();
+        final ProtocolAdapterFSM.AdapterStateEnum adapterState = state.adapter();
         final ProtocolAdapterFSM.StateEnum northbound = state.northbound();
         final ProtocolAdapterFSM.StateEnum southbound = state.southbound();
 
@@ -256,7 +256,7 @@ class ProtocolAdapterWrapperConcurrencyTest {
                             // Verify complete state is valid
                             final var state = requireNonNull(wrapper).currentState();
                             assertNotNull(state, "State should never be null");
-                            assertNotNull(state.state(), "Adapter state should never be null");
+                            assertNotNull(state.adapter(), "Adapter state should never be null");
                             assertNotNull(state.northbound(), "Northbound state should never be null");
                             assertNotNull(state.southbound(), "Southbound state should never be null");
 
@@ -289,14 +289,14 @@ class ProtocolAdapterWrapperConcurrencyTest {
         // Verify final state is complete and valid
         final var finalState = requireNonNull(wrapper).currentState();
         assertNotNull(finalState, "Final state should not be null");
-        assertNotNull(finalState.state(), "Final adapter state should not be null");
+        assertNotNull(finalState.adapter(), "Final adapter state should not be null");
         assertNotNull(finalState.northbound(), "Final northbound state should not be null");
         assertNotNull(finalState.southbound(), "Final southbound state should not be null");
 
         // Final state should be STOPPED or STARTED
-        assertTrue(finalState.state() == ProtocolAdapterFSM.AdapterStateEnum.STOPPED ||
-                        finalState.state() == ProtocolAdapterFSM.AdapterStateEnum.STARTED,
-                "Final state should be stable: " + finalState.state());
+        assertTrue(finalState.adapter() == ProtocolAdapterFSM.AdapterStateEnum.STOPPED ||
+                        finalState.adapter() == ProtocolAdapterFSM.AdapterStateEnum.STARTED,
+                "Final state should be stable: " + finalState.adapter());
     }
 
     @Test
@@ -316,7 +316,7 @@ class ProtocolAdapterWrapperConcurrencyTest {
                     while (!stopLatch.await(0, TimeUnit.MILLISECONDS)) {
                         final var state = requireNonNull(wrapper).currentState();
                         assertNotNull(state, "State should never be null");
-                        assertNotNull(state.state(), "Adapter state should never be null");
+                        assertNotNull(state.adapter(), "Adapter state should never be null");
                         assertNotNull(state.northbound(), "Northbound state should never be null");
                         assertNotNull(state.southbound(), "Southbound state should never be null");
 
@@ -443,18 +443,17 @@ class ProtocolAdapterWrapperConcurrencyTest {
     @Test
     @Timeout(10)
     void test_concurrentStartAsync_properSerialization() throws Exception {
-        runConcurrentOperations(SMALL_THREAD_COUNT,
-                () -> {
-                    try {
-                        requireNonNull(wrapper).startAsync(requireNonNull(mockModuleServices)).get();
-                    } catch (final Exception e) {
-                        // Expected - concurrent operations may fail
-                    }
-                });
+        runConcurrentOperations(SMALL_THREAD_COUNT, () -> {
+            try {
+                requireNonNull(wrapper).startAsync(requireNonNull(mockModuleServices)).get();
+            } catch (final Exception e) {
+                // Expected - concurrent operations may fail
+            }
+        });
 
         final var state = requireNonNull(wrapper).currentState();
         assertNotNull(state);
-        assertNotNull(state.state());
+        assertNotNull(state.adapter());
     }
 
     @Test
@@ -467,7 +466,7 @@ class ProtocolAdapterWrapperConcurrencyTest {
 
         final var state = requireNonNull(wrapper).currentState();
         assertNotNull(state);
-        assertNotNull(state.state());
+        assertNotNull(state.adapter());
     }
 
     @Test
