@@ -13,7 +13,7 @@ import type { NodeTypes } from '@/modules/Workspace/types.ts'
 
 type FilterEntitiesProps = FilterCriteriaProps<MultiValue<FilterSelectionOption>>
 
-const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange }) => {
+const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange, isDisabled }) => {
   const { t } = useTranslation()
   const { nodes } = useWorkspaceStore()
 
@@ -30,7 +30,7 @@ const FilterSelection: FC<FilterEntitiesProps> = ({ value, onChange }) => {
   }
 
   return (
-    <FormControl variant="horizontal" id="workspace-filter-selection">
+    <FormControl variant="horizontal" id="workspace-filter-selection" isDisabled={isDisabled}>
       <FormLabel fontSize="sm" htmlFor="workspace-filter-selection-items">
         {t('workspace.searchToolbox.bySelection.label')}
       </FormLabel>
