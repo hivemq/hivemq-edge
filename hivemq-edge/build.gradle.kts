@@ -212,6 +212,19 @@ dependencies {
     implementation("com.google.protobuf:protobuf-java:4.32.1")
 }
 
+configurations.all {
+    resolutionStrategy {
+        /*
+         * https://nvd.nist.gov/vuln/detail/CVE-2024-57699
+         * A security issue was found in Netplex Json-smart 2.5.0 through 2.5.1.
+         * When loading a specially crafted JSON input, containing a large number of ’{’,
+         * a stack exhaustion can be trigger, which could allow an attacker to cause a Denial of Service (DoS).
+         * This issue exists because of an incomplete fix for CVE-2023-1370.
+         */
+        force(libs.json.smart)
+    }
+}
+
 /* ******************** test ******************** */
 
 dependencies {
