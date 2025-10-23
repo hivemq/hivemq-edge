@@ -36,6 +36,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -116,7 +117,7 @@ class OpenLdapTest {
                 null,
                 SearchScope.SUB,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 ldapSimpleBind);
 
@@ -473,7 +474,7 @@ class OpenLdapTest {
                 null,
                 SearchScope.SUB,
                 5,
-                "ADMIN",
+                ADMIN,
                 true,  // TEST ONLY: Accept any certificate
                 ldapSimpleBind);
 
@@ -542,7 +543,7 @@ class OpenLdapTest {
                 null,
                 SearchScope.SUB,
                 5,
-                "ADMIN",
+                ADMIN,
                 true,  // TEST ONLY: Accept any certificate
                 ldapSimpleBind);
 
@@ -614,7 +615,7 @@ class OpenLdapTest {
                 null,
                 SearchScope.SUB,
                 5,
-                "ADMIN",
+                ADMIN,
                 true,  // TEST ONLY: Accept any certificate
                 ldapSimpleBind);
 
@@ -633,7 +634,7 @@ class OpenLdapTest {
                 null,
                 SearchScope.SUB,
                 5,
-                "ADMIN",
+                ADMIN,
                 true,  // TEST ONLY: Accept any certificate
                 ldapSimpleBind);
 

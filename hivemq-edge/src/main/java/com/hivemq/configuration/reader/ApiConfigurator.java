@@ -45,6 +45,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
 import static com.hivemq.http.core.UsernamePasswordRoles.DEFAULT_PASSWORD;
 import static com.hivemq.http.core.UsernamePasswordRoles.DEFAULT_USERNAME;
 
@@ -53,7 +54,7 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
     private static final @NotNull List<ApiListener> DEFAULT_LISTENERS = List.of(new HttpListener(8080, "127.0.0.1"));
     private static final @NotNull Logger log = LoggerFactory.getLogger(ApiConfigurator.class);
     private static final @NotNull List<UsernamePasswordRoles> DEFAULT_USERS =
-            List.of(new UsernamePasswordRoles(DEFAULT_USERNAME, DEFAULT_PASSWORD.getBytes(StandardCharsets.UTF_8), Set.of("ADMIN")));
+            List.of(new UsernamePasswordRoles(DEFAULT_USERNAME, DEFAULT_PASSWORD.getBytes(StandardCharsets.UTF_8), Set.of(ADMIN)));
 
     private final @NotNull ApiConfigurationService apiCfgService;
     private volatile @Nullable AdminApiEntity configEntity;

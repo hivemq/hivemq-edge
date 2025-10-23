@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
 import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection.TEST_PASSWORD;
 import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection.TEST_USERNAME;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -103,7 +104,7 @@ public class LdapAuthenticationTests {
                         null,
                         SearchScope.SUB,
                         5,
-                        "ADMIN",
+                        ADMIN,
                         false,
                         ldapSimpleBind);
 

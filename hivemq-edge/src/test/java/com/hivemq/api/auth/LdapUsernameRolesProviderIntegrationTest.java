@@ -31,6 +31,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -76,7 +77,7 @@ class LdapUsernameRolesProviderIntegrationTest {
                         null,
                         SearchScope.SUB,
                         5,
-                        "ADMIN",  // assignedRole
+                        ADMIN,  // assignedRole
                         false,
                         ldapSimpleBind);
 
@@ -105,7 +106,7 @@ class LdapUsernameRolesProviderIntegrationTest {
      * Verifies that:
      * - findByUsernameAndPassword returns an Optional with UsernameRoles
      * - The username matches the authenticated user
-     * - Roles are assigned (currently hardcoded to "ADMIN")
+     * - Roles are assigned (currently hardcoded to ADMIN)
      */
     @Test
     void testSuccessfulAuthentication() {
@@ -124,7 +125,7 @@ class LdapUsernameRolesProviderIntegrationTest {
 
         assertThat(result.get().roles())
                 .as("User should have ADMIN role (hardcoded for now)")
-                .contains("ADMIN")
+                .contains(ADMIN)
                 .hasSize(1);
     }
 
@@ -196,7 +197,7 @@ class LdapUsernameRolesProviderIntegrationTest {
 
         assertThat(principal.getRoles())
                 .as("Principal roles should match user roles")
-                .contains("ADMIN")
+                .contains(ADMIN)
                 .hasSize(1);
     }
 

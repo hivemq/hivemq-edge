@@ -32,6 +32,7 @@ import javax.net.ssl.SSLContext;
 import java.security.GeneralSecurityException;
 import java.util.List;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
 import static java.util.Arrays.stream;
 
 /**
@@ -140,7 +141,7 @@ public record LdapConnectionProperties(
                 entity.getRequiredObjectClass(),
                 entity.getDirecoryDescent() ? SearchScope.SUB : SearchScope.BASE,
                 entity.getSearchTimeoutSeconds(),
-                entity.getAssignedRole(),
+                ADMIN,
                 false,  // Never allow test-only certificate acceptance from XML config
                 LdapSimpleBind.fromEntity(entity.getSimpleBindEntity())
         );

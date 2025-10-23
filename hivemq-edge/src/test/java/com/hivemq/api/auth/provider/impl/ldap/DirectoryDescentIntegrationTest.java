@@ -43,6 +43,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.security.KeyStore;
 import java.util.stream.Stream;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -141,7 +142,7 @@ class DirectoryDescentIntegrationTest {
             null,
             SearchScope.SUB,
             5,
-            "ADMIN",
+            ADMIN,
             true,
             new LdapConnectionProperties.LdapSimpleBind(
                 "cn=admin",
@@ -170,7 +171,7 @@ class DirectoryDescentIntegrationTest {
             null,
             SearchScope.SUB,
             5,
-            "ADMIN",
+            ADMIN,
             false,
             new LdapConnectionProperties.LdapSimpleBind(
                 "uid=" + LLDAP.getAdminUsername(),

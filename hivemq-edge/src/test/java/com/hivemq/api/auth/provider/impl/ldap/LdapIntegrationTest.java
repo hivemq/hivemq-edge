@@ -35,6 +35,7 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
 import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection.TEST_PASSWORD;
 import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection.TEST_USERNAME;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -96,7 +97,7 @@ class LdapIntegrationTest {
                 null,
                 SearchScope.SUB,
                 5,
-                "ADMIN",  // assignedRole
+                ADMIN,  // assignedRole
                 false,
                 ldapSimpleBind);
 

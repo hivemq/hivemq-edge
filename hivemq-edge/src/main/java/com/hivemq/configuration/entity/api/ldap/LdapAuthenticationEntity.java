@@ -89,9 +89,6 @@ public class LdapAuthenticationEntity {
     @XmlElement(name = "search-timeout-seconds")
     private int searchTimeoutSeconds = 5;
 
-    @XmlElement(name = "assigned-role", required = true, defaultValue = "ADMIN")
-    private @NotNull String assignedRole = "ADMIN";
-
     @XmlElement(name = "simple-bind", required = true)
     private @NotNull LdapSimpleBindEntity simpleBindEntity = new LdapSimpleBindEntity();
 
@@ -135,10 +132,6 @@ public class LdapAuthenticationEntity {
         return searchTimeoutSeconds;
     }
 
-    public @NotNull String getAssignedRole() {
-        return assignedRole;
-    }
-
     public @NotNull LdapSimpleBindEntity getSimpleBindEntity() {
         return simpleBindEntity;
     }
@@ -162,7 +155,6 @@ public class LdapAuthenticationEntity {
                 Objects.equals(getUidAttribute(), that.getUidAttribute()) &&
                 Objects.equals(getRdns(), that.getRdns()) &&
                 Objects.equals(getRequiredObjectClass(), that.getRequiredObjectClass()) &&
-                Objects.equals(getAssignedRole(), that.getAssignedRole()) &&
                 Objects.equals(getSimpleBindEntity(), that.getSimpleBindEntity());
     }
 
@@ -179,7 +171,6 @@ public class LdapAuthenticationEntity {
                 getRequiredObjectClass(),
                 directoryDescent,
                 getSearchTimeoutSeconds(),
-                getAssignedRole(),
                 getSimpleBindEntity());
     }
 }

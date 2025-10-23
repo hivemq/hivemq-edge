@@ -19,6 +19,7 @@ import com.unboundid.ldap.sdk.SearchScope;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -52,7 +53,7 @@ class LdapConnectionPropertiesTest {
                 null,
                 SearchScope.BASE,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 DEFAULT_SIMPLE_BIND))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -70,7 +71,7 @@ class LdapConnectionPropertiesTest {
                 null,
                 SearchScope.BASE,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 DEFAULT_SIMPLE_BIND))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -91,7 +92,7 @@ class LdapConnectionPropertiesTest {
                 null,
                 SearchScope.BASE,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 DEFAULT_SIMPLE_BIND))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -109,7 +110,7 @@ class LdapConnectionPropertiesTest {
                 null,
                 SearchScope.BASE,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 DEFAULT_SIMPLE_BIND))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -131,7 +132,7 @@ class LdapConnectionPropertiesTest {
                 null,
                 SearchScope.BASE,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 DEFAULT_SIMPLE_BIND);
         assertThat(ldapsProps.trustStore()).isNull();
@@ -149,7 +150,7 @@ class LdapConnectionPropertiesTest {
                 null,
                 SearchScope.BASE,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 DEFAULT_SIMPLE_BIND);
         assertThat(startTlsProps.trustStore()).isNull();
@@ -167,7 +168,7 @@ class LdapConnectionPropertiesTest {
                 null,
                 SearchScope.BASE,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 DEFAULT_SIMPLE_BIND);
         assertThat(noneProps.trustStore()).isNull();
@@ -187,7 +188,7 @@ class LdapConnectionPropertiesTest {
                 null,
                 SearchScope.BASE,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 DEFAULT_SIMPLE_BIND);
 
@@ -209,7 +210,7 @@ class LdapConnectionPropertiesTest {
                 null,
                 SearchScope.BASE,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 DEFAULT_SIMPLE_BIND);
 
@@ -233,7 +234,7 @@ class LdapConnectionPropertiesTest {
                 null,
                 SearchScope.BASE,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 DEFAULT_SIMPLE_BIND);
 
@@ -255,7 +256,7 @@ class LdapConnectionPropertiesTest {
                 null,
                 SearchScope.BASE,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 DEFAULT_SIMPLE_BIND);
 
@@ -280,7 +281,7 @@ class LdapConnectionPropertiesTest {
                 null,
                 SearchScope.BASE,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 DEFAULT_SIMPLE_BIND);
 
@@ -313,7 +314,7 @@ class LdapConnectionPropertiesTest {
                 null,
                 SearchScope.BASE,
                 5,
-                "ADMIN",
+                ADMIN,
                 false,
                 DEFAULT_SIMPLE_BIND);
 
