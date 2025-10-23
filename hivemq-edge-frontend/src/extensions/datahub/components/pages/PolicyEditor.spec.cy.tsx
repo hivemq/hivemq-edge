@@ -23,7 +23,7 @@ describe('PolicyEditor', () => {
                 <PolicyEditor />
               </Box>
             }
-          ></Route>
+          />
         </Routes>
       </ReactFlowProvider>,
       { routerProps: { initialEntries: ['/BEHAVIOR/1'] } }
@@ -47,7 +47,7 @@ describe('PolicyEditor', () => {
                 <PolicyEditor />
               </Box>
             }
-          ></Route>
+          />
         </Routes>
       </ReactFlowProvider>,
       { routerProps: { initialEntries: ['/BEHAVIOR/1'] } }

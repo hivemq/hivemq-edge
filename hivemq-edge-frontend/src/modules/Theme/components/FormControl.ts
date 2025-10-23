@@ -19,6 +19,27 @@ const hivemq = definePartsStyle({
   },
 })
 
+const horizontal = definePartsStyle({
+  container: {
+    display: 'grid',
+    gridTemplateColumns: 'max-content 1fr',
+    alignItems: 'start',
+    columnGap: '2',
+    // Ensure children stack vertically in the second column
+    '& > label': {
+      gridColumn: 1,
+      gridRow: 1,
+      alignSelf: 'center',
+      width: '4rem',
+      textAlign: 'right',
+      marginBottom: 0,
+    },
+    '& > *:not(label)': {
+      gridColumn: 2,
+    },
+  },
+})
+
 export const formControlTheme = defineMultiStyleConfig({
-  variants: { hivemq },
+  variants: { hivemq, horizontal },
 })
