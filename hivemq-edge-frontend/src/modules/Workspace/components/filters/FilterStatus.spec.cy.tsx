@@ -58,4 +58,17 @@ describe('FilterStatus', () => {
 
     cy.checkAccessibility()
   })
+
+  it('should render properly when disabled', () => {
+    const onChange = cy.stub().as('onChange')
+    cy.mountWithProviders(<FilterStatus onChange={onChange} isDisabled />)
+
+    cy.get('[role="group"] label#workspace-filter-status-label').should('have.text', 'Status')
+    cy.get('[role="group"] #workspace-filter-status-trigger').should('have.attr', 'aria-disabled', 'true')
+
+    cy.get('[role="group"] #workspace-filter-status-trigger').click({ force: true })
+    cy.get('#react-select-status-listbox [role="listbox"]').should('not.exist')
+
+    cy.get('@onChange').should('not.have.been.called')
+  })
 })

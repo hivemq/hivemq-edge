@@ -48,6 +48,27 @@ describe('WrapperCriteria', () => {
     })
   })
 
+  it('should render properly when disabled', () => {
+    const onChange = cy.stub().as('onChange')
+    cy.mountWithProviders(
+      <WrapperCriteria id="my-id" label="the label" isActive isDisabled onChange={onChange}>
+        <Text data-testid="wrapper-content">The internal Form Control</Text>
+      </WrapperCriteria>
+    )
+
+    cy.get('@onChange').should('not.have.been.called')
+
+    cy.getByTestId('workspace-filter-my-id-container').within(() => {
+      cy.get('input#workspace-filter-my-id-switch').should('be.disabled')
+      cy.get('label:has(input#workspace-filter-my-id-switch)').should('have.text', 'the label')
+
+      cy.get('label:has(input#workspace-filter-my-id-switch)').click({ force: true })
+      cy.get('@onChange').should('not.have.been.called')
+
+      cy.getByTestId('workspace-filter-my-id-control').should('have.text', 'The internal Form Control')
+    })
+  })
+
   it('should be accessible', () => {
     const onChange = cy.stub().as('onChange')
     cy.injectAxe()

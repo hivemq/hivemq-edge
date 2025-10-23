@@ -87,4 +87,24 @@ describe('FilterEntities', () => {
 
     cy.checkAccessibility()
   })
+
+  it('should render properly when disabled', () => {
+    const onChange = cy.stub().as('onChange')
+
+    cy.mountWithProviders(<FilterEntities onChange={onChange} isDisabled />, {
+      wrapper: getWrapperWith([
+        { ...MOCK_NODE_ADAPTER, position: { x: 50, y: 100 } },
+        { ...MOCK_NODE_DEVICE, position: { x: 50, y: 100 } },
+        { ...MOCK_NODE_COMBINER, position: { x: 50, y: 100 } },
+      ]),
+    })
+
+    cy.get('[role="group"] label#workspace-filter-entities-label').should('have.text', 'Entities')
+    cy.get('[role="group"] #workspace-filter-entities-trigger').should('have.attr', 'aria-disabled', 'true')
+
+    cy.get('[role="group"] #workspace-filter-entities-trigger').click({ force: true })
+    cy.get('#react-select-entities-listbox [role="listbox"]').should('not.exist')
+
+    cy.get('@onChange').should('not.have.been.called')
+  })
 })
