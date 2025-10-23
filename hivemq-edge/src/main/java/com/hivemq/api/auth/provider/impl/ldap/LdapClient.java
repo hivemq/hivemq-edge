@@ -26,6 +26,7 @@ import com.unboundid.ldap.sdk.RoundRobinServerSet;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
 import com.unboundid.ldap.sdk.StartTLSPostConnectProcessor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -166,6 +167,7 @@ public class LdapClient {
      *
      * @throws IllegalStateException if the client is not started
      */
+    @TestOnly
     public synchronized void stop() {
         log.debug("Stopping LDAP client");
 
