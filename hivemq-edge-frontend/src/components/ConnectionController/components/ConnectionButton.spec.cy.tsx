@@ -14,7 +14,6 @@ describe('ConnectionButton', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ConnectionButton id="my-id" isRunning />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: ConnectionButton')
   })
 
   it('should render stop CTAs when device is running', () => {

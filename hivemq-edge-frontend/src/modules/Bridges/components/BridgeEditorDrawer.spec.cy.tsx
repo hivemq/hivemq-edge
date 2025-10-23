@@ -9,7 +9,7 @@ const getWrapperWith = (path: string) => {
     return (
       <WrapperTestRoute>
         <Routes>
-          <Route path={path} element={children}></Route>
+          <Route path={path} element={children} />
         </Routes>
       </WrapperTestRoute>
     )

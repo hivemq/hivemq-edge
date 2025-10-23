@@ -24,6 +24,5 @@ describe('SwitchModeButton', () => {
         region: { enabled: false },
       },
     })
-    cy.percySnapshot('Component: SwitchModeButton')
   })
 })

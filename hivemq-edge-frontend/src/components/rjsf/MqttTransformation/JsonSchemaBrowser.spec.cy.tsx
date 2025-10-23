@@ -20,6 +20,5 @@ describe('JsonSchemaBrowser', () => {
     cy.mountWithProviders(<JsonSchemaBrowser schema={MOCK_MQTT_SCHEMA_REFS} />)
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: JsonSchemaBrowser')
   })
 })

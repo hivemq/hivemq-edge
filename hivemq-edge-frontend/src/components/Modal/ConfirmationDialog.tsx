@@ -43,6 +43,7 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
       leastDestructiveRef={cancelRef as RefObject<FocusableElement>}
       onClose={onClose}
       size="lg"
+      closeOnOverlayClick={false}
     >
       <AlertDialogOverlay>
         <AlertDialogContent>

@@ -34,6 +34,5 @@ describe('FunctionNode', () => {
     cy.injectAxe()
     cy.mountWithProviders(mockReactFlow(<FunctionNode {...MOCK_NODE_FUNCTION} />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DataHub - FunctionNode')
   })
 })

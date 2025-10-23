@@ -151,6 +151,5 @@ describe('PaginationBar', () => {
       />
     )
     cy.checkAccessibility()
-    cy.percySnapshot('Component: PaginationBar')
   })
 })

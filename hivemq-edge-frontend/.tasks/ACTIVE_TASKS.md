@@ -43,6 +43,23 @@ The agent will **automatically look in the `.tasks/` directory** and:
 
 ---
 
+### 37074-percy-optimisation
+
+**Status:** Active  
+**Directory:** `.tasks/37074-percy-optimisation/`  
+**Objective:** Optimize Percy visual regression testing strategy to maximize UI coverage while minimizing token usage  
+**Completed Subtasks:** 2  
+**Last Updated:** October 22, 2025
+
+**Quick Start:**
+
+- Read: [TASK_BRIEF.md](.tasks/37074-percy-optimisation/TASK_BRIEF.md)
+- Review: [TASK_SUMMARY.md](.tasks/37074-percy-optimisation/TASK_SUMMARY.md)
+- Recent work: [CONVERSATION_SUBTASK_2.md](.tasks/37074-percy-optimisation/CONVERSATION_SUBTASK_2.md)
+- Coverage matrix: [COVERAGE_MATRIX.md](.tasks/37074-percy-optimisation/COVERAGE_MATRIX.md)
+
+---
+
 ## Task Template Entry
 
 When adding a new task, copy this template:
@@ -73,4 +90,4 @@ When a task is fully completed, move its entry here:
 
 ---
 
-**Last Updated:** October 17, 2025
+**Last Updated:** October 22, 2025

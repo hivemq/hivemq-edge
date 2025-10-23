@@ -35,6 +35,5 @@ describe('MappingContainer', () => {
     )
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: MappingContainer')
   })
 })

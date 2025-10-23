@@ -26,7 +26,7 @@ const getWrapperWith = (initNodes: Node[], initEdges?: Edge[], status?: Designer
           <Table>
             <Thead>
               <Tr>
-                <Th></Th>
+                <Th />
                 <Th>count</Th>
                 <Th>selected</Th>
               </Tr>

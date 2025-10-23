@@ -62,6 +62,5 @@ describe('NodePropertyDrawer', () => {
         'color-contrast': { enabled: false },
       },
     })
-    cy.percySnapshot('Component: LinkPropertyDrawer')
   })
 })

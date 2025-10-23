@@ -6,7 +6,7 @@ import DryRunPanelController from '@datahub/components/controls/DryRunPanelContr
 const wrapper: FC<PropsWithChildren> = ({ children }) => (
   <ReactFlowProvider>
     <Routes>
-      <Route path="/datahub/:policyType/:policyId?/validation/" element={children}></Route>
+      <Route path="/datahub/:policyType/:policyId?/validation/" element={children} />
     </Routes>
   </ReactFlowProvider>
 )
@@ -48,6 +48,5 @@ describe('DryRunPanelController', () => {
     })
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DryRunPanelController')
   })
 })

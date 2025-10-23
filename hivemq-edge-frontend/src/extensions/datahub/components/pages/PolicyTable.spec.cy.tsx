@@ -65,6 +65,5 @@ describe('PolicyTable', () => {
     cy.intercept('/api/v1/data-hub/behavior-validation/policies', { statusCode: 404 })
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: PolicyTable')
   })
 })

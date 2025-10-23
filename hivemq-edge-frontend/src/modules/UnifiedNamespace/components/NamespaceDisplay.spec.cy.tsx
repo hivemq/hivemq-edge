@@ -39,7 +39,6 @@ describe('NamespaceDisplay', () => {
     cy.injectAxe()
     cy.mountWithProviders(<NamespaceDisplay namespace={MOCK_NAMESPACE} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: NamespaceDisplay')
   })
 
   it('should be accessible for small size', () => {

@@ -21,6 +21,5 @@ describe('WarningMessage', () => {
     cy.injectAxe()
     cy.mountWithProviders(<WarningMessage title={MOCK_TITLE} prompt={MOCK_PROMPT} alt={MOCK_ALT} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: WarningMessage')
   })
 })

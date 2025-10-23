@@ -39,6 +39,5 @@ describe('NodeDatahubToolbar', () => {
     cy.injectAxe()
     cy.mountWithProviders(mockReactFlow(<NodeDatahubToolbar selectedNode="my-node" />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DataHub - NodeDatahubToolbar')
   })
 })

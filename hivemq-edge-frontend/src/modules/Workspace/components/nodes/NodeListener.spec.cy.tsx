@@ -20,6 +20,5 @@ describe('NodeListener', () => {
     cy.injectAxe()
     cy.mountWithProviders(mockReactFlow(<NodeListener {...MOCK_NODE_LISTENER} />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: NodeListener')
   })
 })

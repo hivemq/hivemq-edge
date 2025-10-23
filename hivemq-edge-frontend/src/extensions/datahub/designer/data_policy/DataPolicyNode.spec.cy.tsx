@@ -67,6 +67,5 @@ describe('DataPolicyNode', () => {
     cy.injectAxe()
     cy.mountWithProviders(mockReactFlow(<DataPolicyNode {...MOCK_NODE_DATA_POLICY} />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DataHub - BehaviorPolicyNode')
   })
 })

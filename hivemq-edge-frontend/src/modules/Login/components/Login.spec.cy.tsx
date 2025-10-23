@@ -30,6 +30,5 @@ describe('Login', () => {
     cy.injectAxe()
     cy.mountWithProviders(<Login />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: Login')
   })
 })

@@ -219,6 +219,5 @@ describe('PaginatedTable', () => {
       />
     )
     cy.checkAccessibility()
-    cy.percySnapshot('Component: PaginatedTable')
   })
 })

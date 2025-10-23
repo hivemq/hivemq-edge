@@ -88,6 +88,5 @@ describe('ValidatorPanel', () => {
     cy.mountWithProviders(<ValidatorPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: ValidatorPanel')
   })
 })

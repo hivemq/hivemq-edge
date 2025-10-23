@@ -157,6 +157,5 @@ describe('NodeAdapter', () => {
     cy.mountWithProviders(mockReactFlow(<NodeAdapter {...MOCK_NODE_ADAPTER} />))
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: NodeAdapter')
   })
 })

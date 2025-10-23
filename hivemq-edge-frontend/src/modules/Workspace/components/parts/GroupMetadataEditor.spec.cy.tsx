@@ -41,6 +41,5 @@ describe('GroupMetadataEditor', () => {
       <GroupMetadataEditor group={{ ...MOCK_NODE_GROUP, position: { x: 50, y: 100 } }} onSubmit={onSubmit} />
     )
     cy.checkAccessibility()
-    cy.percySnapshot('Component: GroupMetadataEditor')
   })
 })

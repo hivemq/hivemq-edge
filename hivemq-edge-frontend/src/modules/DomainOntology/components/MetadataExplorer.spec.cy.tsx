@@ -51,6 +51,5 @@ describe('MetadataExplorer', () => {
         'heading-order': { enabled: false },
       },
     })
-    cy.percySnapshot('Component: MetadataExplorer')
   })
 })

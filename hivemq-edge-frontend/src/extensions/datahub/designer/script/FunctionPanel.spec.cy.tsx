@@ -105,6 +105,5 @@ describe('FunctionPanel', () => {
     cy.mountWithProviders(<FunctionPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility()
-    cy.percySnapshot('Component: SchemaPanel')
   })
 })
