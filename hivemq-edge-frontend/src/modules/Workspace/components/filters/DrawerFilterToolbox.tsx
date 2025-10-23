@@ -65,7 +65,7 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
     { id: 'selection', label: t('workspace.searchToolbox.bySelection.criteria'), editor: FilterSelection },
     { id: 'entities', label: t('workspace.searchToolbox.byEntity.criteria'), editor: FilterEntities },
     { id: 'protocols', label: t('workspace.searchToolbox.byProtocol.criteria'), editor: FilterProtocol },
-    { id: 'topic', label: t('workspace.searchToolbox.byTopics.criteria'), editor: FilterTopics },
+    { id: 'topic', label: t('workspace.searchToolbox.byTopics.criteria'), editor: FilterTopics, disabled: true },
     { id: 'status', label: t('workspace.searchToolbox.byStatus.criteria'), editor: FilterStatus },
   ]
 
