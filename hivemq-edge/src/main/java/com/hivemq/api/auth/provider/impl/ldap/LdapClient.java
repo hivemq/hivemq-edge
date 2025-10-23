@@ -16,6 +16,7 @@
 package com.hivemq.api.auth.provider.impl.ldap;
 
 import com.google.common.collect.ImmutableList;
+import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
 import com.unboundid.ldap.sdk.LDAPException;
@@ -57,6 +58,7 @@ public class LdapClient {
     private static final @NotNull Logger log = LoggerFactory.getLogger(LdapClient.class);
 
     private final @NotNull LdapConnectionProperties connectionProperties;
+    private final @NotNull SecurityLog securityLog;
     private volatile UserDnResolver userDnResolver;
     private volatile LDAPConnectionPool connectionPool;
     private volatile SimpleBindRequest adminBindRequest;
@@ -70,8 +72,10 @@ public class LdapClient {
      *
      * @param connectionProperties The connection configuration
      */
-    public LdapClient(final @NotNull LdapConnectionProperties connectionProperties) {
+    public LdapClient(final @NotNull LdapConnectionProperties connectionProperties,
+                      final @NotNull SecurityLog securityLog) {
         this.connectionProperties = connectionProperties;
+        this.securityLog = securityLog;
         // Resolver will be created after connection pool is established in start()
         this.userDnResolver = null;
     }
@@ -238,7 +242,20 @@ public class LdapClient {
      */
     public boolean authenticateUser(final @NotNull String username, final byte @NotNull [] password)
             throws LDAPException {
-        return bindUser(userDnResolver.resolveDn(username), password);
+        try {
+            final var resolved = userDnResolver.resolveDn(username);
+            final var bindResult = bindUser(resolved, password);
+            if (bindResult) {
+                securityLog.authenticationSucceeded("LDAP", username);
+            } else {
+                securityLog.authenticationFailed("LDAP", username, "Wrong password");
+            }
+            return bindResult;
+        } catch (final SearchFilterDnResolver.DnResolutionException e) {
+            securityLog.authenticationFailed("LDAP", username, "Failed to resolve DN for user");
+            throw e;
+        }
+
     }
 
     /**

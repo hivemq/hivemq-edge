@@ -16,6 +16,7 @@
 package com.hivemq.api.auth.provider.impl.ldap;
 
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
+import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.LDAPException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -32,8 +33,8 @@ public class LdapUsernameRolesProvider implements IUsernameRolesProvider {
     private final @NotNull LdapClient ldapClient;
     private final @NotNull Set<String> assignedRole;
 
-    public LdapUsernameRolesProvider(final @NotNull LdapConnectionProperties ldapConnectionProperties) {
-        this.ldapClient = new LdapClient(ldapConnectionProperties);
+    public LdapUsernameRolesProvider(final @NotNull LdapConnectionProperties ldapConnectionProperties, final @NotNull SecurityLog securityLog) {
+        this.ldapClient = new LdapClient(ldapConnectionProperties, securityLog);
         this.assignedRole = Set.of(ldapConnectionProperties.assignedRole());
         try {
             this.ldapClient.start();

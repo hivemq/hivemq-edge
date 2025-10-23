@@ -17,6 +17,7 @@ package com.hivemq.api.auth.provider.impl.ldap;
 
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LldapContainer;
+import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.SearchScope;
 import org.junit.jupiter.api.AfterAll;
@@ -90,7 +91,7 @@ class LdapTlsModesIntegrationTest {
                         ldapSimpleBind);
 
         // Create and start LDAP client
-        ldapClient = new LdapClient(ldapConnectionProperties);
+        ldapClient = new LdapClient(ldapConnectionProperties, new SecurityLog());
         ldapClient.start();
 
         // Create test user
@@ -163,7 +164,7 @@ class LdapTlsModesIntegrationTest {
                 false,
                 ldapSimpleBind);
 
-        final LdapClient timeoutClient = new LdapClient(timeoutProps);
+        final LdapClient timeoutClient = new LdapClient(timeoutProps, new SecurityLog());
 
 
         timeoutClient.start();
@@ -213,7 +214,7 @@ class LdapTlsModesIntegrationTest {
                 false,
                 ldapSimpleBind);
 
-        final LdapClient defaultTimeoutClient = new LdapClient(defaultTimeoutProps);
+        final LdapClient defaultTimeoutClient = new LdapClient(defaultTimeoutProps, new SecurityLog());
 
         // Act
         defaultTimeoutClient.start();

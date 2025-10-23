@@ -17,6 +17,7 @@ package com.hivemq.api.auth.provider.impl.ldap;
 
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.OpenLdapContainer;
+import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.BindRequest;
 import com.unboundid.ldap.sdk.BindResult;
 import com.unboundid.ldap.sdk.LDAPConnection;
@@ -122,7 +123,7 @@ class OpenLdapTest {
                 ldapSimpleBind);
 
         // Create and start LDAP client
-        ldapClient = new LdapClient(connectionProperties);
+        ldapClient = new LdapClient(connectionProperties, new SecurityLog());
         ldapClient.start();
 
         // Wait for OpenLDAP to finish loading LDIF files and TLS configuration
@@ -478,7 +479,7 @@ class OpenLdapTest {
                 true,  // TEST ONLY: Accept any certificate
                 ldapSimpleBind);
 
-        final LdapClient startTlsClient = new LdapClient(startTlsProps);
+        final LdapClient startTlsClient = new LdapClient(startTlsProps, new SecurityLog());
 
         // Act
         startTlsClient.start();
@@ -548,7 +549,7 @@ class OpenLdapTest {
                 ldapSimpleBind);
 
 
-        final LdapClient startTlsClient = new LdapClient(startTlsProps);
+        final LdapClient startTlsClient = new LdapClient(startTlsProps, new SecurityLog());
 
         // Act
         startTlsClient.start();
@@ -619,7 +620,7 @@ class OpenLdapTest {
                 true,  // TEST ONLY: Accept any certificate
                 ldapSimpleBind);
 
-        final LdapClient plainClient = new LdapClient(plainProps);
+        final LdapClient plainClient = new LdapClient(plainProps, new SecurityLog());
 
         // START_TLS client
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
@@ -638,7 +639,7 @@ class OpenLdapTest {
                 true,  // TEST ONLY: Accept any certificate
                 ldapSimpleBind);
 
-        final LdapClient startTlsClient = new LdapClient(startTlsProps);
+        final LdapClient startTlsClient = new LdapClient(startTlsProps, new SecurityLog());
 
         // Act & Assert
         try {

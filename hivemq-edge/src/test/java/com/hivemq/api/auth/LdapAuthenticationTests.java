@@ -33,6 +33,7 @@ import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import com.hivemq.http.core.HttpUtils;
+import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.SearchScope;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.AfterAll;
@@ -118,7 +119,7 @@ public class LdapAuthenticationTests {
         config.setPort(TEST_HTTP_PORT);
 
         final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
-        authenticationHandlers.add(new BasicAuthenticationHandler(new LdapUsernameRolesProvider(ldapConnectionProperties)));
+        authenticationHandlers.add(new BasicAuthenticationHandler(new LdapUsernameRolesProvider(ldapConnectionProperties, new SecurityLog())));
         final ResourceConfig conf = new ResourceConfig(){{
             register(new ApiAuthenticationFeature(authenticationHandlers));
         }

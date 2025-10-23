@@ -21,6 +21,7 @@ import com.hivemq.api.auth.provider.impl.ldap.LdapUsernameRolesProvider;
 import com.hivemq.api.auth.provider.impl.ldap.TlsMode;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LldapContainer;
+import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.SearchScope;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -88,7 +89,7 @@ class LdapUsernameRolesProviderIntegrationTest {
                 LLDAP_CONTAINER.getBaseDn());
 
         // Create the LdapUsernameRolesProvider
-        provider = new LdapUsernameRolesProvider(ldapConnectionProperties);
+        provider = new LdapUsernameRolesProvider(ldapConnectionProperties, new SecurityLog());
     }
 
     public static String getBaseDn() {

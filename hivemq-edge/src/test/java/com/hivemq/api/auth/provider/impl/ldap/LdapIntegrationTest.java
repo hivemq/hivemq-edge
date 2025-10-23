@@ -17,6 +17,7 @@ package com.hivemq.api.auth.provider.impl.ldap;
 
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LldapContainer;
+import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.BindRequest;
 import com.unboundid.ldap.sdk.BindResult;
 import com.unboundid.ldap.sdk.LDAPConnection;
@@ -102,7 +103,7 @@ class LdapIntegrationTest {
                 ldapSimpleBind);
 
         // Create and start LDAP client
-        ldapClient = new LdapClient(ldapConnectionProperties);
+        ldapClient = new LdapClient(ldapConnectionProperties, new SecurityLog());
         ldapClient.start();
 
         // Create test user in LLDAP (using direct connection for admin operations)
@@ -180,7 +181,7 @@ class LdapIntegrationTest {
         // Create an authenticated connection pool using the admin account
         // In production, you would use a dedicated service account with read-only permissions
         final var testconnection = new LdapTestConnection(ldapConnectionProperties);
-        final var ldapClient = new LdapClient(ldapConnectionProperties);
+        final var ldapClient = new LdapClient(ldapConnectionProperties, new SecurityLog());
         ldapClient.start();
         try (final LDAPConnection adminConnection = testconnection.createConnection()) {
             // Bind as admin to create authenticated pool using LldapContainer's convenience methods

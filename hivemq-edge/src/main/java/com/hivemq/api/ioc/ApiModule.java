@@ -52,6 +52,7 @@ import com.hivemq.edge.api.PayloadSamplingApi;
 import com.hivemq.edge.api.ProtocolAdaptersApi;
 import com.hivemq.edge.api.TopicFiltersApi;
 import com.hivemq.edge.api.UnsApi;
+import com.hivemq.logging.SecurityLog;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsBootstrapFactory;
@@ -126,10 +127,12 @@ public abstract class ApiModule {
 
     @Provides
     @Singleton
-    static IUsernameRolesProvider usernamePasswordProvider(final @NotNull ApiConfigurationService apiConfigurationService) {
+    static IUsernameRolesProvider usernamePasswordProvider(
+            final @NotNull ApiConfigurationService apiConfigurationService,
+            final @NotNull SecurityLog securityLog) {
         final var ldap = apiConfigurationService.getLdapConnectionProperties();
         if(ldap != null) {
-            return new LdapUsernameRolesProvider(ldap);
+            return new LdapUsernameRolesProvider(ldap, securityLog);
         } else {
             //Generic Credentials used by Both Authentication Handler
             final SimpleUsernameRolesProviderImpl provider = new SimpleUsernameRolesProviderImpl();
