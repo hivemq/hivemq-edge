@@ -103,7 +103,7 @@ const GroupContentEditor: FC<GroupContentEditorProps> = ({ group }) => {
           enablePaginationGoTo={false}
         />
       </CardBody>
-      <CardFooter justifyContent="flex-end"></CardFooter>
+      <CardFooter justifyContent="flex-end" />
     </Card>
   )
 }
