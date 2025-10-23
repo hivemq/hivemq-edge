@@ -40,6 +40,6 @@ export const CustomHandle: FC<CustomHandleProps> = (props) => {
         ...transform,
         ...props.style,
       }}
-    ></Handle>
+    />
   )
 }

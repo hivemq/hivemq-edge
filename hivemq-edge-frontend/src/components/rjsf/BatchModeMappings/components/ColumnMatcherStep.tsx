@@ -100,7 +100,7 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
                         />
                       )
                     }}
-                  ></Controller>
+                  />
                 </Box>
                 <LuChevronsRight />
                 <Box flex={1}>

@@ -28,7 +28,7 @@ const getWrapperWith = (initialNodes?: Node[]) => {
         dashboard={<div data-testid="data-length">{nodes.length}</div>}
       >
         <Routes>
-          <Route path="/node/:nodeId" element={children}></Route>
+          <Route path="/node/:nodeId" element={children} />
         </Routes>
       </ReactFlowTesting>
     )

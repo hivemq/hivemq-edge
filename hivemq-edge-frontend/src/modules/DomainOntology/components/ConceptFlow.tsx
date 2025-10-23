@@ -16,7 +16,7 @@ const ConceptFlow: FC = () => {
 
   return (
     <ChartWrapper data-testid="edge-panel-concept-flow">
-      <SankeyChart data={sankeyData}></SankeyChart>
+      <SankeyChart data={sankeyData} />
     </ChartWrapper>
   )
 }

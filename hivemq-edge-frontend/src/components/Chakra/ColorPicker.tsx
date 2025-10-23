@@ -44,7 +44,7 @@ export const ColorPicker = forwardRef<ColorPickerProps, 'div'>(
             _hover={{ bg: `${selectedColorScheme}.500` }}
             _active={{ bg: `${selectedColorScheme}.700` }}
             {...props}
-          ></Button>
+          />
         </PopoverTrigger>
 
         <Portal>

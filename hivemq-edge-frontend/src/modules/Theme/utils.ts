@@ -11,9 +11,15 @@ export const getDropZoneBorder = (color: string) => {
 
 export const ANIMATION = {
   FIT_VIEW_DURATION_MS: 500,
+  TOOLBAR_ANIMATION_DURATION_MS: 400,
 }
 
 export const Z_INDICES = {
   // Must be higher than the modal overlay (--chakra-zIndices-modal)
   ACCESSIBLE_DRAG_N_DROP: 1450,
+}
+
+export const TOOLBAR = {
+  MIN_WIDTH: '80px',
+  MAX_WIDTH: '1280px',
 }
