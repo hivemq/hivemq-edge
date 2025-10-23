@@ -63,7 +63,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.hivemq.common.executors.ioc.ExecutorsModule.shutdownExecutor;
 import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ADAPTER_FAILED_TO_START;
 import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ADAPTER_MISSING;
 import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS;
@@ -88,7 +87,7 @@ public class ProtocolAdapterManager {
     private final @NotNull NorthboundConsumerFactory northboundConsumerFactory;
     private final @NotNull TagManager tagManager;
     private final @NotNull ProtocolAdapterExtractor config;
-    private final @NotNull ExecutorService singleThreadRefreshExecutor;
+    private final @NotNull ExecutorService refreshExecutor;
     private final @NotNull ExecutorService sharedAdapterExecutor;
     private final @NotNull AtomicBoolean shutdownInitiated;
 
@@ -124,7 +123,7 @@ public class ProtocolAdapterManager {
         this.config = config;
         this.sharedAdapterExecutor = sharedAdapterExecutor;
         this.protocolAdapters = new ConcurrentHashMap<>();
-        this.singleThreadRefreshExecutor = Executors.newSingleThreadExecutor();
+        this.refreshExecutor = Executors.newSingleThreadExecutor();
         this.shutdownInitiated = new AtomicBoolean(false);
         shutdownHooks.add(new HiveMQShutdownHook() {
             @Override
@@ -161,7 +160,7 @@ public class ProtocolAdapterManager {
     }
 
     public void refresh(final @NotNull List<ProtocolAdapterEntity> configs) {
-        singleThreadRefreshExecutor.submit(() -> {
+        refreshExecutor.submit(() -> {
             log.info("Refreshing adapters");
 
             final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configs.stream()
@@ -365,7 +364,7 @@ public class ProtocolAdapterManager {
 
     private void shutdown() {
         if (shutdownInitiated.compareAndSet(false, true)) {
-            shutdownExecutor(singleThreadRefreshExecutor, "protocol-adapter-manager-refresh", 5);
+            shutdownRefreshExecutor();
 
             log.info("Initiating shutdown of Protocol Adapter Manager");
             final List<ProtocolAdapterWrapper> adaptersToStop = new ArrayList<>(protocolAdapters.values());
@@ -387,7 +386,7 @@ public class ProtocolAdapterManager {
             }
             // wait for all adapters to stop, with timeout
             try {
-                CompletableFuture.allOf(stopFutures.toArray(new CompletableFuture[0])).get(20, TimeUnit.SECONDS);
+                CompletableFuture.allOf(stopFutures.toArray(new CompletableFuture[0])).get(15, TimeUnit.SECONDS);
                 log.info("All adapters stopped successfully during shutdown");
             } catch (final TimeoutException e) {
                 log.warn("Timeout waiting for adapters to stop during shutdown");
@@ -403,6 +402,28 @@ public class ProtocolAdapterManager {
                 log.error("Error occurred while stopping adapters during shutdown", e.getCause());
             }
             log.info("Protocol Adapter Manager shutdown completed");
+        }
+    }
+
+    private void shutdownRefreshExecutor() {
+        final String name = "protocol-adapter-manager-refresh";
+        final int timeoutSeconds = 5;
+        log.debug("Shutting {} executor service", name);
+        refreshExecutor.shutdown();
+        try {
+            if (!refreshExecutor.awaitTermination(timeoutSeconds, TimeUnit.SECONDS)) {
+                log.warn("Executor service {} did not terminate in {}s, forcing shutdown", name, timeoutSeconds);
+                refreshExecutor.shutdownNow();
+                if (!refreshExecutor.awaitTermination(2, TimeUnit.SECONDS)) {
+                    log.error("Executor service {} still has running tasks after forced shutdown", name);
+                }
+            } else {
+                log.debug("Executor service {} shut down successfully", name);
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while waiting for executor service {} to terminate", name);
+            refreshExecutor.shutdownNow();
         }
     }
 
