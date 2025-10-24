@@ -91,6 +91,54 @@ export class WorkspacePage extends ShellPage {
     }
   }
 
+  duplicateCombinerModal = {
+    get modal() {
+      return cy.getByTestId('duplicate-combiner-modal')
+    },
+
+    get title() {
+      return cy.getByTestId('modal-title')
+    },
+
+    get combinerName() {
+      return cy.getByTestId('modal-combiner-name')
+    },
+
+    get description() {
+      return cy.getByTestId('modal-description')
+    },
+
+    get mappingsLabel() {
+      return cy.getByTestId('modal-mappings-label')
+    },
+
+    get mappingsList() {
+      return cy.getByTestId('combiner-mappings-list')
+    },
+
+    get prompt() {
+      return cy.getByTestId('modal-prompt')
+    },
+
+    get closeButton() {
+      return cy.getByTestId('modal-close-button')
+    },
+
+    buttons: {
+      get cancel() {
+        return cy.getByTestId('modal-button-cancel')
+      },
+
+      get createNew() {
+        return cy.getByTestId('modal-button-create-new')
+      },
+
+      get useExisting() {
+        return cy.getByTestId('modal-button-use-existing')
+      },
+    },
+  }
+
   act = {
     /**
      * @todo This "double-back" sequence is necessary to effectively select multiple nodes. Need to check for better alternative
