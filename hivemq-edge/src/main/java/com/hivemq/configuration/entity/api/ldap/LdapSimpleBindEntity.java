@@ -5,6 +5,8 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 /**
  * This class represents the simple bind credentials for an LDAP connection.
  */
@@ -32,5 +34,17 @@ public class LdapSimpleBindEntity {
 
     public @NotNull String getUserPassword() {
         return userPassword;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final LdapSimpleBindEntity that = (LdapSimpleBindEntity) o;
+        return Objects.equals(getRdns(), that.getRdns()) && Objects.equals(getUserPassword(), that.getUserPassword());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getRdns(), getUserPassword());
     }
 }

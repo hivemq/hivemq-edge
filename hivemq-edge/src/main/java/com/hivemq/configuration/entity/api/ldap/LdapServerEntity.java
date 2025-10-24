@@ -5,6 +5,8 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings("NotNullFieldNotInitialized")
 public class LdapServerEntity {
@@ -34,5 +36,17 @@ public class LdapServerEntity {
 
     public int getPort() {
         return port;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final LdapServerEntity that = (LdapServerEntity) o;
+        return getPort() == that.getPort() && Objects.equals(getHost(), that.getHost());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHost(), getPort());
     }
 }

@@ -400,6 +400,8 @@ public class ConfigFileReaderWriter {
             content = IfUtil.replaceIfPlaceHolders(content);
             content = EnvVarUtil.replaceEnvironmentVariablePlaceholders(content);
 
+            log.error("WTF!!! {}", content);
+
             fragmentToModificationTime.putAll(fragment.getFragmentToModificationTime());
 
             try (final ByteArrayInputStream is = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))) {

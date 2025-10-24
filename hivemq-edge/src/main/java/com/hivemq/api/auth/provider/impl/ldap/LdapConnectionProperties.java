@@ -30,7 +30,9 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.SSLContext;
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static com.hivemq.api.auth.ApiRoles.ADMIN;
 import static java.util.Arrays.stream;
@@ -83,16 +85,49 @@ public record LdapConnectionProperties(
                     ldapSimpleBindEntity.getRdns(),
                     ldapSimpleBindEntity.getUserPassword());
         }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            final LdapSimpleBind that = (LdapSimpleBind) o;
+            return Objects.equals(rdns(), that.rdns()) && Objects.equals(userPassword(), that.userPassword());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(rdns(), userPassword());
+        }
     }
 
     /**
      * This class represents the simple bind credentials for an LDAP connection.
      */
     public record LdapServers (@NotNull String[] hosts, int @NotNull [] ports){
+
+        /**
+         * Compact constructor that makes defensive copies of the arrays to ensure immutability.
+         */
+        public LdapServers {
+            hosts = hosts.clone();
+            ports = ports.clone();
+        }
+
         public static LdapServers fromEntity(final @NotNull List<LdapServerEntity> ldapServerEntities) {
             final String[] hosts = ldapServerEntities.stream().map(LdapServerEntity::getHost).toArray(String[]::new);
             final int[] ports = ldapServerEntities.stream().mapToInt(LdapServerEntity::getPort).toArray();
             return new LdapServers(hosts, ports);
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            final LdapServers that = (LdapServers) o;
+            return Objects.deepEquals(hosts(), that.hosts()) && Objects.deepEquals(ports(), that.ports());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(Arrays.hashCode(hosts()), Arrays.hashCode(ports()));
         }
     }
 
@@ -105,6 +140,20 @@ public record LdapConnectionProperties(
                     trustStoreEntity.getTrustStorePath(),
                     trustStoreEntity.getTrustStorePassword(),
                     trustStoreEntity.getTrustStoreType());
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            final TrustStore that = (TrustStore) o;
+            return Objects.equals(trustStorePath(), that.trustStorePath()) &&
+                    Objects.equals(trustStoreType(), that.trustStoreType()) &&
+                    Objects.equals(trustStorePassword(), that.trustStorePassword());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(trustStorePath(), trustStorePassword(), trustStoreType());
         }
     }
 
@@ -279,5 +328,43 @@ public record LdapConnectionProperties(
         }
 
         return options;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final LdapConnectionProperties that = (LdapConnectionProperties) o;
+        return maxConnections() == that.maxConnections() &&
+                connectTimeoutMillis() == that.connectTimeoutMillis() &&
+                searchTimeoutSeconds() == that.searchTimeoutSeconds() &&
+                responseTimeoutMillis() == that.responseTimeoutMillis() &&
+                acceptAnyCertificateForTesting() == that.acceptAnyCertificateForTesting() &&
+                Objects.equals(rdns(), that.rdns()) &&
+                tlsMode() == that.tlsMode() &&
+                Objects.equals(servers(), that.servers()) &&
+                Objects.equals(uidAttribute(), that.uidAttribute()) &&
+                Objects.equals(assignedRole(), that.assignedRole()) &&
+                Objects.equals(trustStore(), that.trustStore()) &&
+                Objects.equals(searchScope(), that.searchScope()) &&
+                Objects.equals(requiredObjectClass(), that.requiredObjectClass()) &&
+                Objects.equals(ldapSimpleBind(), that.ldapSimpleBind());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(servers(),
+                tlsMode(),
+                trustStore(),
+                connectTimeoutMillis(),
+                responseTimeoutMillis(),
+                maxConnections(),
+                uidAttribute(),
+                rdns(),
+                requiredObjectClass(),
+                searchScope(),
+                searchTimeoutSeconds(),
+                assignedRole(),
+                acceptAnyCertificateForTesting(),
+                ldapSimpleBind());
     }
 }

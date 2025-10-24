@@ -46,7 +46,8 @@ public class IfUtil {
             "HIVEMQ_LDAP_SERVER2_ENABLED",
             "HIVEMQ_LDAP_SERVER3_ENABLED",
             "HIVEMQ_LDAP_TLS_TRUSTSTORE_ENABLED",
-            "HIVEMQ_LDAP_ENABLED");
+            "HIVEMQ_LDAP_ENABLED",
+            "HIVEMQ_LDAP_OBJECT_CLASS_ENABLED");
 
     /**
      * Get a Java system property or system environment variable with the specified name.

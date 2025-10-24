@@ -323,4 +323,39 @@ class LdapConnectionPropertiesTest {
         assertThat(resolver.resolveDn("jdoe"))
                 .isEqualTo("uid=jdoe,ou=people,dc=example,dc=com");
     }
+
+    @Test
+    void testLdapServersDefensiveCopying() {
+        // Create arrays
+        final String[] hosts1 = new String[]{"localhost", "backup.example.com"};
+        final int[] ports1 = new int[]{389, 636};
+
+        // Create first LdapServers instance
+        final LdapConnectionProperties.LdapServers servers1 =
+                new LdapConnectionProperties.LdapServers(hosts1, ports1);
+
+        // Modify the original arrays (this should NOT affect servers1 due to defensive copying)
+        hosts1[0] = "modified-host";
+        ports1[0] = 999;
+
+        // Create second LdapServers instance with the original values
+        final String[] hosts2 = new String[]{"localhost", "backup.example.com"};
+        final int[] ports2 = new int[]{389, 636};
+        final LdapConnectionProperties.LdapServers servers2 =
+                new LdapConnectionProperties.LdapServers(hosts2, ports2);
+
+        // If defensive copying works, servers1 should still equal servers2
+        // because servers1 has copies of the original values, not references
+        assertThat(servers1)
+                .as("LdapServers should be immutable - external array modifications should not affect it")
+                .isEqualTo(servers2);
+
+        // Verify the internal state of servers1 is unchanged
+        assertThat(servers1.hosts())
+                .as("hosts array should contain original values")
+                .containsExactly("localhost", "backup.example.com");
+        assertThat(servers1.ports())
+                .as("ports array should contain original values")
+                .containsExactly(389, 636);
+    }
 }

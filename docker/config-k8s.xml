@@ -109,7 +109,9 @@
             <uid-attribute>${ENV:HIVEMQ_LDAP_UID}</uid-attribute>
             <rdns>${ENV:HIVEMQ_LDAP_RDNS}</rdns>
             <directory-descent>${ENV:HIVEMQ_LDAP_DIRECTORY_DESCENT}</directory-descent>
+            ${IF:HIVEMQ_LDAP_OBJECT_CLASS_ENABLED}
             <required-object-class>${ENV:HIVEMQ_LDAP_OBJECT_CLASS}</required-object-class>
+            ${IF:HIVEMQ_LDAP_OBJECT_CLASS_ENABLED}
 
             <max-connections>${ENV:HIVEMQ_LDAP_MAX_CONNECTION}</max-connections>
             <connect-timeout-millis>${ENV:HIVEMQ_LDAP_CONNECT_TIMEOUT_MS}</connect-timeout-millis>
