@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
@@ -31,18 +32,19 @@ public class DatabaseConnection {
     private final @NotNull HikariConfig config;
     private @Nullable HikariDataSource ds;
 
-    public DatabaseConnection(final @NotNull DatabaseType dbType,
-                              final @NotNull String server,
-                              final @NotNull Integer port,
-                              final @NotNull String database,
-                              final @NotNull String username,
-                              final @NotNull String password,
-                              final int connectionTimeout,
-                              final boolean encrypt) {
+    public DatabaseConnection(
+            final @NotNull DatabaseType dbType,
+            final @NotNull String server,
+            final @NotNull Integer port,
+            final @NotNull String database,
+            final @NotNull String username,
+            final @NotNull String password,
+            final int connectionTimeout,
+            final boolean encrypt) {
 
         config = new HikariConfig();
 
-        switch (dbType){
+        switch (dbType) {
             case POSTGRESQL -> {
                 config.setDataSourceClassName("org.postgresql.ds.PGSimpleDataSource");
                 config.addDataSourceProperty("serverName", server);
@@ -77,7 +79,9 @@ public class DatabaseConnection {
                 if (encrypt) {
                     properties.setProperty("encrypt", "true");
                     properties.setProperty("trustServerCertificate", "true"); // Trust the server certificate implicitly
-                } else properties.setProperty("encrypt", "false");
+                } else {
+                    properties.setProperty("encrypt", "false");
+                }
                 config.setDataSourceProperties(properties);
             }
         }

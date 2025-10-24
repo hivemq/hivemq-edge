@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.databases;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
@@ -26,20 +25,15 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingInput;
-import com.hivemq.adapter.sdk.api.polling.PollingOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.databases.config.DatabaseType;
 import com.hivemq.edge.adapters.databases.config.DatabasesAdapterConfig;
 import com.hivemq.edge.adapters.databases.config.DatabasesAdapterTag;
 import com.hivemq.edge.adapters.databases.config.DatabasesAdapterTagDefinition;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,15 +46,12 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
-
 
 public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
+    public static final int TIMEOUT = 30;
     private static final @NotNull Logger log = LoggerFactory.getLogger(DatabasesPollingProtocolAdapter.class);
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    public static final int TIMEOUT = 30;
-
     private final @NotNull DatabasesAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -98,7 +89,8 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
 
     @Override
     public void start(
-            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input,
+            final @NotNull ProtocolAdapterStartOutput output) {
         log.debug("Loading PostgreSQL Driver");
         try {
             Class.forName("org.postgresql.Driver");
@@ -122,7 +114,6 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
             output.failStart(e, null);
             return;
         }
-
 
 
         databaseConnection.connect();
