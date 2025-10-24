@@ -17,12 +17,14 @@ package com.hivemq.http.core;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 public class UsernamePasswordRoles {
 
     public static final String DEFAULT_USERNAME = "admin";
     public static final String DEFAULT_PASSWORD = "hivemq";
+    public static final byte[] DEFAULT_PASSWORD_BYTES = DEFAULT_PASSWORD.getBytes(StandardCharsets.UTF_8);
 
     private String userName;
     private byte[] password;

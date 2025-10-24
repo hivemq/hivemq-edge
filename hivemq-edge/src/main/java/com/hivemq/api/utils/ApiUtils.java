@@ -16,16 +16,15 @@
 package com.hivemq.api.utils;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.HttpsListener;
 import com.hivemq.configuration.service.ApiConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.core.UsernamePasswordRoles;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Simon L Johnson
@@ -36,8 +35,7 @@ public class ApiUtils {
         if(!users.isEmpty()){
             return users.stream()
                     .anyMatch(user -> (UsernamePasswordRoles.DEFAULT_USERNAME.equals(user.getUserName()) &&
-                            UsernamePasswordRoles.DEFAULT_PASSWORD.equals(new String(user.getPassword(),
-                                    StandardCharsets.UTF_8))));
+                                    Objects.deepEquals(UsernamePasswordRoles.DEFAULT_PASSWORD_BYTES, user.getPassword())));
         }
         return false;
     }
