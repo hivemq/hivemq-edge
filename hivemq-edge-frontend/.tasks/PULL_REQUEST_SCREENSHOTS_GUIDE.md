@@ -15,6 +15,7 @@ The PR template requires BEFORE and AFTER screenshots to demonstrate the UX impr
 The E2E test generates a video file that captures all test interactions.
 
 **Video Location:**
+
 ```
 cypress/videos/duplicate-combiner.spec.cy.ts.mp4
 ```
@@ -39,6 +40,7 @@ cypress/videos/duplicate-combiner.spec.cy.ts.mp4
 **Steps:**
 
 1. **Start Cypress in headed mode:**
+
    ```bash
    npx cypress open
    ```
@@ -46,15 +48,18 @@ cypress/videos/duplicate-combiner.spec.cy.ts.mp4
 2. **Select E2E Testing** → **Choose Chrome browser**
 
 3. **Run the test:**
+
    ```
    cypress/e2e/workspace/duplicate-combiner.spec.cy.ts
    ```
 
 4. **Tests with visual snapshots:**
+
    - "Accessibility → should be accessible" - Captures empty modal state
    - "Accessibility → should be accessible with mappings" - Captures modal with mappings
 
 5. **Use your OS screenshot tool** when the modal appears:
+
    - macOS: `Cmd + Shift + 4` (area selection) or `Cmd + Shift + 3` (full screen)
    - Windows: `Win + Shift + S`
    - Linux: Use your distribution's screenshot tool
@@ -72,25 +77,27 @@ Add `cy.screenshot()` commands to the E2E test temporarily:
 ```typescript
 // In "should be accessible" test, after modal appears:
 workspacePage.duplicateCombinerModal.modal.should('be.visible')
-cy.screenshot('duplicate-modal-empty-state', { 
+cy.screenshot('duplicate-modal-empty-state', {
   capture: 'viewport',
-  overwrite: true 
+  overwrite: true,
 })
 
 // In "should be accessible with mappings" test:
 workspacePage.duplicateCombinerModal.modal.should('be.visible')
-cy.screenshot('duplicate-modal-with-mappings', { 
+cy.screenshot('duplicate-modal-with-mappings', {
   capture: 'viewport',
-  overwrite: true 
+  overwrite: true,
 })
 ```
 
 **Run the test:**
+
 ```bash
 npx cypress run --spec "cypress/e2e/workspace/duplicate-combiner.spec.cy.ts"
 ```
 
 **Screenshots will be saved to:**
+
 ```
 cypress/screenshots/workspace/duplicate-combiner.spec.cy.ts/
 ```
@@ -119,17 +126,20 @@ For the "BEFORE" section, you need screenshots of the **old toast notification**
 If the old code is still in git history:
 
 1. **Checkout the commit before this PR:**
+
    ```bash
    git stash  # Save current changes
    git checkout <commit-before-changes>
    ```
 
 2. **Run the application:**
+
    ```bash
    pnpm dev
    ```
 
 3. **Manually trigger duplicate combiner detection:**
+
    - Create a combiner with specific sources
    - Select the same sources again
    - Click "Combine" button
@@ -149,7 +159,7 @@ Create a temporary test that simulates the old toast behavior:
 it('old behavior - toast notification', () => {
   // Setup
   workspacePage.canvas.should('be.visible')
-  
+
   // Show a mock toast (similar to old behavior)
   cy.window().then((win) => {
     win.eval(`
@@ -160,7 +170,7 @@ it('old behavior - toast notification', () => {
       document.body.appendChild(toast)
     `)
   })
-  
+
   cy.wait(1000)
   cy.screenshot('before-toast-notification')
 })
@@ -182,7 +192,7 @@ it('old behavior - toast notification', () => {
 Before updating the PR template:
 
 - [ ] Captured modal empty state screenshot
-- [ ] Captured modal with mappings screenshot  
+- [ ] Captured modal with mappings screenshot
 - [ ] Captured canvas animation frame (optional)
 - [ ] Captured "before" toast notification screenshot
 - [ ] Optimized file sizes (<200 KB each)
@@ -195,6 +205,7 @@ Before updating the PR template:
 ## Screenshot Storage
 
 **Recommended structure:**
+
 ```
 .tasks/33168-duplicate-combiner/
 ├── PULL_REQUEST_TEMPLATE.md
@@ -207,6 +218,7 @@ Before updating the PR template:
 ```
 
 **Update PR template image paths:**
+
 ```markdown
 ![Before - Toast Notification](./screenshots/before-toast-notification.png)
 ![After - Modal Empty State](./screenshots/after-modal-empty-state.png)
@@ -222,4 +234,3 @@ Before updating the PR template:
 - Percy snapshots provide permanent visual regression history
 - Video files are typically too large for git repositories
 - Consider using GitHub's drag-and-drop image upload when creating the actual PR
-

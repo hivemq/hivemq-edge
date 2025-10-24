@@ -18,6 +18,7 @@
 **Objective:** Refactor ContextualToolbar component by extracting complex logic into testable utility functions.
 
 **Deliverables:**
+
 - ✅ Created `toolbar.utils.ts` with 5 utility functions
 - ✅ Created `toolbar.utils.spec.ts` with 29 comprehensive tests
 - ✅ Refactored ContextualToolbar component to use new utilities
@@ -26,6 +27,7 @@
 - ✅ No breaking changes
 
 **Key Functions Extracted:**
+
 1. `isNodeCombinerCandidate()` - Validates node eligibility for combiners
 2. `buildEntityReferencesFromNodes()` - Converts nodes to EntityReference array
 3. `findExistingCombiner()` - Detects duplicate combiners
@@ -33,6 +35,7 @@
 5. `isAssetMapperCombiner()` - Checks for pulse node presence
 
 **Metrics:**
+
 - 29 test cases added
 - ~40 lines of complex logic simplified
 - 100% test coverage of new utility functions
@@ -43,6 +46,7 @@
 **Objective:** Replace toast notification with comprehensive modal dialog for duplicate combiner detection.
 
 **Deliverables:**
+
 - ✅ Created `DuplicateCombinerModal` component (162 lines)
 - ✅ Created `CombinerMappingsList` component (70 lines)
 - ✅ Integrated modal with ReactFlow canvas animation
@@ -53,6 +57,7 @@
 - ✅ TypeScript compilation passed
 
 **Key Features Implemented:**
+
 - Modal positioned off-center with backdrop blur
 - Animated fitView to existing combiner on modal open
 - Three action choices: Cancel, Create New, Use Existing (primary)
@@ -62,6 +67,7 @@
 - Comprehensive data-testid attributes for E2E testing
 
 **UX Improvements:**
+
 - Persistent dialog vs auto-dismissing toast
 - Shows combiner name prominently
 - Lists all existing mappings with details
@@ -69,6 +75,7 @@
 - Better accessibility and keyboard navigation
 
 **Metrics:**
+
 - 5 new files created
 - 2 files modified
 - 15 Cypress tests added (100% passing)
@@ -80,6 +87,7 @@
 **Objective:** Create comprehensive end-to-end tests integrating duplicate combiner modal into workspace critical path.
 
 **Deliverables:**
+
 - ✅ Created comprehensive E2E test suite (~450 lines)
 - ✅ Extended WorkspacePage page object with modal selectors
 - ✅ Added 12 E2E test cases covering all interaction paths
@@ -89,16 +97,19 @@
 - ✅ Accessibility validation with axe-core
 
 **Test Coverage:**
+
 - **Modal Interaction (6 tests):** Display, cancel, close, use existing, create new
 - **Modal with Mappings (2 tests):** Populated state, empty state
 - **Keyboard Navigation (2 tests):** ESC key, default focus
 - **Accessibility (2 tests):** Basic modal, modal with mappings
 
 **Percy Snapshots:**
+
 1. "Workspace - Duplicate Combiner Modal" (empty state)
 2. "Workspace - Duplicate Combiner Modal with Mappings" (populated state)
 
 **Key Features:**
+
 - Page object pattern for maintainable selectors
 - MSW data factory with deterministic IDs
 - Comprehensive user flow testing
@@ -106,6 +117,7 @@
 - Full accessibility coverage
 
 **Metrics:**
+
 - 1 new E2E test file created
 - 1 page object file enhanced
 - 12 E2E test cases added
@@ -119,6 +131,7 @@
 ### Task Complete! 🎉
 
 All three phases successfully completed. The duplicate combiner detection feature is:
+
 - ✅ Fully refactored with testable utilities
 - ✅ Enhanced UX with modal dialog
 - ✅ Comprehensively tested (unit, component, E2E)
@@ -139,15 +152,20 @@ All three phases successfully completed. The duplicate combiner detection featur
 ## Files Modified
 
 ### Phase 1
+
 **Created:**
+
 1. `src/modules/Workspace/utils/toolbar.utils.ts`
 2. `src/modules/Workspace/utils/toolbar.utils.spec.ts`
 
 **Modified:**
+
 1. `src/modules/Workspace/components/nodes/ContextualToolbar.tsx`
 
 ### Phase 2
+
 **Created:**
+
 1. `src/modules/Workspace/components/modals/DuplicateCombinerModal.tsx`
 2. `src/modules/Workspace/components/modals/CombinerMappingsList.tsx`
 3. `src/modules/Workspace/components/modals/index.ts`
@@ -155,14 +173,18 @@ All three phases successfully completed. The duplicate combiner detection featur
 5. `src/modules/Workspace/components/modals/CombinerMappingsList.spec.cy.tsx`
 
 **Modified:**
+
 1. `src/modules/Workspace/components/nodes/ContextualToolbar.tsx` (Phase 2 updates)
 2. `src/locales/en/translation.json`
 
 ### Phase 3
+
 **Created:**
+
 1. `cypress/e2e/workspace/duplicate-combiner.spec.cy.ts`
 
 **Modified:**
+
 1. `cypress/pages/Workspace/WorkspacePage.ts`
 
 ---
@@ -170,13 +192,16 @@ All three phases successfully completed. The duplicate combiner detection featur
 ## Tests Added
 
 **Phase 1:**
+
 - 29 Vitest unit tests in `toolbar.utils.spec.ts` ✅
 
 **Phase 2:**
+
 - 11 Cypress component tests in `DuplicateCombinerModal.spec.cy.tsx` ✅
 - 4 Cypress component tests in `CombinerMappingsList.spec.cy.tsx` ✅
 
 **Phase 3:**
+
 - 12 Cypress E2E tests in `duplicate-combiner.spec.cy.ts` ✅
 - 2 Percy visual regression snapshots ✅
 
@@ -187,6 +212,7 @@ All three phases successfully completed. The duplicate combiner detection featur
 ## Design Highlights
 
 ### Architecture Decisions
+
 - Modals separated into dedicated directory for organization
 - CombinerMappingsList extracted as reusable component
 - Modal uses ReactFlow's fitView for smooth animation
@@ -194,6 +220,7 @@ All three phases successfully completed. The duplicate combiner detection featur
 - Full i18n support with pluralization
 
 ### Accessibility
+
 - Focus management (initial focus on primary action)
 - Keyboard navigation (ESC, Enter, Tab)
 - ARIA labels throughout
@@ -201,6 +228,7 @@ All three phases successfully completed. The duplicate combiner detection featur
 - High contrast warning icon
 
 ### Testing Strategy
+
 - Component tests cover all user interactions
 - Data-testid attributes enable E2E testing
 - Mock data patterns established

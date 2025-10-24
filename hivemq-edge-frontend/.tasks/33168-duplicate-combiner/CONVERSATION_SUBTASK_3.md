@@ -36,6 +36,7 @@ Create comprehensive end-to-end tests for the duplicate combiner modal, integrat
 ### Test Suites
 
 **1. Modal Interaction (6 tests)**
+
 - ✅ Shows duplicate modal when creating combiner with same sources
 - ✅ Displays correct modal content for combiner
 - ✅ Closes modal when cancel button is clicked
@@ -44,20 +45,24 @@ Create comprehensive end-to-end tests for the duplicate combiner modal, integrat
 - ✅ Creates new combiner when "Create New Anyway" is clicked
 
 **2. Modal with Mappings (2 tests)**
+
 - ✅ Displays existing mappings in modal
 - ✅ Shows empty state when combiner has no mappings
 
 **3. Keyboard Navigation (2 tests)**
+
 - ✅ Closes modal when ESC is pressed
 - ✅ Focuses "Use Existing" button by default
 
 **4. Accessibility (2 tests)**
+
 - ✅ Modal is accessible (with axe-core validation)
 - ✅ Modal with mappings is accessible (with axe-core validation)
 
 ### Percy Snapshots
 
 1. **"Workspace - Duplicate Combiner Modal"**
+
    - Modal with empty mappings state
    - Tests basic modal layout and positioning
 
@@ -72,17 +77,32 @@ Create comprehensive end-to-end tests for the duplicate combiner modal, integrat
 ### Page Object Pattern
 
 **WorkspacePage Extension:**
+
 ```typescript
 duplicateCombinerModal = {
-  get modal() { return cy.getByTestId('duplicate-combiner-modal') },
-  get title() { return cy.getByTestId('modal-title') },
-  get combinerName() { return cy.getByTestId('modal-combiner-name') },
-  get description() { return cy.getByTestId('modal-description') },
+  get modal() {
+    return cy.getByTestId('duplicate-combiner-modal')
+  },
+  get title() {
+    return cy.getByTestId('modal-title')
+  },
+  get combinerName() {
+    return cy.getByTestId('modal-combiner-name')
+  },
+  get description() {
+    return cy.getByTestId('modal-description')
+  },
   // ... more selectors
   buttons: {
-    get cancel() { return cy.getByTestId('modal-button-cancel') },
-    get createNew() { return cy.getByTestId('modal-button-create-new') },
-    get useExisting() { return cy.getByTestId('modal-button-use-existing') },
+    get cancel() {
+      return cy.getByTestId('modal-button-cancel')
+    },
+    get createNew() {
+      return cy.getByTestId('modal-button-create-new')
+    },
+    get useExisting() {
+      return cy.getByTestId('modal-button-use-existing')
+    },
   },
 }
 ```
@@ -90,20 +110,23 @@ duplicateCombinerModal = {
 ### API Mocking Strategy
 
 **MSW Data Factory:**
+
 - Uses `@mswjs/data` factory for persistent mock data
 - Deterministic combiner IDs based on source identifiers
 - Proper CRUD operations (Create, Read, Update, Delete)
 - Database reset in `afterEach` hook for test isolation
 
 **Combiner ID Generation:**
+
 ```typescript
-const sourceIds = combiner.sources?.items?.map(s => s.identifier).join('-') || ''
+const sourceIds = combiner.sources?.items?.map((s) => s.identifier).join('-') || ''
 const determinedId = sourceIds ? `combiner-${sourceIds}` : COMBINER_ID_2
 ```
 
 ### Test Flow Pattern
 
 **Typical Test Structure:**
+
 1. Create initial combiner with specific sources
 2. Attempt to create duplicate with same sources
 3. Verify modal appears with correct content
@@ -115,6 +138,7 @@ const determinedId = sourceIds ? `combiner-${sourceIds}` : COMBINER_ID_2
 ## Key Testing Patterns
 
 ### 1. Modal Appearance Verification
+
 ```typescript
 workspacePage.duplicateCombinerModal.modal.should('be.visible')
 workspacePage.duplicateCombinerModal.title.should('contain.text', 'Combiner Already Exists')
@@ -122,6 +146,7 @@ workspacePage.duplicateCombinerModal.combinerName.should('contain.text', 'unname
 ```
 
 ### 2. User Action Simulation
+
 ```typescript
 // Select nodes
 workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
@@ -132,6 +157,7 @@ cy.wait('@postCombiner')
 ```
 
 ### 3. Accessibility Testing
+
 ```typescript
 cy.injectAxe()
 cy.checkAccessibility(undefined, {
@@ -150,6 +176,7 @@ cy.percySnapshot('Workspace - Duplicate Combiner Modal')
 ### Running Tests
 
 **Run E2E tests (requires dev server running):**
+
 ```bash
 # Terminal 1: Start dev server
 pnpm dev
@@ -159,6 +186,7 @@ pnpm exec cypress run --spec "cypress/e2e/workspace/duplicate-combiner.spec.cy.t
 ```
 
 **Open Cypress UI for debugging:**
+
 ```bash
 pnpm exec cypress open
 ```
@@ -173,7 +201,9 @@ pnpm exec cypress open
 ## Integration Points
 
 ### 1. Workspace Critical Path
+
 The duplicate combiner modal is now part of the workspace creation flow:
+
 - User selects multiple nodes
 - User clicks "Combine" button
 - System checks for existing combiner with same sources
@@ -181,14 +211,18 @@ The duplicate combiner modal is now part of the workspace creation flow:
 - If no duplicate: Combiner created directly (existing behavior)
 
 ### 2. Percy Visual Regression
+
 Two snapshots added to visual regression suite:
+
 - Basic modal state (empty mappings)
 - Modal with populated mappings
 
 These will catch any unintended visual changes to the modal.
 
 ### 3. Accessibility Coverage
+
 All modal states tested with axe-core:
+
 - Modal structure and ARIA attributes
 - Focus management
 - Keyboard navigation
@@ -199,15 +233,18 @@ All modal states tested with axe-core:
 ## Metrics
 
 **Tests Added:**
+
 - 12 E2E test cases
 - 2 Percy visual snapshots
 - ~450 lines of test code
 
 **Files Modified:**
+
 - 1 new test file created
 - 1 page object file enhanced
 
 **Coverage:**
+
 - All user interaction paths tested
 - All modal actions verified
 - Accessibility validated
@@ -218,12 +255,14 @@ All modal states tested with axe-core:
 ## Notes
 
 ### Test Requirements
+
 - Tests require the development server to be running (`pnpm dev`)
 - Tests use MSW data factory for API mocking
 - Tests are deterministic and can run in any order
 - Database is reset between tests for isolation
 
 ### Future Enhancements
+
 - [ ] Add tests for asset mapper variant of modal
 - [ ] Test modal behavior with many mappings (scrolling)
 - [ ] Test modal with complex mapping configurations
@@ -243,4 +282,3 @@ All modal states tested with axe-core:
 **Phase 3 Status:** ✅ Complete
 
 All E2E integration tests implemented successfully. The duplicate combiner modal is fully integrated into the workspace critical path with comprehensive test coverage and Percy visual regression protection.
-
