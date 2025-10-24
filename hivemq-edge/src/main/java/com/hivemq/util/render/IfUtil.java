@@ -21,11 +21,12 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 
 /**
@@ -69,48 +70,90 @@ public class IfUtil {
      *
      * @param text the text which contains placeholders (or not)
      * @return replacement result containing the actual string
-     * @throws UnrecoverableException
+     * @throws UnrecoverableException if a variable used in a placeholder is not set
      */
     public static @NotNull String replaceIfPlaceHolders(final @NotNull String text) {
 
         final List<String> activations = SUPPORTED_ENVS.stream()
                 .map(envName -> Boolean.parseBoolean(getValue(envName)) ? envName : "!" + envName)
-                .collect(Collectors.toList());
+                .toList();
 
         final Matcher matcher = Pattern.compile(FRAGMENT_VAR_PATTERN)
                 .matcher(text);
 
-        final Stack<IfToken> matchers = new Stack<>();
-
-
+        // Find all tokens
+        final List<IfToken> allTokens = new ArrayList<>();
         while (matcher.find()) {
             if (matcher.groupCount() < 1) {
                 //this should never happen as we declared 1 groups in the ENV_VAR_PATTERN
                 log.warn("Found unexpected if placeholder in config.xml");
                 continue;
             }
-            matchers.push(new IfToken(matcher.group(1), matcher.start(), matcher.end()));
+            allTokens.add(new IfToken(matcher.group(1), matcher.start(), matcher.end()));
         }
 
-        //going through in reverse order to not mess up the positions in the string
-        String result = text;
-        while(!matchers.empty()) {
-            final IfToken closingMatch = matchers.pop();
-            if (activations.contains(closingMatch.content)) {
-                //this is an active block, just remove the placeholders
-                result = result.substring(0, closingMatch.getStart()) + result.substring(closingMatch.getStop());
-                final IfToken openingMatch = matchers.pop();
-                //also remove the opening placeholder
-                result = (result.substring(0, openingMatch.getStart())
-                        + result.substring(openingMatch.getStop()));
+        // Match opening and closing tags using a stack
+        final Stack<IfToken> stack = new Stack<>();
+        final List<IfTokenPair> pairs = new ArrayList<>();
+
+        for (final var token : allTokens) {
+            if (!stack.isEmpty() && stack.peek().getContent().equals(token.getContent())) {
+                // This is a closing tag - matches the top of the stack
+                final var opening = stack.pop();
+                pairs.add(new IfTokenPair(opening, token));
             } else {
-                //this is an inactive block, remove the whole block, including placeholders
-                final IfToken openingMatch = matchers.pop();
-                result = result.substring(0, openingMatch.getStart()) + result.substring(closingMatch.getStop());
+                // This is an opening tag
+                stack.push(token);
             }
         }
 
-        return result;
+        if (!stack.isEmpty()) {
+            log.warn("Unmatched IF tags found in config");
+        }
+
+        // Create a boolean array to mark which characters to keep
+        final var keep = new boolean[text.length()];
+        Arrays.fill(keep, true); // Keep all by default
+
+        // Sort pairs by span size descending (outermost first)
+        pairs.sort((a, b) -> {
+            final var spanA = a.closing.getStop() - a.opening.getStart();
+            final var spanB = b.closing.getStop() - b.opening.getStart();
+            return Integer.compare(spanB, spanA);
+        });
+
+        // Process each pair
+        for (final var pair : pairs) {
+            // Check if opening tag has been marked for removal (already inside a removed block)
+            if (!keep[pair.opening.getStart()]) {
+                continue; // Skip, already inside a removed block
+            }
+
+            if (activations.contains(pair.opening.getContent())) {
+                // Active block - remove only the tags, keep content
+                for (int i = pair.opening.getStart(); i < pair.opening.getStop(); i++) {
+                    keep[i] = false;
+                }
+                for (int i = pair.closing.getStart(); i < pair.closing.getStop(); i++) {
+                    keep[i] = false;
+                }
+            } else {
+                // Inactive block - remove entire block including tags and content
+                for (int i = pair.opening.getStart(); i < pair.closing.getStop(); i++) {
+                    keep[i] = false;
+                }
+            }
+        }
+
+        // Build result string
+        final var result = new StringBuilder();
+        for (int i = 0; i < text.length(); i++) {
+            if (keep[i]) {
+                result.append(text.charAt(i));
+            }
+        }
+
+        return result.toString();
     }
 
     private static class IfToken{
@@ -139,6 +182,16 @@ public class IfUtil {
         @Override
         public String toString() {
             return "IfToken{" + "content='" + content + '\'' + ", start=" + start + ", stop=" + stop + '}';
+        }
+    }
+
+    private static class IfTokenPair {
+        private final IfToken opening;
+        private final IfToken closing;
+
+        public IfTokenPair(final IfToken opening, final IfToken closing) {
+            this.opening = opening;
+            this.closing = closing;
         }
     }
 }
