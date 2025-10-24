@@ -406,6 +406,15 @@ describe('Duplicate Combiner Detection', () => {
 
       // Percy snapshot
       cy.percySnapshot('Workspace - Duplicate Combiner Modal')
+
+      // Wait for modal slide-in animation to complete by checking opacity
+      workspacePage.duplicateCombinerModal.modal.should('have.css', 'opacity', '1')
+
+      // Screenshot for PR template (last command)
+      cy.screenshot('after/after-modal-empty-state', {
+        capture: 'viewport',
+        overwrite: true,
+      })
     })
 
     it('should be accessible with mappings', { tags: ['@percy'] }, () => {
@@ -460,6 +469,15 @@ describe('Duplicate Combiner Detection', () => {
 
       // Percy snapshot
       cy.percySnapshot('Workspace - Duplicate Combiner Modal with Mappings')
+
+      // Wait for modal slide-in animation to complete by checking opacity
+      workspacePage.duplicateCombinerModal.modal.should('have.css', 'opacity', '1')
+
+      // Screenshot for PR template (last command)
+      cy.screenshot('after/after-modal-with-mappings', {
+        capture: 'viewport',
+        overwrite: true,
+      })
     })
   })
 })
