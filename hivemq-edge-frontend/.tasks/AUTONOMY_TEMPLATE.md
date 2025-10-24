@@ -599,6 +599,7 @@ describe('hookName or utilityName', () => {
 When testing involves **3 or more similar test cases** with variations in props/inputs, use `it.each` pattern instead of multiple individual `it` statements.
 
 **Why this matters:**
+
 - Reduces code duplication and maintenance burden
 - Makes test variations more explicit and readable
 - Easier to add new test cases
@@ -685,9 +686,7 @@ describe('isNodeCombinerCandidate', () => {
     'should return $expected for $description',
     ({ nodeType, adapterType, capabilities, adapterTypesProvided, expected }) => {
       const node = createNode('test-1', nodeType, { type: adapterType })
-      const adapterTypes = adapterTypesProvided && capabilities
-        ? [{ id: adapterType, capabilities }]
-        : undefined
+      const adapterTypes = adapterTypesProvided && capabilities ? [{ id: adapterType, capabilities }] : undefined
 
       expect(isNodeCombinerCandidate(node, adapterTypes)).toBe(expected)
     }
@@ -704,12 +703,14 @@ describe('isNodeCombinerCandidate', () => {
 5. **Keep Logic Simple** - Setup should be straightforward, not complex
 
 **When to Use `it.each`:**
+
 - ✅ 3 or more similar test cases with input/output variations
 - ✅ Testing different states/conditions of the same function
 - ✅ Boundary testing with multiple values
 - ✅ Testing validation logic with various inputs
 
 **When NOT to Use `it.each`:**
+
 - ❌ Only 1-2 test cases (use individual `it` statements)
 - ❌ Test cases require significantly different setup logic
 - ❌ Test cases assert completely different behaviors

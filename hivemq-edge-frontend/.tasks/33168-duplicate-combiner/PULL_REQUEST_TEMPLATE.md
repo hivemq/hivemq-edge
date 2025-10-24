@@ -20,6 +20,7 @@ This PR enhances the user experience when attempting to create a combiner with s
 ### User Experience Improvements
 
 **What users gain:**
+
 - Persistent modal requiring explicit action (no auto-dismiss)
 - Complete visibility of existing combiner mappings before making a decision
 - Clearer understanding of why duplicate detection triggered
@@ -30,6 +31,7 @@ This PR enhances the user experience when attempting to create a combiner with s
 ### Technical Improvements
 
 **Code quality enhancements:**
+
 - Extracted 5 complex utility functions from ContextualToolbar for better testability
 - Created reusable CombinerMappingsList component for displaying mapping details
 - Added comprehensive test coverage: 56 tests total
@@ -48,6 +50,7 @@ This PR enhances the user experience when attempting to create a combiner with s
 The old implementation showed a brief, auto-dismissing toast notification:
 
 **Limitations:**
+
 - Toast auto-dismissed after a few seconds
 - No visibility of existing combiner details
 - No option to review existing mappings
@@ -71,10 +74,11 @@ When a duplicate combiner is detected that hasn't had mappings configured yet:
 
 ![After - Modal Empty State](./screenshots/after-modal-empty-state.png)
 
-*Test: `cypress/e2e/workspace/duplicate-combiner.spec.cy.ts` - "Accessibility → should be accessible"*  
-*Screenshot: 1400x916 viewport, captured via `cy.screenshot()` in E2E test*
+_Test: `cypress/e2e/workspace/duplicate-combiner.spec.cy.ts` - "Accessibility → should be accessible"_  
+_Screenshot: 1400x916 viewport, captured via `cy.screenshot()` in E2E test_
 
 **Key Elements:**
+
 - Warning icon and clear title "Possible Duplicate Combiner"
 - Combiner name prominently displayed
 - Description explaining the duplicate detection
@@ -90,10 +94,11 @@ When a duplicate combiner is detected that has existing mappings configured:
 
 ![After - Modal with Mappings](./screenshots/after-modal-with-mappings.png)
 
-*Test: `cypress/e2e/workspace/duplicate-combiner.spec.cy.ts` - "Accessibility → should be accessible with mappings"*  
-*Screenshot: 1400x916 viewport, captured via `cy.screenshot()` in E2E test*
+_Test: `cypress/e2e/workspace/duplicate-combiner.spec.cy.ts` - "Accessibility → should be accessible with mappings"_  
+_Screenshot: 1400x916 viewport, captured via `cy.screenshot()` in E2E test_
 
 **Key Elements:**
+
 - Complete list of existing mappings displayed in expandable list
 - Source → Destination flow visualization with arrow indicators
 - Instruction count badges for each mapping (e.g., "5 instructions")
@@ -104,9 +109,10 @@ When a duplicate combiner is detected that has existing mappings configured:
 
 When the modal opens, the canvas automatically animates to highlight the existing combiner:
 
-*The canvas uses ReactFlow's `fitView()` animation to smoothly pan and zoom to the existing combiner location. This provides immediate visual context to help users understand which combiner already exists with these sources. The animation is coordinated with the modal opening for a smooth UX.*
+_The canvas uses ReactFlow's `fitView()` animation to smoothly pan and zoom to the existing combiner location. This provides immediate visual context to help users understand which combiner already exists with these sources. The animation is coordinated with the modal opening for a smooth UX._
 
 **Animation details:**
+
 - Duration: Smooth transition (default ReactFlow timing)
 - Target: Existing combiner node on canvas
 - Effect: Backdrop blur on modal allows canvas animation to remain visible
@@ -117,6 +123,7 @@ When the modal opens, the canvas automatically animates to highlight the existin
 ## Test Coverage
 
 ### Unit Tests (29 tests)
+
 - `toolbar.utils.spec.ts` - Comprehensive testing of utility functions
   - Node validation for combiner eligibility
   - Entity reference construction
@@ -125,6 +132,7 @@ When the modal opens, the canvas automatically animates to highlight the existin
   - Asset mapper detection
 
 ### Component Tests (15 tests)
+
 - `DuplicateCombinerModal.spec.cy.tsx` (11 tests)
   - Modal rendering and visibility
   - All button interactions
@@ -137,6 +145,7 @@ When the modal opens, the canvas automatically animates to highlight the existin
   - Instruction count badges
 
 ### E2E Tests (12 tests)
+
 - `duplicate-combiner.spec.cy.ts`
   - Complete user flow testing
   - Modal interaction paths
@@ -162,6 +171,7 @@ When the modal opens, the canvas automatically animates to highlight the existin
 ## Files Changed
 
 ### Created (8 files)
+
 1. `src/modules/Workspace/utils/toolbar.utils.ts` - Extracted utility functions
 2. `src/modules/Workspace/utils/toolbar.utils.spec.ts` - Unit tests
 3. `src/modules/Workspace/components/modals/DuplicateCombinerModal.tsx` - Main modal component
@@ -172,6 +182,7 @@ When the modal opens, the canvas automatically animates to highlight the existin
 8. `cypress/e2e/workspace/duplicate-combiner.spec.cy.ts` - E2E tests
 
 ### Modified (3 files)
+
 1. `src/modules/Workspace/components/nodes/ContextualToolbar.tsx` - Refactored to use utilities and modal
 2. `src/locales/en/translation.json` - Added i18n translations
 3. `cypress/pages/Workspace/WorkspacePage.ts` - Added modal page object selectors
@@ -181,6 +192,7 @@ When the modal opens, the canvas automatically animates to highlight the existin
 ## Percy Visual Regression
 
 Two Percy snapshots added for visual regression protection:
+
 1. **"Workspace - Duplicate Combiner Modal"** - Empty mappings state
 2. **"Workspace - Duplicate Combiner Modal with Mappings"** - Populated state
 
@@ -205,6 +217,7 @@ None. All existing functionality preserved.
 ## Reviewer Notes
 
 **Focus areas for review:**
+
 1. Modal UX flow and action hierarchy
 2. Animation timing coordination with canvas fitView
 3. Translation key patterns and pluralization
@@ -212,8 +225,8 @@ None. All existing functionality preserved.
 5. Accessibility implementation
 
 **Testing instructions:**
+
 1. Run unit tests: `pnpm test:unit toolbar.utils`
 2. Run component tests: `pnpm test:cy:component -- --spec "src/modules/Workspace/components/modals/**"`
 3. Run E2E tests: `pnpm test:cy:e2e -- --spec "cypress/e2e/workspace/duplicate-combiner.spec.cy.ts"`
 4. Manual testing: Create combiner → attempt duplicate → verify modal behavior
-

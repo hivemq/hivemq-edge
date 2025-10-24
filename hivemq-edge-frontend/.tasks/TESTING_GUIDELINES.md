@@ -68,14 +68,14 @@ Test accessibility during common user interactions:
 it('should be accessible', () => {
   cy.injectAxe()
   cy.mountWithProviders(<MyModal isOpen={true} onClose={cy.stub()} />)
-  
+
   // Test initial state
   cy.checkAccessibility()
-  
+
   // Test after interaction
   cy.getByTestId('modal-button').click()
   cy.checkAccessibility()
-  
+
   // Test keyboard navigation
   cy.get('body').type('{tab}')
   cy.checkAccessibility()
@@ -90,10 +90,10 @@ Capture a visual reference for PR documentation:
 it('should be accessible', () => {
   cy.injectAxe()
   cy.mountWithProviders(<MyComponent {...representativeProps} />)
-  
+
   // Verify accessibility
   cy.checkAccessibility()
-  
+
   // Capture screenshot for PR documentation
   cy.screenshot('my-component-accessible-state', {
     capture: 'fullPage',
@@ -121,15 +121,15 @@ Screenshots in accessibility tests serve multiple purposes:
 it('should be accessible', () => {
   cy.viewport(1280, 900) // Consistent viewport size
   cy.injectAxe()
-  
+
   cy.mountWithProviders(<MyComponent {...meaningfulProps} />)
-  
+
   // Wait for animations/loading
   cy.wait(500)
-  
+
   // Check accessibility first
   cy.checkAccessibility()
-  
+
   // Then capture screenshot
   cy.screenshot('component-name-description', {
     capture: 'fullPage',
@@ -143,6 +143,7 @@ it('should be accessible', () => {
 Format: `{component-name}-{state-description}`
 
 Examples:
+
 - `duplicate-combiner-modal-with-mappings`
 - `combiner-mappings-list-empty-state`
 - `toolbar-multiple-selection`
@@ -156,6 +157,7 @@ Examples:
 Use consistent, descriptive test names:
 
 ✅ **Good Examples:**
+
 ```tsx
 it('should render the modal with combiner information', () => {})
 it('should call onSubmit when form is submitted', () => {})
@@ -164,10 +166,11 @@ it('should be accessible', () => {})
 ```
 
 ❌ **Bad Examples:**
+
 ```tsx
 it('works', () => {})
 it('test modal', () => {})
-it('check if accessible', () => {})  // Wrong name!
+it('check if accessible', () => {}) // Wrong name!
 ```
 
 ### Accessibility Test Name
@@ -175,6 +178,7 @@ it('check if accessible', () => {})  // Wrong name!
 **MUST BE:** `"should be accessible"`
 
 This exact naming ensures:
+
 - Easy identification in test reports
 - Consistent grep/search results
 - Team-wide understanding
@@ -208,23 +212,23 @@ describe('MyModal', () => {
 
   it('should render the modal with title and items', () => {
     cy.mountWithProviders(<MyModal {...mockProps} />)
-    
+
     cy.getByTestId('modal-title').should('contain.text', 'Example Modal')
     cy.getByTestId('modal-items').children().should('have.length', 2)
   })
 
   it('should call onClose when cancel button is clicked', () => {
     const onClose = cy.stub().as('onClose')
-    
+
     cy.mountWithProviders(<MyModal {...mockProps} onClose={onClose} />)
-    
+
     cy.getByTestId('modal-button-cancel').click()
     cy.get('@onClose').should('have.been.calledOnce')
   })
 
   it('should support keyboard navigation', () => {
     cy.mountWithProviders(<MyModal {...mockProps} />)
-    
+
     cy.get('body').type('{esc}')
     // Assert expected behavior
   })
@@ -232,14 +236,14 @@ describe('MyModal', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<MyModal {...mockProps} />)
-    
+
     // Test initial accessible state
     cy.checkAccessibility()
-    
+
     // Test accessibility after interaction
     cy.getByTestId('modal-button').click()
     cy.checkAccessibility()
-    
+
     // Optional: Capture screenshot for PR documentation
     cy.screenshot('my-modal-accessible', {
       capture: 'fullPage',
@@ -286,7 +290,7 @@ it('should render correctly', () => {
     id: '123',
     name: 'Test',
   }
-  
+
   cy.mountWithProviders(<MyComponent data={mockData} />)
 })
 ```
@@ -300,12 +304,13 @@ it('should render correctly', () => {
     id: '123',
     name: 'Test',
   }
-  
+
   cy.mountWithProviders(<MyComponent data={mockData} />)
 })
 ```
 
 **Why this matters:**
+
 - Catches type errors at compile time
 - Ensures mocks match actual data structures
 - Prevents runtime errors from mock data mismatches
@@ -322,11 +327,11 @@ it('should render correctly', () => {
 ```tsx
 const mockMapping = {
   id: 'mapping-1',
-  sources: { 
-    primary: { 
-      id: 'source-1', 
-      type: 'ADAPTER'  // ❌ Wrong! String literal
-    } 
+  sources: {
+    primary: {
+      id: 'source-1',
+      type: 'ADAPTER', // ❌ Wrong! String literal
+    },
   },
 }
 ```
@@ -338,20 +343,22 @@ import { DataIdentifierReference } from '@/api/__generated__'
 
 const mockMapping: DataCombining = {
   id: 'mapping-1',
-  sources: { 
-    primary: { 
-      id: 'source-1', 
-      type: DataIdentifierReference.type.TAG  // ✅ Correct! Enum
-    } 
+  sources: {
+    primary: {
+      id: 'source-1',
+      type: DataIdentifierReference.type.TAG, // ✅ Correct! Enum
+    },
   },
 }
 ```
 
 **Common enum types:**
+
 - `EntityType.ADAPTER`, `EntityType.BRIDGE`, `EntityType.EDGE_BROKER`, etc. (for combiner sources)
 - `DataIdentifierReference.type.TAG`, `DataIdentifierReference.type.TOPIC_FILTER`, `DataIdentifierReference.type.PULSE_ASSET` (for mapping sources)
 
 **Why this matters:**
+
 - Type safety - compiler catches invalid values
 - Refactoring - changes to enums update everywhere
 - Consistency - ensures test data matches production data
@@ -368,8 +375,8 @@ const mockMapping: DataCombining = {
 ```tsx
 it('should display data', () => {
   cy.mountWithProviders(<MyComponent />)
-  
-  cy.wait(500)  // ❌ Wrong! Arbitrary wait
+
+  cy.wait(500) // ❌ Wrong! Arbitrary wait
   cy.getByTestId('data').should('be.visible')
 })
 ```
@@ -379,14 +386,14 @@ it('should display data', () => {
 ```tsx
 it('should display data', () => {
   cy.mountWithProviders(<MyComponent />)
-  
+
   // GOOD: Wait for specific condition
   cy.getByTestId('data').should('be.visible')
-  
+
   // GOOD: Wait for network request
   cy.intercept('GET', '/api/data').as('getData')
   cy.wait('@getData')
-  
+
   // GOOD: Wait for element state
   cy.getByTestId('spinner').should('not.exist')
   cy.getByTestId('content').should('be.visible')
@@ -394,12 +401,14 @@ it('should display data', () => {
 ```
 
 **Alternatives to arbitrary waits:**
+
 - `cy.get().should()` - Wait for element conditions
 - `cy.wait('@alias')` - Wait for intercepted network requests
 - `cy.should()` assertions - Automatically retry until condition met
 - Custom commands with built-in retrying
 
 **Why this matters:**
+
 - Flaky tests - arbitrary waits may be too short or too long
 - Slow tests - waiting longer than necessary
 - False positives - test passes during wait, fails after
@@ -426,10 +435,10 @@ When taking screenshots of components with CSS animations (modals, dialogs, tool
 it('should be accessible', { tags: ['@percy'] }, () => {
   cy.injectAxe()
   cy.mountWithProviders(<MyModal isOpen={true} />)
-  
+
   cy.getByTestId('modal').should('be.visible')
   cy.checkAccessibility()
-  
+
   // ❌ Bad: Screenshot may capture animation mid-flight
   cy.screenshot('my-modal', { capture: 'viewport' })
 })
@@ -439,7 +448,7 @@ it('should be accessible', { tags: ['@percy'] }, () => {
 
 ```tsx
 // ❌ Bad: Arbitrary wait triggers ESLint warning
-cy.wait(400)  // cypress/no-unnecessary-waiting
+cy.wait(400) // cypress/no-unnecessary-waiting
 cy.screenshot('my-modal', { capture: 'viewport' })
 ```
 
@@ -449,14 +458,14 @@ cy.screenshot('my-modal', { capture: 'viewport' })
 it('should be accessible', { tags: ['@percy'] }, () => {
   cy.injectAxe()
   cy.mountWithProviders(<MyModal isOpen={true} />)
-  
+
   cy.getByTestId('modal').should('be.visible')
   cy.checkAccessibility()
   cy.percySnapshot('My Modal')
-  
+
   // ✅ Good: Wait for opacity to reach 1 (animation complete)
   cy.getByTestId('modal').should('have.css', 'opacity', '1')
-  
+
   // Now screenshot will show fully rendered modal
   cy.screenshot('my-modal', { capture: 'viewport', overwrite: true })
 })
@@ -465,11 +474,13 @@ it('should be accessible', { tags: ['@percy'] }, () => {
 ### How It Works
 
 **Chakra UI Animations**: Components using `motionPreset` (like `"slideInBottom"`, `"scale"`, etc.) animate CSS properties including:
+
 - `opacity`: 0 → 1
 - `transform`: translateY/scale changes
 - `transition`: Smooth easing over ~200-400ms
 
 **Cypress Retry-ability**: The `.should('have.css', 'opacity', '1')` assertion:
+
 - Automatically retries until opacity reaches exactly `1`
 - Adapts to different system speeds
 - No arbitrary timing needed
@@ -499,14 +510,14 @@ From `cypress/e2e/workspace/duplicate-combiner.spec.cy.ts`:
 ```typescript
 it('should be accessible', { tags: ['@percy'] }, () => {
   cy.injectAxe()
-  
+
   // Create combiner and trigger duplicate modal
   workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
   workspacePage.toolbar.combine.click()
-  
+
   // Modal becomes visible
   workspacePage.duplicateCombinerModal.modal.should('be.visible')
-  
+
   // Check accessibility
   cy.checkAccessibility(undefined, {
     rules: {
@@ -514,13 +525,13 @@ it('should be accessible', { tags: ['@percy'] }, () => {
       'color-contrast': { enabled: false },
     },
   })
-  
+
   // Percy snapshot (can handle animations)
   cy.percySnapshot('Workspace - Duplicate Combiner Modal')
-  
+
   // ✅ Wait for modal slide-in animation to complete by checking opacity
   workspacePage.duplicateCombinerModal.modal.should('have.css', 'opacity', '1')
-  
+
   // ✅ Screenshot for PR template (last command, after animation complete)
   cy.screenshot('pr-screenshots/after-modal-empty-state', {
     capture: 'viewport',
@@ -532,6 +543,7 @@ it('should be accessible', { tags: ['@percy'] }, () => {
 ### Best Practices for Screenshot Timing
 
 **1. Order of Operations:**
+
 ```tsx
 // 1. Verify element visibility
 cy.getByTestId('modal').should('be.visible')
@@ -550,6 +562,7 @@ cy.screenshot('modal-state', { capture: 'viewport', overwrite: true })
 ```
 
 **2. Why Accessibility Checks Come Before Animation Wait:**
+
 - Accessibility checks test semantic structure, not visual appearance
 - No need to wait for full visual rendering
 - If accessibility fails, we don't waste time on screenshot
@@ -557,6 +570,7 @@ cy.screenshot('modal-state', { capture: 'viewport', overwrite: true })
 
 **3. Screenshot Position:**
 Screenshots should **always be the last command** in a test because:
+
 - Only capture if all validations pass
 - Ensure fully rendered state
 - No wasted screenshots from failed tests
@@ -581,12 +595,14 @@ Don't use for:
 ### Troubleshooting
 
 **Screenshot still looks transparent:**
+
 - Check if multiple elements animate (e.g., modal + overlay)
 - Verify the correct element selector
 - Inspect actual CSS in browser DevTools
 - Consider checking multiple properties (opacity + transform)
 
 **Animation takes too long:**
+
 - Default Cypress timeout is 4000ms - should be plenty
 - Check if animation is actually completing
 - Verify CSS transitions are defined correctly
@@ -595,6 +611,7 @@ Don't use for:
 ### ESLint Compliance
 
 ✅ **This pattern avoids ESLint warnings:**
+
 - No `cy.wait()` with numbers
 - Uses built-in Cypress retry-ability
 - Self-documenting assertions
@@ -623,23 +640,23 @@ For specific accessibility requirements:
 it('should be accessible', () => {
   cy.injectAxe()
   cy.mountWithProviders(<MyComponent />)
-  
+
   // Check all accessibility issues
   cy.checkAccessibility()
-  
+
   // Or check specific rules
   cy.checkAccessibility({
     runOnly: {
       type: 'tag',
-      values: ['wcag2a', 'wcag2aa']
-    }
+      values: ['wcag2a', 'wcag2aa'],
+    },
   })
-  
+
   // Or exclude certain rules if necessary (document why!)
   cy.checkAccessibility({
     rules: {
-      'color-contrast': { enabled: false } // Explain: Using brand colors, verified manually
-    }
+      'color-contrast': { enabled: false }, // Explain: Using brand colors, verified manually
+    },
   })
 })
 ```
@@ -684,7 +701,7 @@ When components generate testIds with dynamic UUIDs (e.g., `mapping-item-{uuid}`
 ```typescript
 // This will fail because the UUID is generated at runtime
 cy.getByTestId('mapping-item-abc-123-def-456')
-cy.getByTestId('mapping-item-0')  // Index doesn't work either
+cy.getByTestId('mapping-item-0') // Index doesn't work either
 ```
 
 #### ✅ Correct - Use Attribute Starts-With Selector
@@ -692,9 +709,9 @@ cy.getByTestId('mapping-item-0')  // Index doesn't work either
 ```typescript
 // Use CSS attribute selector to match testIds that start with a pattern
 cy.get('[data-testid^="mapping-item-"]').first()
-cy.get('[data-testid^="mapping-item-"]').eq(0)  // First item
-cy.get('[data-testid^="mapping-item-"]').eq(1)  // Second item
-cy.get('[data-testid^="mapping-item-"]').should('have.length', 3)  // Count items
+cy.get('[data-testid^="mapping-item-"]').eq(0) // First item
+cy.get('[data-testid^="mapping-item-"]').eq(1) // Second item
+cy.get('[data-testid^="mapping-item-"]').should('have.length', 3) // Count items
 ```
 
 ### When to Use Partial Selectors
@@ -718,16 +735,14 @@ cy.get('[data-testid^="mapping-item-"]').first()
 cy.get('[data-testid^="mapping-item-"]').last()
 
 // By index
-cy.get('[data-testid^="mapping-item-"]').eq(2)  // Third item (0-indexed)
+cy.get('[data-testid^="mapping-item-"]').eq(2) // Third item (0-indexed)
 ```
 
 #### Selecting by Content
 
 ```typescript
 // Find item containing specific text
-cy.get('[data-testid^="mapping-destination-"]')
-  .contains('my/destination')
-  .should('be.visible')
+cy.get('[data-testid^="mapping-destination-"]').contains('my/destination').should('be.visible')
 ```
 
 #### Counting Items
@@ -754,20 +769,20 @@ From the duplicate combiner modal tests:
 ```typescript
 it('should display existing mappings in modal', () => {
   // ... create combiner with mappings ...
-  
+
   // Attempt duplicate to show modal
   workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
   workspacePage.toolbar.combine.click()
 
   // ✅ Verify mappings list container
   workspacePage.duplicateCombinerModal.mappingsList.should('be.visible')
-  
+
   // ✅ Select first mapping item (UUID is unknown)
   cy.get('[data-testid^="mapping-item-"]').first().should('be.visible')
-  
+
   // ✅ Verify destination text in first mapping
   cy.get('[data-testid^="mapping-destination-"]').first().should('contain.text', 'my / destination')
-  
+
   // ✅ Count total mappings
   cy.get('[data-testid^="mapping-item-"]').should('have.length', 1)
 })
@@ -782,6 +797,7 @@ it('should display existing mappings in modal', () => {
 Page Objects should include JSDoc comments that link directly to the source components they represent. This creates a direct path from test code to implementation code.
 
 **Benefits:**
+
 - ✅ **IDE Navigation**: Ctrl+Click (or Cmd+Click) to jump directly to the component
 - ✅ **Clear Source of Truth**: No guessing where testIds are defined
 - ✅ **Easier Maintenance**: When components change, you know which tests to update
@@ -918,7 +934,7 @@ const COMBINER_ID = 'combiner-123'
 // BAD: Arrays are difficult to manage in Cypress
 const createdIds: string[] = []
 cy.intercept('POST', '/api/combiners', (req) => {
-  createdIds.push(req.body.id)  // Hard to clean up between tests
+  createdIds.push(req.body.id) // Hard to clean up between tests
 })
 ```
 
@@ -929,7 +945,7 @@ cy.intercept('POST', '/api/combiners', (req) => {
 cy.intercept('POST', '/api/v1/management/combiners', (req) => {
   req.continue((res) => {
     const combiner = res.body as Combiner
-    cy.wrap(combiner.id).as('firstCombinerId')  // ✅ Store in alias
+    cy.wrap(combiner.id).as('firstCombinerId') // ✅ Store in alias
   })
 }).as('postCombiner')
 
@@ -1013,14 +1029,14 @@ it('should navigate to existing combiner when "Use Existing" is clicked', () => 
   workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
   workspacePage.toolbar.combine.click()
   cy.wait('@postCombiner')
-  
+
   // Attempt duplicate
   workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
   workspacePage.toolbar.combine.click()
-  
+
   // Click "Use Existing"
   workspacePage.duplicateCombinerModal.buttons.useExisting.click()
-  
+
   // Verify navigation to the stored combiner ID
   cy.get('@combinerId').then((id) => {
     cy.url().should('include', id as string)

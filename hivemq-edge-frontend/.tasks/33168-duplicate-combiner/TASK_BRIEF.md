@@ -31,6 +31,7 @@ The `ContextualToolbar` component (`src/modules/Workspace/components/nodes/Conte
 ### Issues to Address
 
 1. **UX Improvements Needed:**
+
    - Better visual feedback when duplicate is detected
    - Clearer messaging about why creation was prevented
    - Potentially offer choice to edit existing or create new with modifications
@@ -50,6 +51,7 @@ The `ContextualToolbar` component (`src/modules/Workspace/components/nodes/Conte
 **File:** `src/modules/Workspace/components/nodes/ContextualToolbar.tsx`
 
 **Key Functions:**
+
 - `onManageTransformationNode()` - Handles combiner/asset mapper creation
 - Duplicate detection using `arrayWithSameObjects` utility
 - Toast notifications for various states
@@ -66,11 +68,13 @@ The `ContextualToolbar` component (`src/modules/Workspace/components/nodes/Conte
 ## Success Criteria
 
 1. **UX Improvements:**
+
    - [ ] Enhanced visual feedback for duplicate detection
    - [ ] Improved toast messaging
    - [ ] Clear user guidance on next steps
 
 2. **Refactoring:**
+
    - [ ] Extract logic into testable utility functions
    - [ ] Separate concerns (detection, creation, navigation)
    - [ ] Add comprehensive Vitest unit tests
@@ -106,5 +110,5 @@ We will tackle this task in subtasks:
 ---
 
 **Related Tasks:**
-- 37542-code-coverage (improving test coverage across the codebase)
 
+- 37542-code-coverage (improving test coverage across the codebase)

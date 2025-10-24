@@ -5,7 +5,7 @@
 **Board Name:** Edge  
 **Board ID:** 57  
 **Workspace ID:** 3  
-**Status:** Active  
+**Status:** Active
 
 ## Related Boards
 
@@ -15,6 +15,7 @@
 ## Why This Board?
 
 This board is designated as the default for AI assistant operations because:
+
 1. **Project Alignment** - Matches the HiveMQ Edge Frontend project context
 2. **Active Development** - Currently active and maintained
 3. **Team Focus** - Primary board for Edge team work
@@ -30,6 +31,7 @@ When you ask questions without specifying a board, the AI will assume you mean t
 ## Override Default
 
 To query a different board, simply specify it:
+
 - "What's in the Broker Feature board?"
 - "Show cards from QA board"
 - "List tasks in Platform board"
@@ -37,4 +39,3 @@ To query a different board, simply specify it:
 ## Board Access
 
 You have access to all 23 boards across the HiveMQ BusinessMap workspace. The Edge board is simply the default context for this project's work.
-

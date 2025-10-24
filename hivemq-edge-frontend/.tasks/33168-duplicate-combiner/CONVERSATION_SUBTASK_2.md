@@ -17,6 +17,7 @@ Replace the toast notification for duplicate combiner detection with a comprehen
 ### Modal Architecture
 
 **Positioning & Animation**
+
 - Modal positioned in top-left quadrant to leave space for canvas animation
 - Uses `size="xl"` for adequate space without overwhelming the view
 - **Clear overlay (no backdrop blur)** - Critical for showing the fitView animation to existing combiner
@@ -24,11 +25,13 @@ Replace the toast notification for duplicate combiner detection with a comprehen
 - Uses `ANIMATION.FIT_VIEW_DURATION_MS` constant for consistent timing
 
 **Visual Hierarchy**
+
 - Header: Warning icon + title + combiner name
 - Body: Description + mappings list + prompt
 - Footer: Cancel (ghost) + Create New (outline) + Use Existing (primary blue)
 
 **Accessibility Features**
+
 - Initial focus on primary action ("Use Existing" button)
 - Keyboard navigation support (ESC to close, Enter to confirm)
 - Proper ARIA labels and data-testid attributes throughout
@@ -42,12 +45,14 @@ Replace the toast notification for duplicate combiner detection with a comprehen
 ### New Files Created
 
 1. **`DuplicateCombinerModal.tsx`** (162 lines)
+
    - Main modal component
    - Integrates with ReactFlow for canvas animation
    - Handles both combiner and asset mapper variants
    - Three action callbacks: onClose, onUseExisting, onCreateNew
 
 2. **`CombinerMappingsList.tsx`** (70 lines)
+
    - Lightweight list component showing existing mappings
    - Displays source → destination with arrow icon
    - Shows mapping count badge
@@ -61,6 +66,7 @@ Replace the toast notification for duplicate combiner detection with a comprehen
 ### Modified Files
 
 **`ContextualToolbar.tsx`**
+
 - Added modal state management (duplicateCombiner, pendingEntityReferences, isDuplicateModalOpen)
 - Refactored `onManageTransformationNode()` to open modal instead of toast
 - Added `createCombinerWithReferences()` helper function
@@ -72,6 +78,7 @@ Replace the toast notification for duplicate combiner detection with a comprehen
 - Added modal JSX wrapped in Fragment
 
 **`translation.json`**
+
 - Added `workspace.modal.duplicateCombiner` section with:
   - `title.combiner` and `title.assetMapper`
   - `description.combiner` and `description.assetMapper`
@@ -88,6 +95,7 @@ Replace the toast notification for duplicate combiner detection with a comprehen
 ### Cypress Component Tests
 
 **DuplicateCombinerModal.spec.cy.tsx** (11 tests)
+
 - ✅ Renders modal with combiner information
 - ✅ Renders asset mapper variant correctly
 - ✅ Calls onClose when cancel button clicked
@@ -101,6 +109,7 @@ Replace the toast notification for duplicate combiner detection with a comprehen
 - ✅ Does not render when isOpen is false
 
 **CombinerMappingsList.spec.cy.tsx** (4 tests)
+
 - ✅ Renders empty state when no mappings
 - ✅ Renders single mapping correctly
 - ✅ Renders multiple mappings correctly
@@ -113,6 +122,7 @@ Replace the toast notification for duplicate combiner detection with a comprehen
 ## User Experience Improvements
 
 ### Before (Toast)
+
 - Brief notification with generic message
 - Automatic dismissal after timeout
 - No user choice presented
@@ -120,6 +130,7 @@ Replace the toast notification for duplicate combiner detection with a comprehen
 - Limited information about the duplicate
 
 ### After (Modal)
+
 - Persistent dialog requiring explicit action
 - Shows combiner name prominently
 - Lists all existing mappings with details
@@ -145,6 +156,7 @@ Replace the toast notification for duplicate combiner detection with a comprehen
 For E2E testing, the following test IDs are available:
 
 **Modal**
+
 - `duplicate-combiner-modal`
 - `modal-title`
 - `modal-combiner-name`
@@ -157,6 +169,7 @@ For E2E testing, the following test IDs are available:
 - `modal-button-use-existing`
 
 **Mappings List**
+
 - `mappings-list`
 - `mappings-list-empty`
 - `mappings-count-badge`
@@ -170,6 +183,7 @@ For E2E testing, the following test IDs are available:
 ## Next Steps
 
 ### Future Enhancements (Optional)
+
 - Add "Don't show again for this session" checkbox
 - Show visual diff between selected nodes and existing combiner sources
 - Add "Edit Existing" button to open combiner editor directly
@@ -177,6 +191,7 @@ For E2E testing, the following test IDs are available:
 - Add analytics to track user choices (use existing vs create new)
 
 ### Phase 3 Preparation
+
 - E2E test integration in critical path
 - Visual regression testing with Percy
 - Performance monitoring for modal animation
@@ -187,6 +202,7 @@ For E2E testing, the following test IDs are available:
 ## Files Summary
 
 **Created:**
+
 - `src/modules/Workspace/components/modals/DuplicateCombinerModal.tsx`
 - `src/modules/Workspace/components/modals/CombinerMappingsList.tsx`
 - `src/modules/Workspace/components/modals/index.ts`
@@ -194,6 +210,7 @@ For E2E testing, the following test IDs are available:
 - `src/modules/Workspace/components/modals/CombinerMappingsList.spec.cy.tsx`
 
 **Modified:**
+
 - `src/modules/Workspace/components/nodes/ContextualToolbar.tsx`
 - `src/locales/en/translation.json`
 
@@ -221,6 +238,7 @@ As a senior designer perspective, the implementation includes these key improvem
 This task resulted in the creation of two critical guideline documents:
 
 1. **Design Guidelines** ([.tasks/DESIGN_GUIDELINES.md](../.tasks/DESIGN_GUIDELINES.md))
+
    - Button variant rules: `variant="primary"` instead of `colorScheme`
    - Button hierarchy patterns in modals and forms
    - Consistency and theming requirements
@@ -233,4 +251,3 @@ This task resulted in the creation of two critical guideline documents:
 ---
 
 **Status:** Ready for integration into E2E critical path testing
-

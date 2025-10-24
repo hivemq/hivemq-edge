@@ -30,7 +30,7 @@
 
 ```tsx
 // DON'T use colorScheme for primary buttons
-<Button colorScheme="blue">Save Changes</Button>  // ❌ Wrong!
+<Button colorScheme="blue">Save Changes</Button> // ❌ Wrong!
 ```
 
 #### Button Hierarchy in Forms/Modals
@@ -42,12 +42,13 @@ When presenting multiple actions, follow this hierarchy (left to right or based 
 3. **Primary** (`variant="primary"`) - Main/recommended action (rightmost position)
 
 **Example:**
+
 ```tsx
 <ModalFooter>
   <HStack spacing={3}>
     <Button variant="ghost">Cancel</Button>
     <Button variant="outline">Create New</Button>
-    <Button variant="primary">Use Existing</Button>  {/* Primary action */}
+    <Button variant="primary">Use Existing</Button> {/* Primary action */}
   </HStack>
 </ModalFooter>
 ```
@@ -80,6 +81,7 @@ Use when providing helpful information, suggestions, or non-blocking notificatio
 ```
 
 **When to use:**
+
 - Suggesting alternatives or better options
 - Providing helpful tips or recommendations
 - Notifying about duplicates or existing items
@@ -98,6 +100,7 @@ Use when user needs to be cautious but can proceed:
 ```
 
 **When to use:**
+
 - Actions that might have unexpected consequences
 - Settings that could affect system behavior
 - Non-critical issues that need attention
@@ -115,6 +118,7 @@ Use for errors, destructive actions, or blocking issues:
 ```
 
 **When to use:**
+
 - Destructive actions (delete, remove, permanently change)
 - Critical errors that block user progress
 - Actions that cannot be undone
@@ -132,6 +136,7 @@ Ask yourself:
 3. **Is this helpful information?** → Blue (info)
 
 **Example - Duplicate Combiner Modal:**
+
 - **Wrong:** Orange triangle ❌ - Implies something is wrong/dangerous
 - **Right:** Blue lightbulb ✅ - Helpful suggestion, user can still create new
 
@@ -152,12 +157,13 @@ If the modal references or interacts with underlying content, keep the overlay c
 ```tsx
 // DON'T blur when showing related content below
 <Modal isOpen={isOpen} onClose={onClose}>
-  <ModalOverlay />  {/* No backdropFilter */}
+  <ModalOverlay /> {/* No backdropFilter */}
   {/* Modal content */}
 </Modal>
 ```
 
 **Use cases for clear overlay:**
+
 - Modal references an existing item on the canvas/page
 - Animated transitions show underlying content (e.g., fitView to a node)
 - User needs to identify or verify something below the modal
@@ -179,6 +185,7 @@ Use backdrop blur when you want exclusive focus on the modal:
 ```
 
 **Use cases for blurred overlay:**
+
 - Complex forms requiring concentration
 - Destructive confirmations where distraction is risky
 - Critical decisions needing careful reading
@@ -220,7 +227,7 @@ Based on the codebase, these custom button variants are available:
 
 - `primary` - Main call-to-action buttons
 - `outline` - Secondary actions
-- `ghost` - Tertiary/subtle actions  
+- `ghost` - Tertiary/subtle actions
 - `danger` - Destructive actions (delete, remove, etc.)
 
 **Note:** Standard Chakra variants like `solid`, `link` are also available but use custom variants when possible for consistency.
@@ -232,6 +239,7 @@ Based on the codebase, these custom button variants are available:
 ### ✅ Good Examples
 
 **Login Form:**
+
 ```tsx
 <Button variant="primary" type="submit">
   {t('login.action.submit')}
@@ -239,6 +247,7 @@ Based on the codebase, these custom button variants are available:
 ```
 
 **Bridge Editor:**
+
 ```tsx
 <Button variant="primary" type="submit" form="bridge-form">
   {t('action.save')}
@@ -246,6 +255,7 @@ Based on the codebase, these custom button variants are available:
 ```
 
 **Modal Actions:**
+
 ```tsx
 <Button variant="ghost" onClick={onClose}>Cancel</Button>
 <Button variant="primary" onClick={onSubmit}>Confirm</Button>
@@ -258,7 +268,7 @@ Based on the codebase, these custom button variants are available:
 When creating buttons in new components:
 
 - [ ] Primary action uses `variant="primary"`
-- [ ] Secondary actions use `variant="outline"` 
+- [ ] Secondary actions use `variant="outline"`
 - [ ] Cancel/Close uses `variant="ghost"`
 - [ ] Delete/Remove uses `variant="danger"`
 - [ ] Button hierarchy follows left-to-right importance
@@ -270,6 +280,7 @@ When creating buttons in new components:
 ## Related Files
 
 This guideline affects components that use Chakra UI `<Button>` components, including:
+
 - Modals and dialogs
 - Forms and drawers
 - Toolbars and action panels
@@ -281,4 +292,3 @@ This guideline affects components that use Chakra UI `<Button>` components, incl
 
 - Task 33168 - Duplicate Combiner Modal implementation
 - Chakra UI theme configuration in `src/modules/Theme/`
-
