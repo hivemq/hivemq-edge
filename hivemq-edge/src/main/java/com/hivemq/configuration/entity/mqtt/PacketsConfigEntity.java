@@ -19,15 +19,10 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
-import java.util.Objects;
+import org.jetbrains.annotations.Nullable;
 
 import static com.hivemq.mqtt.message.connack.Mqtt5CONNACK.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
 
-/**
- * @author Florian Limpöck
- * @since 4.0.0
- */
 @XmlRootElement(name = "packets")
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
@@ -41,15 +36,15 @@ public class PacketsConfigEntity {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final PacketsConfigEntity that = (PacketsConfigEntity) o;
-        return getMaxPacketSize() == that.getMaxPacketSize();
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) {
+            return true;
+        }
+        return o instanceof final PacketsConfigEntity that && maxPacketSize == that.maxPacketSize;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getMaxPacketSize());
+        return Integer.hashCode(maxPacketSize);
     }
 }

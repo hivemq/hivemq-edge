@@ -25,6 +25,7 @@ import com.hivemq.configuration.service.entity.MqttTlsWebsocketListener;
 import com.hivemq.logging.EventLog;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
+import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.security.ssl.SslFactory;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
@@ -109,6 +110,7 @@ public class TlsWebsocketChannelInitializerTest {
         when(sslFactory.getSslContext(any(Tls.class))).thenReturn(sslContext);
         when(sslFactory.getSslHandler(any(SocketChannel.class), any(Tls.class), any(SslContext.class))).thenReturn(sslHandler);
         when(channelDependencies.getConfigurationService()).thenReturn(fullConfigurationService);
+        when(fullConfigurationService.mqttConfiguration()).thenReturn(new MqttConfigurationServiceImpl());
         when(mockListener.getTls()).thenReturn(tls);
         when(channelDependencies.getConfigurationService()).thenReturn(fullConfigurationService);
         when(channelDependencies.getRestrictionsConfigurationService()).thenReturn(restrictionsConfigurationService);
