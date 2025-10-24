@@ -16,32 +16,33 @@
 package com.hivemq.api.utils;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.HttpsListener;
 import com.hivemq.configuration.service.ApiConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.core.UsernamePasswordRoles;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Simon L Johnson
  */
 public class ApiUtils {
 
-    public static boolean hasDefaultUser(List<UsernamePasswordRoles> users){
+    public static boolean hasDefaultUser(final List<UsernamePasswordRoles> users){
         if(!users.isEmpty()){
-            return users.stream().filter(user -> (UsernamePasswordRoles.DEFAULT_USERNAME.equals(user.getUserName())
-                && UsernamePasswordRoles.DEFAULT_PASSWORD.equals(user.getPassword()))).count() > 0;
+            return users.stream()
+                    .anyMatch(user -> (UsernamePasswordRoles.DEFAULT_USERNAME.equals(user.getUserName()) &&
+                                    Objects.deepEquals(UsernamePasswordRoles.DEFAULT_PASSWORD_BYTES, user.getPassword())));
         }
         return false;
     }
 
     public static String getWebContextRoot(final @NotNull ApiConfigurationService apiConfigurationService, final boolean trailingSlash){
 
-        List<ApiListener> listeners = apiConfigurationService.getListeners();
+        final var listeners = apiConfigurationService.getListeners();
         if(listeners == null || listeners.isEmpty()){
             return null;
         }
@@ -50,10 +51,10 @@ public class ApiUtils {
         int port = 80;
         String host = null;
 
-        for(ApiListener listener : listeners){
+        for(final var listener : listeners){
             try {
                 host = getHostName(listener.getBindAddress());
-            } catch(UnknownHostException e){
+            } catch(final UnknownHostException e){
                 host = listener.getBindAddress();
             }
             port = listener.getPort();
@@ -75,7 +76,7 @@ public class ApiUtils {
             return "localhost";
 //            return InetAddress.getLocalHost().getHostName();
         }
-        InetAddress host = InetAddress.getByName(name);
+        final var host = InetAddress.getByName(name);
         return host.getHostName();
     }
 }

@@ -71,6 +71,55 @@
             </https-listener>
             ${IF:HIVEMQ_HTTPS_ENABLED}
         </listeners>
+        ${IF:HIVEMQ_LDAP_ENABLED}
+        <ldap>
+            <servers>
+                <ldap-server>
+                    <host>${ENV:HIVEMQ_LDAP_SERVER1_HOST}</host>
+                    <port>${ENV:HIVEMQ_LDAP_SERVER1_PORT}</port>
+                </ldap-server>
+                ${IF:HIVEMQ_LDAP_SERVER2_ENABLED}
+                <ldap-server>
+                    <host>${ENV:HIVEMQ_LDAP_SERVER2_HOST}</host>
+                    <port>${ENV:HIVEMQ_LDAP_SERVER2_PORT}</port>
+                </ldap-server>
+                ${IF:HIVEMQ_LDAP_SERVER2_ENABLED}
+                ${IF:HIVEMQ_LDAP_SERVER3_ENABLED}
+                <ldap-server>
+                    <host>${ENV:HIVEMQ_LDAP_SERVER3_HOST}</host>
+                    <port>${ENV:HIVEMQ_LDAP_SERVER3_PORT}</port>
+                </ldap-server>
+                ${IF:HIVEMQ_LDAP_SERVER3_ENABLED}
+            </servers>
+
+            <tls-mode>${ENV:HIVEMQ_LDAP_TLS_MODE}</tls-mode>
+            ${IF:HIVEMQ_LDAP_TLS_TRUSTSTORE_ENABLED}
+            <tls>
+                <truststore-path>${ENV:HIVEMQ_LDAP_TRUSTSTORE_PATH}</truststore-path>
+                <truststore-password>${ENV:HIVEMQ_LDAP_TRUSTSTORE_PASSWORD}</truststore-password>
+                <truststore-type>JKS</truststore-type>
+            </tls>
+            ${IF:HIVEMQ_LDAP_TLS_TRUSTSTORE_ENABLED}
+
+            <simple-bind>
+                <rdns>${ENV:HIVEMQ_LDAP_SIMPLEBIND_RDNS}</rdns>
+                <userPassword>${ENV:HIVEMQ_LDAP_SIMPLEBIND_PASSWORD}</userPassword>
+            </simple-bind>
+
+            <uid-attribute>${ENV:HIVEMQ_LDAP_UID}</uid-attribute>
+            <rdns>${ENV:HIVEMQ_LDAP_RDNS}</rdns>
+            <directory-descent>${ENV:HIVEMQ_LDAP_DIRECTORY_DESCENT}</directory-descent>
+            ${IF:HIVEMQ_LDAP_OBJECT_CLASS_ENABLED}
+            <required-object-class>${ENV:HIVEMQ_LDAP_OBJECT_CLASS}</required-object-class>
+            ${IF:HIVEMQ_LDAP_OBJECT_CLASS_ENABLED}
+
+            <max-connections>${ENV:HIVEMQ_LDAP_MAX_CONNECTION}</max-connections>
+            <connect-timeout-millis>${ENV:HIVEMQ_LDAP_CONNECT_TIMEOUT_MS}</connect-timeout-millis>
+            <response-timeout-millis>${ENV:HIVEMQ_LDAP_RESPONSE_TIMEOUT_MS}</response-timeout-millis>
+            <search-timeout-seconds>${ENV:HIVEMQ_LDAP_SEARCH_TIMEOUT_S}</search-timeout-seconds>
+        </ldap>
+        ${IF:HIVEMQ_LDAP_ENABLED}
+        ${IF:HIVEMQ_USERS_ENABLED}
         <users>
             <user>
                 <username>${ENV:HIVEMQ_ADMIN_USER}</username>
@@ -80,6 +129,7 @@
                 </roles>
             </user>
         </users>
+        ${IF:HIVEMQ_USERS_ENABLED}
     </admin-api>
     <persistence>
         <mode>${ENV:HIVEMQ_PERSISTENCE_MODE}</mode>

@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -44,7 +43,7 @@ public class EnvVarUtil {
      */
     public static @Nullable String getValue(final @NotNull String name) {
         //also check java properties if system variable is not found
-        final String systemProperty = System.getProperty(name);
+        final var systemProperty = System.getProperty(name);
         if (systemProperty != null) {
             return systemProperty;
         }
@@ -60,10 +59,9 @@ public class EnvVarUtil {
      * @throws UnrecoverableException if a variable used in a placeholder is not set
      */
     public static @NotNull String replaceEnvironmentVariablePlaceholders(final @NotNull String text) {
+        final var resultString = new StringBuilder();
 
-        final StringBuffer resultString = new StringBuffer();
-
-        final Matcher matcher = Pattern.compile(ENV_VAR_PATTERN)
+        final var matcher = Pattern.compile(ENV_VAR_PATTERN)
                 .matcher(text);
 
         while (matcher.find()) {
@@ -75,9 +73,9 @@ public class EnvVarUtil {
                 continue;
             }
 
-            final String varName = matcher.group(1);
+            final var varName = matcher.group(1);
 
-            final String replacement = getValue(varName);
+            final var replacement = getValue(varName);
 
             if (replacement == null) {
                 log.error("Environment Variable {} for HiveMQ config.xml is not set.", varName);

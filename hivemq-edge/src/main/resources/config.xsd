@@ -1131,6 +1131,16 @@
                                 <xs:documentation>Response timeout in milliseconds. 0 means use SDK default.</xs:documentation>
                             </xs:annotation>
                         </xs:element>
+                        <xs:element name="search-timeout-seconds" type="xs:nonNegativeInteger" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>Timeout for search requests.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="max-connections" type="xs:nonNegativeInteger" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>Max number of connections open in the connection pool.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
                         <xs:element name="uid-attribute" type="nonEmptyString" minOccurs="0">
                             <xs:annotation>
                                 <xs:documentation>Attribute for the user id. Example: uid</xs:documentation>
