@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Objects;
 
 public abstract class AbstractHttpRequestResponseHandler implements IHttpRequestResponseHandler {
 
@@ -42,15 +43,15 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
 
     protected final ObjectMapper mapper;
 
-    public AbstractHttpRequestResponseHandler(ObjectMapper mapper) {
+    public AbstractHttpRequestResponseHandler(final ObjectMapper mapper) {
         this.mapper = mapper;
     }
 
-    public void handleRequest(IHttpRequestResponse httpRequestResponse) throws IOException {
+    public void handleRequest(final IHttpRequestResponse httpRequestResponse) throws IOException {
 
-        long start = System.currentTimeMillis();
+        final var start = System.currentTimeMillis();
         try {
-            UsernamePasswordRoles credentials = getRequiredCredentials(httpRequestResponse);
+            final var credentials = getRequiredCredentials(httpRequestResponse);
             if (credentials != null) {
                 if (!handleBasicHttpAuthentication(credentials, httpRequestResponse)) {
                     return;
@@ -104,34 +105,34 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         }
     }
 
-    protected void handleHttpGet(IHttpRequestResponse request) throws HttpException, IOException {
+    protected void handleHttpGet(final IHttpRequestResponse request) throws HttpException, IOException {
         sendNotFoundResponse(request);
     }
 
-    protected void handleHttpPost(IHttpRequestResponse request) throws HttpException, IOException {
+    protected void handleHttpPost(final IHttpRequestResponse request) throws HttpException, IOException {
         sendNotFoundResponse(request);
     }
 
-    protected void sendUnsupportedOperationRequest(IHttpRequestResponse request) throws IOException {
+    protected void sendUnsupportedOperationRequest(final IHttpRequestResponse request) throws IOException {
         writeASCIIResponse(request,
                 HttpConstants.SC_METHOD_NOT_ALLOWED,
                 Html.getErrorMessage(HttpConstants.SC_METHOD_NOT_ALLOWED, "Method not allowed"));
     }
 
-    protected void sendNotFoundResponse(IHttpRequestResponse request) throws IOException {
+    protected void sendNotFoundResponse(final IHttpRequestResponse request) throws IOException {
         writeHTMLResponse(request,
                 HttpConstants.SC_NOT_FOUND,
                 Html.getErrorMessage(HttpConstants.SC_NOT_FOUND, "Resource Not found"));
     }
 
-    protected void sendBadRequestResponse(IHttpRequestResponse request, String message) throws IOException {
+    protected void sendBadRequestResponse(final IHttpRequestResponse request, final String message) throws IOException {
         logger.info("resource not found {}", request);
         writeHTMLResponse(request,
                 HttpConstants.SC_BAD_REQUEST,
                 Html.getErrorMessage(HttpConstants.SC_BAD_REQUEST, message));
     }
 
-    protected void sendRedirect(IHttpRequestResponse request, String resourceUri) throws IOException {
+    protected void sendRedirect(final IHttpRequestResponse request, final String resourceUri) throws IOException {
         try {
             logger.info("sending client side redirect to {}", resourceUri);
             request.addResponseHeader(HttpConstants.LOCATION_HEADER, resourceUri);
@@ -141,7 +142,7 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         }
     }
 
-    protected void writeASCIIResponse(IHttpRequestResponse request, int responseCode, String message)
+    protected void writeASCIIResponse(final IHttpRequestResponse request, final int responseCode, final String message)
             throws IOException {
         writeResponseInternal(request,
                 responseCode,
@@ -149,40 +150,40 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
                 message != null ? message.getBytes(StandardCharsets.UTF_8) : new byte[0]);
     }
 
-    protected void writeHTMLResponse(IHttpRequestResponse request, int responseCode, String html) throws IOException {
+    protected void writeHTMLResponse(final IHttpRequestResponse request, final int responseCode, final String html) throws IOException {
         writeResponseInternal(request,
                 responseCode,
                 HttpConstants.HTML_MIME_TYPE,
                 html != null ? html.getBytes(StandardCharsets.UTF_8) : new byte[0]);
     }
 
-    protected void writeJSONResponse(IHttpRequestResponse request, int responseCode, byte[] bytes) throws IOException {
+    protected void writeJSONResponse(final IHttpRequestResponse request, final int responseCode, final byte[] bytes) throws IOException {
         writeResponseInternal(request, responseCode, HttpConstants.JSON_MIME_TYPE, bytes);
     }
 
-    protected void writeJSONBeanResponse(IHttpRequestResponse request, int responseCode, Object bean)
+    protected void writeJSONBeanResponse(final IHttpRequestResponse request, final int responseCode, final Object bean)
             throws IOException {
         writeJSONResponse(request, responseCode, mapper.writeValueAsBytes(bean));
     }
 
-    protected void writeMessageBeanResponse(IHttpRequestResponse request, int responseCode, Message message)
+    protected void writeMessageBeanResponse(final IHttpRequestResponse request, final int responseCode, final Message message)
             throws IOException {
         writeJSONResponse(request, responseCode, mapper.writeValueAsBytes(message));
     }
 
-    protected void writeStreamResponse(IHttpRequestResponse request, int responseCode, String mimeType, InputStream is)
+    protected void writeStreamResponse(final IHttpRequestResponse request, final int responseCode, final String mimeType, final InputStream is)
             throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-        byte[] buf = new byte[1024];
+        final var baos = new ByteArrayOutputStream(1024);
+        final var buf = new byte[1024];
         int length;
         while ((length = is.read(buf)) != -1) {
             baos.write(buf, 0, length);
         }
-        byte[] bytes = baos.toByteArray();
+        final var bytes = baos.toByteArray();
         writeResponseInternal(request, responseCode, mimeType, bytes);
     }
 
-    protected void writeResponseInternal(IHttpRequestResponse request, int responseCode, String mimeType, byte[] bytes)
+    protected void writeResponseInternal(final IHttpRequestResponse request, final int responseCode, final String mimeType, final byte[] bytes)
             throws IOException {
         OutputStream os = null;
         try {
@@ -198,7 +199,7 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         }
     }
 
-    protected void writeSimpleOKResponse(IHttpRequestResponse request) throws IOException {
+    protected void writeSimpleOKResponse(final IHttpRequestResponse request) throws IOException {
         try {
             request.setResponseContentType(HttpConstants.PLAIN_MIME_TYPE, StandardCharsets.UTF_8);
             request.sendResponseHeaders(HttpConstants.SC_OK, 0);
@@ -207,20 +208,19 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         }
     }
 
-    protected void writeDataFromResource(IHttpRequestResponse requestResponse, String resourcePath) throws IOException {
+    protected void writeDataFromResource(final IHttpRequestResponse requestResponse, final String resourcePath) throws IOException {
         InputStream is = loadClasspathResource(resourcePath);
         logger.trace("loading resource from cp '{}' exists ? {}", resourcePath, is != null);
         if (is == null) {
             sendNotFoundResponse(requestResponse);
         } else {
-            String fileName = Files.getFileName(resourcePath);
-            String ext = Files.getFileExtension(resourcePath);
-            String mimeType = HttpUtils.getMimeTypeFromFileExtension(ext);
+            final var ext = Files.getFileExtension(resourcePath);
+            final var mimeType = HttpUtils.getMimeTypeFromFileExtension(ext);
             writeStreamResponse(requestResponse, HttpConstants.SC_OK, mimeType, is);
         }
     }
 
-    protected <T> T readRequestBody(IHttpRequestResponse requestResponse, Class<T> cls) throws HttpInternalServerError {
+    protected <T> T readRequestBody(final IHttpRequestResponse requestResponse, final Class<T> cls) throws HttpInternalServerError {
         try {
             return mapper.readValue(requestResponse.getRequestBody(), cls);
         } catch (Exception e) {
@@ -228,7 +228,7 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         }
     }
 
-    protected InputStream loadClasspathResource(String resource) {
+    protected InputStream loadClasspathResource(final String resource) {
         logger.trace("loading resource from path " + resource);
         InputStream is = AbstractHttpRequestResponseHandler.class.getClassLoader().getResourceAsStream(resource);
         if (is == null) {
@@ -237,30 +237,29 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         return is;
     }
 
-    protected String getMandatoryParameter(IHttpRequestResponse requestResponse, String paramKey)
+    protected String getMandatoryParameter(final IHttpRequestResponse requestResponse, final String paramKey)
             throws HttpBadRequestException {
-        String value = requestResponse.getParameter(paramKey);
+        final var value = requestResponse.getParameter(paramKey);
         if (value == null) {
             throw new HttpBadRequestException("mandatory request parameter not available " + paramKey);
         }
         return value;
     }
 
-    protected String getParameter(IHttpRequestResponse requestResponse, String paramKey) {
-        String value = requestResponse.getParameter(paramKey);
-        return value;
+    protected String getParameter(final IHttpRequestResponse requestResponse, final String paramKey) {
+        return requestResponse.getParameter(paramKey);
     }
 
     protected boolean handleBasicHttpAuthentication(
-            UsernamePasswordRoles usernamePassword, IHttpRequestResponse httpRequestResponse) throws IOException {
+            final UsernamePasswordRoles usernamePassword,
+            final IHttpRequestResponse httpRequestResponse) throws IOException {
 
         String value = httpRequestResponse.getRequestHeader(HttpConstants.AUTH_HEADER);
         if (value != null) {
             value = value.substring(value.lastIndexOf(" ") + 1);
             value = new String(Base64.getDecoder().decode(value));
-            String[] userNamePassword = value.split(":");
-            if (usernamePassword.getUserName().equals(userNamePassword[0]) &&
-                    usernamePassword.getPassword().equals(userNamePassword[1])) {
+            final var userNamePassword = value.split(":");
+            if (usernamePassword.getUserName().equals(userNamePassword[0]) && Objects.deepEquals(usernamePassword.getPassword(), userNamePassword[1].getBytes(StandardCharsets.UTF_8))) {
                 return true;
             }
         }
@@ -274,7 +273,7 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         return false;
     }
 
-    protected UsernamePasswordRoles getRequiredCredentials(IHttpRequestResponse request) {
+    protected UsernamePasswordRoles getRequiredCredentials(final IHttpRequestResponse request) {
         return null;
     }
 
@@ -288,23 +287,23 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
 
         }
 
-        public Message(String message) {
+        public Message(final String message) {
             this.message = message;
             this.success = true;
         }
 
-        public Message(String title, String message) {
+        public Message(final String title, final String message) {
             this.message = message;
             this.title = title;
             this.success = true;
         }
 
-        public Message(String message, boolean success) {
+        public Message(final String message, final boolean success) {
             this.message = message;
             this.success = success;
         }
 
-        public Message(String title, String message, boolean success) {
+        public Message(final String title, final String message, final boolean success) {
             this.title = title;
             this.message = message;
             this.success = success;
