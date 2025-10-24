@@ -61,7 +61,9 @@ public class EnvVarUtil {
      */
     public static @NotNull String replaceEnvironmentVariablePlaceholders(final @NotNull String text) {
 
-        final StringBuffer resultString = new StringBuffer();
+        log.error("WTF: " + text);
+
+        final StringBuilder resultString = new StringBuilder();
 
         final Matcher matcher = Pattern.compile(ENV_VAR_PATTERN)
                 .matcher(text);
