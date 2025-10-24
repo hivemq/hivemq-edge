@@ -937,6 +937,30 @@
         }
       }
     },
+    "modal": {
+      "duplicateCombiner": {
+        "title": {
+          "combiner": "Possible Duplicate Combiner",
+          "assetMapper": "Possible Duplicate Asset Mapper"
+        },
+        "description": {
+          "combiner": "A combiner with the same source connections already exists. You can use the existing combiner or create a new one anyway.",
+          "assetMapper": "An asset mapper with the same source connections already exists. You can use the existing asset mapper or create a new one anyway."
+        },
+        "existingMappings": "Existing mappings:",
+        "noMappings": "No mappings defined yet",
+        "noDestination": "No destination",
+        "mappingsCount_one": "{{count}} mapping",
+        "mappingsCount_other": "{{count}} mappings",
+        "instructionsCount_one": "{{count}} instruction",
+        "instructionsCount_other": "{{count}} instructions",
+        "prompt": "What would you like to do?",
+        "actions": {
+          "useExisting": "Use Existing",
+          "createNew": "Create New Anyway"
+        }
+      }
+    },
     "grouping": {
       "toolbar": {
         "aria-label": "Toolbar for the group {{ id }}"
