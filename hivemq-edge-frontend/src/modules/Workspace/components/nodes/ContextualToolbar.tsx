@@ -1,37 +1,38 @@
-import type { MouseEventHandler } from 'react'
-import { type FC, useMemo } from 'react'
-import type { Node } from '@xyflow/react'
-import { useStore, useReactFlow } from '@xyflow/react'
-import { getOutgoers, type NodeProps, type NodeToolbarProps, Position } from '@xyflow/react'
+import type { MouseEventHandler, FC } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Divider, Text, useTheme, useToast } from '@chakra-ui/react'
-import { LuPanelRightOpen } from 'react-icons/lu'
-import { ImMakeGroup } from 'react-icons/im'
-import { v4 as uuidv4 } from 'uuid'
 import { useNavigate } from 'react-router-dom'
+import { v4 as uuidv4 } from 'uuid'
+import type { Node, NodeProps, NodeToolbarProps } from '@xyflow/react'
+import { Position, getOutgoers, useStore, useReactFlow } from '@xyflow/react'
 
-import type { Adapter, Bridge, Combiner, EntityReference } from '@/api/__generated__'
-import { EntityType } from '@/api/__generated__'
-import { useCreateCombiner, useListCombiners } from '@/api/hooks/useCombiners'
+import { Divider, Text, useTheme, useToast } from '@chakra-ui/react'
+import { ImMakeGroup } from 'react-icons/im'
+import { LuPanelRightOpen } from 'react-icons/lu'
+
+import type { Combiner, EntityReference } from '@/api/__generated__'
+import { useCreateAssetMapper } from '@/api/hooks/useAssetMapper'
+import { useCreateCombiner } from '@/api/hooks/useCombiners'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes'
-import { useCreateAssetMapper, useListAssetMappers } from '@/api/hooks/useAssetMapper'
-
-import { HqCombiner, HqAssets } from '@/components/Icons'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import { HqAssets, HqCombiner } from '@/components/Icons'
 import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
-import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
+import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import { ANIMATION } from '@/modules/Theme/utils.ts'
-import type { NodeAdapterType, NodeDeviceType, NodePulseType } from '@/modules/Workspace/types.ts'
-import { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import type { NodeAdapterType, NodeDeviceType } from '@/modules/Workspace/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { createGroup, getGroupBounds } from '@/modules/Workspace/utils/group.utils.ts'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
-import { arrayWithSameObjects } from '@/modules/Workspace/utils/combiner.utils'
 import { resetSelectedNodesState } from '@/modules/Workspace/utils/react-flow.utils.ts'
-
-// TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
-type CombinerEligibleNode = Node<Adapter, NodeTypes.ADAPTER_NODE> | Node<Bridge, NodeTypes.BRIDGE_NODE> | NodePulseType
+import {
+  buildEntityReferencesFromNodes,
+  filterCombinerCandidates,
+  findExistingCombiner,
+  isAssetMapperCombiner,
+} from '@/modules/Workspace/utils/toolbar.utils'
+import { DuplicateCombinerModal } from '@/modules/Workspace/components/modals'
 
 type SelectedNodeProps = Pick<NodeProps, 'id' | `dragging`> & Pick<NodeToolbarProps, 'position'>
 interface ContextualToolbarProps extends SelectedNodeProps {
@@ -58,11 +59,14 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
   const toast = useToast(BASE_TOAST_OPTION)
   const { data } = useGetAdapterTypes()
-  const { data: combiners } = useListCombiners()
-  const { data: mappers } = useListAssetMappers()
 
   const navigate = useNavigate()
   const { fitView, getNodesBounds } = useReactFlow()
+
+  // State for duplicate combiner modal
+  const [duplicateCombiner, setDuplicateCombiner] = useState<Combiner | null>(null)
+  const [pendingEntityReferences, setPendingEntityReferences] = useState<EntityReference[]>([])
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
 
   const selectedNodes = useMemo(() => {
     return nodes.filter((node) => node.selected)
@@ -96,19 +100,11 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   }, [edges, nodes, selectedNodes])
 
   const selectedCombinerCandidates = useMemo(() => {
-    const result = selectedNodes.filter((node) => {
-      if (node.type === NodeTypes.ADAPTER_NODE) {
-        const protocol = data?.items.find((e) => e.id === node.data.type)
-        return protocol?.capabilities?.includes('COMBINE')
-      }
-
-      return node.type === NodeTypes.BRIDGE_NODE || node.type === NodeTypes.PULSE_NODE
-    }) as CombinerEligibleNode[]
-    return result.length ? result : undefined
+    return filterCombinerCandidates(selectedNodes, data?.items)
   }, [data?.items, selectedNodes])
 
   const isAssetManager = useMemo(() => {
-    return selectedCombinerCandidates?.find((e) => e.type === NodeTypes.PULSE_NODE)
+    return isAssetMapperCombiner(selectedCombinerCandidates)
   }, [selectedCombinerCandidates])
 
   const onCreateGroup = () => {
@@ -158,51 +154,28 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
   const onManageTransformationNode = () => {
     if (!selectedCombinerCandidates) return
-    const edgeNode = nodes.find((node) => node.type === NodeTypes.EDGE_NODE)
-    if (!edgeNode) return
 
-    const links = selectedCombinerCandidates.map<EntityReference>((node) => {
-      const getType = () => {
-        if (node.type === NodeTypes.ADAPTER_NODE) return EntityType.ADAPTER
-        if (node.type === NodeTypes.BRIDGE_NODE) return EntityType.BRIDGE
+    // Build entity references from selected nodes
+    const entityReferences = buildEntityReferencesFromNodes(selectedCombinerCandidates)
 
-        return EntityType.PULSE_AGENT
-      }
+    // Check if a combiner with these exact sources already exists
+    const existingCombiner = findExistingCombiner(nodes, entityReferences)
 
-      const entity: EntityReference = {
-        type: getType(),
-        id: node.data.id,
-      }
-
-      return entity
-    })
-
-    const isCombinerAlreadyDefined = isAssetManager
-      ? mappers?.items?.find((e) => arrayWithSameObjects<EntityReference>(links)(e.sources.items))
-      : combiners?.items?.find((e) => arrayWithSameObjects<EntityReference>(links)(e.sources.items))
-
-    const areAllCandidatesConnected = selectedNodes.length - selectedCombinerCandidates.length === 0
-
-    if (isCombinerAlreadyDefined) {
-      toast({
-        ...DEFAULT_TOAST_OPTION,
-        status: 'info',
-        title: t('combiner.toast.create.title'),
-        description: t('A combiner already exists. Please add your mappings to it'),
-      })
-      const node = nodes.find((e) => e.id === isCombinerAlreadyDefined.id)
-      if (node) {
-        fitView({
-          nodes: [{ id: isCombinerAlreadyDefined.id }],
-          padding: 3,
-          duration: ANIMATION.FIT_VIEW_DURATION_MS,
-        }).then(() => navigate(`combiner/${isCombinerAlreadyDefined.id}`))
-      }
-
+    if (existingCombiner) {
+      // Open the modal to let user decide what to do
+      setDuplicateCombiner(existingCombiner.data)
+      setPendingEntityReferences(entityReferences)
+      setIsDuplicateModalOpen(true)
       return
     }
 
-    const promise = isAssetManager ? onCreateAssetMapper(links) : onCreateCombiner(links)
+    // No duplicate found, proceed with creation
+    createCombinerWithReferences(entityReferences)
+  }
+
+  const createCombinerWithReferences = (entityReferences: EntityReference[]) => {
+    const areAllCandidatesConnected = selectedNodes.length - (selectedCombinerCandidates?.length || 0) === 0
+    const promise = isAssetManager ? onCreateAssetMapper(entityReferences) : onCreateCombiner(entityReferences)
 
     toast.promise(promise, getOptions(areAllCandidatesConnected))
     promise.then(() => {
@@ -210,62 +183,108 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
     })
   }
 
+  const handleUseExistingCombiner = () => {
+    if (!duplicateCombiner) return
+
+    const node = nodes.find((e) => e.id === duplicateCombiner.id)
+    if (node) {
+      fitView({
+        nodes: [{ id: duplicateCombiner.id }],
+        padding: 3,
+        duration: ANIMATION.FIT_VIEW_DURATION_MS,
+      }).then(() => navigate(`combiner/${duplicateCombiner.id}`))
+    }
+
+    // Clean up state
+    setDuplicateCombiner(null)
+    setPendingEntityReferences([])
+  }
+
+  const handleCreateNewCombiner = () => {
+    // User wants to create a new combiner despite duplicate
+    createCombinerWithReferences(pendingEntityReferences)
+
+    // Clean up state
+    setDuplicateCombiner(null)
+    setPendingEntityReferences([])
+  }
+
+  const handleCloseDuplicateModal = () => {
+    setIsDuplicateModalOpen(false)
+    setDuplicateCombiner(null)
+    setPendingEntityReferences([])
+  }
+
   const isMultiple = selectedNodes.length >= 2
 
   return (
-    <NodeToolbar
-      isVisible={Boolean(topSelectedNode?.id === id && !dragging)}
-      position={Position.Top}
-      aria-label={t('workspace.toolbar.container.label')}
-    >
-      <Text data-testid="toolbar-title">
-        {isMultiple ? t('workspace.toolbar.selection.title', { count: selectedNodes.length }) : title || id}
-      </Text>
-      {children && !isMultiple && (
-        <>
-          <Divider orientation="vertical" />
-          {children}
-        </>
-      )}
-      <ToolbarButtonGroup>
-        <IconButton
-          isDisabled={!selectedCombinerCandidates}
-          data-testid="node-group-toolbar-combiner"
-          icon={isAssetManager ? <HqAssets /> : <HqCombiner />}
-          aria-label={
-            isAssetManager
-              ? t('workspace.toolbar.command.assets.create')
-              : t('workspace.toolbar.command.combiner.create')
-          }
-          onClick={onManageTransformationNode}
+    <>
+      {/* Duplicate Combiner Modal */}
+      {duplicateCombiner && (
+        <DuplicateCombinerModal
+          isOpen={isDuplicateModalOpen}
+          onClose={handleCloseDuplicateModal}
+          existingCombiner={duplicateCombiner}
+          onUseExisting={handleUseExistingCombiner}
+          onCreateNew={handleCreateNewCombiner}
+          isAssetMapper={isAssetManager}
         />
-      </ToolbarButtonGroup>
-
-      <Divider orientation="vertical" />
-      <ToolbarButtonGroup>
-        <IconButton
-          isDisabled={!selectedGroupCandidates}
-          data-testid="node-group-toolbar-group"
-          icon={<ImMakeGroup />}
-          aria-label={t('workspace.toolbar.command.group')}
-          onClick={onCreateGroup}
-        />
-      </ToolbarButtonGroup>
-
-      {!hasNoOverview && !isMultiple && (
-        <>
-          <Divider orientation="vertical" />
-          <ToolbarButtonGroup>
-            <IconButton
-              data-testid="node-group-toolbar-panel"
-              icon={<LuPanelRightOpen />}
-              aria-label={t('workspace.toolbar.command.overview')}
-              onClick={onOpenPanel}
-            />
-          </ToolbarButtonGroup>
-        </>
       )}
-    </NodeToolbar>
+
+      <NodeToolbar
+        isVisible={Boolean(topSelectedNode?.id === id && !dragging)}
+        position={Position.Top}
+        aria-label={t('workspace.toolbar.container.label')}
+      >
+        <Text data-testid="toolbar-title">
+          {isMultiple ? t('workspace.toolbar.selection.title', { count: selectedNodes.length }) : title || id}
+        </Text>
+        {children && !isMultiple && (
+          <>
+            <Divider orientation="vertical" />
+            {children}
+          </>
+        )}
+        <ToolbarButtonGroup>
+          <IconButton
+            isDisabled={!selectedCombinerCandidates}
+            data-testid="node-group-toolbar-combiner"
+            icon={isAssetManager ? <HqAssets /> : <HqCombiner />}
+            aria-label={
+              isAssetManager
+                ? t('workspace.toolbar.command.assets.create')
+                : t('workspace.toolbar.command.combiner.create')
+            }
+            onClick={onManageTransformationNode}
+          />
+        </ToolbarButtonGroup>
+
+        <Divider orientation="vertical" />
+        <ToolbarButtonGroup>
+          <IconButton
+            isDisabled={!selectedGroupCandidates}
+            data-testid="node-group-toolbar-group"
+            icon={<ImMakeGroup />}
+            aria-label={t('workspace.toolbar.command.group')}
+            onClick={onCreateGroup}
+          />
+        </ToolbarButtonGroup>
+
+        {!hasNoOverview && !isMultiple && (
+          <>
+            <Divider orientation="vertical" />
+            <ToolbarButtonGroup>
+              <IconButton
+                data-testid="node-group-toolbar-panel"
+                icon={<LuPanelRightOpen />}
+                aria-label={t('workspace.toolbar.command.overview')}
+                onClick={onOpenPanel}
+              />
+            </ToolbarButtonGroup>
+          </>
+        )}
+      </NodeToolbar>
+    </>
   )
 }
 

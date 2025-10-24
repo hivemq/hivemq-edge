@@ -1,5 +1,7 @@
 import { EDGE_MENU_LINKS } from 'cypress/utils/constants.utils.ts'
 import { ShellPage } from '../ShellPage.ts'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { DuplicateCombinerModal, CombinerMappingsList } from '@/modules/Workspace/components/modals'
 
 export class WorkspacePage extends ShellPage {
   get navLink() {
@@ -89,6 +91,120 @@ export class WorkspacePage extends ShellPage {
         return cy.get(`[role="group"][data-id="${id}"] [data-testid="topic-wrapper"]`)
       },
     }
+  }
+
+  /**
+   * Page Object for the Duplicate Combiner Detection Modal
+   * @see DuplicateCombinerModal
+   */
+  duplicateCombinerModal = {
+    /**
+     * Main modal container
+     * @see DuplicateCombinerModal
+     */
+    get modal() {
+      return cy.getByTestId('duplicate-combiner-modal')
+    },
+
+    /**
+     * Modal title text
+     * @see DuplicateCombinerModal
+     */
+    get title() {
+      return cy.getByTestId('modal-title')
+    },
+
+    /**
+     * Existing combiner name display
+     * @see DuplicateCombinerModal
+     */
+    get combinerName() {
+      return cy.getByTestId('modal-combiner-name')
+    },
+
+    /**
+     * Modal description text
+     * @see DuplicateCombinerModal
+     */
+    get description() {
+      return cy.getByTestId('modal-description')
+    },
+
+    /**
+     * Label for the mappings section
+     * @see DuplicateCombinerModal
+     */
+    get mappingsLabel() {
+      return cy.getByTestId('modal-mappings-label')
+    },
+
+    /**
+     * Container for the list of combiner mappings
+     * @see CombinerMappingsList
+     * @note Use `cy.get('[data-testid^="mapping-item-"]')` to select individual mappings with dynamic UUIDs
+     */
+    get mappingsList() {
+      return cy.getByTestId('mappings-list')
+    },
+
+    /**
+     * Empty state message when no mappings exist
+     * @see CombinerMappingsList
+     */
+    get mappingsListEmpty() {
+      return cy.getByTestId('mappings-list-empty')
+    },
+
+    /**
+     * Badge showing count of mappings
+     * @see CombinerMappingsList
+     */
+    get mappingsCountBadge() {
+      return cy.getByTestId('mappings-count-badge')
+    },
+
+    /**
+     * Modal prompt text asking user what to do
+     * @see CombinerMappingsList
+     */
+    get prompt() {
+      return cy.getByTestId('modal-prompt')
+    },
+
+    /**
+     * Close button (X) in modal header
+     * @see DuplicateCombinerModal
+     */
+    get closeButton() {
+      return cy.getByTestId('modal-close-button')
+    },
+
+    /**
+     * Action buttons in modal footer
+     * @see DuplicateCombinerModal
+     */
+    buttons: {
+      /**
+       * Cancel button - closes modal without action
+       */
+      get cancel() {
+        return cy.getByTestId('modal-button-cancel')
+      },
+
+      /**
+       * Create New Anyway button - creates duplicate combiner
+       */
+      get createNew() {
+        return cy.getByTestId('modal-button-create-new')
+      },
+
+      /**
+       * Use Existing button - navigates to existing combiner (primary action)
+       */
+      get useExisting() {
+        return cy.getByTestId('modal-button-use-existing')
+      },
+    },
   }
 
   act = {
