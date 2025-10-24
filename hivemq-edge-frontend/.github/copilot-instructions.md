@@ -50,4 +50,9 @@ This directory contains comprehensive task documentation, progress tracking, and
 
 **When working on tasks, AI agents should consult this directory first.**
 
+## Important Guidelines
+
+- **Design Guidelines**: [.tasks/DESIGN_GUIDELINES.md](../.tasks/DESIGN_GUIDELINES.md) - UI component patterns, button variants, styling conventions
+- **Testing Guidelines**: [.tasks/TESTING_GUIDELINES.md](../.tasks/TESTING_GUIDELINES.md) - Mandatory accessibility testing, component test patterns
+
 See [README.md](.tasks/README.md) for full documentation structure.
