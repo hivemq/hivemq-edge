@@ -1,5 +1,5 @@
 import type { MouseEventHandler, FC } from 'react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { v4 as uuidv4 } from 'uuid'
@@ -18,7 +18,7 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 import { HqAssets, HqCombiner } from '@/components/Icons'
 import NodeToolbar from '@/components/react-flow/NodeToolbar.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
-import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
+import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import { ANIMATION } from '@/modules/Theme/utils.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import type { NodeAdapterType, NodeDeviceType } from '@/modules/Workspace/types.ts'
@@ -32,6 +32,7 @@ import {
   findExistingCombiner,
   isAssetMapperCombiner,
 } from '@/modules/Workspace/utils/toolbar.utils'
+import { DuplicateCombinerModal } from '@/modules/Workspace/components/modals'
 
 type SelectedNodeProps = Pick<NodeProps, 'id' | `dragging`> & Pick<NodeToolbarProps, 'position'>
 interface ContextualToolbarProps extends SelectedNodeProps {
@@ -61,6 +62,11 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
 
   const navigate = useNavigate()
   const { fitView, getNodesBounds } = useReactFlow()
+
+  // State for duplicate combiner modal
+  const [duplicateCombiner, setDuplicateCombiner] = useState<Combiner | null>(null)
+  const [pendingEntityReferences, setPendingEntityReferences] = useState<EntityReference[]>([])
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
 
   const selectedNodes = useMemo(() => {
     return nodes.filter((node) => node.selected)
@@ -155,27 +161,20 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
     // Check if a combiner with these exact sources already exists
     const existingCombiner = findExistingCombiner(nodes, entityReferences)
 
-    const areAllCandidatesConnected = selectedNodes.length - selectedCombinerCandidates.length === 0
-
     if (existingCombiner) {
-      toast({
-        ...DEFAULT_TOAST_OPTION,
-        status: 'info',
-        title: t('combiner.toast.create.title'),
-        description: t('A combiner already exists. Please add your mappings to it'),
-      })
-      const node = nodes.find((e) => e.id === existingCombiner.id)
-      if (node) {
-        fitView({
-          nodes: [{ id: existingCombiner.id }],
-          padding: 3,
-          duration: ANIMATION.FIT_VIEW_DURATION_MS,
-        }).then(() => navigate(`combiner/${existingCombiner.id}`))
-      }
-
+      // Open the modal to let user decide what to do
+      setDuplicateCombiner(existingCombiner.data)
+      setPendingEntityReferences(entityReferences)
+      setIsDuplicateModalOpen(true)
       return
     }
 
+    // No duplicate found, proceed with creation
+    createCombinerWithReferences(entityReferences)
+  }
+
+  const createCombinerWithReferences = (entityReferences: EntityReference[]) => {
+    const areAllCandidatesConnected = selectedNodes.length - (selectedCombinerCandidates?.length || 0) === 0
     const promise = isAssetManager ? onCreateAssetMapper(entityReferences) : onCreateCombiner(entityReferences)
 
     toast.promise(promise, getOptions(areAllCandidatesConnected))
@@ -184,62 +183,108 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
     })
   }
 
+  const handleUseExistingCombiner = () => {
+    if (!duplicateCombiner) return
+
+    const node = nodes.find((e) => e.id === duplicateCombiner.id)
+    if (node) {
+      fitView({
+        nodes: [{ id: duplicateCombiner.id }],
+        padding: 3,
+        duration: ANIMATION.FIT_VIEW_DURATION_MS,
+      }).then(() => navigate(`combiner/${duplicateCombiner.id}`))
+    }
+
+    // Clean up state
+    setDuplicateCombiner(null)
+    setPendingEntityReferences([])
+  }
+
+  const handleCreateNewCombiner = () => {
+    // User wants to create a new combiner despite duplicate
+    createCombinerWithReferences(pendingEntityReferences)
+
+    // Clean up state
+    setDuplicateCombiner(null)
+    setPendingEntityReferences([])
+  }
+
+  const handleCloseDuplicateModal = () => {
+    setIsDuplicateModalOpen(false)
+    setDuplicateCombiner(null)
+    setPendingEntityReferences([])
+  }
+
   const isMultiple = selectedNodes.length >= 2
 
   return (
-    <NodeToolbar
-      isVisible={Boolean(topSelectedNode?.id === id && !dragging)}
-      position={Position.Top}
-      aria-label={t('workspace.toolbar.container.label')}
-    >
-      <Text data-testid="toolbar-title">
-        {isMultiple ? t('workspace.toolbar.selection.title', { count: selectedNodes.length }) : title || id}
-      </Text>
-      {children && !isMultiple && (
-        <>
-          <Divider orientation="vertical" />
-          {children}
-        </>
-      )}
-      <ToolbarButtonGroup>
-        <IconButton
-          isDisabled={!selectedCombinerCandidates}
-          data-testid="node-group-toolbar-combiner"
-          icon={isAssetManager ? <HqAssets /> : <HqCombiner />}
-          aria-label={
-            isAssetManager
-              ? t('workspace.toolbar.command.assets.create')
-              : t('workspace.toolbar.command.combiner.create')
-          }
-          onClick={onManageTransformationNode}
+    <>
+      {/* Duplicate Combiner Modal */}
+      {duplicateCombiner && (
+        <DuplicateCombinerModal
+          isOpen={isDuplicateModalOpen}
+          onClose={handleCloseDuplicateModal}
+          existingCombiner={duplicateCombiner}
+          onUseExisting={handleUseExistingCombiner}
+          onCreateNew={handleCreateNewCombiner}
+          isAssetMapper={isAssetManager}
         />
-      </ToolbarButtonGroup>
-
-      <Divider orientation="vertical" />
-      <ToolbarButtonGroup>
-        <IconButton
-          isDisabled={!selectedGroupCandidates}
-          data-testid="node-group-toolbar-group"
-          icon={<ImMakeGroup />}
-          aria-label={t('workspace.toolbar.command.group')}
-          onClick={onCreateGroup}
-        />
-      </ToolbarButtonGroup>
-
-      {!hasNoOverview && !isMultiple && (
-        <>
-          <Divider orientation="vertical" />
-          <ToolbarButtonGroup>
-            <IconButton
-              data-testid="node-group-toolbar-panel"
-              icon={<LuPanelRightOpen />}
-              aria-label={t('workspace.toolbar.command.overview')}
-              onClick={onOpenPanel}
-            />
-          </ToolbarButtonGroup>
-        </>
       )}
-    </NodeToolbar>
+
+      <NodeToolbar
+        isVisible={Boolean(topSelectedNode?.id === id && !dragging)}
+        position={Position.Top}
+        aria-label={t('workspace.toolbar.container.label')}
+      >
+        <Text data-testid="toolbar-title">
+          {isMultiple ? t('workspace.toolbar.selection.title', { count: selectedNodes.length }) : title || id}
+        </Text>
+        {children && !isMultiple && (
+          <>
+            <Divider orientation="vertical" />
+            {children}
+          </>
+        )}
+        <ToolbarButtonGroup>
+          <IconButton
+            isDisabled={!selectedCombinerCandidates}
+            data-testid="node-group-toolbar-combiner"
+            icon={isAssetManager ? <HqAssets /> : <HqCombiner />}
+            aria-label={
+              isAssetManager
+                ? t('workspace.toolbar.command.assets.create')
+                : t('workspace.toolbar.command.combiner.create')
+            }
+            onClick={onManageTransformationNode}
+          />
+        </ToolbarButtonGroup>
+
+        <Divider orientation="vertical" />
+        <ToolbarButtonGroup>
+          <IconButton
+            isDisabled={!selectedGroupCandidates}
+            data-testid="node-group-toolbar-group"
+            icon={<ImMakeGroup />}
+            aria-label={t('workspace.toolbar.command.group')}
+            onClick={onCreateGroup}
+          />
+        </ToolbarButtonGroup>
+
+        {!hasNoOverview && !isMultiple && (
+          <>
+            <Divider orientation="vertical" />
+            <ToolbarButtonGroup>
+              <IconButton
+                data-testid="node-group-toolbar-panel"
+                icon={<LuPanelRightOpen />}
+                aria-label={t('workspace.toolbar.command.overview')}
+                onClick={onOpenPanel}
+              />
+            </ToolbarButtonGroup>
+          </>
+        )}
+      </NodeToolbar>
+    </>
   )
 }
 
