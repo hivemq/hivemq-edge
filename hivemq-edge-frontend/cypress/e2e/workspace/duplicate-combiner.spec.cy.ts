@@ -271,7 +271,7 @@ describe('Duplicate Combiner Detection', () => {
   })
 
   describe('Modal with Mappings', () => {
-    it.skip('should display existing mappings in modal', () => {
+    it('should display existing mappings in modal', () => {
       // Create combiner with mappings
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
@@ -315,11 +315,11 @@ describe('Duplicate Combiner Detection', () => {
       workspacePage.duplicateCombinerModal.mappingsList.should('be.visible')
 
       // Verify mapping details are visible
-      cy.getByTestId('mapping-item-0').should('be.visible')
-      cy.getByTestId('mapping-destination-0').should('contain.text', 'my / destination')
+      cy.get('[data-testid^="mapping-item-"]').first().should('be.visible')
+      cy.get('[data-testid^="mapping-destination-"]').first().should('contain.text', 'my/destination')
     })
 
-    it.skip('should show empty state when combiner has no mappings', () => {
+    it('should show empty state when combiner has no mappings', () => {
       // Create combiner without mappings
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
@@ -334,8 +334,7 @@ describe('Duplicate Combiner Detection', () => {
 
       // Verify empty state
       workspacePage.duplicateCombinerModal.modal.should('be.visible')
-      cy.getByTestId('mappings-empty-state').should('be.visible')
-      cy.getByTestId('mappings-empty-state').should('contain.text', 'No mappings configured yet')
+      workspacePage.duplicateCombinerModal.mappingsListEmpty.should('contain.text', 'No mappings defined yet')
     })
   })
 
