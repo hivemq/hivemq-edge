@@ -214,6 +214,7 @@ public class LoggingBootstrap {
         @Override
         public void onReset(final @NotNull LoggerContext context) {
             log.trace("logback.xml was changed");
+            context.getTurboFilterList().remove(logLevelModifierTurboFilter);
             context.addTurboFilter(logLevelModifierTurboFilter);
         }
 
