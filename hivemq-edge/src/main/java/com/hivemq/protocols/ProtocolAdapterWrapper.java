@@ -45,6 +45,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -175,7 +176,21 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                 return CompletableFuture.completedFuture(null);
             }
             if (stopOperationInProgress) {
-                log.warn("Cannot start adapter '{}' while stop operation is in progress", getId());
+                log.warn("Stop operation in progress for adapter '{}', waiting for it to complete before starting",
+                        getId());
+                final CompletableFuture<Void> stopFuture = currentStopFuture;
+                if (stopFuture != null) {
+                    // Wait for stop to complete, then retry start
+                    return stopFuture.handle((result, throwable) -> {
+                        if (throwable != null) {
+                            log.warn("Stop operation failed for adapter '{}', but proceeding with start",
+                                    getId(),
+                                    throwable);
+                        }
+                        return null;
+                    }).thenCompose(v -> startAsync(moduleServices));
+                }
+                log.error("Stop operation in progress but currentStopFuture is null for adapter '{}'", getId());
                 return CompletableFuture.failedFuture(new IllegalStateException("Cannot start adapter '" +
                         adapter.getId() +
                         "' while stop operation is in progress"));
@@ -223,7 +238,21 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                 return CompletableFuture.completedFuture(null);
             }
             if (startOperationInProgress) {
-                log.warn("Cannot stop adapter '{}' while start operation is in progress", getId());
+                log.warn("Start operation in progress for adapter '{}', waiting for it to complete before stopping",
+                        getId());
+                final CompletableFuture<Void> startFuture = currentStartFuture;
+                if (startFuture != null) {
+                    // Wait for start to complete, then retry stop
+                    return startFuture.handle((result, throwable) -> {
+                        if (throwable != null) {
+                            log.warn("Start operation failed for adapter '{}', but proceeding with stop",
+                                    getId(),
+                                    throwable);
+                        }
+                        return null;
+                    }).thenCompose(v -> stopAsync());
+                }
+                log.error("Start operation in progress but currentStartFuture is null for adapter '{}'", getId());
                 return CompletableFuture.failedFuture(new IllegalStateException("Cannot stop adapter '" +
                         adapter.getId() +
                         "' while start operation is in progress"));
@@ -345,6 +374,81 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         return adapter instanceof BatchPollingProtocolAdapter;
     }
 
+    public void addTagHotReload(final @NotNull Tag tag, final @NotNull EventService eventService) {
+        operationLock.lock();
+        try {
+            // Update config with new tag regardless of adapter state
+            final List<Tag> updatedTags = new ArrayList<>(config.getTags());
+            updatedTags.add(tag);
+            config.setTags(updatedTags);
+            if (adapterState.get() != AdapterStateEnum.STARTED) {
+                log.debug("Adapter '{}' not started yet, only updating config for tag '{}'", getId(), tag.getName());
+                return;
+            }
+            if (isPolling()) {
+                log.debug("Starting polling for new tag '{}' on adapter '{}'", tag.getName(), getId());
+                pollingService.schedulePolling(new PerContextSampler(this,
+                        new PollingContextWrapper("unused",
+                                tag.getName(),
+                                MessageHandlingOptions.MQTTMessagePerTag,
+                                false,
+                                false,
+                                List.of(),
+                                1,
+                                -1),
+                        eventService,
+                        tagManager));
+            }
+            log.info("Successfully added tag '{}' to adapter '{}' via hot-reload", tag.getName(), getId());
+        } finally {
+            operationLock.unlock();
+        }
+    }
+
+    public void updateMappingsHotReload(
+            final @Nullable List<NorthboundMapping> northboundMappings,
+            final @Nullable List<SouthboundMapping> southboundMappings,
+            final @NotNull EventService eventService) {
+        operationLock.lock();
+        try {
+            if (northboundMappings != null) {
+                config.setNorthboundMappings(northboundMappings);
+            }
+            if (southboundMappings != null) {
+                config.setSouthboundMappings(southboundMappings);
+            }
+            if (adapterState.get() != AdapterStateEnum.STARTED) {
+                log.debug("Adapter '{}' not started yet, only updating config for mappings", getId());
+                return;
+            }
+            log.debug("Stopping existing consumers for adapter '{}'", getId());
+            consumers.forEach(tagManager::removeConsumer);
+            consumers.clear();
+            if (northboundMappings != null) {
+                log.debug("Updating northbound mappings for adapter '{}'", getId());
+                northboundMappings.stream()
+                        .map(mapping -> northboundConsumerFactory.build(this, mapping, protocolAdapterMetricsService))
+                        .forEach(consumer -> {
+                            tagManager.addConsumer(consumer);
+                            consumers.add(consumer);
+                        });
+            }
+            if (southboundMappings != null && isWriting()) {
+                log.debug("Updating southbound mappings for adapter '{}'", getId());
+                final StateEnum currentSouthboundState = currentState().southbound();
+                if (currentSouthboundState == StateEnum.CONNECTED) {
+                    stopWriting();
+                }
+                if (currentSouthboundState == StateEnum.CONNECTED) {
+                    startSouthbound();
+                }
+            }
+            log.info("Successfully updated mappings for adapter '{}' via hot-reload", getId());
+        } finally {
+            operationLock.unlock();
+        }
+    }
+
     private void cleanupConnectionStatusListener() {
         final Consumer<ProtocolAdapterState.ConnectionStatus> listenerToClean = connectionStatusListener;
         if (listenerToClean != null) {
@@ -401,18 +505,42 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     private void stopPolling() {
         if (isPolling() || isBatchPolling()) {
             log.debug("Stopping polling for protocol adapter with id '{}'", getId());
-            pollingService.stopPollingForAdapterInstance(adapter);
+            try {
+                pollingService.stopPollingForAdapterInstance(adapter);
+                log.debug("Polling stopped successfully for adapter '{}'", getId());
+            } catch (final Exception e) {
+                log.error("Error stopping polling for adapter '{}'", getId(), e);
+            }
         }
     }
 
     private void stopWriting() {
         if (isWriting()) {
             log.debug("Stopping writing for protocol adapter with id '{}'", getId());
-            writingService.stopWriting((WritingProtocolAdapter) adapter,
-                    config.getSouthboundMappings()
-                            .stream()
-                            .map(mapping -> (InternalWritingContext) new InternalWritingContextImpl(mapping))
-                            .toList());
+            try {
+                // Transition southbound state to indicate shutdown in progress
+                final StateEnum currentSouthboundState = currentState().southbound();
+                if (currentSouthboundState == StateEnum.CONNECTED) {
+                    transitionSouthboundState(StateEnum.DISCONNECTING);
+                }
+                writingService.stopWriting((WritingProtocolAdapter) adapter,
+                        config.getSouthboundMappings()
+                                .stream()
+                                .map(mapping -> (InternalWritingContext) new InternalWritingContextImpl(mapping))
+                                .toList());
+                if (currentSouthboundState == StateEnum.CONNECTED ||
+                        currentSouthboundState == StateEnum.DISCONNECTING) {
+                    transitionSouthboundState(StateEnum.DISCONNECTED);
+                }
+                log.debug("Writing stopped successfully for adapter '{}'", getId());
+            } catch (final IllegalStateException stateException) {
+                // State transition failed, log but continue cleanup
+                log.warn("State transition failed while stopping writing for adapter '{}': {}",
+                        getId(),
+                        stateException.getMessage());
+            } catch (final Exception e) {
+                log.error("Error stopping writing for adapter '{}'", getId(), e);
+            }
         }
     }
 
@@ -436,9 +564,17 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                 Thread.currentThread().getName());
         stopAdapter();
         cleanupConnectionStatusListener();
-        consumers.forEach(tagManager::removeConsumer);
+        try {
+            consumers.forEach(tagManager::removeConsumer);
+            consumers.clear();
+            log.debug("Adapter '{}': Consumers cleaned up successfully", getId());
+        } catch (final Exception e) {
+            log.error("Adapter '{}': Error cleaning up consumers", getId(), e);
+        }
+
         stopPolling();
         stopWriting();
+
         final var output = new ProtocolAdapterStopOutputImpl();
         try {
             adapter.stop(new ProtocolAdapterStopInputImpl(), output);
@@ -454,8 +590,17 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         log.warn("Stopping adapter with id {} after a failed start", adapter.getId());
         stopAdapter();
         cleanupConnectionStatusListener();
+        try {
+            consumers.forEach(tagManager::removeConsumer);
+            consumers.clear();
+            log.debug("Adapter '{}': Consumers cleaned up after failed start", getId());
+        } catch (final Exception e) {
+            log.error("Adapter '{}': Error cleaning up consumers after failed start", getId(), e);
+        }
+
         stopPolling();
         stopWriting();
+
         final var output = new ProtocolAdapterStopOutputImpl();
         try {
             adapter.stop(new ProtocolAdapterStopInputImpl(), output);

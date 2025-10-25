@@ -30,12 +30,12 @@ import java.util.Set;
 public class ProtocolAdapterConfig {
 
     private final @NotNull ProtocolSpecificAdapterConfig adapterConfig;
-    private final @NotNull List<? extends Tag> tags;
+    private @NotNull List<? extends Tag> tags;
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
     private final int configVersion;
-    private final @NotNull List<SouthboundMapping> southboundMappings;
-    private final @NotNull List<NorthboundMapping> northboundMappings;
+    private @NotNull List<SouthboundMapping> southboundMappings;
+    private @NotNull List<NorthboundMapping> northboundMappings;
 
     public ProtocolAdapterConfig(
             final @NotNull String adapterId,
@@ -97,6 +97,36 @@ public class ProtocolAdapterConfig {
 
     public int getConfigVersion() {
         return configVersion;
+    }
+
+    /**
+     * Updates the tags for hot-reload support.
+     * This method is used to update tags without restarting the adapter.
+     *
+     * @param tags the new tags
+     */
+    public void setTags(final @NotNull List<? extends Tag> tags) {
+        this.tags = tags;
+    }
+
+    /**
+     * Updates the northbound mappings for hot-reload support.
+     * This method is used to update northbound mappings without restarting the adapter.
+     *
+     * @param northboundMappings the new northbound mappings
+     */
+    public void setNorthboundMappings(final @NotNull List<NorthboundMapping> northboundMappings) {
+        this.northboundMappings = northboundMappings;
+    }
+
+    /**
+     * Updates the southbound mappings for hot-reload support.
+     * This method is used to update southbound mappings without restarting the adapter.
+     *
+     * @param southboundMappings the new southbound mappings
+     */
+    public void setSouthboundMappings(final @NotNull List<SouthboundMapping> southboundMappings) {
+        this.southboundMappings = southboundMappings;
     }
 
     @Override
