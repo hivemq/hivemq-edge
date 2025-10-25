@@ -84,6 +84,8 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     private @Nullable CompletableFuture<Void> currentStartFuture;
     private @Nullable CompletableFuture<Void> currentStopFuture;
     private @Nullable Consumer<ProtocolAdapterState.ConnectionStatus> connectionStatusListener;
+    private volatile boolean startOperationInProgress;
+    private volatile boolean stopOperationInProgress;
 
     public ProtocolAdapterWrapper(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -164,8 +166,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     public @NotNull CompletableFuture<Void> startAsync(final @NotNull ModuleServices moduleServices) {
         operationLock.lock();
         try {
-            // validate state
-            if (currentStartFuture != null && !currentStartFuture.isDone()) {
+            if (startOperationInProgress) {
                 log.info("Start operation already in progress for adapter '{}'", getId());
                 return currentStartFuture;
             }
@@ -173,13 +174,14 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                 log.info("Adapter '{}' is already started, returning success", getId());
                 return CompletableFuture.completedFuture(null);
             }
-            if (currentStopFuture != null && !currentStopFuture.isDone()) {
+            if (stopOperationInProgress) {
                 log.warn("Cannot start adapter '{}' while stop operation is in progress", getId());
                 return CompletableFuture.failedFuture(new IllegalStateException("Cannot start adapter '" +
                         adapter.getId() +
                         "' while stop operation is in progress"));
             }
 
+            startOperationInProgress = true;
             lastStartAttemptTime = System.currentTimeMillis();
             currentStartFuture =
                     CompletableFuture.supplyAsync(startProtocolAdapter(moduleServices), sharedAdapterExecutor)
@@ -196,6 +198,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                                 }
                                 operationLock.lock();
                                 try {
+                                    startOperationInProgress = false;
                                     currentStartFuture = null;
                                 } finally {
                                     operationLock.unlock();
@@ -210,8 +213,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     public @NotNull CompletableFuture<Void> stopAsync() {
         operationLock.lock();
         try {
-            // validate state
-            if (currentStopFuture != null && !currentStopFuture.isDone()) {
+            if (stopOperationInProgress) {
                 log.info("Stop operation already in progress for adapter '{}'", getId());
                 return currentStopFuture;
             }
@@ -220,13 +222,14 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                 log.info("Adapter '{}' is already stopped, returning success", getId());
                 return CompletableFuture.completedFuture(null);
             }
-            if (currentStartFuture != null && !currentStartFuture.isDone()) {
+            if (startOperationInProgress) {
                 log.warn("Cannot stop adapter '{}' while start operation is in progress", getId());
                 return CompletableFuture.failedFuture(new IllegalStateException("Cannot stop adapter '" +
                         adapter.getId() +
                         "' while start operation is in progress"));
             }
 
+            stopOperationInProgress = true;
             log.debug("Adapter '{}': Creating stop operation future", getId());
             currentStopFuture = CompletableFuture.supplyAsync(this::stopProtocolAdapter, sharedAdapterExecutor)
                     .thenCompose(Function.identity())
@@ -244,6 +247,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                         }
                         operationLock.lock();
                         try {
+                            stopOperationInProgress = false;
                             currentStopFuture = null;
                         } finally {
                             operationLock.unlock();
@@ -342,9 +346,10 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     }
 
     private void cleanupConnectionStatusListener() {
-        if (connectionStatusListener != null) {
-            protocolAdapterState.setConnectionStatusListener(CONNECTION_STATUS_NOOP_CONSUMER);
+        final Consumer<ProtocolAdapterState.ConnectionStatus> listenerToClean = connectionStatusListener;
+        if (listenerToClean != null) {
             connectionStatusListener = null;
+            protocolAdapterState.setConnectionStatusListener(CONNECTION_STATUS_NOOP_CONSUMER);
         }
     }
 
