@@ -68,6 +68,7 @@ import java.util.stream.Collectors;
 import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ADAPTER_FAILED_TO_START;
 import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ADAPTER_MISSING;
 import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.failedFuture;
 
 @SuppressWarnings("unchecked")
@@ -151,6 +152,24 @@ public class ProtocolAdapterManager {
             return snippet.get();
         } finally {
             t.setContextClassLoader(currentCtx);
+        }
+    }
+
+    private static boolean updateMappingsHotReload(
+            final @NotNull ProtocolAdapterWrapper wrapper,
+            final @NotNull String mappingType,
+            final @NotNull Runnable updateOperation) {
+        try {
+            log.debug("Updating {} mappings for adapter '{}' via hot-reload", mappingType, wrapper.getId());
+            updateOperation.run();
+            log.info("Successfully updated {} mappings for adapter '{}' via hot-reload", mappingType, wrapper.getId());
+            return true;
+        } catch (final IllegalStateException e) {
+            log.error("Cannot hot-reload {} mappings, adapter not in correct state: {}", mappingType, e.getMessage());
+            return false;
+        } catch (final Throwable e) {
+            log.error("Exception happened while updating {} mappings via hot-reload: ", mappingType, e);
+            return false;
         }
     }
 
@@ -334,39 +353,17 @@ public class ProtocolAdapterManager {
     public boolean updateNorthboundMappingsHotReload(
             final @NotNull String adapterId,
             final @NotNull List<NorthboundMapping> northboundMappings) {
-        return getProtocolAdapterWrapperByAdapterId(adapterId).map(wrapper -> {
-            try {
-                log.debug("Updating northbound mappings for adapter '{}' via hot-reload", adapterId);
-                wrapper.updateMappingsHotReload(northboundMappings, null, eventService);
-                log.info("Successfully updated northbound mappings for adapter '{}' via hot-reload", adapterId);
-                return true;
-            } catch (final IllegalStateException e) {
-                log.error("Cannot hot-reload northbound mappings, adapter not in correct state: {}", e.getMessage());
-                return false;
-            } catch (final Throwable e) {
-                log.error("Exception happened while updating northbound mappings via hot-reload: ", e);
-                return false;
-            }
-        }).orElse(false);
+        return getProtocolAdapterWrapperByAdapterId(adapterId).map(wrapper -> updateMappingsHotReload(wrapper,
+                "northbound",
+                () -> wrapper.updateMappingsHotReload(northboundMappings, null))).orElse(false);
     }
 
     public boolean updateSouthboundMappingsHotReload(
             final @NotNull String adapterId,
             final @NotNull List<SouthboundMapping> southboundMappings) {
-        return getProtocolAdapterWrapperByAdapterId(adapterId).map(wrapper -> {
-            try {
-                log.debug("Updating southbound mappings for adapter '{}' via hot-reload", adapterId);
-                wrapper.updateMappingsHotReload(null, southboundMappings, eventService);
-                log.info("Successfully updated southbound mappings for adapter '{}' via hot-reload", adapterId);
-                return true;
-            } catch (final IllegalStateException e) {
-                log.error("Cannot hot-reload southbound mappings, adapter not in correct state: {}", e.getMessage());
-                return false;
-            } catch (final Throwable e) {
-                log.error("Exception happened while updating southbound mappings via hot-reload: ", e);
-                return false;
-            }
-        }).orElse(false);
+        return getProtocolAdapterWrapperByAdapterId(adapterId).map(wrapper -> updateMappingsHotReload(wrapper,
+                "southbound",
+                () -> wrapper.updateMappingsHotReload(null, southboundMappings))).orElse(false);
     }
 
     public @NotNull List<DomainTag> getDomainTags() {
@@ -552,7 +549,7 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(wrapper);
         final String wid = wrapper.getId();
         log.info("Starting protocol-adapter '{}'.", wid);
-        return wrapper.startAsync(moduleServices).whenComplete((result, throwable) -> {
+        return requireNonNull(wrapper.startAsync(moduleServices)).whenComplete((result, throwable) -> {
             if (throwable == null) {
                 log.info("Protocol-adapter '{}' started successfully.", wid);
                 fireStartEvent(wrapper,
@@ -585,7 +582,7 @@ public class ProtocolAdapterManager {
     @NotNull CompletableFuture<Void> stopAsync(final @NotNull ProtocolAdapterWrapper wrapper) {
         Preconditions.checkNotNull(wrapper);
         log.info("Stopping protocol-adapter '{}'.", wrapper.getId());
-        return wrapper.stopAsync().whenComplete((result, throwable) -> {
+        return requireNonNull(wrapper.stopAsync()).whenComplete((result, throwable) -> {
             final Event.SEVERITY severity;
             final String message;
             final String wid = wrapper.getId();

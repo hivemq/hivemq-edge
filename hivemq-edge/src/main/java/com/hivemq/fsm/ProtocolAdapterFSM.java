@@ -26,57 +26,61 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
 public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterState.ConnectionStatus> {
 
-    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterFSM.class);
-
-    public enum StateEnum {
-        DISCONNECTED,
-        CONNECTING,
-        CONNECTED,
-        DISCONNECTING,
-        ERROR_CLOSING,
-        CLOSING,
-        ERROR,
-        CLOSED,
-        NOT_SUPPORTED
-    }
-
-    public static final @NotNull Map<StateEnum, Set<StateEnum>> possibleTransitions = Map.of(
-            StateEnum.DISCONNECTED, Set.of(StateEnum.DISCONNECTED, StateEnum.CONNECTING, StateEnum.CONNECTED, StateEnum.CLOSED, StateEnum.NOT_SUPPORTED), //allow idempotent DISCONNECTED->DISCONNECTED transitions; for compatibility, we allow to go from CONNECTING to CONNECTED directly, and allow testing transition to CLOSED; NOT_SUPPORTED for adapters without southbound
-            StateEnum.CONNECTING, Set.of(StateEnum.CONNECTING, StateEnum.CONNECTED, StateEnum.ERROR, StateEnum.DISCONNECTED), // allow idempotent CONNECTING->CONNECTING; can go back to DISCONNECTED
-            StateEnum.CONNECTED, Set.of(StateEnum.CONNECTED, StateEnum.DISCONNECTING, StateEnum.CONNECTING, StateEnum.CLOSING, StateEnum.ERROR_CLOSING, StateEnum.DISCONNECTED), // allow idempotent CONNECTED->CONNECTED; transition to CONNECTING in case of recovery, DISCONNECTED for direct transition
-            StateEnum.DISCONNECTING, Set.of(StateEnum.DISCONNECTED, StateEnum.CLOSING), // can go to DISCONNECTED or CLOSING
-            StateEnum.CLOSING, Set.of(StateEnum.CLOSED),
-            StateEnum.ERROR_CLOSING, Set.of(StateEnum.ERROR),
-            StateEnum.ERROR, Set.of(StateEnum.ERROR, StateEnum.CONNECTING, StateEnum.DISCONNECTED), // allow idempotent ERROR->ERROR; can recover from error
-            StateEnum.CLOSED, Set.of(StateEnum.DISCONNECTED, StateEnum.CLOSING), // can restart from closed or go to closing
-            StateEnum.NOT_SUPPORTED, Set.of(StateEnum.NOT_SUPPORTED) // Terminal state for adapters without southbound support; allow idempotent transitions
+    public static final @NotNull Map<StateEnum, Set<StateEnum>> possibleTransitions = Map.of(StateEnum.DISCONNECTED,
+            Set.of(StateEnum.DISCONNECTED,
+                    StateEnum.CONNECTING,
+                    StateEnum.CONNECTED,
+                    StateEnum.CLOSED,
+                    StateEnum.NOT_SUPPORTED),
+            //allow idempotent DISCONNECTED->DISCONNECTED transitions; for compatibility, we allow to go from CONNECTING to CONNECTED directly, and allow testing transition to CLOSED; NOT_SUPPORTED for adapters without southbound
+            StateEnum.CONNECTING,
+            Set.of(StateEnum.CONNECTING, StateEnum.CONNECTED, StateEnum.ERROR, StateEnum.DISCONNECTED),
+            // allow idempotent CONNECTING->CONNECTING; can go back to DISCONNECTED
+            StateEnum.CONNECTED,
+            Set.of(StateEnum.CONNECTED,
+                    StateEnum.DISCONNECTING,
+                    StateEnum.CONNECTING,
+                    StateEnum.CLOSING,
+                    StateEnum.ERROR_CLOSING,
+                    StateEnum.DISCONNECTED),
+            // allow idempotent CONNECTED->CONNECTED; transition to CONNECTING in case of recovery, DISCONNECTED for direct transition
+            StateEnum.DISCONNECTING,
+            Set.of(StateEnum.DISCONNECTED, StateEnum.CLOSING),
+            // can go to DISCONNECTED or CLOSING
+            StateEnum.CLOSING,
+            Set.of(StateEnum.CLOSED),
+            StateEnum.ERROR_CLOSING,
+            Set.of(StateEnum.ERROR),
+            StateEnum.ERROR,
+            Set.of(StateEnum.ERROR, StateEnum.CONNECTING, StateEnum.DISCONNECTED),
+            // allow idempotent ERROR->ERROR; can recover from error
+            StateEnum.CLOSED,
+            Set.of(StateEnum.DISCONNECTED, StateEnum.CLOSING),
+            // can restart from closed or go to closing
+            StateEnum.NOT_SUPPORTED,
+            Set.of(StateEnum.NOT_SUPPORTED)
+            // Terminal state for adapters without southbound support; allow idempotent transitions
     );
-
-    public enum AdapterStateEnum {
-        STARTING,
-        STARTED,
-        STOPPING,
-        STOPPED
-    }
-
     public static final Map<AdapterStateEnum, Set<AdapterStateEnum>> possibleAdapterStateTransitions = Map.of(
-            AdapterStateEnum.STOPPED, Set.of(AdapterStateEnum.STARTING),
-            AdapterStateEnum.STARTING, Set.of(AdapterStateEnum.STARTED, AdapterStateEnum.STOPPED),
-            AdapterStateEnum.STARTED, Set.of(AdapterStateEnum.STOPPING),
-            AdapterStateEnum.STOPPING, Set.of(AdapterStateEnum.STOPPED)
-    );
-
+            AdapterStateEnum.STOPPED,
+            Set.of(AdapterStateEnum.STARTING),
+            AdapterStateEnum.STARTING,
+            Set.of(AdapterStateEnum.STARTED, AdapterStateEnum.STOPPED),
+            AdapterStateEnum.STARTED,
+            Set.of(AdapterStateEnum.STOPPING),
+            AdapterStateEnum.STOPPING,
+            Set.of(AdapterStateEnum.STOPPED));
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterFSM.class);
+    protected final @NotNull AtomicReference<AdapterStateEnum> adapterState;
     private final @NotNull AtomicReference<StateEnum> northboundState;
     private final @NotNull AtomicReference<StateEnum> southboundState;
-    protected final @NotNull AtomicReference<AdapterStateEnum> adapterState;
     private final @NotNull List<Consumer<State>> stateTransitionListeners;
-
-    public record State(AdapterStateEnum adapter, StateEnum northbound, StateEnum southbound) { }
-
     private final @NotNull String adapterId;
 
     public ProtocolAdapterFSM(final @NotNull String adapterId) {
@@ -87,6 +91,11 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
         this.stateTransitionListeners = new CopyOnWriteArrayList<>();
     }
 
+    private static boolean canTransition(final @NotNull StateEnum currentState, final @NotNull StateEnum newState) {
+        final var allowedTransitions = possibleTransitions.get(currentState);
+        return allowedTransitions != null && allowedTransitions.contains(newState);
+    }
+
     public abstract boolean onStarting();
 
     public abstract void onStopping();
@@ -95,10 +104,10 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
 
     // ADAPTER signals
     public void startAdapter() {
-        if(transitionAdapterState(AdapterStateEnum.STARTING)) {
+        if (transitionAdapterState(AdapterStateEnum.STARTING)) {
             log.debug("Protocol adapter {} starting", adapterId);
-            if(onStarting()) {
-                if(!transitionAdapterState(AdapterStateEnum.STARTED)) {
+            if (onStarting()) {
+                if (!transitionAdapterState(AdapterStateEnum.STARTED)) {
                     log.warn("Protocol adapter {} already started", adapterId);
                 }
             } else {
@@ -110,9 +119,9 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     }
 
     public void stopAdapter() {
-        if(transitionAdapterState(AdapterStateEnum.STOPPING)) {
+        if (transitionAdapterState(AdapterStateEnum.STOPPING)) {
             onStopping();
-            if(!transitionAdapterState(AdapterStateEnum.STOPPED)) {
+            if (!transitionAdapterState(AdapterStateEnum.STOPPED)) {
                 log.warn("Protocol adapter {} already stopped", adapterId);
             }
         } else {
@@ -121,13 +130,59 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     }
 
     public boolean transitionAdapterState(final @NotNull AdapterStateEnum newState) {
+        return performStateTransition(adapterState,
+                newState,
+                this::canTransition,
+                "Adapter",
+                (current, next) -> new State(next, northboundState.get(), southboundState.get()));
+    }
+
+    public boolean transitionNorthboundState(final @NotNull StateEnum newState) {
+        return performStateTransition(northboundState,
+                newState,
+                ProtocolAdapterFSM::canTransition,
+                "Northbound",
+                (current, next) -> new State(adapterState.get(), next, southboundState.get()));
+    }
+
+    public boolean transitionSouthboundState(final @NotNull StateEnum newState) {
+        return performStateTransition(southboundState,
+                newState,
+                ProtocolAdapterFSM::canTransition,
+                "Southbound",
+                (current, next) -> new State(adapterState.get(), northboundState.get(), next));
+    }
+
+    /**
+     * Generic state transition implementation with retry logic and exponential backoff.
+     * Eliminates code duplication across adapter, northbound, and southbound transitions.
+     *
+     * @param stateRef        the atomic reference to the state being transitioned
+     * @param newState        the target state
+     * @param canTransitionFn function to check if transition is valid
+     * @param stateName       name of the state type for logging
+     * @param stateSnapshotFn function to create state snapshot after successful transition
+     * @param <T>             the state type (StateEnum or AdapterStateEnum)
+     * @return true if transition succeeded
+     * @throws IllegalStateException if transition is not allowed from current state
+     */
+    private <T> boolean performStateTransition(
+            final @NotNull AtomicReference<T> stateRef,
+            final @NotNull T newState,
+            final @NotNull BiPredicate<T, T> canTransitionFn,
+            final @NotNull String stateName,
+            final @NotNull BiFunction<T, T, State> stateSnapshotFn) {
         int retryCount = 0;
         while (true) {
-            final var currentState = adapterState.get();
-            if (canTransition(currentState, newState)) {
-                if (adapterState.compareAndSet(currentState, newState)) {
-                    final State snapshotState = new State(newState, northboundState.get(), southboundState.get());
-                    log.debug("Adapter state transition from {} to {} for adapter {}", currentState, newState, adapterId);
+            final T currentState = stateRef.get();
+            if (canTransitionFn.test(currentState, newState)) {
+                if (stateRef.compareAndSet(currentState, newState)) {
+                    final State snapshotState = stateSnapshotFn.apply(currentState, newState);
+                    log.debug("{} state transition from {} to {} for adapter {}",
+                            stateName,
+                            currentState,
+                            newState,
+                            adapterId);
                     notifyListenersAboutStateTransition(snapshotState);
                     return true;
                 }
@@ -141,57 +196,10 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
                 // Fast retry for attempts 1-3 (optimizes for low contention case)
             } else {
                 // Transition not allowed from current state
-                throw new IllegalStateException("Cannot transition adapter state to " + newState);
-            }
-        }
-    }
-
-    public boolean transitionNorthboundState(final @NotNull StateEnum newState) {
-        int retryCount = 0;
-        while (true) {
-            final var currentState = northboundState.get();
-            if (canTransition(currentState, newState)) {
-                if (northboundState.compareAndSet(currentState, newState)) {
-                    final State snapshotState = new State(adapterState.get(), newState, southboundState.get());
-                    log.debug("Northbound state transition from {} to {} for adapter {}", currentState, newState, adapterId);
-                    notifyListenersAboutStateTransition(snapshotState);
-                    return true;
-                }
-                retryCount++;
-                if (retryCount > 3) {
-                    // progressive backoff: 1μs, 2μs, 4μs, 8μs, ..., capped at 100μs
-                    final long backoffNanos = Math.min(1_000L * (1L << (retryCount - 4)), 100_000L);
-                    LockSupport.parkNanos(backoffNanos);
-                }
-                // Fast retry for attempts 1-3 (optimizes for low contention case)
-            } else {
-                // Transition not allowed from current state
-                throw new IllegalStateException("Cannot transition northbound state to " + newState);
-            }
-        }
-    }
-
-    public boolean transitionSouthboundState(final @NotNull StateEnum newState) {
-        int retryCount = 0;
-        while (true) {
-            final var currentState = southboundState.get();
-            if (canTransition(currentState, newState)) {
-                if (southboundState.compareAndSet(currentState, newState)) {
-                    final State snapshotState = new State(adapterState.get(), northboundState.get(), newState);
-                    log.debug("Southbound state transition from {} to {} for adapter {}", currentState, newState, adapterId);
-                    notifyListenersAboutStateTransition(snapshotState);
-                    return true;
-                }
-                retryCount++;
-                if (retryCount > 3) {
-                    // progressive backoff: 1μs, 2μs, 4μs, 8μs, ..., capped at 100μs
-                    final long backoffNanos = Math.min(1_000L * (1L << (retryCount - 4)), 100_000L);
-                    LockSupport.parkNanos(backoffNanos);
-                }
-                // Fast retry for attempts 1-3 (optimizes for low contention case)
-            } else {
-                // Transition not allowed from current state
-                throw new IllegalStateException("Cannot transition southbound state to " + newState);
+                throw new IllegalStateException("Cannot transition " +
+                        stateName.toLowerCase() +
+                        " state to " +
+                        newState);
             }
         }
     }
@@ -199,20 +207,17 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     @Override
     public void accept(final ProtocolAdapterState.ConnectionStatus connectionStatus) {
         final var transitionResult = switch (connectionStatus) {
-            case CONNECTED ->
-                transitionNorthboundState(StateEnum.CONNECTED)  && startSouthbound();
+            case CONNECTED -> transitionNorthboundState(StateEnum.CONNECTED) && startSouthbound();
             case CONNECTING -> transitionNorthboundState(StateEnum.CONNECTING);
             case DISCONNECTED -> transitionNorthboundState(StateEnum.DISCONNECTED);
             case ERROR -> transitionNorthboundState(StateEnum.ERROR);
             case UNKNOWN -> transitionNorthboundState(StateEnum.DISCONNECTED);
             case STATELESS -> transitionNorthboundState(StateEnum.NOT_SUPPORTED);
         };
-        if(!transitionResult) {
+        if (!transitionResult) {
             log.warn("Failed to transition connection state to {} for adapter {}", connectionStatus, adapterId);
         }
     }
-
-    // Additional methods to support full state machine functionality
 
     public boolean startDisconnecting() {
         return transitionNorthboundState(StateEnum.DISCONNECTING);
@@ -221,6 +226,8 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     public boolean startClosing() {
         return transitionNorthboundState(StateEnum.CLOSING);
     }
+
+    // Additional methods to support full state machine functionality
 
     public boolean startErrorClosing() {
         return transitionNorthboundState(StateEnum.ERROR_CLOSING);
@@ -279,14 +286,33 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
         stateTransitionListeners.forEach(listener -> listener.accept(newState));
     }
 
-    private static boolean canTransition(final @NotNull StateEnum currentState, final @NotNull StateEnum newState) {
-        final var allowedTransitions = possibleTransitions.get(currentState);
+    private boolean canTransition(
+            final @NotNull AdapterStateEnum currentState,
+            final @NotNull AdapterStateEnum newState) {
+        final var allowedTransitions = possibleAdapterStateTransitions.get(currentState);
         return allowedTransitions != null && allowedTransitions.contains(newState);
     }
 
-    private static boolean canTransition(final @NotNull AdapterStateEnum currentState, final @NotNull AdapterStateEnum newState) {
-        final var allowedTransitions = possibleAdapterStateTransitions.get(currentState);
-        return allowedTransitions != null && allowedTransitions.contains(newState);
+    public enum StateEnum {
+        DISCONNECTED,
+        CONNECTING,
+        CONNECTED,
+        DISCONNECTING,
+        ERROR_CLOSING,
+        CLOSING,
+        ERROR,
+        CLOSED,
+        NOT_SUPPORTED
+    }
+
+    public enum AdapterStateEnum {
+        STARTING,
+        STARTED,
+        STOPPING,
+        STOPPED
+    }
+
+    public record State(AdapterStateEnum adapter, StateEnum northbound, StateEnum southbound) {
     }
 }
 
