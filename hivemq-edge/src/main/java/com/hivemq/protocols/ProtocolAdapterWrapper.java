@@ -164,7 +164,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         return started;
     }
 
-    public @NotNull CompletableFuture<Void> startAsync(final @NotNull ModuleServices moduleServices) {
+    public @Nullable CompletableFuture<Void> startAsync(final @NotNull ModuleServices moduleServices) {
         operationLock.lock();
         try {
             if (startOperationInProgress) {
@@ -225,7 +225,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         }
     }
 
-    public @NotNull CompletableFuture<Void> stopAsync() {
+    public @Nullable CompletableFuture<Void> stopAsync() {
         operationLock.lock();
         try {
             if (stopOperationInProgress) {
@@ -407,8 +407,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
 
     public void updateMappingsHotReload(
             final @Nullable List<NorthboundMapping> northboundMappings,
-            final @Nullable List<SouthboundMapping> southboundMappings,
-            final @NotNull EventService eventService) {
+            final @Nullable List<SouthboundMapping> southboundMappings) {
         operationLock.lock();
         try {
             if (northboundMappings != null) {
@@ -562,8 +561,34 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         log.debug("Adapter '{}': Stop operation executing in thread '{}'",
                 adapter.getId(),
                 Thread.currentThread().getName());
+        return performStopOperations();
+    }
+
+    private void stopProtocolAdapterOnFailedStart() {
+        log.warn("Stopping adapter with id {} after a failed start", adapter.getId());
+        final CompletableFuture<Void> stopFuture = performStopOperations();
+
+        // Wait synchronously for stop to complete with timeout
+        try {
+            stopFuture.get(STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (final TimeoutException e) {
+            log.error("Timeout waiting for adapter {} to stop after failed start", adapter.getId());
+        } catch (final Throwable throwable) {
+            log.error("Stopping adapter after a start error failed", throwable);
+        }
+
+        // Always destroy adapter after failed start
+        try {
+            adapter.destroy();
+        } catch (final Exception destroyException) {
+            log.error("Error destroying adapter with id {} after failed start", adapter.getId(), destroyException);
+        }
+    }
+
+    private @NotNull CompletableFuture<Void> performStopOperations() {
         stopAdapter();
         cleanupConnectionStatusListener();
+        // Clean up consumers
         try {
             consumers.forEach(tagManager::removeConsumer);
             consumers.clear();
@@ -575,6 +600,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         stopPolling();
         stopWriting();
 
+        // Initiate adapter stop
         final var output = new ProtocolAdapterStopOutputImpl();
         try {
             adapter.stop(new ProtocolAdapterStopInputImpl(), output);
@@ -582,42 +608,8 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
             log.error("Adapter '{}': Exception during adapter.stop()", adapter.getId(), throwable);
             output.getOutputFuture().completeExceptionally(throwable);
         }
+
         log.debug("Adapter '{}': Waiting for stop output future", adapter.getId());
         return output.getOutputFuture();
-    }
-
-    private void stopProtocolAdapterOnFailedStart() {
-        log.warn("Stopping adapter with id {} after a failed start", adapter.getId());
-        stopAdapter();
-        cleanupConnectionStatusListener();
-        try {
-            consumers.forEach(tagManager::removeConsumer);
-            consumers.clear();
-            log.debug("Adapter '{}': Consumers cleaned up after failed start", getId());
-        } catch (final Exception e) {
-            log.error("Adapter '{}': Error cleaning up consumers after failed start", getId(), e);
-        }
-
-        stopPolling();
-        stopWriting();
-
-        final var output = new ProtocolAdapterStopOutputImpl();
-        try {
-            adapter.stop(new ProtocolAdapterStopInputImpl(), output);
-        } catch (final Throwable throwable) {
-            log.error("Stopping adapter after a start error failed", throwable);
-        }
-        try {
-            output.getOutputFuture().get(STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (final TimeoutException e) {
-            log.error("Timeout waiting for adapter {} to stop after failed start", adapter.getId());
-        } catch (final Throwable throwable) {
-            log.error("Stopping adapter after a start error failed", throwable);
-        }
-        try {
-            adapter.destroy();
-        } catch (final Exception destroyException) {
-            log.error("Error destroying adapter with id {} after failed start", adapter.getId(), destroyException);
-        }
     }
 }
