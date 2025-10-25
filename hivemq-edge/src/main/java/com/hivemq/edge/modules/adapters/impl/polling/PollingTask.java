@@ -19,9 +19,9 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.ExceptionUtils;
 import com.hivemq.util.NanoTimeProvider;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,10 +29,12 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class PollingTask implements Runnable {
 
@@ -42,12 +44,11 @@ public class PollingTask implements Runnable {
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
     private final @NotNull EventService eventService;
     private final @NotNull NanoTimeProvider nanoTimeProvider;
-    private final @NotNull AtomicInteger watchdogErrorCount = new AtomicInteger();
-    private final @NotNull AtomicInteger applicationErrorCount = new AtomicInteger();
-
+    private final @NotNull AtomicInteger watchdogErrorCount;
+    private final @NotNull AtomicInteger applicationErrorCount;
+    private final @NotNull AtomicBoolean continueScheduling;
+    private final @NotNull AtomicReference<ScheduledFuture<?>> currentScheduledFuture;
     private volatile long nanosOfLastPolling;
-    private final @NotNull AtomicBoolean continueScheduling = new AtomicBoolean(true);
-
 
     public PollingTask(
             final @NotNull ProtocolAdapterPollingSampler sampler,
@@ -58,6 +59,19 @@ public class PollingTask implements Runnable {
         this.scheduledExecutorService = scheduledExecutorService;
         this.eventService = eventService;
         this.nanoTimeProvider = nanoTimeProvider;
+        this.watchdogErrorCount = new AtomicInteger();
+        this.applicationErrorCount = new AtomicInteger();
+        this.continueScheduling = new AtomicBoolean(true);
+        this.currentScheduledFuture = new AtomicReference<>();
+    }
+
+    private static long getBackoff(final int errorCount) {
+        //-- This will backoff up to a max of about a day (unless the max provided is less)
+        final long max = InternalConfigurations.ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF.get();
+        long f = (long) (Math.pow(2, Math.min(errorCount, 20)) * 100);
+        f += ThreadLocalRandom.current().nextInt(0, errorCount * 100);
+        f = Math.min(f, max);
+        return f;
     }
 
     @Override
@@ -90,6 +104,11 @@ public class PollingTask implements Runnable {
 
     public void stopScheduling() {
         continueScheduling.set(false);
+        // Cancel any currently scheduled future to prevent thread leaks
+        final ScheduledFuture<?> future = currentScheduledFuture.getAndSet(null);
+        if (future != null) {
+            future.cancel(true);
+        }
     }
 
     private void handleInterruptionException(final @NotNull Throwable throwable) {
@@ -99,7 +118,8 @@ public class PollingTask implements Runnable {
         final var errorCountTotal = watchdogErrorCount.incrementAndGet();
         final var stopBecauseOfTooManyErrors =
                 errorCountTotal > InternalConfigurations.ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT.get();
-        final var milliSecondsSinceLastPoll = TimeUnit.NANOSECONDS.toMillis(nanoTimeProvider.nanoTime() - nanosOfLastPolling);
+        final var milliSecondsSinceLastPoll =
+                TimeUnit.NANOSECONDS.toMillis(nanoTimeProvider.nanoTime() - nanosOfLastPolling);
         if (stopBecauseOfTooManyErrors) {
             log.warn(
                     "Detected bad system process {} in sampler {} - terminating process to maintain health ({}ms runtime)",
@@ -120,7 +140,6 @@ public class PollingTask implements Runnable {
             reschedule(errorCountTotal);
         }
     }
-
 
     private void handleExceptionDuringPolling(final @NotNull Throwable throwable) {
         final int errorCountTotal = applicationErrorCount.incrementAndGet();
@@ -145,11 +164,12 @@ public class PollingTask implements Runnable {
             notifyOnError(sampler, throwable, false);
             // no rescheduling
         }
-
     }
 
     private void notifyOnError(
-            final @NotNull ProtocolAdapterPollingSampler sampler, final @NotNull Throwable t, final boolean continuing) {
+            final @NotNull ProtocolAdapterPollingSampler sampler,
+            final @NotNull Throwable t,
+            final boolean continuing) {
         try {
             sampler.error(t, continuing);
         } catch (final Throwable samplerError) {
@@ -178,12 +198,10 @@ public class PollingTask implements Runnable {
         }
 
         final long nonNegativeDelay = Math.max(0, delayInMillis);
-
         if (errorCountTotal == 0) {
             schedule(nonNegativeDelay);
         } else {
-            final long backoff = getBackoff(errorCountTotal,
-                    InternalConfigurations.ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF.get());
+            final long backoff = getBackoff(errorCountTotal);
             final long effectiveDelay = Math.max(nonNegativeDelay, backoff);
             schedule(effectiveDelay);
         }
@@ -193,7 +211,9 @@ public class PollingTask implements Runnable {
     void schedule(final long nonNegativeDelay) {
         if (continueScheduling.get()) {
             try {
-                scheduledExecutorService.schedule(this, nonNegativeDelay, TimeUnit.MILLISECONDS);
+                currentScheduledFuture.set(scheduledExecutorService.schedule(this,
+                        nonNegativeDelay,
+                        TimeUnit.MILLISECONDS));
             } catch (final RejectedExecutionException rejectedExecutionException) {
                 // ignore. This is fine during shutdown.
             }
@@ -203,13 +223,5 @@ public class PollingTask implements Runnable {
     private void resetErrorStats() {
         applicationErrorCount.set(0);
         watchdogErrorCount.set(0);
-    }
-
-    private static long getBackoff(final int errorCount, final long max) {
-        //-- This will backoff up to a max of about a day (unless the max provided is less)
-        long f = (long) (Math.pow(2, Math.min(errorCount, 20)) * 100);
-        f += ThreadLocalRandom.current().nextInt(0, errorCount * 100);
-        f = Math.min(f, max);
-        return f;
     }
 }
