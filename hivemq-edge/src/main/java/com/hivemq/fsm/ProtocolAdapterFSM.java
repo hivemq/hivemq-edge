@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
 public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterState.ConnectionStatus> {
@@ -120,15 +121,24 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     }
 
     public boolean transitionAdapterState(final @NotNull AdapterStateEnum newState) {
+        int retryCount = 0;
         while (true) {
             final var currentState = adapterState.get();
             if (canTransition(currentState, newState)) {
                 if (adapterState.compareAndSet(currentState, newState)) {
+                    final State snapshotState = new State(newState, northboundState.get(), southboundState.get());
                     log.debug("Adapter state transition from {} to {} for adapter {}", currentState, newState, adapterId);
-                    notifyListenersAboutStateTransition(currentState());
+                    notifyListenersAboutStateTransition(snapshotState);
                     return true;
                 }
-                // CAS failed due to concurrent modification, retry
+                retryCount++;
+                if (retryCount > 3) {
+                    // progressive backoff: 1μs, 2μs, 4μs, 8μs, ..., capped at 100μs
+                    // reduces CPU consumption and cache line contention under high load
+                    final long backoffNanos = Math.min(1_000L * (1L << (retryCount - 4)), 100_000L);
+                    LockSupport.parkNanos(backoffNanos);
+                }
+                // Fast retry for attempts 1-3 (optimizes for low contention case)
             } else {
                 // Transition not allowed from current state
                 throw new IllegalStateException("Cannot transition adapter state to " + newState);
@@ -137,15 +147,23 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     }
 
     public boolean transitionNorthboundState(final @NotNull StateEnum newState) {
+        int retryCount = 0;
         while (true) {
             final var currentState = northboundState.get();
             if (canTransition(currentState, newState)) {
                 if (northboundState.compareAndSet(currentState, newState)) {
+                    final State snapshotState = new State(adapterState.get(), newState, southboundState.get());
                     log.debug("Northbound state transition from {} to {} for adapter {}", currentState, newState, adapterId);
-                    notifyListenersAboutStateTransition(currentState());
+                    notifyListenersAboutStateTransition(snapshotState);
                     return true;
                 }
-                // CAS failed due to concurrent modification, retry
+                retryCount++;
+                if (retryCount > 3) {
+                    // progressive backoff: 1μs, 2μs, 4μs, 8μs, ..., capped at 100μs
+                    final long backoffNanos = Math.min(1_000L * (1L << (retryCount - 4)), 100_000L);
+                    LockSupport.parkNanos(backoffNanos);
+                }
+                // Fast retry for attempts 1-3 (optimizes for low contention case)
             } else {
                 // Transition not allowed from current state
                 throw new IllegalStateException("Cannot transition northbound state to " + newState);
@@ -154,15 +172,23 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     }
 
     public boolean transitionSouthboundState(final @NotNull StateEnum newState) {
+        int retryCount = 0;
         while (true) {
             final var currentState = southboundState.get();
             if (canTransition(currentState, newState)) {
                 if (southboundState.compareAndSet(currentState, newState)) {
+                    final State snapshotState = new State(adapterState.get(), northboundState.get(), newState);
                     log.debug("Southbound state transition from {} to {} for adapter {}", currentState, newState, adapterId);
-                    notifyListenersAboutStateTransition(currentState());
+                    notifyListenersAboutStateTransition(snapshotState);
                     return true;
                 }
-                // CAS failed due to concurrent modification, retry
+                retryCount++;
+                if (retryCount > 3) {
+                    // progressive backoff: 1μs, 2μs, 4μs, 8μs, ..., capped at 100μs
+                    final long backoffNanos = Math.min(1_000L * (1L << (retryCount - 4)), 100_000L);
+                    LockSupport.parkNanos(backoffNanos);
+                }
+                // Fast retry for attempts 1-3 (optimizes for low contention case)
             } else {
                 // Transition not allowed from current state
                 throw new IllegalStateException("Cannot transition southbound state to " + newState);
