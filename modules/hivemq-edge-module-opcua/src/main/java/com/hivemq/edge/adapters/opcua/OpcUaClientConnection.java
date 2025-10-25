@@ -45,7 +45,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
-import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 public class OpcUaClientConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
@@ -81,84 +80,6 @@ public class OpcUaClientConnection {
         this.tags = tags;
     }
 
-    synchronized boolean start(final ParsedConfig parsedConfig) {
-        log.debug("Subscribing to OPC UA client");
-        final OpcUaClient client;
-        final var faultListener = new OpcUaServiceFaultListener(protocolAdapterMetricsService, eventService, adapterId);
-        final var activityListener = new OpcUaSessionActivityListener(protocolAdapterMetricsService, eventService, adapterId, protocolAdapterState);
-        final var endpointFilter = new OpcUaEndpointFilter(adapterId, config.getSecurity().policy().getSecurityPolicy().getUri(), config);
-        try {
-            client = OpcUaClient
-                .create(
-                        config.getUri(),
-                        endpointFilter,
-                        ignore -> {},
-                        new OpcUaClientConfigurator(adapterId, parsedConfig));
-            client.addFaultListener(faultListener);
-            client.connect();
-        } catch (final UaException e) {
-            log.error("Unable to connect and subscribe to the OPC UA server for adapter '{}'", adapterId, e);
-            eventService
-                    .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                    .withMessage("Unable to connect and subscribe to the OPC UA server for adapter '" + adapterId + "'")
-                    .withSeverity(Event.SEVERITY.ERROR)
-                    .fire();
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-            return false;
-        }
-
-        final var subscriptionLifecycleHandler = new OpcUaSubscriptionLifecycleHandler(protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, dataPointFactory, config);
-
-        final var subscriptionOptional = subscriptionLifecycleHandler.subscribe(client);
-
-        if(subscriptionOptional.isEmpty()) {
-            log.error("Failed to create or transfer OPC UA subscription. Closing client connection.");
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-            eventService
-                    .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                    .withMessage("Failed to create or transfer OPC UA subscription. Closing client connection.")
-                    .withSeverity(Event.SEVERITY.ERROR)
-                    .fire();
-            quietlyCloseClient(client, false, faultListener, activityListener);
-            return false;
-        }
-
-        final var subscription = subscriptionOptional.get();
-        log.trace("Creating Subscription for OPC UA client");
-
-        context.set(new ConnectionContext(subscription.getClient(), faultListener, activityListener));
-        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
-        client.addSessionActivityListener(activityListener);
-        log.info("Client created and connected successfully");
-        return true;
-    }
-
-    synchronized void stop() {
-        log.info("Stopping OPC UA client");
-        final ConnectionContext ctx = context.get();
-        if(ctx != null) {
-            quietlyCloseClient(ctx.client(),true,  ctx.faultListener(), ctx.activityListener());
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-        }
-    }
-
-    void destroy() {
-        log.info("Destroying OPC UA client");
-        final ConnectionContext ctx = context.get();
-        if(ctx != null) {
-            quietlyCloseClient(ctx.client(), false, ctx.faultListener(), ctx.activityListener());
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-        }
-    }
-
-    @NotNull Optional<OpcUaClient> client() {
-        final ConnectionContext ctx = context.get();
-        if(ctx != null) {
-            return Optional.of(ctx.client());
-        }
-        return Optional.empty();
-    }
-
     private static void quietlyDeleteSubscription(
             final @NotNull OpcUaClient client,
             final @NotNull OpcUaSubscription subscription) {
@@ -180,14 +101,12 @@ public class OpcUaClientConnection {
             final @Nullable ServiceFaultListener faultListener,
             final @Nullable SessionActivityListener activityListener) {
 
-        client
-            .getSubscriptions()
-            .forEach(subscription -> {
-                subscription.setSubscriptionListener(null);
-                if(!keepSubscription) {
-                    quietlyDeleteSubscription(client, subscription);
-                }
-            });
+        client.getSubscriptions().forEach(subscription -> {
+            subscription.setSubscriptionListener(null);
+            if (!keepSubscription) {
+                quietlyDeleteSubscription(client, subscription);
+            }
+        });
         if (faultListener != null) {
             try {
                 client.removeFaultListener(faultListener);
@@ -205,11 +124,98 @@ public class OpcUaClientConnection {
 
         try {
             client.disconnect();
+            log.info("Successfully disconnected OPC UA client");
         } catch (final UaException e) {
             log.error("Failed to disconnect: {}", e.getMessage());
         }
     }
 
-    private record ConnectionContext(@NotNull OpcUaClient client, @NotNull ServiceFaultListener faultListener, @NotNull SessionActivityListener activityListener) {
+    synchronized boolean start(final ParsedConfig parsedConfig) {
+        log.debug("Subscribing to OPC UA client");
+        final OpcUaClient client;
+        final var faultListener = new OpcUaServiceFaultListener(protocolAdapterMetricsService, eventService, adapterId);
+        final var activityListener = new OpcUaSessionActivityListener(protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                protocolAdapterState);
+        final var endpointFilter =
+                new OpcUaEndpointFilter(adapterId, config.getSecurity().policy().getSecurityPolicy().getUri(), config);
+        try {
+            client = OpcUaClient.create(config.getUri(),
+                    endpointFilter,
+                    ignore -> {},
+                    new OpcUaClientConfigurator(adapterId, parsedConfig));
+            client.addFaultListener(faultListener);
+            client.connect();
+        } catch (final UaException e) {
+            log.error("Unable to connect and subscribe to the OPC UA server for adapter '{}'", adapterId, e);
+            eventService.createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                    .withMessage("Unable to connect and subscribe to the OPC UA server for adapter '" + adapterId + "'")
+                    .withSeverity(Event.SEVERITY.ERROR)
+                    .fire();
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+            return false;
+        }
+
+        final var subscriptionLifecycleHandler = new OpcUaSubscriptionLifecycleHandler(protocolAdapterMetricsService,
+                tagStreamingService,
+                eventService,
+                adapterId,
+                tags,
+                client,
+                dataPointFactory,
+                config);
+
+        final var subscriptionOptional = subscriptionLifecycleHandler.subscribe(client);
+
+        if (subscriptionOptional.isEmpty()) {
+            log.error("Failed to create or transfer OPC UA subscription. Closing client connection.");
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+            eventService.createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                    .withMessage("Failed to create or transfer OPC UA subscription. Closing client connection.")
+                    .withSeverity(Event.SEVERITY.ERROR)
+                    .fire();
+            quietlyCloseClient(client, false, faultListener, activityListener);
+            return false;
+        }
+
+        final var subscription = subscriptionOptional.get();
+        log.trace("Creating Subscription for OPC UA client");
+
+        context.set(new ConnectionContext(subscription.getClient(), faultListener, activityListener));
+        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        client.addSessionActivityListener(activityListener);
+        log.info("Client created and connected successfully");
+        return true;
+    }
+
+    synchronized void stop() {
+        log.info("Stopping OPC UA client");
+        final ConnectionContext ctx = context.get();
+        if (ctx != null) {
+            quietlyCloseClient(ctx.client(), true, ctx.faultListener(), ctx.activityListener());
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        }
+    }
+
+    void destroy() {
+        log.info("Destroying OPC UA client");
+        final ConnectionContext ctx = context.get();
+        if (ctx != null) {
+            quietlyCloseClient(ctx.client(), false, ctx.faultListener(), ctx.activityListener());
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        }
+    }
+
+    @NotNull Optional<OpcUaClient> client() {
+        final ConnectionContext ctx = context.get();
+        if (ctx != null) {
+            return Optional.of(ctx.client());
+        }
+        return Optional.empty();
+    }
+
+    private record ConnectionContext(@NotNull OpcUaClient client, @NotNull ServiceFaultListener faultListener,
+                                     @NotNull SessionActivityListener activityListener) {
     }
 }

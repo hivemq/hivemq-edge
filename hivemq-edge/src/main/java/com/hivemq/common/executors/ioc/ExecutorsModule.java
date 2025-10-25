@@ -17,53 +17,58 @@ package com.hivemq.common.executors.ioc;
 
 import dagger.Module;
 import dagger.Provides;
-
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * @author Simon L Johnson
- */
 @Module
 public abstract class ExecutorsModule {
 
-    static final String GROUP_NAME = "hivemq-edge-group";
-    static final String SCHEDULED_WORKER_GROUP_NAME = "hivemq-edge-scheduled-group";
-    static final String CACHED_WORKER_GROUP_NAME = "hivemq-edge-cached-group";
-    private static final ThreadGroup coreGroup = new ThreadGroup(GROUP_NAME);
+    public static final @NotNull String SCHEDULED_WORKER_GROUP_NAME = "hivemq-edge-scheduled-group";
+    public static final @NotNull String CACHED_WORKER_GROUP_NAME = "hivemq-edge-cached-group";
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ExecutorsModule.class);
+
+    private static final @NotNull String GROUP_NAME = "hivemq-edge-group";
+    private static final int SCHEDULED_WORKER_GROUP_THREAD_COUNT = 4;
+    private static final @NotNull ThreadGroup coreGroup = new ThreadGroup(GROUP_NAME);
 
     @Provides
     @Singleton
-    static ScheduledExecutorService scheduledExecutor() {
-        return Executors.newScheduledThreadPool(4,
+    static @NotNull ScheduledExecutorService scheduledExecutor() {
+        return Executors.newScheduledThreadPool(SCHEDULED_WORKER_GROUP_THREAD_COUNT,
                 new HiveMQEdgeThreadFactory(SCHEDULED_WORKER_GROUP_NAME));
     }
 
     @Provides
     @Singleton
-    static ExecutorService executorService() {
+    static @NotNull ExecutorService executorService() {
         return Executors.newCachedThreadPool(new HiveMQEdgeThreadFactory(CACHED_WORKER_GROUP_NAME));
     }
 
-    static class HiveMQEdgeThreadFactory implements ThreadFactory {
-        private final String factoryName;
-        private final ThreadGroup group;
-        private volatile int counter = 0;
+    private static class HiveMQEdgeThreadFactory implements ThreadFactory {
+        private final @NotNull String factoryName;
+        private final @NotNull ThreadGroup group;
+        private final @NotNull AtomicInteger counter = new AtomicInteger(0);
 
-        public HiveMQEdgeThreadFactory(final String factoryName) {
+        public HiveMQEdgeThreadFactory(final @NotNull String factoryName) {
             this.factoryName = factoryName;
-            this.group = new ThreadGroup(coreGroup,  factoryName);
+            this.group = new ThreadGroup(coreGroup, factoryName);
         }
 
         @Override
-        public Thread newThread(final Runnable r) {
-            synchronized (group) {
-                Thread thread = new Thread(coreGroup, r, String.format(factoryName + "-%d", counter++));
-                return thread;
-            }
+        public @NotNull Thread newThread(final @NotNull Runnable r) {
+            final Thread thread = new Thread(group, r, factoryName + "-" + counter.getAndIncrement());
+            thread.setDaemon(true);
+            thread.setUncaughtExceptionHandler((t, e) -> log.error("Uncaught exception in thread {}", t.getName(), e));
+            return thread;
         }
     }
 }

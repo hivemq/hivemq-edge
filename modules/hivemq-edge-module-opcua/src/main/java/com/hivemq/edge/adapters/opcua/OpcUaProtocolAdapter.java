@@ -159,10 +159,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         log.info("Destroying OPC UA protocol adapter {}", adapterId);
         final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
         if (conn != null) {
-            CompletableFuture.runAsync(() -> {
+            try {
+                // Destroy synchronously to ensure all resources (threads, connections) are cleaned up
+                // before returning. This prevents resource leaks in tests and during adapter lifecycle.
                 conn.destroy();
                 log.info("Destroyed OPC UA protocol adapter {}", adapterId);
-            });
+            } catch (final Exception e) {
+                log.error("Error destroying OPC UA protocol adapter {}", adapterId, e);
+            }
         } else {
             log.info("Tried destroying stopped OPC UA protocol adapter {}", adapterId);
         }

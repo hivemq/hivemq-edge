@@ -174,10 +174,12 @@ public class HiveMQEdgeMain {
 
     public void stop() {
         stopGateway();
-        try {
-            Runtime.getRuntime().removeShutdownHook(shutdownThread);
-        } catch (final IllegalStateException ignored) {
-            //ignore
+        if (shutdownThread != null) {
+            try {
+                Runtime.getRuntime().removeShutdownHook(shutdownThread);
+            } catch (final IllegalStateException ignored) {
+                //ignore
+            }
         }
     }
 

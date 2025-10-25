@@ -39,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -95,13 +96,13 @@ public class ProtocolAdapterApiUtils {
                 true,
                 info.getCapabilities()
                         .stream()
-                        .filter(cap -> cap != ProtocolAdapterCapability.WRITE || adapterManager.writingEnabled())
+                        .filter(cap -> cap != ProtocolAdapterCapability.WRITE || adapterManager.isWritingEnabled())
                         .map(ProtocolAdapter.Capability::from)
                         .collect(Collectors.toSet()),
                 convertApiCategory(info.getCategory()),
-                info.getTags() != null ? info.getTags().stream().map(Enum::toString).toList() : null,
+                info.getTags() != null ? info.getTags().stream().map(Enum::toString).toList() : List.of(),
                 new ProtocolAdapterSchemaManager(objectMapper,
-                        adapterManager.writingEnabled() ?
+                        adapterManager.isWritingEnabled() ?
                                 info.configurationClassNorthAndSouthbound() :
                                 info.configurationClassNorthbound()).generateSchemaNode(),
                 getUiSchemaForAdapter(objectMapper, info));
@@ -152,10 +153,10 @@ public class ProtocolAdapterApiUtils {
                 getLogoUrl(module, configurationService),
                 module.getProvisioningLink() != null ? module.getProvisioningLink().getUrl() : null,
                 module.getAuthor(),
-                false,
+                Boolean.FALSE,
                 Set.of(),
                 null,
-                null,
+                List.of(),
                 null,
                 null);
     }
@@ -163,18 +164,18 @@ public class ProtocolAdapterApiUtils {
     private static @Nullable String getLogoUrl(
             final @NotNull Module module,
             final @NotNull ConfigurationService configurationService) {
-        String logoUrl = null;
         if (module.getLogoUrl() != null) {
-            logoUrl = module.getLogoUrl().getUrl();
+            final String logoUrl = module.getLogoUrl().getUrl();
             if (logoUrl != null) {
-                logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : logoUrl;
-                logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
+                return applyAbsoluteServerAddressInDeveloperMode(
+                        logoUrl.startsWith("/") ? "/module" + logoUrl : logoUrl,
+                        configurationService);
             }
         }
-        return logoUrl;
+        return null;
     }
 
-    private static @NotNull String getLogoUrl(
+    private static @Nullable String getLogoUrl(
             final @NotNull ProtocolAdapterInformation info,
             final @NotNull ConfigurationService configurationService,
             final @Nullable String xOriginalURI) {
@@ -196,12 +197,13 @@ public class ProtocolAdapterApiUtils {
                 }
             }
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
+            return logoUrl;
         } else {
             // although it is marked as not null it is input from outside (possible customer adapter),
             // so we should trust but validate and at least log.
             log.warn("Logo url for adapter '{}' was null. ", info.getDisplayName());
+            return null;
         }
-        return logoUrl;
     }
 
     @VisibleForTesting
@@ -226,14 +228,13 @@ public class ProtocolAdapterApiUtils {
      *
      * @param category the category enum to convert
      */
-    @org.jetbrains.annotations.VisibleForTesting
+    @VisibleForTesting
     public static @Nullable ProtocolAdapterCategory convertApiCategory(final @Nullable com.hivemq.adapter.sdk.api.ProtocolAdapterCategory category) {
-        if (category == null) {
-            return null;
-        }
-        return new ProtocolAdapterCategory(category.name(),
-                category.getDisplayName(),
-                category.getDescription(),
-                category.getImage());
+        return category != null ?
+                new ProtocolAdapterCategory(category.name(),
+                        category.getDisplayName(),
+                        category.getDescription(),
+                        category.getImage()) :
+                null;
     }
 }

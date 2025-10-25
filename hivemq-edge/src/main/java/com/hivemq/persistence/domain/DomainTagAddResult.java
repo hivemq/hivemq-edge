@@ -65,8 +65,7 @@ public class DomainTagAddResult {
     public enum DomainTagPutStatus {
         SUCCESS(),
         ALREADY_EXISTS(),
-        ADAPTER_MISSING()
+        ADAPTER_MISSING(),
+        ADAPTER_FAILED_TO_START(),
     }
-
-
 }

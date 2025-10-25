@@ -22,27 +22,31 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DatabaseConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(DatabaseConnection.class);
     private final @NotNull HikariConfig config;
-    private @Nullable HikariDataSource ds;
+    private final @NotNull AtomicBoolean connected = new AtomicBoolean(false);
+    private volatile @Nullable HikariDataSource ds;
 
-    public DatabaseConnection(final @NotNull DatabaseType dbType,
-                              final @NotNull String server,
-                              final @NotNull Integer port,
-                              final @NotNull String database,
-                              final @NotNull String username,
-                              final @NotNull String password,
-                              final int connectionTimeout,
-                              final boolean encrypt) {
+    public DatabaseConnection(
+            final @NotNull DatabaseType dbType,
+            final @NotNull String server,
+            final @NotNull Integer port,
+            final @NotNull String database,
+            final @NotNull String username,
+            final @NotNull String password,
+            final int connectionTimeout,
+            final boolean encrypt) {
 
         config = new HikariConfig();
 
-        switch (dbType){
+        switch (dbType) {
             case POSTGRESQL -> {
                 config.setDataSourceClassName("org.postgresql.ds.PGSimpleDataSource");
                 config.addDataSourceProperty("serverName", server);
@@ -77,13 +81,19 @@ public class DatabaseConnection {
                 if (encrypt) {
                     properties.setProperty("encrypt", "true");
                     properties.setProperty("trustServerCertificate", "true"); // Trust the server certificate implicitly
-                } else properties.setProperty("encrypt", "false");
+                } else {
+                    properties.setProperty("encrypt", "false");
+                }
                 config.setDataSourceProperties(properties);
             }
         }
     }
 
     public void connect() {
+        if (!connected.compareAndSet(false, true)) {
+            log.debug("Database connection already established, skipping connect");
+            return;  // Already connected
+        }
         log.debug("Connection settings : {}", config.toString());
         this.ds = new HikariDataSource(config);
     }
@@ -96,8 +106,21 @@ public class DatabaseConnection {
     }
 
     public void close() {
-        if (ds != null) {
-            ds.close();
+        if (!connected.compareAndSet(true, false)) {
+            log.debug("Database connection already closed or not connected");
+            return;  // Already closed or never connected
+        }
+        if (ds != null && !ds.isClosed()) {
+            log.debug("Closing HikariCP datasource");
+            try {
+                // Hard shutdown of HikariCP to ensure threads are terminated
+                ds.close();
+                log.debug("HikariCP datasource closed successfully");
+            } catch (final Exception e) {
+                log.error("Error closing HikariCP datasource", e);
+            } finally {
+                ds = null;  // Clear reference to allow GC
+            }
         }
     }
 }

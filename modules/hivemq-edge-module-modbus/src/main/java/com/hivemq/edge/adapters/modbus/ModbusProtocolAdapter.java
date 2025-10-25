@@ -139,7 +139,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
 
     @Override
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
-        if (startRequested.get() && stopRequested.compareAndSet(false, true)) {
+        if (stopRequested.compareAndSet(false, true)) {
             log.info("Stopping Modbus protocol adapter {}", adapterId);
             publishChangedDataOnlyHandler.clear();
             try {
@@ -166,6 +166,12 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
             } catch (final InterruptedException | ExecutionException e) {
                 log.error("Unable to stop the connection to the Modbus server", e);
             }
+        } else {
+            // stop() called when already stopped or stop in progress
+            // This can happen when stopping after a failed start
+            // Just complete successfully - adapter is already stopped
+            log.debug("Stop called for Modbus adapter {} but adapter is already stopped or stopping", adapterId);
+            output.stoppedSuccessfully();
         }
     }
 
