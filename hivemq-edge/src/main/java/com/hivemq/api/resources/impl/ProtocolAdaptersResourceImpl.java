@@ -70,6 +70,8 @@ import com.hivemq.edge.api.model.StatusTransitionCommand;
 import com.hivemq.edge.api.model.StatusTransitionResult;
 import com.hivemq.edge.api.model.TagSchema;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
+import com.hivemq.persistence.mappings.NorthboundMapping;
+import com.hivemq.persistence.mappings.SouthboundMapping;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
@@ -803,22 +805,31 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         missingTags));
             }
 
-            return configExtractor.getAdapterByAdapterId(adapterId)
-                    .map(cfg -> new ProtocolAdapterEntity(cfg.getAdapterId(),
-                            cfg.getProtocolId(),
-                            cfg.getConfigVersion(),
-                            cfg.getConfig(),
-                            converted,
-                            cfg.getSouthboundMappings(),
-                            cfg.getTags()))
-                    .map(newCfg -> {
-                        if (!configExtractor.updateAdapter(newCfg)) {
-                            return adapterCannotBeUpdatedError(adapterId);
-                        }
-                        log.info("Successfully updated northbound mappings for adapter '{}'.", adapterId);
-                        return Response.ok(northboundMappings).build();
-                    })
-                    .orElseGet(adapterNotUpdatedError(adapterId));
+            final List<NorthboundMapping> convertedMappings =
+                    converted.stream().map(NorthboundMappingEntity::toPersistence).toList();
+            if (protocolAdapterManager.updateNorthboundMappingsHotReload(adapterId, convertedMappings)) {
+                // update config persistence
+                return configExtractor.getAdapterByAdapterId(adapterId)
+                        .map(cfg -> new ProtocolAdapterEntity(cfg.getAdapterId(),
+                                cfg.getProtocolId(),
+                                cfg.getConfigVersion(),
+                                cfg.getConfig(),
+                                converted,
+                                cfg.getSouthboundMappings(),
+                                cfg.getTags()))
+                        .map(newCfg -> {
+                            if (!configExtractor.updateAdapter(newCfg)) {
+                                return adapterCannotBeUpdatedError(adapterId);
+                            }
+                            log.info("Successfully updated northbound mappings for adapter '{}' via hot-reload.",
+                                    adapterId);
+                            return Response.ok(northboundMappings).build();
+                        })
+                        .orElseGet(adapterNotUpdatedError(adapterId));
+            } else {
+                log.error("Hot-reload failed for northbound mappings on adapter '{}'", adapterId);
+                return errorResponse(new InternalServerError("Failed to hot-reload northbound mappings"));
+            }
         };
     }
 
@@ -841,22 +852,31 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         missingTags));
             }
 
-            return configExtractor.getAdapterByAdapterId(adapterId)
-                    .map(cfg -> new ProtocolAdapterEntity(cfg.getAdapterId(),
-                            cfg.getProtocolId(),
-                            cfg.getConfigVersion(),
-                            cfg.getConfig(),
-                            cfg.getNorthboundMappings(),
-                            converted,
-                            cfg.getTags()))
-                    .map(newCfg -> {
-                        if (!configExtractor.updateAdapter(newCfg)) {
-                            return adapterCannotBeUpdatedError(adapterId);
-                        }
-                        log.info("Successfully updated fromMappings for adapter '{}'.", adapterId);
-                        return Response.ok(southboundMappings).build();
-                    })
-                    .orElseGet(adapterNotUpdatedError(adapterId));
+            final List<SouthboundMapping> convertedMappings =
+                    converted.stream().map(entity -> entity.toPersistence(objectMapper)).toList();
+            if (protocolAdapterManager.updateSouthboundMappingsHotReload(adapterId, convertedMappings)) {
+                // update config persistence
+                return configExtractor.getAdapterByAdapterId(adapterId)
+                        .map(cfg -> new ProtocolAdapterEntity(cfg.getAdapterId(),
+                                cfg.getProtocolId(),
+                                cfg.getConfigVersion(),
+                                cfg.getConfig(),
+                                cfg.getNorthboundMappings(),
+                                converted,
+                                cfg.getTags()))
+                        .map(newCfg -> {
+                            if (!configExtractor.updateAdapter(newCfg)) {
+                                return adapterCannotBeUpdatedError(adapterId);
+                            }
+                            log.info("Successfully updated southbound mappings for adapter '{}' via hot-reload.",
+                                    adapterId);
+                            return Response.ok(southboundMappings).build();
+                        })
+                        .orElseGet(adapterNotUpdatedError(adapterId));
+            } else {
+                log.error("Hot-reload failed for southbound mappings on adapter '{}'", adapterId);
+                return errorResponse(new InternalServerError("Failed to hot-reload southbound mappings"));
+            }
         };
     }
 
@@ -911,11 +931,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     private @NotNull Adapter toAdapter(final @NotNull ProtocolAdapterWrapper value) {
         final String adapterId = value.getId();
-        final Map<String, Object> config = runWithContextLoader(
-                value.getAdapterFactory().getClass().getClassLoader(),
-                () -> {
-                    final Map<String, Object> cfg = value.getAdapterFactory()
-                            .unconvertConfigObject(objectMapper, value.getConfigObject());
+        final Map<String, Object> config =
+                runWithContextLoader(value.getAdapterFactory().getClass().getClassLoader(), () -> {
+                    final Map<String, Object> cfg =
+                            value.getAdapterFactory().unconvertConfigObject(objectMapper, value.getConfigObject());
                     cfg.put("id", value.getId());
                     return cfg;
                 });

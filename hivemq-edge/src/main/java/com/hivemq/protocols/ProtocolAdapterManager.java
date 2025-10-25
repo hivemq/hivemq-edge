@@ -40,6 +40,8 @@ import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImp
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
+import com.hivemq.persistence.mappings.NorthboundMapping;
+import com.hivemq.persistence.mappings.SouthboundMapping;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -305,26 +307,66 @@ public class ProtocolAdapterManager {
             if (alreadyExists) {
                 return DomainTagAddResult.failed(ALREADY_EXISTS, adapterId);
             }
-            deleteAdapterInternal(wrapper.getId());
+
             try {
-                tags.add(configConverter.domainTagToTag(wrapper.getProtocolAdapterInformation().getProtocolId(),
-                        domainTag));
-                startAsync(createAdapterInternal(new ProtocolAdapterConfig(wrapper.getId(),
-                        wrapper.getAdapterInformation().getProtocolId(),
-                        wrapper.getAdapterInformation().getCurrentConfigVersion(),
-                        wrapper.getConfigObject(),
-                        wrapper.getSouthboundMappings(),
-                        wrapper.getNorthboundMappings(),
-                        tags), versionProvider.getVersion())).get();
+                final var convertedTag =
+                        configConverter.domainTagToTag(wrapper.getProtocolAdapterInformation().getProtocolId(),
+                                domainTag);
+
+                // Use hot-reload to add tag without restarting the adapter
+                log.debug("Adding tag '{}' to adapter '{}' via hot-reload", domainTag.getTagName(), adapterId);
+                wrapper.addTagHotReload(convertedTag, eventService);
+
+                log.info("Successfully added tag '{}' to adapter '{}' via hot-reload",
+                        domainTag.getTagName(),
+                        adapterId);
                 return DomainTagAddResult.success();
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.error("Interrupted while async execution: ", e.getCause());
+            } catch (final IllegalStateException e) {
+                log.error("Cannot hot-reload tag, adapter not in correct state: {}", e.getMessage());
+                return DomainTagAddResult.failed(ADAPTER_FAILED_TO_START, adapterId);
             } catch (final Throwable e) {
-                log.error("Exception happened while async execution: ", e.getCause());
+                log.error("Exception happened while adding tag via hot-reload: ", e);
+                return DomainTagAddResult.failed(ADAPTER_FAILED_TO_START, adapterId);
             }
-            return DomainTagAddResult.failed(ADAPTER_FAILED_TO_START, adapterId);
         }).orElse(DomainTagAddResult.failed(ADAPTER_MISSING, adapterId));
+    }
+
+    public boolean updateNorthboundMappingsHotReload(
+            final @NotNull String adapterId,
+            final @NotNull List<NorthboundMapping> northboundMappings) {
+        return getProtocolAdapterWrapperByAdapterId(adapterId).map(wrapper -> {
+            try {
+                log.debug("Updating northbound mappings for adapter '{}' via hot-reload", adapterId);
+                wrapper.updateMappingsHotReload(northboundMappings, null, eventService);
+                log.info("Successfully updated northbound mappings for adapter '{}' via hot-reload", adapterId);
+                return true;
+            } catch (final IllegalStateException e) {
+                log.error("Cannot hot-reload northbound mappings, adapter not in correct state: {}", e.getMessage());
+                return false;
+            } catch (final Throwable e) {
+                log.error("Exception happened while updating northbound mappings via hot-reload: ", e);
+                return false;
+            }
+        }).orElse(false);
+    }
+
+    public boolean updateSouthboundMappingsHotReload(
+            final @NotNull String adapterId,
+            final @NotNull List<SouthboundMapping> southboundMappings) {
+        return getProtocolAdapterWrapperByAdapterId(adapterId).map(wrapper -> {
+            try {
+                log.debug("Updating southbound mappings for adapter '{}' via hot-reload", adapterId);
+                wrapper.updateMappingsHotReload(null, southboundMappings, eventService);
+                log.info("Successfully updated southbound mappings for adapter '{}' via hot-reload", adapterId);
+                return true;
+            } catch (final IllegalStateException e) {
+                log.error("Cannot hot-reload southbound mappings, adapter not in correct state: {}", e.getMessage());
+                return false;
+            } catch (final Throwable e) {
+                log.error("Exception happened while updating southbound mappings via hot-reload: ", e);
+                return false;
+            }
+        }).orElse(false);
     }
 
     public @NotNull List<DomainTag> getDomainTags() {
