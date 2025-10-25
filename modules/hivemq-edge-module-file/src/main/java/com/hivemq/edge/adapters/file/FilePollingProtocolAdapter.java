@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
@@ -48,6 +49,7 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull List<FileTag> tags;
+    private final @NotNull AtomicBoolean started;
 
     public FilePollingProtocolAdapter(
             final @NotNull String adapterId,
@@ -58,6 +60,7 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterConfig = input.getConfig();
         this.tags = input.getTags().stream().map(tag -> (FileTag)tag).toList();
         this.protocolAdapterState = input.getProtocolAdapterState();
+        this.started = new AtomicBoolean(false);
     }
 
     @Override
@@ -68,11 +71,17 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
     @Override
     public void start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+        if (!started.compareAndSet(false, true)) {
+            LOG.debug("File adapter {} already started, returning success", adapterId);
+            output.startedSuccessfully();
+            return;
+        }
         // any setup which should be done before the adapter starts polling comes here.
         try {
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
             output.startedSuccessfully();
         } catch (final Exception e) {
+            started.set(false);
             output.failStart(e, null);
         }
     }
@@ -81,6 +90,11 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
     public void stop(
             final @NotNull ProtocolAdapterStopInput protocolAdapterStopInput,
             final @NotNull ProtocolAdapterStopOutput protocolAdapterStopOutput) {
+        if (!started.compareAndSet(true, false)) {
+            LOG.debug("File adapter {} already stopped, returning success", adapterId);
+            protocolAdapterStopOutput.stoppedSuccessfully();
+            return;
+        }
         protocolAdapterStopOutput.stoppedSuccessfully();
     }
 
