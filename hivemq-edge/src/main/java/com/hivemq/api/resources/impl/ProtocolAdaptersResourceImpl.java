@@ -578,21 +578,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     return adapterNotFoundError(adapterId).get();
                 }) :
                 errorResponse(new ConfigWritingDisabled());
-
-        //TODO
-
-//        case ALREADY_USED_BY_ANOTHER_ADAPTER:
-//        //noinspection DataFlowIssue cant be null here.
-//        final @NotNull String tagName = domainTagUpdateResult.getErrorMessage();
-//        return ErrorResponseUtil.errorResponse(new AlreadyExistsError("The tag '" +
-//                tagName +
-//                "' cannot be created since another item already exists with the same id."));
     }
 
     @Override
     public @NotNull Response getDomainTags() {
         final List<com.hivemq.persistence.domain.DomainTag> domainTags = protocolAdapterManager.getDomainTags();
-        // empty list is also 200 as discussed.
         return Response.ok(new DomainTagList().items(domainTags.stream()
                 .map(com.hivemq.persistence.domain.DomainTag::toModel)
                 .toList())).build();
@@ -818,6 +808,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                                 cfg.getSouthboundMappings(),
                                 cfg.getTags()))
                         .map(newCfg -> {
+                            // Enable skip flag to prevent refresh() from restarting adapter
+                            // The flag will be cleared by refresh() when it checks it
+                            ProtocolAdapterManager.enableSkipNextRefresh();
                             if (!configExtractor.updateAdapter(newCfg)) {
                                 return adapterCannotBeUpdatedError(adapterId);
                             }
@@ -865,6 +858,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                                 converted,
                                 cfg.getTags()))
                         .map(newCfg -> {
+                            // Enable skip flag to prevent refresh() from restarting adapter
+                            // The flag will be cleared by refresh() when it checks it
+                            ProtocolAdapterManager.enableSkipNextRefresh();
                             if (!configExtractor.updateAdapter(newCfg)) {
                                 return adapterCannotBeUpdatedError(adapterId);
                             }

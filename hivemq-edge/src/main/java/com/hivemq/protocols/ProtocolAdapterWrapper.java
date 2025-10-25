@@ -80,6 +80,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     private final @NotNull TagManager tagManager;
     private final @NotNull List<NorthboundTagConsumer> consumers;
     private final @NotNull ReentrantLock operationLock;
+    private final @NotNull Object adapterLock; // protects underlying adapter start/stop calls
     private final @NotNull ExecutorService sharedAdapterExecutor;
     protected volatile @Nullable Long lastStartAttemptTime;
     private @Nullable CompletableFuture<Void> currentStartFuture;
@@ -114,6 +115,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         this.consumers = new CopyOnWriteArrayList<>();
         this.operationLock = new ReentrantLock();
         this.sharedAdapterExecutor = sharedAdapterExecutor;
+        this.adapterLock = new Object();
 
         if (log.isDebugEnabled()) {
             registerStateTransitionListener(state -> log.debug(
@@ -375,8 +377,17 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     }
 
     public void addTagHotReload(final @NotNull Tag tag, final @NotNull EventService eventService) {
+        // Wait for any in-progress operations before proceeding
+        waitForOperationsToComplete();
+
         operationLock.lock();
         try {
+            if (startOperationInProgress || stopOperationInProgress) {
+                throw new IllegalStateException("Cannot hot-reload tag for adapter '" +
+                        getId() +
+                        "': operation started during wait");
+            }
+
             // Update config with new tag regardless of adapter state
             final List<Tag> updatedTags = new ArrayList<>(config.getTags());
             updatedTags.add(tag);
@@ -407,9 +418,18 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
 
     public void updateMappingsHotReload(
             final @Nullable List<NorthboundMapping> northboundMappings,
-            final @Nullable List<SouthboundMapping> southboundMappings) {
+            final @Nullable List<SouthboundMapping> southboundMappings,
+            final @NotNull EventService eventService) {
+        waitForOperationsToComplete();
+
         operationLock.lock();
         try {
+            if (startOperationInProgress || stopOperationInProgress) {
+                throw new IllegalStateException("Cannot hot-reload mappings for adapter '" +
+                        getId() +
+                        "': operation started during wait");
+            }
+
             if (northboundMappings != null) {
                 config.setNorthboundMappings(northboundMappings);
             }
@@ -420,10 +440,16 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                 log.debug("Adapter '{}' not started yet, only updating config for mappings", getId());
                 return;
             }
-            log.debug("Stopping existing consumers for adapter '{}'", getId());
-            consumers.forEach(tagManager::removeConsumer);
-            consumers.clear();
+
+            // Stop existing consumers and polling
             if (northboundMappings != null) {
+                log.debug("Stopping existing consumers and polling for adapter '{}'", getId());
+                consumers.forEach(tagManager::removeConsumer);
+                consumers.clear();
+
+                // Stop polling to restart with new mappings
+                stopPolling();
+
                 log.debug("Updating northbound mappings for adapter '{}'", getId());
                 northboundMappings.stream()
                         .map(mapping -> northboundConsumerFactory.build(this, mapping, protocolAdapterMetricsService))
@@ -431,20 +457,72 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                             tagManager.addConsumer(consumer);
                             consumers.add(consumer);
                         });
+
+                // Restart polling with new consumers
+                log.debug("Restarting polling for adapter '{}'", getId());
+                if (isBatchPolling()) {
+                    log.debug("Schedule batch polling for protocol adapter with id '{}'", getId());
+                    pollingService.schedulePolling(new PerAdapterSampler(this, eventService, tagManager));
+                }
+                if (isPolling()) {
+                    config.getTags()
+                            .forEach(tag -> pollingService.schedulePolling(new PerContextSampler(this,
+                                    new PollingContextWrapper("unused",
+                                            tag.getName(),
+                                            MessageHandlingOptions.MQTTMessagePerTag,
+                                            false,
+                                            false,
+                                            List.of(),
+                                            1,
+                                            -1),
+                                    eventService,
+                                    tagManager)));
+                }
             }
+
             if (southboundMappings != null && isWriting()) {
                 log.debug("Updating southbound mappings for adapter '{}'", getId());
                 final StateEnum currentSouthboundState = currentState().southbound();
-                if (currentSouthboundState == StateEnum.CONNECTED) {
+                final boolean wasConnected = (currentSouthboundState == StateEnum.CONNECTED);
+                if (wasConnected) {
+                    log.debug("Stopping southbound for adapter '{}' before hot-reload", getId());
                     stopWriting();
-                }
-                if (currentSouthboundState == StateEnum.CONNECTED) {
+                    log.debug("Restarting southbound for adapter '{}' after hot-reload", getId());
                     startSouthbound();
                 }
             }
             log.info("Successfully updated mappings for adapter '{}' via hot-reload", getId());
         } finally {
             operationLock.unlock();
+        }
+    }
+
+    private void waitForOperationsToComplete() {
+        CompletableFuture<Void> futureToWait = null;
+        operationLock.lock();
+        try {
+            if (startOperationInProgress) {
+                log.debug("Adapter '{}': Waiting for start operation to complete before hot-reload", getId());
+                futureToWait = currentStartFuture;
+            } else if (stopOperationInProgress) {
+                log.debug("Adapter '{}': Waiting for stop operation to complete before hot-reload", getId());
+                futureToWait = currentStopFuture;
+            }
+        } finally {
+            operationLock.unlock();
+        }
+
+        if (futureToWait != null) {
+            try {
+                // Wait with a timeout to prevent indefinite blocking
+                futureToWait.get(30, TimeUnit.SECONDS);
+                log.debug("Adapter '{}': Operation completed, proceeding with hot-reload", getId());
+            } catch (final TimeoutException e) {
+                log.warn("Adapter '{}': Operation did not complete within 30 seconds, proceeding with hot-reload anyway",
+                        getId());
+            } catch (final Exception e) {
+                log.warn("Adapter '{}': Operation completed with error, but proceeding with hot-reload", getId(), e);
+            }
         }
     }
 
@@ -548,10 +626,15 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
         return () -> {
             startAdapter(); // start FSM
             final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
-            try {
-                adapter.start(new ProtocolAdapterStartInputImpl(moduleServices), output);
-            } catch (final Throwable t) {
-                output.getStartFuture().completeExceptionally(t);
+            synchronized (adapterLock) {
+                log.debug("Adapter '{}': Calling adapter.start() in thread '{}'",
+                        getId(),
+                        Thread.currentThread().getName());
+                try {
+                    adapter.start(new ProtocolAdapterStartInputImpl(moduleServices), output);
+                } catch (final Throwable t) {
+                    output.getStartFuture().completeExceptionally(t);
+                }
             }
             return output.getStartFuture();
         };
@@ -602,11 +685,14 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
 
         // Initiate adapter stop
         final var output = new ProtocolAdapterStopOutputImpl();
-        try {
-            adapter.stop(new ProtocolAdapterStopInputImpl(), output);
-        } catch (final Throwable throwable) {
-            log.error("Adapter '{}': Exception during adapter.stop()", adapter.getId(), throwable);
-            output.getOutputFuture().completeExceptionally(throwable);
+        synchronized (adapterLock) {
+            log.debug("Adapter '{}': Calling adapter.stop() in thread '{}'", getId(), Thread.currentThread().getName());
+            try {
+                adapter.stop(new ProtocolAdapterStopInputImpl(), output);
+            } catch (final Throwable throwable) {
+                log.error("Adapter '{}': Exception during adapter.stop()", adapter.getId(), throwable);
+                output.getOutputFuture().completeExceptionally(throwable);
+            }
         }
 
         log.debug("Adapter '{}': Waiting for stop output future", adapter.getId());

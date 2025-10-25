@@ -76,6 +76,11 @@ import static java.util.concurrent.CompletableFuture.failedFuture;
 public class ProtocolAdapterManager {
     private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
 
+    // ThreadLocal flag to prevent refresh() from restarting adapters during hot-reload config updates
+    // AtomicBoolean to skip next refresh() call during hot-reload config updates
+    // Must be atomic (not ThreadLocal) because refresh() runs in a different thread (refreshExecutor)
+    private static final @NotNull AtomicBoolean skipRefreshForAdapter = new AtomicBoolean(false);
+
     private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters;
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull ModuleServicesImpl moduleServices;
@@ -173,6 +178,19 @@ public class ProtocolAdapterManager {
         }
     }
 
+    /**
+     * Enables skipping the next refresh operation for hot-reload config updates.
+     * This prevents the refresh() callback from restarting adapters when the config
+     * change originates from a hot-reload operation.
+     */
+    public static void enableSkipNextRefresh() {
+        skipRefreshForAdapter.set(true);
+    }
+
+    public static void disableSkipNextRefresh() {
+        skipRefreshForAdapter.set(false);
+    }
+
     public void start() {
         if (log.isDebugEnabled()) {
             log.debug("Starting adapters");
@@ -182,6 +200,12 @@ public class ProtocolAdapterManager {
 
     public void refresh(final @NotNull List<ProtocolAdapterEntity> configs) {
         refreshExecutor.submit(() -> {
+            // Atomically check and clear skip flag (hot-reload in progress)
+            if (skipRefreshForAdapter.getAndSet(false)) {
+                log.debug("Skipping refresh because hot-reload config update is in progress");
+                return;
+            }
+
             log.info("Refreshing adapters");
 
             final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configs.stream()
@@ -355,7 +379,7 @@ public class ProtocolAdapterManager {
             final @NotNull List<NorthboundMapping> northboundMappings) {
         return getProtocolAdapterWrapperByAdapterId(adapterId).map(wrapper -> updateMappingsHotReload(wrapper,
                 "northbound",
-                () -> wrapper.updateMappingsHotReload(northboundMappings, null))).orElse(false);
+                () -> wrapper.updateMappingsHotReload(northboundMappings, null, eventService))).orElse(false);
     }
 
     public boolean updateSouthboundMappingsHotReload(
@@ -363,7 +387,7 @@ public class ProtocolAdapterManager {
             final @NotNull List<SouthboundMapping> southboundMappings) {
         return getProtocolAdapterWrapperByAdapterId(adapterId).map(wrapper -> updateMappingsHotReload(wrapper,
                 "southbound",
-                () -> wrapper.updateMappingsHotReload(null, southboundMappings))).orElse(false);
+                () -> wrapper.updateMappingsHotReload(null, southboundMappings, eventService))).orElse(false);
     }
 
     public @NotNull List<DomainTag> getDomainTags() {
