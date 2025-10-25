@@ -45,13 +45,14 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
     public static final int TIMEOUT = 30;
     private static final @NotNull Logger log = LoggerFactory.getLogger(DatabasesPollingProtocolAdapter.class);
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private final @NotNull DatabasesAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -59,6 +60,7 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
     private final @NotNull List<Tag> tags;
     private final @NotNull DatabaseConnection databaseConnection;
     private final @NotNull AdapterFactories adapterFactories;
+    private final @NotNull AtomicBoolean started;
 
     public DatabasesPollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -69,9 +71,8 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.tags = input.getTags();
         this.adapterFactories = input.adapterFactories();
-
+        this.started = new AtomicBoolean(false);
         log.debug("Building connection string");
-
         this.databaseConnection = new DatabaseConnection(adapterConfig.getType(),
                 adapterConfig.getServer(),
                 adapterConfig.getPort(),
@@ -91,46 +92,62 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
     public void start(
             final @NotNull ProtocolAdapterStartInput input,
             final @NotNull ProtocolAdapterStartOutput output) {
-        log.debug("Loading PostgreSQL Driver");
-        try {
-            Class.forName("org.postgresql.Driver");
-        } catch (final ClassNotFoundException e) {
-            output.failStart(e, null);
+        if (!started.compareAndSet(false, true)) {
+            log.debug("Database adapter {} already started, returning success", adapterId);
+            output.startedSuccessfully();
             return;
         }
 
-        log.debug("Loading MariaDB Driver (for MySQL)");
         try {
-            Class.forName("org.mariadb.jdbc.Driver");
-        } catch (final ClassNotFoundException e) {
-            output.failStart(e, null);
-            return;
-        }
+            log.debug("Loading PostgreSQL Driver");
+            try {
+                Class.forName("org.postgresql.Driver");
+            } catch (final ClassNotFoundException e) {
+                output.failStart(e, null);
+                started.set(false);
+                return;
+            }
 
-        log.debug("Loading MS SQL Driver");
-        try {
-            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDataSource");
-        } catch (final ClassNotFoundException e) {
-            output.failStart(e, null);
-            return;
-        }
+            log.debug("Loading MariaDB Driver (for MySQL)");
+            try {
+                Class.forName("org.mariadb.jdbc.Driver");
+            } catch (final ClassNotFoundException e) {
+                output.failStart(e, null);
+                started.set(false);
+                return;
+            }
 
+            log.debug("Loading MS SQL Driver");
+            try {
+                Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDataSource");
+            } catch (final ClassNotFoundException e) {
+                output.failStart(e, null);
+                started.set(false);
+                return;
+            }
 
-        databaseConnection.connect();
+            databaseConnection.connect();
 
-        try {
-            log.debug("Starting connection to the database instance");
-            if (databaseConnection.getConnection().isValid(TIMEOUT)) {
-                output.startedSuccessfully();
-                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
-            } else {
-                output.failStart(new Throwable("Error connecting database, please check the configuration"),
-                        "Error connecting database, please check the configuration");
+            try {
+                log.debug("Starting connection to the database instance");
+                if (databaseConnection.getConnection().isValid(TIMEOUT)) {
+                    output.startedSuccessfully();
+                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+                } else {
+                    output.failStart(new Throwable("Error connecting database, please check the configuration"),
+                            "Error connecting database, please check the configuration");
+                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+                    started.set(false);
+                }
+            } catch (final Exception e) {
+                output.failStart(e, null);
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+                started.set(false);
             }
         } catch (final Exception e) {
+            log.error("Unexpected error during adapter start", e);
             output.failStart(e, null);
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            started.set(false);
         }
     }
 
@@ -138,6 +155,11 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
     public void stop(
             final @NotNull ProtocolAdapterStopInput protocolAdapterStopInput,
             final @NotNull ProtocolAdapterStopOutput protocolAdapterStopOutput) {
+        if (!started.compareAndSet(true, false)) {
+            log.debug("Database adapter {} already stopped, returning success", adapterId);
+            protocolAdapterStopOutput.stoppedSuccessfully();
+            return;
+        }
         databaseConnection.close();
         protocolAdapterStopOutput.stoppedSuccessfully();
     }
@@ -247,5 +269,4 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
     public int getMaxPollingErrorsBeforeRemoval() {
         return adapterConfig.getMaxPollingErrorsBeforeRemoval();
     }
-
 }

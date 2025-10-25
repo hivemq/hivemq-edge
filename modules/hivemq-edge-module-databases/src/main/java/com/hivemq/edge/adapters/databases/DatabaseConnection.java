@@ -26,11 +26,13 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DatabaseConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(DatabaseConnection.class);
     private final @NotNull HikariConfig config;
-    private @Nullable HikariDataSource ds;
+    private final @NotNull AtomicBoolean connected = new AtomicBoolean(false);
+    private volatile @Nullable HikariDataSource ds;
 
     public DatabaseConnection(
             final @NotNull DatabaseType dbType,
@@ -88,6 +90,10 @@ public class DatabaseConnection {
     }
 
     public void connect() {
+        if (!connected.compareAndSet(false, true)) {
+            log.debug("Database connection already established, skipping connect");
+            return;  // Already connected
+        }
         log.debug("Connection settings : {}", config.toString());
         this.ds = new HikariDataSource(config);
     }
@@ -100,6 +106,10 @@ public class DatabaseConnection {
     }
 
     public void close() {
+        if (!connected.compareAndSet(true, false)) {
+            log.debug("Database connection already closed or not connected");
+            return;  // Already closed or never connected
+        }
         if (ds != null && !ds.isClosed()) {
             log.debug("Closing HikariCP datasource");
             try {
