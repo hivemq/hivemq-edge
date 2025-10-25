@@ -85,7 +85,8 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
         // This is can be sent through the API to give an indication of the
         // status of an adapter runtime.
         lastErrorMessage.set(errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage);
-        if (sendEvent) {
+        // Don't send error events if the adapter is already stopped
+        if (sendEvent && runtimeStatus.get() != RuntimeStatus.STOPPED) {
             final var eventBuilder = eventService.createAdapterEvent(adapterId, protocolId)
                     .withSeverity(EventImpl.SEVERITY.ERROR)
                     .withMessage(String.format("Adapter '%s' encountered an error.", adapterId));
