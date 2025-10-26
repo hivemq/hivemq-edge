@@ -157,7 +157,20 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                         .map(InternalWritingContextImpl::new)
                         .collect(Collectors.<InternalWritingContext>toList()));
         if (started) {
-            log.info("Southbound started for adapter {}", adapter.getId());
+            // Allow time for writing capabilities to initialize after hot-reload
+            // This prevents data loss by ensuring ReactiveWriters complete MQTT subscription
+            // and are ready to process messages before hot-reload completes.
+            // TODO: Replace with proper event-based initialization by:
+            //       1. Making ReactiveWriter.start() return CompletableFuture<Void>
+            //       2. Having ProtocolAdapterWritingServiceImpl.startWriting() wait on all futures
+            //       3. Removing this sleep in favor of the future-based approach
+            try {
+                Thread.sleep(1000);
+                log.info("Southbound started for adapter {}", adapter.getId());
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("Interrupted while waiting for southbound initialization after hot-reload for adapter '{}'", getId());
+            }
             transitionSouthboundState(StateEnum.CONNECTED);
         } else {
             log.error("Southbound start failed for adapter {}", adapter.getId());

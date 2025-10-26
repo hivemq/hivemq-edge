@@ -199,6 +199,12 @@ public class ProtocolAdapterManager {
     }
 
     public void refresh(final @NotNull List<ProtocolAdapterEntity> configs) {
+        // Don't submit refresh if shutdown initiated or executor is shutting down
+        if (shutdownInitiated.get() || refreshExecutor.isShutdown()) {
+            log.debug("Skipping refresh because manager is shutting down");
+            return;
+        }
+
         refreshExecutor.submit(() -> {
             // Atomically check and clear skip flag (hot-reload in progress)
             if (skipRefreshForAdapter.getAndSet(false)) {
@@ -264,18 +270,33 @@ public class ProtocolAdapterManager {
                         log.error(
                                 "Existing adapters were modified while a refresh was ongoing, adapter with name '{}' was deleted and could not be updated",
                                 name);
+                        return;
                     }
-                    if (wrapper != null && !protocolAdapterConfigs.get(name).equals(wrapper.getConfig())) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Updating adapter '{}'", name);
+
+                    if (!protocolAdapterConfigs.get(name).equals(wrapper.getConfig())) {
+                        final boolean isStarted =
+                                wrapper.getRuntimeStatus() == ProtocolAdapterState.RuntimeStatus.STARTED;
+
+                        if (!isStarted) {
+                            // Adapter is stopped - update config by recreating wrapper but don't start
+                            if (log.isDebugEnabled()) {
+                                log.debug("Updating config for stopped adapter '{}' without starting", name);
+                            }
+                            deleteAdapterInternal(name);
+                            createAdapterInternal(protocolAdapterConfigs.get(name), versionProvider.getVersion());
+                        } else {
+                            // Adapter is started - do full stop->delete->create->start cycle
+                            if (log.isDebugEnabled()) {
+                                log.debug("Updating adapter '{}'", name);
+                            }
+                            stopAsync(name).thenApply(v -> {
+                                        deleteAdapterInternal(name);
+                                        return null;
+                                    })
+                                    .thenCompose(ignored -> startAsync(createAdapterInternal(protocolAdapterConfigs.get(
+                                            name), versionProvider.getVersion())))
+                                    .get();
                         }
-                        stopAsync(name).thenApply(v -> {
-                                    deleteAdapterInternal(name);
-                                    return null;
-                                })
-                                .thenCompose(ignored -> startAsync(createAdapterInternal(protocolAdapterConfigs.get(name),
-                                        versionProvider.getVersion())))
-                                .get();
                     } else {
                         if (log.isDebugEnabled()) {
                             log.debug("Not-updating adapter '{}' since the config is unchanged", name);
