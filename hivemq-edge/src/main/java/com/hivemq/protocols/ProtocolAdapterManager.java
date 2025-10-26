@@ -228,7 +228,10 @@ public class ProtocolAdapterManager {
                     if (log.isDebugEnabled()) {
                         log.debug("Deleting adapter '{}'", name);
                     }
-                    stopAsync(name).whenComplete((ignored, t) -> deleteAdapterInternal(name)).get();
+                    stopAsync(name).handle((result, throwable) -> {
+                        deleteAdapterInternal(name);
+                        return null;
+                    }).get();
                 } catch (final InterruptedException e) {
                     Thread.currentThread().interrupt();
                     failedAdapters.add(name);
