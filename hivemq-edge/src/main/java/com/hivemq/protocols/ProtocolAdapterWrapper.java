@@ -86,6 +86,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
     private @Nullable CompletableFuture<Void> currentStartFuture;
     private @Nullable CompletableFuture<Void> currentStopFuture;
     private @Nullable Consumer<ProtocolAdapterState.ConnectionStatus> connectionStatusListener;
+    private volatile @Nullable ModuleServices lastModuleServices; // Stored for hot-reload operations
     private volatile boolean startOperationInProgress;
     private volatile boolean stopOperationInProgress;
 
@@ -169,7 +170,8 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                 log.info("Southbound started for adapter {}", adapter.getId());
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
-                log.warn("Interrupted while waiting for southbound initialization after hot-reload for adapter '{}'", getId());
+                log.warn("Interrupted while waiting for southbound initialization after hot-reload for adapter '{}'",
+                        getId());
             }
             transitionSouthboundState(StateEnum.CONNECTED);
         } else {
@@ -213,6 +215,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
 
             startOperationInProgress = true;
             lastStartAttemptTime = System.currentTimeMillis();
+            lastModuleServices = moduleServices; // Store for hot-reload operations
             currentStartFuture =
                     CompletableFuture.supplyAsync(startProtocolAdapter(moduleServices), sharedAdapterExecutor)
                             .thenCompose(Function.identity())
@@ -411,17 +414,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
             }
             if (isPolling()) {
                 log.debug("Starting polling for new tag '{}' on adapter '{}'", tag.getName(), getId());
-                pollingService.schedulePolling(new PerContextSampler(this,
-                        new PollingContextWrapper("unused",
-                                tag.getName(),
-                                MessageHandlingOptions.MQTTMessagePerTag,
-                                false,
-                                false,
-                                List.of(),
-                                1,
-                                -1),
-                        eventService,
-                        tagManager));
+                schedulePollingForTag(tag, eventService);
             }
             log.info("Successfully added tag '{}' to adapter '{}' via hot-reload", tag.getName(), getId());
         } finally {
@@ -471,25 +464,18 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                             consumers.add(consumer);
                         });
 
-                // Restart polling with new consumers
-                log.debug("Restarting polling for adapter '{}'", getId());
-                if (isBatchPolling()) {
-                    log.debug("Schedule batch polling for protocol adapter with id '{}'", getId());
-                    pollingService.schedulePolling(new PerAdapterSampler(this, eventService, tagManager));
-                }
-                if (isPolling()) {
-                    config.getTags()
-                            .forEach(tag -> pollingService.schedulePolling(new PerContextSampler(this,
-                                    new PollingContextWrapper("unused",
-                                            tag.getName(),
-                                            MessageHandlingOptions.MQTTMessagePerTag,
-                                            false,
-                                            false,
-                                            List.of(),
-                                            1,
-                                            -1),
-                                    eventService,
-                                    tagManager)));
+                // Restart data flow with new consumers
+                // For polling adapters: schedule polling
+                // For subscription-based adapters: reconnect to restart subscriptions
+                final StateEnum currentNorthboundState = currentState().northbound();
+                final boolean wasConnected = (currentNorthboundState == StateEnum.CONNECTED);
+                if (isPolling() || isBatchPolling()) {
+                    log.debug("Restarting polling for adapter '{}'", getId());
+                    schedulePollingForAllTags(eventService);
+                } else if (wasConnected) {
+                    log.debug("Reconnecting subscription-based adapter '{}' after hot-reload", getId());
+                    stopAdapterConnection();
+                    startAdapterConnection();
                 }
             }
 
@@ -559,24 +545,7 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
                     });
 
             // start polling
-            if (isBatchPolling()) {
-                log.debug("Schedule batch polling for protocol adapter with id '{}'", getId());
-                pollingService.schedulePolling(new PerAdapterSampler(this, eventService, tagManager));
-            }
-            if (isPolling()) {
-                config.getTags()
-                        .forEach(tag -> pollingService.schedulePolling(new PerContextSampler(this,
-                                new PollingContextWrapper("unused",
-                                        tag.getName(),
-                                        MessageHandlingOptions.MQTTMessagePerTag,
-                                        false,
-                                        false,
-                                        List.of(),
-                                        1,
-                                        -1),
-                                eventService,
-                                tagManager)));
-            }
+            schedulePollingForAllTags(eventService);
 
             // FSM's accept() method handles:
             // 1. Transitioning northbound adapter
@@ -631,6 +600,57 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
             } catch (final Exception e) {
                 log.error("Error stopping writing for adapter '{}'", getId(), e);
             }
+        }
+    }
+
+    private void stopAdapterConnection() {
+        log.debug("Stopping adapter connection for adapter '{}' during hot-reload", getId());
+        try {
+            // Transition northbound state to indicate shutdown in progress
+            final StateEnum currentNorthboundState = currentState().northbound();
+            if (currentNorthboundState == StateEnum.CONNECTED) {
+                transitionNorthboundState(StateEnum.DISCONNECTING);
+            }
+
+            synchronized (adapterLock) {
+                adapter.stop(new ProtocolAdapterStopInputImpl(), new ProtocolAdapterStopOutputImpl());
+            }
+
+            if (currentNorthboundState == StateEnum.CONNECTED || currentNorthboundState == StateEnum.DISCONNECTING) {
+                transitionNorthboundState(StateEnum.DISCONNECTED);
+            }
+            log.debug("Adapter connection stopped successfully for adapter '{}'", getId());
+        } catch (final IllegalStateException stateException) {
+            // State transition failed, log but continue
+            log.warn("State transition failed while stopping adapter connection for '{}': {}",
+                    getId(),
+                    stateException.getMessage());
+        } catch (final Exception e) {
+            log.error("Error stopping adapter connection for '{}'", getId(), e);
+        }
+    }
+
+    private void startAdapterConnection() {
+        log.debug("Starting adapter connection for adapter '{}' during hot-reload", getId());
+        try {
+            transitionNorthboundState(StateEnum.CONNECTING);
+
+            final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
+            synchronized (adapterLock) {
+                adapter.start(new ProtocolAdapterStartInputImpl(lastModuleServices), output);
+            }
+
+            // Wait for the start to complete (with timeout)
+            output.getStartFuture().get(30, TimeUnit.SECONDS);
+
+            // Connection status will transition to CONNECTED via the connection status listener
+            log.info("Adapter connection restarted successfully for adapter '{}'", getId());
+        } catch (final TimeoutException e) {
+            log.error("Timeout while restarting adapter connection for '{}'", getId(), e);
+            transitionNorthboundState(StateEnum.ERROR);
+        } catch (final Exception e) {
+            log.error("Error restarting adapter connection for '{}'", getId(), e);
+            transitionNorthboundState(StateEnum.ERROR);
         }
     }
 
@@ -710,5 +730,33 @@ public class ProtocolAdapterWrapper extends ProtocolAdapterFSM {
 
         log.debug("Adapter '{}': Waiting for stop output future", adapter.getId());
         return output.getOutputFuture();
+    }
+
+    private @NotNull PollingContextWrapper createPollingContextForTag(final @NotNull Tag tag) {
+        return new PollingContextWrapper("unused",
+                tag.getName(),
+                MessageHandlingOptions.MQTTMessagePerTag,
+                false,
+                false,
+                List.of(),
+                1,
+                -1);
+    }
+
+    private void schedulePollingForTag(final @NotNull Tag tag, final @NotNull EventService eventService) {
+        pollingService.schedulePolling(new PerContextSampler(this,
+                createPollingContextForTag(tag),
+                eventService,
+                tagManager));
+    }
+
+    private void schedulePollingForAllTags(final @NotNull EventService eventService) {
+        if (isBatchPolling()) {
+            log.debug("Schedule batch polling for protocol adapter with id '{}'", getId());
+            pollingService.schedulePolling(new PerAdapterSampler(this, eventService, tagManager));
+        }
+        if (isPolling()) {
+            config.getTags().forEach(tag -> schedulePollingForTag(tag, eventService));
+        }
     }
 }

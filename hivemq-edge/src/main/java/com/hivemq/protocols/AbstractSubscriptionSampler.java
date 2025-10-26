@@ -48,7 +48,6 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     protected final @NotNull ProtocolAdapterWrapper protocolAdapter;
     protected final @NotNull EventService eventService;
 
-
     public AbstractSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper protocolAdapter, final @NotNull EventService eventService) {
         this.protocolAdapter = protocolAdapter;

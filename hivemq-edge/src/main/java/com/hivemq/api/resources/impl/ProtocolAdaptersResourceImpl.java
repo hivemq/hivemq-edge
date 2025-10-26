@@ -808,10 +808,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                                 cfg.getSouthboundMappings(),
                                 cfg.getTags()))
                         .map(newCfg -> {
-                            // Enable skip flag to prevent refresh() from restarting adapter
-                            // The flag will be cleared by refresh() when it checks it
-                            ProtocolAdapterManager.enableSkipNextRefresh();
-                            if (!configExtractor.updateAdapter(newCfg)) {
+                            if (!configExtractor.updateAdapter(newCfg, false)) {
                                 return adapterCannotBeUpdatedError(adapterId);
                             }
                             log.info("Successfully updated northbound mappings for adapter '{}' via hot-reload.",
@@ -858,10 +855,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                                 converted,
                                 cfg.getTags()))
                         .map(newCfg -> {
-                            // Enable skip flag to prevent refresh() from restarting adapter
-                            // The flag will be cleared by refresh() when it checks it
-                            ProtocolAdapterManager.enableSkipNextRefresh();
-                            if (!configExtractor.updateAdapter(newCfg)) {
+                            if (!configExtractor.updateAdapter(newCfg, false)) {
                                 return adapterCannotBeUpdatedError(adapterId);
                             }
                             log.info("Successfully updated southbound mappings for adapter '{}' via hot-reload.",

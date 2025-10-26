@@ -30,10 +30,10 @@ import java.util.Set;
 public class ProtocolAdapterConfig {
 
     private final @NotNull ProtocolSpecificAdapterConfig adapterConfig;
-    private @NotNull List<? extends Tag> tags;
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
     private final int configVersion;
+    private @NotNull List<? extends Tag> tags;
     private @NotNull List<SouthboundMapping> southboundMappings;
     private @NotNull List<NorthboundMapping> northboundMappings;
 
@@ -87,51 +87,35 @@ public class ProtocolAdapterConfig {
         return tags;
     }
 
+    public void setTags(final @NotNull List<? extends Tag> tags) {
+        this.tags = tags;
+    }
+
     public @NotNull List<NorthboundMapping> getNorthboundMappings() {
         return northboundMappings;
+    }
+
+    public void setNorthboundMappings(final @NotNull List<NorthboundMapping> northboundMappings) {
+        this.northboundMappings = northboundMappings;
     }
 
     public @NotNull List<SouthboundMapping> getSouthboundMappings() {
         return southboundMappings;
     }
 
-    public int getConfigVersion() {
-        return configVersion;
-    }
-
-    /**
-     * Updates the tags for hot-reload support.
-     * This method is used to update tags without restarting the adapter.
-     *
-     * @param tags the new tags
-     */
-    public void setTags(final @NotNull List<? extends Tag> tags) {
-        this.tags = tags;
-    }
-
-    /**
-     * Updates the northbound mappings for hot-reload support.
-     * This method is used to update northbound mappings without restarting the adapter.
-     *
-     * @param northboundMappings the new northbound mappings
-     */
-    public void setNorthboundMappings(final @NotNull List<NorthboundMapping> northboundMappings) {
-        this.northboundMappings = northboundMappings;
-    }
-
-    /**
-     * Updates the southbound mappings for hot-reload support.
-     * This method is used to update southbound mappings without restarting the adapter.
-     *
-     * @param southboundMappings the new southbound mappings
-     */
     public void setSouthboundMappings(final @NotNull List<SouthboundMapping> southboundMappings) {
         this.southboundMappings = southboundMappings;
     }
 
+    public int getConfigVersion() {
+        return configVersion;
+    }
+
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final ProtocolAdapterConfig that = (ProtocolAdapterConfig) o;
         return getConfigVersion() == that.getConfigVersion() &&
                 Objects.equals(getAdapterConfig(), that.getAdapterConfig()) &&

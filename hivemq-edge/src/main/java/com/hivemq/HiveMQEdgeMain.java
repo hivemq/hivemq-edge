@@ -21,35 +21,32 @@ import com.google.common.base.Preconditions;
 import com.hivemq.bootstrap.LoggingBootstrap;
 import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.bootstrap.ioc.Persistences;
-import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapService;
 import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapServiceImpl;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.info.SystemInformationImpl;
-import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
+import com.hivemq.http.JaxrsHttpServer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.http.JaxrsHttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-public class HiveMQEdgeMain {
-    private static final Logger log = LoggerFactory.getLogger(HiveMQEdgeMain.class);
+import static java.util.Objects.requireNonNull;
 
-    private @Nullable ConfigurationService configService;
+public class HiveMQEdgeMain {
+    private static final @NotNull Logger log = LoggerFactory.getLogger(HiveMQEdgeMain.class);
+
     private final @NotNull ModuleLoader moduleLoader;
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull SystemInformation systemInformation;
-
+    private @Nullable ConfigurationService configService;
     private @Nullable JaxrsHttpServer jaxrsServer;
-
     private @Nullable Injector injector;
     private @Nullable Thread shutdownThread;
 
@@ -64,21 +61,29 @@ public class HiveMQEdgeMain {
         this.moduleLoader = moduleLoader;
     }
 
-    public void bootstrap() throws HiveMQEdgeStartupException {
-        // Already bootstrapped.
-        if (injector != null) {
-            return;
-        }
-        final HiveMQEdgeBootstrap bootstrap =
-                new HiveMQEdgeBootstrap(metricRegistry, systemInformation, moduleLoader, configService);
-
-
-        injector = bootstrap.bootstrap();
-        if (configService == null) {
-            configService = injector.configurationService();
+    public static void main(final String @NotNull [] args) throws Exception {
+        log.info("Starting HiveMQ Edge...");
+        final long startTime = System.nanoTime();
+        final SystemInformationImpl systemInformation = new SystemInformationImpl(true);
+        final ModuleLoader moduleLoader = new ModuleLoader(systemInformation);
+        final HiveMQEdgeMain server = new HiveMQEdgeMain(systemInformation, new MetricRegistry(), null, moduleLoader);
+        try {
+            server.start(null);
+            log.info("Started HiveMQ Edge in {}ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+        } catch (final HiveMQEdgeStartupException e) {
+            log.error("HiveMQ Edge start was aborted with error.", e);
         }
     }
 
+    public void bootstrap() throws HiveMQEdgeStartupException {
+        if (injector == null) {
+            injector =
+                    new HiveMQEdgeBootstrap(metricRegistry, systemInformation, moduleLoader, configService).bootstrap();
+            if (configService == null) {
+                configService = injector.configurationService();
+            }
+        }
+    }
 
     protected void startGateway(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
         if (injector == null) {
@@ -90,9 +95,7 @@ public class HiveMQEdgeMain {
             throw new HiveMQEdgeStartupException("User aborted.");
         }
 
-        final HiveMQEdgeGateway instance = injector.edgeGateway();
-        instance.start(embeddedExtension);
-
+        injector.edgeGateway().start(embeddedExtension);
         initializeApiServer(injector);
         startApiServer();
     }
@@ -102,11 +105,9 @@ public class HiveMQEdgeMain {
             return;
         }
         final ShutdownHooks shutdownHooks = injector.shutdownHooks();
-        // Already shutdown.
         if (shutdownHooks.isShuttingDown()) {
             return;
         }
-
         shutdownHooks.runShutdownHooks();
 
         //clear metrics
@@ -114,13 +115,11 @@ public class HiveMQEdgeMain {
 
         //Stop the API Webserver
         stopApiServer();
-
         LoggingBootstrap.resetLogging();
     }
 
     protected void initializeApiServer(final @NotNull Injector injector) {
-        final ApiConfigurationService config = Objects.requireNonNull(configService).apiConfiguration();
-        if (jaxrsServer == null && config.isEnabled()) {
+        if (jaxrsServer == null && requireNonNull(configService).apiConfiguration().isEnabled()) {
             jaxrsServer = injector.apiServer();
         } else {
             log.info("API is DISABLED by configuration");
@@ -142,7 +141,6 @@ public class HiveMQEdgeMain {
 
     protected void afterStart() {
         afterHiveMQStartBootstrap();
-        //hook method
     }
 
     private void afterHiveMQStartBootstrap() {
@@ -150,13 +148,11 @@ public class HiveMQEdgeMain {
         final Persistences persistences = injector.persistences();
         Preconditions.checkNotNull(persistences);
         Preconditions.checkNotNull(configService);
-
         try {
-            final AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService =
-                    AfterHiveMQStartBootstrapServiceImpl.decorate(injector.completeBootstrapService(),
+            injector.commercialModuleLoaderDiscovery()
+                    .afterHiveMQStart(AfterHiveMQStartBootstrapServiceImpl.decorate(injector.completeBootstrapService(),
                             injector.protocolAdapterManager(),
-                            injector.services().modulesAndExtensionsService());
-            injector.commercialModuleLoaderDiscovery().afterHiveMQStart(afterHiveMQStartBootstrapService);
+                            injector.services().modulesAndExtensionsService()));
         } catch (final Exception e) {
             log.warn("Error on bootstrapping modules:", e);
             throw new HiveMQEdgeStartupException(e);
@@ -183,24 +179,7 @@ public class HiveMQEdgeMain {
         }
     }
 
-    public static void main(final String @NotNull [] args) throws Exception {
-        log.info("Starting HiveMQ Edge...");
-        final long startTime = System.nanoTime();
-        final SystemInformationImpl systemInformation = new SystemInformationImpl(true);
-        final ModuleLoader moduleLoader = new ModuleLoader(systemInformation);
-        final HiveMQEdgeMain server =
-                new HiveMQEdgeMain(systemInformation, new MetricRegistry(), null, moduleLoader);
-        try {
-            server.start(null);
-            log.info("Started HiveMQ Edge in {}ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
-        } catch (final HiveMQEdgeStartupException e) {
-            log.error("HiveMQ Edge start was aborted with error.", e);
-        }
-    }
-
     public @Nullable Injector getInjector() {
         return injector;
     }
-
-
 }

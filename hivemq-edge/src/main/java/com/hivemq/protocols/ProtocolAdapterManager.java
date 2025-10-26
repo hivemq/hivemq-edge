@@ -76,11 +76,6 @@ import static java.util.concurrent.CompletableFuture.failedFuture;
 public class ProtocolAdapterManager {
     private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
 
-    // ThreadLocal flag to prevent refresh() from restarting adapters during hot-reload config updates
-    // AtomicBoolean to skip next refresh() call during hot-reload config updates
-    // Must be atomic (not ThreadLocal) because refresh() runs in a different thread (refreshExecutor)
-    private static final @NotNull AtomicBoolean skipRefreshForAdapter = new AtomicBoolean(false);
-
     private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters;
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull ModuleServicesImpl moduleServices;
@@ -160,7 +155,7 @@ public class ProtocolAdapterManager {
         }
     }
 
-    private static boolean updateMappingsHotReload(
+    private static @NotNull Boolean updateMappingsHotReload(
             final @NotNull ProtocolAdapterWrapper wrapper,
             final @NotNull String mappingType,
             final @NotNull Runnable updateOperation) {
@@ -168,27 +163,14 @@ public class ProtocolAdapterManager {
             log.debug("Updating {} mappings for adapter '{}' via hot-reload", mappingType, wrapper.getId());
             updateOperation.run();
             log.info("Successfully updated {} mappings for adapter '{}' via hot-reload", mappingType, wrapper.getId());
-            return true;
+            return Boolean.TRUE;
         } catch (final IllegalStateException e) {
             log.error("Cannot hot-reload {} mappings, adapter not in correct state: {}", mappingType, e.getMessage());
-            return false;
+            return Boolean.FALSE;
         } catch (final Throwable e) {
             log.error("Exception happened while updating {} mappings via hot-reload: ", mappingType, e);
-            return false;
+            return Boolean.FALSE;
         }
-    }
-
-    /**
-     * Enables skipping the next refresh operation for hot-reload config updates.
-     * This prevents the refresh() callback from restarting adapters when the config
-     * change originates from a hot-reload operation.
-     */
-    public static void enableSkipNextRefresh() {
-        skipRefreshForAdapter.set(true);
-    }
-
-    public static void disableSkipNextRefresh() {
-        skipRefreshForAdapter.set(false);
     }
 
     public void start() {
@@ -198,37 +180,33 @@ public class ProtocolAdapterManager {
         config.registerConsumer(this::refresh);
     }
 
-    public void refresh(final @NotNull List<ProtocolAdapterEntity> configs) {
-        // Don't submit refresh if shutdown initiated or executor is shutting down
+    private void refresh(final @NotNull List<ProtocolAdapterEntity> configs) {
         if (shutdownInitiated.get() || refreshExecutor.isShutdown()) {
             log.debug("Skipping refresh because manager is shutting down");
             return;
         }
 
         refreshExecutor.submit(() -> {
-            // Atomically check and clear skip flag (hot-reload in progress)
-            if (skipRefreshForAdapter.getAndSet(false)) {
-                log.debug("Skipping refresh because hot-reload config update is in progress");
-                return;
-            }
-
             log.info("Refreshing adapters");
 
             final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configs.stream()
                     .map(configConverter::fromEntity)
                     .collect(Collectors.toMap(ProtocolAdapterConfig::getAdapterId, Function.identity()));
 
-            final List<String> loadListOfAdapterNames = new ArrayList<>(protocolAdapterConfigs.keySet());
+            final List<String> loadedAdapterIds = new ArrayList<>(protocolAdapterConfigs.keySet());
 
             final List<String> adaptersToBeDeleted = new ArrayList<>(protocolAdapters.keySet());
-            adaptersToBeDeleted.removeAll(loadListOfAdapterNames);
-            final List<String> adaptersToBeCreated = new ArrayList<>(loadListOfAdapterNames);
+            adaptersToBeDeleted.removeAll(loadedAdapterIds);
+
+            final List<String> adaptersToBeCreated = new ArrayList<>(loadedAdapterIds);
             adaptersToBeCreated.removeAll(protocolAdapters.keySet());
+
             final List<String> adaptersToBeUpdated = new ArrayList<>(protocolAdapters.keySet());
             adaptersToBeUpdated.removeAll(adaptersToBeCreated);
             adaptersToBeUpdated.removeAll(adaptersToBeDeleted);
 
             final List<String> failedAdapters = new ArrayList<>();
+
             adaptersToBeDeleted.forEach(name -> {
                 try {
                     if (log.isDebugEnabled()) {
@@ -274,21 +252,17 @@ public class ProtocolAdapterManager {
                     }
 
                     if (!protocolAdapterConfigs.get(name).equals(wrapper.getConfig())) {
-                        final boolean isStarted =
-                                wrapper.getRuntimeStatus() == ProtocolAdapterState.RuntimeStatus.STARTED;
-
-                        if (!isStarted) {
-                            // Adapter is stopped - update config by recreating wrapper but don't start
+                        if (wrapper.getRuntimeStatus() != ProtocolAdapterState.RuntimeStatus.STARTED) {
                             if (log.isDebugEnabled()) {
                                 log.debug("Updating config for stopped adapter '{}' without starting", name);
                             }
                             deleteAdapterInternal(name);
                             createAdapterInternal(protocolAdapterConfigs.get(name), versionProvider.getVersion());
                         } else {
-                            // Adapter is started - do full stop->delete->create->start cycle
                             if (log.isDebugEnabled()) {
                                 log.debug("Updating adapter '{}'", name);
                             }
+                            // TODO is this correct
                             stopAsync(name).thenApply(v -> {
                                         deleteAdapterInternal(name);
                                         return null;
@@ -296,10 +270,6 @@ public class ProtocolAdapterManager {
                                     .thenCompose(ignored -> startAsync(createAdapterInternal(protocolAdapterConfigs.get(
                                             name), versionProvider.getVersion())))
                                     .get();
-                        }
-                    } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Not-updating adapter '{}' since the config is unchanged", name);
                         }
                     }
                 } catch (final InterruptedException e) {
@@ -403,7 +373,7 @@ public class ProtocolAdapterManager {
             final @NotNull List<NorthboundMapping> northboundMappings) {
         return getProtocolAdapterWrapperByAdapterId(adapterId).map(wrapper -> updateMappingsHotReload(wrapper,
                 "northbound",
-                () -> wrapper.updateMappingsHotReload(northboundMappings, null, eventService))).orElse(false);
+                () -> wrapper.updateMappingsHotReload(northboundMappings, null, eventService))).orElse(Boolean.FALSE);
     }
 
     public boolean updateSouthboundMappingsHotReload(
@@ -411,7 +381,7 @@ public class ProtocolAdapterManager {
             final @NotNull List<SouthboundMapping> southboundMappings) {
         return getProtocolAdapterWrapperByAdapterId(adapterId).map(wrapper -> updateMappingsHotReload(wrapper,
                 "southbound",
-                () -> wrapper.updateMappingsHotReload(null, southboundMappings, eventService))).orElse(false);
+                () -> wrapper.updateMappingsHotReload(null, southboundMappings, eventService))).orElse(Boolean.FALSE);
     }
 
     public @NotNull List<DomainTag> getDomainTags() {
@@ -461,7 +431,6 @@ public class ProtocolAdapterManager {
             }
 
             // initiate stop for all adapters
-            log.info("Stopping {} protocol adapters during shutdown", adaptersToStop.size());
             final List<CompletableFuture<Void>> stopFutures = new ArrayList<>();
             for (final ProtocolAdapterWrapper wrapper : adaptersToStop) {
                 try {
@@ -499,13 +468,10 @@ public class ProtocolAdapterManager {
         refreshExecutor.shutdown();
         try {
             if (!refreshExecutor.awaitTermination(timeoutSeconds, TimeUnit.SECONDS)) {
-                log.warn("Executor service {} did not terminate in {}s, forcing shutdown", name, timeoutSeconds);
                 refreshExecutor.shutdownNow();
                 if (!refreshExecutor.awaitTermination(2, TimeUnit.SECONDS)) {
                     log.error("Executor service {} still has running tasks after forced shutdown", name);
                 }
-            } else {
-                log.debug("Executor service {} shut down successfully", name);
             }
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();

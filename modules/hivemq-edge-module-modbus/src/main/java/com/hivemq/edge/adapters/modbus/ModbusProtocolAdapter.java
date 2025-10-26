@@ -143,33 +143,26 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
             log.info("Stopping Modbus protocol adapter {}", adapterId);
             publishChangedDataOnlyHandler.clear();
             try {
-                client
-                    .disconnect()
-                    .whenComplete((unused, throwable) -> {
-                        try {
-                            if (throwable == null) {
-                                protocolAdapterState.setConnectionStatus(DISCONNECTED);
-                                output.stoppedSuccessfully();
-                                log.info("Successfully stopped Modbus protocol adapter {}", adapterId);
-                            } else {
-                                protocolAdapterState.setConnectionStatus(ERROR);
-                                output.failStop(throwable, "Error encountered closing connection to Modbus server.");
-                                log.error("Unable to stop the connection to the Modbus server", throwable);
-                            }
-                        } finally {
-                            startRequested.set(false);
-                            stopRequested.set(false);
+                client.disconnect().whenComplete((unused, throwable) -> {
+                    try {
+                        if (throwable == null) {
+                            protocolAdapterState.setConnectionStatus(DISCONNECTED);
+                            output.stoppedSuccessfully();
+                            log.info("Successfully stopped Modbus protocol adapter {}", adapterId);
+                        } else {
+                            protocolAdapterState.setConnectionStatus(ERROR);
+                            output.failStop(throwable, "Error encountered closing connection to Modbus server.");
+                            log.error("Unable to stop the connection to the Modbus server", throwable);
                         }
-                    })
-                    .toCompletableFuture()
-                    .get();
+                    } finally {
+                        startRequested.set(false);
+                        stopRequested.set(false);
+                    }
+                }).toCompletableFuture().get();
             } catch (final InterruptedException | ExecutionException e) {
                 log.error("Unable to stop the connection to the Modbus server", e);
             }
         } else {
-            // stop() called when already stopped or stop in progress
-            // This can happen when stopping after a failed start
-            // Just complete successfully - adapter is already stopped
             log.debug("Stop called for Modbus adapter {} but adapter is already stopped or stopping", adapterId);
             output.stoppedSuccessfully();
         }

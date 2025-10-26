@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class DatabaseConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(DatabaseConnection.class);
     private final @NotNull HikariConfig config;
-    private final @NotNull AtomicBoolean connected = new AtomicBoolean(false);
+    private final @NotNull AtomicBoolean connected;
     private volatile @Nullable HikariDataSource ds;
 
     public DatabaseConnection(
@@ -45,6 +45,7 @@ public class DatabaseConnection {
             final boolean encrypt) {
 
         config = new HikariConfig();
+        connected = new AtomicBoolean(false);
 
         switch (dbType) {
             case POSTGRESQL -> {
@@ -99,7 +100,7 @@ public class DatabaseConnection {
     }
 
     public @NotNull Connection getConnection() throws SQLException {
-        if (ds == null) {
+        if (!connected.get()) {
             throw new IllegalStateException("Hikari Connection Pool must be started before usage.");
         }
         return ds.getConnection();
@@ -108,18 +109,17 @@ public class DatabaseConnection {
     public void close() {
         if (!connected.compareAndSet(true, false)) {
             log.debug("Database connection already closed or not connected");
-            return;  // Already closed or never connected
+            return;
         }
         if (ds != null && !ds.isClosed()) {
             log.debug("Closing HikariCP datasource");
             try {
-                // Hard shutdown of HikariCP to ensure threads are terminated
                 ds.close();
                 log.debug("HikariCP datasource closed successfully");
             } catch (final Exception e) {
                 log.error("Error closing HikariCP datasource", e);
             } finally {
-                ds = null;  // Clear reference to allow GC
+                ds = null;
             }
         }
     }

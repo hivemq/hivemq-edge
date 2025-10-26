@@ -28,9 +28,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
-    protected final @NotNull AtomicReference<RuntimeStatus> runtimeStatus;
-    protected final @NotNull AtomicReference<ConnectionStatus> connectionStatus;
-    protected final @NotNull AtomicReference<@Nullable String> lastErrorMessage;
+    private final @NotNull AtomicReference<RuntimeStatus> runtimeStatus;
+    private final @NotNull AtomicReference<ConnectionStatus> connectionStatus;
+    private final @NotNull AtomicReference<@Nullable String> lastErrorMessage;
     private final @NotNull EventService eventService;
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
@@ -85,8 +85,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
         // This is can be sent through the API to give an indication of the
         // status of an adapter runtime.
         lastErrorMessage.set(errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage);
-        // Don't send error events if the adapter is already stopped
-        if (sendEvent && runtimeStatus.get() != RuntimeStatus.STOPPED) {
+        if (sendEvent) {
             final var eventBuilder = eventService.createAdapterEvent(adapterId, protocolId)
                     .withSeverity(EventImpl.SEVERITY.ERROR)
                     .withMessage(String.format("Adapter '%s' encountered an error.", adapterId));

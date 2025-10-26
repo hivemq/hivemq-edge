@@ -104,7 +104,6 @@ public class PollingTask implements Runnable {
 
     public void stopScheduling() {
         continueScheduling.set(false);
-        // Cancel any currently scheduled future to prevent thread leaks
         final ScheduledFuture<?> future = currentScheduledFuture.getAndSet(null);
         if (future != null) {
             future.cancel(true);
@@ -214,7 +213,7 @@ public class PollingTask implements Runnable {
                 currentScheduledFuture.set(scheduledExecutorService.schedule(this,
                         nonNegativeDelay,
                         TimeUnit.MILLISECONDS));
-            } catch (final RejectedExecutionException rejectedExecutionException) {
+            } catch (final RejectedExecutionException ignored) {
                 // ignore. This is fine during shutdown.
             }
         }

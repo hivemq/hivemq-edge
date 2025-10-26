@@ -47,6 +47,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
+
 public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
     public static final int TIMEOUT = 30;
@@ -182,7 +184,7 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
         log.debug("Handling tags for the adapter");
         tags.forEach(tag -> loadDataFromDB(pollingOutput, (DatabasesAdapterTag) tag));
 
-        // Don't manually set connection status - FSM manages this automatically
+        protocolAdapterState.setConnectionStatus(STATELESS);
         pollingOutput.finish();
     }
 
