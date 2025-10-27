@@ -27,6 +27,29 @@ The agent will **automatically look in the `.tasks/` directory** and:
 
 ## Active Tasks
 
+### 33168-duplicate-combiner
+
+**Status:** Completed ✅  
+**Directory:** `.tasks/33168-duplicate-combiner/`  
+**Objective:** Improve duplicate combiner detection UX and refactor ContextualToolbar for better testability  
+**Completed Subtasks:** 3 (All Phases Complete)  
+**Last Updated:** October 24, 2025
+
+**Summary:**
+
+- ✅ Phase 1: Extracted 5 utility functions with 29 unit tests
+- ✅ Phase 2: Created modal dialog UI with 15 component tests
+- ✅ Phase 3: Added 12 E2E tests + 2 Percy snapshots
+- **Total: 56 tests, all passing**
+
+**Quick Start:**
+
+- Read: [TASK_BRIEF.md](.tasks/33168-duplicate-combiner/TASK_BRIEF.md)
+- Review: [TASK_SUMMARY.md](.tasks/33168-duplicate-combiner/TASK_SUMMARY.md)
+- Recent work: [CONVERSATION_SUBTASK_3.md](.tasks/33168-duplicate-combiner/CONVERSATION_SUBTASK_3.md)
+
+---
+
 ### 37542-code-coverage
 
 **Status:** Active  
@@ -90,4 +113,4 @@ When a task is fully completed, move its entry here:
 
 ---
 
-**Last Updated:** October 22, 2025
+**Last Updated:** October 23, 2025
