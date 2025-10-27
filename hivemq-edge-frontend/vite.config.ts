@@ -30,15 +30,6 @@ export default defineConfig({
   server: {
     open: true,
     port: 3000,
-    // Fixes for Cypress intermittent "Failed to fetch dynamically imported module" errors
-    hmr: {
-      // Disable HMR overlay during Cypress tests to prevent race conditions
-      overlay: process.env.CYPRESS ? false : true,
-    },
-    fs: {
-      // More strict caching to prevent module resolution issues
-      strict: false,
-    },
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8080/',
@@ -60,20 +51,6 @@ export default defineConfig({
     watch: {
       ignored: [path.resolve(__dirname, './coverage*/**')],
     },
-  },
-
-  optimizeDeps: {
-    // Force pre-bundling of Cypress support files to prevent dynamic import issues
-    include: [
-      'cypress-axe',
-      'cypress-each',
-      '@percy/cypress',
-      'cypress-real-events',
-      '@cypress/code-coverage/support',
-      '@cypress/grep',
-    ],
-    // Ensure dependencies are properly processed during Cypress tests
-    force: process.env.CYPRESS === 'true',
   },
 
   build: {

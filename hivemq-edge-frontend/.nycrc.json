@@ -4,18 +4,5 @@
   "extends": "@istanbuljs/nyc-config-typescript",
   "check-coverage": true,
   "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": [
-    "cypress/**/*.*",
-    "**/*.d.ts",
-    "**/*.cy.tsx",
-    "**/*.cy.ts",
-    "**/*.spec.tsx",
-    "**/*.spec.ts",
-    "**/*.test.tsx",
-    "**/*.test.ts",
-    "src/__test-utils__/**/*",
-    "public/mockServiceWorker.js",
-    "dist/**/*",
-    "build/**/*"
-  ]
+  "exclude": ["cypress/**/*.*", "**/*.d.ts", "**/*.cy.tsx", "**/*.cy.ts"]
 }
