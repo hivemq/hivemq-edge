@@ -1,16 +1,21 @@
 import type { Edge, Node, OnEdgesChange, OnNodesChange, NodeAddChange, EdgeAddChange, Rect } from '@xyflow/react'
 import type { Adapter, Bridge, Combiner, Listener, ProtocolAdapter, PulseStatus } from '@/api/__generated__'
+import type { NodeStatusModel } from './types/status.types'
 
-export type NodeAdapterType = Node<Adapter, NodeTypes.ADAPTER_NODE>
-export type NodeDeviceType = Node<DeviceMetadata, NodeTypes.DEVICE_NODE>
-export type NodeBridgeType = Node<Bridge, NodeTypes.BRIDGE_NODE>
-export type NodeGroupType = Node<Group, NodeTypes.CLUSTER_NODE>
-export type NodeCombinerType = Node<Combiner, NodeTypes.COMBINER_NODE>
-export type NodeListenerType = Node<Listener, NodeTypes.LISTENER_NODE>
-export type NodeEdgeType = Node<{ label: string }, NodeTypes.EDGE_NODE>
-export type NodeHostType = Node<{ label: string }, NodeTypes.HOST_NODE>
-export type NodePulseType = Node<{ label: string; id: string; status?: PulseStatus }, NodeTypes.PULSE_NODE>
-export type NodeAssetsType = Node<{ label: string; id: string }, NodeTypes.ASSETS_NODE>
+// Node data types with optional statusModel for unified status handling
+export type NodeAdapterType = Node<Adapter & { statusModel?: NodeStatusModel }, NodeTypes.ADAPTER_NODE>
+export type NodeDeviceType = Node<DeviceMetadata & { statusModel?: NodeStatusModel }, NodeTypes.DEVICE_NODE>
+export type NodeBridgeType = Node<Bridge & { statusModel?: NodeStatusModel }, NodeTypes.BRIDGE_NODE>
+export type NodeGroupType = Node<Group & { statusModel?: NodeStatusModel }, NodeTypes.CLUSTER_NODE>
+export type NodeCombinerType = Node<Combiner & { statusModel?: NodeStatusModel }, NodeTypes.COMBINER_NODE>
+export type NodeListenerType = Node<Listener & { statusModel?: NodeStatusModel }, NodeTypes.LISTENER_NODE>
+export type NodeEdgeType = Node<{ label: string; statusModel?: NodeStatusModel }, NodeTypes.EDGE_NODE>
+export type NodeHostType = Node<{ label: string; statusModel?: NodeStatusModel }, NodeTypes.HOST_NODE>
+export type NodePulseType = Node<
+  { label: string; id: string; status?: PulseStatus; statusModel?: NodeStatusModel },
+  NodeTypes.PULSE_NODE
+>
+export type NodeAssetsType = Node<{ label: string; id: string; statusModel?: NodeStatusModel }, NodeTypes.ASSETS_NODE>
 
 export interface EdgeFlowOptions {
   showTopics: boolean
