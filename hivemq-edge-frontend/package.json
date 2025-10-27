@@ -120,7 +120,7 @@
     "tippy.js": "6.3.7",
     "ts-pattern": "5.3.1",
     "uuid": "9.0.1",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zustand": "4.4.7"
   },
   "devDependencies": {
