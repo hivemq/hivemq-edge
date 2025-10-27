@@ -62,6 +62,20 @@ export default defineConfig({
     },
   },
 
+  optimizeDeps: {
+    // Force pre-bundling of Cypress support files to prevent dynamic import issues
+    include: [
+      'cypress-axe',
+      'cypress-each',
+      '@percy/cypress',
+      'cypress-real-events',
+      '@cypress/code-coverage/support',
+      '@cypress/grep',
+    ],
+    // Ensure dependencies are properly processed during Cypress tests
+    force: process.env.CYPRESS === 'true',
+  },
+
   build: {
     sourcemap: true,
   },

@@ -1,8 +1,9 @@
 {
   "all": true,
-  "report-dir": "./coverage-cypress",
+  "report-dir": "./coverage-cypress-matrix",
+  "temp-dir": "./.nyc_output/matrix",
   "extends": "@istanbuljs/nyc-config-typescript",
-  "check-coverage": true,
+  "check-coverage": false,
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": [
     "cypress/**/*.*",
@@ -17,5 +18,6 @@
     "public/mockServiceWorker.js",
     "dist/**/*",
     "build/**/*"
-  ]
+  ],
+  "reporter": ["json", "lcovonly"]
 }
