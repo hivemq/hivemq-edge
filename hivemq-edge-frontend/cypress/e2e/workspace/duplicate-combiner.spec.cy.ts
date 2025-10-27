@@ -256,17 +256,6 @@ describe('Duplicate Combiner Detection', () => {
       cy.wait('@postCombiner').then((interception) => {
         expect(interception.response?.statusCode).to.equal(200)
       })
-      // // Verify modal closes
-      // workspacePage.toast.success.should('contain.text', "We've successfully created the combiner for you.")
-      // workspacePage.closeToast.click()
-      //
-      // workspacePage.duplicateCombinerModal.modal.should('not.exist')
-      //
-      // // Wait for creation
-      // cy.wait('@postCombiner')
-      // cy.wait('@getCombiners')
-      //
-      // // Verify success message
     })
   })
 
