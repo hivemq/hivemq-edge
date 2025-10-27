@@ -25,10 +25,10 @@ const NodeWrapper: FC<NodeWrapperProps> = ({ children, isSelected = false, statu
       p={6}
       rounded="md"
       borderWidth={1}
-      // Set CSS custom property for focus-visible shadow
-      style={{
-        ...rest.style,
-        ['--node-status-color' as string]: statusColor,
+      sx={{
+        '.react-flow__node.selectable:focus-visible &': {
+          boxShadow: `0 0 0 15px ${statusColor}40, 0 0 10px 2px ${statusColor}60, 0 1px 1px rgba(0, 0, 0, 0.15)`,
+        },
       }}
       {...rest}
     >
