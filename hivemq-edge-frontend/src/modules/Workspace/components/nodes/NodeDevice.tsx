@@ -1,8 +1,8 @@
 import type { FC } from 'react'
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position, useStore } from '@xyflow/react'
+import { Handle, Position, useStore, useNodeConnections, useNodesData, useReactFlow } from '@xyflow/react'
 import { HStack, Icon, Text, VStack } from '@chakra-ui/react'
 
 import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.ts'
@@ -23,6 +23,7 @@ import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualTo
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
 import MappingBadge from '@/modules/Workspace/components/parts/MappingBadge.tsx'
+import { RuntimeStatus, OperationalStatus, type NodeStatusModel } from '@/modules/Workspace/types/status.types'
 
 const NodeDevice: FC<NodeProps<NodeDeviceType>> = ({ id, selected, data, dragging }) => {
   const { t } = useTranslation()
@@ -30,10 +31,56 @@ const NodeDevice: FC<NodeProps<NodeDeviceType>> = ({ id, selected, data, draggin
   const { category, capabilities } = data
   const showSkeleton = useStore(selectorIsSkeletonZoom)
   const { data: deviceTags } = useGetDomainTags(data.sourceAdapterId)
+  const { updateNodeData } = useReactFlow()
+
+  // Use React Flow's efficient hooks to get connected nodes (parent adapter)
+  const connections = useNodeConnections({ id })
+  const connectedNodes = useNodesData(connections.map((connection) => connection.source))
 
   const tagNames = useMemo(() => {
     return deviceTags?.items?.map((tag) => tag.name) || []
   }, [deviceTags?.items])
+
+  // Compute unified status model - derives from parent adapter using React Flow's optimized hooks
+  const statusModel = useMemo(() => {
+    const hasTags = tagNames.length > 0
+
+    // Operational status: ACTIVE if has tags configured, INACTIVE otherwise
+    const operational = hasTags ? OperationalStatus.ACTIVE : OperationalStatus.INACTIVE
+
+    // Derive runtime status from parent adapter
+    if (!connectedNodes || connectedNodes.length === 0) {
+      return {
+        runtime: RuntimeStatus.INACTIVE,
+        operational,
+        source: 'DERIVED' as const,
+      }
+    }
+
+    // Get status from parent adapter (should only be one)
+    const parentAdapter = connectedNodes[0]
+    if (!parentAdapter) {
+      return {
+        runtime: RuntimeStatus.INACTIVE,
+        operational,
+        source: 'DERIVED' as const,
+      }
+    }
+
+    const parentStatusModel = (parentAdapter.data as { statusModel?: NodeStatusModel }).statusModel
+    const runtime = parentStatusModel?.runtime || RuntimeStatus.INACTIVE
+
+    return {
+      runtime,
+      operational,
+      source: 'DERIVED' as const,
+    }
+  }, [connectedNodes, tagNames.length])
+
+  // Update node data with statusModel whenever it changes
+  useEffect(() => {
+    updateNodeData(id, { statusModel })
+  }, [id, statusModel, updateNodeData])
 
   return (
     <>
@@ -49,6 +96,7 @@ const NodeDevice: FC<NodeProps<NodeDeviceType>> = ({ id, selected, data, draggin
       </ContextualToolbar>
       <NodeWrapper
         isSelected={selected}
+        statusModel={statusModel}
         wordBreak="break-word"
         textAlign="center"
         p={3}

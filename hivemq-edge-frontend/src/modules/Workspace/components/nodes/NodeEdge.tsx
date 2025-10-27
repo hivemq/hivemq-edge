@@ -1,8 +1,8 @@
 import type { FC } from 'react'
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position } from '@xyflow/react'
+import { Handle, Position, useNodeConnections, useNodesData, useReactFlow } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Icon, Image, Text, VStack } from '@chakra-ui/react'
 
@@ -19,16 +19,72 @@ import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualTo
 import type { NodeEdgeType } from '../../types'
 import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils'
 import MappingBadge from '../parts/MappingBadge'
+import { RuntimeStatus, OperationalStatus, type NodeStatusModel } from '@/modules/Workspace/types/status.types'
 
 const NodeEdge: FC<NodeProps<NodeEdgeType>> = (props) => {
   const { t } = useTranslation()
   const { onContextMenu } = useContextMenu(props.id, props.selected, `/workspace/edge/${props.id}`)
   const navigate = useNavigate()
   const { data } = useListTopicFilters()
+  const { updateNodeData } = useReactFlow()
+
+  // Use React Flow's efficient hooks to get connected nodes (adapters, bridges, pulse)
+  const connections = useNodeConnections({ handleType: 'target', id: props.id })
+  const connectedNodes = useNodesData(connections.map((connection) => connection.source))
 
   const topicFilters = useMemo(() => {
     return data?.items.map((e) => e.topicFilter) || []
   }, [data?.items])
+
+  // Compute unified status model with operational status based on topic filters
+  const statusModel = useMemo(() => {
+    const hasTopicFilters = topicFilters.length > 0
+
+    // Operational status: ACTIVE if has topic filters, INACTIVE otherwise
+    const operational = hasTopicFilters ? OperationalStatus.ACTIVE : OperationalStatus.INACTIVE
+
+    // Derive runtime status from upstream active nodes (adapters, bridges, pulse)
+    if (!connectedNodes || connectedNodes.length === 0) {
+      return {
+        runtime: RuntimeStatus.INACTIVE,
+        operational,
+        source: 'DERIVED' as const,
+      }
+    }
+
+    let hasErrorUpstream = false
+    let hasActiveUpstream = false
+
+    for (const node of connectedNodes) {
+      if (!node) continue
+      const upstreamStatusModel = (node.data as { statusModel?: NodeStatusModel }).statusModel
+      if (!upstreamStatusModel) continue
+
+      if (upstreamStatusModel.runtime === RuntimeStatus.ERROR) {
+        hasErrorUpstream = true
+      } else if (upstreamStatusModel.runtime === RuntimeStatus.ACTIVE) {
+        hasActiveUpstream = true
+      }
+    }
+
+    // ERROR propagates first
+    const runtime = hasErrorUpstream
+      ? RuntimeStatus.ERROR
+      : hasActiveUpstream
+        ? RuntimeStatus.ACTIVE
+        : RuntimeStatus.INACTIVE
+
+    return {
+      runtime,
+      operational,
+      source: 'DERIVED' as const,
+    }
+  }, [connectedNodes, topicFilters.length])
+
+  // Update node data with statusModel whenever it changes
+  useEffect(() => {
+    updateNodeData(props.id, { statusModel })
+  }, [props.id, statusModel, updateNodeData])
 
   return (
     <>
@@ -48,6 +104,7 @@ const NodeEdge: FC<NodeProps<NodeEdgeType>> = (props) => {
       </ContextualToolbar>
       <NodeWrapper
         isSelected={props.selected}
+        statusModel={statusModel}
         onDoubleClick={onContextMenu}
         onContextMenu={onContextMenu}
         flexDirection="row"
