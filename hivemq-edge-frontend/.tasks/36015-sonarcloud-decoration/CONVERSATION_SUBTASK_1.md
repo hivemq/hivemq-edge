@@ -16,11 +16,13 @@ User requested to start task 36015-sonarcloud-decoration.
 ### Configuration Discovery
 
 **Repository Structure:**
+
 - Monorepo: `/Users/nicolas/IdeaProjects/hivemq-edge/`
 - Frontend subdirectory: `hivemq-edge-frontend/`
 - GitHub Actions location: `/Users/nicolas/IdeaProjects/hivemq-edge/.github/workflows/`
 
 **Files Examined:**
+
 1. `hivemq-edge-frontend/sonar-project.properties` - SonarCloud configuration
 2. `.github/workflows/check-frontend.yml` - Frontend CI pipeline
 3. `.github/workflows/check.yml` - Main orchestration workflow
@@ -31,6 +33,7 @@ User requested to start task 36015-sonarcloud-decoration.
 #### ✅ What's Working
 
 **1. SonarCloud Configuration (`sonar-project.properties`):**
+
 ```ini
 sonar.projectKey=hivemq_hivemq-edge
 sonar.organization=hivemq
@@ -40,6 +43,7 @@ sonar.sources=./src
 ```
 
 **2. Coverage Reporting:**
+
 - Multiple LCOV report paths configured for combined coverage:
   - `lcov-cypress-Components/lcov.info`
   - `lcov-cypress-E2E/lcov.info`
@@ -49,11 +53,13 @@ sonar.sources=./src
   - `lcov-vitest/lcov.info`
 
 **3. Test File Inclusions:**
+
 ```ini
 sonar.test.inclusions=**/*.spec.ts, **/*.spec.tsx, **/*.spec.cy.ts, **/*.spec.cy.tsx
 ```
 
 **4. Coverage Exclusions:**
+
 - Generated files: `**/__generated__/**`
 - Test utilities: `**/__test-utils__/**`, `**/__handlers__/**`
 - Cypress files: `**/cypress/**`
@@ -61,6 +67,7 @@ sonar.test.inclusions=**/*.spec.ts, **/*.spec.tsx, **/*.spec.cy.ts, **/*.spec.cy
 - Config and tools: `./cypress.config.ts`, `./tools/**`
 
 **5. GitHub Actions Integration (`check-frontend.yml`):**
+
 - Job: `sonarqube` (lines 175-196)
 - Runs after: `cypress_matrix` and `unit_tests` jobs complete
 - Uses: `SonarSource/sonarqube-scan-action@2500896589ef8f7247069a56136f8dc177c27ccf`
@@ -70,27 +77,33 @@ sonar.test.inclusions=**/*.spec.ts, **/*.spec.tsx, **/*.spec.cy.ts, **/*.spec.cy
 #### ❌ Issues Identified
 
 **1. Incorrect Action Name:**
+
 - Currently uses: `SonarSource/sonarqube-scan-action@v5`
 - **Problem:** This is for SonarQube (self-hosted), NOT SonarCloud
 - **Should use:** `SonarSource/sonarcloud-github-action@v3`
 
 **2. Missing PR Decoration Configuration:**
+
 - No PR-specific parameters in the workflow
 - Missing pull request base branch configuration
 - No quality gate status check integration
 
 **3. Coverage Artifact Path Mismatch:**
+
 - Artifacts downloaded to: `hivemq-edge-frontend/coverage-combined`
 - Configuration expects: `./coverage-combined/lcov-*/*.info`
 - **Potential issue:** Path resolution may fail
 
 **4. Conditional Execution:**
+
 ```yaml
 if: success() || failure()
 ```
+
 - This runs even when tests fail, which may submit incomplete coverage
 
 **5. Missing Quality Gate:**
+
 - No explicit quality gate status check
 - No PR decoration for quality gate pass/fail
 
@@ -128,6 +141,7 @@ if: success() || failure()
 ```
 
 **Why This Matters:**
+
 1. **Wrong Action:** The previous `sonarqube-scan-action` is for self-hosted SonarQube servers, not SonarCloud
 2. **No PR Decoration:** Without the correct action, SonarCloud cannot post analysis results to PRs
 3. **Missing Token:** The `GITHUB_TOKEN` is required for PR decoration functionality
@@ -135,6 +149,7 @@ if: success() || failure()
 ### Backup Created
 
 A backup of the original workflow was created at:
+
 - `.github/workflows/check-frontend.yml.backup`
 
 ### Testing Plan
@@ -171,6 +186,7 @@ To verify the fix works:
 The workflow was already using the correct action (`sonarqube-scan-action@v5`). The real question is: **What's preventing PR decoration from working?**
 
 Let me investigate the actual root cause...
+
 # Task: 36015-sonarcloud-decoration
 
 ## Objective
@@ -180,6 +196,7 @@ Configure and optimize SonarCloud decoration for the HiveMQ Edge Frontend reposi
 ## Context
 
 SonarCloud provides automated code quality analysis and can decorate pull requests with:
+
 - Code quality metrics
 - Security vulnerability detection
 - Code smell identification
@@ -210,4 +227,3 @@ This task aims to properly configure SonarCloud integration to ensure developers
 
 - SonarCloud Documentation: https://docs.sonarcloud.io/
 - Current config: `sonar-project.properties`
-

@@ -10,6 +10,7 @@ Configure SonarQube Cloud to exclude test utility directories from code duplicat
 ## Context
 
 SonarQube Cloud was flagging code duplication in test utility directories:
+
 - `**/__test-utils__/**` - directories containing test helpers and utilities
 - `**/__handlers__/**` - directories containing mock service handlers
 
@@ -28,6 +29,7 @@ Added `sonar.cpd.exclusions` property to `sonar-project.properties` to exclude t
 **File:** `sonar-project.properties`
 
 **Change:**
+
 ```properties
 # Exclude following files from code duplication detection (CPD)
 sonar.cpd.exclusions=\
@@ -45,6 +47,7 @@ These are separate properties because you might want different exclusion rules f
 ## Implementation Details
 
 The glob patterns used:
+
 - `**/__test-utils__/**` - Matches any directory named `__test-utils__` at any depth
 - `**/__handlers__/**` - Matches any directory named `__handlers__` at any depth
 
@@ -57,6 +60,7 @@ Changes will take effect on the next SonarQube scan, which happens automatically
 ## Expected Outcome
 
 After the next scan:
+
 1. ✅ Test utility directories will not contribute to code duplication metrics
 2. ✅ Code duplication percentage should decrease
 3. ✅ Quality gate focused on production code quality
@@ -73,4 +77,3 @@ After the next scan:
 
 - SonarQube CPD Documentation: https://docs.sonarsource.com/sonarqube/latest/project-administration/analysis-scope/
 - Project: `hivemq_hivemq-edge` on SonarQube Cloud
-

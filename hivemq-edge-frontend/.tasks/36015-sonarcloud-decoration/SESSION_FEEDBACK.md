@@ -9,12 +9,14 @@
 ## What Went Well ✅
 
 ### 1. Systematic Investigation
+
 - Started with examining relevant configuration files
 - Reviewed both Cypress and Vite configurations
 - Identified multiple root causes rather than just treating symptoms
 - Understood the interaction between Vite dev server and Cypress
 
 ### 2. Comprehensive Solution
+
 - Addressed the issue at multiple levels (Vite and Cypress)
 - Pre-bundling dependencies eliminates race conditions
 - HMR optimization prevents interference
@@ -22,6 +24,7 @@
 - Environment variable coordination ties everything together
 
 ### 3. Documentation Quality
+
 - Clear explanation of root causes
 - Step-by-step implementation details
 - Additional recommendations for edge cases
@@ -29,6 +32,7 @@
 - Rollback plan provided
 
 ### 4. Validation Process
+
 - Used `get_errors` to verify configuration validity
 - No TypeScript errors introduced
 - Configuration changes are syntactically correct
@@ -43,12 +47,14 @@
 **Finding:** Dynamic module imports in Cypress with Vite can fail due to timing issues
 
 **Root Causes:**
+
 - Vite's dev server uses dynamic module resolution
 - Cypress loads support files early in initialization
 - Race conditions occur when both systems load modules simultaneously
 - HMR can invalidate modules during test startup
 
 **Solution Pattern:**
+
 - Pre-bundle all test-related dependencies
 - Use `optimizeDeps.include` to force bundling
 - Set environment variables to coordinate behavior
@@ -59,6 +65,7 @@
 **Key Insight:** Pre-bundling dependencies is crucial for test stability
 
 **Dependencies to Pre-bundle:**
+
 - Test framework plugins (cypress-axe, cypress-each)
 - Visual testing tools (@percy/cypress)
 - User interaction libraries (cypress-real-events)
@@ -67,6 +74,7 @@
 - Framework dependencies (react, react-dom)
 
 **Implementation:**
+
 ```typescript
 optimizeDeps: {
   include: [/* all test dependencies */],
@@ -79,11 +87,13 @@ optimizeDeps: {
 **Pattern:** Use environment variables to synchronize configuration
 
 **Implementation:**
+
 1. Set `CYPRESS=true` in Cypress config
 2. Check `process.env.CYPRESS` in Vite config
 3. Apply conditional optimizations based on flag
 
 **Benefits:**
+
 - Vite knows when it's serving Cypress tests
 - Can disable features that interfere (HMR overlay)
 - Can force re-optimization when needed
@@ -94,6 +104,7 @@ optimizeDeps: {
 **Discovery:** Cypress component devServer accepts inline Vite config
 
 **Usage:**
+
 ```typescript
 component: {
   devServer: {
@@ -107,6 +118,7 @@ component: {
 ```
 
 **Benefits:**
+
 - Component-specific optimizations
 - Override main Vite config for tests
 - Better isolation between dev and test
@@ -117,10 +129,12 @@ component: {
 **Finding:** Default timeouts may be too aggressive for dynamic imports
 
 **Changes:**
+
 - `defaultCommandTimeout`: 4000ms → 10000ms
 - `pageLoadTimeout`: 60000ms → 100000ms
 
 **Rationale:**
+
 - Dynamic imports can be slow, especially first run
 - CI environments may have slower network/disk
 - Pre-bundling on first run takes time
@@ -133,6 +147,7 @@ component: {
 ### Pattern 1: Intermittent Test Failure Investigation
 
 **Steps:**
+
 1. Identify if error is timing-related (race condition)
 2. Check configuration of both test runner and dev server
 3. Look for dynamic imports or lazy loading
@@ -142,6 +157,7 @@ component: {
 ### Pattern 2: Vite + Test Framework Integration
 
 **Configuration Template:**
+
 ```typescript
 // vite.config.ts
 export default defineConfig({
@@ -154,7 +170,9 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: [/* all test dependencies */],
+    include: [
+      /* all test dependencies */
+    ],
     force: process.env.TEST_FRAMEWORK === 'true',
   },
 })
@@ -163,6 +181,7 @@ export default defineConfig({
 ### Pattern 3: Multi-level Problem Solving
 
 **Approach:**
+
 1. Fix at dev server level (Vite configuration)
 2. Fix at test runner level (Cypress configuration)
 3. Add coordination mechanism (environment variables)
@@ -178,6 +197,7 @@ export default defineConfig({
 **Symptom:** Longer dev server startup time
 
 **Mitigation:**
+
 - Only force pre-bundling when CYPRESS=true
 - Normal dev mode unaffected
 - One-time cost, subsequent runs use cache
@@ -187,6 +207,7 @@ export default defineConfig({
 **Symptom:** Vite cache conflicts between dev and test
 
 **Mitigation:**
+
 - Document cache clearing procedure
 - Add script: `"clean": "rm -rf node_modules/.vite"`
 - Consider separate cache directories
@@ -196,6 +217,7 @@ export default defineConfig({
 **Symptom:** Slow tests don't fail, but indicate problems
 
 **Mitigation:**
+
 - Monitor test execution times
 - Set up performance budgets
 - Investigate tests that approach timeout
@@ -206,30 +228,35 @@ export default defineConfig({
 ## Recommendations for Similar Tasks 💡
 
 ### 1. Always Start with Configuration Review
+
 - Examine both test runner and build tool configs
 - Look for integration points
 - Check environment variable usage
 - Review timeout settings
 
 ### 2. Understand the Module Loading Flow
+
 - How does the build tool resolve modules?
 - When does the test runner load support files?
 - What can interfere with module loading?
 - Are there caching mechanisms involved?
 
 ### 3. Test Comprehensive Solutions
+
 - Don't just fix one level
 - Coordinate between all systems
 - Add safety margins
 - Document alternative approaches
 
 ### 4. Provide Clear Documentation
+
 - Explain root causes, not just fixes
 - Show before/after configurations
 - Provide testing strategy
 - Include troubleshooting steps
 
 ### 5. Consider Different Environments
+
 - Local development
 - CI/CD pipelines
 - Different operating systems
@@ -243,6 +270,7 @@ export default defineConfig({
 
 **Current:** Manual CYPRESS=true prefix  
 **Improved:**
+
 ```json
 {
   "scripts": {
@@ -257,6 +285,7 @@ export default defineConfig({
 
 **Consideration:** Create `vite.config.cypress.ts`  
 **Benefits:**
+
 - Complete isolation
 - No conditional logic
 - Clearer separation of concerns
@@ -265,6 +294,7 @@ export default defineConfig({
 
 **Idea:** Pre-test hook to clear cache if needed  
 **Implementation:**
+
 ```typescript
 // beforeRun hook in Cypress
 if (needsCacheClearing) {
@@ -276,6 +306,7 @@ if (needsCacheClearing) {
 
 **Goal:** Optimize for CI environment  
 **Options:**
+
 - Environment-specific timeout values
 - Different pre-bundling strategies
 - Parallel execution considerations
@@ -283,6 +314,7 @@ if (needsCacheClearing) {
 ### 5. Monitoring and Alerting
 
 **Track:**
+
 - Test failure rates
 - Specific error patterns
 - Test execution times
@@ -306,17 +338,19 @@ This task demonstrated the importance of understanding the interaction between b
 The solution is multi-layered and addresses the problem at multiple levels, which is the right approach for complex integration issues. Pre-bundling dependencies proved to be the key insight that eliminates race conditions.
 
 **Task completed successfully with comprehensive documentation for future reference.**
+
 # Task: 38000-cypress-module
 
 ## Objective
 
-Fix intermittent Cypress test failures caused by dynamic module import errors: "Failed to fetch dynamically imported module: http://localhost:3000/__cypress/src/cypress/support/component.ts"
+Fix intermittent Cypress test failures caused by dynamic module import errors: "Failed to fetch dynamically imported module: http://localhost:3000/\_\_cypress/src/cypress/support/component.ts"
 
 ## Context
 
 The project uses Cypress for component and E2E testing with Vite as the dev server. Occasionally, tests fail with a dynamic import error when Cypress tries to load the support file. This is a known issue caused by race conditions between Vite's dev server and Cypress loading modules.
 
 **Key characteristics of the issue:**
+
 - Intermittent/sporadic failures (not consistent)
 - Always the same import module (component.ts)
 - All other tests in the suite work fine
@@ -334,6 +368,7 @@ The project uses Cypress for component and E2E testing with Vite as the dev serv
 The solution involves configuring both Vite and Cypress to work more reliably together:
 
 1. **Vite Configuration** (`vite.config.ts`):
+
    - Disable HMR overlay during Cypress tests
    - Configure file system caching to be less strict
    - Pre-bundle all Cypress-related dependencies
@@ -350,6 +385,7 @@ The solution involves configuring both Vite and Cypress to work more reliably to
 ### File: `vite.config.ts`
 
 Added:
+
 - `server.hmr.overlay`: Disabled during Cypress tests (using `process.env.CYPRESS`)
 - `server.fs.strict`: Set to false for more flexible module resolution
 - `optimizeDeps.include`: Pre-bundle all Cypress dependencies (cypress-axe, cypress-each, @percy/cypress, etc.)
@@ -358,6 +394,7 @@ Added:
 ### File: `cypress.config.ts`
 
 Added:
+
 - `env.CYPRESS`: Set to true to signal Vite
 - `defaultCommandTimeout`: Increased to 10000ms
 - `pageLoadTimeout`: Increased to 100000ms
@@ -388,4 +425,3 @@ Added:
 - Cypress with Vite: https://docs.cypress.io/guides/component-testing/react/quickstart
 - Vite optimizeDeps: https://vitejs.dev/config/dep-optimization-options.html
 - Known issue discussions in Cypress + Vite communities
-
