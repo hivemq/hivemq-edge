@@ -97,10 +97,25 @@ public class KeystoreUtil {
             //load keystore from TLS config
             final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
             keyStore.load(fileInputStream, keyStorePassword.toCharArray());
-            final String firstAlias = keyStore.aliases().nextElement();
-            final PrivateKey privateKey = (PrivateKey) keyStore.getKey(firstAlias, privateKeyPassword.toCharArray());
-            final Certificate certificate = keyStore.getCertificate(firstAlias);
-            final Certificate[] certificateChain = keyStore.getCertificateChain(firstAlias);
+
+            // Find the first key entry (not just any alias, which might be a certificate entry)
+            String keyAlias = null;
+            final Iterator<String> aliasIterator = keyStore.aliases().asIterator();
+            while (aliasIterator.hasNext()) {
+                final String alias = aliasIterator.next();
+                if (keyStore.isKeyEntry(alias)) {
+                    keyAlias = alias;
+                    break;
+                }
+            }
+
+            if (keyAlias == null) {
+                throw new SslException("No key entry found in KeyStore '" + keyStorePath + "'");
+            }
+
+            final PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyAlias, privateKeyPassword.toCharArray());
+            final Certificate certificate = keyStore.getCertificate(keyAlias);
+            final Certificate[] certificateChain = keyStore.getCertificateChain(keyAlias);
 
             final X509Certificate certificateX509 = (X509Certificate) certificate;
             final X509Certificate[] certificateChainX509 = new X509Certificate[certificateChain.length];
