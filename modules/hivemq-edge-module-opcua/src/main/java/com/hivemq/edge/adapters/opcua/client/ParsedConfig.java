@@ -80,12 +80,22 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
             return Failure.of("Failed to create identity provider, check authentication configuration");
         }
 
-        // Extract Application URI from certificate if available
-        final String applicationUri = keyPairWithChain != null ? keyPairWithChain.applicationUri() : null;
-        if (applicationUri != null) {
+        // Determine Application URI with priority: configured > certificate SAN > default
+        final String applicationUri;
+        if (adapterConfig.getApplicationUri() != null && !adapterConfig.getApplicationUri().isBlank()) {
+            // Priority 1: Use configured override
+            applicationUri = adapterConfig.getApplicationUri();
+            log.info("Using configured Application URI override: {}", applicationUri);
+        } else if (keyPairWithChain != null && keyPairWithChain.applicationUri() != null) {
+            // Priority 2: Use certificate SAN URI
+            applicationUri = keyPairWithChain.applicationUri();
             log.info("Using Application URI from certificate: {}", applicationUri);
-        } else if (tlsEnabled && keyPairWithChain != null) {
-            log.warn("Certificate does not contain Application URI in SAN extension, will use default URI");
+        } else {
+            // Priority 3: Will use default in OpcUaClientConfigurator
+            applicationUri = null;
+            if (tlsEnabled && keyPairWithChain != null) {
+                log.warn("Certificate does not contain Application URI in SAN extension, will use default URI");
+            }
         }
 
         return Success.of(new ParsedConfig(tlsEnabled, keyPairWithChain, certValidator, identityProvider.get(), applicationUri));

@@ -159,4 +159,31 @@ class OpcUaClientConfiguratorTest {
                 .as("Should fall back to default URI when applicationUri is explicitly null")
                 .isEqualTo(Constants.OPCUA_APPLICATION_URI);
     }
+
+    @Test
+    void testAccept_withConfiguredApplicationUri_usesConfiguredUri() {
+        // Given - Test configured override URI (Priority 1)
+        final String configuredUri = "urn:custom:configured:uri";
+        final ParsedConfig parsedConfig = new ParsedConfig(
+                false,  // TLS disabled to avoid certificate configuration
+                null,
+                null,
+                new AnonymousProvider(),
+                configuredUri  // Configured override URI
+        );
+
+        final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig);
+        final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());
+
+        // When
+        configurator.accept(configBuilder);
+
+        // Then
+        final ArgumentCaptor<String> uriCaptor = ArgumentCaptor.forClass(String.class);
+        verify(configBuilder).setApplicationUri(uriCaptor.capture());
+
+        assertThat(uriCaptor.getValue())
+                .as("Should use configured Application URI override (Priority 1)")
+                .isEqualTo(configuredUri);
+    }
 }
