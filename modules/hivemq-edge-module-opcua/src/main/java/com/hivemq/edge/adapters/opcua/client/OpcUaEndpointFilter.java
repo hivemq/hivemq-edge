@@ -62,7 +62,7 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
             // Filter by MessageSecurityMode if specified
             if (preferredMode != null) {
                 final MessageSecurityMode endpointMode = endpointDescription.getSecurityMode();
-                if (endpointMode != preferredMode) {
+                if (!preferredMode.equals(endpointMode)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Endpoint {} has mode {} but preferred mode is {}, skipping",
                                 endpointDescription.getEndpointUrl(), endpointMode, preferredMode);
