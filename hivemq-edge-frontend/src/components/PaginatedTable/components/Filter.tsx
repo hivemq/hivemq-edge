@@ -95,7 +95,7 @@ export const Filter = <T,>({
         instanceId={id}
         menuPortalTarget={document.body}
         value={columnValue ? { value: columnValue, label: columnValue } : null}
-        onChange={(item) => setFilterValue(item?.value)}
+        onChange={(item) => setFilterValue((item as { value?: string } | null)?.value)}
         options={sortedUniqueValues.map((value: string) => ({ value: value, label: value }))}
         placeholder={placeholder}
         noOptionsMessage={noOptionsMessage}

@@ -74,7 +74,7 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceStatus & Workspace
           })
         }
       },
-      onUpdateNodes: <T>(item: string, data: T) => {
+      onUpdateNodes: <T extends Record<string, unknown>>(item: string, data: T) => {
         set({
           nodes: get().nodes.map((node) => {
             const newNode = { ...node }

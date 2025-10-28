@@ -3,11 +3,12 @@ import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Spinner, useToast } from '@chakra-ui/react'
-import type { Connection, NodeAddChange } from '@xyflow/react'
+import type { Connection, Node, NodeAddChange } from '@xyflow/react'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 import { DataHubNodeType, DesignerStatus, DesignerPolicyType } from '@datahub/types.ts'
+import type { BehaviorPolicyData, DataPolicyData } from '@datahub/types.ts'
 import PolicyEditor from '@datahub/components/pages/PolicyEditor.tsx'
 import { useGetDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetDataPolicy.ts'
 import { useGetBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetBehaviorPolicy.ts'
@@ -48,9 +49,14 @@ export const DataPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
     try {
       store.reset()
       const policyNode = loadDataPolicy(dataPolicy)
-      const filterNode = loadTopicFilter(dataPolicy, policyNode.item)
-      const validatorNodes = loadValidators(dataPolicy, schemas.items || [], policyNode.item)
-      const pipelines = loadDataPolicyPipelines(dataPolicy, schemas.items || [], scripts.items || [], policyNode.item)
+      const filterNode = loadTopicFilter(dataPolicy, policyNode.item as Node<DataPolicyData>)
+      const validatorNodes = loadValidators(dataPolicy, schemas.items || [], policyNode.item as Node<DataPolicyData>)
+      const pipelines = loadDataPolicyPipelines(
+        dataPolicy,
+        schemas.items || [],
+        scripts.items || [],
+        policyNode.item as Node<DataPolicyData>
+      )
 
       const allArtefactsLoaded = [policyNode, ...filterNode, ...validatorNodes, ...pipelines]
 
@@ -114,12 +120,12 @@ export const BehaviorPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
     try {
       store.reset()
       const behaviorPolicyNode = loadBehaviorPolicy(behaviorPolicy)
-      const filterNode = loadClientFilter(behaviorPolicy, behaviorPolicyNode.item)
+      const filterNode = loadClientFilter(behaviorPolicy, behaviorPolicyNode.item as Node<BehaviorPolicyData>)
       const pipelines = loadTransitions(
         behaviorPolicy,
         schemas.items || [],
         scripts.items || [],
-        behaviorPolicyNode.item
+        behaviorPolicyNode.item as Node<BehaviorPolicyData>
       )
 
       const allArtefactsLoaded = [behaviorPolicyNode, ...filterNode, ...pipelines]
