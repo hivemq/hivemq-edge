@@ -18,9 +18,11 @@ package com.hivemq.edge.adapters.opcua.client;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.eclipse.milo.opcua.stack.core.util.EndpointUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,14 +35,17 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
 
     private final @NotNull String adapterId;
     private final @NotNull String configPolicyUri;
+    private final @Nullable MessageSecurityMode preferredMode;
     private final @NotNull OpcUaSpecificAdapterConfig adapterConfig;
 
     public OpcUaEndpointFilter(
             final @NotNull String adapterId,
             final @NotNull String configPolicyUri,
+            final @Nullable MessageSecurityMode preferredMode,
             final @NotNull OpcUaSpecificAdapterConfig adapterConfig) {
         this.adapterId = adapterId;
         this.configPolicyUri = configPolicyUri;
+        this.preferredMode = preferredMode;
         this.adapterConfig = adapterConfig;
     }
 
@@ -48,9 +53,24 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
     public @NotNull Optional<EndpointDescription> apply(final List<EndpointDescription> endpointDescriptions) {
         return endpointDescriptions.stream().filter(endpointDescription -> {
             final String policyUri = endpointDescription.getSecurityPolicyUri();
+
+            // Filter by SecurityPolicyUri
             if (!configPolicyUri.equals(policyUri)) {
                 return false;
             }
+
+            // Filter by MessageSecurityMode if specified
+            if (preferredMode != null) {
+                final MessageSecurityMode endpointMode = endpointDescription.getSecurityMode();
+                if (!preferredMode.equals(endpointMode)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Endpoint {} has mode {} but preferred mode is {}, skipping",
+                                endpointDescription.getEndpointUrl(), endpointMode, preferredMode);
+                    }
+                    return false;
+                }
+            }
+
             if (policyUri.equals(SecurityPolicy.None.getUri())) {
                 return true;
             }

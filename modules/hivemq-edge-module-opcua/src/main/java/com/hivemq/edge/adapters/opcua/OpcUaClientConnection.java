@@ -24,7 +24,9 @@ import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
+import com.hivemq.edge.adapters.opcua.config.MsgSecurityMode;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSessionActivityListener;
@@ -35,6 +37,7 @@ import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -86,7 +89,31 @@ public class OpcUaClientConnection {
         final OpcUaClient client;
         final var faultListener = new OpcUaServiceFaultListener(protocolAdapterMetricsService, eventService, adapterId);
         final var activityListener = new OpcUaSessionActivityListener(protocolAdapterMetricsService, eventService, adapterId, protocolAdapterState);
-        final var endpointFilter = new OpcUaEndpointFilter(adapterId, config.getSecurity().policy().getSecurityPolicy().getUri(), config);
+
+        // Determine preferred MessageSecurityMode with intelligent defaults
+        final MessageSecurityMode preferredMode;
+        final MsgSecurityMode configuredMode = config.getSecurity().messageSecurityMode();
+        if (configuredMode != null) {
+            // Explicitly configured mode
+            preferredMode = configuredMode.getMiloMode();
+            if (log.isDebugEnabled()) {
+                log.debug("Using configured message security mode: {}", preferredMode);
+            }
+        } else {
+            // Intelligent default based on security policy
+            final SecPolicy policy = config.getSecurity().policy();
+            if (policy == SecPolicy.NONE) {
+                preferredMode = MessageSecurityMode.None;
+            } else {
+                // For all secure policies, prefer SignAndEncrypt (most secure)
+                preferredMode = MessageSecurityMode.SignAndEncrypt;
+                if (log.isDebugEnabled()) {
+                    log.debug("No message security mode configured, defaulting to SignAndEncrypt for policy {}", policy);
+                }
+            }
+        }
+
+        final var endpointFilter = new OpcUaEndpointFilter(adapterId, config.getSecurity().policy().getSecurityPolicy().getUri(), preferredMode, config);
         try {
             client = OpcUaClient
                 .create(

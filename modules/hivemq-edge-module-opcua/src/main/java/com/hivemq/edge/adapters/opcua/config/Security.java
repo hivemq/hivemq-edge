@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua.config;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -32,10 +33,22 @@ import java.util.Objects;
 @JsonDeserialize(using = Security.SecurityDeserializer.class)
 public record Security(@JsonProperty("policy") @ModuleConfigField(title = "OPC UA security policy",
                                                                   description = "Security policy to use for communication with the server.",
-                                                                  defaultValue = "NONE") @NotNull SecPolicy policy) {
+                                                                  defaultValue = "NONE") @NotNull SecPolicy policy,
+                       @JsonProperty("messageSecurityMode")
+                       @JsonInclude(JsonInclude.Include.NON_NULL)
+                       @ModuleConfigField(title = "Message Security Mode",
+                                         description = "Message security mode (None, Sign, SignAndEncrypt). If not specified, defaults based on policy: None→None, others→SignAndEncrypt.",
+                                         required = false) @Nullable MsgSecurityMode messageSecurityMode) {
 
-    public Security(@JsonProperty("policy") final @Nullable SecPolicy policy) {
+    public Security(@JsonProperty("policy") final @Nullable SecPolicy policy,
+                    @JsonProperty("messageSecurityMode") final @Nullable MsgSecurityMode messageSecurityMode) {
         this.policy = Objects.requireNonNullElse(policy, Constants.DEFAULT_SECURITY_POLICY);
+        this.messageSecurityMode = messageSecurityMode;
+    }
+
+    // Backwards compatibility constructor
+    public Security(final @Nullable SecPolicy policy) {
+        this(policy, null);
     }
 
     @Override
@@ -50,13 +63,13 @@ public record Security(@JsonProperty("policy") @ModuleConfigField(title = "OPC U
                 final @NotNull DeserializationContext context) throws IOException {
             final String text = parser.getText();
             if (text != null && text.isEmpty()) {
-                return new Security(Constants.DEFAULT_SECURITY_POLICY);
+                return new Security(Constants.DEFAULT_SECURITY_POLICY, null);
             }
 
             try {
                 final Map<String, Object> map = parser.readValueAs(Map.class);
                 if (map == null || map.isEmpty()) {
-                    return new Security(Constants.DEFAULT_SECURITY_POLICY);
+                    return new Security(Constants.DEFAULT_SECURITY_POLICY, null);
                 }
 
                 final Object policyValue = map.get("policy");
@@ -66,9 +79,18 @@ public record Security(@JsonProperty("policy") @ModuleConfigField(title = "OPC U
                 } else {
                     policy = Constants.DEFAULT_SECURITY_POLICY;
                 }
-                return new Security(policy);
+
+                final Object modeValue = map.get("messageSecurityMode");
+                final MsgSecurityMode messageSecurityMode;
+                if (modeValue instanceof String) {
+                    messageSecurityMode = MsgSecurityMode.fromString((String) modeValue);
+                } else {
+                    messageSecurityMode = null;
+                }
+
+                return new Security(policy, messageSecurityMode);
             } catch (final IOException e) {
-                return new Security(Constants.DEFAULT_SECURITY_POLICY);
+                return new Security(Constants.DEFAULT_SECURITY_POLICY, null);
             }
         }
     }
