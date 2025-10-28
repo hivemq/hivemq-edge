@@ -1,12 +1,14 @@
-import type { QueryFunction, QueryKey } from '@tanstack/react-query'
+import type { QueryFunction, QueryKey, UseQueryResult } from '@tanstack/react-query'
 import { useQueries } from '@tanstack/react-query'
 
-import type { EntityReference } from '@/api/__generated__'
+import type { DomainTagList, EntityReference, TopicFilterList } from '@/api/__generated__'
 import { EntityType } from '@/api/__generated__'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
 
-export const useGetCombinedEntities = (entities: EntityReference[]) => {
+export const useGetCombinedEntities = (
+  entities: EntityReference[]
+): UseQueryResult<DomainTagList | TopicFilterList, Error>[] => {
   const appClient = useHttpClient()
 
   // TODO[NVL] Likely too many duplicates; needs filtering
