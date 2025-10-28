@@ -56,7 +56,7 @@ public enum MsgSecurityMode {
      * @return the corresponding MsgSecurityMode, or null if not found
      */
     public static @Nullable MsgSecurityMode forMiloMode(final @NotNull MessageSecurityMode mode) {
-        for (MsgSecurityMode value : values()) {
+        for (final var value : values()) {
             if (value.miloMode == mode) {
                 return value;
             }
@@ -75,7 +75,7 @@ public enum MsgSecurityMode {
         if (value == null || value.isBlank()) {
             return null;
         }
-        for (MsgSecurityMode mode : values()) {
+        for (final var mode : values()) {
             if (mode.name().equalsIgnoreCase(value) ||
                     mode.name().replace("_", "").equalsIgnoreCase(value)) {
                 return mode;
