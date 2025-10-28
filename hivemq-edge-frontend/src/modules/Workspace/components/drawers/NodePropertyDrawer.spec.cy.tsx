@@ -2,15 +2,14 @@
 
 import NodePropertyDrawer from '@/modules/Workspace/components/drawers/NodePropertyDrawer.tsx'
 import { MOCK_NODE_ADAPTER } from '@/__test-utils__/react-flow/nodes.ts'
-import type { Node } from '@xyflow/react'
-import type { Adapter, Bridge } from '@/api/__generated__'
+import type { NodeAdapterType } from '@/modules/Workspace/types.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
-const mockNode: Node<Bridge | Adapter> = {
+const mockNode: NodeAdapterType = {
   position: { x: 0, y: 0 },
   id: 'adapter@fgffgf',
   type: NodeTypes.ADAPTER_NODE,
-  data: MOCK_NODE_ADAPTER,
+  data: MOCK_NODE_ADAPTER.data,
 }
 
 describe('NodePropertyDrawer', () => {

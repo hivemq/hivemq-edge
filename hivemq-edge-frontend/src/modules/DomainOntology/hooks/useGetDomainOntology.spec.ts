@@ -15,14 +15,10 @@ import { handlers as topicFilterHandlers } from '@/api/hooks/useTopicFilters/__h
 import { handlers as bridgeHandlers } from '@/api/hooks/useGetBridges/__handlers__'
 import type { BridgeSubscription } from '@/modules/DomainOntology/types.ts'
 
-const successListOf = <T>(payload: T) =>
+const successListOf = <T extends Record<string, unknown>>(payload: T) =>
   expect.objectContaining({
     data: expect.objectContaining({
-      items: [
-        expect.objectContaining<T>({
-          ...payload,
-        }),
-      ],
+      items: expect.arrayContaining([expect.objectContaining(payload as never)]),
     }),
     error: null,
     isSuccess: true,

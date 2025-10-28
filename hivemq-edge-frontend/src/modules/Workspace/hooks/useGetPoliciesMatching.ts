@@ -8,6 +8,7 @@ import { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { discoverAdapterTopics, getBridgeTopics } from '@/modules/Workspace/utils/topics-utils.ts'
 import mqttTopicMatch from 'mqtt-match'
+import type { GenericObjectType } from '@rjsf/utils'
 
 import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.ts'
 
@@ -37,7 +38,7 @@ export const useGetPoliciesMatching = (id: string) => {
     const adapterProtocol = protocols?.items?.find((e) => e.id === node.data.type)
     if (!adapterProtocol) return undefined
 
-    const allTopics = discoverAdapterTopics(adapterProtocol, node.data.config)
+    const allTopics = discoverAdapterTopics(adapterProtocol, node.data.config as GenericObjectType)
 
     return dataPolicies?.items?.filter((policy) =>
       allTopics.some((topic) => mqttTopicMatch(policy.matching.topicFilter, topic))
