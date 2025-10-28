@@ -87,11 +87,12 @@ By adding the return type directly to the `useGetCombinedEntities` hook, we:
 
 ## Note on Premature Completion
 
-Initial verification was incorrect - claimed all errors were resolved when only Subtask 1 was complete. This was due to using wrong tsc command (`npx tsc --noEmit` vs `npx tsc -b`). 
+Initial verification was incorrect - claimed all errors were resolved when only Subtask 1 was complete. This was due to using wrong tsc command (`npx tsc --noEmit` vs `npx tsc -b`).
 
 **Learning:** Always use the same command the user uses for verification.
 
 **Actual Status after Subtask 1:**
+
 - ✅ 16 errors fixed
 - ⏳ 8 errors remaining (from original 24)
 
