@@ -15,7 +15,9 @@
  */
 package com.hivemq.edge.adapters.opcua.util;
 
+import org.eclipse.milo.opcua.stack.core.util.CertificateUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
@@ -106,7 +108,10 @@ public class KeystoreUtil {
                 certificateChainX509[i] = (X509Certificate) certificateChain[i];
             }
 
-            return new KeyPairWithChain(privateKey, certificateX509, certificateChainX509);
+            // Extract Application URI from certificate SAN extension
+            final String applicationUri = CertificateUtil.getSanUri(certificateX509).orElse(null);
+
+            return new KeyPairWithChain(privateKey, certificateX509, certificateChainX509, applicationUri);
         } catch (final UnrecoverableKeyException e1) {
             throw new SslException(
                     "Not able to recover key from KeyStore, please check your private-key-password and your keyStorePassword",
@@ -125,6 +130,7 @@ public class KeystoreUtil {
     }
 
     public record KeyPairWithChain(@NotNull PrivateKey privateKey, @NotNull X509Certificate publicKey,
-                                   @NotNull X509Certificate[] certificateChain) {
+                                   @NotNull X509Certificate[] certificateChain,
+                                   @Nullable String applicationUri) {
     }
 }

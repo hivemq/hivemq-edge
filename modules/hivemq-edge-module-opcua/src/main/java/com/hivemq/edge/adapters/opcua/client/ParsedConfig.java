@@ -46,7 +46,8 @@ import java.util.Optional;
 import java.util.Set;
 
 public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain keyPairWithChain,
-                           CertificateValidator clientCertificateValidator, IdentityProvider identityProvider) {
+                           CertificateValidator clientCertificateValidator, IdentityProvider identityProvider,
+                           @Nullable String applicationUri) {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ParsedConfig.class);
 
@@ -79,7 +80,15 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
             return Failure.of("Failed to create identity provider, check authentication configuration");
         }
 
-        return Success.of(new ParsedConfig(tlsEnabled, keyPairWithChain, certValidator, identityProvider.get()));
+        // Extract Application URI from certificate if available
+        final String applicationUri = keyPairWithChain != null ? keyPairWithChain.applicationUri() : null;
+        if (applicationUri != null) {
+            log.info("Using Application URI from certificate: {}", applicationUri);
+        } else if (tlsEnabled && keyPairWithChain != null) {
+            log.warn("Certificate does not contain Application URI in SAN extension, will use default URI");
+        }
+
+        return Success.of(new ParsedConfig(tlsEnabled, keyPairWithChain, certValidator, identityProvider.get(), applicationUri));
     }
 
     private static @NotNull Optional<List<X509Certificate>> getTrustedCerts(@Nullable final Truststore truststore) {
