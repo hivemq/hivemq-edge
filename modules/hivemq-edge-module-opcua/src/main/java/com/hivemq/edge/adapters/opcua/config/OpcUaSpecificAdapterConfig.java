@@ -55,6 +55,13 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
                        defaultValue = "false")
     private final boolean overrideUri;
 
+    @JsonProperty("applicationUri")
+    @ModuleConfigField(title = "Application URI Override",
+                       description = "Overrides the Application URI used for OPC UA client identification. If not specified, the URI from the certificate SAN extension is used, or the default URI 'urn:hivemq:edge:client' as fallback.",
+                       format = ModuleConfigField.FieldType.URI,
+                       required = false)
+    private final @Nullable String applicationUri;
+
     @JsonProperty("auth")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final @Nullable Auth auth;
@@ -74,12 +81,14 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
     public OpcUaSpecificAdapterConfig(
             @JsonProperty(value = "uri", required = true) final @NotNull String uri,
             @JsonProperty("overrideUri") final @Nullable Boolean overrideUri,
+            @JsonProperty("applicationUri") final @Nullable String applicationUri,
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
             @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
             @JsonProperty("security") final @Nullable Security security) {
         this.uri = uri;
         this.overrideUri = requireNonNullElse(overrideUri, false);
+        this.applicationUri = (applicationUri != null && !applicationUri.isBlank()) ? applicationUri : null;
         this.auth = auth;
         this.tls = requireNonNullElse(tls, new Tls(false, null, null));
         this.opcuaToMqttConfig =
@@ -112,6 +121,10 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         return overrideUri;
     }
 
+    public @Nullable String getApplicationUri() {
+        return applicationUri;
+    }
+
     @Override
     public boolean equals(final @Nullable Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -121,6 +134,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         return getOverrideUri().equals(that.getOverrideUri()) &&
                 Objects.equals(id, that.id) &&
                 Objects.equals(getUri(), that.getUri()) &&
+                Objects.equals(getApplicationUri(), that.getApplicationUri()) &&
                 Objects.equals(getAuth(), that.getAuth()) &&
                 Objects.equals(getTls(), that.getTls()) &&
                 Objects.equals(getSecurity(), that.getSecurity()) &&
@@ -129,6 +143,6 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
 
     @Override
     public int hashCode() {
-        return Objects.hash(getOverrideUri(), id, getUri(), getAuth(), getTls(), getSecurity(), getOpcuaToMqttConfig());
+        return Objects.hash(getOverrideUri(), id, getUri(), getApplicationUri(), getAuth(), getTls(), getSecurity(), getOpcuaToMqttConfig());
     }
 }

@@ -39,9 +39,20 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
 
     @Override
     public void accept(final @NotNull OpcUaClientConfigBuilder configBuilder) {
+        // Use Application URI from certificate if available, otherwise fall back to default
+        final String applicationUri = parsedConfig.applicationUri() != null
+                ? parsedConfig.applicationUri()
+                : Constants.OPCUA_APPLICATION_URI;
+
+        if (parsedConfig.applicationUri() == null) {
+            log.info("Using default Application URI: {}", applicationUri);
+        } else {
+            log.info("Using Application URI from certificate: {}", applicationUri);
+        }
+
         configBuilder
                 .setApplicationName(LocalizedText.english(Constants.OPCUA_APPLICATION_NAME))
-                .setApplicationUri(Constants.OPCUA_APPLICATION_URI)
+                .setApplicationUri(applicationUri)
                 .setProductUri(Constants.OPCUA_PRODUCT_URI)
                 .setSessionName(() -> Constants.OPCUA_SESSION_NAME_PREFIX + adapterId);
 
