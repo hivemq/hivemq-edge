@@ -16,7 +16,8 @@ describe('LayoutRegistry', () => {
 
   describe('constructor', () => {
     it('should initialize with default algorithms', () => {
-      expect(registry.count).toBe(5) // TB, LR, RADIAL_HUB, COLA_FORCE, COLA_CONSTRAINED
+      expect(registry.count).toBe(6) // MANUAL, TB, LR, RADIAL_HUB, COLA_FORCE, COLA_CONSTRAINED
+      expect(registry.has('MANUAL' as LayoutType)).toBe(true)
       expect(registry.has('DAGRE_TB' as LayoutType)).toBe(true)
       expect(registry.has('DAGRE_LR' as LayoutType)).toBe(true)
       expect(registry.has('RADIAL_HUB' as LayoutType)).toBe(true)
@@ -77,14 +78,15 @@ describe('LayoutRegistry', () => {
 
   describe('getAll', () => {
     it('should return all registered algorithms', () => {
-      expect(algorithms).toHaveLength(5) // TB, LR, RADIAL_HUB, COLA_FORCE, COLA_CONSTRAINED
+      const algorithms = registry.getAll()
 
-      expect(algorithms).toHaveLength(3) // TB, LR, RADIAL_HUB
+      expect(algorithms).toHaveLength(6) // MANUAL, TB, LR, RADIAL_HUB, COLA_FORCE, COLA_CONSTRAINED
       expect(algorithms[0]).toBeDefined()
-      expect(algorithms[3]).toBeDefined()
-      expect(algorithms[4]).toBeDefined()
       expect(algorithms[1]).toBeDefined()
       expect(algorithms[2]).toBeDefined()
+      expect(algorithms[3]).toBeDefined()
+      expect(algorithms[4]).toBeDefined()
+      expect(algorithms[5]).toBeDefined()
     })
   })
 
@@ -117,7 +119,7 @@ describe('LayoutRegistry', () => {
 
   describe('count', () => {
     it('should return number of registered algorithms', () => {
-      expect(registry.count).toBe(5) // TB, LR, RADIAL_HUB, COLA_FORCE, COLA_CONSTRAINED
+      expect(registry.count).toBe(6) // MANUAL, TB, LR, RADIAL_HUB, COLA_FORCE, COLA_CONSTRAINED
     })
 
     it('should update after registration', () => {

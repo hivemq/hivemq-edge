@@ -14,7 +14,7 @@ const initialState: WorkspaceState = {
   edges: [],
   // Layout configuration
   layoutConfig: {
-    currentAlgorithm: LayoutType.DAGRE_TB,
+    currentAlgorithm: LayoutType.MANUAL,
     mode: LayoutMode.STATIC,
     options: {
       animate: true,

@@ -6,6 +6,7 @@
  */
 
 import type { LayoutAlgorithm, LayoutType, LayoutFeature } from '../../types/layout'
+import { ManualLayoutAlgorithm } from './manual-layout'
 import { DagreLayoutAlgorithm } from './dagre-layout'
 import { RadialHubLayoutAlgorithm } from './radial-hub-layout'
 import { ColaForceLayoutAlgorithm } from './cola-force-layout'
@@ -28,6 +29,9 @@ class LayoutRegistry {
    * Register default layout algorithms
    */
   private registerDefaults() {
+    // Register manual layout (default - no automatic layout)
+    this.register(new ManualLayoutAlgorithm())
+
     // Register dagre algorithms
     this.register(new DagreLayoutAlgorithm('TB'))
     this.register(new DagreLayoutAlgorithm('LR'))
