@@ -149,8 +149,31 @@ When adding a new task, copy this template:
 
 When a task is fully completed, move its entry here:
 
-<!-- No completed tasks yet -->
+### 37884-typescript-errors
+
+**Status:** Completed ✅  
+**Directory:** `.tasks/37884-typescript-errors/`  
+**Objective:** Fix all latent TypeScript errors in the web app  
+**Completed Subtasks:** 5 (all subtasks)  
+**Completed Date:** October 28, 2025
+
+**Summary:**
+
+- ✅ Fixed 24 TypeScript errors across 17 files
+- ✅ Subtask 1: Hook return type + test mock properties (16 errors)
+- ✅ Subtask 2: React Flow node types in tests (5 errors)
+- ✅ Subtask 3: Generic type constraints (3 errors)
+- ✅ Subtask 4: Runtime type safety (1 error)
+- ✅ Subtask 5: DataHub & component errors (8 errors)
+- **Result: 0 TypeScript errors - verified by user with `npm run build:tsc`**
+
+**Quick Start:**
+
+- Read: [TASK_BRIEF.md](.tasks/37884-typescript-errors/TASK_BRIEF.md)
+- Review: [TASK_SUMMARY.md](.tasks/37884-typescript-errors/TASK_SUMMARY.md)
+- Complete: [TASK_COMPLETE.md](.tasks/37884-typescript-errors/TASK_COMPLETE.md)
+- Subtasks: [CONVERSATION_SUBTASK_1.md](.tasks/37884-typescript-errors/CONVERSATION_SUBTASK_1.md) through [CONVERSATION_SUBTASK_5.md](.tasks/37884-typescript-errors/CONVERSATION_SUBTASK_5.md)
 
 ---
 
-**Last Updated:** October 23, 2025
+**Last Updated:** October 28, 2025

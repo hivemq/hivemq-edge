@@ -2,15 +2,14 @@
 
 import NodePropertyDrawer from '@/modules/Workspace/components/drawers/NodePropertyDrawer.tsx'
 import { MOCK_NODE_ADAPTER } from '@/__test-utils__/react-flow/nodes.ts'
-import type { Node } from '@xyflow/react'
-import type { Adapter, Bridge } from '@/api/__generated__'
+import type { NodeAdapterType } from '@/modules/Workspace/types.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
-const mockNode: Node<Bridge | Adapter> = {
+const mockNode: NodeAdapterType = {
   position: { x: 0, y: 0 },
   id: 'adapter@fgffgf',
   type: NodeTypes.ADAPTER_NODE,
-  data: MOCK_NODE_ADAPTER,
+  data: MOCK_NODE_ADAPTER.data,
 }
 
 describe('NodePropertyDrawer', () => {
@@ -44,10 +43,13 @@ describe('NodePropertyDrawer', () => {
     cy.getByTestId('metrics-toggle').should('be.visible')
 
     // check that the event log is there
-    cy.get('p').should('contain.text', 'The 5 most recent events for adapter idAdapter')
+    cy.getByTestId('overview-event-log-header').should(
+      'contain.text',
+      'The 5 most recent events for adapter my-adapter'
+    )
     cy.getByTestId('navigate-eventLog-filtered')
       .should('contain.text', 'Show more')
-      .should('have.attr', 'href', '/event-logs?source=idAdapter')
+      .should('have.attr', 'href', '/event-logs?source=my-adapter')
     cy.get('tbody').find('tr').should('have.length', 5)
 
     // check that the controller is there

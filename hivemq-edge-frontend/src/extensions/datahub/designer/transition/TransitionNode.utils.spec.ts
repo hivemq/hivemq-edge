@@ -95,10 +95,6 @@ describe('checkValidityTransitions', () => {
       width: 235,
       height: 48,
       selected: false,
-      positionAbsolute: {
-        x: 650,
-        y: 325,
-      },
     }
     const MOCK_STORE: WorkspaceState = {
       nodes: [
@@ -131,11 +127,6 @@ describe('checkValidityTransitions', () => {
           width: 233,
           height: 56,
           selected: false,
-          positionAbsolute: {
-            x: 975,
-            y: 275,
-          },
-          dragging: false,
         } as Node<OperationData>,
         MOCK_TRANSITION,
         MOCK_NODE_BEHAVIOR,

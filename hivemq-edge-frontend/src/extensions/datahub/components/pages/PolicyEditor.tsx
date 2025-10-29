@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import type React from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
-import type { Connection, HandleType, Node, NodeAddChange, ReactFlowInstance, XYPosition } from '@xyflow/react'
+import type { Connection, Edge, HandleType, Node, NodeAddChange, ReactFlowInstance, XYPosition } from '@xyflow/react'
 import { ReactFlow, ReactFlowProvider } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
@@ -47,7 +47,18 @@ const PolicyEditor: FC = () => {
   const { isPolicyEditable } = usePolicyGuards()
 
   const checkValidity = useCallback(
-    (connection: Connection) => isValidPolicyConnection(connection, nodes, edges),
+    (connection: Connection | Edge) => {
+      const conn: Connection =
+        'id' in connection
+          ? {
+              source: connection.source,
+              target: connection.target,
+              sourceHandle: connection.sourceHandle ?? null,
+              targetHandle: connection.targetHandle ?? null,
+            }
+          : connection
+      return isValidPolicyConnection(conn, nodes, edges)
+    },
     [edges, nodes]
   )
 
@@ -136,13 +147,13 @@ const PolicyEditor: FC = () => {
 
           const edgeConnection: Connection = droppedNode.isSource
             ? {
-                target: nodeId,
+                target: nodeId as string,
                 targetHandle: handleId,
                 source: id,
                 sourceHandle: droppedNode.handle,
               }
             : {
-                source: nodeId,
+                source: nodeId as string,
                 sourceHandle: handleId,
                 target: id,
                 targetHandle: droppedNode.handle,

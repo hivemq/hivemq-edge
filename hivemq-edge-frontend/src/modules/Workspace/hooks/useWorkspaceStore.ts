@@ -92,7 +92,7 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
           }),
         })
       },
-      onUpdateNode: <T>(id: string, data: T) => {
+      onUpdateNode: <T extends Record<string, unknown>>(id: string, data: T) => {
         set({
           nodes: get().nodes.map((node) => {
             if (id === node.id) {

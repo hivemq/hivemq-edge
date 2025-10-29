@@ -56,7 +56,7 @@ export interface WorkspaceAction {
   onConnect: (connection: Connection) => void
   onAddNodes: (changes: NodeAddChange[]) => void
   onAddEdges: (changes: EdgeAddChange[]) => void
-  onUpdateNodes: <T>(item: string, data: T) => void
+  onUpdateNodes: <T extends Record<string, unknown>>(item: string, data: T) => void
 
   onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>) => string | undefined
 

@@ -31,8 +31,8 @@ describe('ConfigurationSave', () => {
         isFilterActive={true}
         onSave={onSave}
         configurations={[
-          { label: 'test1', filter: {} },
-          { label: 'test2', filter: {} },
+          { label: 'test1', filter: {}, isActive: false },
+          { label: 'test2', filter: {}, isActive: false },
         ]}
       />
     )
@@ -76,7 +76,10 @@ describe('ConfigurationSave', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(
-      <ConfigurationSave isFilterActive={true} configurations={[{ label: 'my first quick filter', filter: {} }]} />
+      <ConfigurationSave
+        isFilterActive={true}
+        configurations={[{ label: 'my first quick filter', filter: {}, isActive: false }]}
+      />
     )
 
     cy.checkAccessibility()

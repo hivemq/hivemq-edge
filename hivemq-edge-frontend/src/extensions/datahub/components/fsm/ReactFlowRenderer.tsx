@@ -75,8 +75,8 @@ const getLayoutedElements = async (
 }
 
 export const ReactFlowRenderer: FC<FiniteStateMachine> = (props) => {
-  const [nodes, setNodes, onNodesChange] = useNodesState([])
-  const [edges, setEdges, onEdgesChange] = useEdgesState([])
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const { fitView } = useReactFlow()
 
   const { initialNodes, initialEdges } = useMemo(() => {
