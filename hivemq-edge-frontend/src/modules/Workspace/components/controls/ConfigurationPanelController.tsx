@@ -75,6 +75,11 @@ const ConfigurationPanelController: FC<ConfigurationPanelControllerProps> = ({ t
     onOpen()
   }, [nodes.length, onOpen, selectedNode])
 
+  useEffect(() => {
+    if (!nodes.length || !selectedEdge) return
+    onOpen()
+  }, [nodes.length, onOpen, selectedEdge])
+
   const handleClose = () => {
     onClose()
     navigate('/workspace')
