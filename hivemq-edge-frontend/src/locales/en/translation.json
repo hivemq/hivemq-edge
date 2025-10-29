@@ -864,6 +864,29 @@
       "expand": "Expand Toolbox",
       "collapse": "Collapse Toolbox"
     },
+    "autoLayout": {
+      "controls": {
+        "aria-label": "Layout Controls"
+      },
+      "apply": {
+        "label": "Apply Layout",
+        "tooltip": "Automatically arrange workspace nodes using the selected algorithm",
+        "loading": "Applying..."
+      },
+      "selector": {
+        "tooltip": "Select layout algorithm"
+      },
+      "success": {
+        "title": "Layout Applied",
+        "description": "{{algorithm}} applied in {{duration}}ms ({{nodes}} nodes)"
+      },
+      "error": {
+        "no-algorithm": "No Algorithm Selected",
+        "select-algorithm": "Please select a layout algorithm first",
+        "failed": "Layout Failed",
+        "unknown": "An unknown error occurred while applying the layout"
+      }
+    },
     "configuration": {
       "header": "Workspace configuration",
       "content": {
