@@ -208,6 +208,7 @@ jobs:
             -Dsonar.verbose=false
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   percy_finalise:
     name: Percy (finalise)

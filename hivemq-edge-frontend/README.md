@@ -147,3 +147,45 @@ See github actions
 ### Lighthouse - Performance testing
 
 ### SonarQube Cloud
+
+## Code Coverage
+
+This project uses a comprehensive coverage setup that merges reports from multiple test sources:
+
+- **Vitest** for unit tests
+- **Cypress** for E2E and component tests (with matrix execution)
+
+### Quick Commands
+
+```bash
+# Run all tests and get combined coverage
+pnpm run coverage:report:all
+
+# Run only Cypress matrix tests and merge
+pnpm run cypress:coverage:report
+
+# Merge existing coverage without re-running tests
+pnpm run coverage:merge:cypress     # Cypress only
+pnpm run coverage:merge:all         # Vitest + Cypress
+
+# Test the coverage merge setup
+./tools/test-coverage-merge.sh
+```
+
+### Coverage Reports Location
+
+- **Individual Reports**:
+
+  - `coverage-vitest/` - Vitest unit tests
+  - `coverage-cypress/` - Cypress main output
+  - `coverage-combined/e2e/` - E2E matrix tests
+  - `coverage-combined/components/` - Component matrix tests
+  - `coverage-combined/extensions/` - Extension matrix tests
+  - `coverage-combined/modules/` - Module matrix tests
+
+- **Merged Reports**:
+  - `coverage-combined/index.html` - Combined HTML report
+  - `coverage-combined/lcov.info` - Combined LCOV report
+  - `coverage-combined/coverage-final.json` - Combined JSON report
+
+📚 **For detailed coverage documentation**, see [COVERAGE-SETUP.md](./COVERAGE-SETUP.md)
