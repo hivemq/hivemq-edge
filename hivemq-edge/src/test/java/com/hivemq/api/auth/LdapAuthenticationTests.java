@@ -20,7 +20,6 @@ import com.hivemq.api.TestApiResource;
 import com.hivemq.api.TestPermitAllApiResource;
 import com.hivemq.api.TestResourceLevelRolesApiResource;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
-import com.hivemq.api.auth.handler.impl.BasicAuthenticationHandler;
 import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.auth.provider.impl.ldap.LdapUsernameRolesProvider;
 import com.hivemq.api.auth.provider.impl.ldap.TlsMode;
@@ -32,7 +31,6 @@ import com.hivemq.http.HttpConstants;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpUrlConnectionClient;
-import com.hivemq.http.core.HttpUtils;
 import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.SearchScope;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -160,7 +158,7 @@ public class LdapAuthenticationTests {
     @Test
     public void testGetSecuredResourceWithInvalidUsername() throws IOException {
         final var headers = Map.of(HttpConstants.AUTH_HEADER,
-                HttpUtils.getBasicAuthenticationHeaderValue("testaWRONG", TEST_PASSWORD));
+                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testaWRONG", TEST_PASSWORD));
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
@@ -172,7 +170,7 @@ public class LdapAuthenticationTests {
     @Test
     public void testGetSecuredResourceWithInvalidPassword() throws IOException {
         final var headers = Map.of(HttpConstants.AUTH_HEADER,
-                HttpUtils.getBasicAuthenticationHeaderValue(TEST_USERNAME, "incorrect"));
+                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue(TEST_USERNAME, "incorrect"));
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
@@ -184,7 +182,7 @@ public class LdapAuthenticationTests {
     @Test
     public void testGetSecuredResourceWithValidCreds() throws IOException {
         final var headers = Map.of(HttpConstants.AUTH_HEADER,
-                HttpUtils.getBasicAuthenticationHeaderValue(TEST_USERNAME, TEST_PASSWORD));
+                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue(TEST_USERNAME, TEST_PASSWORD));
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);

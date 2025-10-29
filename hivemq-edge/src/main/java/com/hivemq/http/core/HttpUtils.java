@@ -15,13 +15,12 @@
  */
 package com.hivemq.http.core;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,10 +28,6 @@ public class HttpUtils {
 
     public static String getBearerTokenAuthenticationHeaderValue(String token) {
         return "Bearer " + token;
-    }
-    public static String getBasicAuthenticationHeaderValue(String username, String password) {
-        String valueToEncode = username + ":" + password;
-        return "Basic " + Base64.getEncoder().encodeToString(valueToEncode.getBytes());
     }
 
     public static String getMimeTypeFromFileExtension(String fileExtension) throws MimeTypeNotFoundException {

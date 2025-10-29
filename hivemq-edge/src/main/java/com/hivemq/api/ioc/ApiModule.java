@@ -52,20 +52,20 @@ import com.hivemq.edge.api.PayloadSamplingApi;
 import com.hivemq.edge.api.ProtocolAdaptersApi;
 import com.hivemq.edge.api.TopicFiltersApi;
 import com.hivemq.edge.api.UnsApi;
-import com.hivemq.logging.SecurityLog;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsBootstrapFactory;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
+import com.hivemq.logging.SecurityLog;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.ElementsIntoSet;
 import dagger.multibindings.IntoSet;
+import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.inject.Singleton;
 import java.util.Set;
 
 @Module
@@ -120,7 +120,6 @@ public abstract class ApiModule {
     @ElementsIntoSet
     @Singleton
     static Set<IAuthenticationHandler> provideAuthHandlers(
-            /*final @NotNull BasicAuthenticationHandler basicAuthenticationHandler,*/
             final @NotNull BearerTokenAuthenticationHandler bearerTokenAuthenticationHandler) {
         return Set.of(bearerTokenAuthenticationHandler);
     }

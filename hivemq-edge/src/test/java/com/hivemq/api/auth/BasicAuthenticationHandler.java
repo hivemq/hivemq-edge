@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.api.auth.handler.impl;
+package com.hivemq.api.auth;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.api.auth.handler.AuthenticationResult;
+import com.hivemq.api.auth.handler.impl.AbstractHeaderAuthenticationHandler;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.UsernamePasswordRoles;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -34,14 +33,18 @@ import java.util.Optional;
 /**
  * @author Simon L Johnson
  */
-@Singleton
 public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHandler {
 
     static final String SEP = ":";
     static final String METHOD = "Basic";
     private final IUsernameRolesProvider provider;
 
-    @Inject
+
+    public static String getBasicAuthenticationHeaderValue(final @NotNull String username, final @NotNull String password) {
+        final var valueToEncode = username + ":" + password;
+        return "Basic " + Base64.getEncoder().encodeToString(valueToEncode.getBytes());
+    }
+
     public BasicAuthenticationHandler(final @NotNull IUsernameRolesProvider provider) {
         this.provider = provider;
     }
