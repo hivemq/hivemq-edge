@@ -80,8 +80,8 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selec
             initMetrics={getDefaultMetricsFor(selectedNode)}
             defaultChartType={ChartType.SAMPLE}
           />
-          <Card size="sm">
-            <CardHeader>
+          <Card size="sm" data-testid="overview-event-log">
+            <CardHeader data-testid="overview-event-log-header">
               <Text>
                 {t('workspace.property.eventLog.header', { type: selectedNode.type, id: selectedNode.data.id })}
               </Text>

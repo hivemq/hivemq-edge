@@ -43,10 +43,13 @@ describe('NodePropertyDrawer', () => {
     cy.getByTestId('metrics-toggle').should('be.visible')
 
     // check that the event log is there
-    cy.get('p').should('contain.text', 'The 5 most recent events for adapter idAdapter')
+    cy.getByTestId('overview-event-log-header').should(
+      'contain.text',
+      'The 5 most recent events for adapter my-adapter'
+    )
     cy.getByTestId('navigate-eventLog-filtered')
       .should('contain.text', 'Show more')
-      .should('have.attr', 'href', '/event-logs?source=idAdapter')
+      .should('have.attr', 'href', '/event-logs?source=my-adapter')
     cy.get('tbody').find('tr').should('have.length', 5)
 
     // check that the controller is there
