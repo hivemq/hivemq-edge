@@ -41,7 +41,7 @@ describe('ProtocolsBrowser', () => {
   })
 
   it('should render properly', () => {
-    const mockOnCreate = cy.stub().as('createAdapter')
+    const mockOnCreate = cy.stub()
 
     cy.mountWithProviders(
       <ProtocolsBrowser items={MOCK_ADAPTERS} facet={{ search: 'from an edge device' }} onCreate={mockOnCreate} />
@@ -59,7 +59,7 @@ describe('ProtocolsBrowser', () => {
 
     cy.get('@createAdapter').should('not.have.been.called')
     cy.getByTestId('protocol-create-adapter').eq(0).click()
-    cy.get('@createAdapter').should('have.been.calledWith', 'simulation1')
+    cy.get('@createAdapter').should('have.been.calledWith', 'simulation3')
 
     cy.get('@createAdapter').should('not.have.been.calledWith', 'simulation4')
     cy.getByTestId('protocol-create-adapter').eq(3).click()
@@ -80,7 +80,7 @@ describe('ProtocolsBrowser', () => {
     cy.getByTestId('protocol-create-adapter').should('have.length', 2)
     cy.get('@createAdapter').should('not.have.been.called')
     cy.getByTestId('protocol-create-adapter').eq(1).click()
-    cy.get('@createAdapter').should('have.been.calledWith', 'simulation3')
+    cy.get('@createAdapter').should('have.been.calledWith', 'simulation1')
   })
 
   it('should filter properly by tags', () => {
