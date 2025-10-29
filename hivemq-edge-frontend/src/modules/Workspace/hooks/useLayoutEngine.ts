@@ -99,17 +99,65 @@ export const useLayoutEngine = () => {
       const result = await currentAlgorithm.apply(nodes, edges, layoutConfig.options, constraints)
 
       if (result.success) {
-        // Update nodes with new positions
-        const changes = result.nodes.map((node) => ({
-          id: node.id,
-          type: 'position' as const,
-          position: node.position,
-          positionAbsolute: node.position,
-          ...(node.sourcePosition && { sourcePosition: node.sourcePosition }),
-          ...(node.targetPosition && { targetPosition: node.targetPosition }),
-        }))
+        const animationDuration = layoutConfig.options.animate ? layoutConfig.options.animationDuration || 300 : 0
 
-        onNodesChange(changes)
+        if (animationDuration > 0) {
+          // Step 1: Add transition styles to all nodes
+          const currentNodes = reactFlowInstance.getNodes()
+          const addStyleChanges = currentNodes.map((node) => ({
+            id: node.id,
+            type: 'replace' as const,
+            item: {
+              ...node,
+              style: {
+                ...node.style,
+                transition: `transform ${animationDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`,
+              },
+            },
+          }))
+          onNodesChange(addStyleChanges)
+
+          // Step 2: Wait for next frame, then update positions (triggers animation)
+          requestAnimationFrame(() => {
+            const changes = result.nodes.map((node) => ({
+              id: node.id,
+              type: 'position' as const,
+              position: node.position,
+              positionAbsolute: node.position,
+              ...(node.sourcePosition && { sourcePosition: node.sourcePosition }),
+              ...(node.targetPosition && { targetPosition: node.targetPosition }),
+            }))
+            onNodesChange(changes)
+
+            // Step 3: Remove transition styles after animation completes
+            setTimeout(() => {
+              const finalNodes = reactFlowInstance.getNodes()
+              const removeStyleChanges = finalNodes.map((node) => {
+                const { transition, ...restStyle } = node.style || {}
+                return {
+                  id: node.id,
+                  type: 'replace' as const,
+                  item: {
+                    ...node,
+                    style: restStyle,
+                  },
+                }
+              })
+              onNodesChange(removeStyleChanges)
+            }, animationDuration)
+          })
+        } else {
+          // No animation - just update positions immediately
+          const changes = result.nodes.map((node) => ({
+            id: node.id,
+            type: 'position' as const,
+            position: node.position,
+            positionAbsolute: node.position,
+            ...(node.sourcePosition && { sourcePosition: node.sourcePosition }),
+            ...(node.targetPosition && { targetPosition: node.targetPosition }),
+          }))
+          onNodesChange(changes)
+        }
 
         // Save to history
         pushLayoutHistory({
