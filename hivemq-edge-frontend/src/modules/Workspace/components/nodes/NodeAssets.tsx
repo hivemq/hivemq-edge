@@ -1,3 +1,4 @@
+import { computeNodeRuntimeStatus } from '@/modules/Workspace/utils/status-propagation.utils.ts'
 import type { FC } from 'react'
 import { useMemo, useEffect } from 'react'
 import type { NodeProps } from '@xyflow/react'
@@ -17,7 +18,7 @@ import type { NodeAssetsType } from '@/modules/Workspace/types.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
-import { RuntimeStatus, OperationalStatus, type NodeStatusModel } from '@/modules/Workspace/types/status.types'
+import { OperationalStatus } from '@/modules/Workspace/types/status.types'
 
 const NodeAssets: FC<NodeProps<NodeAssetsType>> = ({ id, data, selected, dragging }) => {
   const { t } = useTranslation()
@@ -40,42 +41,7 @@ const NodeAssets: FC<NodeProps<NodeAssetsType>> = ({ id, data, selected, draggin
     const hasMappedAssets = mappedAssets.length > 0
     const operational = hasMappedAssets ? OperationalStatus.ACTIVE : OperationalStatus.INACTIVE
 
-    // Derive runtime status from connected upstream nodes
-    if (!connectedNodes || connectedNodes.length === 0) {
-      return {
-        runtime: RuntimeStatus.INACTIVE,
-        operational,
-        source: 'DERIVED' as const,
-      }
-    }
-
-    let hasErrorUpstream = false
-    let hasActiveUpstream = false
-
-    for (const node of connectedNodes) {
-      if (!node) continue
-      const upstreamStatusModel = (node.data as { statusModel?: NodeStatusModel }).statusModel
-      if (!upstreamStatusModel) continue
-
-      if (upstreamStatusModel.runtime === RuntimeStatus.ERROR) {
-        hasErrorUpstream = true
-      } else if (upstreamStatusModel.runtime === RuntimeStatus.ACTIVE) {
-        hasActiveUpstream = true
-      }
-    }
-
-    // ERROR propagates first
-    const runtime = hasErrorUpstream
-      ? RuntimeStatus.ERROR
-      : hasActiveUpstream
-        ? RuntimeStatus.ACTIVE
-        : RuntimeStatus.INACTIVE
-
-    return {
-      runtime,
-      operational,
-      source: 'DERIVED' as const,
-    }
+    return computeNodeRuntimeStatus(operational, connectedNodes)
   }, [connectedNodes, mappedAssets.length])
 
   // Update node data with statusModel whenever it changes

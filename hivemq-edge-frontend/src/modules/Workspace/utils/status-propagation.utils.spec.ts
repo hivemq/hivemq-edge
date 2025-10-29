@@ -9,6 +9,7 @@ import {
   computePassiveNodeStatus,
   getDownstreamNodes,
   getAffectedNodes,
+  computeNodeRuntimeStatus,
 } from './status-propagation.utils'
 
 describe('status-propagation.utils', () => {
@@ -351,6 +352,267 @@ describe('status-propagation.utils', () => {
 
       expect(affected).toBeDefined()
       expect(affected.length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('computeNodeRuntimeStatus', () => {
+    it('should return INACTIVE when no connected nodes are provided', () => {
+      const result = computeNodeRuntimeStatus(OperationalStatus.ACTIVE, [])
+
+      expect(result.runtime).toBe(RuntimeStatus.INACTIVE)
+      expect(result.operational).toBe(OperationalStatus.ACTIVE)
+      expect(result.source).toBe('DERIVED')
+    })
+
+    it('should return INACTIVE when connectedNodes is undefined', () => {
+      const result = computeNodeRuntimeStatus(OperationalStatus.ACTIVE, undefined as unknown as Node[])
+
+      expect(result.runtime).toBe(RuntimeStatus.INACTIVE)
+      expect(result.operational).toBe(OperationalStatus.ACTIVE)
+      expect(result.source).toBe('DERIVED')
+    })
+
+    it('should return ACTIVE when at least one connected node is ACTIVE', () => {
+      const activeStatus: NodeStatusModel = {
+        runtime: RuntimeStatus.ACTIVE,
+        operational: OperationalStatus.ACTIVE,
+        source: 'ADAPTER',
+      }
+      const connectedNodes: Pick<Node, 'id' | 'type' | 'data'>[] = [
+        { id: 'adapter1', type: NodeTypes.ADAPTER_NODE, data: { statusModel: activeStatus } },
+      ]
+
+      const result = computeNodeRuntimeStatus(OperationalStatus.ACTIVE, connectedNodes)
+
+      expect(result.runtime).toBe(RuntimeStatus.ACTIVE)
+      expect(result.operational).toBe(OperationalStatus.ACTIVE)
+      expect(result.source).toBe('DERIVED')
+    })
+
+    it('should return ERROR when any connected node is ERROR', () => {
+      const errorStatus: NodeStatusModel = {
+        runtime: RuntimeStatus.ERROR,
+        operational: OperationalStatus.ACTIVE,
+        source: 'ADAPTER',
+      }
+      const connectedNodes: Pick<Node, 'id' | 'type' | 'data'>[] = [
+        { id: 'adapter1', type: NodeTypes.ADAPTER_NODE, data: { statusModel: errorStatus } },
+      ]
+
+      const result = computeNodeRuntimeStatus(OperationalStatus.ACTIVE, connectedNodes)
+
+      expect(result.runtime).toBe(RuntimeStatus.ERROR)
+      expect(result.operational).toBe(OperationalStatus.ACTIVE)
+      expect(result.source).toBe('DERIVED')
+    })
+
+    it('should prioritize ERROR over ACTIVE when both are present', () => {
+      const activeStatus: NodeStatusModel = {
+        runtime: RuntimeStatus.ACTIVE,
+        operational: OperationalStatus.ACTIVE,
+        source: 'ADAPTER',
+      }
+      const errorStatus: NodeStatusModel = {
+        runtime: RuntimeStatus.ERROR,
+        operational: OperationalStatus.ACTIVE,
+        source: 'BRIDGE',
+      }
+      const connectedNodes: Pick<Node, 'id' | 'type' | 'data'>[] = [
+        { id: 'adapter1', type: NodeTypes.ADAPTER_NODE, data: { statusModel: activeStatus } },
+        { id: 'bridge1', type: NodeTypes.BRIDGE_NODE, data: { statusModel: errorStatus } },
+      ]
+
+      const result = computeNodeRuntimeStatus(OperationalStatus.ACTIVE, connectedNodes)
+
+      expect(result.runtime).toBe(RuntimeStatus.ERROR)
+      expect(result.operational).toBe(OperationalStatus.ACTIVE)
+      expect(result.source).toBe('DERIVED')
+    })
+
+    it('should return INACTIVE when all connected nodes are INACTIVE', () => {
+      const inactiveStatus: NodeStatusModel = {
+        runtime: RuntimeStatus.INACTIVE,
+        operational: OperationalStatus.ACTIVE,
+        source: 'ADAPTER',
+      }
+      const connectedNodes: Pick<Node, 'id' | 'type' | 'data'>[] = [
+        { id: 'adapter1', type: NodeTypes.ADAPTER_NODE, data: { statusModel: inactiveStatus } },
+      ]
+
+      const result = computeNodeRuntimeStatus(OperationalStatus.ACTIVE, connectedNodes)
+
+      expect(result.runtime).toBe(RuntimeStatus.INACTIVE)
+      expect(result.operational).toBe(OperationalStatus.ACTIVE)
+      expect(result.source).toBe('DERIVED')
+    })
+
+    it('should return ACTIVE when at least one node is ACTIVE and none are ERROR', () => {
+      const activeStatus: NodeStatusModel = {
+        runtime: RuntimeStatus.ACTIVE,
+        operational: OperationalStatus.ACTIVE,
+        source: 'ADAPTER',
+      }
+      const inactiveStatus: NodeStatusModel = {
+        runtime: RuntimeStatus.INACTIVE,
+        operational: OperationalStatus.ACTIVE,
+        source: 'BRIDGE',
+      }
+      const connectedNodes: Pick<Node, 'id' | 'type' | 'data'>[] = [
+        { id: 'adapter1', type: NodeTypes.ADAPTER_NODE, data: { statusModel: activeStatus } },
+        { id: 'bridge1', type: NodeTypes.BRIDGE_NODE, data: { statusModel: inactiveStatus } },
+      ]
+
+      const result = computeNodeRuntimeStatus(OperationalStatus.ACTIVE, connectedNodes)
+
+      expect(result.runtime).toBe(RuntimeStatus.ACTIVE)
+      expect(result.operational).toBe(OperationalStatus.ACTIVE)
+      expect(result.source).toBe('DERIVED')
+    })
+
+    it('should preserve the operational status from the parameter', () => {
+      const activeStatus: NodeStatusModel = {
+        runtime: RuntimeStatus.ACTIVE,
+        operational: OperationalStatus.ACTIVE,
+        source: 'ADAPTER',
+      }
+      const connectedNodes: Pick<Node, 'id' | 'type' | 'data'>[] = [
+        { id: 'adapter1', type: NodeTypes.ADAPTER_NODE, data: { statusModel: activeStatus } },
+      ]
+
+      const result = computeNodeRuntimeStatus(OperationalStatus.INACTIVE, connectedNodes)
+
+      expect(result.runtime).toBe(RuntimeStatus.ACTIVE)
+      expect(result.operational).toBe(OperationalStatus.INACTIVE)
+      expect(result.source).toBe('DERIVED')
+    })
+
+    it('should handle nodes without statusModel gracefully', () => {
+      const connectedNodes: Pick<Node, 'id' | 'type' | 'data'>[] = [
+        { id: 'adapter1', type: NodeTypes.ADAPTER_NODE, data: {} },
+      ]
+
+      const result = computeNodeRuntimeStatus(OperationalStatus.ACTIVE, connectedNodes)
+
+      expect(result.runtime).toBe(RuntimeStatus.INACTIVE)
+      expect(result.operational).toBe(OperationalStatus.ACTIVE)
+      expect(result.source).toBe('DERIVED')
+    })
+
+    it('should handle null/undefined nodes in array gracefully', () => {
+      const activeStatus: NodeStatusModel = {
+        runtime: RuntimeStatus.ACTIVE,
+        operational: OperationalStatus.ACTIVE,
+        source: 'ADAPTER',
+      }
+      const connectedNodes: Pick<Node, 'id' | 'type' | 'data'>[] = [
+        undefined as unknown as Node,
+        { id: 'adapter1', type: NodeTypes.ADAPTER_NODE, data: { statusModel: activeStatus } },
+        null as unknown as Node,
+      ]
+
+      const result = computeNodeRuntimeStatus(OperationalStatus.ACTIVE, connectedNodes)
+
+      expect(result.runtime).toBe(RuntimeStatus.ACTIVE)
+      expect(result.operational).toBe(OperationalStatus.ACTIVE)
+      expect(result.source).toBe('DERIVED')
+    })
+
+    it('should handle multiple ACTIVE nodes correctly', () => {
+      const activeStatus1: NodeStatusModel = {
+        runtime: RuntimeStatus.ACTIVE,
+        operational: OperationalStatus.ACTIVE,
+        source: 'ADAPTER',
+      }
+      const activeStatus2: NodeStatusModel = {
+        runtime: RuntimeStatus.ACTIVE,
+        operational: OperationalStatus.ACTIVE,
+        source: 'BRIDGE',
+      }
+      const connectedNodes: Pick<Node, 'id' | 'type' | 'data'>[] = [
+        { id: 'adapter1', type: NodeTypes.ADAPTER_NODE, data: { statusModel: activeStatus1 } },
+        { id: 'bridge1', type: NodeTypes.BRIDGE_NODE, data: { statusModel: activeStatus2 } },
+      ]
+
+      const result = computeNodeRuntimeStatus(OperationalStatus.ACTIVE, connectedNodes)
+
+      expect(result.runtime).toBe(RuntimeStatus.ACTIVE)
+      expect(result.operational).toBe(OperationalStatus.ACTIVE)
+      expect(result.source).toBe('DERIVED')
+    })
+
+    it('should handle multiple ERROR nodes correctly', () => {
+      const errorStatus1: NodeStatusModel = {
+        runtime: RuntimeStatus.ERROR,
+        operational: OperationalStatus.ACTIVE,
+        source: 'ADAPTER',
+      }
+      const errorStatus2: NodeStatusModel = {
+        runtime: RuntimeStatus.ERROR,
+        operational: OperationalStatus.ACTIVE,
+        source: 'BRIDGE',
+      }
+      const connectedNodes: Pick<Node, 'id' | 'type' | 'data'>[] = [
+        { id: 'adapter1', type: NodeTypes.ADAPTER_NODE, data: { statusModel: errorStatus1 } },
+        { id: 'bridge1', type: NodeTypes.BRIDGE_NODE, data: { statusModel: errorStatus2 } },
+      ]
+
+      const result = computeNodeRuntimeStatus(OperationalStatus.ACTIVE, connectedNodes)
+
+      expect(result.runtime).toBe(RuntimeStatus.ERROR)
+      expect(result.operational).toBe(OperationalStatus.ACTIVE)
+      expect(result.source).toBe('DERIVED')
+    })
+
+    it('should handle multiple INACTIVE nodes correctly', () => {
+      const inactiveStatus1: NodeStatusModel = {
+        runtime: RuntimeStatus.INACTIVE,
+        operational: OperationalStatus.ACTIVE,
+        source: 'ADAPTER',
+      }
+      const inactiveStatus2: NodeStatusModel = {
+        runtime: RuntimeStatus.INACTIVE,
+        operational: OperationalStatus.ACTIVE,
+        source: 'BRIDGE',
+      }
+      const connectedNodes: Pick<Node, 'id' | 'type' | 'data'>[] = [
+        { id: 'adapter1', type: NodeTypes.ADAPTER_NODE, data: { statusModel: inactiveStatus1 } },
+        { id: 'bridge1', type: NodeTypes.BRIDGE_NODE, data: { statusModel: inactiveStatus2 } },
+      ]
+
+      const result = computeNodeRuntimeStatus(OperationalStatus.ACTIVE, connectedNodes)
+
+      expect(result.runtime).toBe(RuntimeStatus.INACTIVE)
+      expect(result.operational).toBe(OperationalStatus.ACTIVE)
+      expect(result.source).toBe('DERIVED')
+    })
+
+    it('should handle mixed status with ERROR taking highest priority', () => {
+      const activeStatus: NodeStatusModel = {
+        runtime: RuntimeStatus.ACTIVE,
+        operational: OperationalStatus.ACTIVE,
+        source: 'ADAPTER',
+      }
+      const inactiveStatus: NodeStatusModel = {
+        runtime: RuntimeStatus.INACTIVE,
+        operational: OperationalStatus.ACTIVE,
+        source: 'BRIDGE',
+      }
+      const errorStatus: NodeStatusModel = {
+        runtime: RuntimeStatus.ERROR,
+        operational: OperationalStatus.ACTIVE,
+        source: 'PULSE',
+      }
+      const connectedNodes: Pick<Node, 'id' | 'type' | 'data'>[] = [
+        { id: 'adapter1', type: NodeTypes.ADAPTER_NODE, data: { statusModel: activeStatus } },
+        { id: 'bridge1', type: NodeTypes.BRIDGE_NODE, data: { statusModel: inactiveStatus } },
+        { id: 'pulse1', type: NodeTypes.PULSE_NODE, data: { statusModel: errorStatus } },
+      ]
+
+      const result = computeNodeRuntimeStatus(OperationalStatus.ACTIVE, connectedNodes)
+
+      expect(result.runtime).toBe(RuntimeStatus.ERROR)
+      expect(result.operational).toBe(OperationalStatus.ACTIVE)
+      expect(result.source).toBe('DERIVED')
     })
   })
 })

@@ -1,3 +1,4 @@
+import { computeNodeRuntimeStatus } from '@/modules/Workspace/utils/status-propagation.utils.ts'
 import type { FC } from 'react'
 import { useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -19,7 +20,7 @@ import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualTo
 import type { NodeEdgeType } from '../../types'
 import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils'
 import MappingBadge from '../parts/MappingBadge'
-import { RuntimeStatus, OperationalStatus, type NodeStatusModel } from '@/modules/Workspace/types/status.types'
+import { OperationalStatus } from '@/modules/Workspace/types/status.types'
 
 const NodeEdge: FC<NodeProps<NodeEdgeType>> = (props) => {
   const { t } = useTranslation()
@@ -43,42 +44,7 @@ const NodeEdge: FC<NodeProps<NodeEdgeType>> = (props) => {
     // Operational status: ACTIVE if has topic filters, INACTIVE otherwise
     const operational = hasTopicFilters ? OperationalStatus.ACTIVE : OperationalStatus.INACTIVE
 
-    // Derive runtime status from upstream active nodes (adapters, bridges, pulse)
-    if (!connectedNodes || connectedNodes.length === 0) {
-      return {
-        runtime: RuntimeStatus.INACTIVE,
-        operational,
-        source: 'DERIVED' as const,
-      }
-    }
-
-    let hasErrorUpstream = false
-    let hasActiveUpstream = false
-
-    for (const node of connectedNodes) {
-      if (!node) continue
-      const upstreamStatusModel = (node.data as { statusModel?: NodeStatusModel }).statusModel
-      if (!upstreamStatusModel) continue
-
-      if (upstreamStatusModel.runtime === RuntimeStatus.ERROR) {
-        hasErrorUpstream = true
-      } else if (upstreamStatusModel.runtime === RuntimeStatus.ACTIVE) {
-        hasActiveUpstream = true
-      }
-    }
-
-    // ERROR propagates first
-    const runtime = hasErrorUpstream
-      ? RuntimeStatus.ERROR
-      : hasActiveUpstream
-        ? RuntimeStatus.ACTIVE
-        : RuntimeStatus.INACTIVE
-
-    return {
-      runtime,
-      operational,
-      source: 'DERIVED' as const,
-    }
+    return computeNodeRuntimeStatus(operational, connectedNodes)
   }, [connectedNodes, topicFilters.length])
 
   // Update node data with statusModel whenever it changes

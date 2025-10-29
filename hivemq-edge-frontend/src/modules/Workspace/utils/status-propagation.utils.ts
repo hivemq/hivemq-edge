@@ -164,3 +164,45 @@ export function getAffectedNodes(nodeId: string, edges: Edge[], nodes: Node[], v
 
   return affected
 }
+
+export const computeNodeRuntimeStatus = (
+  operational: OperationalStatus,
+  connectedNodes: Pick<Node, 'id' | 'type' | 'data'>[]
+) => {
+  // Derive runtime status from connected upstream nodes
+  if (!connectedNodes || connectedNodes.length === 0) {
+    return {
+      runtime: RuntimeStatus.INACTIVE,
+      operational,
+      source: 'DERIVED' as const,
+    }
+  }
+
+  let hasErrorUpstream = false
+  let hasActiveUpstream = false
+
+  for (const node of connectedNodes) {
+    if (!node) continue
+    const upstreamStatusModel = (node.data as { statusModel?: NodeStatusModel }).statusModel
+    if (!upstreamStatusModel) continue
+
+    if (upstreamStatusModel.runtime === RuntimeStatus.ERROR) {
+      hasErrorUpstream = true
+    } else if (upstreamStatusModel.runtime === RuntimeStatus.ACTIVE) {
+      hasActiveUpstream = true
+    }
+  }
+
+  // ERROR propagates first
+  const runtime = hasErrorUpstream
+    ? RuntimeStatus.ERROR
+    : hasActiveUpstream
+      ? RuntimeStatus.ACTIVE
+      : RuntimeStatus.INACTIVE
+
+  return {
+    runtime,
+    operational,
+    source: 'DERIVED' as const,
+  }
+}
