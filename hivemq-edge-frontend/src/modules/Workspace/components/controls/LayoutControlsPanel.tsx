@@ -14,10 +14,10 @@ import Panel from '@/components/react-flow/Panel.tsx'
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut'
 import { useLayoutEngine } from '../../hooks/useLayoutEngine'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore'
-import LayoutSelector from './LayoutSelector'
-import ApplyLayoutButton from './ApplyLayoutButton'
-import LayoutOptionsDrawer from './LayoutOptionsDrawer'
-import LayoutPresetsManager from './LayoutPresetsManager'
+import LayoutSelector from '../layout/LayoutSelector.tsx'
+import ApplyLayoutButton from '../layout/ApplyLayoutButton.tsx'
+import LayoutOptionsDrawer from '../layout/LayoutOptionsDrawer.tsx'
+import LayoutPresetsManager from '../layout/LayoutPresetsManager.tsx'
 
 const LayoutControlsPanel: FC = () => {
   const { t } = useTranslation()

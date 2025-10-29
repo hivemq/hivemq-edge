@@ -28,8 +28,8 @@ import {
   Text,
   Badge,
 } from '@chakra-ui/react'
-import { LayoutType } from '../../types/layout'
-import type { DagreOptions, RadialOptions, ColaForceOptions, ColaConstrainedOptions } from '../../types/layout'
+import { LayoutType } from '../../types/layout.ts'
+import type { DagreOptions, RadialOptions, ColaForceOptions, ColaConstrainedOptions } from '../../types/layout.ts'
 
 interface LayoutOptionsDrawerProps {
   isOpen: boolean

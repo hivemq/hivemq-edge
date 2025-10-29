@@ -34,8 +34,8 @@ import {
   Tooltip,
 } from '@chakra-ui/react'
 import { LuBookmark, LuSave, LuTrash2 } from 'react-icons/lu'
-import useWorkspaceStore from '../../hooks/useWorkspaceStore'
-import type { LayoutPreset } from '../../types/layout'
+import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
+import type { LayoutPreset } from '../../types/layout.ts'
 
 const LayoutPresetsManager: FC = () => {
   const toast = useToast()

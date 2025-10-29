@@ -5,7 +5,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import ApplyLayoutButton from './ApplyLayoutButton'
+import ApplyLayoutButton from './ApplyLayoutButton.tsx'
 
 // Mock config
 vi.mock('@/config', () => ({

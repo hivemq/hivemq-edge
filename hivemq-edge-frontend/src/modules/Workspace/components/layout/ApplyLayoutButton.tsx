@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { Button, Icon, Tooltip, useToast } from '@chakra-ui/react'
 import { LuNetwork } from 'react-icons/lu'
 import config from '@/config'
-import { useLayoutEngine } from '../../hooks/useLayoutEngine'
+import { useLayoutEngine } from '../../hooks/useLayoutEngine.ts'
 
 const ApplyLayoutButton: FC = () => {
   const { t } = useTranslation()
