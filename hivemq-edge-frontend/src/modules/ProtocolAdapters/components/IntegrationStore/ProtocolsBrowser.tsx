@@ -22,12 +22,13 @@ interface ProtocolsBrowserProps {
 const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, isLoading }) => {
   const { t } = useTranslation()
   const filteredAdapters = useMemo(() => {
-    if (!facet) return items
-    return items.filter(applyFacets(facet)).sort((a, b) => {
+    const sorted = items.toSorted((a, b) => {
       const aName = a.name?.toLowerCase() || ''
       const bName = b.name?.toLowerCase() || ''
       return aName.localeCompare(bName)
     })
+    if (!facet) return sorted
+    return sorted.filter(applyFacets(facet))
   }, [items, facet])
 
   if (!filteredAdapters.length)
