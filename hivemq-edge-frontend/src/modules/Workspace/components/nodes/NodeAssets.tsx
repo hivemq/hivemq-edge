@@ -1,7 +1,8 @@
+import { computeNodeRuntimeStatus } from '@/modules/Workspace/utils/status-propagation.utils.ts'
 import type { FC } from 'react'
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position } from '@xyflow/react'
+import { Handle, Position, useNodeConnections, useNodesData, useReactFlow } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Icon, Text, useColorModeValue, VStack } from '@chakra-ui/react'
 
@@ -17,22 +18,43 @@ import type { NodeAssetsType } from '@/modules/Workspace/types.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
+import { OperationalStatus } from '@/modules/Workspace/types/status.types'
 
 const NodeAssets: FC<NodeProps<NodeAssetsType>> = ({ id, data, selected, dragging }) => {
   const { t } = useTranslation()
   const bgColour = useColorModeValue('gray.300', 'gray.900')
   const { data: allAssets, isLoading } = useListManagedAssets()
+  const { updateNodeData } = useReactFlow()
+
+  // Use React Flow's efficient hooks to get connected nodes (upstream sources)
+  const connections = useNodeConnections({ id })
+  const connectedNodes = useNodesData(connections.map((connection) => connection.source))
 
   const mappedAssets = useMemo<ManagedAsset[]>(() => {
     if (!allAssets?.items) return []
     return allAssets.items.filter((asset) => asset.mapping.status === AssetMapping.status.STREAMING)
   }, [allAssets])
 
+  // Compute unified status model - derives from upstream sources using React Flow's optimized hooks
+  const statusModel = useMemo(() => {
+    // Asset mapper operational if it has mapped (streaming) assets
+    const hasMappedAssets = mappedAssets.length > 0
+    const operational = hasMappedAssets ? OperationalStatus.ACTIVE : OperationalStatus.INACTIVE
+
+    return computeNodeRuntimeStatus(operational, connectedNodes)
+  }, [connectedNodes, mappedAssets.length])
+
+  // Update node data with statusModel whenever it changes
+  useEffect(() => {
+    updateNodeData(id, { statusModel })
+  }, [id, statusModel, updateNodeData])
+
   return (
     <>
       <ContextualToolbar id={id} title={data.label} dragging={dragging} hasNoOverview />
       <NodeWrapper
         isSelected={selected}
+        statusModel={statusModel}
         wordBreak="break-word"
         textAlign="center"
         borderTopRadius={30}

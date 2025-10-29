@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   NodeProps,
@@ -7,7 +8,7 @@ import type {
   NodeReplaceChange,
   EdgeRemoveChange,
 } from '@xyflow/react'
-import { Handle, NodeResizer, Position } from '@xyflow/react'
+import { Handle, NodeResizer, Position, useReactFlow, useNodesData } from '@xyflow/react'
 import { Box, Icon, Text, useColorMode, useDisclosure, useTheme } from '@chakra-ui/react'
 import { LuExpand, LuShrink } from 'react-icons/lu'
 import { ImUngroup } from 'react-icons/im'
@@ -20,6 +21,7 @@ import { useContextMenu } from '../../hooks/useContextMenu.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
+import { RuntimeStatus, OperationalStatus, type NodeStatusModel } from '@/modules/Workspace/types/status.types'
 
 const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props }) => {
   const { t } = useTranslation()
@@ -29,6 +31,56 @@ const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props 
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/group/${id}`)
   const { colorMode } = useColorMode()
   const isLight = colorMode === 'light'
+  const { updateNodeData } = useReactFlow()
+
+  // Use React Flow's efficient hook to get child node data directly
+  const childNodesData = useNodesData(data.childrenNodeIds)
+
+  // Compute unified status model - aggregates from child nodes using React Flow's optimized hook
+  const statusModel = useMemo(() => {
+    let hasErrorRuntime = false
+    let hasActiveRuntime = false
+    let hasErrorOperational = false
+    let hasActiveOperational = false
+
+    // Aggregate status from all child nodes
+    for (const child of childNodesData) {
+      if (!child) continue
+      const childStatusModel = (child.data as { statusModel?: NodeStatusModel }).statusModel
+      if (!childStatusModel) continue
+
+      if (childStatusModel.runtime === RuntimeStatus.ERROR) hasErrorRuntime = true
+      else if (childStatusModel.runtime === RuntimeStatus.ACTIVE) hasActiveRuntime = true
+
+      if (childStatusModel.operational === OperationalStatus.ERROR) hasErrorOperational = true
+      else if (childStatusModel.operational === OperationalStatus.ACTIVE) hasActiveOperational = true
+    }
+
+    // Determine aggregated runtime status
+    const runtime = hasErrorRuntime
+      ? RuntimeStatus.ERROR
+      : hasActiveRuntime
+        ? RuntimeStatus.ACTIVE
+        : RuntimeStatus.INACTIVE
+
+    // Determine aggregated operational status
+    const operational = hasErrorOperational
+      ? OperationalStatus.ERROR
+      : hasActiveOperational
+        ? OperationalStatus.ACTIVE
+        : OperationalStatus.INACTIVE
+
+    return {
+      runtime,
+      operational,
+      source: 'DERIVED' as const,
+    }
+  }, [childNodesData])
+
+  // Update node data with statusModel whenever it changes
+  useEffect(() => {
+    updateNodeData(id, { statusModel })
+  }, [id, statusModel, updateNodeData])
 
   const onConfirmUngroup = () => {
     onConfirmUngroupOpen()

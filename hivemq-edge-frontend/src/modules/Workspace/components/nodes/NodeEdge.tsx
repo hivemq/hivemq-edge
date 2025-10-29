@@ -1,8 +1,9 @@
+import { computeNodeRuntimeStatus } from '@/modules/Workspace/utils/status-propagation.utils.ts'
 import type { FC } from 'react'
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position } from '@xyflow/react'
+import { Handle, Position, useNodeConnections, useNodesData, useReactFlow } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Icon, Image, Text, VStack } from '@chakra-ui/react'
 
@@ -19,16 +20,37 @@ import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualTo
 import type { NodeEdgeType } from '../../types'
 import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils'
 import MappingBadge from '../parts/MappingBadge'
+import { OperationalStatus } from '@/modules/Workspace/types/status.types'
 
 const NodeEdge: FC<NodeProps<NodeEdgeType>> = (props) => {
   const { t } = useTranslation()
   const { onContextMenu } = useContextMenu(props.id, props.selected, `/workspace/edge/${props.id}`)
   const navigate = useNavigate()
   const { data } = useListTopicFilters()
+  const { updateNodeData } = useReactFlow()
+
+  // Use React Flow's efficient hooks to get connected nodes (adapters, bridges, pulse)
+  const connections = useNodeConnections({ handleType: 'target', id: props.id })
+  const connectedNodes = useNodesData(connections.map((connection) => connection.source))
 
   const topicFilters = useMemo(() => {
     return data?.items.map((e) => e.topicFilter) || []
   }, [data?.items])
+
+  // Compute unified status model with operational status based on topic filters
+  const statusModel = useMemo(() => {
+    const hasTopicFilters = topicFilters.length > 0
+
+    // Operational status: ACTIVE if has topic filters, INACTIVE otherwise
+    const operational = hasTopicFilters ? OperationalStatus.ACTIVE : OperationalStatus.INACTIVE
+
+    return computeNodeRuntimeStatus(operational, connectedNodes)
+  }, [connectedNodes, topicFilters.length])
+
+  // Update node data with statusModel whenever it changes
+  useEffect(() => {
+    updateNodeData(props.id, { statusModel })
+  }, [props.id, statusModel, updateNodeData])
 
   return (
     <>
@@ -48,6 +70,7 @@ const NodeEdge: FC<NodeProps<NodeEdgeType>> = (props) => {
       </ContextualToolbar>
       <NodeWrapper
         isSelected={props.selected}
+        statusModel={statusModel}
         onDoubleClick={onContextMenu}
         onContextMenu={onContextMenu}
         flexDirection="row"
