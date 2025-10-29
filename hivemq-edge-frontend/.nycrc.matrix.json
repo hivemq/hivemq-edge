@@ -1,0 +1,10 @@
+{
+  "all": true,
+  "report-dir": "./coverage-cypress-matrix",
+  "temp-dir": "./.nyc_output/matrix",
+  "extends": "@istanbuljs/nyc-config-typescript",
+  "check-coverage": false,
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["cypress/**/*.*", "**/*.d.ts", "**/*.cy.tsx", "**/*.cy.ts"],
+  "reporter": ["json", "lcovonly"]
+}

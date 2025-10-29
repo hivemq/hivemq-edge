@@ -83,6 +83,46 @@ The agent will **automatically look in the `.tasks/` directory** and:
 
 ---
 
+### 36015-sonarcloud-decoration
+
+**Status:** Active  
+**Directory:** `.tasks/36015-sonarcloud-decoration/`  
+**Objective:** Configure and optimize SonarCloud decoration for PR code quality feedback  
+**Completed Subtasks:** 1  
+**Last Updated:** October 24, 2025
+
+**Quick Start:**
+
+- Read: [TASK_BRIEF.md](.tasks/36015-sonarcloud-decoration/TASK_BRIEF.md)
+- Review: [TASK_SUMMARY.md](.tasks/36015-sonarcloud-decoration/TASK_SUMMARY.md)
+- Recent work: [CONVERSATION_SUBTASK_1.md](.tasks/36015-sonarcloud-decoration/CONVERSATION_SUBTASK_1.md)
+
+---
+
+### 38000-cypress-module
+
+**Status:** Completed ✅  
+**Directory:** `.tasks/38000-cypress-module/`  
+**Objective:** Fix intermittent Cypress test failures caused by dynamic module import errors  
+**Completed Subtasks:** 1  
+**Last Updated:** October 24, 2025
+
+**Summary:**
+
+- ✅ Investigated intermittent "Failed to fetch dynamically imported module" errors
+- ✅ Configured Vite to pre-bundle Cypress dependencies and disable HMR during tests
+- ✅ Enhanced Cypress configuration with increased timeouts and environment coordination
+- **Result: Eliminated race conditions between Vite dev server and Cypress module loading**
+
+**Quick Start:**
+
+- Read: [TASK_BRIEF.md](.tasks/38000-cypress-module/TASK_BRIEF.md)
+- Review: [TASK_SUMMARY.md](.tasks/38000-cypress-module/TASK_SUMMARY.md)
+- Implementation details: [CONVERSATION_SUBTASK_1.md](.tasks/38000-cypress-module/CONVERSATION_SUBTASK_1.md)
+- Learnings: [SESSION_FEEDBACK.md](.tasks/38000-cypress-module/SESSION_FEEDBACK.md)
+
+---
+
 ## Task Template Entry
 
 When adding a new task, copy this template:

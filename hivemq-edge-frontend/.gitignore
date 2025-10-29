@@ -35,6 +35,7 @@ test-results
 /coverage-e2e/
 /coverage-vitest/
 /coverage-cypress/
+/coverage-combined/
 
 
 # Local dev fixes
