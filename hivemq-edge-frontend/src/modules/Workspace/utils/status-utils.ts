@@ -57,6 +57,7 @@ export const getThemeForPulseStatus = (theme: Partial<WithCSSVar<Dict>>, status:
  * @param theme - Chakra UI theme object
  * @param status - RuntimeStatus from NodeStatusModel
  * @returns Theme color string for the status
+ * @todo check for differentiation for default return
  */
 export const getThemeForRuntimeStatus = (theme: Partial<WithCSSVar<Dict>>, status: RuntimeStatus) => {
   switch (status) {
@@ -94,7 +95,7 @@ export const getThemeForStatusModel = (theme: Partial<WithCSSVar<Dict>>, statusM
  */
 export const getStatusColor = (theme: Partial<WithCSSVar<Dict>>, statusModel?: NodeStatusModel): string => {
   if (!statusModel) {
-    return theme.colors?.status?.disconnected?.[500] || '#cbd5e0' // fallback gray
+    return theme.colors.status.disconnected[500]
   }
   return getThemeForRuntimeStatus(theme, statusModel.runtime)
 }
