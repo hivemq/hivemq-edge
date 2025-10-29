@@ -7,6 +7,7 @@
 
 import type { FC } from 'react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Menu,
   MenuButton,
@@ -38,6 +39,7 @@ import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import type { LayoutPreset } from '../../types/layout.ts'
 
 const LayoutPresetsManager: FC = () => {
+  const { t } = useTranslation()
   const toast = useToast()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [presetName, setPresetName] = useState('')
@@ -59,25 +61,24 @@ const LayoutPresetsManager: FC = () => {
       id: `preset-${Date.now()}`,
       name: presetName.trim(),
       createdAt: new Date(),
-      algorithmType: layoutConfig.currentAlgorithm,
+      updatedAt: new Date(),
+      algorithm: layoutConfig.currentAlgorithm,
       options: layoutConfig.options,
-      nodePositions: nodes.reduce(
-        (acc, node) => {
-          acc[node.id] = {
+      positions: new Map(
+        nodes.map((node) => [
+          node.id,
+          {
             x: node.position.x,
             y: node.position.y,
-          }
-          return acc
-        },
-        {} as Record<string, { x: number; y: number }>
+          },
+        ])
       ),
     }
 
     saveLayoutPreset(preset)
 
     toast({
-      title: 'Preset saved',
-      description: `"${presetName}" saved successfully`,
+      description: t('workspace.autoLayout.presets.toast.saved', { name: presetName }),
       status: 'success',
       duration: 3000,
       isClosable: true,
@@ -93,8 +94,7 @@ const LayoutPresetsManager: FC = () => {
 
     if (preset) {
       toast({
-        title: 'Preset loaded',
-        description: `"${preset.name}" applied successfully`,
+        description: t('workspace.autoLayout.presets.toast.loaded', { name: preset.name }),
         status: 'success',
         duration: 3000,
         isClosable: true,
@@ -107,8 +107,7 @@ const LayoutPresetsManager: FC = () => {
     deleteLayoutPreset(presetId)
 
     toast({
-      title: 'Preset deleted',
-      description: `"${preset?.name}" removed`,
+      description: t('workspace.autoLayout.presets.toast.removed', { name: preset?.name }),
       status: 'info',
       duration: 3000,
       isClosable: true,
@@ -118,25 +117,25 @@ const LayoutPresetsManager: FC = () => {
   return (
     <>
       <Menu>
-        <Tooltip label="Saved Presets" placement="bottom">
+        <Tooltip label={t('workspace.autoLayout.presets.tooltip')} placement="bottom">
           <MenuButton
             as={IconButton}
             icon={<Icon as={LuBookmark} />}
             size="sm"
             variant="ghost"
-            aria-label="Layout presets"
+            aria-label={t('workspace.autoLayout.presets.aria-label')}
           />
         </Tooltip>
         <MenuList>
           <MenuItem icon={<Icon as={LuSave} />} onClick={onOpen}>
-            Save Current Layout
+            {t('workspace.autoLayout.presets.actions.save')}
           </MenuItem>
 
           {layoutConfig.presets.length > 0 && (
             <>
               <MenuDivider />
               <Text fontSize="xs" fontWeight="bold" px={3} py={1} color="gray.500">
-                Saved Presets
+                {t('workspace.autoLayout.presets.list.title')}
               </Text>
 
               {layoutConfig.presets.map((preset) => (
@@ -154,7 +153,7 @@ const LayoutPresetsManager: FC = () => {
                     size="xs"
                     variant="ghost"
                     colorScheme="red"
-                    aria-label="Delete preset"
+                    aria-label={t('workspace.autoLayout.presets.actions.delete')}
                     onClick={(e) => {
                       e.stopPropagation()
                       handleDeletePreset(preset.id)
@@ -169,7 +168,7 @@ const LayoutPresetsManager: FC = () => {
             <>
               <MenuDivider />
               <Text fontSize="xs" px={3} py={2} color="gray.500">
-                No saved presets
+                {t('workspace.autoLayout.presets.list.empty')}
               </Text>
             </>
           )}
@@ -179,13 +178,13 @@ const LayoutPresetsManager: FC = () => {
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Save Layout Preset</ModalHeader>
+          <ModalHeader>{t('workspace.autoLayout.presets.modal.title')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <FormControl>
-              <FormLabel>Preset Name</FormLabel>
+              <FormLabel>{t('workspace.autoLayout.presets.modal.nameLabel')}</FormLabel>
               <Input
-                placeholder="e.g., My Custom Layout"
+                placeholder={t('workspace.autoLayout.presets.modal.namePlaceholder')}
                 value={presetName}
                 onChange={(e) => setPresetName(e.target.value)}
                 onKeyDown={(e) => {
@@ -196,16 +195,16 @@ const LayoutPresetsManager: FC = () => {
               />
             </FormControl>
             <Text fontSize="sm" color="gray.500" mt={3}>
-              This will save the current node positions and layout settings.
+              {t('workspace.autoLayout.presets.modal.description')}
             </Text>
           </ModalBody>
 
           <ModalFooter>
             <Button variant="ghost" mr={3} onClick={onClose}>
-              Cancel
+              {t('workspace.autoLayout.presets.modal.cancel')}
             </Button>
             <Button colorScheme="blue" onClick={handleSavePreset} leftIcon={<Icon as={LuSave} />}>
-              Save
+              {t('workspace.autoLayout.presets.modal.save')}
             </Button>
           </ModalFooter>
         </ModalContent>

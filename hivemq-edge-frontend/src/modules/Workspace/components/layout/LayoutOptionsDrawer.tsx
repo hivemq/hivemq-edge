@@ -7,6 +7,7 @@
 
 import type { FC } from 'react'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { IChangeEvent } from '@rjsf/core'
 import {
   Button,
@@ -48,6 +49,7 @@ interface LayoutOptionsDrawerProps {
 }
 
 const LayoutOptionsDrawer: FC<LayoutOptionsDrawerProps> = ({ isOpen, onClose, algorithmType, options }) => {
+  const { t } = useTranslation()
   // Get fresh hooks inside the component
   const { setLayoutOptions } = useWorkspaceStore()
   const { applyLayout } = useLayoutEngine()
@@ -99,18 +101,18 @@ const LayoutOptionsDrawer: FC<LayoutOptionsDrawerProps> = ({ isOpen, onClose, al
   return (
     <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="md" variant="hivemq" id="layout-options-drawer">
       <DrawerOverlay />
-      <DrawerContent aria-label="Layout Options Configuration">
+      <DrawerContent aria-label={t('workspace.autoLayout.options.aria-label')}>
         <DrawerCloseButton />
-        <DrawerHeader>Layout Options</DrawerHeader>
+        <DrawerHeader>{t('workspace.autoLayout.options.title')}</DrawerHeader>
 
         <DrawerBody>
           {algorithmType === LayoutType.MANUAL ? (
             <Text color="gray.600" _dark={{ color: 'gray.400' }} fontSize="sm">
-              Manual layout has no configurable options. Nodes remain in their current positions.
+              {t('workspace.autoLayout.options.manual.message')}
             </Text>
           ) : !algorithmType ? (
             <Text color="gray.500" _dark={{ color: 'gray.400' }}>
-              Select a layout algorithm to configure options
+              {t('workspace.autoLayout.options.noAlgorithm.message')}
             </Text>
           ) : (
             <Card>
@@ -131,9 +133,9 @@ const LayoutOptionsDrawer: FC<LayoutOptionsDrawerProps> = ({ isOpen, onClose, al
         {algorithmType && algorithmType !== LayoutType.MANUAL && (
           <DrawerFooter>
             <ButtonGroup flexGrow={1} justifyContent="flex-end">
-              <Button onClick={handleCancel}>Cancel</Button>
+              <Button onClick={handleCancel}>{t('workspace.autoLayout.options.actions.cancel')}</Button>
               <Button variant="primary" type="submit" form="layout-options-form">
-                Apply Options
+                {t('workspace.autoLayout.options.actions.apply')}
               </Button>
             </ButtonGroup>
           </DrawerFooter>

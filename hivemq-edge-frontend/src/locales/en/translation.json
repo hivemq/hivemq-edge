@@ -876,6 +876,45 @@
       "selector": {
         "tooltip": "Select layout algorithm"
       },
+      "options": {
+        "title": "Layout Options",
+        "aria-label": "Layout Options Configuration",
+        "manual": {
+          "message": "Manual layout has no configurable options. Nodes remain in their current positions."
+        },
+        "noAlgorithm": {
+          "message": "Select a layout algorithm to configure options"
+        },
+        "actions": {
+          "cancel": "Cancel",
+          "apply": "Apply Options"
+        }
+      },
+      "presets": {
+        "tooltip": "Saved Presets",
+        "aria-label": "Layout presets",
+        "actions": {
+          "save": "Save Current Layout",
+          "delete": "Delete preset"
+        },
+        "list": {
+          "title": "Saved Presets",
+          "empty": "No saved presets"
+        },
+        "modal": {
+          "title": "Save Layout Preset",
+          "nameLabel": "Preset Name",
+          "namePlaceholder": "e.g., My Custom Layout",
+          "description": "This will save the current node positions and layout settings.",
+          "cancel": "Cancel",
+          "save": "Save"
+        },
+        "toast": {
+          "saved": "\"{{name}}\" saved",
+          "loaded": "\"{{name}}\" loaded",
+          "removed": "\"{{name}}\" removed"
+        }
+      },
       "success": {
         "title": "Layout Applied",
         "description": "{{algorithm}} applied in {{duration}}ms ({{nodes}} nodes)"
