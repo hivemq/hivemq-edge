@@ -1,8 +1,8 @@
 import type { FC } from 'react'
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position } from '@xyflow/react'
+import { Handle, Position, useReactFlow, useNodeConnections, useNodesData } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 
 import { AssetMapping, Capability, type ManagedAsset, PulseStatus } from '@/api/__generated__'
@@ -20,12 +20,21 @@ import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import MappingBadge from '@/modules/Workspace/components/parts/MappingBadge.tsx'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
-import type { NodePulseType } from '@/modules/Workspace/types'
+import type { NodePulseType, NodeCombinerType } from '@/modules/Workspace/types'
+import { createPulseStatusModel } from '@/modules/Workspace/utils/status-mapping.utils.ts'
+import { computePulseNodeOperationalStatus } from '@/modules/Workspace/utils/status-edge-operational.utils.ts'
+import { OperationalStatus } from '@/modules/Workspace/types/status.types.ts'
 
 const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging }) => {
   const { t } = useTranslation()
   const { data: hasPulseCapability, isSuccess } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
   const { data: allAssets, isLoading } = useListManagedAssets()
+  const { updateNodeData } = useReactFlow()
+  const { onContextMenu } = useContextMenu(id, selected, `/workspace/pulse-agent/${id}`)
+
+  // Get outbound connections to asset mappers using React Flow's efficient hooks
+  const connections = useNodeConnections({ id })
+  const connectedNodes = useNodesData<NodeCombinerType>(connections.map((connection) => connection.target))
 
   const unmappedAssets = useMemo<ManagedAsset[]>(() => {
     if (!allAssets?.items) return []
@@ -38,7 +47,26 @@ const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging 
     return { mapped: allAssets.items.length - unmappedAssets.length, unmapped: unmappedAssets.length }
   }, [allAssets?.items, unmappedAssets])
 
-  const { onContextMenu } = useContextMenu(id, selected, `/workspace/pulse-agent/${id}`)
+  // Compute unified status model with operational status based on connected asset mappers
+  const statusModel = useMemo(() => {
+    // Filter out null/undefined nodes and only keep combiner nodes
+    const validCombiners = (connectedNodes || []).filter(
+      (node): node is NodeCombinerType => node !== null && node !== undefined
+    )
+
+    // Determine operational status based on whether any connected asset mapper
+    // has mappings that reference valid (mapped) Pulse assets
+    const operational = allAssets?.items
+      ? computePulseNodeOperationalStatus(validCombiners, allAssets.items)
+      : OperationalStatus.INACTIVE
+
+    return createPulseStatusModel(data.status, operational)
+  }, [data.status, connectedNodes, allAssets])
+
+  // Update node data with statusModel whenever it changes
+  useEffect(() => {
+    updateNodeData(id, { statusModel })
+  }, [id, statusModel, updateNodeData])
 
   const pulseStatus: PulseStatus.activation = hasPulseCapability
     ? PulseStatus.activation.ACTIVATED
@@ -49,6 +77,7 @@ const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging 
       <ContextualToolbar id={id} title={data.label} dragging={dragging} onOpenPanel={onContextMenu} />
       <NodeWrapper
         isSelected={selected}
+        statusModel={statusModel}
         onDoubleClick={onContextMenu}
         onContextMenu={onContextMenu}
         p={3}

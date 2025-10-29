@@ -97,6 +97,7 @@ class OpcUaProtocolAdapterAuthTest {
                 false,
                 null,
                 null,
+                null,
                 new OpcUaToMqttConfig(1, 1000),
                 null);
 
@@ -122,6 +123,7 @@ class OpcUaProtocolAdapterAuthTest {
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
+                null,
                 auth,
                 null,
                 null,
@@ -147,6 +149,7 @@ class OpcUaProtocolAdapterAuthTest {
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
+                null,
                 null,
                 tls,
                 null,
@@ -175,6 +178,7 @@ class OpcUaProtocolAdapterAuthTest {
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
+                null,
                 auth,
                 tls,
                 null,

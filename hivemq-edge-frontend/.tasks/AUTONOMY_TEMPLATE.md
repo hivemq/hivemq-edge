@@ -594,6 +594,157 @@ describe('hookName or utilityName', () => {
 })
 ```
 
+**Using `it.each` for Repetitive Test Cases:** ⚠️ CRITICAL
+
+When testing involves **3 or more similar test cases** with variations in props/inputs, use `it.each` pattern instead of multiple individual `it` statements.
+
+**Why this matters:**
+
+- Reduces code duplication and maintenance burden
+- Makes test variations more explicit and readable
+- Easier to add new test cases
+- Follows DRY (Don't Repeat Yourself) principle
+
+**❌ BAD - Multiple similar `it` statements:**
+
+```typescript
+describe('isNodeCombinerCandidate', () => {
+  it('should return true for adapter nodes with COMBINE capability', () => {
+    const adapterNode = createNode('adapter-1', NodeTypes.ADAPTER_NODE, { type: 'mqtt' })
+    const adapterTypes = [{ id: 'mqtt', capabilities: ['COMBINE'] }]
+    expect(isNodeCombinerCandidate(adapterNode, adapterTypes)).toBe(true)
+  })
+
+  it('should return false for adapter nodes without COMBINE capability', () => {
+    const adapterNode = createNode('adapter-1', NodeTypes.ADAPTER_NODE, { type: 'modbus' })
+    const adapterTypes = [{ id: 'modbus', capabilities: ['READ'] }]
+    expect(isNodeCombinerCandidate(adapterNode, adapterTypes)).toBe(false)
+  })
+
+  it('should return false for adapter nodes when adapter type is not found', () => {
+    const adapterNode = createNode('adapter-1', NodeTypes.ADAPTER_NODE, { type: 'unknown' })
+    const adapterTypes = [{ id: 'mqtt', capabilities: ['COMBINE'] }]
+    expect(isNodeCombinerCandidate(adapterNode, adapterTypes)).toBe(false)
+  })
+
+  it('should return false for adapter nodes when adapter types are undefined', () => {
+    const adapterNode = createNode('adapter-1', NodeTypes.ADAPTER_NODE, { type: 'mqtt' })
+    expect(isNodeCombinerCandidate(adapterNode, undefined)).toBe(false)
+  })
+})
+```
+
+**✅ GOOD - Using `it.each` pattern:**
+
+```typescript
+describe('isNodeCombinerCandidate', () => {
+  interface TestCase {
+    description: string
+    nodeType: string
+    adapterType?: string
+    capabilities?: string[]
+    adapterTypesProvided: boolean
+    expected: boolean
+  }
+
+  const testCases: TestCase[] = [
+    {
+      description: 'adapter with COMBINE capability',
+      nodeType: NodeTypes.ADAPTER_NODE,
+      adapterType: 'mqtt',
+      capabilities: ['COMBINE', 'READ'],
+      adapterTypesProvided: true,
+      expected: true,
+    },
+    {
+      description: 'adapter without COMBINE capability',
+      nodeType: NodeTypes.ADAPTER_NODE,
+      adapterType: 'modbus',
+      capabilities: ['READ'],
+      adapterTypesProvided: true,
+      expected: false,
+    },
+    {
+      description: 'adapter when type is not found',
+      nodeType: NodeTypes.ADAPTER_NODE,
+      adapterType: 'unknown',
+      capabilities: undefined,
+      adapterTypesProvided: true,
+      expected: false,
+    },
+    {
+      description: 'adapter when adapter types are undefined',
+      nodeType: NodeTypes.ADAPTER_NODE,
+      adapterType: 'mqtt',
+      capabilities: undefined,
+      adapterTypesProvided: false,
+      expected: false,
+    },
+  ]
+
+  it.each(testCases)(
+    'should return $expected for $description',
+    ({ nodeType, adapterType, capabilities, adapterTypesProvided, expected }) => {
+      const node = createNode('test-1', nodeType, { type: adapterType })
+      const adapterTypes = adapterTypesProvided && capabilities ? [{ id: adapterType, capabilities }] : undefined
+
+      expect(isNodeCombinerCandidate(node, adapterTypes)).toBe(expected)
+    }
+  )
+})
+```
+
+**Pattern Guidelines:**
+
+1. **Define Test Case Interface** - Type the test data structure
+2. **Create Test Cases Array** - List all variations with descriptive names
+3. **Use Template Literals** - Make test names readable: `'should return $expected for $description'`
+4. **Destructure Parameters** - Extract only what you need from each test case
+5. **Keep Logic Simple** - Setup should be straightforward, not complex
+
+**When to Use `it.each`:**
+
+- ✅ 3 or more similar test cases with input/output variations
+- ✅ Testing different states/conditions of the same function
+- ✅ Boundary testing with multiple values
+- ✅ Testing validation logic with various inputs
+
+**When NOT to Use `it.each`:**
+
+- ❌ Only 1-2 test cases (use individual `it` statements)
+- ❌ Test cases require significantly different setup logic
+- ❌ Test cases assert completely different behaviors
+- ❌ Complex test logic that would be harder to read in tabular format
+
+**Real-World Example from Existing Codebase:**
+
+```typescript
+// From combiner.utils.spec.ts - Good use of it.each
+interface ObjectsEqualSuite<T> {
+  rule: string
+  obj1: T
+  obj2: T
+  expected: boolean
+}
+
+const objectsEqualSuiteTests: ObjectsEqualSuite<Test>[] = [
+  { rule: 'same object', obj1: test1, obj2: test1, expected: true },
+  { rule: 'different order', obj1: test1, obj2: test2, expected: true },
+  { rule: 'different objects', obj1: test1, obj2: test3, expected: false },
+  { rule: 'empty objects', obj1: {}, obj2: {}, expected: true },
+  { rule: 'different keys', obj1: test1, obj2: test4, expected: false },
+]
+
+describe('objectsEqual', () => {
+  it.each<ObjectsEqualSuite<Test>>(objectsEqualSuiteTests)(
+    '$rule should return $expected',
+    ({ obj1, obj2, expected }) => {
+      expect(objectsEqual(obj1, obj2)).toStrictEqual(expected)
+    }
+  )
+})
+```
+
 ---
 
 ### 7. Debug Strategy for Failing Tests

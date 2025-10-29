@@ -103,6 +103,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 false,
                 null,
                 null,
+                null,
                 opcuaToMqttConfig,
                 null);
 

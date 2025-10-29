@@ -177,6 +177,7 @@ class OpcUaProtocolAdapterConfigTest {
         final BidirectionalOpcUaSpecificAdapterConfig adapterConfig = new BidirectionalOpcUaSpecificAdapterConfig(
                 "my.uri.com",
                 true,
+                null,
                 new Auth(new BasicAuth("my-username", "my-password"), new X509Auth(true)),
                 new Tls(true,
                         new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
@@ -225,6 +226,7 @@ class OpcUaProtocolAdapterConfigTest {
                 true,
                 null,
                 null,
+                null,
                 new OpcUaToMqttConfig(1, 1000),
                 null
         );
@@ -264,8 +266,7 @@ class OpcUaProtocolAdapterConfigTest {
         final OpcUaProtocolAdapterFactory protocolAdapterFactory = new OpcUaProtocolAdapterFactory(mockInput);
         final ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
         when(manager.get(PROTOCOL_ID_OPCUA)).thenReturn(Optional.of(protocolAdapterFactory));
-        final ProtocolAdapterConfigConverter converter = new ProtocolAdapterConfigConverter(manager, mapper);
-        return converter;
+        return new ProtocolAdapterConfigConverter(manager, mapper);
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

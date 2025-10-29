@@ -21,7 +21,6 @@ import com.hivemq.api.TestApiResource;
 import com.hivemq.api.TestPermitAllApiResource;
 import com.hivemq.api.TestResourceLevelRolesApiResource;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
-import com.hivemq.api.auth.handler.impl.BasicAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
@@ -36,6 +35,7 @@ import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import com.hivemq.http.core.HttpUtils;
 import com.hivemq.http.error.ProblemDetails;
+import jakarta.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.AfterClass;
@@ -45,7 +45,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashSet;
@@ -200,7 +199,7 @@ public class ChainedAuthTests {
 
         final ObjectMapper mapper = new ObjectMapper();
         final Map<String, String> headers =
-                Map.of(HttpConstants.AUTH_HEADER, HttpUtils.getBasicAuthenticationHeaderValue("testadmin", "test"));
+                Map.of(HttpConstants.AUTH_HEADER, BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testadmin", "test"));
         final HttpResponse response = HttpUrlConnectionClient.get(headers,
                 getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"),
                 CONNECT_TIMEOUT,
