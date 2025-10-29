@@ -1,6 +1,7 @@
 import type { FC } from 'react'
+import { useMemo, useEffect } from 'react'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position, useStore } from '@xyflow/react'
+import { Handle, Position, useStore, useReactFlow } from '@xyflow/react'
 import { Box, HStack, Image, SkeletonText, Text, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
@@ -15,6 +16,8 @@ import { getBridgeTopics } from '@/modules/Workspace/utils/topics-utils.ts'
 import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.ts'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import type { NodeBridgeType } from '@/modules/Workspace/types'
+import { createBridgeStatusModel } from '@/modules/Workspace/utils/status-mapping.utils.ts'
+import { OperationalStatus } from '@/modules/Workspace/types/status.types.ts'
 
 import NodeWrapper from '../parts/NodeWrapper.tsx'
 import MappingBadge from '../parts/MappingBadge.tsx'
@@ -25,12 +28,29 @@ const NodeBridge: FC<NodeProps<NodeBridgeType>> = ({ id, selected, data: bridge,
   const { options } = useEdgeFlowContext()
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/bridge/${id}`)
   const showSkeleton = useStore(selectorIsSkeletonZoom)
+  const { updateNodeData } = useReactFlow()
+
+  // Compute unified status model with operational status based on topic filters
+  const statusModel = useMemo(() => {
+    const hasTopics = topics.local.length > 0 || topics.remote.length > 0
+
+    // Operational status: ACTIVE if has topic filters configured, INACTIVE otherwise
+    const operational = hasTopics ? OperationalStatus.ACTIVE : OperationalStatus.INACTIVE
+
+    return createBridgeStatusModel(bridge.status, operational)
+  }, [bridge.status, topics.local.length, topics.remote.length])
+
+  // Update node data with statusModel whenever it changes
+  useEffect(() => {
+    updateNodeData(id, { statusModel })
+  }, [id, statusModel, updateNodeData])
 
   return (
     <>
       <ContextualToolbar id={id} title={bridge.id} dragging={dragging} onOpenPanel={onContextMenu} />
       <NodeWrapper
         isSelected={selected}
+        statusModel={statusModel}
         onDoubleClick={onContextMenu}
         onContextMenu={onContextMenu}
         p={3}

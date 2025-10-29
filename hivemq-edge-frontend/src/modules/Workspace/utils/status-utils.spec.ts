@@ -15,18 +15,26 @@ import {
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
 
-import type { Adapter, Bridge } from '@/api/__generated__'
+import type { Adapter, Bridge, Combiner } from '@/api/__generated__'
 import { PulseStatus } from '@/api/__generated__'
 import { Status } from '@/api/__generated__'
 import { mockBridgeId, mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { MOCK_PULSE_STATUS_ERROR } from '@/api/hooks/usePulse/__handlers__'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { mockCombiner, mockEmptyCombiner } from '@/api/hooks/useCombiners/__handlers__'
 
 import type { EdgeStyle } from './status-utils.ts'
 import { updatePulseStatus } from './status-utils.ts'
 import { getThemeForPulseStatus } from './status-utils.ts'
-import { getEdgeStatus, getThemeForStatus, updateEdgesStatus, updateNodeStatus } from './status-utils.ts'
+import {
+  getEdgeStatus,
+  getThemeForStatus,
+  updateEdgesStatus,
+  updateNodeStatus,
+  createNewStatusEdgeForCombiner,
+} from './status-utils.ts'
 import { type EdgeStatus, EdgeTypes, type NodePulseType, NodeTypes } from '../types.ts'
+import { RuntimeStatus, OperationalStatus, type NodeStatusModel } from '../types/status.types.ts'
 
 const disconnectedBridge: NodeProps<Node<Bridge>> = {
   ...MOCK_NODE_BRIDGE,
@@ -500,7 +508,6 @@ describe('updateEdgesStatus', () => {
       id: 'edge-bridge-listener',
       data: {
         isConnected: false,
-        // TODO[NVL] This is wrong. Fix it
         hasTopics: true,
       },
       animated: false,
@@ -758,6 +765,336 @@ describe('updatePulseStatus', () => {
           }),
         },
       ],
+    })
+  })
+})
+
+describe('createNewStatusEdgeForCombiner', () => {
+  const mockEdge: Edge = {
+    id: 'edge-test',
+    source: 'source-node',
+    target: 'combiner-node',
+    type: EdgeTypes.DYNAMIC_EDGE,
+  }
+
+  const activeStatusModel: NodeStatusModel = {
+    runtime: RuntimeStatus.ACTIVE,
+    operational: OperationalStatus.ACTIVE,
+    source: 'ADAPTER',
+  }
+
+  const inactiveStatusModel: NodeStatusModel = {
+    runtime: RuntimeStatus.INACTIVE,
+    operational: OperationalStatus.INACTIVE,
+    source: 'ADAPTER',
+  }
+
+  it('should create edge with ACTIVE runtime and ACTIVE operational status when source is active and combiner has mappings', () => {
+    const combinerNode: Node = {
+      id: 'combiner-node',
+      type: NodeTypes.COMBINER_NODE,
+      position: { x: 0, y: 0 },
+      data: {
+        ...mockCombiner,
+        statusModel: {
+          runtime: RuntimeStatus.ACTIVE,
+          operational: OperationalStatus.ACTIVE,
+          source: 'DERIVED',
+        },
+      },
+    }
+
+    const result = createNewStatusEdgeForCombiner(mockEdge, activeStatusModel, combinerNode, MOCK_THEME)
+
+    expect(result).toMatchObject({
+      id: 'edge-test',
+      animated: true,
+      style: {
+        strokeWidth: 1.5,
+        stroke: MOCK_THEME.colors.status.connected[500], // Green for ACTIVE
+      },
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        color: MOCK_THEME.colors.status.connected[500],
+      },
+      data: {
+        isConnected: true,
+        hasTopics: true,
+      },
+    })
+  })
+
+  it('should create edge with ACTIVE runtime but INACTIVE operational status when source is active but combiner has no mappings', () => {
+    const combinerNode: Node = {
+      id: 'combiner-node',
+      type: NodeTypes.COMBINER_NODE,
+      position: { x: 0, y: 0 },
+      data: {
+        ...mockCombiner,
+        statusModel: {
+          runtime: RuntimeStatus.ACTIVE,
+          operational: OperationalStatus.INACTIVE,
+          source: 'DERIVED',
+        },
+      },
+    }
+
+    const result = createNewStatusEdgeForCombiner(mockEdge, activeStatusModel, combinerNode, MOCK_THEME)
+
+    expect(result).toMatchObject({
+      id: 'edge-test',
+      animated: false, // No animation when operational is INACTIVE
+      style: {
+        strokeWidth: 1.5,
+        stroke: MOCK_THEME.colors.status.connected[500], // Still green for ACTIVE runtime
+      },
+      data: {
+        isConnected: true,
+        hasTopics: false, // No topics when operational is INACTIVE
+      },
+    })
+  })
+
+  it('should create edge with INACTIVE runtime when source is inactive', () => {
+    const combinerNode: Node = {
+      id: 'combiner-node',
+      type: NodeTypes.COMBINER_NODE,
+      position: { x: 0, y: 0 },
+      data: {
+        ...mockCombiner,
+        statusModel: {
+          runtime: RuntimeStatus.ACTIVE,
+          operational: OperationalStatus.ACTIVE,
+          source: 'DERIVED',
+        },
+      },
+    }
+
+    const result = createNewStatusEdgeForCombiner(mockEdge, inactiveStatusModel, combinerNode, MOCK_THEME)
+
+    expect(result).toMatchObject({
+      id: 'edge-test',
+      animated: false,
+      style: {
+        strokeWidth: 1.5,
+        stroke: MOCK_THEME.colors.status.disconnected[500], // Gray for INACTIVE
+      },
+      data: {
+        isConnected: false,
+        hasTopics: true, // Combiner operational status
+      },
+    })
+  })
+
+  it('should create edge with ERROR runtime status', () => {
+    const errorStatusModel: NodeStatusModel = {
+      runtime: RuntimeStatus.ERROR,
+      operational: OperationalStatus.ACTIVE,
+      source: 'ADAPTER',
+    }
+
+    const combinerNode: Node = {
+      id: 'combiner-node',
+      type: NodeTypes.COMBINER_NODE,
+      position: { x: 0, y: 0 },
+      data: {
+        ...mockCombiner,
+        statusModel: {
+          runtime: RuntimeStatus.ACTIVE,
+          operational: OperationalStatus.ACTIVE,
+          source: 'DERIVED',
+        },
+      },
+    }
+
+    const result = createNewStatusEdgeForCombiner(mockEdge, errorStatusModel, combinerNode, MOCK_THEME)
+
+    expect(result).toMatchObject({
+      id: 'edge-test',
+      animated: false,
+      style: {
+        strokeWidth: 1.5,
+        stroke: MOCK_THEME.colors.status.error[500], // Red for ERROR
+      },
+      data: {
+        isConnected: false, // ERROR runtime means not connected
+        hasTopics: true,
+      },
+    })
+  })
+
+  it('should use undefined source status model and fallback to INACTIVE runtime', () => {
+    const combinerNode: Node = {
+      id: 'combiner-node',
+      type: NodeTypes.COMBINER_NODE,
+      position: { x: 0, y: 0 },
+      data: {
+        ...mockCombiner,
+        statusModel: {
+          runtime: RuntimeStatus.ACTIVE,
+          operational: OperationalStatus.ACTIVE,
+          source: 'DERIVED',
+        },
+      },
+    }
+
+    const result = createNewStatusEdgeForCombiner(mockEdge, undefined, combinerNode, MOCK_THEME)
+
+    expect(result).toMatchObject({
+      id: 'edge-test',
+      animated: false,
+      style: {
+        strokeWidth: 1.5,
+        stroke: MOCK_THEME.colors.status.disconnected[500], // Gray for INACTIVE (fallback)
+      },
+      data: {
+        isConnected: false,
+        hasTopics: true,
+      },
+    })
+  })
+
+  describe('fallback path when combiner statusModel is not available', () => {
+    it('should check mappings directly when statusModel is undefined - with mappings', () => {
+      const combinerNode: Node = {
+        id: 'combiner-node',
+        type: NodeTypes.COMBINER_NODE,
+        position: { x: 0, y: 0 },
+        data: {
+          ...mockCombiner,
+          statusModel: undefined, // No statusModel
+        },
+      }
+
+      const result = createNewStatusEdgeForCombiner(mockEdge, activeStatusModel, combinerNode, MOCK_THEME)
+
+      expect(result).toMatchObject({
+        id: 'edge-test',
+        animated: true, // Has mappings, so operational is ACTIVE
+        style: {
+          strokeWidth: 1.5,
+          stroke: MOCK_THEME.colors.status.connected[500],
+        },
+        data: {
+          isConnected: true,
+          hasTopics: true, // Has mappings
+        },
+      })
+    })
+
+    it('should check mappings directly when statusModel is undefined - without mappings', () => {
+      const combinerNode: Node = {
+        id: 'combiner-node',
+        type: NodeTypes.COMBINER_NODE,
+        position: { x: 0, y: 0 },
+        data: {
+          ...mockEmptyCombiner,
+          statusModel: undefined, // No statusModel
+        },
+      }
+
+      const result = createNewStatusEdgeForCombiner(mockEdge, activeStatusModel, combinerNode, MOCK_THEME)
+
+      expect(result).toMatchObject({
+        id: 'edge-test',
+        animated: false, // No mappings, so operational is INACTIVE
+        style: {
+          strokeWidth: 1.5,
+          stroke: MOCK_THEME.colors.status.connected[500],
+        },
+        data: {
+          isConnected: true,
+          hasTopics: false, // No mappings
+        },
+      })
+    })
+
+    it('should handle combiner with empty mappings items array', () => {
+      const combinerNode: Node = {
+        id: 'combiner-node',
+        type: NodeTypes.COMBINER_NODE,
+        position: { x: 0, y: 0 },
+        data: {
+          ...mockCombiner,
+          mappings: { items: [] }, // Empty items
+          statusModel: undefined,
+        },
+      }
+
+      const result = createNewStatusEdgeForCombiner(mockEdge, activeStatusModel, combinerNode, MOCK_THEME)
+
+      expect(result).toMatchObject({
+        id: 'edge-test',
+        animated: false,
+        data: {
+          isConnected: true,
+          hasTopics: false, // Empty mappings
+        },
+      })
+    })
+
+    it('should handle combiner with null/undefined mappings', () => {
+      const combinerNode: Node = {
+        id: 'combiner-node',
+        type: NodeTypes.COMBINER_NODE,
+        position: { x: 0, y: 0 },
+        data: {
+          id: 'test-combiner',
+          name: 'test',
+          sources: { items: [] },
+          mappings: undefined, // No mappings at all
+          statusModel: undefined,
+        } as unknown as Combiner,
+      }
+
+      const result = createNewStatusEdgeForCombiner(mockEdge, activeStatusModel, combinerNode, MOCK_THEME)
+
+      expect(result).toMatchObject({
+        id: 'edge-test',
+        animated: false,
+        data: {
+          isConnected: true,
+          hasTopics: false, // No mappings
+        },
+      })
+    })
+  })
+
+  it('should preserve all edge properties when creating new edge', () => {
+    const edgeWithExtraProps: Edge = {
+      id: 'edge-with-props',
+      source: 'source-node',
+      target: 'combiner-node',
+      type: EdgeTypes.DYNAMIC_EDGE,
+      label: 'Test Edge',
+      sourceHandle: 'handle-1',
+      targetHandle: 'handle-2',
+    }
+
+    const combinerNode: Node = {
+      id: 'combiner-node',
+      type: NodeTypes.COMBINER_NODE,
+      position: { x: 0, y: 0 },
+      data: {
+        ...mockCombiner,
+        statusModel: {
+          runtime: RuntimeStatus.ACTIVE,
+          operational: OperationalStatus.ACTIVE,
+          source: 'DERIVED',
+        },
+      },
+    }
+
+    const result = createNewStatusEdgeForCombiner(edgeWithExtraProps, activeStatusModel, combinerNode, MOCK_THEME)
+
+    expect(result).toMatchObject({
+      id: 'edge-with-props',
+      source: 'source-node',
+      target: 'combiner-node',
+      type: EdgeTypes.DYNAMIC_EDGE,
+      label: 'Test Edge',
+      sourceHandle: 'handle-1',
+      targetHandle: 'handle-2',
     })
   })
 })

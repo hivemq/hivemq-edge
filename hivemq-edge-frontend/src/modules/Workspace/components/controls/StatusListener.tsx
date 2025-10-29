@@ -12,7 +12,7 @@ import type { NodePulseType } from '@/modules/Workspace/types.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { NODE_PULSE_AGENT_DEFAULT_ID } from '@/modules/Workspace/utils/nodes-utils.ts'
 
-import { updateEdgesStatus, updateNodeStatus, updatePulseStatus } from '../../utils/status-utils.ts'
+import { updateNodeStatus, updateEdgesStatusWithModel } from '../../utils/status-utils.ts'
 
 /**
  * @deprecated StatusListener could be replaced by in-node processing and flow computing
@@ -23,7 +23,7 @@ const StatusListener = () => {
   const { data: pulseConnections } = useGetPulseStatus()
   const { data: adapterTypes } = useGetAdapterTypes()
   const { setNodes, getNode, setEdges } = useReactFlow()
-  const { onUpdateNode, edges, onEdgesChange, nodes } = useWorkspaceStore()
+  const { onUpdateNode, nodes } = useWorkspaceStore()
 
   const theme = useTheme()
 
@@ -33,9 +33,13 @@ const StatusListener = () => {
 
     if (!pulseNode) return
 
-    const changes = updatePulseStatus(pulseNode, pulseConnections, edges, theme)
-    onUpdateNode<NodePulseType['data']>(NODE_PULSE_AGENT_DEFAULT_ID, changes.nodes)
-    onEdgesChange(changes.edges)
+    // Update only the status field from API, not the statusModel
+    // The statusModel will be computed by NodePulse based on asset mappers
+    onUpdateNode<NodePulseType['data']>(NODE_PULSE_AGENT_DEFAULT_ID, {
+      ...pulseNode.data,
+      status: pulseConnections, // Update API status data
+      // Don't touch statusModel - let NodePulse compute it
+    })
 
     // TODO[NVL] Propagate changes down the graph
 
@@ -51,13 +55,28 @@ const StatusListener = () => {
       })
 
       const { items } = adapterTypes || {}
-      if (items)
+      if (items) {
         setEdges((currentEdges) => {
-          return updateEdgesStatus(items, currentEdges, updates, getNode, theme)
+          // Use the new Phase 5 function for dual-status edge rendering
+          // Runtime status (colors) + Operational status (animations)
+          return updateEdgesStatusWithModel(items, currentEdges, getNode, theme)
         })
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adapterConnections?.items, adapterTypes, bridgeConnections?.items])
+
+  // Update edges when nodes change (e.g., when combiner statusModel updates)
+  // This ensures edges reflect the latest operational status of target nodes
+  useEffect(() => {
+    const { items } = adapterTypes || {}
+    if (items && nodes.length > 0) {
+      setEdges((currentEdges) => {
+        return updateEdgesStatusWithModel(items, currentEdges, getNode, theme)
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, adapterTypes])
 
   return null
 }
