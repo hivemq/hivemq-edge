@@ -22,8 +22,9 @@ graph TB
     subgraph Adapter Lifecycle
         STOPPED -->|startAdapter| STARTING
         STARTING -->|success| STARTED
-        STARTING -->|failure| STOPPED
+        STARTING -->|non recoverable error| ERROR
         STARTED -->|stopAdapter| STOPPING
+        STARTED -->|non recoverable error| ERROR
         STOPPING --> STOPPED
     end
 ```

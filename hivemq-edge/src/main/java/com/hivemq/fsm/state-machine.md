@@ -26,20 +26,28 @@ Four states control adapter lifecycle.
 2. **STARTING**
    - Initialization in progress
    - Calls `onStarting()` hook
-   - Transitions: → STARTED (success), → STOPPED (failure)
+   - Transitions: → STARTED (success), → STOPPED (failure), → ERROR (non recoverable error)
 
 3. **STARTED**
    - Adapter operational
-   - Transitions: → STOPPING
+   - Transitions: → STOPPING, → ERROR (non recoverable error)
 
 4. **STOPPING**
    - Cleanup in progress
    - Calls `onStopping()` hook
    - Transitions: → STOPPED
 
+5. **ERROR**
+   - Non-recoverable error, adapter is dead
+   - This is a terminal state
+   - Transitions: → STARTING
+
 ### Transition Rules
 
 ```
+
+                    ERROR
+
 STOPPED → STARTING → STARTED → STOPPING → STOPPED
    ↑                                ↓
    └────────────────────────────────┘
