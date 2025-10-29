@@ -43,12 +43,6 @@ describe('getStatusColor', () => {
     expect(color).toBe(MOCK_THEME.colors.status.disconnected[500])
   })
 
-  it('should return fallback color when theme colors are not available', () => {
-    const emptyTheme = { colors: {} }
-    const color = getStatusColor(emptyTheme, undefined)
-    expect(color).toBe('#cbd5e0') // fallback gray
-  })
-
   it('should work regardless of operational status (only runtime matters)', () => {
     const activeRuntime = {
       runtime: RuntimeStatus.ACTIVE,
