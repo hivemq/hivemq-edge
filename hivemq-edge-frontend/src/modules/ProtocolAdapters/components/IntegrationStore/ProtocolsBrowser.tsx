@@ -23,7 +23,11 @@ const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, i
   const { t } = useTranslation()
   const filteredAdapters = useMemo(() => {
     if (!facet) return items
-    return items.filter(applyFacets(facet))
+    return items.filter(applyFacets(facet)).sort((a, b) => {
+      const aName = a.name?.toLowerCase() || ''
+      const bName = b.name?.toLowerCase() || ''
+      return aName.localeCompare(bName)
+    })
   }, [items, facet])
 
   if (!filteredAdapters.length)
