@@ -53,7 +53,7 @@ const NodeAdapter: FC<NodeProps<NodeAdapterType>> = ({ id, data: adapter, select
 
     // Operational status: ACTIVE if has required mappings, INACTIVE otherwise
     const operational =
-      hasNorthMappings && (!isBidirectionalAdapter || hasSouthMappings)
+      hasNorthMappings || (!isBidirectionalAdapter && hasSouthMappings)
         ? OperationalStatus.ACTIVE
         : OperationalStatus.INACTIVE
 
