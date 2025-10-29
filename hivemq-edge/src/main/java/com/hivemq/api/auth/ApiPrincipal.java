@@ -19,6 +19,7 @@ import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.NotNull;
 
 import java.security.Principal;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -68,5 +69,17 @@ public class ApiPrincipal implements Principal {
         sb.append(", roles=").append(roles);
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final ApiPrincipal that = (ApiPrincipal) o;
+        return Objects.equals(getName(), that.getName()) && Objects.equals(getRoles(), that.getRoles());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getName(), getRoles());
     }
 }
