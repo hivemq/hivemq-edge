@@ -145,21 +145,19 @@ const PolicyEditor: FC = () => {
           newNode.position.y += CANVAS_DROP_DELTA.y
           if (handleType === 'target') newNode.position.x += CANVAS_DROP_DELTA.x
 
-          const edgeConnection: Connection = (
-            droppedNode.isSource
-              ? {
-                  target: nodeId,
-                  targetHandle: handleId,
-                  source: id,
-                  sourceHandle: droppedNode.handle,
-                }
-              : {
-                  source: nodeId,
-                  sourceHandle: handleId,
-                  target: id,
-                  targetHandle: droppedNode.handle,
-                }
-          ) as Connection
+          const edgeConnection: Connection = droppedNode.isSource
+            ? {
+                target: nodeId as string,
+                targetHandle: handleId,
+                source: id,
+                sourceHandle: droppedNode.handle,
+              }
+            : {
+                source: nodeId as string,
+                sourceHandle: handleId,
+                target: id,
+                targetHandle: droppedNode.handle,
+              }
 
           onAddNodes([{ item: newNode, type: 'add' } as NodeAddChange])
           onConnect(edgeConnection)
