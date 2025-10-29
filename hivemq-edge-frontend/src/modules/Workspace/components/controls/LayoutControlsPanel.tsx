@@ -22,7 +22,7 @@ import LayoutPresetsManager from '../layout/LayoutPresetsManager.tsx'
 const LayoutControlsPanel: FC = () => {
   const { t } = useTranslation()
   const { applyLayout } = useLayoutEngine()
-  const { layoutConfig, setLayoutOptions } = useWorkspaceStore()
+  const { layoutConfig } = useWorkspaceStore()
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   // Keyboard shortcut: Ctrl/Cmd+L to apply layout
@@ -66,8 +66,7 @@ const LayoutControlsPanel: FC = () => {
         isOpen={isOpen}
         onClose={onClose}
         algorithmType={layoutConfig.currentAlgorithm}
-        options={layoutConfig.options as Record<string, unknown>}
-        onOptionsChange={setLayoutOptions}
+        options={layoutConfig.options}
       />
     </>
   )

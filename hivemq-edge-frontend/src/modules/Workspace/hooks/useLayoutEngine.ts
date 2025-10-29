@@ -63,7 +63,11 @@ export const useLayoutEngine = () => {
    * @returns Promise resolving to layout result
    */
   const applyLayout = useCallback(async (): Promise<LayoutResult | null> => {
-    if (!currentAlgorithm) {
+    // ✅ FIX: Read fresh layoutConfig from store, not from closure!
+    const freshLayoutConfig = useWorkspaceStore.getState().layoutConfig
+    const freshAlgorithm = layoutRegistry.get(freshLayoutConfig.currentAlgorithm)
+
+    if (!freshAlgorithm) {
       console.warn('No layout algorithm selected')
       return null
     }
@@ -73,13 +77,14 @@ export const useLayoutEngine = () => {
       return null
     }
 
-    console.log(`Applying ${currentAlgorithm.name} to ${nodes.length} nodes...`)
+    console.log(`Applying ${freshAlgorithm.name} to ${nodes.length} nodes...`)
+    console.log('📊 Current layout options:', freshLayoutConfig.options)
 
     // Extract constraints from current node structure
     const constraints = extractLayoutConstraints(nodes, edges)
 
     // Validate options before applying
-    const validation = currentAlgorithm.validateOptions(layoutConfig.options)
+    const validation = freshAlgorithm.validateOptions(freshLayoutConfig.options)
     if (!validation.valid) {
       console.error('Layout options validation failed:', validation.errors)
       return {
@@ -96,10 +101,12 @@ export const useLayoutEngine = () => {
 
     try {
       // Apply layout algorithm
-      const result = await currentAlgorithm.apply(nodes, edges, layoutConfig.options, constraints)
+      const result = await freshAlgorithm.apply(nodes, edges, freshLayoutConfig.options, constraints)
 
       if (result.success) {
-        const animationDuration = layoutConfig.options.animate ? layoutConfig.options.animationDuration || 300 : 0
+        const animationDuration = freshLayoutConfig.options.animate
+          ? freshLayoutConfig.options.animationDuration || 300
+          : 0
 
         if (animationDuration > 0) {
           // Step 1: Add transition styles to all nodes
@@ -163,24 +170,24 @@ export const useLayoutEngine = () => {
         pushLayoutHistory({
           id: crypto.randomUUID(),
           timestamp: new Date(),
-          algorithm: layoutConfig.currentAlgorithm,
-          options: layoutConfig.options,
+          algorithm: freshLayoutConfig.currentAlgorithm,
+          options: freshLayoutConfig.options,
           nodePositions: new Map(result.nodes.map((n) => [n.id, n.position])),
         })
 
         // Fit view if requested
-        if (layoutConfig.options.fitView) {
+        if (freshLayoutConfig.options.fitView) {
           setTimeout(() => {
             reactFlowInstance.fitView({
-              padding: layoutConfig.options.fitViewOptions?.padding || 0.2,
-              includeHiddenNodes: layoutConfig.options.fitViewOptions?.includeHiddenNodes || false,
-              duration: layoutConfig.options.animate ? layoutConfig.options.animationDuration || 300 : 0,
+              padding: freshLayoutConfig.options.fitViewOptions?.padding || 0.2,
+              includeHiddenNodes: freshLayoutConfig.options.fitViewOptions?.includeHiddenNodes || false,
+              duration: freshLayoutConfig.options.animate ? freshLayoutConfig.options.animationDuration || 300 : 0,
             })
           }, 50)
         }
 
         console.log(`✓ Layout applied successfully in ${result.duration.toFixed(2)}ms`)
-        console.log(`  - Algorithm: ${currentAlgorithm.name}`)
+        console.log(`  - Algorithm: ${freshAlgorithm.name}`)
         console.log(`  - Nodes: ${result.metadata?.nodeCount || nodes.length}`)
         console.log(`  - Edges: ${result.metadata?.edgeCount || edges.length}`)
       } else {
