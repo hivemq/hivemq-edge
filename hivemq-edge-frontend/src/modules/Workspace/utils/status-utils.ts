@@ -288,6 +288,58 @@ export const getEdgeStatusFromModel = (
 }
 
 /**
+ * Create a new edge status model and styling for connections to combiner nodes.
+ * This function handles the logic for edges targeting combiner nodes, where:
+ * - Runtime status comes from the source node (is the source active?)
+ * - Operational status comes from the combiner node (does it have valid mappings?)
+ *
+ * @param edge - The edge being updated
+ * @param sourceStatusModel - Status model from the source node
+ * @param targetNode - The target combiner node
+ * @param theme - Chakra UI theme object for color resolution
+ * @returns Object containing the updated edge with proper styling
+ */
+export const createNewStatusEdgeForCombiner = (
+  edge: Edge,
+  sourceStatusModel: NodeStatusModel | undefined,
+  targetNode: Node,
+  theme: Partial<WithCSSVar<Dict>>
+): Edge => {
+  const targetData = targetNode.data as WithStatusModel
+  const targetStatusModel = targetData.statusModel
+
+  if (targetStatusModel) {
+    // Create edge-specific status model using:
+    // - Runtime status from source node (is the source active?)
+    // - Operational status from target combiner (does it have mappings?)
+    const edgeStatusModel: NodeStatusModel = {
+      runtime: sourceStatusModel?.runtime || RuntimeStatus.INACTIVE,
+      operational: targetStatusModel.operational, // Use target's operational status
+      source: 'DERIVED' as const,
+    }
+
+    return {
+      ...edge,
+      ...getEdgeStatusFromModel(edgeStatusModel, true, theme),
+    }
+  }
+
+  // Fallback: If combiner hasn't computed statusModel yet, check mappings directly
+  const targetCombiner = targetNode.data as Combiner
+  const hasMapping = targetCombiner.mappings?.items && targetCombiner.mappings.items.length > 0
+  const fallbackStatusModel: NodeStatusModel = {
+    runtime: sourceStatusModel?.runtime || RuntimeStatus.INACTIVE,
+    operational: hasMapping ? OperationalStatus.ACTIVE : OperationalStatus.INACTIVE,
+    source: 'DERIVED' as const,
+  }
+
+  return {
+    ...edge,
+    ...getEdgeStatusFromModel(fallbackStatusModel, true, theme),
+  }
+}
+
+/**
  * @deprecated This is wrong, should be based on the useWorkspaceStore, not the React Flow store
  */
 export const updateEdgesStatus = (
@@ -449,39 +501,7 @@ export const updateEdgesStatusWithModel = (
       // For Adapter → Combiner connections, use the target's operational status
       // The combiner itself determines if it's operational (has valid mappings)
       if (target?.type === NodeTypes.COMBINER_NODE) {
-        const targetData = target.data as WithStatusModel
-        const targetStatusModel = targetData.statusModel
-
-        if (targetStatusModel) {
-          // Create edge-specific status model using:
-          // - Runtime status from Adapter node (is the source active?)
-          // - Operational status from target combiner (does it have mappings?)
-          const edgeStatusModel: NodeStatusModel = {
-            runtime: statusModel?.runtime || RuntimeStatus.INACTIVE,
-            operational: targetStatusModel.operational, // Use target's operational status
-            source: 'DERIVED' as const,
-          }
-
-          newEdges.push({
-            ...edge,
-            ...getEdgeStatusFromModel(edgeStatusModel, true, theme),
-          })
-          return
-        }
-
-        // Fallback: If combiner hasn't computed statusModel yet, check mappings directly
-        const targetCombiner = target.data as Combiner
-        const hasMapping = targetCombiner.mappings?.items && targetCombiner.mappings.items.length > 0
-        const fallbackStatusModel: NodeStatusModel = {
-          runtime: statusModel?.runtime || RuntimeStatus.INACTIVE,
-          operational: hasMapping ? OperationalStatus.ACTIVE : OperationalStatus.INACTIVE,
-          source: 'DERIVED' as const,
-        }
-
-        newEdges.push({
-          ...edge,
-          ...getEdgeStatusFromModel(fallbackStatusModel, true, theme),
-        })
+        newEdges.push(createNewStatusEdgeForCombiner(edge, statusModel, target, theme))
         return
       }
 
@@ -509,39 +529,7 @@ export const updateEdgesStatusWithModel = (
       // For Bridge → Combiner connections, use the target's operational status
       // The combiner itself determines if it's operational (has valid mappings)
       if (target?.type === NodeTypes.COMBINER_NODE) {
-        const targetData = target.data as WithStatusModel
-        const targetStatusModel = targetData.statusModel
-
-        if (targetStatusModel) {
-          // Create edge-specific status model using:
-          // - Runtime status from Bridge node (is the source active?)
-          // - Operational status from target combiner (does it have mappings?)
-          const edgeStatusModel: NodeStatusModel = {
-            runtime: statusModel?.runtime || RuntimeStatus.INACTIVE,
-            operational: targetStatusModel.operational, // Use target's operational status
-            source: 'DERIVED' as const,
-          }
-
-          newEdges.push({
-            ...edge,
-            ...getEdgeStatusFromModel(edgeStatusModel, true, theme),
-          })
-          return
-        }
-
-        // Fallback: If combiner hasn't computed statusModel yet, check mappings directly
-        const targetCombiner = target.data as Combiner
-        const hasMapping = targetCombiner.mappings?.items && targetCombiner.mappings.items.length > 0
-        const fallbackStatusModel: NodeStatusModel = {
-          runtime: statusModel?.runtime || RuntimeStatus.INACTIVE,
-          operational: hasMapping ? OperationalStatus.ACTIVE : OperationalStatus.INACTIVE,
-          source: 'DERIVED' as const,
-        }
-
-        newEdges.push({
-          ...edge,
-          ...getEdgeStatusFromModel(fallbackStatusModel, true, theme),
-        })
+        newEdges.push(createNewStatusEdgeForCombiner(edge, statusModel, target, theme))
         return
       }
 
