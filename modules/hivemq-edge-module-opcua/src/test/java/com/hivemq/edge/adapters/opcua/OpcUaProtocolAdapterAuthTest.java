@@ -145,7 +145,7 @@ class OpcUaProtocolAdapterAuthTest {
     @Timeout(30)
     public void whenTlsAndNoSubscriptions_thenConnectSuccessfully() {
         final Security security = new Security(SecPolicy.NONE);
-        final Tls tls = new Tls(true, null, null);
+        final Tls tls = new Tls(true, false, null, null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
@@ -174,7 +174,7 @@ class OpcUaProtocolAdapterAuthTest {
         final KeyChain root = KeyChain.createKeyChain("root");
 
         final var keystore = root.wrapInKeyStoreWithPrivateKey("keystore", "root", "password", "password");
-        final Tls tls = new Tls(true, new Keystore(keystore.getAbsolutePath(), "password", "password"), null);
+        final Tls tls = new Tls(true, false, new Keystore(keystore.getAbsolutePath(), "password", "password"), null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
