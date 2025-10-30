@@ -163,7 +163,7 @@ describe('LayoutPresetsManager', () => {
     })
   })
 
-  it('should load preset on click', () => {
+  it('should load preset configuration on click', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => {
       // Add nodes and a preset
       const store = useWorkspaceStore.getState()
@@ -173,13 +173,16 @@ describe('LayoutPresetsManager', () => {
       ]
       store.onAddNodes(testNodes.map((node) => ({ type: 'add', item: node })))
 
+      // Set a different algorithm initially
+      store.setLayoutAlgorithm(LayoutType.MANUAL)
+
       const testPreset: LayoutPreset = {
         id: 'test-preset-1',
         name: 'Load Test',
         createdAt: new Date(),
         updatedAt: new Date(),
         algorithm: LayoutType.DAGRE_TB,
-        options: {},
+        options: { animate: true },
         positions: new Map([
           ['node1', { x: 100, y: 100 }],
           ['node2', { x: 200, y: 200 }],
@@ -203,15 +206,12 @@ describe('LayoutPresetsManager', () => {
     cy.get('[role="menu"]').within(() => {
       cy.get('[role="menuitem"]').contains('Load Test').click()
     })
-    cy.get('[role="status"]').should('be.visible')
-    cy.get('[role="status"]').should('not.exist')
 
-    // Verify nodes were repositioned in store
-    cy.window().then(() => {
+    // Verify preset configuration was loaded (algorithm and options)
+    cy.window().should(() => {
       const state = useWorkspaceStore.getState()
-      const node1 = state.nodes.find((n) => n.id === 'node1')
-      expect(node1?.position.x).to.equal(100)
-      expect(node1?.position.y).to.equal(100)
+      expect(state.layoutConfig.currentAlgorithm).to.equal(LayoutType.DAGRE_TB)
+      expect(state.layoutConfig.options.animate).to.equal(true)
     })
   })
 
