@@ -20,13 +20,20 @@ import type {
   LayoutFeature,
   ValidationResult,
 } from '../../types/layout'
+import {
+  filterLayoutableNodes,
+  createNodeIndexMap,
+  nodesToColaNodes,
+  edgesToColaLinks,
+  applyGluedNodePositions,
+  colaNodestoNodes,
+  createValidationResult,
+} from './cola-utils'
 
 const log = debug('workspace:layout:cola-force')
 
 const DEFAULT_LINK_DISTANCE = 350 // Accounts for node width (~245px) + gap
 const DEFAULT_MAX_ITERATIONS = 1000
-const DEFAULT_NODE_WIDTH = 245
-const DEFAULT_NODE_HEIGHT = 100
 
 /**
  * WebCola Force-Directed Layout Algorithm
@@ -72,30 +79,11 @@ export class ColaForceLayoutAlgorithm implements LayoutAlgorithm {
         }
       }
 
-      const gluedNodeIds = new Set<string>()
-      if (constraints) {
-        for (const id of constraints.gluedNodes.keys()) {
-          gluedNodeIds.add(id)
-        }
-      }
-
-      const layoutableNodes = nodes.filter((node) => !gluedNodeIds.has(node.id))
-      const nodeIndexMap = new Map<string, number>()
-
-      const colaNodes = layoutableNodes.map((node, index) => {
-        nodeIndexMap.set(node.id, index)
-        const width = node.width || node.measured?.width || DEFAULT_NODE_WIDTH
-        const height = node.height || node.measured?.height || DEFAULT_NODE_HEIGHT
-        return { x: node.position.x, y: node.position.y, width, height }
-      })
-
-      const colaLinks = edges
-        .filter((edge) => nodeIndexMap.has(edge.source) && nodeIndexMap.has(edge.target))
-        .map((edge) => ({
-          source: nodeIndexMap.get(edge.source)!,
-          target: nodeIndexMap.get(edge.target)!,
-          length: colaOptions.linkDistance,
-        }))
+      // Use shared utilities
+      const layoutableNodes = filterLayoutableNodes(nodes, constraints)
+      const nodeIndexMap = createNodeIndexMap(layoutableNodes)
+      const colaNodes = nodesToColaNodes(layoutableNodes)
+      const colaLinks = edgesToColaLinks(edges, nodeIndexMap, colaOptions.linkDistance)
 
       const layout = new cola.Layout()
         .nodes(colaNodes)
@@ -107,39 +95,15 @@ export class ColaForceLayoutAlgorithm implements LayoutAlgorithm {
 
       layout.start(colaOptions.maxIterations, 0, 0, 0)
 
-      const layoutedNodes: Node[] = layoutableNodes.map((node, index) => {
-        const colaNode = colaNodes[index]
-        return {
-          ...node,
-          position: { x: colaNode.x, y: colaNode.y },
-          sourcePosition: Position.Right,
-          targetPosition: Position.Left,
-        }
-      })
+      // Convert back to ReactFlow nodes
+      const layoutedNodes = colaNodestoNodes(layoutableNodes, colaNodes, Position.Right, Position.Left)
 
-      if (constraints) {
-        for (const node of nodes) {
-          if (constraints.gluedNodes.has(node.id)) {
-            const gluedInfo = constraints.gluedNodes.get(node.id)!
-            const parent = layoutedNodes.find((n) => n.id === gluedInfo.parentId)
-            if (parent) {
-              layoutedNodes.push({
-                ...node,
-                position: {
-                  x: parent.position.x + gluedInfo.offset.x,
-                  y: parent.position.y + gluedInfo.offset.y,
-                },
-                sourcePosition: parent.sourcePosition,
-                targetPosition: parent.targetPosition,
-              })
-            }
-          }
-        }
-      }
+      // Apply glued node positioning
+      const finalNodes = applyGluedNodePositions(nodes, layoutedNodes, constraints)
 
       const duration = performance.now() - startTime
       return {
-        nodes: layoutedNodes,
+        nodes: finalNodes,
         duration,
         success: true,
         metadata: { algorithm: this.type, nodeCount: layoutableNodes.length, edgeCount: edges.length },
@@ -180,10 +144,6 @@ export class ColaForceLayoutAlgorithm implements LayoutAlgorithm {
       if (colaOpts.maxIterations > 5000) warnings.push('maxIterations > 5000 may cause slow performance')
     }
 
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-      warnings: warnings.length > 0 ? warnings : undefined,
-    }
+    return createValidationResult(errors, warnings)
   }
 }
