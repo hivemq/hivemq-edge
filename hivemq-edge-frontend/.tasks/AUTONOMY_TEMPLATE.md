@@ -149,37 +149,85 @@ Agent Actions:
 
 ### Document Formatting Requirements ⚠️ CRITICAL
 
-**RULE: Always run prettier on task documents after creation or modification**
+**RULE: Always run prettier and lint on ALL files before declaring task/subtask complete**
 
 ```bash
-# After creating or modifying any .tasks/ documents, ALWAYS run:
+# MANDATORY before declaring COMPLETE - run BOTH commands:
 npx prettier --write .tasks/{task-id}-{task-name}/*.md
+npm run lint:all
 ```
+
+**⚠️ CRITICAL: This is a QUALITY GATE - Not Optional**
+
+- **Pipeline will FAIL** if files are not properly formatted
+- **Local CI checks** will reject improperly formatted files
+- **Remote pipeline** will trigger errors and block merges
+- **Must be run** before declaring ANY task or subtask finished
 
 **Why this matters:**
 
 - Maintains consistency with project linting standards
 - Prevents formatting-related merge conflicts
 - Ensures all task documentation follows the same style
-- Required for all markdown files in `.tasks/` directory
+- Required for ALL markdown files in `.tasks/` directory
+- Required for ALL source code files modified during the task
+- CI/CD pipelines enforce these standards automatically
 
-**When to run prettier:**
+**When to run prettier + lint:**
 
-- After creating TASK_BRIEF.md
-- After creating or updating TASK_SUMMARY.md
-- After creating CONVERSATION_SUBTASK_N.md
-- After creating SESSION_FEEDBACK.md
-- After creating COVERAGE_MATRIX.md or any other task-specific documents
-- Before committing changes to task documentation
+- ✅ After creating TASK_BRIEF.md
+- ✅ After creating or updating TASK_SUMMARY.md
+- ✅ After creating CONVERSATION_SUBTASK_N.md
+- ✅ After creating SESSION_FEEDBACK.md
+- ✅ After creating any task-specific documents
+- ✅ After modifying ANY source code files
+- ✅ **MANDATORY: Before declaring subtask complete**
+- ✅ **MANDATORY: Before declaring task complete**
+- ✅ Before committing changes
 
 **Example workflow:**
 
 ```bash
-# 1. Create/modify task documents
+# 1. Create/modify task documents and source files
 create_file(".tasks/37074-percy-optimisation/TASK_BRIEF.md", content)
+insert_edit_into_file("src/components/MyComponent.tsx", ...)
 
-# 2. ALWAYS format before finishing
+# 2. ALWAYS format ALL modified files
 npx prettier --write .tasks/37074-percy-optimisation/*.md
+npx prettier --write src/components/MyComponent.tsx
+
+# 3. ALWAYS run lint to catch any issues
+npm run lint:all
+
+# 4. Fix any lint errors reported
+# 5. ONLY THEN declare subtask/task complete
+```
+
+**What gets checked:**
+
+- `.tasks/**/*.md` - All task documentation
+- `src/**/*.ts` - All TypeScript source files
+- `src/**/*.tsx` - All React/TSX files
+- `cypress/**/*.ts` - All Cypress test files
+- All other project source files
+
+**Verification Commands:**
+
+```bash
+# Format all task docs
+npx prettier --write .tasks/**/*.md
+
+# Format specific task
+npx prettier --write .tasks/25337-workspace-auto-layout/**/*.md
+
+# Format all modified source files
+npx prettier --write src/**/*.{ts,tsx}
+
+# Run full lint check
+npm run lint:all
+
+# Check for errors (must show 0 errors)
+echo $?  # Should return 0 if successful
 ```
 
 ### E2E Test Verification Requirements ⚠️ CRITICAL
@@ -836,7 +884,21 @@ rm -rf node_modules/.vite
 - [ ] Tests follow existing patterns in codebase
 - [ ] TASK_SUMMARY.md updated with complete subtask entry
 - [ ] Summary statistics updated
+- [ ] **⚠️ CRITICAL: `npx prettier --write` run on ALL modified files**
+- [ ] **⚠️ CRITICAL: `npm run lint:all` executed and passing (0 errors)**
+- [ ] All formatting and linting errors fixed
 - [ ] Committed changes (if applicable)
+
+**Formatting & Linting - MANDATORY:**
+
+```bash
+# Must run BOTH before declaring complete:
+npx prettier --write .tasks/{task-id}-{task-name}/*.md
+npx prettier --write src/**/*.{ts,tsx}  # All modified source files
+npm run lint:all
+```
+
+**Pipeline will FAIL if this step is skipped!**
 
 ---
 
