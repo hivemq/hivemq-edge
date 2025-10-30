@@ -874,6 +874,7 @@
         "loading": "Applying..."
       },
       "selector": {
+        "ariaLabel": "Select layout algorithm",
         "tooltip": "Select layout algorithm"
       },
       "options": {

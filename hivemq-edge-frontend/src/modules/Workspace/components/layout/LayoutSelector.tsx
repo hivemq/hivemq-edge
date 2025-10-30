@@ -28,6 +28,7 @@ const LayoutSelector: FC = () => {
     <Tooltip label={t('workspace.autoLayout.selector.tooltip')} placement="bottom">
       <Select
         data-testid="workspace-layout-selector"
+        aria-label={t('workspace.autoLayout.selector.ariaLabel')}
         size="sm"
         value={currentAlgorithm}
         onChange={handleChange}

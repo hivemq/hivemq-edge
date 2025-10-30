@@ -11,6 +11,9 @@ describe('useWorkspaceStore - localStorage persistence', () => {
   beforeEach(() => {
     // Clear localStorage before each test
     localStorage.clear()
+
+    // Reset the store state to ensure isolation between tests
+    useWorkspaceStore.setState({ nodes: [], edges: [] })
   })
 
   it('should persist nodes and edges to localStorage', () => {
@@ -25,8 +28,8 @@ describe('useWorkspaceStore - localStorage persistence', () => {
 
     // Add nodes and edges
     act(() => {
-      result.current.onAddNodes(testNodes)
-      result.current.onAddEdges(testEdges)
+      result.current.onAddNodes(testNodes.map((node) => ({ type: 'add' as const, item: node })))
+      result.current.onAddEdges(testEdges.map((edge) => ({ type: 'add' as const, item: edge })))
     })
 
     // Check localStorage
@@ -46,7 +49,7 @@ describe('useWorkspaceStore - localStorage persistence', () => {
     const testNodes: Node[] = [{ id: 'test-node', position: { x: 50, y: 50 }, data: {} }]
 
     act(() => {
-      result.current.onAddNodes(testNodes)
+      result.current.onAddNodes(testNodes.map((node) => ({ type: 'add' as const, item: node })))
     })
 
     const stored = localStorage.getItem('edge.workspace')
@@ -57,7 +60,10 @@ describe('useWorkspaceStore - localStorage persistence', () => {
     expect(parsed.state.nodes).toHaveLength(1)
   })
 
-  it('should restore nodes and edges from localStorage on mount', () => {
+  it('should restore nodes and edges from localStorage on mount', async () => {
+    // First clear everything
+    localStorage.clear()
+
     // Simulate existing data in localStorage
     const existingData = {
       state: {
@@ -69,7 +75,9 @@ describe('useWorkspaceStore - localStorage persistence', () => {
 
     localStorage.setItem('edge.workspace', JSON.stringify(existingData))
 
-    // Create new hook instance (simulates page reload)
+    // Force the store to reload from localStorage
+    await useWorkspaceStore.persist.rehydrate()
+
     const { result } = renderHook(() => useWorkspaceStore())
 
     // Should have restored data

@@ -27,6 +27,98 @@ export class WorkspacePage extends ShellPage {
     },
   }
 
+  layoutControls = {
+    get panel() {
+      return cy.getByTestId('layout-controls-panel')
+    },
+
+    get algorithmSelector() {
+      return cy.getByTestId('workspace-layout-selector')
+    },
+
+    get applyButton() {
+      return cy.getByTestId('workspace-apply-layout')
+    },
+
+    get presetsButton() {
+      return cy.get('button[aria-label*="preset"]').first()
+    },
+
+    get optionsButton() {
+      return cy.get('button[aria-label="Layout options"]')
+    },
+
+    presetsMenu: {
+      get saveOption() {
+        return cy.get('[role="menu"]').within(() => {
+          cy.get('[role="menuitem"]').first()
+        })
+      },
+
+      presetItem(name: string) {
+        return cy.get('[role="menu"]').within(() => {
+          cy.contains('[role="menuitem"]', name)
+        })
+      },
+
+      get emptyMessage() {
+        return cy.get('[role="menu"]').contains('No saved presets')
+      },
+    },
+
+    optionsDrawer: {
+      get drawer() {
+        return cy.get('[role="dialog"][id="layout-options-drawer"]')
+      },
+
+      get title() {
+        return cy.get('[role="dialog"]').within(() => {
+          cy.get('header')
+        })
+      },
+
+      get form() {
+        return cy.get('form#layout-options-form')
+      },
+
+      get cancelButton() {
+        return cy.get('[role="dialog"]').within(() => {
+          cy.contains('button', 'Cancel')
+        })
+      },
+
+      get applyButton() {
+        return cy.get('[role="dialog"]').within(() => {
+          cy.contains('button', 'Apply Options')
+        })
+      },
+    },
+
+    savePresetModal: {
+      get modal() {
+        return cy.get('[role="dialog"]').contains('Save Layout Preset').parent('[role="dialog"]')
+      },
+
+      get nameInput() {
+        return cy.get('[role="dialog"]').within(() => {
+          cy.get('input[type="text"]')
+        })
+      },
+
+      get cancelButton() {
+        return cy.get('[role="dialog"]').within(() => {
+          cy.contains('button', 'Cancel')
+        })
+      },
+
+      get saveButton() {
+        return cy.get('[role="dialog"]').within(() => {
+          cy.contains('button', 'Save')
+        })
+      },
+    },
+  }
+
   get nodeToolbar() {
     return cy.get('[data-testid="rf__wrapper"] [role="toolbar"][aria-label="Node toolbar"]')
   }

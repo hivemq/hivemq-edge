@@ -2,10 +2,10 @@
  * Unit tests for Layout Registry
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { LayoutRegistry, layoutRegistry } from './layout-registry'
 import { DagreLayoutAlgorithm } from './dagre-layout'
-import type { LayoutType } from '../../types/layout'
+import type { LayoutType, LayoutFeature } from '../../types/layout'
 
 describe('LayoutRegistry', () => {
   let registry: LayoutRegistry
@@ -92,18 +92,19 @@ describe('LayoutRegistry', () => {
 
   describe('getByFeature', () => {
     it('should return algorithms supporting hierarchical layout', () => {
-      const algorithms = registry.getByFeature('HIERARCHICAL')
+      const algorithms = registry.getByFeature('HIERARCHICAL' as LayoutFeature)
 
       expect(algorithms.length).toBeGreaterThan(0)
       algorithms.forEach((algo) => {
-        expect(algo.supports('HIERARCHICAL')).toBe(true)
+        expect(algo.supports('HIERARCHICAL' as LayoutFeature)).toBe(true)
       })
     })
 
-    it('should return empty array for unsupported feature', () => {
-      const algorithms = registry.getByFeature('FORCE_DIRECTED')
+    it('should return force-directed algorithms', () => {
+      const algorithms = registry.getByFeature('FORCE_DIRECTED' as LayoutFeature)
 
-      expect(algorithms).toHaveLength(0)
+      // ColaForceLayoutAlgorithm should support this feature
+      expect(algorithms.length).toBeGreaterThan(0)
     })
   })
 

@@ -43,7 +43,7 @@ export class ManualLayoutAlgorithm implements LayoutAlgorithm {
   async apply(
     nodes: Node[],
     _edges: Edge[],
-    options: LayoutOptions,
+    _options: LayoutOptions,
     _constraints?: LayoutConstraints
   ): Promise<LayoutResult> {
     const startTime = performance.now()
@@ -64,7 +64,6 @@ export class ManualLayoutAlgorithm implements LayoutAlgorithm {
         algorithm: this.type,
         nodeCount: nodes.length,
         edgeCount: _edges.length,
-        message: 'Manual layout - no changes applied',
       },
     }
   }
@@ -72,7 +71,7 @@ export class ManualLayoutAlgorithm implements LayoutAlgorithm {
   /**
    * Check if algorithm supports a feature
    */
-  supports(feature: LayoutFeature): boolean {
+  supports(_feature: LayoutFeature): boolean {
     // Manual layout doesn't support any automatic layout features
     return false
   }
@@ -80,7 +79,7 @@ export class ManualLayoutAlgorithm implements LayoutAlgorithm {
   /**
    * Validate layout options
    */
-  validateOptions(options: LayoutOptions): ValidationResult {
+  validateOptions(_options: LayoutOptions): ValidationResult {
     // Manual layout only supports common options, no validation needed
     return {
       valid: true,

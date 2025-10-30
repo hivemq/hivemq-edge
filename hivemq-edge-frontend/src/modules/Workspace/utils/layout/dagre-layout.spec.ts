@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { DagreLayoutAlgorithm } from './dagre-layout'
-import type { LayoutType } from '../../types/layout'
+import type { LayoutType, DagreOptions, LayoutFeature } from '../../types/layout'
 import { type LayoutConstraints } from '../../types/layout'
 import type { Node, Edge } from '@xyflow/react'
 
@@ -186,19 +186,19 @@ describe('DagreLayoutAlgorithm', () => {
 
   describe('supports', () => {
     it('should support hierarchical feature', () => {
-      expect(algorithm.supports('HIERARCHICAL')).toBe(true)
+      expect(algorithm.supports('HIERARCHICAL' as LayoutFeature)).toBe(true)
     })
 
     it('should support directional feature', () => {
-      expect(algorithm.supports('DIRECTIONAL')).toBe(true)
+      expect(algorithm.supports('DIRECTIONAL' as LayoutFeature)).toBe(true)
     })
 
     it('should support constrained feature', () => {
-      expect(algorithm.supports('CONSTRAINED')).toBe(true)
+      expect(algorithm.supports('CONSTRAINED' as LayoutFeature)).toBe(true)
     })
 
     it('should not support force-directed feature', () => {
-      expect(algorithm.supports('FORCE_DIRECTED')).toBe(false)
+      expect(algorithm.supports('FORCE_DIRECTED' as LayoutFeature)).toBe(false)
     })
   })
 
@@ -211,28 +211,28 @@ describe('DagreLayoutAlgorithm', () => {
     })
 
     it('should warn about small ranksep', () => {
-      const result = algorithm.validateOptions({ ranksep: 30, rankdir: 'TB' })
+      const result = algorithm.validateOptions({ ranksep: 30, rankdir: 'TB' } as DagreOptions)
 
       expect(result.valid).toBe(true)
       expect(result.warnings).toContain('ranksep < 50px may cause overlapping nodes')
     })
 
     it('should warn about large ranksep', () => {
-      const result = algorithm.validateOptions({ ranksep: 600, rankdir: 'TB' })
+      const result = algorithm.validateOptions({ ranksep: 600, rankdir: 'TB' } as DagreOptions)
 
       expect(result.valid).toBe(true)
       expect(result.warnings).toContain('ranksep > 500px may create excessive spacing')
     })
 
     it('should warn about small nodesep', () => {
-      const result = algorithm.validateOptions({ nodesep: 10, rankdir: 'TB' })
+      const result = algorithm.validateOptions({ nodesep: 10, rankdir: 'TB' } as DagreOptions)
 
       expect(result.valid).toBe(true)
       expect(result.warnings).toContain('nodesep < 20px may cause overlapping nodes')
     })
 
     it('should error on invalid rankdir', () => {
-      const result = algorithm.validateOptions({ rankdir: 'INVALID' as any })
+      const result = algorithm.validateOptions({ rankdir: 'INVALID' } as unknown as DagreOptions)
 
       expect(result.valid).toBe(false)
       expect(result.errors).toContain('Invalid rankdir: INVALID. Must be TB, LR, BT, or RL')
