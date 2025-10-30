@@ -40,6 +40,37 @@ it('should be accessible', () => {
 5. **Interactions:** Optionally test accessibility during/after user interactions
 6. **Screenshot:** Optionally capture a screenshot for PR documentation
 
+### ⚠️ CRITICAL: Select Components MUST Have Accessible Names
+
+**All `<Select>` components MUST have an accessible name via `aria-label`.**
+
+❌ **WRONG - Will fail accessibility:**
+
+```tsx
+<Select value={currentValue} onChange={handleChange}>
+  <option>...</option>
+</Select>
+```
+
+✅ **CORRECT - Accessible:**
+
+```tsx
+<Select aria-label={t('component.selector.ariaLabel')} value={currentValue} onChange={handleChange}>
+  <option>...</option>
+</Select>
+```
+
+**Why this matters:**
+
+- Screen readers need to announce what the select control is for
+- Axe accessibility scanner will fail without an accessible name
+- See: https://dequeuniversity.com/rules/axe/4.10/select-name
+
+**Alternative approaches (also valid):**
+
+- Use `aria-labelledby` to reference a label element by ID
+- Wrap in a `<FormControl>` with a `<FormLabel>` (Chakra UI will connect them)
+
 ---
 
 ## Component Testing Patterns
