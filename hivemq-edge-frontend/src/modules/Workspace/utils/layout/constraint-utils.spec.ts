@@ -1,78 +1,162 @@
-/**
- * Test to verify constraint extraction for ADAPTER+DEVICE nodes
- */
-
 import { describe, it, expect } from 'vitest'
-import { extractLayoutConstraints } from './constraint-utils'
-import { NodeTypes } from '../../types'
-import type { Node, Edge } from '@xyflow/react'
+import type { Node } from '@xyflow/react'
+import {
+  isNodeConstrained,
+  getGluedParentId,
+  calculateGluedPosition,
+  getLayoutableNodes,
+  applyGluedPositions,
+} from './constraint-utils'
+import type { LayoutConstraints, GluedNodeInfo } from '@/modules/Workspace/types/layout'
 
-describe('extractLayoutConstraints - ADAPTER/DEVICE gluing', () => {
-  it('should correctly identify DEVICE as glued child of ADAPTER', () => {
-    const nodes: Node[] = [
-      { id: 'edge-1', type: NodeTypes.EDGE_NODE, position: { x: 0, y: 0 }, data: {} },
-      { id: 'adapter-1', type: NodeTypes.ADAPTER_NODE, position: { x: 0, y: 0 }, data: { id: 'adapter-1' } },
-      { id: 'device-1', type: NodeTypes.DEVICE_NODE, position: { x: 0, y: 0 }, data: { sourceAdapterId: 'adapter-1' } },
-      { id: 'adapter-2', type: NodeTypes.ADAPTER_NODE, position: { x: 0, y: 0 }, data: { id: 'adapter-2' } },
-      { id: 'device-2', type: NodeTypes.DEVICE_NODE, position: { x: 0, y: 0 }, data: { sourceAdapterId: 'adapter-2' } },
-    ]
+describe('constraint-utils', () => {
+  describe('isNodeConstrained', () => {
+    it('should return true for glued nodes', () => {
+      const gluedInfo: GluedNodeInfo = { parentId: 'parent-1', offset: { x: 0, y: 0 }, handle: 'source' }
+      const constraints: LayoutConstraints = {
+        gluedNodes: new Map([['node-1', gluedInfo]]),
+        fixedNodes: new Set<string>(),
+        groupNodes: new Map(),
+      }
 
-    const edges: Edge[] = []
+      expect(isNodeConstrained('node-1', constraints)).toBe(true)
+    })
 
-    const constraints = extractLayoutConstraints(nodes, edges)
+    it('should return true for fixed nodes', () => {
+      const constraints: LayoutConstraints = {
+        gluedNodes: new Map(),
+        fixedNodes: new Set(['node-1']),
+        groupNodes: new Map(),
+      }
 
-    console.log('Extracted glued nodes:', Array.from(constraints.gluedNodes.entries()))
-
-    // DEVICE nodes should be glued to ADAPTER nodes
-    expect(constraints.gluedNodes.has('device-1')).toBe(true)
-    expect(constraints.gluedNodes.has('device-2')).toBe(true)
-
-    // ADAPTER nodes should NOT be glued (they are parents)
-    expect(constraints.gluedNodes.has('adapter-1')).toBe(false)
-    expect(constraints.gluedNodes.has('adapter-2')).toBe(false)
-
-    // Check the parent relationships - should match by sourceAdapterId
-    const device1Info = constraints.gluedNodes.get('device-1')
-    expect(device1Info?.parentId).toBe('adapter-1')
-
-    const device2Info = constraints.gluedNodes.get('device-2')
-    expect(device2Info?.parentId).toBe('adapter-2') // Now correctly maps to adapter-2!
+      expect(isNodeConstrained('node-1', constraints)).toBe(true)
+    })
   })
 
-  it('should handle multiple DEVICE nodes with sourceAdapterId matching', () => {
-    // With sourceAdapterId, each DEVICE should match to its specific ADAPTER
-    const nodes: Node[] = [
-      { id: 'adapter-1', type: NodeTypes.ADAPTER_NODE, position: { x: 0, y: 0 }, data: { id: 'adapter-1' } },
-      { id: 'adapter-2', type: NodeTypes.ADAPTER_NODE, position: { x: 100, y: 0 }, data: { id: 'adapter-2' } },
-      {
-        id: 'device-1',
-        type: NodeTypes.DEVICE_NODE,
-        position: { x: 0, y: 100 },
-        data: { sourceAdapterId: 'adapter-1' },
-      },
-      {
-        id: 'device-2',
-        type: NodeTypes.DEVICE_NODE,
-        position: { x: 100, y: 100 },
-        data: { sourceAdapterId: 'adapter-2' },
-      },
-    ]
+  describe('getGluedParentId', () => {
+    it('should return parent ID for glued nodes', () => {
+      const gluedInfo: GluedNodeInfo = { parentId: 'parent-1', offset: { x: 10, y: 20 }, handle: 'source' }
+      const constraints: LayoutConstraints = {
+        gluedNodes: new Map([['child-1', gluedInfo]]),
+        fixedNodes: new Set<string>(),
+        groupNodes: new Map(),
+      }
 
-    const edges: Edge[] = []
+      expect(getGluedParentId('child-1', constraints)).toBe('parent-1')
+    })
 
-    const constraints = extractLayoutConstraints(nodes, edges)
+    it('should return undefined for non-glued nodes', () => {
+      const constraints: LayoutConstraints = {
+        gluedNodes: new Map(),
+        fixedNodes: new Set<string>(),
+        groupNodes: new Map(),
+      }
 
-    console.log('Multiple ADAPTER/DEVICE pairs:', Array.from(constraints.gluedNodes.entries()))
+      expect(getGluedParentId('node-1', constraints)).toBeUndefined()
+    })
+  })
 
-    // Now correctly matches by sourceAdapterId!
-    const device1Info = constraints.gluedNodes.get('device-1')
-    const device2Info = constraints.gluedNodes.get('device-2')
+  describe('calculateGluedPosition', () => {
+    it('should calculate position with offset', () => {
+      const gluedNode: Node = {
+        id: 'child-1',
+        position: { x: 0, y: 0 },
+        data: {},
+      }
 
-    console.log('device-1 parent:', device1Info?.parentId)
-    console.log('device-2 parent:', device2Info?.parentId)
+      const parentNode: Node = {
+        id: 'parent-1',
+        position: { x: 100, y: 200 },
+        data: {},
+      }
 
-    // Each device now points to its correct adapter
-    expect(device1Info?.parentId).toBe('adapter-1')
-    expect(device2Info?.parentId).toBe('adapter-2') // ✅ Fixed!
+      const gluedInfo: GluedNodeInfo = {
+        parentId: 'parent-1',
+        offset: { x: 15, y: 25 },
+        handle: 'source',
+      }
+
+      const result = calculateGluedPosition(gluedNode, parentNode, gluedInfo)
+
+      expect(result.position).toEqual({ x: 115, y: 225 })
+      expect(result.id).toBe('child-1')
+    })
+  })
+
+  describe('getLayoutableNodes', () => {
+    it('should filter out glued nodes', () => {
+      const nodes: Node[] = [
+        { id: 'node-1', position: { x: 0, y: 0 }, data: {} },
+        { id: 'node-2', position: { x: 100, y: 100 }, data: {} },
+        { id: 'node-3', position: { x: 200, y: 200 }, data: {} },
+      ]
+
+      const gluedInfo: GluedNodeInfo = { parentId: 'node-1', offset: { x: 0, y: 0 }, handle: 'source' }
+      const constraints: LayoutConstraints = {
+        gluedNodes: new Map([['node-2', gluedInfo]]),
+        fixedNodes: new Set<string>(),
+        groupNodes: new Map(),
+      }
+
+      const result = getLayoutableNodes(nodes, constraints)
+
+      expect(result).toHaveLength(2)
+      expect(result.map((n) => n.id)).toEqual(['node-1', 'node-3'])
+    })
+
+    it('should filter out fixed nodes', () => {
+      const nodes: Node[] = [
+        { id: 'node-1', position: { x: 0, y: 0 }, data: {} },
+        { id: 'node-2', position: { x: 100, y: 100 }, data: {} },
+      ]
+
+      const constraints: LayoutConstraints = {
+        gluedNodes: new Map(),
+        fixedNodes: new Set(['node-1']),
+        groupNodes: new Map(),
+      }
+
+      const result = getLayoutableNodes(nodes, constraints)
+
+      expect(result).toHaveLength(1)
+      expect(result[0].id).toBe('node-2')
+    })
+  })
+
+  describe('applyGluedPositions', () => {
+    it('should update glued node positions based on parent', () => {
+      const layoutedNodes: Node[] = [
+        { id: 'parent-1', position: { x: 200, y: 300 }, data: {} },
+        { id: 'child-1', position: { x: 0, y: 0 }, data: {} },
+      ]
+
+      const gluedInfo: GluedNodeInfo = { parentId: 'parent-1', offset: { x: 10, y: 20 }, handle: 'source' }
+      const constraints: LayoutConstraints = {
+        gluedNodes: new Map([['child-1', gluedInfo]]),
+        fixedNodes: new Set<string>(),
+        groupNodes: new Map(),
+      }
+
+      const result = applyGluedPositions(layoutedNodes, constraints)
+
+      expect(result[0].position).toEqual({ x: 200, y: 300 }) // Parent unchanged
+      expect(result[1].position).toEqual({ x: 210, y: 320 }) // Child updated with offset
+    })
+
+    it('should handle missing parent gracefully', () => {
+      const layoutedNodes: Node[] = [{ id: 'child-1', position: { x: 0, y: 0 }, data: {} }]
+
+      const gluedInfo: GluedNodeInfo = { parentId: 'missing-parent', offset: { x: 10, y: 20 }, handle: 'source' }
+      const constraints: LayoutConstraints = {
+        gluedNodes: new Map([['child-1', gluedInfo]]),
+        fixedNodes: new Set<string>(),
+        groupNodes: new Map(),
+      }
+
+      const result = applyGluedPositions(layoutedNodes, constraints)
+
+      // Should return node unchanged when parent is missing
+      expect(result[0].position).toEqual({ x: 0, y: 0 })
+    })
   })
 })
