@@ -19,7 +19,7 @@ export default defineConfig({
       cypressGrepPlugin(config)
 
       installLogsPrinter(on, {
-        printLogsToConsole: 'onFail',
+        printLogsToConsole: 'never',
         includeSuccessfulHookLogs: false,
       })
       return config
@@ -32,7 +32,7 @@ export default defineConfig({
     setupNodeEvents(on, config) {
       codeCoverage(on, config)
       installLogsPrinter(on, {
-        printLogsToConsole: 'onFail',
+        printLogsToConsole: 'never',
         includeSuccessfulHookLogs: false,
       })
       cypressGrepPlugin(config)
