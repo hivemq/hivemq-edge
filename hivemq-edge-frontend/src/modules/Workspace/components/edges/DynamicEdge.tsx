@@ -38,7 +38,7 @@ export const DynamicEdge: FC<EdgeProps> = ({ id, source, target, markerEnd, styl
   }, [policies])
 
   const handleOpenObservability = () => {
-    navigate(`/workspace/link/${id}`)
+    navigate(`/workspace/connector/${id}`)
   }
 
   const handleShowPolicy = (route: string) => {
