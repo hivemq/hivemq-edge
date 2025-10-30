@@ -9,6 +9,7 @@ import type { FC } from 'react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { IChangeEvent } from '@rjsf/core'
+import debug from 'debug'
 import {
   Button,
   ButtonGroup,
@@ -40,6 +41,8 @@ import {
 import { LayoutType, type LayoutOptions } from '../../types/layout.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore'
 import { useLayoutEngine } from '../../hooks/useLayoutEngine'
+
+const log = debug('workspace:layout:drawer')
 
 interface LayoutOptionsDrawerProps {
   isOpen: boolean
@@ -75,7 +78,7 @@ const LayoutOptionsDrawer: FC<LayoutOptionsDrawerProps> = ({ isOpen, onClose, al
 
   const handleSubmit = async (data: IChangeEvent<LayoutOptions>) => {
     if (data.formData) {
-      console.log('📋 [Drawer] Submitting layout options:', data.formData)
+      log('📋 [Drawer] Submitting layout options:', data.formData)
 
       // Step 1: Update options in store
       setLayoutOptions(data.formData)
@@ -84,10 +87,10 @@ const LayoutOptionsDrawer: FC<LayoutOptionsDrawerProps> = ({ isOpen, onClose, al
       await new Promise((resolve) => setTimeout(resolve, 100))
 
       // Step 3: Apply layout - applyLayout now reads fresh state from store!
-      console.log('🚀 [Drawer] Calling applyLayout (which will read fresh state)...')
+      log('🚀 [Drawer] Calling applyLayout (which will read fresh state)...')
       const result = await applyLayout()
 
-      console.log('✅ [Drawer] Layout applied:', result)
+      log('✅ [Drawer] Layout applied:', result)
 
       // Step 4: Close the drawer
       onClose()
