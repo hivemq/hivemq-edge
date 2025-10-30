@@ -57,7 +57,7 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
         CertificateValidator certValidator = null;
         if (tlsEnabled) {
             final var truststore = adapterConfig.getTls().truststore();
-            final var certOptional = getTrustedCerts(truststore).map(ParsedConfig::createServerCertificateValidator);
+            final var certOptional = getTrustedCerts(truststore).map(trustedCerts ->  createServerCertificateValidator(trustedCerts, adapterConfig.getTls().noChecks()));
             if (certOptional.isEmpty()) {
                 return Failure.of("Failed to create certificate validator, check truststore configuration");
             }
@@ -124,10 +124,16 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
         return Optional.of(KeystoreUtil.getCertificatesFromDefaultTruststore());
     }
 
-    private static @NotNull CertificateValidator createServerCertificateValidator(final @NotNull List<X509Certificate> trustedCerts) {
-        return new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
-                Set.of(ValidationCheck.VALIDITY, ValidationCheck.REVOCATION, ValidationCheck.REVOCATION_LISTS),
-                new MemoryCertificateQuarantine());
+    private static @NotNull CertificateValidator createServerCertificateValidator(final @NotNull List<X509Certificate> trustedCerts, final boolean noChecks) {
+        if(noChecks) {
+            return new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
+                    Set.of(),
+                    new MemoryCertificateQuarantine());
+        } else {
+            return new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
+                    Set.of(ValidationCheck.VALIDITY, ValidationCheck.REVOCATION, ValidationCheck.REVOCATION_LISTS),
+                    new MemoryCertificateQuarantine());
+        }
     }
 
     private static @NotNull Optional<KeystoreUtil.KeyPairWithChain> getKeyPairWithChain(final @NotNull Keystore keystore) {
