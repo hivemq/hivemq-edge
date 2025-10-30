@@ -150,32 +150,25 @@ public class ProtocolAdapterWrapper {
                 })
                 .thenCompose(Function.identity())
                 .handle((ignored, error) -> {
-                    if (error != null) {
+                    if(error != null) {
                         log.error("Error starting adapter", error);
                         stopAfterFailedStart();
                         protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
                         //we still return the initial error since that's the most significant information
                         return CompletableFuture.failedFuture(error);
                     } else {
-                        return attemptStartingConsumers(writingEnabled,
-                                moduleServices.eventService()).handle((success, startException) -> {
-                            if (startException == null) {
-                                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
-                                if (success) {
-                                    log.debug("Successfully started adapter with id {}", adapter.getId());
-                                } else {
-                                    log.debug("Partially started adapter with id {}", adapter.getId());
-                                }
-                            } else {
+                        return attemptStartingConsumers(writingEnabled, moduleServices.eventService())
+                            .map(startException -> {
                                 log.error("Failed to start adapter with id {}", adapter.getId(), startException);
                                 stopAfterFailedStart();
-                                //we still return the initial error since that's the most significant information
                                 protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-                                throw new RuntimeException("Failed to start adapter with id " + adapter.getId(),
-                                        startException);
-                            }
-                            return success;
-                        });
+                                //we still return the initial error since that's the most significant information
+                                return CompletableFuture.failedFuture(startException);
+                            })
+                            .orElseGet(() -> {
+                                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
+                                return CompletableFuture.completedFuture(null);
+                            });
                     }
                 })
                 .thenApply(ignored -> (Void)null)
@@ -208,10 +201,7 @@ public class ProtocolAdapterWrapper {
         }
     }
 
-    private @NotNull CompletableFuture<Boolean> attemptStartingConsumers(
-            final boolean writingEnabled,
-            final @NotNull EventService eventService) {
-        final CompletableFuture<Boolean> future = new CompletableFuture<>();
+    private @NotNull Optional<Throwable> attemptStartingConsumers(final boolean writingEnabled, final @NotNull EventService eventService) {
         try {
             //Adapter started successfully, now start the consumers
             createAndSubscribeTagConsumer();
@@ -225,14 +215,11 @@ public class ProtocolAdapterWrapper {
                             try {
                                 if (startWriting(protocolAdapterWritingService).get()) {
                                     log.info("Successfully started adapter with id {}", adapter.getId());
-                                    future.complete(true);
                                 } else {
                                     log.error("Protocol adapter start failed as data hub is not available.");
-                                    future.complete(false);
                                 }
                             } catch (final Exception e) {
                                 log.error("Failed to start writing for adapter with id {}.", adapter.getId(), e);
-                                future.completeExceptionally(e);
                             }
                         }
                     }
@@ -240,9 +227,9 @@ public class ProtocolAdapterWrapper {
             }
         } catch (final Throwable e) {
             log.error("Protocol adapter start failed");
-            future.completeExceptionally(e);
+            return Optional.of(e);
         }
-        return future;
+        return Optional.empty();
     }
 
     public @NotNull CompletableFuture<Void> stopAsync(final boolean destroy) {
