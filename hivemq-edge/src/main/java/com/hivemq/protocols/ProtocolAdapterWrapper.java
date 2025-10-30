@@ -270,7 +270,7 @@ public class ProtocolAdapterWrapper {
             log.error("Protocol adapter with id {} failed to be started.", adapter.getId());
             future.completeExceptionally(e);
         }
-        return future;
+        return Optional.empty();
     }
 
     public @NotNull CompletableFuture<Void> stopAsync(final boolean destroy) {
