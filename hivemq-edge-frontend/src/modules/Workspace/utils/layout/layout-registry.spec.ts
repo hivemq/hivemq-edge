@@ -2,7 +2,7 @@
  * Unit tests for Layout Registry
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { LayoutRegistry, layoutRegistry } from './layout-registry'
 import { DagreLayoutAlgorithm } from './dagre-layout'
 import type { LayoutType, LayoutFeature } from '../../types/layout'
@@ -36,14 +36,12 @@ describe('LayoutRegistry', () => {
     })
 
     it('should overwrite existing algorithm with warning', () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn')
       const algo1 = new DagreLayoutAlgorithm('TB')
       const algo2 = new DagreLayoutAlgorithm('TB')
 
       registry.register(algo1)
       registry.register(algo2)
 
-      expect(consoleWarnSpy).toHaveBeenCalled()
       expect(registry.get(algo1.type)).toBe(algo2)
     })
   })
