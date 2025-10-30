@@ -18,13 +18,13 @@ package com.hivemq.protocols.fsm;
 
 import org.jetbrains.annotations.NotNull;
 
-public class ProtocolAdapterWrapper {
+public class ProtocolAdapterInstance {
     protected @NotNull ProtocolAdapterState state;
     protected @NotNull ProtocolAdapterConnectionState connectionState;
 
-    public ProtocolAdapterWrapper() {
-        this.state = ProtocolAdapterState.Stopped;
-        this.connectionState = ProtocolAdapterConnectionState.Closed;
+    public ProtocolAdapterInstance() {
+        connectionState = ProtocolAdapterConnectionState.Closed;
+        state = ProtocolAdapterState.Stopped;
     }
 
     public @NotNull ProtocolAdapterState getState() {
@@ -35,15 +35,18 @@ public class ProtocolAdapterWrapper {
         return connectionState;
     }
 
-    public @NotNull ProtocolAdapterTransitionStatus transitionTo(final @NotNull ProtocolAdapterState protocolAdapterState) {
-        final ProtocolAdapterTransitionResult result = state.transition(protocolAdapterState, this);
-        state = result.state();
-        // Handle error (logging, throwing exception, etc.)
-        switch (result.status()) {
-            default -> {
-                // TODO
+    public synchronized @NotNull ProtocolAdapterTransitionResponse transitionTo(final @NotNull ProtocolAdapterState newState) {
+        final ProtocolAdapterTransitionResponse response = state.transition(newState, this);
+        if (response.status() == ProtocolAdapterTransitionStatus.Success) {
+            this.state = response.state();
+        } else {
+            // Handle error (logging, throwing exception, etc.)
+            switch (response.status()) {
+                default -> {
+                    // TODO
+                }
             }
         }
-        return result.status();
+        return response;
     }
 }

@@ -14,13 +14,9 @@
  *  limitations under the License.
  */
 
-package com.hivemq.protocols.fsm;
+package com.hivemq.protocols.fsmjochen;
 
-import org.jetbrains.annotations.NotNull;
-
-public record ProtocolAdapterTransitionResult(ProtocolAdapterState state, ProtocolAdapterTransitionStatus status,
-                                              String message, Throwable error) {
-    public ProtocolAdapterTransitionResult(final @NotNull ProtocolAdapterState state) {
-        this(state, ProtocolAdapterTransitionStatus.Success, null, null);
-    }
+public interface ProtocolAdapterFsmJochen {
+    void start();
+    void stop();
 }
