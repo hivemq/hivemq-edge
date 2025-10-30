@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -200,21 +201,25 @@ public class ProtocolAdapterWrapper {
         }
     }
 
-    private Optional<Throwable> attemptStartingConsumers(final boolean writingEnabled, final @NotNull EventService eventService) {
+    private @NotNull Optional<Throwable> attemptStartingConsumers(final boolean writingEnabled, final @NotNull EventService eventService) {
         try {
             //Adapter started successfully, now start the consumers
             createAndSubscribeTagConsumer();
             startPolling(protocolAdapterPollingService, eventService);
 
-            if(writingEnabled && isWriting()) {
+            if (writingEnabled && isWriting()) {
                 final var started = new AtomicBoolean(false);
                 protocolAdapterState.setConnectionStatusListener(status -> {
-                    if(status == ProtocolAdapterState.ConnectionStatus.CONNECTED) {
-                        if(started.compareAndSet(false, true)) {
-                            if(startWriting(protocolAdapterWritingService)) {
-                                log.info("Successfully started adapter with id {}", adapter.getId());
-                            } else {
-                                log.error("Protocol adapter start failed as data hub is not available.");
+                    if (status == ProtocolAdapterState.ConnectionStatus.CONNECTED) {
+                        if (started.compareAndSet(false, true)) {
+                            try {
+                                if (startWriting(protocolAdapterWritingService).get()) {
+                                    log.info("Successfully started adapter with id {}", adapter.getId());
+                                } else {
+                                    log.error("Protocol adapter start failed as data hub is not available.");
+                                }
+                            } catch (final Exception e) {
+                                log.error("Failed to start writing for adapter with id {}.", adapter.getId(), e);
                             }
                         }
                     }
@@ -443,7 +448,7 @@ public class ProtocolAdapterWrapper {
         }
     }
 
-    private @NotNull boolean startWriting(final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
+    private @NotNull CompletableFuture<Boolean> startWriting(final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
         log.debug("Start writing for protocol adapter with id '{}'", getId());
 
         final var southboundMappings = getSouthboundMappings();
