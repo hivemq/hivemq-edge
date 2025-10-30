@@ -80,7 +80,7 @@ describe('LayoutPresetsManager', () => {
 
     cy.mountWithProviders(<LayoutPresetsManager />, { wrapper })
 
-    cy.get('button[aria-label*="preset"]').click()
+    cy.getByTestId('workspace-preset-trigger').click()
     cy.contains('My Test Preset').should('be.visible')
   })
 
@@ -122,8 +122,8 @@ describe('LayoutPresetsManager', () => {
     })
 
     // Should show warning toast
-    cy.get('[role="alert"]').should('be.visible')
-    cy.get('[role="alert"]').should('contain.text', 'Name required')
+    cy.get('[role="status"]').should('be.visible')
+    cy.get('[role="status"]').should('contain.text', 'Name required')
   })
 
   it('should save preset with correct data', () => {
@@ -146,12 +146,13 @@ describe('LayoutPresetsManager', () => {
     cy.mountWithProviders(<LayoutPresetsManager />, { wrapper })
 
     // Open modal and save preset
-    cy.get('button[aria-label*="preset"]').first().click()
+    cy.getByTestId('workspace-preset-trigger').click()
     cy.get('[role="menuitem"]').first().click()
 
     cy.get('[role="dialog"]').within(() => {
-      cy.get('input[type="text"]').type('New Preset')
-      cy.get('button').contains('Save').click()
+      cy.getByTestId('workspace-preset-input').type('New Preset')
+      cy.getByTestId('workspace-preset-save').should('have.text', 'Save')
+      cy.getByTestId('workspace-preset-save').click()
     })
 
     // Verify preset was added to store (don't rely on toast)
@@ -196,12 +197,14 @@ describe('LayoutPresetsManager', () => {
     cy.mountWithProviders(<LayoutPresetsManager />, { wrapper })
 
     // Load preset - open menu and click on the preset item
-    cy.get('button[aria-label*="preset"]').first().click()
+    cy.getByTestId('workspace-preset-trigger').click()
 
     // Click on the preset menu item (not the delete button)
     cy.get('[role="menu"]').within(() => {
       cy.get('[role="menuitem"]').contains('Load Test').click()
     })
+    cy.get('[role="status"]').should('be.visible')
+    cy.get('[role="status"]').should('not.exist')
 
     // Verify nodes were repositioned in store
     cy.window().then(() => {

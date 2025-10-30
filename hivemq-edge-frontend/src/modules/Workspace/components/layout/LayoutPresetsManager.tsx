@@ -35,6 +35,7 @@ import {
   Tooltip,
 } from '@chakra-ui/react'
 import { LuBookmark, LuSave, LuTrash2 } from 'react-icons/lu'
+import { v4 as uuidv4 } from 'uuid'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import type { LayoutPreset } from '../../types/layout.ts'
 
@@ -58,7 +59,7 @@ const LayoutPresetsManager: FC = () => {
     }
 
     const preset: LayoutPreset = {
-      id: `preset-${Date.now()}`,
+      id: `preset-${uuidv4()}`,
       name: presetName.trim(),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -119,6 +120,7 @@ const LayoutPresetsManager: FC = () => {
       <Menu>
         <Tooltip label={t('workspace.autoLayout.presets.tooltip')} placement="bottom">
           <MenuButton
+            data-testid="workspace-preset-trigger"
             as={IconButton}
             icon={<Icon as={LuBookmark} />}
             size="sm"
@@ -185,6 +187,7 @@ const LayoutPresetsManager: FC = () => {
               <FormLabel>{t('workspace.autoLayout.presets.modal.nameLabel')}</FormLabel>
               <Input
                 placeholder={t('workspace.autoLayout.presets.modal.namePlaceholder')}
+                data-testid="workspace-preset-input"
                 value={presetName}
                 onChange={(e) => setPresetName(e.target.value)}
                 onKeyDown={(e) => {
@@ -203,7 +206,12 @@ const LayoutPresetsManager: FC = () => {
             <Button variant="ghost" mr={3} onClick={onClose}>
               {t('workspace.autoLayout.presets.modal.cancel')}
             </Button>
-            <Button colorScheme="blue" onClick={handleSavePreset} leftIcon={<Icon as={LuSave} />}>
+            <Button
+              data-testid="workspace-preset-save"
+              colorScheme="blue"
+              onClick={handleSavePreset}
+              leftIcon={<Icon as={LuSave} />}
+            >
               {t('workspace.autoLayout.presets.modal.save')}
             </Button>
           </ModalFooter>
