@@ -8,6 +8,8 @@
 import type { Node, Edge } from '@xyflow/react'
 import { Position } from '@xyflow/react'
 import * as cola from 'webcola'
+import debug from 'debug'
+
 import type {
   LayoutAlgorithm,
   LayoutType,
@@ -18,6 +20,8 @@ import type {
   LayoutFeature,
   ValidationResult,
 } from '../../types/layout'
+
+const log = debug('workspace:layout:cola-force')
 
 const DEFAULT_LINK_DISTANCE = 350 // Accounts for node width (~245px) + gap
 const DEFAULT_MAX_ITERATIONS = 1000
@@ -142,7 +146,7 @@ export class ColaForceLayoutAlgorithm implements LayoutAlgorithm {
       }
     } catch (error) {
       const duration = performance.now() - startTime
-      console.error('WebCola force layout error:', error)
+      log('WebCola force layout error:', error)
       return {
         nodes,
         duration,

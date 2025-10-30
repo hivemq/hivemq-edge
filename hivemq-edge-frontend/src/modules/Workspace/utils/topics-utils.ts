@@ -1,11 +1,14 @@
 import type { GenericObjectType, RJSFSchema } from '@rjsf/utils'
 import type { JSONSchema7 } from 'json-schema'
 import { stratify } from 'd3-hierarchy'
+import debug from 'debug'
 
 import type { Adapter, Bridge, BridgeSubscription, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import { CustomFormat } from '@/api/types/json-schema.ts'
 import type { TopicFilter } from '../types.ts'
 import { type TopicTreeMetadata } from '../types.ts'
+
+const log = debug('workspace:utils:topics')
 
 export const MQTT_WILDCARD_MULTI = '#'
 export const MQTT_WILDCARD_SINGLE = '+'
@@ -90,7 +93,7 @@ export const getPropertiesFromPath = (path: string, instance: JSONSchema7 | unde
 const getTopicsFromPath = (path: string, instance: GenericObjectType): string[] => {
   /* istanbul ignore next -- @preserve */
   if (!path.length || !instance) {
-    console.log('Warning! Is this really happening?')
+    log('Warning! Is this really happening?')
     return []
   }
   const [property, ...rest] = path.split('.')

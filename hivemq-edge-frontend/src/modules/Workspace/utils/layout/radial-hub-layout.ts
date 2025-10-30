@@ -13,6 +13,8 @@
 
 import type { Node, Edge } from '@xyflow/react'
 import { Position } from '@xyflow/react'
+import debug from 'debug'
+
 import type {
   LayoutAlgorithm,
   LayoutType,
@@ -24,6 +26,8 @@ import type {
   ValidationResult,
 } from '../../types/layout'
 import { NodeTypes } from '../../types'
+
+const log = debug('workspace:layout:radial-hub')
 
 /**
  * Default radial layout configuration
@@ -201,7 +205,7 @@ export class RadialHubLayoutAlgorithm implements LayoutAlgorithm {
       }
     } catch (error) {
       const duration = performance.now() - startTime
-      console.error('Radial hub layout error:', error)
+      log('Radial hub layout error:', error)
 
       return {
         nodes,

@@ -7,10 +7,14 @@
 
 import { useCallback, useMemo } from 'react'
 import { useReactFlow } from '@xyflow/react'
+import debug from 'debug'
+
 import useWorkspaceStore from './useWorkspaceStore'
 import { layoutRegistry } from '../utils/layout/layout-registry'
 import { extractLayoutConstraints } from '../utils/layout/constraint-utils'
 import type { LayoutType, LayoutOptions, LayoutResult } from '../types/layout'
+
+const log = debug('workspace:layout:engine')
 
 /**
  * Hook for managing and applying layout algorithms
@@ -68,17 +72,17 @@ export const useLayoutEngine = () => {
     const freshAlgorithm = layoutRegistry.get(freshLayoutConfig.currentAlgorithm)
 
     if (!freshAlgorithm) {
-      console.warn('No layout algorithm selected')
+      log('No layout algorithm selected')
       return null
     }
 
     if (nodes.length === 0) {
-      console.warn('No nodes to layout')
+      log('No nodes to layout')
       return null
     }
 
-    console.log(`Applying ${freshAlgorithm.name} to ${nodes.length} nodes...`)
-    console.log('📊 Current layout options:', freshLayoutConfig.options)
+    log(`Applying ${freshAlgorithm.name} to ${nodes.length} nodes...`)
+    log('📊 Current layout options:', freshLayoutConfig.options)
 
     // Extract constraints from current node structure
     const constraints = extractLayoutConstraints(nodes, edges)
@@ -86,7 +90,7 @@ export const useLayoutEngine = () => {
     // Validate options before applying
     const validation = freshAlgorithm.validateOptions(freshLayoutConfig.options)
     if (!validation.valid) {
-      console.error('Layout options validation failed:', validation.errors)
+      log('Layout options validation failed:', validation.errors)
       return {
         nodes,
         duration: 0,
@@ -96,7 +100,7 @@ export const useLayoutEngine = () => {
     }
 
     if (validation.warnings && validation.warnings.length > 0) {
-      console.warn('Layout warnings:', validation.warnings)
+      log('Layout warnings:', validation.warnings)
     }
 
     try {
@@ -186,17 +190,17 @@ export const useLayoutEngine = () => {
           }, 50)
         }
 
-        console.log(`✓ Layout applied successfully in ${result.duration.toFixed(2)}ms`)
-        console.log(`  - Algorithm: ${freshAlgorithm.name}`)
-        console.log(`  - Nodes: ${result.metadata?.nodeCount || nodes.length}`)
-        console.log(`  - Edges: ${result.metadata?.edgeCount || edges.length}`)
+        log(`✓ Layout applied successfully in ${result.duration.toFixed(2)}ms`)
+        log(`  - Algorithm: ${freshAlgorithm.name}`)
+        log(`  - Nodes: ${result.metadata?.nodeCount || nodes.length}`)
+        log(`  - Edges: ${result.metadata?.edgeCount || edges.length}`)
       } else {
-        console.error('✗ Layout failed:', result.error)
+        log('✗ Layout failed:', result.error)
       }
 
       return result
     } catch (error) {
-      console.error('Layout engine error:', error)
+      log('Layout engine error:', error)
       return {
         nodes,
         duration: 0,
@@ -260,7 +264,7 @@ export const useLayoutEngine = () => {
       }
 
       saveLayoutPreset(preset)
-      console.log(`✓ Layout preset "${name}" saved`)
+      log(`✓ Layout preset "${name}" saved`)
     },
     [layoutConfig, nodes, saveLayoutPreset]
   )
@@ -284,7 +288,7 @@ export const useLayoutEngine = () => {
    */
   const undo = useCallback(() => {
     if (layoutHistory.length < 2) {
-      console.warn('No layout history to undo')
+      log('No layout history to undo')
       return
     }
 
@@ -308,7 +312,7 @@ export const useLayoutEngine = () => {
       pushLayoutHistory(entry)
     }
 
-    console.log('✓ Layout undo successful')
+    log('✓ Layout undo successful')
   }, [layoutHistory, onNodesChange, clearLayoutHistory, pushLayoutHistory])
 
   /**
@@ -317,7 +321,7 @@ export const useLayoutEngine = () => {
   const resetOptionsToDefault = useCallback(() => {
     if (currentAlgorithm) {
       setLayoutOptions(currentAlgorithm.defaultOptions)
-      console.log('✓ Layout options reset to defaults')
+      log('✓ Layout options reset to defaults')
     }
   }, [currentAlgorithm, setLayoutOptions])
 

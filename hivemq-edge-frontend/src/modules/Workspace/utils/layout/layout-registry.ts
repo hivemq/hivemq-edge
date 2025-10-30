@@ -6,11 +6,15 @@
  */
 
 import type { LayoutAlgorithm, LayoutType, LayoutFeature } from '../../types/layout'
+import debug from 'debug'
+
 import { ManualLayoutAlgorithm } from './manual-layout'
 import { DagreLayoutAlgorithm } from './dagre-layout'
 import { RadialHubLayoutAlgorithm } from './radial-hub-layout'
 import { ColaForceLayoutAlgorithm } from './cola-force-layout'
 import { ColaConstrainedLayoutAlgorithm } from './cola-constrained-layout'
+
+const log = debug('workspace:layout:registry')
 
 /**
  * Registry for layout algorithms
@@ -52,7 +56,7 @@ class LayoutRegistry {
    */
   register(algorithm: LayoutAlgorithm): void {
     if (this.algorithms.has(algorithm.type)) {
-      console.warn(`Layout algorithm ${algorithm.type} is already registered, overwriting`)
+      log(`Layout algorithm ${algorithm.type} is already registered, overwriting`)
     }
     this.algorithms.set(algorithm.type, algorithm)
   }

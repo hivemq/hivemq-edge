@@ -8,6 +8,8 @@
 import dagre from '@dagrejs/dagre'
 import type { Node, Edge } from '@xyflow/react'
 import { Position } from '@xyflow/react'
+import debug from 'debug'
+
 import type {
   LayoutAlgorithm,
   LayoutType,
@@ -18,6 +20,8 @@ import type {
   LayoutFeature,
   ValidationResult,
 } from '../../types/layout'
+
+const log = debug('workspace:layout:dagre')
 
 /**
  * Default node dimensions for dagre layout
@@ -83,11 +87,14 @@ export class DagreLayoutAlgorithm implements LayoutAlgorithm {
         }
       }
 
-      // Debug logging (commented out for production)
-      // console.log('🎯 Dagre Layout Debug:')
-      // console.log('  Total nodes:', nodes.length)
-      // console.log('  Node types:', nodes.map((n) => ({ id: n.id, type: n.type })))
-      // console.log('  Constraints:', constraints)
+      // Debug logging
+      log('🎯 Dagre Layout Debug:')
+      log('  Total nodes:', nodes.length)
+      log(
+        '  Node types:',
+        nodes.map((n) => ({ id: n.id, type: n.type }))
+      )
+      log('  Constraints:', constraints)
 
       // 1. Create dagre graph
       const g = new dagre.graphlib.Graph()
@@ -116,9 +123,8 @@ export class DagreLayoutAlgorithm implements LayoutAlgorithm {
 
         gluedChildIds = new Set(gluedPairs.values())
 
-        // Debug logging
-        // console.log('  Glued pairs (parent -> child):', Array.from(gluedPairs.entries()))
-        // console.log('  Glued children:', Array.from(gluedChildIds))
+        log('  Glued pairs (parent -> child):', Array.from(gluedPairs.entries()))
+        log('  Glued children:', Array.from(gluedChildIds))
 
         for (const id of constraints.fixedNodes) {
           constrainedNodeIds.add(id)
@@ -129,8 +135,10 @@ export class DagreLayoutAlgorithm implements LayoutAlgorithm {
       // For glued pairs (ADAPTER+DEVICE), we include BOTH but adjust their sizes
       const layoutableNodes = nodes.filter((node) => !constrainedNodeIds.has(node.id))
 
-      // Debug logging
-      // console.log('  Layoutable nodes:', layoutableNodes.map(n => ({ id: n.id, type: n.type })))
+      log(
+        '  Layoutable nodes:',
+        layoutableNodes.map((n) => ({ id: n.id, type: n.type }))
+      )
 
       for (const node of layoutableNodes) {
         const width = node.width || node.measured?.width || DEFAULT_NODE_WIDTH
@@ -153,9 +161,8 @@ export class DagreLayoutAlgorithm implements LayoutAlgorithm {
             const compoundWidth = Math.max(width, childWidth)
             const compoundHeight = height + offsetY + childHeight
 
-            // Debug logging
-            // console.log(`  📦 Compound node: ${node.id} (${node.type}) + ${gluedChildId} (${childNode.type})`)
-            // console.log(`     Size: ${width}x${height} + ${childWidth}x${childHeight} = ${compoundWidth}x${compoundHeight}`)
+            log(`  📦 Compound node: ${node.id} (${node.type}) + ${gluedChildId} (${childNode.type})`)
+            log(`     Size: ${width}x${height} + ${childWidth}x${childHeight} = ${compoundWidth}x${compoundHeight}`)
 
             g.setNode(node.id, {
               width: compoundWidth,
@@ -238,7 +245,7 @@ export class DagreLayoutAlgorithm implements LayoutAlgorithm {
       }
     } catch (error) {
       const duration = performance.now() - startTime
-      console.error('Dagre layout error:', error)
+      log('Dagre layout error:', error)
 
       return {
         nodes,

@@ -8,6 +8,8 @@
 import type { Node, Edge } from '@xyflow/react'
 import { Position } from '@xyflow/react'
 import * as cola from 'webcola'
+import debug from 'debug'
+
 import type {
   LayoutAlgorithm,
   LayoutType,
@@ -19,6 +21,8 @@ import type {
   ValidationResult,
 } from '../../types/layout'
 import { NodeTypes } from '../../types'
+
+const log = debug('workspace:layout:cola-constrained')
 
 const DEFAULT_LAYER_GAP = 350 // Accounts for node height (~100px) + visual gap
 const DEFAULT_NODE_GAP = 300 // Accounts for node width (~245px) + gap
@@ -159,7 +163,7 @@ export class ColaConstrainedLayoutAlgorithm implements LayoutAlgorithm {
       }
     } catch (error) {
       const duration = performance.now() - startTime
-      console.error('WebCola constraint layout error:', error)
+      log('WebCola constraint layout error:', error)
       return {
         nodes,
         duration,
