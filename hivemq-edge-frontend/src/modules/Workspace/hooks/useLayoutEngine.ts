@@ -204,7 +204,7 @@ export const useLayoutEngine = () => {
         error: error instanceof Error ? error.message : 'Unknown error in layout engine',
       }
     }
-  }, [currentAlgorithm, nodes, edges, layoutConfig, onNodesChange, pushLayoutHistory, reactFlowInstance])
+  }, [nodes, edges, onNodesChange, pushLayoutHistory, reactFlowInstance])
 
   /**
    * Apply a specific layout algorithm with custom options

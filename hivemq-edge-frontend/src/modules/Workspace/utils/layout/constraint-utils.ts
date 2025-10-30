@@ -7,6 +7,7 @@
 
 import type { Node, Edge, XYPosition } from '@xyflow/react'
 import type { LayoutConstraints, GluedNodeInfo } from '../../types/layout'
+import type { NodeDeviceType } from '../../types'
 import { NodeTypes } from '../../types'
 import { gluedNodeDefinition } from '../nodes-utils'
 
@@ -28,6 +29,7 @@ import { gluedNodeDefinition } from '../nodes-utils'
  * const result = await algorithm.apply(nodes, edges, options, constraints)
  * ```
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const extractLayoutConstraints = (nodes: Node[], _edges: Edge[]): LayoutConstraints => {
   const gluedNodes = new Map<string, GluedNodeInfo>()
   const fixedNodes = new Set<string>()
@@ -55,22 +57,21 @@ export const extractLayoutConstraints = (nodes: Node[], _edges: Edge[]): LayoutC
         let parent: Node | undefined
 
         // Special handling for DEVICE nodes - they have sourceAdapterId that links to specific ADAPTER
-        if (node.type === NodeTypes.DEVICE_NODE && (node.data as any)?.sourceAdapterId) {
-          const sourceAdapterId = (node.data as any).sourceAdapterId
-          parent = nodes.find((n) => n.type === parentType && (n.data as any)?.id === sourceAdapterId)
+        if (node.type === NodeTypes.DEVICE_NODE) {
+          const { data } = node as NodeDeviceType
+          const sourceAdapterId = data.sourceAdapterId
+          parent = nodes.find((n) => n.type === parentType && n.data?.id === sourceAdapterId)
         }
 
         // Fallback: find first node of parent type (for other glued nodes like LISTENER)
-        if (!parent) {
-          parent = nodes.find((n) => n.type === parentType)
-        }
+        parent ??= nodes.find((n) => n.type === parentType)
 
         if (parent) {
           gluedNodes.set(node.id, {
             parentId: parent.id,
             // For now, use fixed offset; could be calculated from current positions
             offset: { x: offset, y: offset } as XYPosition,
-            handle: handle as 'source' | 'target',
+            handle,
           })
         }
       }

@@ -7,15 +7,7 @@
  */
 
 import type { Node, Edge } from '@xyflow/react'
-import type {
-  LayoutAlgorithm,
-  LayoutType,
-  LayoutOptions,
-  LayoutResult,
-  LayoutConstraints,
-  LayoutFeature,
-  ValidationResult,
-} from '../../types/layout'
+import type { LayoutAlgorithm, LayoutType, LayoutOptions, LayoutResult, ValidationResult } from '../../types/layout'
 
 /**
  * Manual Layout Algorithm
@@ -42,9 +34,9 @@ export class ManualLayoutAlgorithm implements LayoutAlgorithm {
    */
   async apply(
     nodes: Node[],
-    _edges: Edge[],
-    _options: LayoutOptions,
-    _constraints?: LayoutConstraints
+    _edges: Edge[]
+    // _options: LayoutOptions,
+    // _constraints?: LayoutConstraints
   ): Promise<LayoutResult> {
     const startTime = performance.now()
 
@@ -71,7 +63,7 @@ export class ManualLayoutAlgorithm implements LayoutAlgorithm {
   /**
    * Check if algorithm supports a feature
    */
-  supports(_feature: LayoutFeature): boolean {
+  supports(): boolean {
     // Manual layout doesn't support any automatic layout features
     return false
   }
@@ -79,7 +71,7 @@ export class ManualLayoutAlgorithm implements LayoutAlgorithm {
   /**
    * Validate layout options
    */
-  validateOptions(_options: LayoutOptions): ValidationResult {
+  validateOptions(): ValidationResult {
     // Manual layout only supports common options, no validation needed
     return {
       valid: true,
