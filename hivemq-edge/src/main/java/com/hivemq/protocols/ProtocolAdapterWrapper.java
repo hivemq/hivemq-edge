@@ -174,10 +174,7 @@ public class ProtocolAdapterWrapper {
         }
     }
 
-    private @NotNull CompletableFuture<Boolean> attemptStartingConsumers(
-            final boolean writingEnabled,
-            final @NotNull EventService eventService) {
-        final CompletableFuture<Boolean> future = new CompletableFuture<>();
+    private @NotNull Optional<Throwable> attemptStartingConsumers(final boolean writingEnabled, final @NotNull EventService eventService) {
         try {
             //Adapter started successfully, now start the consumers
             createAndSubscribeTagConsumer();
@@ -221,7 +218,7 @@ public class ProtocolAdapterWrapper {
             log.error("Protocol adapter with id {} failed to be started.", adapter.getId());
             future.completeExceptionally(e);
         }
-        return future;
+        return Optional.empty();
     }
 
     public @NotNull CompletableFuture<Void> stopAsync(final boolean destroy) {
