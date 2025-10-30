@@ -4,10 +4,14 @@ import { ReactFlowProvider } from '@xyflow/react'
 import LayoutControlsPanel from './LayoutControlsPanel'
 import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore'
+import config from '@/config'
 
 describe('LayoutControlsPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 600)
+
+    // Enable the feature flag for testing
+    config.features.WORKSPACE_AUTO_LAYOUT = true
 
     // Reset store before each test
     useWorkspaceStore.getState().reset()

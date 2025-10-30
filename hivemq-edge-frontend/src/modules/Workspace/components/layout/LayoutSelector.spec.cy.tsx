@@ -5,10 +5,14 @@ import LayoutSelector from './LayoutSelector'
 import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore'
 import { LayoutType } from '@/modules/Workspace/types/layout'
+import config from '@/config'
 
 describe('LayoutSelector', () => {
   beforeEach(() => {
     cy.viewport(400, 300)
+
+    // Enable the feature flag for testing
+    config.features.WORKSPACE_AUTO_LAYOUT = true
   })
 
   it('should render with all available algorithms', () => {

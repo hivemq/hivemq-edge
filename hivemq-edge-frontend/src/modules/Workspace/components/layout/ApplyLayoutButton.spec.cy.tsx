@@ -6,10 +6,14 @@ import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore'
 import { LayoutType } from '@/modules/Workspace/types/layout'
 import type { Node } from '@xyflow/react'
+import config from '@/config'
 
 describe('ApplyLayoutButton', () => {
   beforeEach(() => {
     cy.viewport(400, 300)
+
+    // Enable the feature flag for testing
+    config.features.WORKSPACE_AUTO_LAYOUT = true
 
     // Reset store before each test
     useWorkspaceStore.getState().reset()
@@ -52,9 +56,6 @@ describe('ApplyLayoutButton', () => {
 
     // Click apply layout
     cy.getByTestId('workspace-apply-layout').click()
-
-    // Wait a bit for layout to apply
-    cy.wait(500)
 
     // Verify store shows nodes (layout was attempted)
     cy.window().then(() => {

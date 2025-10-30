@@ -177,7 +177,7 @@ describe('Workspace Layout - Accessibility & Visual Regression', { tags: ['@perc
     workspacePage.layoutControls.applyButton.should('have.attr', 'data-testid')
   })
 
-  it.only('should capture before/after screenshots for PR documentation', () => {
+  it('should capture before/after screenshots for PR documentation', () => {
     // Wait for all nodes to be visible
     workspacePage.toolbox.fit.click()
     workspacePage.edgeNode.should('be.visible')
