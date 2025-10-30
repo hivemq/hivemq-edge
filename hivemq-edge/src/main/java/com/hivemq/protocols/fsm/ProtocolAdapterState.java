@@ -28,101 +28,118 @@ public enum ProtocolAdapterState {
     Error(ProtocolAdapterState::transitionFromError),
     ;
 
-    private final @NotNull BiFunction<ProtocolAdapterState, ProtocolAdapterWrapper, ProtocolAdapterTransitionResult>
+    private final @NotNull BiFunction<ProtocolAdapterState, ProtocolAdapterInstance, ProtocolAdapterTransitionResponse>
             transitionFunction;
 
-    ProtocolAdapterState(@NotNull final BiFunction<ProtocolAdapterState, ProtocolAdapterWrapper, ProtocolAdapterTransitionResult> transitionFunction) {
+    ProtocolAdapterState(@NotNull final BiFunction<ProtocolAdapterState, ProtocolAdapterInstance, ProtocolAdapterTransitionResponse> transitionFunction) {
         this.transitionFunction = transitionFunction;
     }
 
-    public static ProtocolAdapterTransitionResult transitionFromStarted(
-            final @NotNull ProtocolAdapterState targetState,
-            final @NotNull ProtocolAdapterWrapper wrapper) {
-        switch (targetState) {
+    public static ProtocolAdapterTransitionResponse transitionFromStarted(
+            final @NotNull ProtocolAdapterState toState,
+            final @NotNull ProtocolAdapterInstance instance) {
+        switch (toState) {
             case Starting:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Starting);
+                return new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Starting);
             case Started:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Started);
+                return new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Started);
             case Stopping:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Stopping);
+                return new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Stopping);
             case Stopped:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Stopped);
+                return new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Stopped);
             default:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Error);
+                return new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Error);
         }
     }
 
-    public static ProtocolAdapterTransitionResult transitionFromStarting(
-            final @NotNull ProtocolAdapterState targetState,
-            final @NotNull ProtocolAdapterWrapper wrapper) {
-        switch (targetState) {
-            case Starting:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Starting);
-            case Started:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Started);
-            case Stopping:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Stopping);
-            case Stopped:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Stopped);
-            default:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Error);
+    public static ProtocolAdapterTransitionResponse transitionFromStarting(
+            final @NotNull ProtocolAdapterState toState,
+            final @NotNull ProtocolAdapterInstance instance) {
+        return switch (toState) {
+            case Starting -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Starting);
+            case Started -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Started);
+            case Stopping -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Stopping);
+            case Stopped -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Stopped);
+            default -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Error);
+        };
+    }
+
+    public static @NotNull ProtocolAdapterTransitionResponse transitionFromStopped(
+            final @NotNull ProtocolAdapterState toState,
+            final @NotNull ProtocolAdapterInstance instance) {
+        return switch (toState) {
+            case Starting -> transitionFromStoppedToStarting(instance);
+            case Started, Stopping -> transitionToError(ProtocolAdapterState.Stopped, toState);
+            case Stopped -> transitionWithoutChanges(toState);
+            case Error -> transitionFromStoppedToError(instance);
+        };
+    }
+
+    public static ProtocolAdapterTransitionResponse transitionFromStoppedToError(final @NotNull ProtocolAdapterInstance instance) {
+        try {
+            // Do something to error.
+//            instance.doSomething();
+            return new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Error);
+        } catch (final Exception e) {
+            return new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Error,
+                    ProtocolAdapterTransitionStatus.Failure,
+                    "Failed transition from Stopped to Error.",
+                    e);
         }
     }
 
-    public static ProtocolAdapterTransitionResult transitionFromStopped(
-            final @NotNull ProtocolAdapterState targetState,
-            final @NotNull ProtocolAdapterWrapper wrapper) {
-        switch (targetState) {
-            case Starting:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Starting);
-            case Started:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Started);
-            case Stopping:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Stopping);
-            case Stopped:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Stopped);
-            default:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Error);
+    public static ProtocolAdapterTransitionResponse transitionFromStoppedToStarting(final @NotNull ProtocolAdapterInstance instance) {
+        try {
+            // Do something to start the protocol adapter.
+            return new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Starting);
+        } catch (final Exception e) {
+            return new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Stopped,
+                    ProtocolAdapterTransitionStatus.Failure,
+                    "Failed transition from Stopped to Starting.",
+                    e);
         }
     }
 
-    public static ProtocolAdapterTransitionResult transitionFromStopping(
-            final @NotNull ProtocolAdapterState targetState,
-            final @NotNull ProtocolAdapterWrapper wrapper) {
-        switch (targetState) {
-            case Starting:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Starting);
-            case Started:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Started);
-            case Stopping:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Stopping);
-            case Stopped:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Stopped);
-            default:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Error);
-        }
+    public static @NotNull ProtocolAdapterTransitionResponse transitionWithoutChanges(final @NotNull ProtocolAdapterState toState) {
+        return new ProtocolAdapterTransitionResponse(toState);
     }
 
-    public static ProtocolAdapterTransitionResult transitionFromError(
-            final @NotNull ProtocolAdapterState targetState,
-            final @NotNull ProtocolAdapterWrapper wrapper) {
-        switch (targetState) {
-            case Starting:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Starting);
-            case Started:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Started);
-            case Stopping:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Stopping);
-            case Stopped:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Stopped);
-            default:
-                return new ProtocolAdapterTransitionResult(ProtocolAdapterState.Error);
-        }
+    public static @NotNull ProtocolAdapterTransitionResponse transitionToError(
+            final @NotNull ProtocolAdapterState fromState,
+            final @NotNull ProtocolAdapterState toState) {
+        return new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Error,
+                ProtocolAdapterTransitionStatus.Failure,
+                "Unable to transition from " + fromState + " to " + toState + ".",
+                null);
     }
 
-    public @NotNull ProtocolAdapterTransitionResult transition(
-            final @NotNull ProtocolAdapterState targetState,
-            final @NotNull ProtocolAdapterWrapper wrapper) {
-        return transitionFunction.apply(targetState, wrapper);
+    public static ProtocolAdapterTransitionResponse transitionFromStopping(
+            final @NotNull ProtocolAdapterState toState,
+            final @NotNull ProtocolAdapterInstance instance) {
+        return switch (toState) {
+            case Starting -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Starting);
+            case Started -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Started);
+            case Stopping -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Stopping);
+            case Stopped -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Stopped);
+            default -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Error);
+        };
+    }
+
+    public static ProtocolAdapterTransitionResponse transitionFromError(
+            final @NotNull ProtocolAdapterState toState,
+            final @NotNull ProtocolAdapterInstance instance) {
+        return switch (toState) {
+            case Starting -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Starting);
+            case Started -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Started);
+            case Stopping -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Stopping);
+            case Stopped -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Stopped);
+            default -> new ProtocolAdapterTransitionResponse(ProtocolAdapterState.Error);
+        };
+    }
+
+    public @NotNull ProtocolAdapterTransitionResponse transition(
+            final @NotNull ProtocolAdapterState toState,
+            final @NotNull ProtocolAdapterInstance instance) {
+        return transitionFunction.apply(toState, instance);
     }
 }
