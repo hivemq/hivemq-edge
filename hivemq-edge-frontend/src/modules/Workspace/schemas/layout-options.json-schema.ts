@@ -1,8 +1,9 @@
+/* istanbul ignore file -- @preserve */
 /**
  * JSON Schema for Layout Options
  *
  * Individual schemas for each layout algorithm type.
- * Each schema is self-contained and includes only relevant properties.
+ * Each schema is self-contained and specific to its algorithm.
  */
 
 import type { JSONSchema7 } from 'json-schema'

@@ -1,3 +1,4 @@
+/* istanbul ignore file -- @preserve */
 /**
  * UI Schema for Layout Options
  *
