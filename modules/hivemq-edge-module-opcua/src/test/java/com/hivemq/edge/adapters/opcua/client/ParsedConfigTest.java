@@ -357,7 +357,7 @@ class ParsedConfigTest {
                 ? new Truststore(truststorePath, KEYSTORE_PASSWORD)
                 : null;
 
-        final Tls tls = new Tls(tlsEnabled, keystore, truststore);
+        final Tls tls = new Tls(tlsEnabled, false, keystore, truststore);
         final Security security = new Security(SecPolicy.NONE);
         final OpcUaToMqttConfig opcUaToMqttConfig = new OpcUaToMqttConfig(1, 1000);
 

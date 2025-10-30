@@ -90,7 +90,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         this.overrideUri = requireNonNullElse(overrideUri, false);
         this.applicationUri = (applicationUri != null && !applicationUri.isBlank()) ? applicationUri : null;
         this.auth = auth;
-        this.tls = requireNonNullElse(tls, new Tls(false, null, null));
+        this.tls = requireNonNullElse(tls, new Tls(false, false, null, null));
         this.opcuaToMqttConfig =
                 Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(1, 1000));
         this.security = requireNonNullElse(security, new Security(Constants.DEFAULT_SECURITY_POLICY));
@@ -124,6 +124,8 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
     public @Nullable String getApplicationUri() {
         return applicationUri;
     }
+
+
 
     @Override
     public boolean equals(final @Nullable Object o) {
