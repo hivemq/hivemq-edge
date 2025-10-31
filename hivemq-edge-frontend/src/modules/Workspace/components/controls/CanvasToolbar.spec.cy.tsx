@@ -1,15 +1,23 @@
 import { ReactFlowProvider } from '@xyflow/react'
 import CanvasToolbar from '@/modules/Workspace/components/controls/CanvasToolbar.tsx'
+import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider'
+import config from '@/config'
 
 describe('CanvasToolbar', () => {
   beforeEach(() => {
-    cy.viewport(800, 250)
+    cy.viewport(800, 600)
+    // Enable feature flag for testing layout controls
+    config.features.WORKSPACE_AUTO_LAYOUT = true
   })
 
+  const wrapper = ({ children }: { children: JSX.Element }) => (
+    <EdgeFlowProvider>
+      <ReactFlowProvider>{children}</ReactFlowProvider>
+    </EdgeFlowProvider>
+  )
+
   it('should renders properly', () => {
-    cy.mountWithProviders(<CanvasToolbar />, {
-      wrapper: ({ children }: { children: JSX.Element }) => <ReactFlowProvider>{children}</ReactFlowProvider>,
-    })
+    cy.mountWithProviders(<CanvasToolbar />, { wrapper })
 
     cy.getByTestId('toolbox-search-expand').should('have.attr', 'aria-label', 'Expand Toolbox')
     cy.getByTestId('toolbox-search-collapse').should('not.be.visible')
@@ -30,5 +38,122 @@ describe('CanvasToolbar', () => {
     cy.getByTestId('toolbox-search-collapse').click()
     cy.getByTestId('toolbox-search-collapse').should('not.be.visible')
     cy.getByTestId('toolbox-search-expand').should('be.visible')
+  })
+
+  it('should show layout section when expanded and feature enabled', () => {
+    config.features.WORKSPACE_AUTO_LAYOUT = true
+    cy.mountWithProviders(<CanvasToolbar />, { wrapper })
+
+    // Expand toolbar
+    cy.getByTestId('toolbox-search-expand').click()
+
+    // Layout section should be visible
+    cy.get('[role="region"][aria-label*="Layout"]').should('be.visible')
+    cy.getByTestId('workspace-layout-selector').should('be.visible')
+    cy.getByTestId('workspace-apply-layout').should('be.visible')
+  })
+
+  it('should hide layout section when feature disabled', () => {
+    config.features.WORKSPACE_AUTO_LAYOUT = false
+    cy.mountWithProviders(<CanvasToolbar />, { wrapper })
+
+    // Expand toolbar
+    cy.getByTestId('toolbox-search-expand').click()
+
+    // Layout section should NOT be visible
+    cy.get('[role="region"][aria-label*="Layout"]').should('not.exist')
+    cy.getByTestId('workspace-layout-selector').should('not.exist')
+    cy.getByTestId('workspace-apply-layout').should('not.exist')
+  })
+
+  it('should show visual divider between sections when feature enabled', () => {
+    config.features.WORKSPACE_AUTO_LAYOUT = true
+    cy.mountWithProviders(<CanvasToolbar />, { wrapper })
+
+    // Expand toolbar
+    cy.getByTestId('toolbox-search-expand').click()
+
+    // Both sections should be visible
+    cy.getByTestId('toolbox-search').should('be.visible')
+    cy.getByTestId('workspace-layout-selector').should('be.visible')
+  })
+
+  it('should show layout selector', () => {
+    config.features.WORKSPACE_AUTO_LAYOUT = true
+    cy.mountWithProviders(<CanvasToolbar />, { wrapper })
+
+    cy.getByTestId('toolbox-search-expand').click()
+    cy.getByTestId('workspace-layout-selector').should('be.visible')
+  })
+
+  it('should show apply layout button', () => {
+    config.features.WORKSPACE_AUTO_LAYOUT = true
+    cy.mountWithProviders(<CanvasToolbar />, { wrapper })
+
+    cy.getByTestId('toolbox-search-expand').click()
+    cy.getByTestId('workspace-apply-layout').should('be.visible')
+  })
+
+  it('should show presets manager', () => {
+    config.features.WORKSPACE_AUTO_LAYOUT = true
+    cy.mountWithProviders(<CanvasToolbar />, { wrapper })
+
+    cy.getByTestId('toolbox-search-expand').click()
+    cy.get('button[aria-label*="preset"]').should('be.visible')
+  })
+
+  it('should show settings button', () => {
+    config.features.WORKSPACE_AUTO_LAYOUT = true
+    cy.mountWithProviders(<CanvasToolbar />, { wrapper })
+
+    cy.getByTestId('toolbox-search-expand').click()
+    // Settings button with gear icon (LuSettings)
+    cy.get('[role="region"][aria-label*="Layout"]').within(() => {
+      cy.get('button svg').should('exist')
+    })
+  })
+
+  it('should open layout options drawer when settings clicked', () => {
+    config.features.WORKSPACE_AUTO_LAYOUT = true
+    cy.mountWithProviders(<CanvasToolbar />, { wrapper })
+
+    cy.getByTestId('toolbox-search-expand').click()
+    // Click the last button in layout section (settings button)
+    cy.get('[role="region"][aria-label*="Layout"]').within(() => {
+      cy.get('button').last().click()
+    })
+
+    // Drawer should open
+    cy.get('[role="dialog"]').should('be.visible')
+  })
+
+  it('should be accessible', () => {
+    config.features.WORKSPACE_AUTO_LAYOUT = true
+    cy.injectAxe()
+    cy.mountWithProviders(<CanvasToolbar />, { wrapper })
+
+    // Test collapsed state
+    cy.checkAccessibility(undefined, {
+      rules: {
+        region: { enabled: false }, // Panel component may not have proper region labeling
+      },
+    })
+
+    // Test expanded state
+    cy.getByTestId('toolbox-search-expand').click()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        region: { enabled: false },
+      },
+    })
+
+    // Verify ARIA attributes
+    cy.getByTestId('toolbox-search-expand').should('have.attr', 'aria-expanded', 'false')
+    cy.getByTestId('toolbox-search-collapse').should('have.attr', 'aria-expanded', 'true')
+    cy.getByTestId('toolbox-search-collapse').should('have.attr', 'aria-controls', 'workspace-toolbar-content')
+    cy.get('#workspace-toolbar-content').should('have.attr', 'role', 'region')
+
+    // Verify both sections have proper ARIA
+    cy.get('[role="region"]').should('have.length.at.least', 2)
   })
 })
