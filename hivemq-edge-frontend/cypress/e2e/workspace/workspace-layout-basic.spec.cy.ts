@@ -49,6 +49,9 @@ describe('Workspace Layout - Basic', () => {
   })
 
   it('should display layout controls in workspace', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Layout controls panel should be visible
     workspacePage.layoutControls.panel.should('be.visible')
 
@@ -60,6 +63,9 @@ describe('Workspace Layout - Basic', () => {
   })
 
   it('should allow selecting different layout algorithms', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Select Vertical Tree Layout (Dagre TB)
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
     workspacePage.layoutControls.algorithmSelector.should('have.value', 'DAGRE_TB')
@@ -74,6 +80,9 @@ describe('Workspace Layout - Basic', () => {
   })
 
   it('should apply layout when button clicked', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Get initial positions of nodes
     let initialEdgePosition: { x: number; y: number }
     let initialBridgePosition: { x: number; y: number }
@@ -126,6 +135,9 @@ describe('Workspace Layout - Basic', () => {
   })
 
   it('should apply multiple layouts in sequence', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Apply first layout
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
     workspacePage.layoutControls.applyButton.click()
@@ -146,6 +158,9 @@ describe('Workspace Layout - Basic', () => {
   })
 
   it('should persist selected algorithm across interactions', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Select an algorithm
     workspacePage.layoutControls.algorithmSelector.select('COLA_FORCE')
 

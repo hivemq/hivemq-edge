@@ -8,7 +8,6 @@ import { type FC, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Icon, Tooltip, useToast } from '@chakra-ui/react'
 import { LuNetwork } from 'react-icons/lu'
-import config from '@/config'
 import { useLayoutEngine } from '../../hooks/useLayoutEngine.ts'
 
 const ApplyLayoutButton: FC = () => {
@@ -16,10 +15,6 @@ const ApplyLayoutButton: FC = () => {
   const toast = useToast()
   const { applyLayout, currentAlgorithmInstance } = useLayoutEngine()
   const [isApplying, setIsApplying] = useState(false)
-
-  if (!config.features.WORKSPACE_AUTO_LAYOUT) {
-    return null
-  }
 
   const handleApplyLayout = async () => {
     if (!currentAlgorithmInstance) {
@@ -85,6 +80,7 @@ const ApplyLayoutButton: FC = () => {
         onClick={handleApplyLayout}
         isLoading={isApplying}
         loadingText={t('workspace.autoLayout.apply.loading')}
+        minWidth="unset"
       >
         {t('workspace.autoLayout.apply.label')}
       </Button>

@@ -49,6 +49,9 @@ describe('Workspace Layout - Keyboard Shortcuts', () => {
   })
 
   it('should apply layout with Cmd+L shortcut on Mac', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Select an algorithm
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
 
@@ -64,6 +67,9 @@ describe('Workspace Layout - Keyboard Shortcuts', () => {
   })
 
   it('should apply layout with Ctrl+L shortcut', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Select an algorithm
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_LR')
 
@@ -78,6 +84,9 @@ describe('Workspace Layout - Keyboard Shortcuts', () => {
   })
 
   it('should work with different algorithms', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Test with Radial Hub layout
     workspacePage.layoutControls.algorithmSelector.select('RADIAL_HUB')
     workspacePage.canvas.click()
@@ -92,6 +101,9 @@ describe('Workspace Layout - Keyboard Shortcuts', () => {
   })
 
   it('should work after interacting with nodes', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Select algorithm
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
 
