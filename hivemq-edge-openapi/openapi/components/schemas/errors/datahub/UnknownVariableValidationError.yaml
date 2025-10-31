@@ -1,0 +1,29 @@
+allOf:
+  - $ref: "../validation/ValidationError.yaml"
+  - type: object
+    properties:
+      path:
+        type: string
+        description: The json path of the field.
+        example: "$.path"
+      variables:
+        type: array
+        items:
+          type: string
+        description: The unknown variables.
+        example:
+          - "a"
+          - "b"
+          - "c"
+    required:
+      - path
+      - variables
+example:
+  general:
+    detail: "Field '$.path' contains unknown variables: [a, b, c]."
+    path: "$.path"
+    variables:
+      - "a"
+      - "b"
+      - "c"
+    type: "https://hivemq.com/edge/api/model/UnknownVariableValidationError"
