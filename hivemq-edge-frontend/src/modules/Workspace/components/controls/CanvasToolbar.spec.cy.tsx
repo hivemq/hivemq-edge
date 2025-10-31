@@ -1,7 +1,6 @@
 import { ReactFlowProvider } from '@xyflow/react'
 import CanvasToolbar from '@/modules/Workspace/components/controls/CanvasToolbar.tsx'
 import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider'
-import config from '@/config'
 
 describe('CanvasToolbar', () => {
   beforeEach(() => {

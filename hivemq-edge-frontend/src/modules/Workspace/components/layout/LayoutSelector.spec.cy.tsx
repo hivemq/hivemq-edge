@@ -5,7 +5,6 @@ import LayoutSelector from './LayoutSelector'
 import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore'
 import { LayoutType } from '@/modules/Workspace/types/layout'
-import config from '@/config'
 
 describe('LayoutSelector', () => {
   beforeEach(() => {

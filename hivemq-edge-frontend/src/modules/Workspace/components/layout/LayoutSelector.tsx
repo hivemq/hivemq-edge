@@ -7,7 +7,6 @@
 import { type FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Select, Tooltip } from '@chakra-ui/react'
-import config from '@/config'
 import { useLayoutEngine } from '../../hooks/useLayoutEngine.ts'
 import type { LayoutType } from '../../types/layout.ts'
 
