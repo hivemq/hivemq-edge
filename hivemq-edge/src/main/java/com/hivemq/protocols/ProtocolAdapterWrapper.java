@@ -193,12 +193,12 @@ public class ProtocolAdapterWrapper {
                                         log.info("Successfully started adapter with id {}", adapter.getId());
                                         future.complete(true);
                                     } else {
-                                        log.error("Protocol adapter start failed as data hub is not available.");
-                                        future.complete(false);
+                                        log.error("Protocol adapter start writing failed as data hub is not available.");
+                                        future.complete(true);
                                     }
                                 } catch (final Exception e) {
                                     log.error("Failed to start writing for adapter with id {}.", adapter.getId(), e);
-                                    future.completeExceptionally(e);
+                                    future.complete(true);
                                 }
                             }
                         }
