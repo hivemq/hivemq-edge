@@ -20,38 +20,42 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
+    private final @NotNull AtomicReference<RuntimeStatus> runtimeStatus;
+    private final @NotNull AtomicReference<ConnectionStatus> connectionStatus;
+    private final @NotNull AtomicReference<@Nullable String> lastErrorMessage;
     private final @NotNull EventService eventService;
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
-    protected @NotNull AtomicReference<RuntimeStatus> runtimeStatus = new AtomicReference<>(RuntimeStatus.STOPPED);
-    protected @NotNull AtomicReference<ConnectionStatus> connectionStatus =
-            new AtomicReference<>(ConnectionStatus.DISCONNECTED);
-    protected @Nullable String lastErrorMessage;
-    private final AtomicReference<Consumer<ConnectionStatus>> connectionStatusListener = new AtomicReference<>();
+    private final @NotNull AtomicReference<Consumer<ConnectionStatus>> connectionStatusListener;
 
-    public ProtocolAdapterStateImpl(final @NotNull EventService eventService,
-                                    final @NotNull String adapterId,
-                                    final @NotNull String protocolId) {
+    public ProtocolAdapterStateImpl(
+            final @NotNull EventService eventService,
+            final @NotNull String adapterId,
+            final @NotNull String protocolId) {
         this.eventService = eventService;
         this.adapterId = adapterId;
         this.protocolId = protocolId;
+        this.runtimeStatus = new AtomicReference<>(RuntimeStatus.STOPPED);
+        this.connectionStatus = new AtomicReference<>(ConnectionStatus.DISCONNECTED);
+        this.lastErrorMessage = new AtomicReference<>(null);
+        this.connectionStatusListener = new AtomicReference<>();
     }
 
     @Override
     public boolean setConnectionStatus(final @NotNull ConnectionStatus connectionStatus) {
         Preconditions.checkNotNull(connectionStatus);
         final var changed = this.connectionStatus.getAndSet(connectionStatus) != connectionStatus;
-        if(changed) {
+        if (changed) {
             final var listener = connectionStatusListener.get();
-            if(listener != null) {
+            if (listener != null) {
                 listener.accept(connectionStatus);
             }
         }
@@ -68,52 +72,50 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
      * and the errorMessage to that supplied.
      */
     @Override
-    public void setErrorConnectionStatus(
-            final @Nullable Throwable t,
-            final @Nullable String errorMessage) {
-        final boolean changed = setConnectionStatus(ConnectionStatus.ERROR);
-        reportErrorMessage( t, errorMessage, changed);
+    public void setErrorConnectionStatus(final @Nullable Throwable t, final @Nullable String errorMessage) {
+        reportErrorMessage(t, errorMessage, setConnectionStatus(ConnectionStatus.ERROR));
     }
 
-    /**
-     * Sets the last error message associated with the adapter runtime. This is can be sent through the API to
-     * give an indication of the status of an adapter runtime.
-     *
-     * @param errorMessage
-     */
     @Override
     public void reportErrorMessage(
             final @Nullable Throwable throwable,
             final @Nullable String errorMessage,
             final boolean sendEvent) {
-        this.lastErrorMessage = errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage;
+        // Sets the last error message associated with the adapter runtime.
+        // This is can be sent through the API to give an indication of the
+        // status of an adapter runtime.
+        lastErrorMessage.set(errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage);
         if (sendEvent) {
-            eventService.createAdapterEvent(adapterId, protocolId)
+            final var eventBuilder = eventService.createAdapterEvent(adapterId, protocolId)
                     .withSeverity(EventImpl.SEVERITY.ERROR)
-                    .withMessage(String.format("Adapter '%s' encountered an error.", adapterId))
-                    .withPayload(Payload.ContentType.PLAIN_TEXT, ExceptionUtils.getStackTrace(throwable))
-                    .fire();
+                    .withMessage(String.format("Adapter '%s' encountered an error.", adapterId));
+            if (throwable != null) {
+                eventBuilder.withPayload(Payload.ContentType.PLAIN_TEXT, ExceptionUtils.getStackTrace(throwable));
+            } else if (errorMessage != null) {
+                eventBuilder.withPayload(Payload.ContentType.PLAIN_TEXT, errorMessage);
+            }
+            eventBuilder.fire();
         }
     }
 
     @Override
-    public void setRuntimeStatus(final @NotNull RuntimeStatus runtimeStatus) {
-        this.runtimeStatus.set(runtimeStatus);
+    public @NotNull RuntimeStatus getRuntimeStatus() {
+        return runtimeStatus.get();
     }
 
     @Override
-    public @NotNull RuntimeStatus getRuntimeStatus() {
-        return this.runtimeStatus.get();
+    public void setRuntimeStatus(final @NotNull RuntimeStatus status) {
+        runtimeStatus.set(status);
     }
 
     @Override
     public @Nullable String getLastErrorMessage() {
-        return lastErrorMessage;
+        return lastErrorMessage.get();
     }
 
-    public void setConnectionStatusListener(final @NotNull Consumer<ConnectionStatus> connectionStatusListener) {
-        this.connectionStatusListener.set(connectionStatusListener);
-        connectionStatusListener.accept(connectionStatus.get());
+    public void setConnectionStatusListener(final @NotNull Consumer<ConnectionStatus> listener) {
+        final ConnectionStatus currentStatus = connectionStatus.get();
+        connectionStatusListener.set(listener);
+        listener.accept(currentStatus);
     }
-
 }
