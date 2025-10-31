@@ -45,6 +45,7 @@ describe('Workspace Layout - Options', () => {
 
     cy.wait('@getAdapters')
     cy.wait('@getBridges')
+    workspacePage.toolbox.fit.click()
   })
 
   it('should open layout options drawer', () => {

@@ -45,6 +45,7 @@ describe('Workspace Layout - Basic', () => {
 
     cy.wait('@getAdapters')
     cy.wait('@getBridges')
+    workspacePage.toolbox.fit.click()
   })
 
   it('should display layout controls in workspace', () => {

@@ -45,6 +45,7 @@ describe('Workspace Layout - Presets', () => {
 
     cy.wait('@getAdapters')
     cy.wait('@getBridges')
+    workspacePage.toolbox.fit.click()
   })
 
   it('should show no saved presets initially', () => {
@@ -168,8 +169,13 @@ describe('Workspace Layout - Presets', () => {
 
     // Reload page
     cy.reload()
+    loginPage.visit('/app/workspace')
+    loginPage.loginButton.click()
+    workspacePage.navLink.click()
+
     cy.wait('@getAdapters')
     cy.wait('@getBridges')
+    workspacePage.toolbox.fit.click()
 
     // Check preset still exists
     workspacePage.layoutControls.presetsButton.click()

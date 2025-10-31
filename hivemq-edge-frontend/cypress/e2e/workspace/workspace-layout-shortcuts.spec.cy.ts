@@ -45,6 +45,7 @@ describe('Workspace Layout - Keyboard Shortcuts', () => {
 
     cy.wait('@getAdapters')
     cy.wait('@getBridges')
+    workspacePage.toolbox.fit.click()
   })
 
   it('should apply layout with Cmd+L shortcut on Mac', () => {

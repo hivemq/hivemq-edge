@@ -45,6 +45,7 @@ describe('Workspace Layout - Accessibility & Visual Regression', { tags: ['@perc
 
     cy.wait('@getAdapters')
     cy.wait('@getBridges')
+    workspacePage.toolbox.fit.click()
   })
 
   it('should have accessible layout controls', () => {
@@ -134,6 +135,7 @@ describe('Workspace Layout - Accessibility & Visual Regression', { tags: ['@perc
 
     workspacePage.layoutControls.presetsButton.click()
     workspacePage.layoutControls.presetsMenu.saveOption.click()
+    workspacePage.layoutControls.savePresetModal.modal.should('be.visible')
     workspacePage.layoutControls.savePresetModal.nameInput.type('Visual Test')
     workspacePage.layoutControls.savePresetModal.saveButton.click()
 

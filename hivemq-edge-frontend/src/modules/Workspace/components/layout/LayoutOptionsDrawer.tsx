@@ -136,8 +136,10 @@ const LayoutOptionsDrawer: FC<LayoutOptionsDrawerProps> = ({ isOpen, onClose, al
         {algorithmType && algorithmType !== LayoutType.MANUAL && (
           <DrawerFooter>
             <ButtonGroup flexGrow={1} justifyContent="flex-end">
-              <Button onClick={handleCancel}>{t('workspace.autoLayout.options.actions.cancel')}</Button>
-              <Button variant="primary" type="submit" form="layout-options-form">
+              <Button data-testid="workspace-options-cancel" onClick={handleCancel}>
+                {t('workspace.autoLayout.options.actions.cancel')}
+              </Button>
+              <Button data-testid="workspace-options-apply" variant="primary" type="submit" form="layout-options-form">
                 {t('workspace.autoLayout.options.actions.apply')}
               </Button>
             </ButtonGroup>

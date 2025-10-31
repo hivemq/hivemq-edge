@@ -203,7 +203,7 @@ const LayoutPresetsManager: FC = () => {
           </ModalBody>
 
           <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onClose}>
+            <Button data-testid="workspace-preset-cancel" variant="ghost" mr={3} onClick={onClose}>
               {t('workspace.autoLayout.presets.modal.cancel')}
             </Button>
             <Button
