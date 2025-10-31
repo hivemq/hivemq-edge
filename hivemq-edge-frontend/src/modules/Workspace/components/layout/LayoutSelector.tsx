@@ -15,10 +15,6 @@ const LayoutSelector: FC = () => {
   const { t } = useTranslation()
   const { currentAlgorithm, setAlgorithm, availableAlgorithms } = useLayoutEngine()
 
-  if (!config.features.WORKSPACE_AUTO_LAYOUT) {
-    return null
-  }
-
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newAlgorithm = event.target.value as LayoutType
     setAlgorithm(newAlgorithm)

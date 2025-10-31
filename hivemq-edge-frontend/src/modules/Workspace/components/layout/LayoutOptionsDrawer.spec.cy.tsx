@@ -12,9 +12,6 @@ describe('LayoutOptionsDrawer', () => {
   beforeEach(() => {
     cy.viewport(1200, 800)
 
-    // Enable the feature flag for testing
-    config.features.WORKSPACE_AUTO_LAYOUT = true
-
     // Reset store before each test
     useWorkspaceStore.getState().reset()
   })

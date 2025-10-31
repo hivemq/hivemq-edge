@@ -6,8 +6,6 @@ import config from '@/config'
 describe('CanvasToolbar', () => {
   beforeEach(() => {
     cy.viewport(800, 600)
-    // Enable feature flag for testing layout controls
-    config.features.WORKSPACE_AUTO_LAYOUT = true
   })
 
   const wrapper = ({ children }: { children: JSX.Element }) => (
@@ -41,7 +39,6 @@ describe('CanvasToolbar', () => {
   })
 
   it('should show layout section when expanded and feature enabled', () => {
-    config.features.WORKSPACE_AUTO_LAYOUT = true
     cy.mountWithProviders(<CanvasToolbar />, { wrapper })
 
     // Expand toolbar
@@ -54,7 +51,6 @@ describe('CanvasToolbar', () => {
   })
 
   it('should hide layout section when feature disabled', () => {
-    config.features.WORKSPACE_AUTO_LAYOUT = false
     cy.mountWithProviders(<CanvasToolbar />, { wrapper })
 
     // Expand toolbar
@@ -67,7 +63,6 @@ describe('CanvasToolbar', () => {
   })
 
   it('should show visual divider between sections when feature enabled', () => {
-    config.features.WORKSPACE_AUTO_LAYOUT = true
     cy.mountWithProviders(<CanvasToolbar />, { wrapper })
 
     // Expand toolbar
@@ -79,7 +74,6 @@ describe('CanvasToolbar', () => {
   })
 
   it('should show layout selector', () => {
-    config.features.WORKSPACE_AUTO_LAYOUT = true
     cy.mountWithProviders(<CanvasToolbar />, { wrapper })
 
     cy.getByTestId('toolbox-search-expand').click()
@@ -87,7 +81,6 @@ describe('CanvasToolbar', () => {
   })
 
   it('should show apply layout button', () => {
-    config.features.WORKSPACE_AUTO_LAYOUT = true
     cy.mountWithProviders(<CanvasToolbar />, { wrapper })
 
     cy.getByTestId('toolbox-search-expand').click()
@@ -95,7 +88,6 @@ describe('CanvasToolbar', () => {
   })
 
   it('should show presets manager', () => {
-    config.features.WORKSPACE_AUTO_LAYOUT = true
     cy.mountWithProviders(<CanvasToolbar />, { wrapper })
 
     cy.getByTestId('toolbox-search-expand').click()
@@ -103,7 +95,6 @@ describe('CanvasToolbar', () => {
   })
 
   it('should show settings button', () => {
-    config.features.WORKSPACE_AUTO_LAYOUT = true
     cy.mountWithProviders(<CanvasToolbar />, { wrapper })
 
     cy.getByTestId('toolbox-search-expand').click()
@@ -114,7 +105,6 @@ describe('CanvasToolbar', () => {
   })
 
   it('should open layout options drawer when settings clicked', () => {
-    config.features.WORKSPACE_AUTO_LAYOUT = true
     cy.mountWithProviders(<CanvasToolbar />, { wrapper })
 
     cy.getByTestId('toolbox-search-expand').click()
@@ -128,7 +118,6 @@ describe('CanvasToolbar', () => {
   })
 
   it('should be accessible', () => {
-    config.features.WORKSPACE_AUTO_LAYOUT = true
     cy.injectAxe()
     cy.mountWithProviders(<CanvasToolbar />, { wrapper })
 
