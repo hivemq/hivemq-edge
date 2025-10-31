@@ -37,7 +37,7 @@ describe('CanvasToolbar', () => {
     cy.getByTestId('toolbox-search-expand').should('be.visible')
   })
 
-  it('should show layout section when expanded and feature enabled', () => {
+  it('should show layout section when expanded', () => {
     cy.mountWithProviders(<CanvasToolbar />, { wrapper })
 
     // Expand toolbar
@@ -49,19 +49,7 @@ describe('CanvasToolbar', () => {
     cy.getByTestId('workspace-apply-layout').should('be.visible')
   })
 
-  it('should hide layout section when feature disabled', () => {
-    cy.mountWithProviders(<CanvasToolbar />, { wrapper })
-
-    // Expand toolbar
-    cy.getByTestId('toolbox-search-expand').click()
-
-    // Layout section should NOT be visible
-    cy.get('[role="region"][aria-label*="Layout"]').should('not.exist')
-    cy.getByTestId('workspace-layout-selector').should('not.exist')
-    cy.getByTestId('workspace-apply-layout').should('not.exist')
-  })
-
-  it('should show visual divider between sections when feature enabled', () => {
+  it('should show visual divider between sections', () => {
     cy.mountWithProviders(<CanvasToolbar />, { wrapper })
 
     // Expand toolbar
