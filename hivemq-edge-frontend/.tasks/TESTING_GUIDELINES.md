@@ -1,6 +1,102 @@
 # HiveMQ Edge Frontend - Testing Guidelines
 
-**Last Updated:** October 24, 2025
+**Last Updated:** October 31, 2025
+
+---
+
+## 🚨 CRITICAL RULE: NEVER Declare Test Work Complete Without Running Tests
+
+**ABSOLUTE REQUIREMENT: If you create, modify, or update ANY test file, you MUST run those tests and verify they pass BEFORE declaring the work complete.**
+
+### The Non-Negotiable Rule
+
+**NEVER:**
+
+- ❌ Say "tests are complete" without running them
+- ❌ Write "all tests passing" without seeing actual results
+- ❌ Create completion documentation without test verification
+- ❌ Claim "tests should work" or make assumptions
+- ❌ Mark test-related work as done without green test results
+
+**ALWAYS:**
+
+- ✅ Run the actual test command
+- ✅ Read and verify the test output
+- ✅ See the actual pass/fail counts
+- ✅ Fix failures immediately
+- ✅ Include real test results in completion documentation
+
+### Required Test Commands
+
+**Component Tests:**
+
+```bash
+pnpm cypress:run:component --spec "path/to/Component.spec.cy.tsx"
+```
+
+**E2E Tests:**
+
+```bash
+pnpm cypress:run:e2e --spec "cypress/e2e/path/to/test.spec.cy.ts"
+```
+
+**Multiple Test Files:**
+
+```bash
+# Use glob patterns for related tests
+pnpm cypress:run:e2e --spec "cypress/e2e/workspace/workspace-layout*.spec.cy.ts"
+```
+
+### What "Test-Related Work" Means
+
+Work involves tests if it includes:
+
+- Creating new test files
+- Modifying existing tests
+- Updating Page Objects or test utilities
+- Changing components that have tests
+- Updating test selectors or test-ids
+- Fixing test failures
+
+### Proper Completion Documentation
+
+**Required format when completing test work:**
+
+```markdown
+## Test Verification
+
+Command: `pnpm cypress:run:component --spec "src/components/Toolbar.spec.cy.tsx"`
+
+Results:
+```
+
+Toolbar
+✓ should render correctly (234ms)
+✓ should handle clicks (156ms)
+✓ should be accessible (89ms)
+
+3 passing (2s)
+
+```
+
+✅ All tests verified passing.
+```
+
+### Why This Rule Exists
+
+**Past Issues:**
+
+- Tests declared complete but actually failing
+- User runs tests and finds failures
+- Wasted time and broken trust
+- Overconfident claims without verification
+
+**The Solution:**
+
+- Always run tests before claiming completion
+- Show real results, not assumptions
+- Fix issues immediately
+- Build trust through verification
 
 ---
 
