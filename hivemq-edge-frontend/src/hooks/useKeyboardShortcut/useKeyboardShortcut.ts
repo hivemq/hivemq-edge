@@ -27,7 +27,11 @@ export const useKeyboardShortcut = (shortcut: KeyboardShortcut) => {
       const keyMatch = event.key.toLowerCase() === shortcut.key.toLowerCase()
 
       // Check modifiers
-      const ctrlMatch = shortcut.ctrl ? (isMac ? event.metaKey : event.ctrlKey) : !(isMac ? event.metaKey : event.ctrlKey)
+      const ctrlMatch = shortcut.ctrl
+        ? isMac
+          ? event.metaKey
+          : event.ctrlKey
+        : !(isMac ? event.metaKey : event.ctrlKey)
       const shiftMatch = shortcut.shift ? event.shiftKey : !event.shiftKey
       const altMatch = shortcut.alt ? event.altKey : !event.altKey
       const metaMatch = shortcut.meta ? event.metaKey : true
