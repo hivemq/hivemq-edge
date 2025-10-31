@@ -56,7 +56,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, new Keystore("path", null, null), null),
+                new Tls(true, false, new Keystore("path", null, null), null),
                 null,
                 null);
 
@@ -115,7 +115,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, new Keystore("path", null, null), null),
+                new Tls(true, false, new Keystore("path", null, null), null),
                 null,
                 null);
 
@@ -152,7 +152,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, new Keystore("path", null, null), null),
+                new Tls(true, false, new Keystore("path", null, null), null),
                 null,
                 null);
 
@@ -181,7 +181,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, new Keystore("path", null, null), null),
+                new Tls(true, false, new Keystore("path", null, null), null),
                 null,
                 null);
 
