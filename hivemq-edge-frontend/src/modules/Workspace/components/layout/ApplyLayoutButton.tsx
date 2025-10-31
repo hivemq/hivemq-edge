@@ -85,6 +85,7 @@ const ApplyLayoutButton: FC = () => {
         onClick={handleApplyLayout}
         isLoading={isApplying}
         loadingText={t('workspace.autoLayout.apply.loading')}
+        minWidth="unset"
       >
         {t('workspace.autoLayout.apply.label')}
       </Button>
