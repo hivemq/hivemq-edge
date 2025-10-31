@@ -7,7 +7,6 @@ import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore'
 import { LayoutType } from '@/modules/Workspace/types/layout'
 import type { Node } from '@xyflow/react'
 import type { LayoutPreset } from '@/modules/Workspace/types/layout'
-import config from '@/config'
 
 describe('LayoutPresetsManager', () => {
   beforeEach(() => {

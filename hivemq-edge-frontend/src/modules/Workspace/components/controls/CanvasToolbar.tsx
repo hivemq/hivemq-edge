@@ -25,7 +25,6 @@ import LayoutOptionsDrawer from '@/modules/Workspace/components/layout/LayoutOpt
 import { useLayoutEngine } from '@/modules/Workspace/hooks/useLayoutEngine'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore'
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut'
-import config from '@/config'
 import { ANIMATION } from '@/modules/Theme/utils.ts'
 
 const CanvasToolbar: FC = () => {

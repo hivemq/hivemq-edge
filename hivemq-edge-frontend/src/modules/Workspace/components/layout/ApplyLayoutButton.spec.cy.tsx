@@ -6,7 +6,6 @@ import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore'
 import { LayoutType } from '@/modules/Workspace/types/layout'
 import type { Node } from '@xyflow/react'
-import config from '@/config'
 
 describe('ApplyLayoutButton', () => {
   beforeEach(() => {
