@@ -32,6 +32,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
@@ -69,6 +70,78 @@ public class ProtocolAdapterExtractorTest {
                 </hivemq>
                 """);
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+    }
+
+    @Test
+    public void whenMessageHandlingOptionsInNorthboundMappingIsAbsent_thenApplyConfigShouldPass() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                  <protocol-adapters>
+                    <protocol-adapter>
+                      <adapterId>simInvalid</adapterId>
+                      <protocolId>simulation</protocolId>
+                      <configVersion>1</configVersion>
+                      <config>
+                        <pollingIntervalMillis>123</pollingIntervalMillis>
+                        <timeout>10000</timeout>
+                        <minDelay>0</minDelay>
+                        <maxDelay>0</maxDelay>
+                      </config>
+                      <northboundMappings>
+                        <northboundMapping>
+                          <tagName>tag1</tagName>
+                          <topic>MTConnect/my-steams</topic>
+                          <maxQos>1</maxQos>
+                          <messageHandlingOptions/>
+                          <includeTagNames>false</includeTagNames>
+                          <includeTimestamp>true</includeTimestamp>
+                          <mqttUserProperties/>
+                          <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
+                        </northboundMapping>
+                      </northboundMappings>
+                      <tags>
+                        <tag>
+                          <name>tag1</name>
+                          <description>description1</description>
+                        </tag>
+                      </tags>
+                    </protocol-adapter>
+                  </protocol-adapters>
+                </hivemq>
+                """);
+        assertThat(configFileReader.applyConfig()).isNotNull();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+        assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(1);
+        final ProtocolAdapterEntity protocolAdapterEntity = protocolAdapterExtractor.getAllConfigs().getFirst();
+        assertThat(protocolAdapterEntity.getAdapterId()).isEqualTo("simInvalid");
+        assertThat(protocolAdapterEntity.getProtocolId()).isEqualTo("simulation");
+        assertThat(protocolAdapterEntity.getNorthboundMappings()).hasSize(1);
+        final NorthboundMappingEntity northboundMappingEntity =
+                protocolAdapterEntity.getNorthboundMappings().getFirst();
+        assertThat(northboundMappingEntity.getTopic()).isEqualTo("MTConnect/my-steams");
+        assertThat(northboundMappingEntity.getTagName()).isEqualTo("tag1");
+        assertThat(northboundMappingEntity.getMessageHandlingOptions()).isEqualTo(MessageHandlingOptions.MQTTMessagePerTag);
+        protocolAdapterEntity.getNorthboundMappings().clear();
+        protocolAdapterEntity.getNorthboundMappings()
+                .add(new NorthboundMappingEntity(northboundMappingEntity.getTagName(),
+                        northboundMappingEntity.getTopic(),
+                        northboundMappingEntity.getMaxQoS(),
+                        null,
+                        northboundMappingEntity.isIncludeTagNames(),
+                        northboundMappingEntity.isIncludeTimestamp(),
+                        northboundMappingEntity.getUserProperties(),
+                        northboundMappingEntity.getMessageExpiryInterval()));
+        final File newConfigFile = new File(tempDir, "new-conf.xml");
+        try (final FileWriter fileWriter = new FileWriter(newConfigFile)) {
+            configFileReader.writeConfigToXML(fileWriter);
+        }
+        final String newConfigString = Files.readString(newConfigFile.toPath());
+        // If nillable = true is set on messageHandlingOptions, the output XML would contain xsi:nil="true".
+        // This is a bug that can cause the config to be invalid.
+        // @XmlElement(name = "messageHandlingOptions", defaultValue = "MQTTMessagePerTag", nillable = true)
+        // private final @Nullable MessageHandlingOptions messageHandlingOptions;
+        assertThat(newConfigString).as("<messageHandlingOptions/> shouldn't contain xsi:nil=\"true\"")
+                .doesNotContain("<messageHandlingOptions xsi:nil=\"true\"/>");
     }
 
     @ParameterizedTest
@@ -318,6 +391,36 @@ public class ProtocolAdapterExtractorTest {
                   </protocol-adapters>
                 </hivemq>
                 """);
+        assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+    }
+
+    @Test
+    public void whenMessageHandlingOptionsIsNillable_thenApplyConfigShouldFail() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                  <protocol-adapters>
+                    <protocol-adapter>
+                      <adapterId>simInvalid</adapterId>
+                      <protocolId>simulation</protocolId>
+                      <configVersion>1</configVersion>
+                      <config>
+                        <pollingIntervalMillis>123</pollingIntervalMillis>
+                        <timeout>10000</timeout>
+                        <minDelay>0</minDelay>
+                        <maxDelay>0</maxDelay>
+                      </config>
+                      <northboundMappings>
+                        <northboundMapping>
+                          <topic>MTConnect/my-steams</topic>
+                          <messageHandlingOptions xsi:nil="true"/>
+                        </northboundMapping>
+                      </northboundMappings>
+                    </protocol-adapter>
+                  </protocol-adapters>
+                </hivemq>
+                """);
+        // XML schema violation in line '16' and column '51' caused by:
+        // "The prefix "xsi" for attribute "xsi:nil" associated with an element type "messageHandlingOptions" is not bound."
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
     }
 
