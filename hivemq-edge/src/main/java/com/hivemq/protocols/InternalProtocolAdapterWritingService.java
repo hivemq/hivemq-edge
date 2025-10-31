@@ -18,12 +18,10 @@ package com.hivemq.protocols;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.persistence.SingleWriterService;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 public interface InternalProtocolAdapterWritingService extends ProtocolAdapterWritingService {
 
