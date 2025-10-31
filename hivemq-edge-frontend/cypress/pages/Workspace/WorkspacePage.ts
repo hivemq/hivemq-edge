@@ -50,9 +50,7 @@ export class WorkspacePage extends ShellPage {
 
     presetsMenu: {
       get saveOption() {
-        return cy.get('[role="menu"]').within(() => {
-          cy.get('[role="menuitem"]').first()
-        })
+        return cy.get('[role="menu"] [role="menuitem"]').first()
       },
 
       presetItem(name: string) {
@@ -68,13 +66,11 @@ export class WorkspacePage extends ShellPage {
 
     optionsDrawer: {
       get drawer() {
-        return cy.get('[role="dialog"][id="layout-options-drawer"]')
+        return cy.get('[role="dialog"][id="chakra-modal-layout-options-drawer"]')
       },
 
       get title() {
-        return cy.get('[role="dialog"]').within(() => {
-          cy.get('header')
-        })
+        return cy.get('[role="dialog"] header')
       },
 
       get form() {
@@ -82,39 +78,29 @@ export class WorkspacePage extends ShellPage {
       },
 
       get cancelButton() {
-        return cy.get('[role="dialog"]').within(() => {
-          cy.contains('button', 'Cancel')
-        })
+        return cy.getByTestId('workspace-options-cancel')
       },
 
       get applyButton() {
-        return cy.get('[role="dialog"]').within(() => {
-          cy.contains('button', 'Apply Options')
-        })
+        return cy.getByTestId('workspace-options-apply')
       },
     },
 
     savePresetModal: {
       get modal() {
-        return cy.get('[role="dialog"]').contains('Save Layout Preset').parent('[role="dialog"]')
+        return cy.get('[role="dialog"]')
       },
 
       get nameInput() {
-        return cy.get('[role="dialog"]').within(() => {
-          cy.get('input[type="text"]')
-        })
+        return cy.getByTestId('workspace-preset-input')
       },
 
       get cancelButton() {
-        return cy.get('[role="dialog"]').within(() => {
-          cy.contains('button', 'Cancel')
-        })
+        return cy.getByTestId('workspace-preset-cancel')
       },
 
       get saveButton() {
-        return cy.get('[role="dialog"]').within(() => {
-          cy.contains('button', 'Save')
-        })
+        return cy.getByTestId('workspace-preset-save')
       },
     },
   }
