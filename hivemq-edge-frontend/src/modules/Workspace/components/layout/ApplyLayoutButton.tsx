@@ -17,10 +17,6 @@ const ApplyLayoutButton: FC = () => {
   const { applyLayout, currentAlgorithmInstance } = useLayoutEngine()
   const [isApplying, setIsApplying] = useState(false)
 
-  if (!config.features.WORKSPACE_AUTO_LAYOUT) {
-    return null
-  }
-
   const handleApplyLayout = async () => {
     if (!currentAlgorithmInstance) {
       toast({

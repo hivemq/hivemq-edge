@@ -5,7 +5,6 @@ import type { Group, WorkspaceState, WorkspaceAction, DeviceMetadata } from '@/m
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Adapter } from '@/api/__generated__'
-import config from '@/config'
 import { LayoutType, LayoutMode, type LayoutPreset, type LayoutHistoryEntry, type LayoutOptions } from '../types/layout'
 
 // define the initial state
@@ -222,13 +221,9 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
           edges: state.edges,
         }
 
-        // Only persist layout config if feature is enabled
-        // This prevents breaking existing installations when flag is off
-        if (config.features.WORKSPACE_AUTO_LAYOUT) {
-          persisted.layoutConfig = state.layoutConfig
-          persisted.isAutoLayoutEnabled = state.isAutoLayoutEnabled
-          // Don't persist layoutHistory - it's ephemeral
-        }
+        persisted.layoutConfig = state.layoutConfig
+        persisted.isAutoLayoutEnabled = state.isAutoLayoutEnabled
+        // Don't persist layoutHistory - it's ephemeral
 
         return persisted
       },

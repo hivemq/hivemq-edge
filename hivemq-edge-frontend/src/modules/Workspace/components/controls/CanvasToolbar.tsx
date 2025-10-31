@@ -148,53 +148,50 @@ const CanvasToolbar: FC = () => {
                 <DrawerFilterToolbox />
               </Box>
             </VStack>
-            {config.features.WORKSPACE_AUTO_LAYOUT && (
-              <Divider
-                orientation={dividerOrientation}
-                // h={{ base: 'auto', xl: '24px' }}
-                // w={{ base: 'auto', xl: 'auto' }}
-                borderColor="gray.300"
-                _dark={{ borderColor: 'gray.600' }}
-              />
-            )}
-            {config.features.WORKSPACE_AUTO_LAYOUT && (
-              <VStack
-                role="region"
-                data-testid="layout-controls-panel"
-                aria-label={t('workspace.autoLayout.controls.aria-label')}
-                spacing={{ base: 2, xl: 0 }}
-                align="stretch"
-                flex={{ base: '1', xl: 'initial' }}
+            <Divider
+              orientation={dividerOrientation}
+              // h={{ base: 'auto', xl: '24px' }}
+              // w={{ base: 'auto', xl: 'auto' }}
+              borderColor="gray.300"
+              _dark={{ borderColor: 'gray.600' }}
+            />
+
+            <VStack
+              role="region"
+              data-testid="layout-controls-panel"
+              aria-label={t('workspace.autoLayout.controls.aria-label')}
+              spacing={{ base: 2, xl: 0 }}
+              align="stretch"
+              flex={{ base: '1', xl: 'initial' }}
+            >
+              <Box
+                display="flex"
+                flexDirection={{ base: 'column', md: 'row', xl: 'row' }}
+                gap={2}
+                sx={{
+                  '& > *': {
+                    width: { base: '100%', md: 'auto' },
+                  },
+                }}
               >
-                <Box
-                  display="flex"
-                  flexDirection={{ base: 'column', md: 'row', xl: 'row' }}
-                  gap={2}
-                  sx={{
-                    '& > *': {
-                      width: { base: '100%', md: 'auto' },
-                    },
-                  }}
-                >
-                  <LayoutSelector />
-                  <ApplyLayoutButton />
-                  <Box display="flex" gap={2} width="fit-content">
-                    <LayoutPresetsManager />
-                    <Tooltip label={t('workspace.autoLayout.options.title')} placement={tooltipPlacement}>
-                      <ChakraIconButton
-                        data-testid="workspace-layout-options"
-                        aria-label={t('workspace.autoLayout.options.title')}
-                        icon={<Icon as={LuSettings} />}
-                        size="sm"
-                        variant="ghost"
-                        onClick={onLayoutDrawerOpen}
-                        width={{ base: '100%', md: 'auto' }}
-                      />
-                    </Tooltip>
-                  </Box>
+                <LayoutSelector />
+                <ApplyLayoutButton />
+                <Box display="flex" gap={2} width="fit-content">
+                  <LayoutPresetsManager />
+                  <Tooltip label={t('workspace.autoLayout.options.title')} placement={tooltipPlacement}>
+                    <ChakraIconButton
+                      data-testid="workspace-layout-options"
+                      aria-label={t('workspace.autoLayout.options.title')}
+                      icon={<Icon as={LuSettings} />}
+                      size="sm"
+                      variant="ghost"
+                      onClick={onLayoutDrawerOpen}
+                      width={{ base: '100%', md: 'auto' }}
+                    />
+                  </Tooltip>
                 </Box>
-              </VStack>
-            )}
+              </Box>
+            </VStack>
             <Divider
               orientation={dividerOrientation}
               // h={{ base: 'auto', xl: '24px' }}
@@ -220,14 +217,13 @@ const CanvasToolbar: FC = () => {
       </Panel>
 
       {/* Layout Options Drawer */}
-      {config.features.WORKSPACE_AUTO_LAYOUT && (
-        <LayoutOptionsDrawer
-          isOpen={isLayoutDrawerOpen}
-          onClose={onLayoutDrawerClose}
-          algorithmType={layoutConfig.currentAlgorithm}
-          options={layoutConfig.options}
-        />
-      )}
+
+      <LayoutOptionsDrawer
+        isOpen={isLayoutDrawerOpen}
+        onClose={onLayoutDrawerClose}
+        algorithmType={layoutConfig.currentAlgorithm}
+        options={layoutConfig.options}
+      />
     </>
   )
 }
