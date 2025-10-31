@@ -210,7 +210,11 @@ public class ProtocolAdapterWrapper {
                                         status);
                                 future.complete(true);
                             }
+                        } else {
+                            future.complete(true);
                         }
+                    } else {
+                        future.complete(true);
                     }
                 });
             } else {
