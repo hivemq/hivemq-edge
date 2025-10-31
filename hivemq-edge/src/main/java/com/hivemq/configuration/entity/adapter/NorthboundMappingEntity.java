@@ -47,7 +47,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
     @XmlElement(name = "maxQos", required = true)
     private final int maxQoS;
 
-    @XmlElement(name = "messageHandlingOptions", defaultValue = "MQTTMessagePerTag", nillable = true)
+    @XmlElement(name = "messageHandlingOptions", defaultValue = "MQTTMessagePerTag")
     private final @Nullable MessageHandlingOptions messageHandlingOptions;
 
     @XmlElement(name = "includeTagNames", required = true)
