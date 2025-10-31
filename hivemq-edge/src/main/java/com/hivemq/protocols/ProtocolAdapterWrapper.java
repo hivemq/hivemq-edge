@@ -47,7 +47,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -210,11 +209,15 @@ public class ProtocolAdapterWrapper {
                                         status);
                                 future.complete(true);
                             }
-                        } else {
-                            future.complete(true);
                         }
-                    } else {
-                        future.complete(true);
+                        case ERROR -> {
+                            if (futureCompleted.compareAndSet(false, true)) {
+                                log.error("Failed to start writing for adapter with id {} because the status is {}.",
+                                        adapter.getId(),
+                                        status);
+                                future.complete(true);
+                            }
+                        }
                     }
                 });
             } else {
