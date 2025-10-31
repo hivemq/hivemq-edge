@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPollingSampler {
 
-
     private final long initialDelay;
     private final long period;
     private final int maxErrorsBeforeRemoval;
@@ -49,12 +48,11 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     protected final @NotNull ProtocolAdapterWrapper protocolAdapter;
     protected final @NotNull EventService eventService;
 
-
     public AbstractSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper protocolAdapter, final @NotNull EventService eventService) {
         this.protocolAdapter = protocolAdapter;
+        this.eventService = eventService;
         this.adapterId = protocolAdapter.getId();
-
         if (protocolAdapter.getAdapter() instanceof final PollingProtocolAdapter adapter) {
             this.initialDelay = Math.max(adapter.getPollingIntervalMillis(), 100);
             this.period = Math.max(adapter.getPollingIntervalMillis(), 10);
@@ -66,7 +64,6 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         } else {
             throw new IllegalArgumentException("Adapter must be a polling or batch polling protocol adapter");
         }
-        this.eventService = eventService;
         this.uuid = UUID.randomUUID();
         this.created = new Date();
     }
@@ -88,7 +85,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             final @NotNull Throwable exception, final boolean continuing) {
         protocolAdapter.setErrorConnectionStatus(exception, null);
         if (!continuing) {
-            protocolAdapter.stopAsync(false);
+            protocolAdapter.stopAsync();
         }
     }
 
@@ -173,6 +170,4 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     public int hashCode() {
         return Objects.hash(uuid);
     }
-
-
 }

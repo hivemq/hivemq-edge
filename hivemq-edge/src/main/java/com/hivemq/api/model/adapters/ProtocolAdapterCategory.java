@@ -17,15 +17,13 @@ package com.hivemq.api.model.adapters;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.edge.HiveMQEdgeConstants;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * A category is a unique entity and represents a curated grouping of a protocol adapter. A protocol adapter
  * maybe in 1 category.
- *
- * @author Simon L Johnson
  */
 public class ProtocolAdapterCategory {
 
@@ -34,7 +32,7 @@ public class ProtocolAdapterCategory {
             description = "The unique name of the category to be used in API communication.",
             format = "string",
             minLength = 1,
-            required = true,
+            requiredMode = Schema.RequiredMode.REQUIRED,
             maxLength = HiveMQEdgeConstants.MAX_NAME_LEN,
             pattern = HiveMQEdgeConstants.NAME_REGEX)
     private final @NotNull String name;
@@ -44,20 +42,16 @@ public class ProtocolAdapterCategory {
             description = "The display name of the category to be used in HCIs.",
             format = "string",
             minLength = 1,
-            required = true)
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull String displayName;
 
     @JsonProperty("description")
-    @Schema(name = "description",
-            description = "The description associated with the category.",
-            format = "string")
-    private final @NotNull String description;
+    @Schema(name = "description", description = "The description associated with the category.", format = "string")
+    private final @Nullable String description;
 
     @JsonProperty("image")
-    @Schema(name = "image",
-            description = "The image associated with the category.",
-            format = "string")
-    private final @NotNull String image;
+    @Schema(name = "image", description = "The image associated with the category.", format = "string")
+    private final @Nullable String image;
 
     public ProtocolAdapterCategory(
             @JsonProperty("name") final @NotNull String name,
@@ -70,19 +64,19 @@ public class ProtocolAdapterCategory {
         this.image = image;
     }
 
-    public String getName() {
+    public @NotNull String getName() {
         return name;
     }
 
-    public String getDisplayName() {
+    public @NotNull String getDisplayName() {
         return displayName;
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public String getImage() {
+    public @Nullable String getImage() {
         return image;
     }
 }

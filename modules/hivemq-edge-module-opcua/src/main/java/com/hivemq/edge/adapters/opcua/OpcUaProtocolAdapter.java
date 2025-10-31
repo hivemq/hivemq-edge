@@ -54,7 +54,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -114,27 +113,33 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
 
         final OpcUaClientConnection conn;
-        if (opcUaClientConnection.compareAndSet(null, conn = new OpcUaClientConnection(adapterId,
-                tagList,
-                protocolAdapterState,
-                input.moduleServices().protocolAdapterTagStreamingService(),
-                dataPointFactory,
-                input.moduleServices().eventService(),
-                protocolAdapterMetricsService,
-                config,
-                lastSubscriptionId))) {
+        if (opcUaClientConnection.compareAndSet(null,
+                conn = new OpcUaClientConnection(adapterId,
+                        tagList,
+                        protocolAdapterState,
+                        input.moduleServices().protocolAdapterTagStreamingService(),
+                        dataPointFactory,
+                        input.moduleServices().eventService(),
+                        protocolAdapterMetricsService,
+                        config,
+                        lastSubscriptionId))) {
 
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-            CompletableFuture.supplyAsync(() -> conn.start(parsedConfig)).whenComplete((success, throwable) -> {
-                if (!success || throwable != null) {
-                    this.opcUaClientConnection.set(null);
+            try {
+                if (conn.start(parsedConfig)) {
+                    log.info("Successfully started OPC UA protocol adapter {}", adapterId);
+                    output.startedSuccessfully();
+                } else {
+                    opcUaClientConnection.set(null);
                     protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                    log.error("Failed to start OPC UA client", throwable);
+                    output.failStart(new IllegalStateException("check the logs"), "Failed to start OPC UA client");
                 }
-            });
-
-            log.info("Successfully started OPC UA protocol adapter {}", adapterId);
-            output.startedSuccessfully();
+            } catch (final Exception e) {
+                opcUaClientConnection.set(null);
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                log.error("Failed to start OPC UA client", e);
+                output.failStart(e.getCause(), "Failed to start OPC UA client");
+            }
         } else {
             log.warn("Tried starting already started OPC UA protocol adapter {}", adapterId);
         }
@@ -159,10 +164,12 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         log.info("Destroying OPC UA protocol adapter {}", adapterId);
         final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
         if (conn != null) {
-            CompletableFuture.runAsync(() -> {
+            try {
                 conn.destroy();
                 log.info("Destroyed OPC UA protocol adapter {}", adapterId);
-            });
+            } catch (final Exception e) {
+                log.error("Error destroying OPC UA protocol adapter {}", adapterId, e);
+            }
         } else {
             log.info("Tried destroying stopped OPC UA protocol adapter {}", adapterId);
         }

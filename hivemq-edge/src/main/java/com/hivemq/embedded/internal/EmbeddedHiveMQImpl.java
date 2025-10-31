@@ -27,9 +27,9 @@ import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.embedded.EmbeddedHiveMQ;
+import com.hivemq.util.ThreadFactoryUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.util.ThreadFactoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,22 +43,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
-/**
- * @author Georg Held
- */
 class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(EmbeddedHiveMQImpl.class);
-
-    private final @NotNull SystemInformationImpl systemInformation;
-    private final @NotNull MetricRegistry metricRegistry;
     @VisibleForTesting
     final @NotNull ExecutorService stateChangeExecutor;
+    private final @NotNull SystemInformationImpl systemInformation;
+    private final @NotNull MetricRegistry metricRegistry;
     private final @Nullable EmbeddedExtension embeddedExtension;
+    private final @NotNull Function<SystemInformationImpl, ModuleLoader> moduleLoaderFactory;
     private @Nullable ConfigurationService configurationService;
     private @Nullable HiveMQEdgeMain hiveMQServer;
-    private final @NotNull Function<SystemInformationImpl, ModuleLoader> moduleLoaderFactory;
-
     private @NotNull State currentState = State.STOPPED;
     private @NotNull State desiredState = State.STOPPED;
     private @Nullable Exception failedException;
@@ -120,13 +115,6 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
         shutDownFuture.get();
     }
 
-    private enum State {
-        RUNNING,
-        STOPPED,
-        FAILED,
-        CLOSED
-    }
-
     private void stateChange() {
         final List<CompletableFuture<Void>> localStartFutures;
         final List<CompletableFuture<Void>> localStopFutures;
@@ -169,9 +157,8 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
 
                     final ModuleLoader moduleLoader = moduleLoaderFactory.apply(systemInformation);
                     moduleLoader.loadModules();
-                    hiveMQServer = new HiveMQEdgeMain(systemInformation,
-                            metricRegistry,
-                            configurationService, moduleLoader);
+                    hiveMQServer =
+                            new HiveMQEdgeMain(systemInformation, metricRegistry, configurationService, moduleLoader);
                     hiveMQServer.bootstrap();
                     hiveMQServer.start(embeddedExtension);
 
@@ -210,7 +197,6 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
 
         try {
             final long startTime = System.currentTimeMillis();
-
             try {
                 hiveMQServer.stop();
             } catch (final Exception ex) {
@@ -243,7 +229,8 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     }
 
     private void failFutureList(
-            final @NotNull Exception exception, final @NotNull List<CompletableFuture<Void>> futures) {
+            final @NotNull Exception exception,
+            final @NotNull List<CompletableFuture<Void>> futures) {
         for (final CompletableFuture<Void> future : futures) {
             future.completeExceptionally(exception);
         }
@@ -291,6 +278,13 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     @VisibleForTesting
     @Nullable Injector getInjector() {
         return hiveMQServer != null ? hiveMQServer.getInjector() : null;
+    }
+
+    private enum State {
+        RUNNING,
+        STOPPED,
+        FAILED,
+        CLOSED
     }
 
     private static class AbortedStateChangeException extends Exception {

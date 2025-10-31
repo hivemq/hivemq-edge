@@ -30,12 +30,12 @@ import java.util.Set;
 public class ProtocolAdapterConfig {
 
     private final @NotNull ProtocolSpecificAdapterConfig adapterConfig;
-    private final @NotNull List<? extends Tag> tags;
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
     private final int configVersion;
-    private final @NotNull List<SouthboundMapping> southboundMappings;
-    private final @NotNull List<NorthboundMapping> northboundMappings;
+    private @NotNull List<? extends Tag> tags;
+    private @NotNull List<SouthboundMapping> southboundMappings;
+    private @NotNull List<NorthboundMapping> northboundMappings;
 
     public ProtocolAdapterConfig(
             final @NotNull String adapterId,
@@ -87,12 +87,24 @@ public class ProtocolAdapterConfig {
         return tags;
     }
 
+    public void setTags(final @NotNull List<? extends Tag> tags) {
+        this.tags = tags;
+    }
+
     public @NotNull List<NorthboundMapping> getNorthboundMappings() {
         return northboundMappings;
     }
 
+    public void setNorthboundMappings(final @NotNull List<NorthboundMapping> northboundMappings) {
+        this.northboundMappings = northboundMappings;
+    }
+
     public @NotNull List<SouthboundMapping> getSouthboundMappings() {
         return southboundMappings;
+    }
+
+    public void setSouthboundMappings(final @NotNull List<SouthboundMapping> southboundMappings) {
+        this.southboundMappings = southboundMappings;
     }
 
     public int getConfigVersion() {
@@ -101,7 +113,9 @@ public class ProtocolAdapterConfig {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final ProtocolAdapterConfig that = (ProtocolAdapterConfig) o;
         return getConfigVersion() == that.getConfigVersion() &&
                 Objects.equals(getAdapterConfig(), that.getAdapterConfig()) &&
