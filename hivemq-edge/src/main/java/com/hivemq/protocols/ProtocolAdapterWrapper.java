@@ -267,8 +267,6 @@ public class ProtocolAdapterWrapper {
                             if (futureCompleted.compareAndSet(false, true)) {
                                 future.complete(false);
                             }
-                        } else {
-                            future.complete(true);
                         }
                         default -> {}
                     }
