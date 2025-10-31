@@ -234,9 +234,15 @@ public class ProtocolAdapterWrapper {
                                 log.error("Failed to start writing for adapter with id {}.", adapter.getId(), e);
                                 future.completeExceptionally(e);
                             }
+                        } else {
+                            future.complete(true);
                         }
+                    } else {
+                        future.complete(true);
                     }
                 });
+            } else {
+                future.complete(true);
             }
         } catch (final Throwable e) {
             log.error("Protocol adapter start failed");
