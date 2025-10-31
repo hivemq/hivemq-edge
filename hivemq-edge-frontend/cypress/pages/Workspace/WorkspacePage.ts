@@ -27,6 +27,16 @@ export class WorkspacePage extends ShellPage {
     },
   }
 
+  canvasToolbar = {
+    get expandButton() {
+      return cy.getByTestId('toolbox-search-expand')
+    },
+
+    get collapseButton() {
+      return cy.getByTestId('toolbox-search-collapse')
+    },
+  }
+
   layoutControls = {
     get panel() {
       return cy.getByTestId('layout-controls-panel')
@@ -45,7 +55,7 @@ export class WorkspacePage extends ShellPage {
     },
 
     get optionsButton() {
-      return cy.get('button[aria-label="Layout options"]')
+      return cy.getByTestId('workspace-layout-options')
     },
 
     presetsMenu: {
