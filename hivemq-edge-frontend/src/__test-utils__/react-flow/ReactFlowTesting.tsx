@@ -8,7 +8,7 @@ import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider.tsx
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>
 interface ReactFlowTestingConfig {
-  initialState?: Optional<WorkspaceState, 'nodes' | 'edges'>
+  initialState?: Optional<WorkspaceState, 'nodes' | 'edges' | 'layoutConfig' | 'isAutoLayoutEnabled' | 'layoutHistory'>
 }
 
 interface ReactFlowTestingProps {

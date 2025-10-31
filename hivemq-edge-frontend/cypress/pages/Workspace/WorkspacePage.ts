@@ -27,6 +27,84 @@ export class WorkspacePage extends ShellPage {
     },
   }
 
+  layoutControls = {
+    get panel() {
+      return cy.getByTestId('layout-controls-panel')
+    },
+
+    get algorithmSelector() {
+      return cy.getByTestId('workspace-layout-selector')
+    },
+
+    get applyButton() {
+      return cy.getByTestId('workspace-apply-layout')
+    },
+
+    get presetsButton() {
+      return cy.get('button[aria-label*="preset"]').first()
+    },
+
+    get optionsButton() {
+      return cy.get('button[aria-label="Layout options"]')
+    },
+
+    presetsMenu: {
+      get saveOption() {
+        return cy.get('[role="menu"] [role="menuitem"]').first()
+      },
+
+      presetItem(name: string) {
+        return cy.get('[role="menu"]').within(() => {
+          cy.contains('[role="menuitem"]', name)
+        })
+      },
+
+      get emptyMessage() {
+        return cy.get('[role="menu"]').contains('No saved presets')
+      },
+    },
+
+    optionsDrawer: {
+      get drawer() {
+        return cy.get('[role="dialog"][id="chakra-modal-layout-options-drawer"]')
+      },
+
+      get title() {
+        return cy.get('[role="dialog"] header')
+      },
+
+      get form() {
+        return cy.get('form#layout-options-form')
+      },
+
+      get cancelButton() {
+        return cy.getByTestId('workspace-options-cancel')
+      },
+
+      get applyButton() {
+        return cy.getByTestId('workspace-options-apply')
+      },
+    },
+
+    savePresetModal: {
+      get modal() {
+        return cy.get('[role="dialog"]')
+      },
+
+      get nameInput() {
+        return cy.getByTestId('workspace-preset-input')
+      },
+
+      get cancelButton() {
+        return cy.getByTestId('workspace-preset-cancel')
+      },
+
+      get saveButton() {
+        return cy.getByTestId('workspace-preset-save')
+      },
+    },
+  }
+
   get nodeToolbar() {
     return cy.get('[data-testid="rf__wrapper"] [role="toolbar"][aria-label="Node toolbar"]')
   }

@@ -10,3 +10,9 @@ max_line_length = 180
 # Markdown files
 [*.md]
 trim_trailing_whitespace = false
+
+# Markdown files in .tasks/ directory - disable code injection analysis
+[.tasks/**/*.md]
+trim_trailing_whitespace = false
+# Disable language injection for code blocks in documentation
+ij_markdown_disable_injections = true

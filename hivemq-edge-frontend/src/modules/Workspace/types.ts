@@ -1,6 +1,7 @@
 import type { Edge, Node, OnEdgesChange, OnNodesChange, NodeAddChange, EdgeAddChange, Rect } from '@xyflow/react'
 import type { Adapter, Bridge, Combiner, Listener, ProtocolAdapter, PulseStatus } from '@/api/__generated__'
 import type { NodeStatusModel } from './types/status.types'
+import type { LayoutType, LayoutPreset, LayoutOptions, LayoutHistoryEntry, LayoutMode } from './types/layout'
 
 // Node data types with optional statusModel for unified status handling
 export type NodeAdapterType = Node<Adapter & { statusModel?: NodeStatusModel }, NodeTypes.ADAPTER_NODE>
@@ -25,10 +26,16 @@ export interface EdgeFlowOptions {
 
 export enum EdgeFlowLayout {
   HORIZONTAL = 'HORIZONTAL',
+  // New auto-layout types
+  DAGRE_TB = 'DAGRE_TB',
+  DAGRE_LR = 'DAGRE_LR',
+  COLA_FORCE = 'COLA_FORCE',
+  COLA_CONSTRAINED = 'COLA_CONSTRAINED',
+  MANUAL = 'MANUAL',
 }
 
 export interface EdgeFlowGrouping {
-  layout: EdgeFlowLayout
+  layout: EdgeFlowLayout | LayoutType
   keys: string[]
   showGroups: boolean
 }
@@ -82,6 +89,15 @@ export type Group = {
 export interface WorkspaceState {
   nodes: Node[]
   edges: Edge[]
+  // Layout configuration
+  layoutConfig: {
+    currentAlgorithm: LayoutType
+    mode: LayoutMode
+    options: LayoutOptions
+    presets: LayoutPreset[]
+  }
+  isAutoLayoutEnabled: boolean
+  layoutHistory: LayoutHistoryEntry[]
 }
 
 export interface WorkspaceAction {
@@ -95,6 +111,16 @@ export interface WorkspaceAction {
   onToggleGroup: (node: Pick<Node<Group, NodeTypes.CLUSTER_NODE>, 'id' | 'data'>, show: boolean) => void
   onGroupSetData: (id: string, node: Pick<Group, 'title' | 'colorScheme'>) => void
   onUpdateNode: <T extends Record<string, unknown>>(id: string, data: T) => void
+  // Layout actions
+  setLayoutAlgorithm: (algorithm: LayoutType) => void
+  setLayoutMode: (mode: LayoutMode) => void
+  setLayoutOptions: (options: Partial<LayoutOptions>) => void
+  toggleAutoLayout: () => void
+  saveLayoutPreset: (preset: LayoutPreset) => void
+  loadLayoutPreset: (presetId: string) => void
+  deleteLayoutPreset: (presetId: string) => void
+  pushLayoutHistory: (entry: LayoutHistoryEntry) => void
+  clearLayoutHistory: () => void
 }
 
 export interface TopicTreeMetadata {

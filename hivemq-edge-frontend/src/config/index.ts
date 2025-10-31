@@ -20,6 +20,7 @@ interface configType {
     DEV_MOCK_SERVER: boolean
     DATAHUB_FSM_REACT_FLOW: boolean
     WORKSPACE_EXPERIMENTAL: boolean
+    WORKSPACE_AUTO_LAYOUT: boolean
   }
 
   documentation: {
@@ -89,6 +90,13 @@ const config: configType = {
     DATAHUB_FSM_REACT_FLOW: import.meta.env.VITE_FLAG_DATAHUB_FSM_REACTFLOW === 'true',
 
     WORKSPACE_EXPERIMENTAL: import.meta.env.VITE_FLAG_WORKSPACE_SHOW_EXPERIMENTAL === 'true',
+
+    /**
+     * Enable workspace auto-layout algorithms (dagre, WebCola)
+     * Allows users to apply professional graph layout algorithms to automatically arrange workspace nodes
+     * @experimental Phase: Beta testing
+     */
+    WORKSPACE_AUTO_LAYOUT: import.meta.env.VITE_FLAG_WORKSPACE_AUTO_LAYOUT === 'true',
   },
 
   documentation: {

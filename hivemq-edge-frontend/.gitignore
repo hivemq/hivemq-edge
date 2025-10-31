@@ -48,3 +48,4 @@ test-results
 
 # Keep task documentation in version control
 # DO NOT ignore .tasks/ directory - it contains important task tracking
+/.tasks-log/

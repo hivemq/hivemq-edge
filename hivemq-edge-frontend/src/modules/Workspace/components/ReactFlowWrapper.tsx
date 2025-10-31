@@ -17,6 +17,7 @@ import StatusListener from '@/modules/Workspace/components/controls/StatusListen
 import CanvasControls from '@/modules/Workspace/components/controls/CanvasControls.tsx'
 import SelectionListener from '@/modules/Workspace/components/controls/SelectionListener.tsx'
 import CanvasToolbar from '@/modules/Workspace/components/controls/CanvasToolbar.tsx'
+import LayoutControlsPanel from '@/modules/Workspace/components/controls/LayoutControlsPanel.tsx'
 import MonitoringEdge from '@/modules/Workspace/components/edges/MonitoringEdge.tsx'
 import {
   NodeAdapter,
@@ -116,6 +117,7 @@ const ReactFlowWrapper = () => {
       aria-label={t('workspace.canvas.aria-label')}
     >
       <Box role="group" aria-label={t('workspace.canvas.toolbar.container')} aria-controls="edge-workspace-canvas">
+        <LayoutControlsPanel />
         <CanvasToolbar />
         <SelectionListener />
         <StatusListener />

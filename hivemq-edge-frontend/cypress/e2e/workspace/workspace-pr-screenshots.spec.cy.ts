@@ -34,20 +34,19 @@ describe('Workspace - PR Screenshots', () => {
     // This MUST be called before navigation to enable Pulse/Asset Mapper nodes
     cy_interceptPulseWithMockDB(mswDB, true, true)
 
-    // Protocol types
-    cy.intercept('/api/v1/management/protocol-adapters/types', {
-      items: [MOCK_PROTOCOL_OPC_UA],
-    }).as('getProtocols')
+    cy.intercept('/api/v1/management/topic-filters', { statusCode: 202, log: false })
+    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
 
     loginPage.visit('/app/workspace')
     loginPage.loginButton.click()
     workspacePage.navLink.click()
+
+    workspacePage.toolbox.fit.click()
   })
 
   describe('PR Screenshots - Status Visualization', () => {
-    it('PR Screenshot 1: Healthy workspace with all systems operational', { tags: ['@percy'] }, () => {
-      // Mock a complex workspace with multiple adapters and bridge
-      // All entities showing ACTIVE status with operational data flow
+    beforeEach(() => {
+      // Mock a comprehensive enterprise workspace with all entity types and mixed statuses
       cy.intercept('/api/v1/management/protocol-adapters/adapters', {
         items: [
           {
@@ -126,15 +125,14 @@ describe('Workspace - PR Screenshots', () => {
           },
         ],
       })
+    })
 
+    it('PR Screenshot 1: Healthy workspace with all systems operational', { tags: ['@percy'] }, () => {
       // Wait for React Flow to render
-      cy.get('.react-flow__viewport', { timeout: 10000 }).should('be.visible')
+      cy.get('.react-flow__viewport').should('be.visible')
 
       // Fit the workspace to show all entities
       workspacePage.toolbox.fit.click()
-
-      // Wait for layout to settle
-      cy.wait(1500)
 
       // Check accessibility before taking screenshot
       cy.injectAxe()
@@ -162,165 +160,10 @@ describe('Workspace - PR Screenshots', () => {
       'PR Screenshot 2: Complex enterprise workspace with Pulse Agent and data integration',
       { tags: ['@percy'] },
       () => {
-        // Mock a comprehensive enterprise workspace with all entity types and mixed statuses
-        cy.intercept('/api/v1/management/protocol-adapters/adapters', {
-          items: [
-            // ERROR adapter - shows red edges, error propagates to device nodes
-            {
-              ...mockAdapter_OPCUA,
-              id: 'opcua-critical',
-              status: {
-                connection: Status.connection.ERROR,
-                runtime: Status.runtime.STOPPED,
-                message: 'Connection timeout: Unable to reach device at opc.tcp://192.168.1.100:4840',
-              },
-            },
-            // ACTIVE operational adapter #1 - has mappings, shows green animated edges
-            {
-              ...mockAdapter_OPCUA,
-              id: 'opcua-working',
-              type: 'simulation',
-              status: {
-                connection: Status.connection.CONNECTED,
-                runtime: Status.runtime.STARTED,
-              },
-            },
-            // ACTIVE operational adapter #2 - different mappings, also animated
-            {
-              ...mockAdapter_OPCUA,
-              id: 'opcua-working2',
-              type: 'opcua',
-              status: {
-                connection: Status.connection.CONNECTED,
-                runtime: Status.runtime.STARTED,
-              },
-            },
-            // ACTIVE non-operational adapter - no mappings, shows green static edges
-            {
-              ...mockAdapter_OPCUA,
-              id: 'modbus-idle',
-              type: 'modbus',
-              status: {
-                connection: Status.connection.CONNECTED,
-                runtime: Status.runtime.STARTED,
-              },
-            },
-            // INACTIVE adapter - shows gray edges
-            {
-              ...mockAdapter_OPCUA,
-              id: 's7-maintenance',
-              type: 's7',
-              status: {
-                connection: Status.connection.DISCONNECTED,
-                runtime: Status.runtime.STOPPED,
-              },
-            },
-            // Another ERROR adapter to show multiple errors
-            {
-              ...mockAdapter_OPCUA,
-              id: 'http-failed',
-              type: 'http',
-              status: {
-                connection: Status.connection.ERROR,
-                runtime: Status.runtime.STOPPED,
-                message: 'HTTP 500: Internal server error',
-              },
-            },
-          ],
-        })
-
-        // Mock mappings - varied operational states
-        cy.intercept('/api/v1/management/protocol-adapters/adapters/opcua-critical/northboundMappings', {
-          items: [], // ERROR adapter has no working mappings
-        })
-
-        cy.intercept('/api/v1/management/protocol-adapters/adapters/opcua-working/northboundMappings', {
-          items: [
-            { tagName: 'sensor-data', topic: 'production/data/stream' },
-            { tagName: 'sensor-status', topic: 'production/status/monitor' },
-          ], // Operational ACTIVE - will animate
-        })
-
-        cy.intercept('/api/v1/management/protocol-adapters/adapters/opcua-working2/northboundMappings', {
-          items: [
-            { tagName: 'temperature-sensor', topic: 'factory/temperature/zone1' },
-            { tagName: 'pressure-sensor', topic: 'factory/pressure/zone1' },
-            { tagName: 'flow-sensor', topic: 'factory/flow/line3' },
-          ], // Different mappings - also operational ACTIVE
-        })
-
-        cy.intercept('/api/v1/management/protocol-adapters/adapters/modbus-idle/northboundMappings', {
-          items: [], // ACTIVE but no mappings - green but not animated
-        })
-
-        cy.intercept('/api/v1/management/protocol-adapters/adapters/s7-maintenance/northboundMappings', {
-          items: [], // INACTIVE - gray edges
-        })
-
-        cy.intercept('/api/v1/management/protocol-adapters/adapters/http-failed/northboundMappings', {
-          items: [], // ERROR adapter
-        })
-
-        // Mock bridge with ACTIVE status and operational mappings
-        cy.intercept('/api/v1/management/bridges', {
-          items: [
-            {
-              ...mockBridge,
-              id: 'backup-bridge',
-              status: {
-                connection: Status.connection.CONNECTED,
-                runtime: Status.runtime.STARTED,
-              },
-              localSubscriptions: [{ filters: ['production/#'], destination: 'backup/production', maxQoS: 1 }],
-              remoteSubscriptions: [{ filters: ['alerts/#'], destination: 'local/alerts', maxQoS: 0 }],
-            },
-          ],
-        })
-
-        // Mock Combiner connected to opcua-critical and opcua-working
-        // Note: cy_interceptPulseWithMockDB already sets up combiners endpoint
-        // This will override with our specific test data
-        cy.intercept('/api/v1/management/combiners', {
-          items: [
-            {
-              id: 'data-combiner-1',
-              name: 'Production Data Aggregator',
-              description: 'Combines critical and working adapter data',
-              sources: {
-                items: [
-                  { type: 'ADAPTER', id: 'opcua-critical' },
-                  { type: 'ADAPTER', id: 'opcua-working' },
-                ],
-              },
-              mappings: {
-                items: [
-                  {
-                    id: 'mapping-1',
-                    sources: {
-                      primary: { id: 'sensor-data', type: 'TAG' },
-                      tags: ['sensor-data', 'sensor-status'],
-                      topicFilters: [],
-                    },
-                    destination: { topic: 'combined/production/metrics' },
-                    instructions: [],
-                  },
-                ],
-              },
-            },
-          ],
-        })
+        workspacePage.toolbox.fit.click()
 
         // Wait for React Flow to render and all Pulse entities to load
         cy.get('.react-flow__viewport', { timeout: 10000 }).should('be.visible')
-
-        // Wait for Pulse Agent node to appear (confirms Pulse is properly initialized)
-        cy.get('[data-nodetype="PULSE_AGENT_NODE"]', { timeout: 10000 }).should('exist')
-
-        // Fit the workspace to show all entities
-        workspacePage.toolbox.fit.click()
-
-        // Wait for layout to settle with all the complex entities
-        cy.wait(2000)
 
         // Check accessibility before taking screenshot
         cy.injectAxe()

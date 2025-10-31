@@ -5,11 +5,26 @@ import type { Group, WorkspaceState, WorkspaceAction, DeviceMetadata } from '@/m
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Adapter } from '@/api/__generated__'
+import config from '@/config'
+import { LayoutType, LayoutMode, type LayoutPreset, type LayoutHistoryEntry, type LayoutOptions } from '../types/layout'
 
 // define the initial state
 const initialState: WorkspaceState = {
   nodes: [],
   edges: [],
+  // Layout configuration
+  layoutConfig: {
+    currentAlgorithm: LayoutType.MANUAL,
+    mode: LayoutMode.STATIC,
+    options: {
+      animate: true,
+      animationDuration: 300,
+      fitView: true,
+    },
+    presets: [],
+  },
+  isAutoLayoutEnabled: false,
+  layoutHistory: [],
 }
 
 const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
@@ -121,10 +136,102 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
           }),
         })
       },
+      // Layout actions
+      setLayoutAlgorithm: (algorithm: LayoutType) => {
+        set((state) => ({
+          layoutConfig: {
+            ...state.layoutConfig,
+            currentAlgorithm: algorithm,
+          },
+        }))
+      },
+      setLayoutMode: (mode: LayoutMode) => {
+        set((state) => ({
+          layoutConfig: {
+            ...state.layoutConfig,
+            mode,
+          },
+        }))
+      },
+      setLayoutOptions: (options: Partial<LayoutOptions>) => {
+        set((state) => ({
+          layoutConfig: {
+            ...state.layoutConfig,
+            options: {
+              ...state.layoutConfig.options,
+              ...options,
+            },
+          },
+        }))
+      },
+      toggleAutoLayout: () => {
+        set((state) => ({
+          isAutoLayoutEnabled: !state.isAutoLayoutEnabled,
+        }))
+      },
+      saveLayoutPreset: (preset: LayoutPreset) => {
+        set((state) => ({
+          layoutConfig: {
+            ...state.layoutConfig,
+            presets: [...state.layoutConfig.presets, preset],
+          },
+        }))
+      },
+      loadLayoutPreset: (presetId: string) => {
+        const state = get()
+        const preset = state.layoutConfig.presets.find((p) => p.id === presetId)
+        if (preset) {
+          set({
+            layoutConfig: {
+              ...state.layoutConfig,
+              currentAlgorithm: preset.algorithm,
+              options: preset.options,
+            },
+          })
+        }
+      },
+      deleteLayoutPreset: (presetId: string) => {
+        set((state) => ({
+          layoutConfig: {
+            ...state.layoutConfig,
+            presets: state.layoutConfig.presets.filter((p) => p.id !== presetId),
+          },
+        }))
+      },
+      pushLayoutHistory: (entry: LayoutHistoryEntry) => {
+        set((state) => {
+          const newHistory = [...state.layoutHistory, entry]
+          // Keep only last 20 entries
+          if (newHistory.length > 20) {
+            newHistory.shift()
+          }
+          return { layoutHistory: newHistory }
+        })
+      },
+      clearLayoutHistory: () => {
+        set({ layoutHistory: [] })
+      },
     }),
     {
       name: 'edge.workspace',
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => {
+        // Always persist nodes and edges (core workspace state)
+        const persisted: Partial<WorkspaceState> = {
+          nodes: state.nodes,
+          edges: state.edges,
+        }
+
+        // Only persist layout config if feature is enabled
+        // This prevents breaking existing installations when flag is off
+        if (config.features.WORKSPACE_AUTO_LAYOUT) {
+          persisted.layoutConfig = state.layoutConfig
+          persisted.isAutoLayoutEnabled = state.isAutoLayoutEnabled
+          // Don't persist layoutHistory - it's ephemeral
+        }
+
+        return persisted
+      },
     }
   )
 )

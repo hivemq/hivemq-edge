@@ -1,206 +1,321 @@
-# Reporting Strategy for Task Documentation
+# AI Agent Reporting Strategy
 
-## Document Lifecycle
+**Last Updated:** October 30, 2025
 
-### 1. TASK_BRIEF.md
+---
 
-- **Created:** At task start (by user or AI)
-- **Modified:** NEVER - this is the original requirement
-- **Purpose:** Defines the objective, context, and acceptance criteria
-- **Owner:** User
+## Overview
 
-### 2. TASK_SUMMARY.md
+This document defines how AI agents should report work completed during sessions, including both permanent documentation (in git) and ephemeral session logs (local only).
 
-- **Created:** At task start (by AI after analyzing TASK_BRIEF)
-- **Modified:** By APPENDING sections at the bottom
-- **Purpose:** Contains initial analysis, proposed subtasks, and progress tracking
-- **Structure:**
+---
 
-  ```
-  ## Overview
-  ## Error Summary by File (initial analysis)
-  ## Proposed Subtasks
-  ## Execution Order
+## Two-Tier Documentation System
 
-  --- APPEND NEW SECTIONS BELOW ---
+### Tier 1: Permanent Documentation (`.tasks/` - IN GIT)
 
-  ## Progress Updates (append only)
-  ### Update YYYY-MM-DD HH:MM
-  - What was done
-  - Current status
-  ```
+**Purpose:** Long-term reference documentation that should be committed to the repository.
 
-### 3. CONVERSATION_SUBTASK_N.md
+**Location:** `.tasks/` and `.tasks/{task-number}-{task-name}/`
 
-- **Created:** When starting each subtask
-- **Modified:** By APPENDING sections as work progresses
-- **Purpose:** Detailed work log for a specific subtask
-- **Naming:** N = 1, 2, 3, 4, 5... (sequential, matches subtask number from plan)
-- **Structure:**
+**Files Include:**
 
-  ```
-  # Subtask N: [Name] - [Status]
+- `TASK_BRIEF.md` - Initial task description and requirements
+- `TASK_SUMMARY.md` - Overall task progress and status
+- `CONVERSATION_SUBTASK_N.md` - Detailed subtask conversations
+- `ARCHITECTURE.md` - Technical architecture decisions
+- `PHASE_N_SUMMARY.md` - Major phase completions
+- Feature-specific documentation (e.g., `LAYOUT_ALGORITHMS_REFERENCE.md`)
 
-  ## Objective
-  ## Files to Fix
-  ## Work Log
+**Characteristics:**
 
-  --- APPEND SECTIONS AS WORK PROGRESSES ---
+- ✅ Committed to git
+- ✅ Long-term reference
+- ✅ Reviewed by team
+- ✅ Part of project history
 
-  ## Additional Fixes (if needed)
-  ## Issues Encountered
-  ## Final Verification
-  ## Status: COMPLETE ✅
-  ```
+### Tier 2: Ephemeral Session Logs (`.tasks-log/` - LOCAL ONLY)
 
-### 4. TASK_COMPLETE.md
+**Purpose:** Detailed session-by-session logs that provide context and quick reference but are not committed to git.
 
-- **Created:** ONLY when ALL subtasks are verified complete by user
-- **Modified:** NEVER
-- **Purpose:** Final summary of all work done
-- **Created by:** AI after user confirms success
+**Location:** `.tasks-log/`
 
-## Rules
+**Naming Convention:**
+
+```
+{TASK_NUMBER}_{INDEX}_{DESCRIPTIVE_NAME}.md
+```
+
+**Examples:**
+
+- `25337_00_SESSION_INDEX.md` - Master index for a session
+- `25337_01_Subtask11_Testing_Complete.md` - Detailed summary
+- `25337_02_Accessibility_Select_Fix.md` - Specific fix documentation
+- `25337_03_CyWait_Removal.md` - Anti-pattern removal details
+
+**Components of the Naming:**
+
+1. **TASK_NUMBER**: The task/issue number (e.g., `25337`)
+2. **INDEX**: Sequential number starting from 00 (e.g., `00`, `01`, `02`, `03`)
+   - `00` is reserved for SESSION_INDEX
+   - `01+` are specific topics/fixes/implementations
+3. **DESCRIPTIVE_NAME**: Clear description using PascalCase or snake_case
+
+**Characteristics:**
+
+- ❌ NOT committed to git (in `.gitignore`)
+- ⚠️ May be cleaned up periodically
+- ✅ Detailed session records
+- ✅ Quick reference during development
+- ✅ Easy to follow (numbered sequentially)
+
+---
+
+## When to Use Each Tier
+
+### Use Permanent Documentation (`.tasks/`) When:
+
+- ✅ Documenting architectural decisions
+- ✅ Recording major milestones or phase completions
+- ✅ Providing long-term reference material
+- ✅ Creating documentation that the team will review
+- ✅ Establishing patterns or guidelines
+- ✅ Tracking overall task progress
+
+### Use Session Logs (`.tasks-log/`) When:
+
+- ✅ Documenting a specific work session
+- ✅ Recording detailed fix steps
+- ✅ Providing troubleshooting context
+- ✅ Creating quick reference summaries
+- ✅ Logging incremental progress
+- ✅ Documenting issues and their resolutions
+
+---
+
+## Session Log Structure
+
+### Always Create a SESSION_INDEX (00)
+
+Every work session should have a master index file:
+
+**File:** `{TASK_NUMBER}_00_SESSION_INDEX.md`
+
+**Contents:**
+
+```markdown
+# Task {NUMBER} - Session Index
+
+**Session Date:** {DATE}
+**Task:** {TASK_NAME} - {SUBTASK}
+**Status:** ✅ COMPLETE / 🔄 IN PROGRESS
+
+---
+
+## Session Logs Created
+
+### 📄 01 - {Title}
+
+**File:** `{TASK}_01_{Name}.md`
+Brief description...
+
+### 📄 02 - {Title}
+
+**File:** `{TASK}_02_{Name}.md`
+Brief description...
+
+---
+
+## Quick Reference
+
+- Key files created
+- Major achievements
+- Issues resolved
+
+---
+
+## Session Statistics
+
+- Duration
+- Files modified
+- Tests created/fixed
+- Documentation updated
+```
+
+### Individual Topic Logs (01+)
+
+Each specific topic/fix/implementation gets its own numbered file:
+
+**Structure:**
+
+```markdown
+# Task {NUMBER} - Session Log: {TOPIC}
+
+**Date:** {DATE}
+**Session:** {SUBTASK_NAME}
+**Log #:** {INDEX}
+
+---
+
+## Issue/Topic
+
+Description of what was addressed
+
+## Solution/Implementation
+
+How it was solved
+
+## Key Details
+
+Specific technical details, code examples
+
+## Result
+
+Final outcome and verification
+
+---
+
+**Key Takeaway:** Main lesson learned
+```
+
+---
+
+## Git Configuration
+
+### `.gitignore` Setup
+
+```gitignore
+# Exclude all session logs
+.tasks-log/*
+
+# But include the README
+!.tasks-log/README.md
+```
+
+This ensures:
+
+- ✅ `.tasks-log/README.md` is committed (explains the system)
+- ❌ All session logs are excluded from git
+- ⚠️ Users know these files may be cleaned up
+
+### `.tasks-log/README.md`
+
+This file **IS committed to git** and explains the ephemeral log system to other developers.
+
+---
+
+## AI Agent Workflow
+
+### At Session Start
+
+1. Check if `.tasks-log/` exists, create if needed
+2. Verify `.gitignore` includes `.tasks-log/*` with `!.tasks-log/README.md`
+3. Find next available index for the task (check existing `{TASK}_##_*` files)
+
+### During Session
+
+1. Create `{TASK}_00_SESSION_INDEX.md` at the start
+2. For each significant fix/feature/issue, create `{TASK}_{NN}_{NAME}.md`
+3. Update SESSION_INDEX as you create new logs
+
+### At Session End
+
+1. Finalize SESSION_INDEX with complete statistics
+2. Update permanent documentation in `.tasks/` as needed
+3. Remind user that session logs are ephemeral and may be cleaned up
+
+---
+
+## Example Session
+
+**Task 25337 - Testing Implementation:**
+
+```
+.tasks-log/
+├── README.md                              # In git - explains system
+├── 25337_00_SESSION_INDEX.md             # Master index
+├── 25337_01_Subtask11_Testing_Complete.md
+├── 25337_02_Accessibility_Select_Fix.md
+├── 25337_03_CyWait_Removal.md
+├── 25337_04_File_Corruption_Recovery.md
+└── 25337_05_TypeScript_Errors_Fixed.md
+```
+
+**Permanent documentation also updated:**
+
+```
+.tasks/25337-workspace-auto-layout/
+├── CONVERSATION_SUBTASK_11.md            # In git
+├── SUBTASK_11_TESTING_COMPLETE.md        # In git
+└── ACCESSIBILITY_SELECT_FIX.md           # In git
+```
+
+---
+
+## Best Practices
 
 ### DO:
 
-✅ Create TASK_BRIEF and TASK_SUMMARY at start  
-✅ Create CONVERSATION_SUBTASK_N for each subtask  
-✅ APPEND to existing documents (don't rewrite)  
-✅ Wait for user verification before creating TASK_COMPLETE  
-✅ Keep subtask numbering consistent with the plan  
-✅ Create additional specialized documents when needed (see below)
+- ✅ Use sequential numbering for easy following
+- ✅ Create descriptive, searchable filenames
+- ✅ Include code examples in session logs
+- ✅ Add "Key Takeaway" sections for lessons learned
+- ✅ Reference related files and documentation
+- ✅ Update SESSION_INDEX throughout the session
 
 ### DON'T:
 
-❌ Create TASK_COMPLETE before user confirms all errors fixed  
-❌ Create random documents like PHASE_3_COMPLETE, EXECUTIVE_SUMMARY, FINAL_VERIFICATION  
-❌ Rewrite existing sections (only append)  
-❌ Create ADDITIONAL_FIX as separate document (add to relevant CONVERSATION_SUBTASK_N)  
-❌ Mark subtasks complete in TASK_SUMMARY without user verification
+- ❌ Skip the SESSION_INDEX file
+- ❌ Use ambiguous file names
+- ❌ Mix permanent and ephemeral documentation
+- ❌ Forget to update `.gitignore`
+- ❌ Assume session logs will persist forever
 
 ---
 
-## Additional Documents (When Needed)
+## Maintenance
 
-Beyond the core workflow documents, you SHOULD create additional specialized documents when appropriate:
+### Periodic Cleanup
 
-### Resource & Metrics Documents
+Session logs in `.tasks-log/` should be periodically cleaned up:
 
-✅ **RESOURCE_USAGE.md** - Track API calls, token usage, costs  
-✅ **COVERAGE_MATRIX.md** - Track test coverage progress  
-✅ **PERFORMANCE_METRICS.md** - Track build times, test execution times  
-✅ **ERROR_LOG.md** - Track recurring errors and solutions
+**Keep:**
 
-### Deliverables & Handoff Documents
+- README.md (always - it's in git)
+- Recent session logs (last 1-2 weeks)
+- Logs for active/ongoing work
 
-✅ **PULL_REQUEST.md** - PR description ready to copy/paste  
-✅ **RELEASE_NOTES.md** - User-facing changes for this task  
-✅ **MIGRATION_GUIDE.md** - Breaking changes and upgrade steps  
-✅ **API_CHANGES.md** - Document API modifications
+**Remove:**
 
-### Planning & Reference Documents
+- Old completed session logs
+- Duplicate information (if moved to permanent docs)
+- Logs older than 30 days (unless specifically valuable)
 
-✅ **DESIGN_DECISIONS.md** - Major architectural choices and rationale  
-✅ **ALTERNATIVES_CONSIDERED.md** - Options evaluated but not chosen  
-✅ **TECHNICAL_DEBT.md** - Known issues and future improvements  
-✅ **DEPENDENCIES.md** - External libraries added/removed
+### Searching Logs
 
-### Context & Learning Documents
+Use task number prefix to find all logs for a task:
 
-✅ **LESSONS_LEARNED.md** - Insights from challenges encountered  
-✅ **TESTING_STRATEGY.md** - Test approach for this specific task  
-✅ **TROUBLESHOOTING.md** - Common issues and solutions
-
-**Key Principle:** Create any document that adds value. The core workflow (TASK_BRIEF → TASK_SUMMARY → CONVERSATION_SUBTASK_N → TASK_COMPLETE) should not be polluted with completion documents before verification, but specialized documents are encouraged.
-
----
-
-## Document Hierarchy
-
-```
-.tasks/{task-id}/
-├── TASK_BRIEF.md              (immutable - original requirements)
-├── TASK_SUMMARY.md            (append-only - plan + progress updates)
-├── CONVERSATION_SUBTASK_1.md  (append-only - detailed work log)
-├── CONVERSATION_SUBTASK_N.md  (append-only - detailed work log)
-├── TASK_COMPLETE.md           (created ONLY after user verification)
-│
-└── Additional documents (create as needed):
-    ├── PULL_REQUEST.md
-    ├── RESOURCE_USAGE.md
-    ├── COVERAGE_MATRIX.md
-    ├── DESIGN_DECISIONS.md
-    ├── LESSONS_LEARNED.md
-    └── ...any other specialized documents
+```bash
+ls .tasks-log/25337_*
 ```
 
-## Progress Tracking
+Use grep to search content:
 
-Track progress by appending to TASK_SUMMARY.md:
-
-```markdown
----
-
-## Progress Update - October 28, 2025 14:30
-
-### Completed
-
-- ✅ Subtask 1: [description] - See CONVERSATION_SUBTASK_1.md
-- ✅ Subtask 2: [description] - See CONVERSATION_SUBTASK_2.md
-
-### In Progress
-
-- 🔄 Subtask 3: [description] - See CONVERSATION_SUBTASK_3.md
-
-### Remaining
-
-- ⏳ Subtask 4: [description]
-- ⏳ Subtask 5: [description]
-
-### Error Count
-
-- Start: 24 errors
-- Fixed: 19 errors
-- Remaining: 5 errors
+```bash
+grep -r "accessibility" .tasks-log/
 ```
 
-## Verification Process
+---
 
-1. AI makes changes
-2. AI asks user to verify: "Please run `npx tsc -b` and confirm the error count"
-3. User provides actual results
-4. If errors remain: Continue fixing, append to current CONVERSATION_SUBTASK_N
-5. If all errors resolved: User says "all clear"
-6. ONLY THEN: Create TASK_COMPLETE.md
+## Summary
 
-## Anti-Patterns to Avoid
-
-❌ Creating completion documents before user verification  
-❌ Creating multiple summary documents (EXECUTIVE_SUMMARY, FINAL_VERIFICATION, etc.)  
-❌ Claiming success without checking `tsc -b` output  
-❌ Rewriting TASK_SUMMARY instead of appending  
-❌ Creating PHASE_N documents (use CONVERSATION_SUBTASK_N instead)  
-❌ Orphan documents like ADDITIONAL_FIX (merge into relevant subtask)
-
-## Example Workflow
-
-1. User creates TASK_BRIEF
-2. AI analyzes and creates TASK_SUMMARY with plan
-3. AI creates CONVERSATION_SUBTASK_1.md and starts work
-4. AI appends fixes to CONVERSATION_SUBTASK_1.md
-5. AI asks user to verify
-6. User reports: "Still 5 errors"
-7. AI appends to CONVERSATION_SUBTASK_1.md with additional fixes
-8. AI asks user to verify again
-9. User confirms: "Subtask 1 complete"
-10. AI appends status to TASK_SUMMARY.md
-11. AI creates CONVERSATION_SUBTASK_2.md
-12. ... repeat for all subtasks ...
-13. User confirms: "All errors resolved"
-14. AI creates TASK_COMPLETE.md
-15. Done!
+- **Permanent docs** (`.tasks/`) = Long-term, reviewed, in git
+- **Session logs** (`.tasks-log/`) = Detailed, ephemeral, local only
+- **Naming format**: `{TASK}_{INDEX}_{NAME}.md`
+- **Always create**: SESSION_INDEX as `{TASK}_00_SESSION_INDEX.md`
+- **Git**: README is committed, logs are excluded
+- **Remember**: Session logs may be cleaned up!
 
 ---
 
-**Key Principle:** Append, don't rewrite. Verify with user, don't assume.
+**AI agents should use this two-tier system for all task documentation.**
