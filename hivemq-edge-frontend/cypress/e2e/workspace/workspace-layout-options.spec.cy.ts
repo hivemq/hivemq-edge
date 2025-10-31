@@ -49,6 +49,9 @@ describe('Workspace Layout - Options', () => {
   })
 
   it('should open layout options drawer', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Click options button
     workspacePage.layoutControls.optionsButton.click()
 
@@ -58,6 +61,9 @@ describe('Workspace Layout - Options', () => {
   })
 
   it('should show different options for different algorithms', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Select Dagre algorithm
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
     workspacePage.layoutControls.optionsButton.click()
@@ -81,6 +87,9 @@ describe('Workspace Layout - Options', () => {
   })
 
   it('should close drawer on cancel', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Open drawer
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
     workspacePage.layoutControls.optionsButton.click()
@@ -94,6 +103,9 @@ describe('Workspace Layout - Options', () => {
   })
 
   it('should apply layout with modified options', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Select algorithm and open options
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
     workspacePage.layoutControls.optionsButton.click()
@@ -108,9 +120,6 @@ describe('Workspace Layout - Options', () => {
     // Apply options (this will also apply layout)
     workspacePage.layoutControls.optionsDrawer.applyButton.click()
 
-    // Wait for layout to apply
-    cy.wait(1000)
-
     // Drawer should close
     workspacePage.layoutControls.optionsDrawer.drawer.should('not.exist')
 
@@ -119,6 +128,7 @@ describe('Workspace Layout - Options', () => {
   })
 
   it('should show no options for null algorithm selection', () => {
+    workspacePage.canvasToolbar.expandButton.click()
     // Open options drawer without selecting algorithm (if possible)
     // Or with MANUAL selected
     workspacePage.layoutControls.optionsButton.click()
