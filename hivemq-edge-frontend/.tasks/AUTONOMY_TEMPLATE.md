@@ -35,6 +35,137 @@ When a user mentions working on a task:
 
 ---
 
+## 🚨 CRITICAL RULE #2: NEVER Declare Test-Related Subtasks Complete Without Running Tests
+
+**ABSOLUTE REQUIREMENT: If a subtask involves ANY test changes (component, E2E, unit), you MUST run those tests and verify they pass BEFORE declaring the subtask complete.**
+
+### The Rule
+
+**NEVER:**
+
+- ❌ Write a completion summary without running tests
+- ❌ Create a "SUBTASK COMPLETE" document without test verification
+- ❌ Claim "all tests passing" without actually running them
+- ❌ Mark a test-related subtask as done without seeing green results
+- ❌ Say "tests should work" or "tests are expected to pass"
+
+**ALWAYS:**
+
+- ✅ Run the actual test command (component, E2E, unit)
+- ✅ Read the actual test output
+- ✅ Verify the pass/fail count
+- ✅ If tests fail, FIX THEM before proceeding
+- ✅ Only declare complete after seeing real passing results
+- ✅ Include the actual test output in your completion summary
+
+### What Qualifies as a "Test-Related Subtask"
+
+A subtask involves tests if it includes ANY of:
+
+- Creating new test files
+- Modifying existing test files (.spec.ts, .spec.tsx, .spec.cy.ts, .cy.tsx)
+- Updating test utilities or Page Objects
+- Changing code that has test coverage
+- Adding/updating E2E tests
+- Adding/updating component tests
+- Adding/updating unit tests
+- Updating test configuration
+
+### Required Verification Steps
+
+**For Component Tests:**
+
+```bash
+# MUST run this before declaring complete
+pnpm cypress:run:component --spec "path/to/ComponentName.spec.cy.tsx"
+
+# Check the output shows ALL tests passing
+# Example expected output:
+#   ✓ test name 1
+#   ✓ test name 2
+#   10 passing (4s)
+```
+
+**For E2E Tests:**
+
+```bash
+# MUST run this before declaring complete
+pnpm cypress:run:e2e --spec "cypress/e2e/path/to/test.spec.cy.ts"
+
+# Verify all tests pass
+```
+
+**For All Layout Tests (example):**
+
+```bash
+# If you modified multiple test files, run them all
+pnpm cypress:run:e2e --spec "cypress/e2e/workspace/workspace-layout*.spec.cy.ts"
+```
+
+### Completion Documentation Requirements
+
+When documenting subtask completion involving tests, you MUST include:
+
+1. **The actual command you ran**
+2. **The actual test output** (pass/fail counts)
+3. **Verification that all tests passed**
+
+**Example - CORRECT completion documentation:**
+
+```markdown
+## Test Results
+
+Ran: `pnpm cypress:run:component --spec "src/components/Toolbar.spec.cy.tsx"`
+
+Output:
+```
+
+Toolbar
+✓ should render correctly (234ms)
+✓ should handle clicks (156ms)
+✓ should be accessible (89ms)
+
+3 passing (2s)
+
+```
+
+✅ All tests passing - subtask complete.
+```
+
+**Example - INCORRECT (DO NOT DO THIS):**
+
+```markdown
+## Subtask Complete ❌
+
+Updated the toolbar tests. All tests should pass. ← NO! Must actually run them!
+```
+
+### Why This Rule Exists
+
+**Past mistakes:**
+
+- Declaring tests complete without running them
+- Tests actually failing when user runs them
+- Wasting user's time with broken tests
+- Loss of trust from overconfident claims
+
+**The consequence:**
+
+- User frustration and wasted time
+- Having to re-run and fix tests manually
+- Undermines confidence in AI work
+
+### Exception: When You Cannot Run Tests
+
+If you genuinely cannot run tests (e.g., dev server not available, missing dependencies), you MUST:
+
+1. ✅ Clearly state: "I cannot verify these tests without [specific requirement]"
+2. ✅ Provide the exact command the user should run
+3. ✅ State: "Subtask pending verification - awaiting test results"
+4. ❌ Do NOT claim the subtask is complete
+
+---
+
 ## Starting a New Conversation Thread ✅
 
 **Problem:** When starting a new conversation, the AI needs to know which task to work on and where to find its history.
