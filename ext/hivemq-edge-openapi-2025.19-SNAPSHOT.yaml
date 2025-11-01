@@ -14,7 +14,7 @@ info:
     ## OpenAPI
     HiveMQ's REST API provides an OpenAPI 3.0 schema definition that can imported into popular API tooling (e.g. Postman) or can be used to generate client-code for multiple programming languages.
   title: HiveMQ Edge REST API
-  version: 2025.19-SNAPSHOT
+  version: 2025.14-SNAPSHOT
   x-logo:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
@@ -94,6 +94,9 @@ tags:
       These endpoints can be used to retrieve states of clients for the Data Hub.
 
     name: Data Hub - State
+  - description: |
+      These endpoints can be used to retrieve the different elements of the Edge topology
+    name: Domain
   - description: |
       These endpoints can be used to manage Pulse and its assets.
     name: Pulse
@@ -3697,7 +3700,7 @@ paths:
       summary: Add a new Adapter
       tags:
         - Protocol Adapters
-  /api/v1/management/protocol-adapters/northboundMappings:
+  /api/v1/management/protocol-adapters/mappings/northboundMappings:
     get:
       description: Get all northbound mappings
       operationId: get-northboundMappings
@@ -3706,12 +3709,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NorthboundMappingList'
+                $ref: '#/components/schemas/NorthboundMappingOwnerList'
           description: Success
-      summary: Get the mappings for northbound messages.
+      summary: Get all the northbound mappings.
       tags:
         - Protocol Adapters
-  /api/v1/management/protocol-adapters/southboundMappings:
+        - Domain
+  /api/v1/management/protocol-adapters/mappings/southboundMappings:
     get:
       description: Get all southbound mappings.
       operationId: get-southboundMappings
@@ -3720,11 +3724,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SouthboundMappingList'
+                $ref: '#/components/schemas/SouthboundMappingOwnerList'
           description: Success
-      summary: Get all  southbound mappings.
+      summary: Get all the southbound mappings.
       tags:
         - Protocol Adapters
+        - Domain
   /api/v1/management/protocol-adapters/status:
     get:
       description: Obtain the details.
@@ -3796,11 +3801,12 @@ paths:
                           node: ns=2;i=test2
                         name: tag2
               schema:
-                $ref: '#/components/schemas/DomainTagList'
+                $ref: '#/components/schemas/DomainTagOwnerList'
           description: Success
-      summary: Get the list of all domain tags created in this Edge instance
+      summary: Get the list of all tags created in this Edge instance
       tags:
         - Protocol Adapters
+        - Domain
   /api/v1/management/protocol-adapters/tags/{tagName}:
     get:
       description: Get a domain tag created in this Edge instance
@@ -4060,6 +4066,7 @@ paths:
       summary: Get the list of all topic filters created in this Edge instance
       tags:
         - Topic Filters
+        - Domain
     post:
       description: Add a new topic filter.
       operationId: add-topicFilters
@@ -4583,6 +4590,7 @@ paths:
       operationId: get-managed-assets
       tags:
         - Pulse
+        - Domain
       responses:
         '200':
           content:
@@ -6450,6 +6458,44 @@ components:
             $ref: '#/components/schemas/DomainTag'
       required:
         - items
+    NorthboundMappingOwnerList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            type: object
+            required:
+              - adapterId
+              - mapping
+            properties:
+              adapterId:
+                type: string
+                description: The id of the adapter owning the mapping
+              mapping:
+                $ref: '#/components/schemas/NorthboundMapping'
+      required:
+        - items
+    SouthboundMappingOwnerList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            type: object
+            required:
+              - adapterId
+              - mapping
+            properties:
+              adapterId:
+                type: string
+                description: The id of the adapter owning the mapping
+              mapping:
+                $ref: '#/components/schemas/SouthboundMapping'
+      required:
+        - items
     TagSchema:
       type: object
       properties:
@@ -6458,6 +6504,25 @@ components:
         protocolId:
           type: string
           description: The id assigned to the protocol adapter type
+    DomainTagOwnerList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            type: object
+            required:
+              - adapterId
+              - mapping
+            properties:
+              adapterId:
+                type: string
+                description: The id of the adapter owning the tag
+              mapping:
+                $ref: '#/components/schemas/DomainTag'
+      required:
+        - items
     ProtocolAdapterCategory:
       type: object
       description: The category of the adapter

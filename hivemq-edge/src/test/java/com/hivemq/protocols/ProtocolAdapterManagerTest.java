@@ -47,6 +47,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -102,7 +103,7 @@ class ProtocolAdapterManagerTest {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
         when(protocolAdapterWritingService.startWriting(any(),
                 any(),
-                any())).thenReturn(true);
+                any())).thenReturn(CompletableFuture.completedFuture(true));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
         final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
@@ -155,7 +156,7 @@ class ProtocolAdapterManagerTest {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
         when(protocolAdapterWritingService
                 .startWriting(any(), any(), any()))
-                .thenReturn(true);
+                .thenReturn(CompletableFuture.completedFuture(true));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
@@ -188,7 +189,7 @@ class ProtocolAdapterManagerTest {
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
         when(protocolAdapterWritingService.startWriting(any(),
                 any(),
-                any())).thenReturn(true);
+                any())).thenReturn(CompletableFuture.completedFuture(true));
 
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
         final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
