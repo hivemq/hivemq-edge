@@ -756,7 +756,37 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     }
                     yield errorResponse(new InternalServerError(null));
                 }
-            };
+            } catch (final @NotNull ExecutionException e) {
+                if (endTime - startTime > RETRY_TIMEOUT_MILLIS) {
+                    return switch (tagSchemaCreationOutput.getStatus()) {
+                        case NOT_SUPPORTED ->
+                                errorResponse(new AdapterOperationNotSupportedError("Operation not supported:" +
+                                        e.getCause().getMessage()));
+                        case ADAPTER_NOT_STARTED ->
+                                errorResponse(new AdapterOperationNotSupportedError("Adapter not started: " +
+                                        e.getCause().getMessage()));
+                        case TAG_NOT_FOUND -> errorResponse(new DomainTagNotFoundError(tagName));
+                        default -> {
+                            log.warn("Exception was raised during creation of json schema for writing to PLCs.");
+                            if (log.isDebugEnabled()) {
+                                log.debug("Original exception: ", e);
+                            }
+                            yield errorResponse(new InternalServerError(null));
+                        }
+                    };
+                }
+            }
+            try {
+                TimeUnit.MILLISECONDS.sleep(RETRY_INTERVAL_MILLIS);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("Creation of json schema for writing to PLCs were interrupted.");
+                log.debug("Original exception: ", e);
+                if (endTime - startTime > RETRY_TIMEOUT_MILLIS) {
+                    return errorResponse(new InternalServerError(null));
+                }
+            }
+            endTime = System.currentTimeMillis();
         }
     }
 
