@@ -204,7 +204,7 @@ public class OpcUaClientConnection {
         final var subscription = subscriptionOptional.get();
         log.trace("Creating Subscription for OPC UA client");
 
-        context.set(new ConnectionContext(subscription.getClient(), faultListener, activityListener));
+        context.set(new ConnectionContext(subscription.getClient(), faultListener, activityListener, subscriptionLifecycleHandler));
         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         client.addSessionActivityListener(activityListener);
 
@@ -247,6 +247,40 @@ public class OpcUaClientConnection {
         if(ctx != null) {
             quietlyCloseClient(ctx.client(), false, ctx.faultListener(), ctx.activityListener());
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        }
+    }
+
+    /**
+     * Checks if the connection is healthy by verifying both:
+     * 1. Session is active (client connection exists and session is present)
+     * 2. Keep-alive messages are being received (subscription is healthy)
+     *
+     * @return true if connection is healthy, false otherwise
+     */
+    public boolean isHealthy() {
+        final ConnectionContext ctx = context.get();
+        if (ctx == null) {
+            log.debug("Connection health check failed: no connection context");
+            return false;
+        }
+
+        try {
+            // Check 1: Session is active
+            if (ctx.client().getSession().isEmpty()) {
+                log.debug("Connection health check failed: session inactive for adapter '{}'", adapterId);
+                return false;
+            }
+
+            // Check 2: Keep-alive is healthy
+            if (!ctx.subscriptionHandler().isKeepAliveHealthy()) {
+                log.debug("Connection health check failed: keep-alive timeout for adapter '{}'", adapterId);
+                return false;
+            }
+
+            return true;
+        } catch (final UaException e) {
+            log.debug("Connection health check failed with exception for adapter '{}'", adapterId, e);
+            return false;
         }
     }
 
@@ -361,6 +395,9 @@ public class OpcUaClientConnection {
         }
     }
 
-    private record ConnectionContext(@NotNull OpcUaClient client, @NotNull ServiceFaultListener faultListener, @NotNull SessionActivityListener activityListener) {
+    private record ConnectionContext(@NotNull OpcUaClient client,
+                                     @NotNull ServiceFaultListener faultListener,
+                                     @NotNull SessionActivityListener activityListener,
+                                     @NotNull OpcUaSubscriptionLifecycleHandler subscriptionHandler) {
     }
 }

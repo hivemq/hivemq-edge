@@ -27,6 +27,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
@@ -78,6 +79,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull ScheduledExecutorService retryScheduler = Executors.newSingleThreadScheduledExecutor();
     private final @NotNull AtomicReference<ScheduledFuture<?>> retryFuture = new AtomicReference<>();
 
+    // Stored for reconnection - set during start()
+    private volatile ParsedConfig parsedConfig;
+    private volatile ModuleServices moduleServices;
+
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input) {
@@ -111,6 +116,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         } else if (result instanceof Success<ParsedConfig, String>(final ParsedConfig result1)) {
             parsedConfig = result1;
+            // Store for reconnection
+            this.parsedConfig = result1;
+            this.moduleServices = input.moduleServices();
         } else {
             output.failStart(new IllegalStateException("Unexpected result type: " + result.getClass().getName()),
                     "Failed to parse configuration for OPC UA client");
@@ -154,6 +162,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         // Cancel any pending retries
         cancelRetry();
 
+        // Clear stored configuration to prevent reconnection after stop
+        this.parsedConfig = null;
+        this.moduleServices = null;
+
         final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
         if (conn != null) {
             conn.stop();
@@ -161,6 +173,56 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             log.info("Tried stopping stopped OPC UA protocol adapter {}", adapterId);
         }
         output.stoppedSuccessfully();
+    }
+
+    /**
+     * Triggers reconnection by stopping the current connection and creating a new one.
+     * Used for runtime reconnection when health check detects issues.
+     * Requires that start() has been called previously to initialize parsedConfig and moduleServices.
+     */
+    private void reconnect() {
+        log.info("Reconnecting OPC UA adapter '{}'", adapterId);
+
+        // Verify we have the necessary configuration
+        if (parsedConfig == null || moduleServices == null) {
+            log.error("Cannot reconnect OPC UA adapter '{}' - adapter has not been started yet", adapterId);
+            return;
+        }
+
+        // Cancel any pending retries
+        cancelRetry();
+
+        // Stop and clean up current connection
+        final OpcUaClientConnection oldConn = opcUaClientConnection.getAndSet(null);
+        if (oldConn != null) {
+            oldConn.stop();
+            log.debug("Stopped old connection for OPC UA adapter '{}'", adapterId);
+        }
+
+        // Create new connection
+        final OpcUaClientConnection newConn = new OpcUaClientConnection(adapterId,
+                tagList,
+                protocolAdapterState,
+                moduleServices.protocolAdapterTagStreamingService(),
+                dataPointFactory,
+                moduleServices.eventService(),
+                protocolAdapterMetricsService,
+                config);
+
+        // Set as current connection and attempt connection with retry logic
+        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        if (opcUaClientConnection.compareAndSet(null, newConn)) {
+            // Create a minimal ProtocolAdapterStartInput for attemptConnection
+            final ProtocolAdapterStartInput input = new ProtocolAdapterStartInput() {
+                @Override
+                public ModuleServices moduleServices() {
+                    return moduleServices;
+                }
+            };
+            attemptConnection(newConn, parsedConfig, input);
+        } else {
+            log.warn("OPC UA adapter '{}' reconnect failed - another connection was created concurrently", adapterId);
+        }
     }
 
     @Override
@@ -369,7 +431,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         final int retryIntervalSeconds = config.getRetryInterval();
         final ScheduledFuture<?> future = retryScheduler.schedule(() -> {
             // Check if adapter was stopped before retry executes
-            if (opcUaClientConnection.get() == null) {
+            if (this.parsedConfig == null || this.moduleServices == null) {
                 log.debug("OPC UA adapter '{}' retry cancelled - adapter was stopped", adapterId);
                 return;
             }
@@ -380,15 +442,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             final OpcUaClientConnection newConn = new OpcUaClientConnection(adapterId,
                     tagList,
                     protocolAdapterState,
-                    input.moduleServices().protocolAdapterTagStreamingService(),
+                    this.moduleServices.protocolAdapterTagStreamingService(),
                     dataPointFactory,
-                    input.moduleServices().eventService(),
+                    this.moduleServices.eventService(),
                     protocolAdapterMetricsService,
                     config);
 
             // Set as current connection and attempt
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             if (opcUaClientConnection.compareAndSet(null, newConn)) {
-                attemptConnection(newConn, parsedConfig, input);
+                attemptConnection(newConn, this.parsedConfig, input);
             } else {
                 log.debug("OPC UA adapter '{}' retry skipped - connection already exists", adapterId);
             }
