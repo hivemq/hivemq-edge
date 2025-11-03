@@ -78,6 +78,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull ScheduledExecutorService retryScheduler = Executors.newSingleThreadScheduledExecutor();
     private final @NotNull AtomicReference<ScheduledFuture<?>> retryFuture = new AtomicReference<>();
+    private final @NotNull ScheduledExecutorService healthCheckScheduler = Executors.newSingleThreadScheduledExecutor();
+    private final @NotNull AtomicReference<ScheduledFuture<?>> healthCheckFuture = new AtomicReference<>();
 
     // Stored for reconnection - set during start()
     private volatile ParsedConfig parsedConfig;
@@ -159,8 +161,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             final @NotNull ProtocolAdapterStopOutput output) {
         log.info("Stopping OPC UA protocol adapter {}", adapterId);
 
-        // Cancel any pending retries
+        // Cancel any pending retries and health checks
         cancelRetry();
+        cancelHealthCheck();
 
         // Clear stored configuration to prevent reconnection after stop
         this.parsedConfig = null;
@@ -189,8 +192,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
 
-        // Cancel any pending retries
+        // Cancel any pending retries and health checks
         cancelRetry();
+        cancelHealthCheck();
 
         // Stop and clean up current connection
         final OpcUaClientConnection oldConn = opcUaClientConnection.getAndSet(null);
@@ -225,12 +229,54 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
     }
 
+    /**
+     * Schedules periodic health check that monitors connection health and triggers reconnection if needed.
+     */
+    private void scheduleHealthCheck() {
+        final int healthCheckIntervalSeconds = config.getHealthCheckInterval();
+        final ScheduledFuture<?> future = healthCheckScheduler.scheduleAtFixedRate(() -> {
+            final OpcUaClientConnection conn = opcUaClientConnection.get();
+            if (conn == null) {
+                log.debug("Health check skipped - no active connection for adapter '{}'", adapterId);
+                return;
+            }
+
+            if (!conn.isHealthy()) {
+                log.warn("Health check failed for adapter '{}' - triggering reconnection", adapterId);
+                reconnect();
+            } else {
+                log.debug("Health check passed for adapter '{}'", adapterId);
+            }
+        }, healthCheckIntervalSeconds, healthCheckIntervalSeconds, TimeUnit.SECONDS);
+
+        // Store future so it can be cancelled if needed
+        final ScheduledFuture<?> oldFuture = healthCheckFuture.getAndSet(future);
+        if (oldFuture != null && !oldFuture.isDone()) {
+            oldFuture.cancel(false);
+        }
+
+        log.debug("Scheduled connection health check every {} seconds for adapter '{}'",
+                healthCheckIntervalSeconds, adapterId);
+    }
+
+    /**
+     * Cancels any pending health check.
+     */
+    private void cancelHealthCheck() {
+        final ScheduledFuture<?> future = healthCheckFuture.getAndSet(null);
+        if (future != null && !future.isDone()) {
+            future.cancel(false);
+            log.debug("Cancelled health check for adapter '{}'", adapterId);
+        }
+    }
+
     @Override
     public void destroy() {
         log.info("Destroying OPC UA protocol adapter {}", adapterId);
 
-        // Cancel any pending retries
+        // Cancel any pending retries and health checks
         cancelRetry();
+        cancelHealthCheck();
 
         // Shutdown retry scheduler
         retryScheduler.shutdown();
@@ -241,6 +287,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             retryScheduler.shutdownNow();
+        }
+
+        // Shutdown health check scheduler
+        healthCheckScheduler.shutdown();
+        try {
+            if (!healthCheckScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                healthCheckScheduler.shutdownNow();
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            healthCheckScheduler.shutdownNow();
         }
 
         final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
@@ -398,8 +455,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
         CompletableFuture.supplyAsync(() -> conn.start(parsedConfig)).whenComplete((success, throwable) -> {
             if (success && throwable == null) {
-                // Connection succeeded - cancel any pending retries
+                // Connection succeeded - cancel any pending retries and start health check
                 cancelRetry();
+                scheduleHealthCheck();
                 log.info("OPC UA adapter '{}' connected successfully", adapterId);
             } else {
                 // Connection failed - clean up and schedule retry

@@ -68,8 +68,6 @@ public class OpcUaClientConnection {
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
 
     private final @NotNull AtomicReference<ConnectionContext> context = new AtomicReference<>();
-    private final @NotNull ScheduledExecutorService healthCheckScheduler = Executors.newSingleThreadScheduledExecutor();
-    private final @NotNull AtomicReference<ScheduledFuture<?>> healthCheckFuture = new AtomicReference<>();
 
     OpcUaClientConnection(
             final @NotNull String adapterId,
@@ -208,18 +206,12 @@ public class OpcUaClientConnection {
         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         client.addSessionActivityListener(activityListener);
 
-        // Schedule periodic health check to detect stale connections
-        scheduleHealthCheck();
-
         log.info("Client created and connected successfully");
         return true;
     }
 
     synchronized void stop() {
         log.info("Stopping OPC UA client");
-
-        // Cancel health check
-        cancelHealthCheck();
 
         final ConnectionContext ctx = context.get();
         if(ctx != null) {
@@ -230,18 +222,6 @@ public class OpcUaClientConnection {
 
     void destroy() {
         log.info("Destroying OPC UA client");
-
-        // Cancel health check and shutdown scheduler
-        cancelHealthCheck();
-        healthCheckScheduler.shutdown();
-        try {
-            if (!healthCheckScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                healthCheckScheduler.shutdownNow();
-            }
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            healthCheckScheduler.shutdownNow();
-        }
 
         final ConnectionContext ctx = context.get();
         if(ctx != null) {
@@ -340,58 +320,6 @@ public class OpcUaClientConnection {
             client.disconnect();
         } catch (final UaException e) {
             log.error("Failed to disconnect: {}", e.getMessage());
-        }
-    }
-
-    /**
-     * Schedules periodic health checks to detect stale connections.
-     * Runs at configured health check interval to verify session is active.
-     */
-    private void scheduleHealthCheck() {
-        final int healthCheckIntervalSeconds = config.getHealthCheckInterval();
-        final ScheduledFuture<?> future = healthCheckScheduler.scheduleAtFixedRate(() -> {
-            try {
-                final ConnectionContext ctx = context.get();
-                if (ctx == null) {
-                    log.trace("Health check skipped - client not connected for adapter '{}'", adapterId);
-                    return;
-                }
-
-                final OpcUaClient client = ctx.client();
-                if (client.getSession().isEmpty()) {
-                    log.warn("Health check failed for adapter '{}' - session is not active", adapterId);
-                    eventService
-                            .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                            .withMessage("Connection health check failed for adapter '" + adapterId + "' - session inactive")
-                            .withSeverity(Event.SEVERITY.WARN)
-                            .fire();
-                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                } else {
-                    log.trace("Health check passed for adapter '{}' - session is active", adapterId);
-                }
-            } catch (final Exception e) {
-                log.warn("Health check exception for adapter '{}'", adapterId, e);
-            }
-        }, healthCheckIntervalSeconds, healthCheckIntervalSeconds, TimeUnit.SECONDS);
-
-        // Store future and cancel any existing health check
-        final ScheduledFuture<?> oldFuture = healthCheckFuture.getAndSet(future);
-        if (oldFuture != null && !oldFuture.isDone()) {
-            oldFuture.cancel(false);
-        }
-
-        log.debug("Scheduled connection health check every {} seconds for adapter '{}'",
-                healthCheckIntervalSeconds, adapterId);
-    }
-
-    /**
-     * Cancels any pending health check.
-     */
-    private void cancelHealthCheck() {
-        final ScheduledFuture<?> future = healthCheckFuture.getAndSet(null);
-        if (future != null && !future.isDone()) {
-            future.cancel(false);
-            log.debug("Cancelled health check for adapter '{}'", adapterId);
         }
     }
 
