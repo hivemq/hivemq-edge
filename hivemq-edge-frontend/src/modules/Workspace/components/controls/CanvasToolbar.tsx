@@ -11,7 +11,7 @@ import {
   useDisclosure,
   useBreakpointValue,
 } from '@chakra-ui/react'
-import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from '@chakra-ui/icons'
+import { ChevronRightIcon, SearchIcon } from '@chakra-ui/icons'
 import { LuNetwork, LuSettings } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
@@ -77,16 +77,6 @@ const CanvasToolbar: FC = () => {
           display="flex"
           flexDirection={{ base: 'column', xl: 'row' }}
           transition="all 0.4s cubic-bezier(0.4,0,0.2,1)"
-          // maxWidth={{
-          //   base: expanded ? '100vw' : '56px',
-          //   md: expanded ? '90vw' : '56px',
-          //   xl: expanded ? TOOLBAR.MAX_WIDTH : TOOLBAR.MIN_WIDTH,
-          // }}
-          // width={{
-          //   base: expanded ? '100vw' : 'auto',
-          //   md: expanded ? 'auto' : 'auto',
-          // }}
-          // minHeight={{ base: '48px', md: '40px' }}
           boxShadow="md"
           borderRadius="md"
           position="relative"
@@ -104,11 +94,7 @@ const CanvasToolbar: FC = () => {
               <>
                 <SearchIcon mr="2px" />
                 <Icon as={LuNetwork} boxSize="18px" />
-                <Icon
-                  as={ChevronRightIcon}
-                  boxSize="24px"
-                  // transform={{ base: 'rotate(-90deg)', xl: 'rotate(0deg)' }}
-                />
+                <Icon as={ChevronRightIcon} boxSize="24px" transform={{ base: 'rotate(90deg)', xl: 'rotate(0deg)' }} />
               </>
             }
             onClick={() => setExpanded(true)}
@@ -147,13 +133,7 @@ const CanvasToolbar: FC = () => {
                 <DrawerFilterToolbox />
               </Box>
             </VStack>
-            <Divider
-              orientation={dividerOrientation}
-              // h={{ base: 'auto', xl: '24px' }}
-              // w={{ base: 'auto', xl: 'auto' }}
-              borderColor="gray.300"
-              _dark={{ borderColor: 'gray.600' }}
-            />
+            <Divider orientation={dividerOrientation} borderColor="gray.300" _dark={{ borderColor: 'gray.600' }} />
 
             <VStack
               role="region"
@@ -191,19 +171,15 @@ const CanvasToolbar: FC = () => {
                 </Box>
               </Box>
             </VStack>
-            <Divider
-              orientation={dividerOrientation}
-              // h={{ base: 'auto', xl: '24px' }}
-              // w={{ base: 'auto', xl: 'auto' }}
-              borderColor="gray.300"
-              _dark={{ borderColor: 'gray.600' }}
-            />
+            <Divider orientation={dividerOrientation} borderColor="gray.300" _dark={{ borderColor: 'gray.600' }} />
             <IconButton
               data-testid="toolbox-search-collapse"
               aria-label={t('workspace.controls.collapse')}
               aria-expanded="true"
               aria-controls="workspace-toolbar-content"
-              icon={<Icon as={ChevronLeftIcon} boxSize="24px" />}
+              icon={
+                <Icon as={ChevronRightIcon} boxSize="24px" transform={{ base: 'rotate(-90deg)', xl: 'rotate(0deg)' }} />
+              }
               onClick={() => setExpanded(false)}
               variant="ghost"
               size="sm"
