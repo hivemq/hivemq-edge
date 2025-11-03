@@ -38,7 +38,8 @@ public class BidirectionalOpcUaSpecificAdapterConfig extends OpcUaSpecificAdapte
             @JsonProperty("keepAliveFailuresAllowed") final @Nullable Integer keepAliveFailuresAllowed,
             @JsonProperty("connectionTimeout") final @Nullable Integer connectionTimeout,
             @JsonProperty("healthCheckInterval") final @Nullable Integer healthCheckInterval,
-            @JsonProperty("retryInterval") final @Nullable Integer retryInterval) {
-        super(uri, overrideUri, applicationUri, auth, tls, opcuaToMqttConfig, security, sessionTimeout, requestTimeout, keepAliveInterval, keepAliveFailuresAllowed, connectionTimeout, healthCheckInterval, retryInterval);
+            @JsonProperty("retryInterval") final @Nullable Integer retryInterval,
+            @JsonProperty("autoReconnect") final @Nullable Boolean autoReconnect) {
+        super(uri, overrideUri, applicationUri, auth, tls, opcuaToMqttConfig, security, sessionTimeout, requestTimeout, keepAliveInterval, keepAliveFailuresAllowed, connectionTimeout, healthCheckInterval, retryInterval, autoReconnect);
     }
 }
