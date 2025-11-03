@@ -308,7 +308,45 @@
           "title_warning": "The policy is not completely valid and will not successfully run on your topology.",
           "description_warning": "The following parts of the policy needs correction:",
           "title_success": "The policy is fully valid to run on your topology.",
-          "description_success": "You can now publish it"
+          "description_success": "You can now publish it",
+          "details": {
+            "header": "What will be published",
+            "policy": {
+              "title": "Policy Details",
+              "id": "Policy ID",
+              "type": "Type",
+              "status_new": "New",
+              "status_update": "Update",
+              "topicFilters": "Topic Filters",
+              "transitions": "Transitions"
+            },
+            "resources": {
+              "title": "Resources",
+              "empty": "No additional resources required",
+              "schemas": "Schemas",
+              "schemas_count_one": "Schema ({{count}})",
+              "schemas_count_other": "Schemas ({{count}})",
+              "scripts": "Scripts",
+              "scripts_count_one": "Script ({{count}})",
+              "scripts_count_other": "Scripts ({{count}})",
+              "version": "Version",
+              "type": "Type",
+              "status_new": "New",
+              "status_update": "Update"
+            },
+            "json": {
+              "title": "JSON Payload",
+              "expand": "Show JSON",
+              "collapse": "Hide JSON",
+              "copy": "Copy to clipboard",
+              "copied": "Copied to clipboard",
+              "tabs": {
+                "policy": "Policy",
+                "schemas": "Schemas",
+                "scripts": "Scripts"
+              }
+            }
+          }
         },
         "cta": {
           "close": "Close",

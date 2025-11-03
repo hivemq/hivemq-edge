@@ -399,7 +399,42 @@ export interface DraftPolicy {
 export type CombinedPolicy =
   | (DataPolicy & { type: DesignerPolicyType.DATA_POLICY })
   | (BehaviorPolicy & { type: DesignerPolicyType.BEHAVIOR_POLICY })
-  | (DraftPolicy & { type: DesignerPolicyType.CREATE_POLICY })
+
+/**
+ * Extracted policy summary for display in success report
+ */
+export interface PolicySummary {
+  id: string
+  type: DataHubNodeType.DATA_POLICY | DataHubNodeType.BEHAVIOR_POLICY
+  isNew: boolean // true = creating new, false = updating existing
+  topicFilters?: string[] // for Data Policies
+  transitions?: string[] // for Behavior Policies (transition events)
+}
+
+/**
+ * Extracted resource summary for display in success report
+ */
+export interface ResourceSummary {
+  id: string
+  version: number | ResourceWorkingVersion
+  type: 'SCHEMA' | 'FUNCTION'
+  isNew: boolean // true = creating new, false = updating existing
+  metadata: {
+    schemaType?: 'JSON' | 'PROTOBUF' // for schemas
+    functionType?: string // for scripts
+  }
+}
+
+/**
+ * Complete policy payload for JSON display
+ */
+export interface PolicyPayload {
+  policy: object
+  resources: {
+    schemas: object[]
+    scripts: object[]
+  }
+}
 
 export interface ReactFlowSchemaFormContext {
   functions: FunctionSpecs[]
