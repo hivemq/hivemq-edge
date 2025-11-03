@@ -1,10 +1,13 @@
 import type { FC } from 'react'
 import { useState } from 'react'
 import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
   Box,
-  Button,
   Code,
-  Collapse,
   HStack,
   Icon,
   Tab,
@@ -15,7 +18,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { LuChevronDown, LuChevronUp, LuCode2 } from 'react-icons/lu'
+import { LuCode2 } from 'react-icons/lu'
 
 import type { PolicyPayload } from '@datahub/types.ts'
 import CopyButton from './CopyButton.tsx'
@@ -31,7 +34,7 @@ export interface PolicyJsonViewProps {
  */
 export const PolicyJsonView: FC<PolicyJsonViewProps> = ({ payload }) => {
   const { t } = useTranslation('datahub')
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [tabIndex, setTabIndex] = useState(0)
 
   // Prepare JSON strings for display
   const policyJson = JSON.stringify(payload.policy, null, 2)
@@ -40,39 +43,26 @@ export const PolicyJsonView: FC<PolicyJsonViewProps> = ({ payload }) => {
   const allJson = JSON.stringify(payload, null, 2)
 
   return (
-    <Box borderWidth="1px" borderRadius="md" borderColor="gray.200" data-testid="policy-json-view">
-      {/* Toggle Button */}
-      <Button
-        width="100%"
-        onClick={() => setIsExpanded(!isExpanded)}
-        rightIcon={<Icon as={isExpanded ? LuChevronUp : LuChevronDown} />}
-        variant="ghost"
-        justifyContent="space-between"
-        borderRadius="md"
-        data-testid="json-toggle-button"
-        aria-expanded={isExpanded}
-        aria-controls="json-payload-content"
-      >
-        <HStack>
-          <Icon as={LuCode2} />
-          <Text>
-            {isExpanded
-              ? t('workspace.dryRun.report.success.details.json.collapse')
-              : t('workspace.dryRun.report.success.details.json.expand')}
-          </Text>
-        </HStack>
-      </Button>
+    <Accordion allowToggle data-testid="policy-json-view">
+      <AccordionItem border="1px" borderRadius="md" borderColor="gray.200">
+        <h2>
+          <AccordionButton data-testid="json-toggle-button">
+            <HStack flex="1" textAlign="left">
+              <Icon as={LuCode2} />
+              <Text>{t('workspace.dryRun.report.success.details.json.expand')}</Text>
+            </HStack>
+            <AccordionIcon />
+          </AccordionButton>
+        </h2>
 
-      {/* Collapsible Content */}
-      <Collapse in={isExpanded} animateOpacity>
-        <Box id="json-payload-content" p={4} borderTopWidth="1px" borderColor="gray.200">
+        <AccordionPanel pb={4} borderTopWidth="1px" borderColor="gray.200">
           {/* Copy All Button */}
           <HStack justifyContent="flex-end" mb={2}>
             <CopyButton content={allJson} label="Copy All" data-testid="copy-all-button" />
           </HStack>
 
           {/* Tabbed Interface */}
-          <Tabs size="sm" variant="enclosed" data-testid="json-tabs">
+          <Tabs size="sm" variant="enclosed" data-testid="json-tabs" index={tabIndex} onChange={setTabIndex}>
             <TabList>
               <Tab data-testid="tab-policy">{t('workspace.dryRun.report.success.details.json.tabs.policy')}</Tab>
               <Tab data-testid="tab-schemas">
@@ -168,9 +158,9 @@ export const PolicyJsonView: FC<PolicyJsonViewProps> = ({ payload }) => {
           <Text fontSize="xs" color="gray.500" mt={3}>
             📋 Complete JSON payload ready for publishing
           </Text>
-        </Box>
-      </Collapse>
-    </Box>
+        </AccordionPanel>
+      </AccordionItem>
+    </Accordion>
   )
 }
 

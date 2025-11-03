@@ -73,7 +73,7 @@ export const ResourcesBreakdown: FC<ResourcesBreakdownProps> = ({
         {/* Schemas Section */}
         {schemas.length > 0 && (
           <AccordionItem borderColor="gray.200">
-            <h3>
+            <h2>
               <AccordionButton
                 aria-label={t('workspace.dryRun.report.success.details.resources.schemas_count', {
                   count: schemas.length,
@@ -84,7 +84,7 @@ export const ResourcesBreakdown: FC<ResourcesBreakdownProps> = ({
                 </Box>
                 <AccordionIcon />
               </AccordionButton>
-            </h3>
+            </h2>
             <AccordionPanel pb={4}>
               <VStack align="stretch" spacing={3} data-testid="schemas-list">
                 {schemas.map((schema) => (
@@ -120,7 +120,7 @@ export const ResourcesBreakdown: FC<ResourcesBreakdownProps> = ({
         {/* Scripts Section */}
         {scripts.length > 0 && (
           <AccordionItem borderColor="gray.200">
-            <h3>
+            <h2>
               <AccordionButton
                 aria-label={t('workspace.dryRun.report.success.details.resources.scripts_count', {
                   count: scripts.length,
@@ -131,7 +131,7 @@ export const ResourcesBreakdown: FC<ResourcesBreakdownProps> = ({
                 </Box>
                 <AccordionIcon />
               </AccordionButton>
-            </h3>
+            </h2>
             <AccordionPanel pb={4}>
               <VStack align="stretch" spacing={3} data-testid="scripts-list">
                 {scripts.map((script) => (
