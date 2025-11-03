@@ -49,9 +49,11 @@ export function extractPolicySummary(
   // For Behavior Policies, extract transition events
   if (policyType === DataHubNodeType.BEHAVIOR_POLICY) {
     const behaviorPolicy = policyData as BehaviorPolicy
-    // Extract event names from onTransitions property keys
+    // Extract event names from each transition's property keys (excluding fromState and toState)
     summary.transitions = behaviorPolicy.onTransitions
-      ? Object.keys(behaviorPolicy.onTransitions).filter((key) => key !== 'fromState' && key !== 'toState')
+      ? behaviorPolicy.onTransitions.flatMap((transition) =>
+          Object.keys(transition).filter((key) => key !== 'fromState' && key !== 'toState')
+        )
       : []
   }
 

@@ -36,39 +36,47 @@ describe('PolicyOverview', () => {
     it('should render the component with Data Policy summary (new)', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockDataPolicySummaryNew} />)
 
-      cy.get('[data-testid="policy-overview"]').should('be.visible')
+      cy.getByTestId('policy-overview').should('be.visible')
       cy.contains('Policy Details').should('be.visible')
-      cy.get('[data-testid="policy-status-badge"]').should('contain', 'New')
-      cy.get('[data-testid="policy-type"]').should('contain', 'Data Policy')
-      cy.get('[data-testid="policy-id"]').should('contain', 'my-data-policy')
-      cy.get('[data-testid="topic-filters-list"]').should('be.visible')
-      cy.get('[data-testid="topic-filters-list"] li').should('have.length', 2)
+      cy.getByTestId('policy-status-badge').should('contain', 'New')
+      cy.getByTestId('policy-type').should('contain', 'Data Policy')
+      cy.getByTestId('policy-id').should('contain', 'my-data-policy')
+      cy.getByTestId('topic-filters-list').should('be.visible')
+      cy.getByTestId('topic-filters-list').within(() => {
+        cy.get(' li').should('have.length', 2)
+      })
     })
 
     it('should render the component with Data Policy summary (update)', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockDataPolicySummaryUpdate} />)
 
-      cy.get('[data-testid="policy-status-badge"]').should('contain', 'Update')
-      cy.get('[data-testid="policy-id"]').should('contain', 'existing-data-policy')
-      cy.get('[data-testid="topic-filters-list"] li').should('have.length', 1)
+      cy.getByTestId('policy-status-badge').should('contain', 'Update')
+      cy.getByTestId('policy-id').should('contain', 'existing-data-policy')
+      cy.getByTestId('topic-filters-list').within(() => {
+        cy.get(' li').should('have.length', 1)
+      })
     })
 
     it('should render the component with Behavior Policy summary (new)', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockBehaviorPolicySummaryNew} />)
 
-      cy.get('[data-testid="policy-status-badge"]').should('contain', 'New')
-      cy.get('[data-testid="policy-type"]').should('contain', 'Behavior Policy')
-      cy.get('[data-testid="policy-id"]').should('contain', 'my-behavior-policy')
-      cy.get('[data-testid="transitions-list"]').should('be.visible')
-      cy.get('[data-testid="transitions-list"] li').should('have.length', 2)
+      cy.getByTestId('policy-status-badge').should('contain', 'New')
+      cy.getByTestId('policy-type').should('contain', 'Behavior Policy')
+      cy.getByTestId('policy-id').should('contain', 'my-behavior-policy')
+      cy.getByTestId('transitions-list').should('be.visible')
+      cy.getByTestId('transitions-list').within(() => {
+        cy.get(' li').should('have.length', 2)
+      })
     })
 
     it('should render the component with Behavior Policy summary (update)', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockBehaviorPolicySummaryUpdate} />)
 
-      cy.get('[data-testid="policy-status-badge"]').should('contain', 'Update')
-      cy.get('[data-testid="policy-id"]').should('contain', 'existing-behavior-policy')
-      cy.get('[data-testid="transitions-list"] li').should('have.length', 1)
+      cy.getByTestId('policy-status-badge').should('contain', 'Update')
+      cy.getByTestId('policy-id').should('contain', 'existing-behavior-policy')
+      cy.getByTestId('transitions-list').within(() => {
+        cy.get(' li').should('have.length', 1)
+      })
     })
 
     it('should render with empty topic filters', () => {
@@ -79,7 +87,7 @@ describe('PolicyOverview', () => {
 
       cy.mountWithProviders(<PolicyOverview summary={summary} />)
 
-      cy.get('[data-testid="topic-filters-list"]').should('not.exist')
+      cy.getByTestId('topic-filters-list').should('not.exist')
     })
 
     it('should render with empty transitions', () => {
@@ -90,13 +98,13 @@ describe('PolicyOverview', () => {
 
       cy.mountWithProviders(<PolicyOverview summary={summary} />)
 
-      cy.get('[data-testid="transitions-list"]').should('not.exist')
+      cy.getByTestId('transitions-list').should('not.exist')
     })
 
     it('should display policy icon', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockDataPolicySummaryNew} />)
 
-      cy.get('[data-testid="policy-icon"]').should('be.visible')
+      cy.getByTestId('policy-icon').should('be.visible')
     })
 
     it('should truncate long policy IDs with ellipsis', () => {
@@ -107,7 +115,7 @@ describe('PolicyOverview', () => {
 
       cy.mountWithProviders(<PolicyOverview summary={longIdSummary} />)
 
-      cy.get('[data-testid="policy-id"]')
+      cy.getByTestId('policy-id')
         .should('have.css', 'text-overflow', 'ellipsis')
         .and('have.attr', 'title', longIdSummary.id)
     })
@@ -117,26 +125,26 @@ describe('PolicyOverview', () => {
     it('should use blue color scheme for new policy by default', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockDataPolicySummaryNew} />)
 
-      cy.get('[data-testid="policy-status-badge"]').should('have.class', 'chakra-badge')
+      cy.getByTestId('policy-status-badge').should('have.class', 'chakra-badge')
       // Chakra adds color scheme as class
     })
 
     it('should use orange color scheme for update policy by default', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockDataPolicySummaryUpdate} />)
 
-      cy.get('[data-testid="policy-status-badge"]').should('have.class', 'chakra-badge')
+      cy.getByTestId('policy-status-badge').should('have.class', 'chakra-badge')
     })
 
     it('should allow custom color scheme for new badge', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockDataPolicySummaryNew} newBadgeColorScheme="green" />)
 
-      cy.get('[data-testid="policy-status-badge"]').should('be.visible')
+      cy.getByTestId('policy-status-badge').should('be.visible')
     })
 
     it('should allow custom color scheme for update badge', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockDataPolicySummaryUpdate} updateBadgeColorScheme="purple" />)
 
-      cy.get('[data-testid="policy-status-badge"]').should('be.visible')
+      cy.getByTestId('policy-status-badge').should('be.visible')
     })
   })
 
@@ -156,7 +164,7 @@ describe('PolicyOverview', () => {
     it('should display all topic filters in list', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockDataPolicySummaryNew} />)
 
-      cy.get('[data-testid="topic-filters-list"]').within(() => {
+      cy.getByTestId('topic-filters-list').within(() => {
         cy.contains('devices/+/temperature').should('be.visible')
         cy.contains('devices/+/humidity').should('be.visible')
       })
@@ -165,7 +173,7 @@ describe('PolicyOverview', () => {
     it('should display all transitions in list', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockBehaviorPolicySummaryNew} />)
 
-      cy.get('[data-testid="transitions-list"]').within(() => {
+      cy.getByTestId('transitions-list').within(() => {
         cy.contains('Mqtt.OnInboundPublish').should('be.visible')
         cy.contains('Mqtt.OnInboundConnect').should('be.visible')
       })
@@ -191,7 +199,7 @@ describe('PolicyOverview', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockDataPolicySummaryNew} />)
 
       // Card header should have heading
-      cy.get('[data-testid="policy-overview"]').within(() => {
+      cy.getByTestId('policy-overview').within(() => {
         cy.get('h2, h3, h4').should('exist')
       })
     })
@@ -211,7 +219,7 @@ describe('PolicyOverview', () => {
 
       cy.mountWithProviders(<PolicyOverview summary={longIdSummary} />)
 
-      cy.get('[data-testid="policy-id"]').should('have.attr', 'title', longIdSummary.id)
+      cy.getByTestId('policy-id').should('have.attr', 'title', longIdSummary.id)
     })
   })
 
@@ -225,7 +233,9 @@ describe('PolicyOverview', () => {
       cy.mountWithProviders(<PolicyOverview summary={singleFilterSummary} />)
 
       cy.contains('Topic Filters (1)').should('be.visible')
-      cy.get('[data-testid="topic-filters-list"] li').should('have.length', 1)
+      cy.getByTestId('topic-filters-list').within(() => {
+        cy.get(' li').should('have.length', 1)
+      })
     })
 
     it('should handle policy with single transition', () => {
@@ -237,7 +247,9 @@ describe('PolicyOverview', () => {
       cy.mountWithProviders(<PolicyOverview summary={singleTransitionSummary} />)
 
       cy.contains('Transitions (1)').should('be.visible')
-      cy.get('[data-testid="transitions-list"] li').should('have.length', 1)
+      cy.getByTestId('transitions-list').within(() => {
+        cy.get(' li').should('have.length', 1)
+      })
     })
 
     it('should handle Data Policy with undefined topicFilters', () => {
@@ -248,7 +260,7 @@ describe('PolicyOverview', () => {
 
       cy.mountWithProviders(<PolicyOverview summary={noFiltersSummary} />)
 
-      cy.get('[data-testid="topic-filters-list"]').should('not.exist')
+      cy.getByTestId('topic-filters-list').should('not.exist')
     })
 
     it('should handle Behavior Policy with undefined transitions', () => {
@@ -259,7 +271,7 @@ describe('PolicyOverview', () => {
 
       cy.mountWithProviders(<PolicyOverview summary={noTransitionsSummary} />)
 
-      cy.get('[data-testid="transitions-list"]').should('not.exist')
+      cy.getByTestId('transitions-list').should('not.exist')
     })
 
     it('should handle policy with special characters in ID', () => {
@@ -270,7 +282,7 @@ describe('PolicyOverview', () => {
 
       cy.mountWithProviders(<PolicyOverview summary={specialCharSummary} />)
 
-      cy.get('[data-testid="policy-id"]').should('contain', specialCharSummary.id)
+      cy.getByTestId('policy-id').should('contain', specialCharSummary.id)
     })
   })
 
@@ -278,7 +290,7 @@ describe('PolicyOverview', () => {
     it('should display status badge with icon', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockDataPolicySummaryNew} />)
 
-      cy.get('[data-testid="policy-status-badge"]').within(() => {
+      cy.getByTestId('policy-status-badge').within(() => {
         cy.get('svg').should('exist') // Icon should be present
         cy.contains('New').should('be.visible')
       })
@@ -287,13 +299,13 @@ describe('PolicyOverview', () => {
     it('should use monospace font for policy ID', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockDataPolicySummaryNew} />)
 
-      cy.get('[data-testid="policy-id"]').should('have.css', 'font-family').and('match', /mono/i)
+      cy.getByTestId('policy-id').should('have.css', 'font-family').and('match', /mono/i)
     })
 
     it('should maintain consistent spacing between sections', () => {
       cy.mountWithProviders(<PolicyOverview summary={mockDataPolicySummaryNew} />)
 
-      cy.get('[data-testid="policy-overview"]').within(() => {
+      cy.getByTestId('policy-overview').within(() => {
         cy.get('.chakra-stack').should('exist')
       })
     })

@@ -91,11 +91,15 @@ export const MOCK_BEHAVIOR_POLICY: BehaviorPolicy = {
       maxPublishes: 100,
     },
   },
-  onTransitions: {
-    'Mqtt.OnInboundPublish': {
-      pipeline: [],
+  onTransitions: [
+    {
+      fromState: 'Mqtt.OnInboundConnect',
+      toState: 'Mqtt.OnInboundPublish',
+      'Mqtt.OnInboundPublish': {
+        pipeline: [],
+      },
     },
-  },
+  ],
 }
 
 // Mock Resource Data
@@ -128,7 +132,7 @@ export const MOCK_SCRIPT: Script = {
 /**
  * Success report for a Data Policy with schemas and scripts
  */
-export const MOCK_SUCCESS_REPORT_DATA_POLICY: DryRunResults<unknown, never>[] = [
+export const MOCK_SUCCESS_REPORT_DATA_POLICY = [
   // Per-node validation items
   {
     node: {
@@ -163,17 +167,17 @@ export const MOCK_SUCCESS_REPORT_DATA_POLICY: DryRunResults<unknown, never>[] = 
     resources: [
       {
         node: MOCK_SCHEMA_NODE_DRAFT,
-        data: MOCK_SCHEMA as unknown,
+        data: MOCK_SCHEMA,
         error: undefined,
       },
       {
         node: MOCK_SCRIPT_NODE_DRAFT,
-        data: MOCK_SCRIPT as unknown,
+        data: MOCK_SCRIPT,
         error: undefined,
       },
     ],
   },
-]
+] as DryRunResults<unknown, PolicySchema | Script>[]
 
 /**
  * Success report for a Behavior Policy with transitions
@@ -236,7 +240,7 @@ export const MOCK_SUCCESS_REPORT_NO_RESOURCES: DryRunResults<unknown, never>[] =
 /**
  * Success report with multiple schemas (new and modified)
  */
-export const MOCK_SUCCESS_REPORT_MIXED_RESOURCES: DryRunResults<unknown, never>[] = [
+export const MOCK_SUCCESS_REPORT_MIXED_RESOURCES = [
   // Per-node items
   {
     node: MOCK_SCHEMA_NODE_DRAFT,
@@ -261,17 +265,17 @@ export const MOCK_SUCCESS_REPORT_MIXED_RESOURCES: DryRunResults<unknown, never>[
     resources: [
       {
         node: MOCK_SCHEMA_NODE_DRAFT, // DRAFT = new
-        data: MOCK_SCHEMA as unknown,
+        data: MOCK_SCHEMA,
         error: undefined,
       },
       {
         node: MOCK_SCHEMA_NODE_MODIFIED, // MODIFIED = update
-        data: MOCK_SCHEMA_MODIFIED as unknown,
+        data: MOCK_SCHEMA_MODIFIED,
         error: undefined,
       },
     ],
   },
-]
+] as DryRunResults<unknown, PolicySchema>[]
 
 /**
  * Empty report (edge case)
