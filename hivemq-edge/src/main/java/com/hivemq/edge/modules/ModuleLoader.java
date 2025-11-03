@@ -20,72 +20,72 @@ import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.modules.adapters.impl.IsolatedModuleClassloader;
 import com.hivemq.extensions.loader.ClassServiceLoader;
 import com.hivemq.http.handlers.AlternativeClassloadingStaticFileHandler;
+import jakarta.inject.Inject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ModuleLoader {
-    private static final Logger log = LoggerFactory.getLogger(ModuleLoader.class);
-
-    private final @NotNull SystemInformation systemInformation;
-    protected final @NotNull Set<EdgeModule> modules = new HashSet<>();
-    protected final @NotNull Comparator<File> fileComparator = (o1, o2) -> {
+    protected static final @NotNull Comparator<File> fileComparator = (o1, o2) -> {
         final long delta = o2.lastModified() - o1.lastModified();
-        // we cna easily get an overflow within months, so we can not use the delta directly by casting it to integer!
-        if (delta == 0) {
-            return 0;
-        } else if (delta < 0) {
-            return -1;
-        } else {
-            return 1;
-        }
+        return delta == 0 ? 0 : delta < 0 ? -1 : 1;
     };
-
-    private final @NotNull ClassServiceLoader classServiceLoader = new ClassServiceLoader();
-    private final AtomicBoolean loaded = new AtomicBoolean();
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ModuleLoader.class);
+    protected final @NotNull Set<EdgeModule> modules;
+    private final @NotNull SystemInformation systemInformation;
+    private final @NotNull ClassServiceLoader classServiceLoader;
+    private final @NotNull AtomicBoolean loaded;
 
     @Inject
     public ModuleLoader(final @NotNull SystemInformation systemInformation) {
         this.systemInformation = systemInformation;
+        this.classServiceLoader = new ClassServiceLoader();
+        this.loaded = new AtomicBoolean(false);
+        this.modules = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    }
+
+    private static void logException(final @NotNull File file, final @NotNull IOException ioException) {
+        log.warn("Exception with reason {} while reading module file {}",
+                ioException.getMessage(),
+                file.getAbsolutePath());
+        log.debug("Original exception", ioException);
     }
 
     public void loadModules() {
-        if (loaded.get()) {
-            // avoid duplicate loads
-            return;
-        }
-        loaded.set(true);
-        final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        if (Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)) {
-            log.info(String.format("Welcome '%s' is starting...", "48 69 76 65 4D 51  45 64 67 65"));
-            log.warn(
-                    "\n################################################################################################################\n" +
-                            "# You are running HiveMQ Edge in Development Mode and Modules will be loaded from your workspace NOT your      #\n" +
-                            "# HIVEMQ_HOME/modules directory. To load runtime modules from your HOME directory please remove                #\n" +
-                            "#  '-Dhivemq.edge.workspace.modules=true' from your startup script                                             #\n" +
-                            "################################################################################################################");
-            loadFromWorkspace(contextClassLoader);
-            // load the commercial module loader from the workspace folder
-            // the loadFromWorkspace() will not find it.
-            log.info("Loading the commercial module loader from workspace.");
-            loadCommercialModuleLoaderFromWorkSpace(contextClassLoader);
-        } else {
-            // the commercial module loader will be found here in case of a "normal" running hivemq edge
-            loadFromModulesDirectory(contextClassLoader);
+        if (loaded.compareAndSet(false, true)) {
+            final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            if (Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)) {
+                log.info(String.format("Welcome '%s' is starting...", "48 69 76 65 4D 51  45 64 67 65"));
+                log.warn("""
+                        
+                        ################################################################################################################
+                        # You are running HiveMQ Edge in Development Mode and Modules will be loaded from your workspace NOT your      #
+                        # HIVEMQ_HOME/modules directory. To load runtime modules from your HOME directory please remove                #
+                        #  '-Dhivemq.edge.workspace.modules=true' from your startup script                                             #
+                        ################################################################################################################""");
+                loadFromWorkspace(contextClassLoader);
+                // load the commercial module loader from the workspace folder
+                // the loadFromWorkspace() will not find it.
+                log.info("Loading the commercial module loader from workspace.");
+                loadCommercialModuleLoaderFromWorkSpace(contextClassLoader);
+            } else {
+                // the commercial module loader will be found here in case of a "normal" running hivemq edge
+                loadFromModulesDirectory(contextClassLoader);
+            }
         }
     }
 
@@ -98,31 +98,24 @@ public class ModuleLoader {
             return;
         }
 
-
-        final File commercialModuleLoaderLibFolder =
-                new File(commercialModulesRepoRootFolder, "hivemq-edge-commercial-modules-loader/build/libs");
-        if (!commercialModuleLoaderLibFolder.exists()) {
+        final File libs = new File(commercialModulesRepoRootFolder, "hivemq-edge-commercial-modules-loader/build/libs");
+        if (!libs.exists()) {
             log.error("Could not load commercial module loader as the assumed lib folder '{}' does not exist.",
-                    commercialModuleLoaderLibFolder.getAbsolutePath());
+                    libs.getAbsolutePath());
             return;
         }
-
-        final File[] tmp = commercialModuleLoaderLibFolder.listFiles(file -> file.getName().endsWith("proguarded.jar"));
-
+        final File[] tmp = libs.listFiles(file -> file.getName().endsWith("proguarded.jar"));
         if (tmp == null || tmp.length == 0) {
-            log.info("No commercial module loader jar was discovered in libs folder '{}'",
-                    commercialModuleLoaderLibFolder);
+            log.info("No commercial module loader jar was discovered in libs folder '{}'", libs);
             return;
         }
 
-        final List<File> potentialCommercialModuleJars =
-                new ArrayList<>(Arrays.stream(tmp).sorted(fileComparator).toList());
-
-        final String absolutePathJar = potentialCommercialModuleJars.get(0).getAbsolutePath();
-        if (potentialCommercialModuleJars.size() > 1) {
+        final List<File> jars = new ArrayList<>(Arrays.stream(tmp).sorted(fileComparator).toList());
+        final String absolutePathJar = jars.get(0).getAbsolutePath();
+        if (jars.size() > 1) {
             log.debug(
                     "More than one commercial module loader jar was discovered in libs folder '{}'. Clean unwanted jars to avoid loading the wrong version. The first found jar '{}' will be loaded.",
-                    commercialModuleLoaderLibFolder,
+                    libs,
                     absolutePathJar);
         } else {
             log.info("Commercial Module jar '{}' was discovered.", absolutePathJar);
@@ -138,15 +131,14 @@ public class ModuleLoader {
             log.error("", e);
         }
         log.info("Loading commercial module loader from {}", jarFile.getAbsoluteFile());
-        final IsolatedModuleClassloader isolatedClassloader =
-                new IsolatedModuleClassloader(urls.toArray(new URL[0]), parentClassloader);
-        modules.add(new ModuleLoader.EdgeModule(jarFile, isolatedClassloader, false));
+        modules.add(new ModuleLoader.EdgeModule(jarFile,
+                new IsolatedModuleClassloader(urls.toArray(new URL[0]), parentClassloader),
+                false));
     }
 
     protected void loadFromWorkspace(final @NotNull ClassLoader parentClassloader) {
         log.debug("Loading modules from development workspace.");
-        final File userDir = new File(System.getProperty("user.dir"));
-        loadFromWorkspace(parentClassloader, userDir);
+        loadFromWorkspace(parentClassloader, new File(System.getProperty("user.dir")));
     }
 
     /**
@@ -158,7 +150,7 @@ public class ModuleLoader {
      * @param parentClassloader the parent classloader
      * @param currentDir        the current dir
      */
-    protected void loadFromWorkspace(final @NotNull ClassLoader parentClassloader, final @NotNull File currentDir) {
+    private void loadFromWorkspace(final @NotNull ClassLoader parentClassloader, final @NotNull File currentDir) {
         if (currentDir.exists() && currentDir.isDirectory()) {
             if (currentDir.getName().equals("hivemq-edge")) {
                 discoverWorkspaceModule(new File(currentDir, "modules"), parentClassloader);
@@ -173,7 +165,7 @@ public class ModuleLoader {
         }
     }
 
-    protected void discoverWorkspaceModule(final File dir, final @NotNull ClassLoader parentClassloader) {
+    protected void discoverWorkspaceModule(final @NotNull File dir, final @NotNull ClassLoader parentClassloader) {
         if (dir.exists()) {
             final File[] files = dir.listFiles(pathname -> pathname.isDirectory() &&
                     pathname.canRead() &&
@@ -196,14 +188,11 @@ public class ModuleLoader {
                             urls.add(jar.toURI().toURL());
                         }
                     }
-                    final IsolatedModuleClassloader isolatedClassloader =
-                            new IsolatedModuleClassloader(urls.toArray(new URL[0]), parentClassloader);
-                    modules.add(new EdgeModule(file, isolatedClassloader, true));
+                    modules.add(new EdgeModule(file,
+                            new IsolatedModuleClassloader(urls.toArray(new URL[0]), parentClassloader),
+                            true));
                 } catch (final IOException ioException) {
-                    log.warn("Exception with reason {} while reading module file {}",
-                            ioException.getMessage(),
-                            file.getAbsolutePath());
-                    log.debug("Original exception", ioException);
+                    logException(file, ioException);
                 }
             }
         }
@@ -225,10 +214,7 @@ public class ModuleLoader {
                         log.debug("Ignoring non jar file in module folder {}.", lib.getAbsolutePath());
                     }
                 } catch (final IOException ioException) {
-                    log.warn("Exception with reason {} while reading module file {}",
-                            ioException.getMessage(),
-                            lib.getAbsolutePath());
-                    log.debug("Original exception", ioException);
+                    logException(lib, ioException);
                 }
             }
         }
@@ -256,7 +242,7 @@ public class ModuleLoader {
     }
 
     public @NotNull Set<EdgeModule> getModules() {
-        return modules;
+        return Collections.unmodifiableSet(modules);
     }
 
     public void clear() {
@@ -264,7 +250,6 @@ public class ModuleLoader {
     }
 
     public static class EdgeModule {
-
         private final @NotNull File root;
         private final @NotNull ClassLoader classloader;
 
