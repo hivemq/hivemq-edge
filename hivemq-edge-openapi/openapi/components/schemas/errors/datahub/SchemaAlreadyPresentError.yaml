@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The schema id.
+        example: "abc"
+    required:
+      - id
+example:
+  general:
+    status: 409
+    title: "Schema Already Present"
+    detail: "The given schema is already present as the latest version for the schema id 'abc'."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/SchemaAlreadyPresentError"

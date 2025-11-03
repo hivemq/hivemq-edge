@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The data policy id.
+        example: "abc"
+    required:
+      - id
+example:
+  general:
+    status: 404
+    title: "Behavior Policy Not Found"
+    detail: "Behavior policy with ID 'abc' is not found."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/BehaviorPolicyNotFoundError"

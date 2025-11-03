@@ -178,12 +178,23 @@ get:
           schema:
             $ref: ../components/schemas/BehaviorPolicyList.yaml
       description: Success
+    '400':
+      content:
+        application/problem+json:
+          schema:
+            oneOf:
+              - $ref: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
+            discriminator:
+              propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/InvalidQueryParameterError: "../components/schemas/errors/http/InvalidQueryParameterError.yaml"
+      description: URL parameter missing
     '503':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Temporarily not available
+            $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
+      description: Request resource temporary unavailable
   summary: Get all policies
   tags:
     - Data Hub - Behavior Policies
@@ -268,34 +279,45 @@ post:
       description: Success
     '400':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            oneOf:
+              - $ref: "../components/schemas/errors/datahub/BehaviorPolicyCreationFailureError.yaml"
+              - $ref: "../components/schemas/errors/datahub/BehaviorPolicyInvalidErrors.yaml"
+              - $ref: "../components/schemas/errors/datahub/BehaviorPolicyRejectedError.yaml"
+              - $ref: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
+            discriminator:
+              propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/BehaviorPolicyCreationFailureError: "../components/schemas/errors/datahub/BehaviorPolicyCreationFailureError.yaml"
+                https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors: "../components/schemas/errors/datahub/BehaviorPolicyInvalidErrors.yaml"
+                https://hivemq.com/edge/api/model/BehaviorPolicyRejectedError: "../components/schemas/errors/datahub/BehaviorPolicyRejectedError.yaml"
+                https://hivemq.com/edge/api/model/RequestBodyMissingError: "../components/schemas/errors/http/RequestBodyMissingError.yaml"
       description: Policy creation failed
     '409':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Already exists
+            $ref: "../components/schemas/errors/datahub/BehaviorPolicyAlreadyPresentError.yaml"
+      description: Behavior policy already present
     '500':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Internal error
+            $ref: "../components/schemas/errors/http/InternalServerError.yaml"
+      description: Internal server error
     '503':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Temporarily unavailable
+            $ref: "../components/schemas/errors/http/TemporaryNotAvailableError.yaml"
+      description: Request resource temporary unavailable
     '507':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Insufficient storage error
+            $ref: "../components/schemas/errors/datahub/PolicyInsufficientStorageError.yaml"
+      description: Insufficient storage
   summary: Create a new policy
   tags:
     - Data Hub - Behavior Policies

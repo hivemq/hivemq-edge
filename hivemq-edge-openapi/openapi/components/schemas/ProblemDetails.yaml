@@ -6,6 +6,7 @@ properties:
   detail:
     type: string
   errors:
+    deprecated: true
     type: array
     items:
       $ref: ./Error.yaml

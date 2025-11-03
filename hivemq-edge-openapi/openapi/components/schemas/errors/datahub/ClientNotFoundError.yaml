@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The client id.
+        example: "abc"
+    required:
+      - id
+example:
+  general:
+    status: 404
+    title: "Client Not Found"
+    detail: "Client with ID 'abc' is not found."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/ClientNotFoundError"

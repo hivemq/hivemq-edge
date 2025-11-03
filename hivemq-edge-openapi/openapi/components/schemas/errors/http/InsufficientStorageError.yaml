@@ -1,0 +1,8 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+example:
+  general:
+    status: 507
+    title: "Insufficient Storage"
+    detail: "Insufficient Storage."
+    type: "https://hivemq.com/edge/api/model/InsufficientStorageError"

@@ -1,0 +1,8 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+example:
+  general:
+    status: 503
+    title: "Endpoint Temporarily not Available"
+    detail: "The endpoint is temporarily not available, please try again later."
+    type: "https://hivemq.com/edge/api/model/TemporaryNotAvailableError"

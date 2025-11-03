@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The script ID.
+        example: "abc"
+    required:
+      - id
+example:
+  general:
+    status: 404
+    title: "Script Not Found"
+    detail: "Script with ID 'abc' is not found."
+    id: "abc"
+    type: "https://hivemq.com/edge/api/model/ScriptNotFoundError"

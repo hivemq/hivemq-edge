@@ -1,0 +1,16 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      parameter:
+        type: string
+        description: The the missing request body parameter.
+    required:
+      - parameter
+example:
+  general:
+    status: 400
+    title: "Required Request Body Parameter Missing"
+    detail: "Required request body parameter 'a' is missing."
+    parameter: "a"
+    type: "https://hivemq.com/edge/api/model/RequestBodyParameterMissingError"

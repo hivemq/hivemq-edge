@@ -38,22 +38,34 @@ get:
       description: Success
     '400':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
+            oneOf:
+              - $ref: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
+            discriminator:
+              propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/UrlParameterMissingError: "../components/schemas/errors/http/UrlParameterMissingError.yaml"
       description: URL parameter missing
     '404':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Client is disconnected
+            oneOf:
+              - $ref: "../components/schemas/errors/datahub/ClientDisconnectedError.yaml"
+              - $ref: "../components/schemas/errors/datahub/ClientNotFoundError.yaml"
+            discriminator:
+              propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/model/ClientDisconnectedError: "../components/schemas/errors/datahub/ClientDisconnectedError.yaml"
+                https://hivemq.com/edge/api/model/ClientNotFoundError: "../components/schemas/errors/datahub/ClientNotFoundError.yaml"
+      description: Client error
     '500':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Internal Server error
+            $ref: "../components/schemas/errors/http/InternalServerError.yaml"
+      description: Internal server error
   summary: Get the state of a client
   tags:
     - Data Hub - State

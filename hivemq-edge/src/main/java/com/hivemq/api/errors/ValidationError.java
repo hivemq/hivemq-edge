@@ -27,7 +27,7 @@ public class ValidationError extends ProblemDetails {
             final @Nullable List<Error> errors) {
         super(
                 "ValidationError",
-                "Validatin failed",
+                "Validation failed",
                 "JSON failed validation.",
                 HttpStatus.BAD_REQUEST_400,
                 errors);

@@ -200,6 +200,9 @@ dependencies {
     // json path
     implementation(libs.json.path)
 
+    // i18n
+    implementation(libs.freemarker)
+
     // Edge modules
     compileOnly("com.hivemq:hivemq-edge-module-etherip")
     compileOnly("com.hivemq:hivemq-edge-module-plc4x")
@@ -297,6 +300,7 @@ val buildDirectory = layout.buildDirectory.get()
 tasks.register<GenerateTask>("genJaxRs") {
     inputSpec.set("${projectDir}/../ext/hivemq-edge-openapi-${project.version}.yaml")
     outputDir.set("${buildDirectory}/generated/openapi")
+    templateDir.set("$projectDir/../hivemq-edge-openapi/openapi/templates/Java")
     generatorName.set("jaxrs-spec")
     apiPackage.set("com.hivemq.edge.api")
     modelPackage.set("com.hivemq.edge.api.model")
@@ -436,6 +440,7 @@ license {
     header = file("HEADER")
     mapping("java", "SLASHSTAR_STYLE")
     exclude("*.json")
+    exclude("**/*.properties")
     exclude("**/*.xml")
     exclude("**/RollingList.java")
     exclude("**/api/**/*.java")

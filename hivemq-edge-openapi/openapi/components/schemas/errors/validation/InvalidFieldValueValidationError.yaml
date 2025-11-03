@@ -1,0 +1,21 @@
+allOf:
+  - $ref: "./ValidationError.yaml"
+  - type: object
+    properties:
+      path:
+        type: string
+        format: json-path
+        description: The invalid json path.
+        example: "$.action.pipeline[1].field"
+      value:
+        type: string
+        description: The invalid value.
+        example: "functionDoesNotExist"
+    required:
+      - path
+example:
+  general:
+    detail: "Referenced function does not exist."
+    path: "$.action.pipeline[1].field"
+    value: "functionDoesNotExist"
+    type: "https://hivemq.com/edge/api/model/InvalidFieldValueValidationError"

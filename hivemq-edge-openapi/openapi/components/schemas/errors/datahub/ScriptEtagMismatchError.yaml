@@ -1,0 +1,22 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      id:
+        type: string
+        description: The script id.
+        example: "abc"
+      eTag:
+        type: string
+        description: The eTag.
+        example: "33a64df551425fcc55e4d42a148795d9f25f89d4"
+    required:
+      - id
+example:
+  general:
+    status: 412
+    title: "Script eTag Mismatch"
+    detail: "Script with id 'abc' does not match the given etag '33a64df551425fcc55e4d42a148795d9f25f89d4'."
+    id: "abc"
+    eTag: "33a64df551425fcc55e4d42a148795d9f25f89d4"
+    type: "https://hivemq.com/edge/api/model/ScriptEtagMismatchError"

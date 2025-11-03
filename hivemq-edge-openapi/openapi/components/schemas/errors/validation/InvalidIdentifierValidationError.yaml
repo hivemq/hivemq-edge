@@ -1,0 +1,22 @@
+allOf:
+  - $ref: "./ValidationError.yaml"
+  - type: object
+    properties:
+      path:
+        type: string
+        format: json-path
+        description: The invalid identifier path.
+        example: "$.id"
+      value:
+        type: string
+        description: The invalid identifier value.
+        example: "invalidId"
+    required:
+      - path
+      - value
+example:
+  general:
+    detail: "Identifier script 'id' must begin with a letter and may only consist of lowercase letters, uppercase letters, numbers, periods, hyphens, and underscores."
+    path: "$.id"
+    value: "invalidId"
+    type: "https://hivemq.com/edge/api/model/InvalidIdentifierValidationError"

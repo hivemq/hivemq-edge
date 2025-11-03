@@ -1,0 +1,8 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+example:
+  general:
+    status: 400
+    title: "Behavior Policy Rejected"
+    detail: "Behavior policy is rejected."
+    type: "https://hivemq.com/edge/api/model/BehaviorPolicyRejectedError"

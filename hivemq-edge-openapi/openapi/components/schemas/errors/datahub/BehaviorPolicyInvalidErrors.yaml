@@ -1,0 +1,24 @@
+allOf:
+  - $ref: "../ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      childErrors:
+        type: array
+        description: List of child validation errors.
+        items:
+          $ref: "./BehaviorPolicyValidationError.yaml"
+    required:
+      - childErrors
+example:
+  general:
+    status: 400
+    title: "Behavior Policy Invalid"
+    detail: "Behavior policy is invalid due to validation errors."
+    type: "https://hivemq.com/edge/api/model/BehaviorPolicyInvalidErrors"
+    childErrors:
+      - detail: "The transition from state 'state1' to state 'state2' on event 'event1' in '$.path' is not defined for behavior 'id1'."
+        fromState: "state1"
+        toState: "state2"
+        path: "$.path"
+        id: "id1"
+        type: "https://hivemq.com/edge/api/model/IllegalEventTransitionValidationError"
