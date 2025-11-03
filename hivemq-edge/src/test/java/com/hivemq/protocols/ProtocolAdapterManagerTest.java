@@ -47,6 +47,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -100,9 +101,9 @@ class ProtocolAdapterManagerTest {
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService.startWriting(any(),
+        when(protocolAdapterWritingService.startWritingAsync(any(),
                 any(),
-                any())).thenReturn(true);
+                any())).thenReturn(CompletableFuture.completedFuture(true));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
         final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
@@ -145,7 +146,7 @@ class ProtocolAdapterManagerTest {
 
         assertThat(adapterWrapper.getRuntimeStatus()).isEqualTo(ProtocolAdapterState.RuntimeStatus.STARTED);
         verify(remoteService).fireUsageEvent(any());
-        verify(protocolAdapterWritingService, never()).startWriting(any(), any(), any());
+        verify(protocolAdapterWritingService, never()).startWritingAsync(any(), any(), any());
     }
 
     @Test
@@ -154,8 +155,8 @@ class ProtocolAdapterManagerTest {
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
         when(protocolAdapterWritingService
-                .startWriting(any(), any(), any()))
-                .thenReturn(true);
+                .startWritingAsync(any(), any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(true));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
@@ -186,9 +187,9 @@ class ProtocolAdapterManagerTest {
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService.startWriting(any(),
+        when(protocolAdapterWritingService.startWritingAsync(any(),
                 any(),
-                any())).thenReturn(true);
+                any())).thenReturn(CompletableFuture.completedFuture(true));
 
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
         final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),

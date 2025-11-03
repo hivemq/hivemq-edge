@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Singleton
 public class WritingServiceProvider {
@@ -78,12 +79,13 @@ public class WritingServiceProvider {
 
 
         @Override
-        public boolean startWriting(
+        public @NotNull CompletableFuture<Boolean> startWritingAsync(
                 final @NotNull WritingProtocolAdapter writingProtocolAdapter,
                 final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
                 final @NotNull List<InternalWritingContext> southboundMappings) {
             log.warn("No bidirectional module is currently installed. Writing to PLCs is currently not supported.");
-            return true;        }
+            return CompletableFuture.completedFuture(true);
+        }
 
         @Override
         public void stopWriting(
