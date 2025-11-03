@@ -89,23 +89,23 @@ jobs:
       - name: Check if openapi job succeeded
         if: needs.check-for-changes.outputs.openapi-changed == 'true'
         run: |
-          if [[ "${{ needs.check-openapi.result }}" != "success" ]]; then
-          echo "OpenAPI check failed"
-          exit 0
+          if [[ ! "${{ needs.check-openapi.result }}" =~ ^(success|skipped)$ ]]; then
+            echo "OpenAPI check failed"
+            exit 1
           fi
 
       - name: Check if frontend job succeeded
         if: needs.check-for-changes.outputs.frontend-changed == 'true'
         run: |
-          if [[ "${{ needs.check-frontend.result }}" != "success" ]]; then
+          if [[ ! "${{ needs.check-frontend.result }}" =~ ^(success|skipped)$ ]]; then
             echo "Frontend check failed"
-            exit 0
+            exit 1
           fi
       
       - name: Check if backend job succeeded
         if: needs.check-for-changes.outputs.backend-changed == 'true'
         run: |
-          if [[ "${{ needs.check-backend.result }}" != "success" ]]; then
+          if [[ ! "${{ needs.check-backend.result }}" =~ ^(success|skipped)$ ]]; then
             echo "Backend check failed"
             exit 1
           fi
