@@ -52,19 +52,4 @@ public record Tls (@JsonProperty("enabled")
     @JsonCreator
     public Tls{
     }
-
-    @Override
-    public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final Tls tls = (Tls) o;
-        return enabled() == tls.enabled() &&
-                noChecks() == tls.noChecks() &&
-                Objects.equals(keystore(), tls.keystore()) &&
-                Objects.equals(truststore(), tls.truststore());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(enabled(), noChecks(), keystore(), truststore());
-    }
 }
