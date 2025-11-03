@@ -375,6 +375,7 @@ class ParsedConfigTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
     }

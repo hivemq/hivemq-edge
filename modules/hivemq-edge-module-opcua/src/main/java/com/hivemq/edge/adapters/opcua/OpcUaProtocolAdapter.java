@@ -242,8 +242,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             }
 
             if (!conn.isHealthy()) {
-                log.warn("Health check failed for adapter '{}' - triggering reconnection", adapterId);
-                reconnect();
+                if (config.isAutoReconnect()) {
+                    log.warn("Health check failed for adapter '{}' - triggering automatic reconnection", adapterId);
+                    reconnect();
+                } else {
+                    log.warn("Health check failed for adapter '{}' - automatic reconnection is disabled", adapterId);
+                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                }
             } else {
                 log.debug("Health check passed for adapter '{}'", adapterId);
             }

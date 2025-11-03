@@ -112,6 +112,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 null,
                 null,
                 null,
+                null,
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);

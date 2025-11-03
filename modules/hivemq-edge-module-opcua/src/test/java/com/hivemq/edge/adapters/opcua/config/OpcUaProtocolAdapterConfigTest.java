@@ -189,6 +189,7 @@ class OpcUaProtocolAdapterConfigTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -232,6 +233,7 @@ class OpcUaProtocolAdapterConfigTest {
                 null,
                 null,
                 new OpcUaToMqttConfig(1, 1000),
+                null,
                 null,
                 null,
                 null,

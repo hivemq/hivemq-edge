@@ -108,6 +108,7 @@ class OpcUaProtocolAdapterAuthTest {
                 null,
                 null,
                 null,
+                null,
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
@@ -134,6 +135,7 @@ class OpcUaProtocolAdapterAuthTest {
                 false,
                 null,
                 auth,
+                null,
                 null,
                 null,
                 null,
@@ -176,6 +178,7 @@ class OpcUaProtocolAdapterAuthTest {
                 null,
                 null,
                 null,
+                null,
                 null);
         when(protocolAdapterInput.getConfig()).thenReturn(config);
 
@@ -204,6 +207,7 @@ class OpcUaProtocolAdapterAuthTest {
                 null,
                 auth,
                 tls,
+                null,
                 null,
                 null,
                 null,

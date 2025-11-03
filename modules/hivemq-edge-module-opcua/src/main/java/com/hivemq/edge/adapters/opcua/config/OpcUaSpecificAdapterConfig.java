@@ -132,6 +132,12 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
                        defaultValue = "30")
     private final int retryInterval;
 
+    @JsonProperty("autoReconnect")
+    @ModuleConfigField(title = "Automatic Reconnection",
+                       description = "Enable automatic reconnection when health check detects connection issues",
+                       defaultValue = "true")
+    private final boolean autoReconnect;
+
     @JsonCreator
     public OpcUaSpecificAdapterConfig(
             @JsonProperty(value = "uri", required = true) final @NotNull String uri,
@@ -147,7 +153,8 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
             @JsonProperty("keepAliveFailuresAllowed") final @Nullable Integer keepAliveFailuresAllowed,
             @JsonProperty("connectionTimeout") final @Nullable Integer connectionTimeout,
             @JsonProperty("healthCheckInterval") final @Nullable Integer healthCheckInterval,
-            @JsonProperty("retryInterval") final @Nullable Integer retryInterval) {
+            @JsonProperty("retryInterval") final @Nullable Integer retryInterval,
+            @JsonProperty("autoReconnect") final @Nullable Boolean autoReconnect) {
         this.uri = uri;
         this.overrideUri = requireNonNullElse(overrideUri, false);
         this.applicationUri = (applicationUri != null && !applicationUri.isBlank()) ? applicationUri : null;
@@ -165,6 +172,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         this.connectionTimeout = requireNonNullElse(connectionTimeout, 30);
         this.healthCheckInterval = requireNonNullElse(healthCheckInterval, 30);
         this.retryInterval = requireNonNullElse(retryInterval, 30);
+        this.autoReconnect = requireNonNullElse(autoReconnect, true);
     }
 
 
@@ -224,6 +232,10 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         return retryInterval;
     }
 
+    public boolean isAutoReconnect() {
+        return autoReconnect;
+    }
+
     @Override
     public boolean equals(final @Nullable Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -238,6 +250,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
                 connectionTimeout == that.connectionTimeout &&
                 healthCheckInterval == that.healthCheckInterval &&
                 retryInterval == that.retryInterval &&
+                autoReconnect == that.autoReconnect &&
                 Objects.equals(id, that.id) &&
                 Objects.equals(getUri(), that.getUri()) &&
                 Objects.equals(getApplicationUri(), that.getApplicationUri()) &&
@@ -250,6 +263,6 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
     @Override
     public int hashCode() {
         return Objects.hash(getOverrideUri(), id, getUri(), getApplicationUri(), getAuth(), getTls(), getSecurity(), getOpcuaToMqttConfig(),
-                sessionTimeout, requestTimeout, keepAliveInterval, keepAliveFailuresAllowed, connectionTimeout, healthCheckInterval, retryInterval);
+                sessionTimeout, requestTimeout, keepAliveInterval, keepAliveFailuresAllowed, connectionTimeout, healthCheckInterval, retryInterval, autoReconnect);
     }
 }
