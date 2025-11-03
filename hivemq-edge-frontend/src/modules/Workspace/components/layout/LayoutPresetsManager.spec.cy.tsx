@@ -7,14 +7,10 @@ import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore'
 import { LayoutType } from '@/modules/Workspace/types/layout'
 import type { Node } from '@xyflow/react'
 import type { LayoutPreset } from '@/modules/Workspace/types/layout'
-import config from '@/config'
 
 describe('LayoutPresetsManager', () => {
   beforeEach(() => {
     cy.viewport(600, 800)
-
-    // Enable the feature flag for testing
-    config.features.WORKSPACE_AUTO_LAYOUT = true
 
     // Reset store before each test
     useWorkspaceStore.getState().reset()

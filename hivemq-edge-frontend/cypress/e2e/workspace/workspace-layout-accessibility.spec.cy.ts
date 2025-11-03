@@ -51,6 +51,9 @@ describe('Workspace Layout - Accessibility & Visual Regression', { tags: ['@perc
   it('should have accessible layout controls', () => {
     cy.injectAxe()
 
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Check accessibility of layout controls panel
     workspacePage.layoutControls.panel.should('be.visible')
 
@@ -64,6 +67,9 @@ describe('Workspace Layout - Accessibility & Visual Regression', { tags: ['@perc
 
   it('should have accessible presets menu', () => {
     cy.injectAxe()
+
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
 
     // Open presets menu
     workspacePage.layoutControls.presetsButton.click()
@@ -80,6 +86,9 @@ describe('Workspace Layout - Accessibility & Visual Regression', { tags: ['@perc
   it('should have accessible options drawer', () => {
     cy.injectAxe()
 
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Select algorithm and open drawer
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
     workspacePage.layoutControls.optionsButton.click()
@@ -94,6 +103,9 @@ describe('Workspace Layout - Accessibility & Visual Regression', { tags: ['@perc
   })
 
   it('should support keyboard navigation', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Focus on workspace to start keyboard navigation
     workspacePage.canvas.click()
 
@@ -109,12 +121,18 @@ describe('Workspace Layout - Accessibility & Visual Regression', { tags: ['@perc
   it('should take Percy snapshot of layout controls', () => {
     workspacePage.toolbox.fit.click()
 
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Snapshot with layout controls visible
     cy.percySnapshot('Workspace - Layout Controls Panel')
   })
 
   it('should take Percy snapshot of options drawer', () => {
     workspacePage.toolbox.fit.click()
+
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
 
     // Open options drawer
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
@@ -128,6 +146,9 @@ describe('Workspace Layout - Accessibility & Visual Regression', { tags: ['@perc
   })
 
   it('should take Percy snapshot of presets menu', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Save a preset first
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
     workspacePage.layoutControls.applyButton.click()
@@ -149,6 +170,9 @@ describe('Workspace Layout - Accessibility & Visual Regression', { tags: ['@perc
   it('should take Percy snapshot of workspace after layout', () => {
     workspacePage.toolbox.fit.click()
 
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Apply layout
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
     workspacePage.layoutControls.applyButton.click()
@@ -168,6 +192,9 @@ describe('Workspace Layout - Accessibility & Visual Regression', { tags: ['@perc
   })
 
   it('should have proper ARIA labels', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Check layout selector has proper label
     workspacePage.layoutControls.algorithmSelector.should('have.attr', 'data-testid')
 
@@ -196,6 +223,7 @@ describe('Workspace Layout - Accessibility & Visual Regression', { tags: ['@perc
       overwrite: true,
     })
 
+    workspacePage.canvasToolbar.expandButton.click()
     // Select Radial Hub layout algorithm (provides best visual results)
     workspacePage.layoutControls.algorithmSelector.select('RADIAL_HUB')
     workspacePage.layoutControls.algorithmSelector.should('have.value', 'RADIAL_HUB')

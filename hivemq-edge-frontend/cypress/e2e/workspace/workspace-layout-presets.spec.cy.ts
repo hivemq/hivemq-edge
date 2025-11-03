@@ -49,6 +49,9 @@ describe('Workspace Layout - Presets', () => {
   })
 
   it('should show no saved presets initially', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Open presets menu
     workspacePage.layoutControls.presetsButton.click()
 
@@ -57,6 +60,9 @@ describe('Workspace Layout - Presets', () => {
   })
 
   it('should open save preset modal', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Open presets menu
     workspacePage.layoutControls.presetsButton.click()
 
@@ -69,6 +75,9 @@ describe('Workspace Layout - Presets', () => {
   })
 
   it('should require preset name', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Open save modal
     workspacePage.layoutControls.presetsButton.click()
     workspacePage.layoutControls.presetsMenu.saveOption.click()
@@ -82,6 +91,9 @@ describe('Workspace Layout - Presets', () => {
   })
 
   it('should save a preset with valid name', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // Apply a layout first
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
     workspacePage.layoutControls.applyButton.click()
@@ -108,6 +120,9 @@ describe('Workspace Layout - Presets', () => {
   })
 
   it('should load a saved preset', () => {
+    // Expand toolbar to access layout controls
+    workspacePage.canvasToolbar.expandButton.click()
+
     // First, save a preset
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
     workspacePage.layoutControls.applyButton.click()
@@ -133,6 +148,7 @@ describe('Workspace Layout - Presets', () => {
   })
 
   it('should delete a preset', () => {
+    workspacePage.canvasToolbar.expandButton.click()
     // Save a preset
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
     workspacePage.layoutControls.applyButton.click()
@@ -157,6 +173,7 @@ describe('Workspace Layout - Presets', () => {
   })
 
   it('should persist presets across page reloads', () => {
+    workspacePage.canvasToolbar.expandButton.click()
     // Save a preset
     workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
     workspacePage.layoutControls.applyButton.click()
@@ -177,7 +194,7 @@ describe('Workspace Layout - Presets', () => {
     cy.wait('@getBridges')
     workspacePage.toolbox.fit.click()
 
-    // Check preset still exists
+    workspacePage.canvasToolbar.expandButton.click()
     workspacePage.layoutControls.presetsButton.click()
     cy.get('[role="menu"]').should('contain.text', 'Persistent Test')
   })

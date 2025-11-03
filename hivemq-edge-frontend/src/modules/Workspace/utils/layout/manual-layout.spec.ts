@@ -31,24 +31,12 @@ describe('ManualLayoutAlgorithm', () => {
   })
 
   describe('validateOptions', () => {
-    it('should always return valid for any options', () => {
-      const result1 = algorithm.validateOptions({})
-      const result2 = algorithm.validateOptions({ anything: 'goes' } as never)
-      const result3 = algorithm.validateOptions({ foo: 123, bar: true } as never)
+    it('should always return valid', () => {
+      const result = algorithm.validateOptions()
 
-      expect(result1.valid).toBe(true)
-      expect(result2.valid).toBe(true)
-      expect(result3.valid).toBe(true)
-    })
-
-    it('should handle undefined options', () => {
-      const result = algorithm.validateOptions(undefined as unknown as Record<string, unknown>)
       expect(result.valid).toBe(true)
-    })
-
-    it('should handle null options', () => {
-      const result = algorithm.validateOptions(null as unknown as Record<string, unknown>)
-      expect(result.valid).toBe(true)
+      expect(result.errors).toEqual([])
+      expect(result.warnings).toEqual([])
     })
   })
 
@@ -65,7 +53,7 @@ describe('ManualLayoutAlgorithm', () => {
         { id: 'e2-3', source: '2', target: '3' },
       ]
 
-      const result = await algorithm.apply(nodes, edges, {})
+      const result = await algorithm.apply(nodes, edges)
 
       expect(result.success).toBe(true)
       expect(result.nodes).toHaveLength(3)
@@ -80,13 +68,13 @@ describe('ManualLayoutAlgorithm', () => {
         { id: 'node-2', type: 'edge', position: { x: 100, y: 100 }, data: {} },
       ]
 
-      const result = await algorithm.apply(nodes, [], {})
+      const result = await algorithm.apply(nodes, [])
 
       expect(result.nodes.map((n) => n.id)).toEqual(['node-1', 'node-2'])
     })
 
     it('should handle empty node array', async () => {
-      const result = await algorithm.apply([], [], {})
+      const result = await algorithm.apply([], [])
 
       expect(result.success).toBe(true)
       expect(result.nodes).toEqual([])
@@ -99,7 +87,7 @@ describe('ManualLayoutAlgorithm', () => {
         { id: '2', type: 'edge', position: { x: 150, y: 150 }, data: {} },
       ]
 
-      const result = await algorithm.apply(nodes, [], {})
+      const result = await algorithm.apply(nodes, [])
 
       expect(result.success).toBe(true)
       expect(result.nodes).toHaveLength(2)
@@ -114,34 +102,29 @@ describe('ManualLayoutAlgorithm', () => {
       }))
 
       const startTime = performance.now()
-      const result = await algorithm.apply(nodes, [], {})
+      const result = await algorithm.apply(nodes, [])
       const duration = performance.now() - startTime
 
       expect(result.success).toBe(true)
       expect(duration).toBeLessThan(10) // Should be nearly instant
     })
 
-    it('should ignore any options passed', async () => {
+    it('should not accept options parameter', async () => {
       const nodes: Node[] = [{ id: '1', type: 'adapter', position: { x: 10, y: 20 }, data: {} }]
 
-      const result1 = await algorithm.apply(nodes, [], {})
-      const result2 = await algorithm.apply(nodes, [], { ranksep: 500, animate: true } as never)
+      // Manual layout has simplified signature - no options parameter
+      const result = await algorithm.apply(nodes, [])
 
-      expect(result1.nodes[0].position).toEqual(result2.nodes[0].position)
+      expect(result.nodes[0].position).toEqual({ x: 10, y: 20 })
     })
 
-    it('should ignore constraints', async () => {
+    it('should not accept constraints parameter', async () => {
       const nodes: Node[] = [{ id: '1', type: 'adapter', position: { x: 10, y: 20 }, data: {} }]
 
-      const constraints = {
-        fixedNodes: new Set(['1']),
-        gluedNodes: new Map(),
-        groupNodes: new Map(),
-      }
+      // Manual layout has simplified signature - no constraints parameter
+      const result = await algorithm.apply(nodes, [])
 
-      const result = await algorithm.apply(nodes, [], {}, constraints)
-
-      // Should ignore constraint and keep original position
+      // Should keep original position
       expect(result.nodes[0].position).toEqual({ x: 10, y: 20 })
     })
 
@@ -152,7 +135,7 @@ describe('ManualLayoutAlgorithm', () => {
         { id: '3', type: 'client', position: { x: 200, y: 200 }, data: {} },
       ]
 
-      const result = await algorithm.apply(nodes, [], {})
+      const result = await algorithm.apply(nodes, [])
 
       expect(result.metadata?.algorithm).toBe(LayoutType.MANUAL)
       expect(result.metadata?.nodeCount).toBe(3)
@@ -167,7 +150,7 @@ describe('ManualLayoutAlgorithm', () => {
 
       const edges: Edge[] = [{ id: 'e1-2', source: '1', target: '2' }]
 
-      const result = await algorithm.apply(nodes, edges, {})
+      const result = await algorithm.apply(nodes, edges)
 
       expect(result.metadata?.edgeCount).toBe(1)
     })
@@ -175,7 +158,7 @@ describe('ManualLayoutAlgorithm', () => {
     it('should have minimal duration', async () => {
       const nodes: Node[] = [{ id: '1', type: 'adapter', position: { x: 0, y: 0 }, data: {} }]
 
-      const result = await algorithm.apply(nodes, [], {})
+      const result = await algorithm.apply(nodes, [])
 
       expect(result.duration).toBeGreaterThanOrEqual(0)
       expect(result.duration).toBeLessThan(5)
@@ -193,7 +176,7 @@ describe('ManualLayoutAlgorithm', () => {
         },
       ]
 
-      const result = await algorithm.apply(nodes, [], {})
+      const result = await algorithm.apply(nodes, [])
 
       const node = result.nodes[0]
       expect(node.id).toBe('complex-node')
