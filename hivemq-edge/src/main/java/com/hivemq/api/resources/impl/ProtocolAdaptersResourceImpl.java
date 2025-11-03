@@ -624,51 +624,32 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     "' exists, but it does not support writing to PLCs."));
         }
 
-        final long startTime = System.currentTimeMillis();
-        long endTime = startTime;
-        while (true) {
-            final TagSchemaCreationOutputImpl tagSchemaCreationOutput = new TagSchemaCreationOutputImpl();
-            try {
-                adapter.createTagSchema(new TagSchemaCreationInputImpl(decodedTagName), tagSchemaCreationOutput);
-                return Response.ok(tagSchemaCreationOutput.getFuture().get()).build(); // JSON schema root node
-            } catch (final @NotNull InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.warn("Creation of json schema for writing to PLCs were interrupted.");
-                log.debug("Original exception: ", e);
-                if (endTime - startTime > RETRY_TIMEOUT_MILLIS) {
-                    return errorResponse(new InternalServerError(null));
+        final TagSchemaCreationOutputImpl tagSchemaCreationOutput = new TagSchemaCreationOutputImpl();
+        adapter.createTagSchema(new TagSchemaCreationInputImpl(decodedTagName), tagSchemaCreationOutput);
+
+        try {
+            return Response.ok(tagSchemaCreationOutput.getFuture().get()).build(); // JSON schema root node
+        } catch (final @NotNull InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Creation of json schema for writing to PLCs were interrupted.");
+            log.debug("Original exception: ", e);
+            return errorResponse(new InternalServerError(null));
+        } catch (final @NotNull ExecutionException e) {
+            return switch (tagSchemaCreationOutput.getStatus()) {
+                case NOT_SUPPORTED -> errorResponse(new AdapterOperationNotSupportedError("Operation not supported:" +
+                        e.getCause().getMessage()));
+                case ADAPTER_NOT_STARTED ->
+                        errorResponse(new AdapterOperationNotSupportedError("Adapter not started: " +
+                                e.getCause().getMessage()));
+                case TAG_NOT_FOUND -> errorResponse(new DomainTagNotFoundError(tagName));
+                default -> {
+                    log.warn("Exception was raised during creation of json schema for writing to PLCs.");
+                    if (log.isDebugEnabled()) {
+                        log.debug("Original exception: ", e);
+                    }
+                    yield errorResponse(new InternalServerError(null));
                 }
-            } catch (final @NotNull ExecutionException e) {
-                if (endTime - startTime > RETRY_TIMEOUT_MILLIS) {
-                    return switch (tagSchemaCreationOutput.getStatus()) {
-                        case NOT_SUPPORTED ->
-                                errorResponse(new AdapterOperationNotSupportedError("Operation not supported:" +
-                                        e.getCause().getMessage()));
-                        case ADAPTER_NOT_STARTED ->
-                                errorResponse(new AdapterOperationNotSupportedError("Adapter not started: " +
-                                        e.getCause().getMessage()));
-                        case TAG_NOT_FOUND -> errorResponse(new DomainTagNotFoundError(tagName));
-                        default -> {
-                            log.warn("Exception was raised during creation of json schema for writing to PLCs.");
-                            if (log.isDebugEnabled()) {
-                                log.debug("Original exception: ", e);
-                            }
-                            yield errorResponse(new InternalServerError(null));
-                        }
-                    };
-                }
-            }
-            try {
-                TimeUnit.MILLISECONDS.sleep(RETRY_INTERVAL_MILLIS);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.warn("Creation of json schema for writing to PLCs were interrupted.");
-                log.debug("Original exception: ", e);
-                if (endTime - startTime > RETRY_TIMEOUT_MILLIS) {
-                    return errorResponse(new InternalServerError(null));
-                }
-            }
-            endTime = System.currentTimeMillis();
+            };
         }
     }
 
