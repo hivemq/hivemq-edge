@@ -47,6 +47,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -55,6 +58,7 @@ import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 
 public class OpcUaClientConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
+    private static final int HEALTH_CHECK_INTERVAL_SECONDS = 30;
 
     private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull List<OpcuaTag> tags;
@@ -66,6 +70,8 @@ public class OpcUaClientConnection {
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
 
     private final @NotNull AtomicReference<ConnectionContext> context = new AtomicReference<>();
+    private final @NotNull ScheduledExecutorService healthCheckScheduler = Executors.newSingleThreadScheduledExecutor();
+    private final @NotNull AtomicReference<ScheduledFuture<?>> healthCheckFuture = new AtomicReference<>();
 
     OpcUaClientConnection(
             final @NotNull String adapterId,
@@ -202,12 +208,20 @@ public class OpcUaClientConnection {
         context.set(new ConnectionContext(subscription.getClient(), faultListener, activityListener));
         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         client.addSessionActivityListener(activityListener);
+
+        // Schedule periodic health check to detect stale connections
+        scheduleHealthCheck();
+
         log.info("Client created and connected successfully");
         return true;
     }
 
     synchronized void stop() {
         log.info("Stopping OPC UA client");
+
+        // Cancel health check
+        cancelHealthCheck();
+
         final ConnectionContext ctx = context.get();
         if(ctx != null) {
             quietlyCloseClient(ctx.client(),true,  ctx.faultListener(), ctx.activityListener());
@@ -217,6 +231,19 @@ public class OpcUaClientConnection {
 
     void destroy() {
         log.info("Destroying OPC UA client");
+
+        // Cancel health check and shutdown scheduler
+        cancelHealthCheck();
+        healthCheckScheduler.shutdown();
+        try {
+            if (!healthCheckScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                healthCheckScheduler.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            healthCheckScheduler.shutdownNow();
+        }
+
         final ConnectionContext ctx = context.get();
         if(ctx != null) {
             quietlyCloseClient(ctx.client(), false, ctx.faultListener(), ctx.activityListener());
@@ -280,6 +307,57 @@ public class OpcUaClientConnection {
             client.disconnect();
         } catch (final UaException e) {
             log.error("Failed to disconnect: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Schedules periodic health checks to detect stale connections.
+     * Runs every HEALTH_CHECK_INTERVAL_SECONDS to verify session is active.
+     */
+    private void scheduleHealthCheck() {
+        final ScheduledFuture<?> future = healthCheckScheduler.scheduleAtFixedRate(() -> {
+            try {
+                final ConnectionContext ctx = context.get();
+                if (ctx == null) {
+                    log.trace("Health check skipped - client not connected for adapter '{}'", adapterId);
+                    return;
+                }
+
+                final OpcUaClient client = ctx.client();
+                if (client.getSession().isEmpty()) {
+                    log.warn("Health check failed for adapter '{}' - session is not active", adapterId);
+                    eventService
+                            .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                            .withMessage("Connection health check failed for adapter '" + adapterId + "' - session inactive")
+                            .withSeverity(Event.SEVERITY.WARN)
+                            .fire();
+                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                } else {
+                    log.trace("Health check passed for adapter '{}' - session is active", adapterId);
+                }
+            } catch (Exception e) {
+                log.warn("Health check exception for adapter '{}'", adapterId, e);
+            }
+        }, HEALTH_CHECK_INTERVAL_SECONDS, HEALTH_CHECK_INTERVAL_SECONDS, TimeUnit.SECONDS);
+
+        // Store future and cancel any existing health check
+        final ScheduledFuture<?> oldFuture = healthCheckFuture.getAndSet(future);
+        if (oldFuture != null && !oldFuture.isDone()) {
+            oldFuture.cancel(false);
+        }
+
+        log.debug("Scheduled connection health check every {} seconds for adapter '{}'",
+                HEALTH_CHECK_INTERVAL_SECONDS, adapterId);
+    }
+
+    /**
+     * Cancels any pending health check.
+     */
+    private void cancelHealthCheck() {
+        final ScheduledFuture<?> future = healthCheckFuture.getAndSet(null);
+        if (future != null && !future.isDone()) {
+            future.cancel(false);
+            log.debug("Cancelled health check for adapter '{}'", adapterId);
         }
     }
 
