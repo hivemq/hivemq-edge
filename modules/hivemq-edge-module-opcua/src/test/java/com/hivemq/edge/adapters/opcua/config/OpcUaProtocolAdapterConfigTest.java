@@ -135,9 +135,7 @@ class OpcUaProtocolAdapterConfigTest {
 
         assertThat(config.getAuth()).isNull();
 
-        assertThat(config.getTls()).satisfies(tls -> {
-            assertThat(tls.enabled()).isFalse();
-        });
+        assertThat(config.getTls()).satisfies(tls -> assertThat(tls.enabled()).isFalse());
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
         assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(mapping -> {
@@ -184,7 +182,14 @@ class OpcUaProtocolAdapterConfigTest {
                         new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
                         new Truststore("my/truststore/path", "truststore-password")),
                 new OpcUaToMqttConfig(1, 1000),
-                new Security(BASIC128RSA15)
+                new Security(BASIC128RSA15),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         );
 
         final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory =
@@ -202,9 +207,7 @@ class OpcUaProtocolAdapterConfigTest {
             assertThat(basic.get("username")).isEqualTo("my-username");
             assertThat(basic.get("password")).isEqualTo("my-password");
         });
-        assertThat((Map<String, Object>) authMap.get("x509")).satisfies(basic -> {
-            assertThat(basic.get("enabled")).isEqualTo(true);
-        });
+        assertThat((Map<String, Object>) authMap.get("x509")).satisfies(basic -> assertThat(basic.get("enabled")).isEqualTo(true));
 
         final Map<String, Object> tlsMap = (Map<String, Object>) config.get("tls");
         assertThat(tlsMap.get("enabled")).isEqualTo(true);
@@ -229,6 +232,13 @@ class OpcUaProtocolAdapterConfigTest {
                 null,
                 null,
                 new OpcUaToMqttConfig(1, 1000),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
 
@@ -253,7 +263,7 @@ class OpcUaProtocolAdapterConfigTest {
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
-        final ProtocolAdapterEntity adapterEntity = configEntity.getProtocolAdapterConfig().get(0);
+        final ProtocolAdapterEntity adapterEntity = configEntity.getProtocolAdapterConfig().getFirst();
 
         final ProtocolAdapterConfigConverter converter = createConverter();
 

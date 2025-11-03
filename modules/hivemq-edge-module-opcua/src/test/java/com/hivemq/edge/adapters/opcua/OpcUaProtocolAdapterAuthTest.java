@@ -58,12 +58,14 @@ class OpcUaProtocolAdapterAuthTest {
 
     private final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> protocolAdapterInput = mock();
 
+    private ModuleServices moduleServices;
+
     @BeforeEach
     void setUp() {
         when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(),
                 "id",
                 "protocolId"));
-        final ModuleServices moduleServices = mock();
+        moduleServices = mock();
         when(moduleServices.adapterPublishService()).thenReturn(mock(ProtocolAdapterPublishService.class));
         when(moduleServices.eventService()).thenReturn(new FakeEventService());
         when(moduleServices.adapterPublishService()).thenReturn(mock(ProtocolAdapterPublishService.class));
@@ -99,6 +101,13 @@ class OpcUaProtocolAdapterAuthTest {
                 null,
                 null,
                 new OpcUaToMqttConfig(1, 1000),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
@@ -107,7 +116,7 @@ class OpcUaProtocolAdapterAuthTest {
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
-        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(protocolAdapterInput.moduleServices());
+        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(moduleServices);
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out);
 
@@ -127,6 +136,13 @@ class OpcUaProtocolAdapterAuthTest {
                 auth,
                 null,
                 null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
@@ -134,7 +150,7 @@ class OpcUaProtocolAdapterAuthTest {
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
-        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(protocolAdapterInput.moduleServices());
+        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(moduleServices);
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out);
 
@@ -153,13 +169,20 @@ class OpcUaProtocolAdapterAuthTest {
                 null,
                 tls,
                 null,
-                security);
+                security,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
         when(protocolAdapterInput.getConfig()).thenReturn(config);
 
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
-        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(protocolAdapterInput.moduleServices());
+        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(moduleServices);
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out);
 
@@ -182,6 +205,13 @@ class OpcUaProtocolAdapterAuthTest {
                 auth,
                 tls,
                 null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
@@ -189,7 +219,7 @@ class OpcUaProtocolAdapterAuthTest {
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
-        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(protocolAdapterInput.moduleServices());
+        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(moduleServices);
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out);
 

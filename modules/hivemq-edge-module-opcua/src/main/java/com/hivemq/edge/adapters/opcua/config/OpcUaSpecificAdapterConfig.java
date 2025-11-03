@@ -58,8 +58,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
     @JsonProperty("applicationUri")
     @ModuleConfigField(title = "Application URI Override",
                        description = "Overrides the Application URI used for OPC UA client identification. If not specified, the URI from the certificate SAN extension is used, or the default URI 'urn:hivemq:edge:client' as fallback.",
-                       format = ModuleConfigField.FieldType.URI,
-                       required = false)
+                       format = ModuleConfigField.FieldType.URI)
     private final @Nullable String applicationUri;
 
     @JsonProperty("auth")
@@ -77,6 +76,62 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
                        description = "The configuration for a data stream from OPC UA to MQTT")
     private final @NotNull OpcUaToMqttConfig opcuaToMqttConfig;
 
+    @JsonProperty("sessionTimeout")
+    @ModuleConfigField(title = "Session Timeout (seconds)",
+                       description = "OPC UA session timeout in seconds. Session will be renewed at this interval.",
+                       numberMin = 10,
+                       numberMax = 3600,
+                       defaultValue = "120")
+    private final int sessionTimeout;
+
+    @JsonProperty("requestTimeout")
+    @ModuleConfigField(title = "Request Timeout (seconds)",
+                       description = "Timeout for OPC UA requests in seconds",
+                       numberMin = 5,
+                       numberMax = 300,
+                       defaultValue = "30")
+    private final int requestTimeout;
+
+    @JsonProperty("keepAliveInterval")
+    @ModuleConfigField(title = "Keep-Alive Interval (seconds)",
+                       description = "Interval between OPC UA keep-alive pings in seconds",
+                       numberMin = 1,
+                       numberMax = 60,
+                       defaultValue = "10")
+    private final int keepAliveInterval;
+
+    @JsonProperty("keepAliveFailuresAllowed")
+    @ModuleConfigField(title = "Keep-Alive Failures Allowed",
+                       description = "Number of consecutive keep-alive failures before connection is considered dead",
+                       numberMin = 1,
+                       numberMax = 10,
+                       defaultValue = "3")
+    private final int keepAliveFailuresAllowed;
+
+    @JsonProperty("connectionTimeout")
+    @ModuleConfigField(title = "Connection Timeout (seconds)",
+                       description = "Timeout for establishing connection to OPC UA server in seconds",
+                       numberMin = 5,
+                       numberMax = 300,
+                       defaultValue = "30")
+    private final int connectionTimeout;
+
+    @JsonProperty("healthCheckInterval")
+    @ModuleConfigField(title = "Health Check Interval (seconds)",
+                       description = "Interval between connection health checks in seconds",
+                       numberMin = 10,
+                       numberMax = 300,
+                       defaultValue = "30")
+    private final int healthCheckInterval;
+
+    @JsonProperty("retryInterval")
+    @ModuleConfigField(title = "Retry Interval (seconds)",
+                       description = "Interval between connection retry attempts in seconds",
+                       numberMin = 5,
+                       numberMax = 300,
+                       defaultValue = "30")
+    private final int retryInterval;
+
     @JsonCreator
     public OpcUaSpecificAdapterConfig(
             @JsonProperty(value = "uri", required = true) final @NotNull String uri,
@@ -85,7 +140,14 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
             @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
-            @JsonProperty("security") final @Nullable Security security) {
+            @JsonProperty("security") final @Nullable Security security,
+            @JsonProperty("sessionTimeout") final @Nullable Integer sessionTimeout,
+            @JsonProperty("requestTimeout") final @Nullable Integer requestTimeout,
+            @JsonProperty("keepAliveInterval") final @Nullable Integer keepAliveInterval,
+            @JsonProperty("keepAliveFailuresAllowed") final @Nullable Integer keepAliveFailuresAllowed,
+            @JsonProperty("connectionTimeout") final @Nullable Integer connectionTimeout,
+            @JsonProperty("healthCheckInterval") final @Nullable Integer healthCheckInterval,
+            @JsonProperty("retryInterval") final @Nullable Integer retryInterval) {
         this.uri = uri;
         this.overrideUri = requireNonNullElse(overrideUri, false);
         this.applicationUri = (applicationUri != null && !applicationUri.isBlank()) ? applicationUri : null;
@@ -94,6 +156,15 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         this.opcuaToMqttConfig =
                 Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(1, 1000));
         this.security = requireNonNullElse(security, new Security(Constants.DEFAULT_SECURITY_POLICY));
+
+        // Timeout configurations with sensible defaults
+        this.sessionTimeout = requireNonNullElse(sessionTimeout, 120);
+        this.requestTimeout = requireNonNullElse(requestTimeout, 30);
+        this.keepAliveInterval = requireNonNullElse(keepAliveInterval, 10);
+        this.keepAliveFailuresAllowed = requireNonNullElse(keepAliveFailuresAllowed, 3);
+        this.connectionTimeout = requireNonNullElse(connectionTimeout, 30);
+        this.healthCheckInterval = requireNonNullElse(healthCheckInterval, 30);
+        this.retryInterval = requireNonNullElse(retryInterval, 30);
     }
 
 
@@ -125,7 +196,33 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         return applicationUri;
     }
 
+    public int getSessionTimeout() {
+        return sessionTimeout;
+    }
 
+    public int getRequestTimeout() {
+        return requestTimeout;
+    }
+
+    public int getKeepAliveInterval() {
+        return keepAliveInterval;
+    }
+
+    public int getKeepAliveFailuresAllowed() {
+        return keepAliveFailuresAllowed;
+    }
+
+    public int getConnectionTimeout() {
+        return connectionTimeout;
+    }
+
+    public int getHealthCheckInterval() {
+        return healthCheckInterval;
+    }
+
+    public int getRetryInterval() {
+        return retryInterval;
+    }
 
     @Override
     public boolean equals(final @Nullable Object o) {
@@ -134,6 +231,13 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         }
         final OpcUaSpecificAdapterConfig that = (OpcUaSpecificAdapterConfig) o;
         return getOverrideUri().equals(that.getOverrideUri()) &&
+                sessionTimeout == that.sessionTimeout &&
+                requestTimeout == that.requestTimeout &&
+                keepAliveInterval == that.keepAliveInterval &&
+                keepAliveFailuresAllowed == that.keepAliveFailuresAllowed &&
+                connectionTimeout == that.connectionTimeout &&
+                healthCheckInterval == that.healthCheckInterval &&
+                retryInterval == that.retryInterval &&
                 Objects.equals(id, that.id) &&
                 Objects.equals(getUri(), that.getUri()) &&
                 Objects.equals(getApplicationUri(), that.getApplicationUri()) &&
@@ -145,6 +249,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
 
     @Override
     public int hashCode() {
-        return Objects.hash(getOverrideUri(), id, getUri(), getApplicationUri(), getAuth(), getTls(), getSecurity(), getOpcuaToMqttConfig());
+        return Objects.hash(getOverrideUri(), id, getUri(), getApplicationUri(), getAuth(), getTls(), getSecurity(), getOpcuaToMqttConfig(),
+                sessionTimeout, requestTimeout, keepAliveInterval, keepAliveFailuresAllowed, connectionTimeout, healthCheckInterval, retryInterval);
     }
 }
