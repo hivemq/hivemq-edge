@@ -46,7 +46,6 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -55,12 +54,17 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
+    private static final int RETRY_DELAY_SECONDS = 30;
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -72,7 +76,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull OpcUaSpecificAdapterConfig config;
-    private final @NotNull AtomicReference<UInteger> lastSubscriptionId = new AtomicReference<>();
+    private final @NotNull ScheduledExecutorService retryScheduler = Executors.newSingleThreadScheduledExecutor();
+    private final @NotNull AtomicReference<ScheduledFuture<?>> retryFuture = new AtomicReference<>();
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -100,13 +105,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         log.info("Starting OPC UA protocol adapter {}", adapterId);
         final ParsedConfig parsedConfig;
         final var result = ParsedConfig.fromConfig(config);
-        if (result instanceof final Failure<ParsedConfig, String> failure) {
-            log.error("Failed to parse configuration for OPC UA client: {}", failure.failure());
-            output.failStart(new IllegalStateException(failure.failure()),
+        if (result instanceof Failure<ParsedConfig, String>(final String failure)) {
+            log.error("Failed to parse configuration for OPC UA client: {}", failure);
+            output.failStart(new IllegalStateException(failure),
                     "Failed to parse configuration for OPC UA client");
             return;
-        } else if (result instanceof final Success<ParsedConfig, String> success) {
-            parsedConfig = success.result();
+        } else if (result instanceof Success<ParsedConfig, String>(final ParsedConfig result1)) {
+            parsedConfig = result1;
         } else {
             output.failStart(new IllegalStateException("Unexpected result type: " + result.getClass().getName()),
                     "Failed to parse configuration for OPC UA client");
@@ -121,22 +126,23 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 dataPointFactory,
                 input.moduleServices().eventService(),
                 protocolAdapterMetricsService,
-                config,
-                lastSubscriptionId))) {
+                config))) {
 
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-            CompletableFuture.supplyAsync(() -> conn.start(parsedConfig)).whenComplete((success, throwable) -> {
-                if (!success || throwable != null) {
-                    this.opcUaClientConnection.set(null);
-                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                    log.error("Failed to start OPC UA client", throwable);
-                }
-            });
 
+            // Attempt initial connection asynchronously
+            attemptConnection(conn, parsedConfig, input);
+
+            // Adapter starts successfully even if connection isn't established yet
+            // Hardware may come online later and automatic retry will connect
             log.info("Successfully started OPC UA protocol adapter {}", adapterId);
             output.startedSuccessfully();
         } else {
-            log.warn("Tried starting already started OPC UA protocol adapter {}", adapterId);
+            log.error("Cannot start OPC UA protocol adapter '{}' - adapter is already started", adapterId);
+            output.failStart(
+                new IllegalStateException("Adapter already started"),
+                "Cannot start already started adapter. Please stop the adapter first."
+            );
         }
     }
 
@@ -145,6 +151,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             final @NotNull ProtocolAdapterStopInput input,
             final @NotNull ProtocolAdapterStopOutput output) {
         log.info("Stopping OPC UA protocol adapter {}", adapterId);
+
+        // Cancel any pending retries
+        cancelRetry();
+
         final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
         if (conn != null) {
             conn.stop();
@@ -157,6 +167,21 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     @Override
     public void destroy() {
         log.info("Destroying OPC UA protocol adapter {}", adapterId);
+
+        // Cancel any pending retries
+        cancelRetry();
+
+        // Shutdown retry scheduler
+        retryScheduler.shutdown();
+        try {
+            if (!retryScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                retryScheduler.shutdownNow();
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            retryScheduler.shutdownNow();
+        }
+
         final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
         if (conn != null) {
             CompletableFuture.runAsync(() -> {
@@ -299,5 +324,90 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     @VisibleForTesting
     public @NotNull ProtocolAdapterState getProtocolAdapterState() {
         return protocolAdapterState;
+    }
+
+    /**
+     * Attempts to establish connection to OPC UA server.
+     * On failure, schedules automatic retry after RETRY_DELAY_SECONDS.
+     */
+    private void attemptConnection(
+            final @NotNull OpcUaClientConnection conn,
+            final @NotNull ParsedConfig parsedConfig,
+            final @NotNull ProtocolAdapterStartInput input) {
+
+        CompletableFuture.supplyAsync(() -> conn.start(parsedConfig)).whenComplete((success, throwable) -> {
+            if (success && throwable == null) {
+                // Connection succeeded - cancel any pending retries
+                cancelRetry();
+                log.info("OPC UA adapter '{}' connected successfully", adapterId);
+            } else {
+                // Connection failed - clean up and schedule retry
+                this.opcUaClientConnection.set(null);
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+
+                if (throwable != null) {
+                    log.warn("OPC UA adapter '{}' connection failed, will retry in {} seconds",
+                            adapterId, RETRY_DELAY_SECONDS, throwable);
+                } else {
+                    log.warn("OPC UA adapter '{}' connection returned false, will retry in {} seconds",
+                            adapterId, RETRY_DELAY_SECONDS);
+                }
+
+                // Schedule retry attempt
+                scheduleRetry(parsedConfig, input);
+            }
+        });
+    }
+
+    /**
+     * Schedules a retry attempt after RETRY_DELAY_SECONDS.
+     */
+    private void scheduleRetry(
+            final @NotNull ParsedConfig parsedConfig,
+            final @NotNull ProtocolAdapterStartInput input) {
+
+        final ScheduledFuture<?> future = retryScheduler.schedule(() -> {
+            // Check if adapter was stopped before retry executes
+            if (opcUaClientConnection.get() == null) {
+                log.debug("OPC UA adapter '{}' retry cancelled - adapter was stopped", adapterId);
+                return;
+            }
+
+            log.info("Retrying connection for OPC UA adapter '{}'", adapterId);
+
+            // Create new connection object for retry
+            final OpcUaClientConnection newConn = new OpcUaClientConnection(adapterId,
+                    tagList,
+                    protocolAdapterState,
+                    input.moduleServices().protocolAdapterTagStreamingService(),
+                    dataPointFactory,
+                    input.moduleServices().eventService(),
+                    protocolAdapterMetricsService,
+                    config);
+
+            // Set as current connection and attempt
+            if (opcUaClientConnection.compareAndSet(null, newConn)) {
+                attemptConnection(newConn, parsedConfig, input);
+            } else {
+                log.debug("OPC UA adapter '{}' retry skipped - connection already exists", adapterId);
+            }
+        }, RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
+
+        // Store future so it can be cancelled if needed
+        final ScheduledFuture<?> oldFuture = retryFuture.getAndSet(future);
+        if (oldFuture != null && !oldFuture.isDone()) {
+            oldFuture.cancel(false);
+        }
+    }
+
+    /**
+     * Cancels any pending retry attempts.
+     */
+    private void cancelRetry() {
+        final ScheduledFuture<?> future = retryFuture.getAndSet(null);
+        if (future != null && !future.isDone()) {
+            future.cancel(false);
+            log.debug("Cancelled pending retry for OPC UA adapter '{}'", adapterId);
+        }
     }
 }

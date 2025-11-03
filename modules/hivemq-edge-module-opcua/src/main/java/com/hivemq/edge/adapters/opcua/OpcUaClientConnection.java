@@ -45,10 +45,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
-import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 public class OpcUaClientConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
@@ -72,8 +75,7 @@ public class OpcUaClientConnection {
             final @NotNull DataPointFactory dataPointFactory,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
-            final @NotNull OpcUaSpecificAdapterConfig config,
-            final @NotNull AtomicReference<UInteger> lastSubscriptionId) {
+            final @NotNull OpcUaSpecificAdapterConfig config) {
         this.config = config;
         this.tagStreamingService = tagStreamingService;
         this.dataPointFactory = dataPointFactory;
@@ -122,12 +124,56 @@ public class OpcUaClientConnection {
                         ignore -> {},
                         new OpcUaClientConfigurator(adapterId, parsedConfig));
             client.addFaultListener(faultListener);
-            client.connect();
+
+            // Add timeout to connection attempt to prevent hanging forever
+            // Wrap synchronous connect() call with CompletableFuture timeout
+            try {
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        client.connect();
+                    } catch (final UaException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).get(30, TimeUnit.SECONDS);
+                log.debug("OPC UA client connected successfully for adapter '{}'", adapterId);
+            } catch (final TimeoutException e) {
+                log.error("Connection timeout after 30 seconds for OPC UA adapter '{}'", adapterId);
+                eventService
+                        .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                        .withMessage("Connection timeout after 30 seconds for adapter '" + adapterId + "'")
+                        .withSeverity(Event.SEVERITY.ERROR)
+                        .fire();
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                quietlyCloseClient(client, false, faultListener, null);
+                return false;
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("Connection interrupted for OPC UA adapter '{}'", adapterId, e);
+                eventService
+                        .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                        .withMessage("Connection interrupted for adapter '" + adapterId + "'")
+                        .withSeverity(Event.SEVERITY.ERROR)
+                        .fire();
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                quietlyCloseClient(client, false, faultListener, null);
+                return false;
+            } catch (final ExecutionException e) {
+                final Throwable cause = e.getCause();
+                log.error("Connection failed for OPC UA adapter '{}'", adapterId, cause);
+                eventService
+                        .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                        .withMessage("Connection failed for adapter '" + adapterId + "': " + cause.getMessage())
+                        .withSeverity(Event.SEVERITY.ERROR)
+                        .fire();
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                quietlyCloseClient(client, false, faultListener, null);
+                return false;
+            }
         } catch (final UaException e) {
-            log.error("Unable to connect and subscribe to the OPC UA server for adapter '{}'", adapterId, e);
+            log.error("Unable to create OPC UA client for adapter '{}'", adapterId, e);
             eventService
                     .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                    .withMessage("Unable to connect and subscribe to the OPC UA server for adapter '" + adapterId + "'")
+                    .withMessage("Unable to create OPC UA client for adapter '" + adapterId + "'")
                     .withSeverity(Event.SEVERITY.ERROR)
                     .fire();
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
