@@ -368,7 +368,14 @@ class ParsedConfigTest {
                 null,  // no auth
                 tls,
                 opcUaToMqttConfig,
-                security
+                security,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         );
     }
 }

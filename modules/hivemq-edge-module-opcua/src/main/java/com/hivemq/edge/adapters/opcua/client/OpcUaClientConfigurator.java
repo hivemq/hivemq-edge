@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.client;
 
 import com.hivemq.edge.adapters.opcua.Constants;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClientConfigBuilder;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
@@ -32,10 +33,12 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
 
     private final @NotNull String adapterId;
     private final @NotNull ParsedConfig parsedConfig;
+    private final @NotNull OpcUaSpecificAdapterConfig config;
 
-    public OpcUaClientConfigurator(final @NotNull String adapterId, final @NotNull ParsedConfig parsedConfig) {
+    public OpcUaClientConfigurator(final @NotNull String adapterId, final @NotNull ParsedConfig parsedConfig, final @NotNull OpcUaSpecificAdapterConfig config) {
         this.adapterId = adapterId;
         this.parsedConfig = parsedConfig;
+        this.config = config;
     }
 
     @Override
@@ -51,18 +54,24 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
             log.info("Using Application URI from certificate: {}", applicationUri);
         }
 
+        // Convert seconds to milliseconds for SDK configuration
+        final int sessionTimeoutMs = config.getSessionTimeout() * 1000;
+        final int requestTimeoutMs = config.getRequestTimeout() * 1000;
+        final int keepAliveIntervalMs = config.getKeepAliveInterval() * 1000;
+
         configBuilder
                 .setApplicationName(LocalizedText.english(Constants.OPCUA_APPLICATION_NAME))
                 .setApplicationUri(applicationUri)
                 .setProductUri(Constants.OPCUA_PRODUCT_URI)
                 .setSessionName(() -> Constants.OPCUA_SESSION_NAME_PREFIX + adapterId)
                 // Configure timeouts to prevent silent disconnects
-                .setSessionTimeout(UInteger.valueOf(120_000))  // 2 minutes - session renewal interval
-                .setRequestTimeout(UInteger.valueOf(30_000))   // 30 seconds - request timeout
-                .setKeepAliveInterval(UInteger.valueOf(10_000)) // 10 seconds - keep-alive ping interval
-                .setKeepAliveFailuresAllowed(UInteger.valueOf(3)); // 3 failures = 30s before disconnect
+                .setSessionTimeout(UInteger.valueOf(sessionTimeoutMs))
+                .setRequestTimeout(UInteger.valueOf(requestTimeoutMs))
+                .setKeepAliveInterval(UInteger.valueOf(keepAliveIntervalMs))
+                .setKeepAliveFailuresAllowed(UInteger.valueOf(config.getKeepAliveFailuresAllowed()));
 
-        log.info("Configured OPC UA timeouts: session=120s, request=30s, keepAlive=10s, failuresAllowed=3");
+        log.info("Configured OPC UA timeouts: session={}s, request={}s, keepAlive={}s, failuresAllowed={}",
+                config.getSessionTimeout(), config.getRequestTimeout(), config.getKeepAliveInterval(), config.getKeepAliveFailuresAllowed());
         log.info("TLS is enabled: {}", parsedConfig.tlsEnabled());
         if (parsedConfig.tlsEnabled()) {
             if (log.isDebugEnabled()) {

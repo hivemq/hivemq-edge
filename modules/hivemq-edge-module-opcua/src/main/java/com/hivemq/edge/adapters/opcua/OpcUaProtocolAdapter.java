@@ -64,7 +64,6 @@ import java.util.stream.Collectors;
 
 public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
-    private static final int RETRY_DELAY_SECONDS = 30;
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -328,7 +327,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
     /**
      * Attempts to establish connection to OPC UA server.
-     * On failure, schedules automatic retry after RETRY_DELAY_SECONDS.
+     * On failure, schedules automatic retry after configured retry interval.
      */
     private void attemptConnection(
             final @NotNull OpcUaClientConnection conn,
@@ -345,12 +344,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 this.opcUaClientConnection.set(null);
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
 
+                final int retryIntervalSeconds = config.getRetryInterval();
                 if (throwable != null) {
                     log.warn("OPC UA adapter '{}' connection failed, will retry in {} seconds",
-                            adapterId, RETRY_DELAY_SECONDS, throwable);
+                            adapterId, retryIntervalSeconds, throwable);
                 } else {
                     log.warn("OPC UA adapter '{}' connection returned false, will retry in {} seconds",
-                            adapterId, RETRY_DELAY_SECONDS);
+                            adapterId, retryIntervalSeconds);
                 }
 
                 // Schedule retry attempt
@@ -360,12 +360,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     }
 
     /**
-     * Schedules a retry attempt after RETRY_DELAY_SECONDS.
+     * Schedules a retry attempt after configured retry interval.
      */
     private void scheduleRetry(
             final @NotNull ParsedConfig parsedConfig,
             final @NotNull ProtocolAdapterStartInput input) {
 
+        final int retryIntervalSeconds = config.getRetryInterval();
         final ScheduledFuture<?> future = retryScheduler.schedule(() -> {
             // Check if adapter was stopped before retry executes
             if (opcUaClientConnection.get() == null) {
@@ -391,7 +392,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             } else {
                 log.debug("OPC UA adapter '{}' retry skipped - connection already exists", adapterId);
             }
-        }, RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
+        }, retryIntervalSeconds, TimeUnit.SECONDS);
 
         // Store future so it can be cancelled if needed
         final ScheduledFuture<?> oldFuture = retryFuture.getAndSet(future);

@@ -36,7 +36,6 @@ import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.UaException;
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -58,7 +57,6 @@ import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 
 public class OpcUaClientConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
-    private static final int HEALTH_CHECK_INTERVAL_SECONDS = 30;
 
     private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull List<OpcuaTag> tags;
@@ -128,11 +126,12 @@ public class OpcUaClientConnection {
                         config.getUri(),
                         endpointFilter,
                         ignore -> {},
-                        new OpcUaClientConfigurator(adapterId, parsedConfig));
+                        new OpcUaClientConfigurator(adapterId, parsedConfig, config));
             client.addFaultListener(faultListener);
 
             // Add timeout to connection attempt to prevent hanging forever
             // Wrap synchronous connect() call with CompletableFuture timeout
+            final int connectionTimeoutSeconds = config.getConnectionTimeout();
             try {
                 CompletableFuture.runAsync(() -> {
                     try {
@@ -140,13 +139,13 @@ public class OpcUaClientConnection {
                     } catch (final UaException e) {
                         throw new RuntimeException(e);
                     }
-                }).get(30, TimeUnit.SECONDS);
+                }).get(connectionTimeoutSeconds, TimeUnit.SECONDS);
                 log.debug("OPC UA client connected successfully for adapter '{}'", adapterId);
             } catch (final TimeoutException e) {
-                log.error("Connection timeout after 30 seconds for OPC UA adapter '{}'", adapterId);
+                log.error("Connection timeout after {} seconds for OPC UA adapter '{}'", connectionTimeoutSeconds, adapterId);
                 eventService
                         .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                        .withMessage("Connection timeout after 30 seconds for adapter '" + adapterId + "'")
+                        .withMessage("Connection timeout after " + connectionTimeoutSeconds + " seconds for adapter '" + adapterId + "'")
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
@@ -239,7 +238,7 @@ public class OpcUaClientConnection {
             if (!healthCheckScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
                 healthCheckScheduler.shutdownNow();
             }
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             healthCheckScheduler.shutdownNow();
         }
@@ -312,9 +311,10 @@ public class OpcUaClientConnection {
 
     /**
      * Schedules periodic health checks to detect stale connections.
-     * Runs every HEALTH_CHECK_INTERVAL_SECONDS to verify session is active.
+     * Runs at configured health check interval to verify session is active.
      */
     private void scheduleHealthCheck() {
+        final int healthCheckIntervalSeconds = config.getHealthCheckInterval();
         final ScheduledFuture<?> future = healthCheckScheduler.scheduleAtFixedRate(() -> {
             try {
                 final ConnectionContext ctx = context.get();
@@ -335,10 +335,10 @@ public class OpcUaClientConnection {
                 } else {
                     log.trace("Health check passed for adapter '{}' - session is active", adapterId);
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 log.warn("Health check exception for adapter '{}'", adapterId, e);
             }
-        }, HEALTH_CHECK_INTERVAL_SECONDS, HEALTH_CHECK_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        }, healthCheckIntervalSeconds, healthCheckIntervalSeconds, TimeUnit.SECONDS);
 
         // Store future and cancel any existing health check
         final ScheduledFuture<?> oldFuture = healthCheckFuture.getAndSet(future);
@@ -347,7 +347,7 @@ public class OpcUaClientConnection {
         }
 
         log.debug("Scheduled connection health check every {} seconds for adapter '{}'",
-                HEALTH_CHECK_INTERVAL_SECONDS, adapterId);
+                healthCheckIntervalSeconds, adapterId);
     }
 
     /**
