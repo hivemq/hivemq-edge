@@ -9,10 +9,10 @@ properties:
     description: The metadata associated with the function
   schema:
     $ref: ./JsonNode.yaml
-    description: the full JSON-Schema describimng the function and its arguments
+    description: the full JSON-Schema describing the function and its arguments
   uiSchema:
     $ref: ./JsonNode.yaml
-    description: An optional UI Schema to customise the rendering of the configuraton form
+    description: An optional UI Schema to customise the rendering of the configuration form
 required:
   - functionId
   - metadata

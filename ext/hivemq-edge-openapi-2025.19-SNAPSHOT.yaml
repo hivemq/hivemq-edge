@@ -6793,10 +6793,10 @@ components:
           description: The metadata associated with the function
         schema:
           $ref: '#/components/schemas/JsonNode'
-          description: the full JSON-Schema describimng the function and its arguments
+          description: the full JSON-Schema describing the function and its arguments
         uiSchema:
           $ref: '#/components/schemas/JsonNode'
-          description: An optional UI Schema to customise the rendering of the configuraton form
+          description: An optional UI Schema to customise the rendering of the configuration form
       required:
         - functionId
         - metadata
