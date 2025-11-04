@@ -133,7 +133,7 @@ const DrawerFilterToolbox: FC<DrawerFilterToolboxProps> = ({ onClearFilters, onA
   }
 
   return (
-    <ButtonGroup variant="outline" isAttached size="sm" m={1} data-testid="toolbox-filter">
+    <ButtonGroup variant="outline" isAttached size="sm" data-testid="toolbox-filter">
       <Button
         size="sm"
         leftIcon={<Icon as={GoSidebarExpand} boxSize="24px" />}

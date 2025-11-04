@@ -99,6 +99,41 @@ The agent will **automatically look in the `.tasks/` directory** and:
 
 ---
 
+### 37943-toolbar-search-filter
+
+**Status:** Active 🟡  
+**Directory:** `.tasks/37943-toolbar-search-filter/`  
+**Objective:** Combine layout controls and search/filter toolbars into a single collapsible toolbar  
+**Completed Subtasks:** 0 (Planning Complete)  
+**Last Updated:** October 31, 2025
+
+**Summary:**
+
+Follow-up to task 25337 (workspace-auto-layout). Merging the top-left layout controls toolbar and top-right search/filter toolbar into a unified collapsible toolbar at top-left with section-based organization:
+
+- Section 1: Search & Filter
+- Section 2: Layout Controls
+
+**Phases:**
+
+- ✅ Phase 1: Planning & Architecture (Complete)
+- 🟡 Phase 2: Core Implementation (In Progress)
+  - Subtask 1: Create unified toolbar component
+  - Subtask 2: Integrate search/filter section
+  - Subtask 3: Integrate layout controls section
+  - Subtask 4: Add visual separators
+- ⏳ Phase 3: Testing & Polish
+  - Subtask 5: Update and consolidate tests
+  - Subtask 6: Accessibility validation
+  - Subtask 7: E2E testing (optional)
+
+**Quick Start:**
+
+- Read: [TASK_BRIEF.md](.tasks/37943-toolbar-search-filter/TASK_BRIEF.md)
+- Review: [TASK_SUMMARY.md](.tasks/37943-toolbar-search-filter/TASK_SUMMARY.md)
+
+---
+
 ### 38000-cypress-module
 
 **Status:** Completed ✅  

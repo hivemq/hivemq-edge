@@ -7,17 +7,12 @@
 import { type FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Select, Tooltip } from '@chakra-ui/react'
-import config from '@/config'
 import { useLayoutEngine } from '../../hooks/useLayoutEngine.ts'
 import type { LayoutType } from '../../types/layout.ts'
 
 const LayoutSelector: FC = () => {
   const { t } = useTranslation()
   const { currentAlgorithm, setAlgorithm, availableAlgorithms } = useLayoutEngine()
-
-  if (!config.features.WORKSPACE_AUTO_LAYOUT) {
-    return null
-  }
 
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newAlgorithm = event.target.value as LayoutType

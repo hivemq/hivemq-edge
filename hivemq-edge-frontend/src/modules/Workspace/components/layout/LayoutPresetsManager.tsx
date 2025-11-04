@@ -33,6 +33,7 @@ import {
   Text,
   useToast,
   Tooltip,
+  Portal,
 } from '@chakra-ui/react'
 import { LuBookmark, LuSave, LuTrash2 } from 'react-icons/lu'
 import { v4 as uuidv4 } from 'uuid'
@@ -128,53 +129,55 @@ const LayoutPresetsManager: FC = () => {
             aria-label={t('workspace.autoLayout.presets.aria-label')}
           />
         </Tooltip>
-        <MenuList>
-          <MenuItem icon={<Icon as={LuSave} />} onClick={onOpen}>
-            {t('workspace.autoLayout.presets.actions.save')}
-          </MenuItem>
+        <Portal>
+          <MenuList>
+            <MenuItem icon={<Icon as={LuSave} />} onClick={onOpen}>
+              {t('workspace.autoLayout.presets.actions.save')}
+            </MenuItem>
 
-          {layoutConfig.presets.length > 0 && (
-            <>
-              <MenuDivider />
-              <Text fontSize="xs" fontWeight="bold" px={3} py={1} color="gray.500">
-                {t('workspace.autoLayout.presets.list.title')}
-              </Text>
+            {layoutConfig.presets.length > 0 && (
+              <>
+                <MenuDivider />
+                <Text fontSize="xs" fontWeight="bold" px={3} py={1} color="gray.500">
+                  {t('workspace.autoLayout.presets.list.title')}
+                </Text>
 
-              {layoutConfig.presets.map((preset) => (
-                <HStack key={preset.id} spacing={0} _hover={{ bg: 'gray.50', _dark: { bg: 'gray.700' } }}>
-                  <MenuItem flex={1} onClick={() => handleLoadPreset(preset.id)}>
-                    <VStack align="start" spacing={0}>
-                      <Text fontSize="sm">{preset.name}</Text>
-                      <Text fontSize="xs" color="gray.500">
-                        {new Date(preset.createdAt).toLocaleDateString()}
-                      </Text>
-                    </VStack>
-                  </MenuItem>
-                  <IconButton
-                    icon={<Icon as={LuTrash2} />}
-                    size="xs"
-                    variant="ghost"
-                    colorScheme="red"
-                    aria-label={t('workspace.autoLayout.presets.actions.delete')}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeletePreset(preset.id)
-                    }}
-                  />
-                </HStack>
-              ))}
-            </>
-          )}
+                {layoutConfig.presets.map((preset) => (
+                  <HStack key={preset.id} spacing={0} _hover={{ bg: 'gray.50', _dark: { bg: 'gray.700' } }}>
+                    <MenuItem flex={1} onClick={() => handleLoadPreset(preset.id)}>
+                      <VStack align="start" spacing={0}>
+                        <Text fontSize="sm">{preset.name}</Text>
+                        <Text fontSize="xs" color="gray.500">
+                          {new Date(preset.createdAt).toLocaleDateString()}
+                        </Text>
+                      </VStack>
+                    </MenuItem>
+                    <IconButton
+                      icon={<Icon as={LuTrash2} />}
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="red"
+                      aria-label={t('workspace.autoLayout.presets.actions.delete')}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeletePreset(preset.id)
+                      }}
+                    />
+                  </HStack>
+                ))}
+              </>
+            )}
 
-          {layoutConfig.presets.length === 0 && (
-            <>
-              <MenuDivider />
-              <Text fontSize="xs" px={3} py={2} color="gray.500">
-                {t('workspace.autoLayout.presets.list.empty')}
-              </Text>
-            </>
-          )}
-        </MenuList>
+            {layoutConfig.presets.length === 0 && (
+              <>
+                <MenuDivider />
+                <Text fontSize="xs" px={3} py={2} color="gray.500">
+                  {t('workspace.autoLayout.presets.list.empty')}
+                </Text>
+              </>
+            )}
+          </MenuList>
+        </Portal>
       </Menu>
 
       <Modal isOpen={isOpen} onClose={onClose}>
