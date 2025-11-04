@@ -1,0 +1,43 @@
+{
+  "id": "test-behavior-policy",
+  "matching": {
+    "clientIdRegex": "client/example/1"
+  },
+  "createdAt": "2025-11-03T10:00:00.000Z",
+  "lastUpdatedAt": "2025-11-03T10:00:00.000Z",
+  "behavior": {
+    "id": "Mqtt.events",
+    "arguments": null
+  },
+  "onTransitions": [
+    {
+      "fromState": "Initial",
+      "toState": "Connected",
+      "Mqtt.OnInboundConnect": {
+        "pipeline": [
+          {
+            "arguments": {
+              "level": "INFO",
+              "message": "Client connected"
+            },
+            "functionId": "System.log",
+            "id": "action-test1"
+          }
+        ]
+      }
+    },
+    {
+      "fromState": "Connected",
+      "toState": "Connected",
+      "Mqtt.OnInboundSubscribe": {
+        "pipeline": [
+          {
+            "arguments": {},
+            "functionId": "Mqtt.disconnect",
+            "id": "action-test2"
+          }
+        ]
+      }
+    }
+  ]
+}

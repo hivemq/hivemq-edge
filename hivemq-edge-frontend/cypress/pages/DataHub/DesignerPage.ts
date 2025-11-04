@@ -21,6 +21,10 @@ export class DesignerPage extends Page {
       return cy.get(`[role="group"][data-testid^="rf__node-"]`)
     },
 
+    selectNode(type: string) {
+      return this.mode(type).click()
+    },
+
     edges() {
       // xy-edge__FUNCTION_8be4812a-59a1-4b27-87e3-99268cc4e3bd-OPERATION_77b42291-6889-43d7-8205-81799c4ae7b7function
       return cy.get(`[role="group"][data-id^="xy-edge__"]`)
@@ -68,6 +72,12 @@ export class DesignerPage extends Page {
     },
   }
 
+  statusBar = {
+    get modify() {
+      return cy.getByTestId('designer-edit-modify')
+    },
+  }
+
   controls = {
     get fit() {
       return cy.getByAriaLabel('Fit to the canvas')
@@ -75,6 +85,82 @@ export class DesignerPage extends Page {
 
     get zoomIn() {
       return cy.getByAriaLabel('Zoom in')
+    },
+  }
+
+  toolbar = {
+    get checkPolicy() {
+      return cy.getByTestId('toolbox-policy-check')
+    },
+
+    get showReport() {
+      return cy.getByTestId('toolbox-policy-report')
+    },
+
+    get publishPolicy() {
+      return cy.getByTestId('toolbox-policy-publish')
+    },
+  }
+
+  dryRunPanel = {
+    get drawer() {
+      return cy.getByTestId('policy-validity-report')
+    },
+
+    get closeButton() {
+      return this.drawer.find('[aria-label="Close"]')
+    },
+
+    get statusAlert() {
+      return cy.getByTestId('toolbox-policy-check-status')
+    },
+
+    get policyOverview() {
+      return cy.getByTestId('policy-overview')
+    },
+
+    get policyStatusBadge() {
+      return cy.getByTestId('policy-status-badge')
+    },
+
+    get policyType() {
+      return cy.getByTestId('policy-type')
+    },
+
+    get policyId() {
+      return cy.getByTestId('policy-id')
+    },
+
+    get topicFiltersList() {
+      return cy.getByTestId('topic-filters-list')
+    },
+
+    get transitionsList() {
+      return cy.getByTestId('transitions-list')
+    },
+
+    get resourcesBreakdown() {
+      return cy.getByTestId('resources-breakdown')
+    },
+
+    get jsonView() {
+      return cy.getByTestId('policy-json-view')
+    },
+
+    get jsonToggleButton() {
+      return cy.getByTestId('json-toggle-button')
+    },
+
+    get jsonTabs() {
+      return cy.getByTestId('json-tabs')
+    },
+
+    jsonTab(name: 'Policy' | 'Schemas' | 'Scripts') {
+      return cy.getByTestId(`tab-${name.toLowerCase()}`)
+    },
+
+    get copyAllButton() {
+      return cy.getByTestId('copy-all-button')
     },
   }
 }

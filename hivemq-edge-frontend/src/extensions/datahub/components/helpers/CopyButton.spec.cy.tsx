@@ -101,7 +101,7 @@ describe('CopyButton', () => {
       cy.checkAccessibility()
     })
 
-    it.only('should be keyboard accessible', () => {
+    it('should be keyboard accessible', () => {
       cy.mountWithProviders(<CopyButton content={testContent} data-testid="keyboard-btn" />)
 
       cy.get('[data-testid="keyboard-btn"]').focus()

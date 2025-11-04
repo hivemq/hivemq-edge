@@ -228,6 +228,22 @@ export const cy_interceptDataHubWithMockDB = (factory: DataHubFactory) => {
     req.reply(200, { items: allDataPolicies })
   })
 
+  cy.intercept<DataPolicyList>('GET', '/api/v1/data-hub/behavior-validation/policies/**', (req) => {
+    const urlParts = req.url.split('/')
+    const policyId = urlParts[urlParts.length - 1]
+
+    const data = factory.behaviourPolicy.findFirst({
+      where: {
+        id: {
+          equals: policyId,
+        },
+      },
+    })
+
+    const dataPolicy = JSON.parse(data.json)
+    req.reply(200, dataPolicy)
+  })
+
   cy.intercept<SchemaList>('GET', '/api/v1/data-hub/schemas', (req) => {
     const data = factory.schema.getAll()
     const allSchemas = data.map<PolicySchema>((data) => ({ ...JSON.parse(data.json) }))
