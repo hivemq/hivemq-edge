@@ -51,7 +51,7 @@ Simply tell??\*\*To resume work on a thSimply tell the AI agent:
 
 > "We'**Simply tell??**To resume work on a thSimply tell tto> "We're working on tasked> "We're working on taskmpThe agentom1. Rle1. Read this index file (`.tasks/ACTIVE_TASKS.md`) 2. Find the task cy2. Find the task director ✅
 
-- 37943-toolbar-2. Find the task cy2. Find the task directory under `.tso4. Review TASK_SUMMARY.mdHU4cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && pnpm vitest run src/extensions/datahub/utils/policy-summary.utils.spec.ts
+- 37943-toolbar-2. Find the task cy2. Find the task directory under `.tso4. Review TASK*SUMMARY.mdHU4cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && pnpm vitest run src/extensions/datahub/utils/policy-summary.utils.spec.ts
   cat /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/api/**generated**/models/DataPolicyMatching.ts
   head -50 /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/api/**generated**/models/DataPolicyMatching.ts
   grep -A 3 "export enum functionType" /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/api/**generated**/models/Script.ts
@@ -66,7 +66,7 @@ Simply tell??\*\*To resume work on a thSimply tell the AI agent:
   head -50 /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/extensions/datahub/components/helpers/PolicySummaryReport.tsx
   ls -la /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/extensions/datahub/components/helpers/PolicySummaryReport.tsx
   wc -l /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/extensions/datahub/components/helpers/PolicySummaryReport.tsx && cat /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/extensions/datahub/components/helpers/PolicySummaryReport.tsx
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && sed -i '' '2s/._/import type { AlertStatus } from '\''@chakra-ui\/react'\''/' src/extensions/datahub/components/helpers/PolicySummaryReport.tsx && sed -i '' '3s/._/import { Alert, AlertDescription, AlertIcon, AlertTitle, Box, Text, VStack } from '\''@chakra-ui\/react'\''/' src/extensions/datahub/components/helpers/PolicySummaryReport.tsx && sed -i '' '5s/._/import { PolicyDryRunStatus, type DesignerStatus, type DryRunResults } from '\''@datahub\/types.ts'\''/' src/extensions/datahub/components/helpers/PolicySummaryReport.tsx
+  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && sed -i '' '2s/.*/import type { AlertStatus } from '\''@chakra-ui\/react'\''/' src/extensions/datahub/components/helpers/PolicySummaryReport.tsx && sed -i '' '3s/._/import { Alert, AlertDescription, AlertIcon, AlertTitle, Box, Text, VStack } from '\''@chakra-ui\/react'\''/' src/extensions/datahub/components/helpers/PolicySummaryReport.tsx && sed -i '' '5s/._/import { PolicyDryRunStatus, type DesignerStatus, type DryRunResults } from '\''@datahub\/types.ts'\''/' src/extensions/datahub/components/helpers/PolicySummaryReport.tsx
   cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && tail -n 227 src/extensions/datahub/components/helpers/PolicyJsonView.tsx | head -n 227
   wc -l /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/extensions/datahub/components/helpers/PolicyJsonView.tsx
   cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && pnpm vitest run src/extensions/datahub/utils/policy-summary.utils.spec.ts --reporter=verbose 2>&1 | head -100
@@ -80,7 +80,7 @@ Simply tell??\*\*To resume work on a thSimply tell the AI agent:
   cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && grep -r "cy\.get\(\'\[data-testid=" src/extensions/datahub/components/helpers/_.spec.cy.tsx | head -5
   cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && grep "data-testid" src/extensions/datahub/components/helpers/PolicyJsonView.spec.cy.tsx | head -3
   cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && find src/extensions/datahub/components/helpers -name "_.spec.cy.tsx" -exec grep -l 'data-testid' {} \;
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && sed -i '' "s/cy\.get('\[data-testid=\"\([^\"]_\)\"\]')/cy.getByTestId('\1')/g" src/extensions/datahub/components/helpers/PolicyJsonView.spec.cy.tsx && echo "PolicyJsonView.spec.cy.tsx updated"
+  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && sed -i '' "s/cy\.get('\[data-testid=\"\([^\"]\_\)\"\]')/cy.getByTestId('\1')/g" src/extensions/datahub/components/helpers/PolicyJsonView.spec.cy.tsx && echo "PolicyJsonView.spec.cy.tsx updated"
   cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && for file in src/extensions/datahub/components/helpers/{PolicyOverview,ResourcesBreakdown,CopyButton,PolicySummaryReport}.spec.cy.tsx; do sed -i '' "s/cy\.get('\[data-testid=\"\([^\"]*\)\"\]')/cy.getByTestId('\1')/g" "$file" && echo "Updated: $file"; done
 cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && grep "cy.getByTestId" src/extensions/datahub/components/helpers/PolicyJsonView.spec.cy.tsx | head -5
 cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && cat > /tmp/fix_testid.sh << 'SCRIPT'
