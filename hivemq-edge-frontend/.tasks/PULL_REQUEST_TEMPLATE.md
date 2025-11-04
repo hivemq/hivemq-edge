@@ -92,8 +92,59 @@ adds edge-specific status computation using React Flow hooks.
 - Reference the test file in caption: `_Test: cypress/e2e/[path]/[file].spec.cy.ts_`
 - Include scenario description: `_Scenario: User creates adapter with multiple combiners_`
 - Use consistent viewport: 1400x1016 (or document if different)
-- Save in `.tasks/[task-id]/screenshots/` directory
-- Use descriptive filenames: `after-modal-empty-state.png`
+- Cypress screenshots saved to `cypress/screenshots/[test-file]/` directory
+- Use descriptive filenames in screenshot command: `cy.screenshot('workspace-data-policy-report')`
+
+**E2E Tests for PR Screenshots:**
+
+**Critical:** Create a dedicated test group specifically for PR screenshots, separate from functional tests.
+
+**Pattern:**
+
+```typescript
+describe('Feature - Functional Tests', () => {
+  it('should validate feature works correctly', () => {
+    // Functional testing
+  })
+  // ... more functional tests
+})
+
+describe('Visual Regression - PR Screenshots', { tags: ['@percy'] }, () => {
+  it('should capture main scenario', () => {
+    // Setup complete scenario
+    // Navigate to feature
+    // Wait for all content to load
+
+    cy.percySnapshot('Feature - Main View')
+    cy.screenshot('feature-main-view', {
+      capture: 'viewport',
+      overwrite: true,
+    })
+  })
+
+  it('should capture variant scenario', () => {
+    // Setup variant
+    cy.percySnapshot('Feature - Variant View')
+    cy.screenshot('feature-variant-view', {
+      capture: 'viewport',
+      overwrite: true,
+    })
+  })
+})
+```
+
+**Why separate:**
+
+- PR screenshots need complete, realistic scenarios showing full feature
+- Functional tests focus on specific behaviors (narrow, targeted)
+- PR screenshots include ALL relevant UI elements (overview)
+- Keeps PR document focused on 2-3 key screenshots, not 8+ test scenarios
+
+**In PR document:**
+
+- Only reference the PR screenshot tests in AFTER section
+- Don't mention all functional E2E tests in the visual sections
+- Functional tests go in "Test Coverage" section as count only
 
 ### Visual Language Guide (Optional)
 
@@ -105,6 +156,7 @@ adds edge-specific status computation using React Flow hooks.
 - Three columns: Visual Element | Meaning | User Action
 - Use emojis for quick recognition (🟢🔴🟡⚡🚫)
 - Include "Combined Status Examples" table showing interactions
+- **Only use colors that actually exist in the UI** (don't invent orange if it's not there)
 
 ### Test Coverage Section
 
@@ -121,21 +173,6 @@ adds edge-specific status computation using React Flow hooks.
 - Showing test code
 - Overly detailed test descriptions
 
-### Files Changed Section
-
-**Structure:**
-
-- **Summary table** with counts (Created/Modified/Total)
-- **Key Files** organized by category
-- Brief one-line descriptions
-- File paths for easy navigation
-
-**Keep concise:**
-
-- Group similar files (e.g., "All 10 node types")
-- Don't list every single file
-- Focus on most important/changed files
-
 ### Standard Sections
 
 Always include these sections (brief is fine):
@@ -144,6 +181,10 @@ Always include these sections (brief is fine):
 2. **Performance Impact** - Positive improvements or "No impact"
 3. **Accessibility** - Key a11y considerations (if UI changes)
 4. **Documentation** - What docs were added/updated
+
+**Do NOT include:**
+
+- ❌ **Files Changed section** - GitHub shows this automatically in the PR diff view
 
 ### Reviewer Notes Section
 
