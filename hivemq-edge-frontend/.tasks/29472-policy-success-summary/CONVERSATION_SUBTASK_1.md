@@ -212,7 +212,6 @@ Finalize the visual design and user experience for the policy success summary, e
 
 ```tsx
 import { Code } from '@chakra-ui/react'
-
 ;<Code
   display="block"
   whiteSpace="pre"
