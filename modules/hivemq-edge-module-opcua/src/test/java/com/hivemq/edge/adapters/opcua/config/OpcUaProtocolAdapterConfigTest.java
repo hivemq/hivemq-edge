@@ -178,7 +178,7 @@ class OpcUaProtocolAdapterConfigTest {
                 null,
                 new Auth(new BasicAuth("my-username", "my-password"), new X509Auth(true)),
                 new Tls(true,
-                        false,
+                        TlsChecks.NONE,
                         new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
                         new Truststore("my/truststore/path", "truststore-password")),
                 new OpcUaToMqttConfig(1, 1000),

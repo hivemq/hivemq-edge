@@ -21,8 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static java.util.Objects.requireNonNullElse;
 
@@ -35,8 +33,8 @@ public record Tls (@JsonProperty("enabled")
                    @JsonProperty("noChecks")
                    @ModuleConfigField(title = "Disable certificate validation",
                                       description = "Allows to disable the validation of a certificate",
-                                      defaultValue = "false")
-                   @Nullable Boolean noChecks,
+                                      defaultValue = "STANDARD")
+                   @Nullable TlsChecks tlsChecks,
 
                    @JsonProperty("keystore")
                    @JsonInclude(NON_NULL)
@@ -50,8 +48,10 @@ public record Tls (@JsonProperty("enabled")
                                       description = "Truststore which contains the trusted server certificates or trusted intermediates.")
                    @Nullable Truststore truststore
                    ) {
+
     @JsonCreator
     public Tls {
-        noChecks = requireNonNullElse(noChecks, false);
+        tlsChecks = requireNonNullElse(tlsChecks, TlsChecks.STANDARD);
     }
+
 }

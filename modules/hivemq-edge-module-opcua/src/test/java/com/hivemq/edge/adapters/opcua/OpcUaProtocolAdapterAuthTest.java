@@ -31,6 +31,7 @@ import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Security;
 import com.hivemq.edge.adapters.opcua.config.Tls;
+import com.hivemq.edge.adapters.opcua.config.TlsChecks;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
@@ -163,7 +164,7 @@ class OpcUaProtocolAdapterAuthTest {
     @Timeout(30)
     public void whenTlsAndNoSubscriptions_thenConnectSuccessfully() {
         final Security security = new Security(SecPolicy.NONE);
-        final Tls tls = new Tls(true, false, null, null);
+        final Tls tls = new Tls(true, TlsChecks.NONE, null, null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
@@ -200,7 +201,7 @@ class OpcUaProtocolAdapterAuthTest {
         final KeyChain root = KeyChain.createKeyChain("root");
 
         final var keystore = root.wrapInKeyStoreWithPrivateKey("keystore", "root", "password", "password");
-        final Tls tls = new Tls(true, false, new Keystore(keystore.getAbsolutePath(), "password", "password"), null);
+        final Tls tls = new Tls(true, TlsChecks.NONE, new Keystore(keystore.getAbsolutePath(), "password", "password"), null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
