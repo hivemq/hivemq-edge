@@ -217,7 +217,7 @@ export const ToolbarPublish: FC = () => {
       })
       .catch((error) => {
         let message
-        let description
+        let description = undefined
         if (error instanceof ApiError) {
           message = error.message
           description = error.body as ProblemDetails
