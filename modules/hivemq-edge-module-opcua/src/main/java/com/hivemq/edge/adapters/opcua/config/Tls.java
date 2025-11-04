@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import static java.util.Objects.requireNonNullElse;
 
 public record Tls (@JsonProperty("enabled")
                    @ModuleConfigField(title = "Enable TLS",
@@ -50,6 +51,7 @@ public record Tls (@JsonProperty("enabled")
                    @Nullable Truststore truststore
                    ) {
     @JsonCreator
-    public Tls{
+    public Tls {
+        noChecks = requireNonNullElse(noChecks, false);
     }
 }

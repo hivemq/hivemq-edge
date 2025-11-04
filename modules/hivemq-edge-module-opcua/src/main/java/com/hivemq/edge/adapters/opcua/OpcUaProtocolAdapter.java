@@ -85,6 +85,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private volatile ParsedConfig parsedConfig;
     private volatile ModuleServices moduleServices;
 
+    // Flag to prevent scheduling after stop
+    private volatile boolean stopped = false;
+
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input) {
@@ -109,6 +112,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             final @NotNull ProtocolAdapterStartInput input,
             final @NotNull ProtocolAdapterStartOutput output) {
         log.info("Starting OPC UA protocol adapter {}", adapterId);
+
+        // Reset stopped flag
+        stopped = false;
+
         final ParsedConfig parsedConfig;
         final var result = ParsedConfig.fromConfig(config);
         if (result instanceof Failure<ParsedConfig, String>(final String failure)) {
@@ -161,9 +168,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             final @NotNull ProtocolAdapterStopOutput output) {
         log.info("Stopping OPC UA protocol adapter {}", adapterId);
 
+        // Set stopped flag to prevent new scheduling
+        stopped = true;
+
         // Cancel any pending retries and health checks
         cancelRetry();
         cancelHealthCheck();
+
+        // Shutdown schedulers immediately to prevent new tasks
+        shutdownSchedulers();
 
         // Clear stored configuration to prevent reconnection after stop
         this.parsedConfig = null;
@@ -184,6 +197,12 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
      * Requires that start() has been called previously to initialize parsedConfig and moduleServices.
      */
     private void reconnect() {
+        // Check if adapter has been stopped
+        if (stopped) {
+            log.debug("Skipping reconnection for adapter '{}' - adapter has been stopped", adapterId);
+            return;
+        }
+
         log.info("Reconnecting OPC UA adapter '{}'", adapterId);
 
         // Verify we have the necessary configuration
@@ -233,8 +252,20 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
      * Schedules periodic health check that monitors connection health and triggers reconnection if needed.
      */
     private void scheduleHealthCheck() {
+        // Check if adapter has been stopped
+        if (stopped) {
+            log.debug("Skipping health check scheduling for adapter '{}' - adapter has been stopped", adapterId);
+            return;
+        }
+
         final int healthCheckIntervalSeconds = config.getHealthCheckInterval();
         final ScheduledFuture<?> future = healthCheckScheduler.scheduleAtFixedRate(() -> {
+            // Check if adapter was stopped before health check executes
+            if (stopped) {
+                log.debug("Health check skipped for adapter '{}' - adapter was stopped", adapterId);
+                return;
+            }
+
             final OpcUaClientConnection conn = opcUaClientConnection.get();
             if (conn == null) {
                 log.debug("Health check skipped - no active connection for adapter '{}'", adapterId);
@@ -275,6 +306,32 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
     }
 
+    /**
+     * Shuts down both retry and health check schedulers.
+     * Uses immediate shutdown to cancel all pending tasks.
+     */
+    private void shutdownSchedulers() {
+        // Shutdown retry scheduler - use shutdownNow() to cancel pending tasks immediately
+        if (!retryScheduler.isShutdown()) {
+            retryScheduler.shutdownNow();
+            try {
+                retryScheduler.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        // Shutdown health check scheduler - use shutdownNow() to cancel pending tasks immediately
+        if (!healthCheckScheduler.isShutdown()) {
+            healthCheckScheduler.shutdownNow();
+            try {
+                healthCheckScheduler.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
     @Override
     public void destroy() {
         log.info("Destroying OPC UA protocol adapter {}", adapterId);
@@ -283,27 +340,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         cancelRetry();
         cancelHealthCheck();
 
-        // Shutdown retry scheduler
-        retryScheduler.shutdown();
-        try {
-            if (!retryScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                retryScheduler.shutdownNow();
-            }
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            retryScheduler.shutdownNow();
-        }
-
-        // Shutdown health check scheduler
-        healthCheckScheduler.shutdown();
-        try {
-            if (!healthCheckScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                healthCheckScheduler.shutdownNow();
-            }
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            healthCheckScheduler.shutdownNow();
-        }
+        // Shutdown schedulers (if not already shutdown in stop())
+        shutdownSchedulers();
 
         final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
         if (conn != null) {
@@ -491,10 +529,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             final @NotNull ParsedConfig parsedConfig,
             final @NotNull ProtocolAdapterStartInput input) {
 
+        // Check if adapter has been stopped
+        if (stopped) {
+            log.debug("Skipping retry scheduling for adapter '{}' - adapter has been stopped", adapterId);
+            return;
+        }
+
         final int retryIntervalSeconds = config.getRetryInterval();
         final ScheduledFuture<?> future = retryScheduler.schedule(() -> {
             // Check if adapter was stopped before retry executes
-            if (this.parsedConfig == null || this.moduleServices == null) {
+            if (stopped || this.parsedConfig == null || this.moduleServices == null) {
                 log.debug("OPC UA adapter '{}' retry cancelled - adapter was stopped", adapterId);
                 return;
             }
