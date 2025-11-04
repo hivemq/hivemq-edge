@@ -1,1 +1,1 @@
-this is the end
+my only friend
