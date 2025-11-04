@@ -152,6 +152,18 @@ public class ProtocolAdapterManager {
         protocolAdapterConfig.registerConsumer(this::refresh);
     }
 
+    @VisibleForTesting
+    public void shutdown() {
+        protocolAdapters.entrySet().stream().forEach(entry -> {
+            try {
+                entry.getValue().stopAsync(true).get();
+            } catch (final InterruptedException | ExecutionException e) {
+                log.error("Exception happened while shutting down adapter: ", e);
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
     public void refresh(final @NotNull List<ProtocolAdapterEntity> configs) {
         executorService.submit(() -> {
             log.info("Refreshing adapters");
