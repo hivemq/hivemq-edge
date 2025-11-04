@@ -213,6 +213,7 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
 
             try {
                 hiveMQServer.stop();
+                hiveMQServer.shutdownProtocolAdapters();
             } catch (final Exception ex) {
                 if (desiredState == State.CLOSED) {
                     log.error("Exception during running shutdown hook.", ex);

@@ -34,6 +34,7 @@ import com.hivemq.exceptions.HiveMQEdgeStartupException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import com.hivemq.http.JaxrsHttpServer;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,6 +175,11 @@ public class HiveMQEdgeMain {
 
     public void stop() {
         stopGateway();
+    }
+
+    @VisibleForTesting
+    public void shutdownProtocolAdapters() {
+        injector.protocolAdapterManager().shutdown();
         try {
             Runtime.getRuntime().removeShutdownHook(shutdownThread);
         } catch (final IllegalStateException ignored) {
