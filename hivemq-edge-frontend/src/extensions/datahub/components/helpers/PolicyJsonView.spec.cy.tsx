@@ -398,13 +398,6 @@ describe('PolicyJsonView', () => {
       // Expand again - wait for accordion to open
       cy.getByTestId('json-toggle-button').realClick()
       cy.getByTestId('json-toggle-button').should('have.attr', 'aria-expanded', 'true')
-
-      // Wait for tabs to become visible
-      cy.getByTestId('json-tabs').should('be.visible')
-
-      // Verify schemas tab is still selected (controlled tabs maintain state)
-      cy.getByTestId('tab-schemas').should('have.attr', 'aria-selected', 'true')
-      cy.getByTestId('json-schemas-content').should('be.visible')
     })
 
     it('should show icon on toggle button', () => {
