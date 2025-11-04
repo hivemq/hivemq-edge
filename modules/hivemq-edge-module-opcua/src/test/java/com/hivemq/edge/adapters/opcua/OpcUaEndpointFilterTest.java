@@ -20,6 +20,7 @@ import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Tls;
+import com.hivemq.edge.adapters.opcua.config.TlsChecks;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.jetbrains.annotations.NotNull;
@@ -56,7 +57,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, false, new Keystore("path", "pass", "passPriv"), null),
+                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
                 null,
                 null,
                 null,
@@ -129,7 +130,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, false, new Keystore("path", "pass", "passPriv"), null),
+                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
                 null,
                 null,
                 null,
@@ -180,7 +181,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, false, new Keystore("path", "pass", "passPriv"), null),
+                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
                 null,
                 null,
                 null,
@@ -220,7 +221,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, false, new Keystore("path", "pass", "passPriv"), null),
+                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
                 null,
                 null,
                 null,
