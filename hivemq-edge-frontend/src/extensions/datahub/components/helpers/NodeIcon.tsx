@@ -40,7 +40,7 @@ const NodeIcon: FC<NodeIconProps> = ({ type, ...iconProps }) => {
   const config = type && iconMapping[type] ? iconMapping[type] : { icon: GrStatusUnknown, boxSize: '24px' }
   const ariaLabel = type ? t('workspace.nodes.type', { context: type }) : t('workspace.nodes.type')
 
-  return <Icon as={config.icon} boxSize={config.boxSize} aria-label={ariaLabel} {...iconProps} />
+  return <Icon as={config.icon} boxSize={config.boxSize} {...iconProps} aria-label={ariaLabel} />
 }
 
 export default NodeIcon
