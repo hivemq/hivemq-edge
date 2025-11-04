@@ -399,6 +399,7 @@ export interface DraftPolicy {
 export type CombinedPolicy =
   | (DataPolicy & { type: DesignerPolicyType.DATA_POLICY })
   | (BehaviorPolicy & { type: DesignerPolicyType.BEHAVIOR_POLICY })
+  | (DraftPolicy & { type: DesignerPolicyType.CREATE_POLICY })
 
 /**
  * Extracted policy summary for display in success report
