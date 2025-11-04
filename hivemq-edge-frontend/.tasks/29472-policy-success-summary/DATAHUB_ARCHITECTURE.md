@@ -99,6 +99,125 @@ setReport: (report: DryRunResults<unknown, never>[]) => {
 
 ---
 
+## Node Selection and Toolbar Workflow
+
+### Critical Understanding: Node Selection Required
+
+**The policy check button (`toolbox-policy-check`) requires a selected node to be enabled.**
+
+### ToolboxSelectionListener
+
+**Location:** `src/extensions/datahub/components/controls/ToolboxSelectionListener.tsx`
+
+**Responsibilities:**
+
+- Listens to React Flow node selection events
+- Updates `usePolicyChecksStore` with the selected node via `setNode()`
+- Clears selection when no node is selected
+
+**Selection Flow:**
+
+1. User clicks on a policy node in the React Flow canvas
+2. `ToolboxSelectionListener` detects the selection change
+3. Calls `setNode(node)` to store the selected node
+4. Toolbar buttons (Check Policy, Publish) read the selected node to determine enabled state
+
+### ToolbarDryRun (Check Policy Button)
+
+**Location:** `src/extensions/datahub/components/toolbar/ToolbarDryRun.tsx`
+
+**Button State Logic:**
+
+```typescript
+isDisabled={!selectedNode || !isPolicyEditable}
+```
+
+**Key Behavior:**
+
+- Button is **disabled by default** when no node is selected
+- Only enabled when:
+  - A policy node (DATA_POLICY or BEHAVIOR_POLICY) is selected
+  - The policy is in an editable state (DRAFT or MODIFIED)
+
+**E2E Test Pattern:**
+
+```typescript
+// ❌ WRONG - Button will be disabled
+datahubDesignerPage.toolbar.checkPolicy.click()
+
+// ✅ CORRECT - Select node first
+datahubDesignerPage.designer.selectNode('DATA_POLICY')
+datahubDesignerPage.toolbar.checkPolicy.click()
+```
+
+### Validation Trigger Workflow
+
+**Complete E2E flow:**
+
+1. **Navigate to policy editor:**
+
+   ```typescript
+   datahubPage.policiesTable.action(0, 'edit').click()
+   cy.url().should('contain', '/datahub/DATA_POLICY/test')
+   ```
+
+2. **Select the policy node:**
+
+   ```typescript
+   // This triggers ToolboxSelectionListener → setNode()
+   datahubDesignerPage.designer.selectNode('DATA_POLICY')
+   ```
+
+3. **Click check policy button:**
+
+   ```typescript
+   // Now enabled because selectedNode exists
+   datahubDesignerPage.toolbar.checkPolicy.click()
+   ```
+
+4. **Wait for validation:**
+
+   ```typescript
+   // Button re-enables when validation completes
+   datahubDesignerPage.toolbar.checkPolicy.should('not.be.disabled')
+   ```
+
+5. **Open report drawer:**
+   ```typescript
+   // Click on the status badge to open drawer
+   datahubDesignerPage.dryRunPanel.statusBadge.click()
+   datahubDesignerPage.dryRunPanel.drawer.should('be.visible')
+   ```
+
+### Page Object Support
+
+**Location:** `cypress/pages/DataHub/DesignerPage.ts`
+
+**Key Methods:**
+
+```typescript
+designer = {
+  // Get nodes by type
+  mode(type: string) {
+    return cy.get(`[role="group"][data-testid^="rf__node-${type}_"]`)
+  },
+
+  // Select a node (triggers ToolboxSelectionListener)
+  selectNode(type: string) {
+    return this.mode(type).click()
+  },
+}
+
+toolbar = {
+  // Check policy button (requires selected node)
+  get checkPolicy() {
+    return cy.getByTestId('toolbox-policy-check')
+  },
+}
+```
+
+---
+
 ## Validation & Dry Run Flow
 
 ### DryRunResults Structure
@@ -505,3 +624,161 @@ Based on this architecture understanding:
    - Component tests for new UI
    - Integration tests for data extraction
    - Accessibility tests (per guidelines)
+
+---
+
+## E2E Testing Architecture & MSW Mocking
+
+### Critical MSW Intercept Requirements
+
+**Location:** `cypress/utils/intercept.utils.ts`
+
+For E2E tests to work correctly, MSW intercepts must handle BOTH list and individual resource fetching:
+
+#### Data Policy Intercepts ✅
+
+```typescript
+// List all data policies
+cy.intercept('GET', '/api/v1/data-hub/data-validation/policies', ...)
+
+// Get individual data policy by ID
+cy.intercept('GET', '/api/v1/data-hub/data-validation/policies/**', ...)
+```
+
+#### Behavior Policy Intercepts ✅
+
+```typescript
+// List all behavior policies
+cy.intercept('GET', '/api/v1/data-hub/behavior-validation/policies', ...)
+
+// Get individual behavior policy by ID ⚠️ CRITICAL - MUST BE PRESENT
+cy.intercept('GET', '/api/v1/data-hub/behavior-validation/policies/**', ...)
+```
+
+### Common E2E Testing Mistake
+
+**Problem:** When loading a policy for editing (clicking "Edit" in policy table), the application:
+
+1. Navigates to `/datahub/{POLICY_TYPE}/{policyId}`
+2. Makes GET request to fetch individual policy: `/api/v1/data-hub/{type}-validation/policies/{policyId}`
+3. If intercept is missing → 404 error → Canvas never loads → All tests fail
+
+**Symptom:**
+
+```
+Expected to find element: `[role="application"][data-testid="rf__wrapper"]`,
+but never found it.
+```
+
+**Solution:** Always ensure MSW factory has intercepts for:
+
+- List endpoint (for table display)
+- Individual resource endpoint (for editing/loading)
+
+### Behavior Policy Fixture Structure
+
+**Location:** `cypress/fixtures/test-behavior-policy-2025-11-03.json`
+
+**Correct Structure:**
+
+```json
+{
+  "id": "test-behavior-policy",
+  "matching": {
+    "clientIdRegex": "client/example/1" // ✅ Correct: clientIdRegex, not clientFilter
+  },
+  "createdAt": "2025-11-03T10:00:00.000Z",
+  "lastUpdatedAt": "2025-11-03T10:00:00.000Z",
+  "behavior": {
+    "id": "Mqtt.events", // ✅ Correct behavior spec
+    "arguments": null
+  },
+  "onTransitions": [
+    // ✅ Correct: onTransitions array
+    {
+      "fromState": "Initial",
+      "toState": "Connected",
+      "Mqtt.OnInboundConnect": {
+        // ✅ Event type as key
+        "pipeline": [
+          {
+            "arguments": {
+              "level": "INFO",
+              "message": "Client connected"
+            },
+            "functionId": "System.log", // ✅ Built-in function
+            "id": "action-test1"
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+**Common Mistakes to Avoid:**
+
+❌ **Wrong matching syntax:**
+
+```json
+"matching": {
+  "clientFilter": "client-.*"  // ❌ Wrong field name
+}
+```
+
+❌ **Wrong transition structure:**
+
+```json
+"transitions": [  // ❌ Wrong field name (should be onTransitions)
+  {
+    "event": "Disconnect",  // ❌ Wrong structure
+    "pipeline": [...]
+  }
+]
+```
+
+❌ **Invalid function references:**
+
+```json
+{
+  "functionId": "custom-function-not-in-mocks" // ❌ Function must exist in MOCK_DATAHUB_FUNCTIONS
+}
+```
+
+### Fixture Validation Checklist
+
+When creating policy fixtures for E2E tests:
+
+1. ✅ **API Structure Match** - Fixture must match exact API response structure
+2. ✅ **Required Fields** - Include `id`, `createdAt`, `lastUpdatedAt`
+3. ✅ **Type-Specific Fields** - Data policies have `matching.topicFilters`, behavior policies have `matching.clientIdRegex`
+4. ✅ **Function References** - All `functionId` values must exist in `MOCK_DATAHUB_FUNCTIONS`
+5. ✅ **Schema References** - All schema IDs must have corresponding mock schemas created in test setup
+6. ✅ **Valid Enum Values** - Behavior spec IDs, event types must be valid per API schema
+
+### E2E Test Pattern for Policy Loading
+
+**Correct Pattern:**
+
+```typescript
+// 1. Create policy in MSW database
+mswDB.behaviourPolicy.create({
+  id: mockBehaviorPolicy.id,
+  json: JSON.stringify({ ...mockBehaviorPolicy, createdAt, lastUpdatedAt }),
+})
+
+// 2. Navigate to edit
+datahubPage.policiesTable.action(0, 'edit').click()
+
+// 3. Verify URL changed (proves navigation worked)
+cy.url().should('contain', '/datahub/BEHAVIOR_POLICY/test-behavior-policy')
+
+// 4. Now canvas should load (proves intercept worked)
+validateAndOpenReport('BEHAVIOR_POLICY')
+```
+
+**Why URL Check is Important:**
+
+- Confirms MSW list intercept worked (table showed policy)
+- Confirms navigation happened
+- If canvas fails to load AFTER correct URL, then individual GET intercept is missing
