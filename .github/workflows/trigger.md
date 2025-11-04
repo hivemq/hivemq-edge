@@ -1,1 +1,1 @@
-my only friend
+Of our elaborate plans, the end
