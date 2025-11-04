@@ -36,7 +36,6 @@ export const PolicyJsonView: FC<PolicyJsonViewProps> = ({ payload }) => {
   const { t } = useTranslation('datahub')
   const [tabIndex, setTabIndex] = useState(0)
 
-  // Prepare JSON strings for display
   const policyJson = JSON.stringify(payload.policy, null, 2)
   const schemasJson = JSON.stringify(payload.resources.schemas, null, 2)
   const scriptsJson = JSON.stringify(payload.resources.scripts, null, 2)
@@ -56,12 +55,10 @@ export const PolicyJsonView: FC<PolicyJsonViewProps> = ({ payload }) => {
         </h2>
 
         <AccordionPanel pb={4} borderTopWidth="1px" borderColor="gray.200">
-          {/* Copy All Button */}
           <HStack justifyContent="flex-end" mb={2}>
             <CopyButton content={allJson} label="Copy All" data-testid="copy-all-button" />
           </HStack>
 
-          {/* Tabbed Interface */}
           <Tabs size="sm" variant="enclosed" data-testid="json-tabs" index={tabIndex} onChange={setTabIndex}>
             <TabList>
               <Tab data-testid="tab-policy">{t('workspace.dryRun.report.success.details.json.tabs.policy')}</Tab>
@@ -74,7 +71,6 @@ export const PolicyJsonView: FC<PolicyJsonViewProps> = ({ payload }) => {
             </TabList>
 
             <TabPanels>
-              {/* Policy Tab */}
               <TabPanel px={0}>
                 <Box position="relative">
                   <Box position="absolute" right={2} top={2} zIndex={1}>
@@ -100,7 +96,6 @@ export const PolicyJsonView: FC<PolicyJsonViewProps> = ({ payload }) => {
                 </Box>
               </TabPanel>
 
-              {/* Schemas Tab */}
               <TabPanel px={0}>
                 <Box position="relative">
                   <Box position="absolute" right={2} top={2} zIndex={1}>
@@ -126,7 +121,6 @@ export const PolicyJsonView: FC<PolicyJsonViewProps> = ({ payload }) => {
                 </Box>
               </TabPanel>
 
-              {/* Scripts Tab */}
               <TabPanel px={0}>
                 <Box position="relative">
                   <Box position="absolute" right={2} top={2} zIndex={1}>
@@ -154,9 +148,8 @@ export const PolicyJsonView: FC<PolicyJsonViewProps> = ({ payload }) => {
             </TabPanels>
           </Tabs>
 
-          {/* Helper Text */}
           <Text fontSize="xs" color="gray.500" mt={3}>
-            📋 Complete JSON payload ready for publishing
+            {t('workspace.dryRun.report.success.details.json.summary')}
           </Text>
         </AccordionPanel>
       </AccordionItem>

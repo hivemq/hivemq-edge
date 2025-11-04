@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid'
 import type { DryRunResults, ResourceSummary, PolicySummary, PolicyPayload } from '@datahub/types.ts'
 import { DataHubNodeType, DesignerStatus, ResourceWorkingVersion } from '@datahub/types.ts'
 import type { BehaviorPolicy, DataPolicy, PolicySchema, Script } from '@/api/__generated__'
@@ -90,7 +91,7 @@ export function extractResourcesSummary(report: DryRunResults<unknown, never>[] 
       const isNew = version === ResourceWorkingVersion.DRAFT
 
       const summary: ResourceSummary = {
-        id: '',
+        id: uuidv4(),
         version: version || ResourceWorkingVersion.DRAFT,
         type: nodeType === DataHubNodeType.SCHEMA ? 'SCHEMA' : 'FUNCTION',
         isNew,

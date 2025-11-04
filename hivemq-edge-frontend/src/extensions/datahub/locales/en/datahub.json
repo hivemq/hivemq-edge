@@ -340,11 +340,13 @@
               "collapse": "Hide JSON",
               "copy": "Copy to clipboard",
               "copied": "Copied to clipboard",
+              "failed": "Failed to copy",
               "tabs": {
                 "policy": "Policy",
                 "schemas": "Schemas",
                 "scripts": "Scripts"
-              }
+              },
+              "summary": "\uD83D\uDCCB Complete JSON payload ready for publishing"
             }
           }
         },

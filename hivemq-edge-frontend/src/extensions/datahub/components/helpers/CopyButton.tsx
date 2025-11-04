@@ -5,21 +5,9 @@ import { useTranslation } from 'react-i18next'
 import { LuCopy, LuCheck } from 'react-icons/lu'
 
 export interface CopyButtonProps {
-  /**
-   * The text content to copy to clipboard
-   */
   content: string
-  /**
-   * Button size (default: 'xs')
-   */
   size?: 'xs' | 'sm' | 'md' | 'lg'
-  /**
-   * Button label text (optional, defaults to "Copy")
-   */
   label?: string
-  /**
-   * data-testid for testing
-   */
   'data-testid'?: string
 }
 
@@ -57,9 +45,8 @@ export const CopyButton: FC<CopyButtonProps> = ({ content, size = 'xs', label, '
         })
       },
       () => {
-        // Handle error silently or show error toast if needed
         toast({
-          title: 'Failed to copy',
+          title: t('workspace.dryRun.report.success.details.json.failed'),
           status: 'error',
           duration: 2000,
           isClosable: true,
