@@ -1649,6 +1649,8 @@
       "wheel": "Concept Wheel",
       "chord": "Relation Chords",
       "sankey": "Concept Flow",
+      "network": "Network Graph",
+      "tracer": "Data Flow Tracer",
       "edge-blunting": "Topology Diagram (*)"
     },
     "charts": {
