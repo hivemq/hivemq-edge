@@ -1,1 +1,1 @@
-Of our elaborate plans, the end
+Of everything that stands, the end
