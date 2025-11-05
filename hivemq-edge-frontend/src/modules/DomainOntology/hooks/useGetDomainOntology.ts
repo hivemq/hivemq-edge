@@ -5,6 +5,8 @@ import { useListDomainSouthboundMappings } from '@/api/hooks/useDomainModel/useL
 import { useListDomainTags } from '@/api/hooks/useDomainModel/useListDomainTags.ts'
 import { useListTopicFilters } from '@/api/hooks/useTopicFilters/useListTopicFilters.ts'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
+import { useListCombiners } from '@/api/hooks/useCombiners'
+import { useListAssetMappers } from '@/api/hooks/useAssetMapper'
 import type { BridgeSubscription } from '@/modules/DomainOntology/types.ts'
 
 export const useGetDomainOntology = () => {
@@ -13,12 +15,26 @@ export const useGetDomainOntology = () => {
   const tags = useListDomainTags()
   const topicFilters = useListTopicFilters()
   const bridges = useListBridges()
+  const combiners = useListCombiners()
+  const assetMappers = useListAssetMappers()
 
   const isLoading =
-    northMappings.isLoading || southMappings.isLoading || tags.isLoading || bridges.isLoading || topicFilters.isLoading
+    northMappings.isLoading ||
+    southMappings.isLoading ||
+    tags.isLoading ||
+    bridges.isLoading ||
+    topicFilters.isLoading ||
+    combiners.isLoading ||
+    assetMappers.isLoading
 
   const isError =
-    northMappings.isError || southMappings.isError || tags.isError || bridges.isError || topicFilters.isError
+    northMappings.isError ||
+    southMappings.isError ||
+    tags.isError ||
+    bridges.isError ||
+    topicFilters.isError ||
+    combiners.isError ||
+    assetMappers.isError
 
   const bridgeSubscriptions = useMemo<BridgeSubscription>(() => {
     const topics: string[] = []
@@ -49,6 +65,8 @@ export const useGetDomainOntology = () => {
     northMappings,
     southMappings,
     bridgeSubscriptions,
+    combiners,
+    assetMappers,
     isLoading,
     isError,
   }

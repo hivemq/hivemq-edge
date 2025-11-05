@@ -1,6 +1,7 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Tab, TabList, TabPanel, TabPanels, type TabPanelProps, Tabs, VStack } from '@chakra-ui/react'
+import { ReactFlowProvider } from '@xyflow/react'
 
 import ConceptWheel from '@/modules/DomainOntology/components/ConceptWheel.tsx'
 
@@ -8,6 +9,8 @@ import AdapterCluster from '@/modules/DomainOntology/components/AdapterCluster.t
 import RelationMatrix from '@/modules/DomainOntology/components/RelationMatrix.tsx'
 import ConceptFlow from '@/modules/DomainOntology/components/ConceptFlow.tsx'
 import RelationEdgeBundling from '@/modules/DomainOntology/components/RelationEdgeBundling.tsx'
+import NetworkGraphView from '@/modules/DomainOntology/components/NetworkGraphView.tsx'
+import DataFlowTracer from '@/modules/DomainOntology/components/DataFlowTracer.tsx'
 import config from '@/config'
 
 const DomainOntologyManager: FC = () => {
@@ -22,6 +25,8 @@ const DomainOntologyManager: FC = () => {
         <Tab>{t('ontology.panel.wheel')}</Tab>
         <Tab>{t('ontology.panel.chord')}</Tab>
         <Tab>{t('ontology.panel.sankey')}</Tab>
+        <Tab>{t('ontology.panel.network')}</Tab>
+        <Tab>{t('ontology.panel.tracer')}</Tab>
         {config.features.WORKSPACE_EXPERIMENTAL && <Tab>{t('ontology.panel.edge-blunting')}</Tab>}
       </TabList>
       <TabPanels>
@@ -36,6 +41,14 @@ const DomainOntologyManager: FC = () => {
         </TabPanel>
         <TabPanel {...panelProps}>
           <ConceptFlow />
+        </TabPanel>
+        <TabPanel {...panelProps}>
+          <ReactFlowProvider>
+            <NetworkGraphView />
+          </ReactFlowProvider>
+        </TabPanel>
+        <TabPanel {...panelProps}>
+          <DataFlowTracer />
         </TabPanel>
         {config.features.WORKSPACE_EXPERIMENTAL && (
           <TabPanel {...panelProps}>
