@@ -87,7 +87,6 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
           height="40vh"
           defaultLanguage={lng}
           defaultValue={props.value}
-          value={props.value}
           theme={isReadOnly ? 'readOnlyTheme' : 'lightTheme'}
           onChange={(event) => props.onChange(event)}
           options={{ readOnly: isReadOnly }}
