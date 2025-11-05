@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Node } from '@xyflow/react'
 import type { CustomValidator, UiSchema } from '@rjsf/utils'
 import type { IChangeEvent } from '@rjsf/core'
@@ -28,6 +28,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onForm
   const { nodes } = useDataHubDraftStore()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
   const [formData, setFormData] = useState<SchemaData | null>(null)
+  const isProgrammaticUpdateRef = useRef(false)
 
   useEffect(() => {
     if (!allSchemas) return
@@ -46,9 +47,16 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onForm
 
   const onReactFlowSchemaFormChange = useCallback(
     (changeEvent: IChangeEvent, id?: string | undefined) => {
+      // Ignore onChange events triggered by programmatic updates
+      if (isProgrammaticUpdateRef.current) {
+        isProgrammaticUpdateRef.current = false
+        return
+      }
+
       // id have form "root_XXXXXX", which makes the test unsafe
       if (id?.includes('name')) {
         const schema = allSchemas?.items?.findLast((schema) => schema.id === changeEvent.formData.name)
+        isProgrammaticUpdateRef.current = true
         if (schema) {
           setFormData({
             name: schema.id,
@@ -68,28 +76,37 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onForm
           })
         }
       }
+
       if (id?.includes('type') && formData) {
         if (formData.type !== changeEvent.formData.type) {
+          isProgrammaticUpdateRef.current = true
           setFormData({
             ...formData,
             type: changeEvent.formData.type,
             schemaSource: changeEvent.formData.type === SchemaType.JSON ? MOCK_JSONSCHEMA_SCHEMA : MOCK_PROTOBUF_SCHEMA,
+            version: ResourceWorkingVersion.MODIFIED,
+            internalStatus: ResourceStatus.MODIFIED,
           })
         }
       }
+
       if (id?.includes('schemaSource') && formData && formData.internalStatus === ResourceStatus.LOADED) {
+        isProgrammaticUpdateRef.current = true
         setFormData({
           ...formData,
           version: ResourceWorkingVersion.MODIFIED,
           internalStatus: ResourceStatus.MODIFIED,
         })
       }
+
       if (id?.includes('version') && formData) {
         const schema = allSchemas?.items?.find(
-          (schema) => schema.id === formData.name && schema.version?.toString() === changeEvent.formData.version
+          (schema) =>
+            schema.id === formData.name && schema.version?.toString() === changeEvent.formData.version.toString()
         )
 
         if (schema) {
+          isProgrammaticUpdateRef.current = true
           setFormData({
             ...formData,
             version: changeEvent.formData.version,
