@@ -154,9 +154,9 @@ public class ProtocolAdapterManager {
 
     @VisibleForTesting
     public void shutdown() {
-        protocolAdapters.entrySet().stream().forEach(entry -> {
+        protocolAdapters.values().forEach(entry -> {
             try {
-                entry.getValue().stopAsync(true).get();
+                entry.stopAsync(true).get();
             } catch (final InterruptedException | ExecutionException e) {
                 log.error("Exception happened while shutting down adapter: ", e);
             }
