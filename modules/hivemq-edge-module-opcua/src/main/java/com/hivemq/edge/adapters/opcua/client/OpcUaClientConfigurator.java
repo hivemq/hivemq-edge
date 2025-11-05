@@ -55,9 +55,9 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
         }
 
         // Convert seconds to milliseconds for SDK configuration
-        final int sessionTimeoutMs = config.getConnectionOptions().sessionTimeout() * 1000;
-        final int requestTimeoutMs = config.getConnectionOptions().requestTimeout() * 1000;
-        final int keepAliveIntervalMs = config.getConnectionOptions().keepAliveInterval() * 1000;
+        final long sessionTimeoutMs = config.getConnectionOptions().sessionTimeout() * 1000;
+        final long requestTimeoutMs = config.getConnectionOptions().requestTimeout() * 1000;
+        final long keepAliveIntervalMs = config.getConnectionOptions().keepAliveInterval() * 1000;
 
         configBuilder
                 .setApplicationName(LocalizedText.english(Constants.OPCUA_APPLICATION_NAME))

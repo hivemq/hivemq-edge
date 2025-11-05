@@ -126,7 +126,7 @@ public class OpcUaClientConnection {
 
             // Add timeout to connection attempt to prevent hanging forever
             // Wrap synchronous connect() call with CompletableFuture timeout
-            final int connectionTimeoutSeconds = config.getConnectionOptions().connectionTimeout();
+            final long connectionTimeoutSeconds = config.getConnectionOptions().connectionTimeout();
             try {
                 CompletableFuture.runAsync(() -> {
                     try {
