@@ -111,7 +111,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
     @JsonProperty("connectionTimeout")
     @ModuleConfigField(title = "Connection Timeout (seconds)",
                        description = "Timeout for establishing connection to OPC UA server in seconds",
-                       numberMin = 5,
+                       numberMin = 2,
                        numberMax = 300,
                        defaultValue = "30")
     private final int connectionTimeout;
