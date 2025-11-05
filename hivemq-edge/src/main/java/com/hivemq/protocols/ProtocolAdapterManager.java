@@ -159,7 +159,6 @@ public class ProtocolAdapterManager {
                 entry.getValue().stopAsync(true).get();
             } catch (final InterruptedException | ExecutionException e) {
                 log.error("Exception happened while shutting down adapter: ", e);
-                throw new RuntimeException(e);
             }
         });
     }
