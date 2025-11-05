@@ -32,7 +32,7 @@ public record Tls (@JsonProperty("enabled")
                                       defaultValue = "false")
                    boolean enabled,
 
-                   @JsonProperty("noChecks")
+                   @JsonProperty("tlsChecks")
                    @ModuleConfigField(title = "Disable certificate validation",
                                       description = "Allows to disable the validation of a certificate",
                                       defaultValue = "STANDARD")
