@@ -1,24 +1,36 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Editor, useMonaco } from '@monaco-editor/react'
+import type { editor } from 'monaco-editor'
 import type { WidgetProps } from '@rjsf/utils'
 import { labelValue } from '@rjsf/utils'
-import { Editor, useMonaco } from '@monaco-editor/react'
-import { FormControl, FormLabel, Text, useColorModeValue, useToken, VStack } from '@chakra-ui/react'
-import { getChakra } from '@/components/rjsf/utils/getChakra'
+import { useTranslation } from 'react-i18next'
 import { generateWidgets } from '@rjsf/chakra-ui'
+import { FormControl, FormLabel, Text, useColorModeValue, useToken, VStack } from '@chakra-ui/react'
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
-import { useTranslation } from 'react-i18next'
+import { getChakra } from '@/components/rjsf/utils/getChakra'
 
 const CodeEditor = (lng: string, props: WidgetProps) => {
   const { t } = useTranslation('datahub')
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
   const monaco = useMonaco()
   const [isLoaded, setIsLoaded] = useState(false)
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
 
   const [editorBgLight, editorBgDark] = useToken('colors', ['white', 'gray.200'])
   const editorBackgroundColor = useColorModeValue(editorBgLight, editorBgDark)
 
   const { TextareaWidget } = generateWidgets()
+
+  const handleEditorMount = (editor: editor.IStandaloneCodeEditor) => {
+    editorRef.current = editor
+  }
+
+  useEffect(() => {
+    if (editorRef.current && props.value !== editorRef.current.getValue()) {
+      editorRef.current.setValue(props.value || '')
+    }
+  }, [props.value])
 
   useEffect(() => {
     if (monaco) {
@@ -89,6 +101,7 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
           defaultValue={props.value}
           theme={isReadOnly ? 'readOnlyTheme' : 'lightTheme'}
           onChange={(event) => props.onChange(event)}
+          onMount={handleEditorMount}
           options={{ readOnly: isReadOnly }}
         />
         )
