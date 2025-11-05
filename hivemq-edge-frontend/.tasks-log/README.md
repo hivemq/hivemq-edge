@@ -1,48 +1,87 @@
-# Tasks Log Directory
+# Ephemeral Session Logs
 
-This directory contains ephemeral session documents generated during task work. These are working documents that complement the permanent documentation in `.tasks/`.
+**⚠️ IMPORTANT: These files are NOT committed to git and may be cleaned up periodically.**
+
+---
 
 ## Purpose
 
-- **Temporary logs**: Session-specific documents that don't need to be in git
-- **AI-generated summaries**: Quick reference documents created during work sessions
-- **Running commentary**: Step-by-step records of what was done
-- **Troubleshooting notes**: Detailed fixes and issues resolved
+This directory contains detailed session-by-session logs that provide context and quick reference during active development. Unlike the permanent documentation in `.tasks/`, these logs are:
+
+- ❌ **NOT committed to git** (excluded in `.gitignore`)
+- ⚠️ **May be cleaned up** after 30 days
+- ✅ **Detailed session records** with troubleshooting context
+- ✅ **Quick reference** during development
+
+---
 
 ## Naming Convention
-
-All files follow this pattern:
 
 ```
 {TASK_NUMBER}_{INDEX}_{DESCRIPTIVE_NAME}.md
 ```
 
-### Examples:
+**Examples:**
+- `99999_00_SESSION_INDEX.md` - Master index for a session
+- `99999_01_Discovery_Context.md` - Detailed discovery session
+- `99999_02_Network_Graph_Implementation.md` - Specific implementation
 
-- `25337_01_Phase1_Component_Tests_Complete.md`
-- `25337_02_Phase2_E2E_Tests_Complete.md`
-- `25337_03_TypeScript_Errors_Fixed.md`
-- `25337_04_Accessibility_Select_Fix.md`
-- `25337_05_CyWait_Removal_Complete.md`
-
-### Components:
-
-- **TASK_NUMBER**: The task/issue number (e.g., `25337`)
-- **INDEX**: Sequential number starting from 01 (e.g., `01`, `02`, `03`)
-- **DESCRIPTIVE_NAME**: Clear description using PascalCase or snake_case
-
-## Git Status
-
-This directory is **excluded from git** (see `.gitignore`). These are local working documents that:
-
-- Help track session progress
-- Provide quick reference during work
-- Don't need to be committed to the repository
-
-## Permanent Documentation
-
-For permanent documentation that should be committed to git, use the `.tasks/` directory structure instead.
+**Components:**
+1. **TASK_NUMBER** - Task/issue number (e.g., `99999`)
+2. **INDEX** - Sequential number (00 = SESSION_INDEX, 01+ = topics)
+3. **DESCRIPTIVE_NAME** - Clear description in PascalCase
 
 ---
 
-**Note:** Clean this directory periodically to remove old session logs.
+## Current Sessions
+
+### Task 99999 - Domain Ontology Visualisation
+- `99999_00_SESSION_INDEX.md` - Session overview and summary
+- `99999_01_Discovery_Context.md` - Initial discovery and analysis
+
+---
+
+## How to Use
+
+### Finding Logs for a Task
+```bash
+ls .tasks-log/99999_*
+```
+
+### Searching Content
+```bash
+grep -r "React Flow" .tasks-log/
+```
+
+### Viewing Session Index
+```bash
+cat .tasks-log/99999_00_SESSION_INDEX.md
+```
+
+---
+
+## Permanent Documentation
+
+For long-term documentation that IS committed to git, see `.tasks/`:
+- `.tasks/ACTIVE_TASKS.md` - Master task index
+- `.tasks/{task-id}-{task-name}/` - Task-specific documentation
+
+---
+
+## Maintenance
+
+Session logs should be cleaned up periodically:
+
+**Keep:**
+- This README.md (always in git)
+- Recent session logs (last 1-2 weeks)
+- Logs for active/ongoing work
+
+**Remove:**
+- Completed session logs older than 30 days
+- Duplicate information (if moved to permanent docs)
+
+---
+
+**For more information, see:** `.tasks/REPORTING_STRATEGY.md`
+

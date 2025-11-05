@@ -102,6 +102,157 @@ Toolbar
 
 ---
 
+## 🧪 Proof-of-Concept (POC) Testing Strategy
+
+**Purpose:** Establish basic test coverage for POC implementations without requiring full test suites.
+
+### POC Testing Requirements
+
+For features marked as **Proof-of-Concept**, implement minimal but meaningful tests:
+
+#### 1. Component Tests (Required)
+
+**Every new component MUST have a Cypress component test file** with at minimum:
+
+```tsx
+describe('MyPOCComponent', () => {
+  it('should be accessible', () => {
+    cy.injectAxe()
+    cy.mountWithProviders(<MyPOCComponent {...representativeProps} />)
+    cy.checkAccessibility()
+  })
+})
+```
+
+**Benefits:**
+
+- ✅ Validates component renders without errors
+- ✅ Ensures basic accessibility compliance
+- ✅ Provides runtime component context for debugging
+- ✅ Establishes test structure for future expansion
+- ✅ Helps AI agents understand component behavior
+
+**Optional additions:**
+
+- Basic interaction test (if component has critical interactions)
+- Screenshot for visual reference
+
+#### 2. E2E Tests (Required)
+
+**Every new feature MUST have a basic E2E test** that verifies access to the feature in context:
+
+```tsx
+describe('POC Feature Access', () => {
+  it('should access the new feature', () => {
+    // Navigate to feature location
+    cy.visit('/workspace')
+    cy.getByTestId('edge-node').click()
+    cy.getByTestId('open-panel-button').click()
+
+    // Verify feature is accessible
+    cy.getByTestId('new-feature-tab').should('be.visible')
+    cy.getByTestId('new-feature-tab').click()
+    cy.getByTestId('new-feature-content').should('be.visible')
+  })
+})
+```
+
+**Required E2E Test Structure:**
+
+- ✅ Create or update relevant Page Object
+- ✅ Test only the actions required to access the feature
+- ✅ Verify feature renders/displays correctly
+- ✅ Use `data-testid` selectors via `cy.getByTestId()`
+
+**Benefits:**
+
+- ✅ Validates feature integration with existing UI
+- ✅ Ensures navigation/access patterns work
+- ✅ Documents feature location for future reference
+- ✅ Provides E2E context for debugging
+- ✅ Prevents accidental breakage of access paths
+
+#### 3. Page Object Updates (Required if applicable)
+
+If the feature is accessed through existing pages, **update or create Page Objects**:
+
+```typescript
+// cypress/pages/WorkspaceEdgePanel.ts
+export class WorkspaceEdgePanel {
+  // ...existing code...
+
+  openNetworkGraphTab() {
+    cy.getByTestId('ontology-panel-tab-network').click()
+    return this
+  }
+
+  verifyNetworkGraphVisible() {
+    cy.getByTestId('edge-panel-network-graph').should('be.visible')
+    return this
+  }
+}
+```
+
+### POC Testing Exemptions
+
+POC implementations are **exempt from**:
+
+- ❌ Full test coverage requirements
+- ❌ Edge case testing
+- ❌ Complex interaction testing
+- ❌ Performance testing
+- ❌ Multiple browser testing
+
+### Transition from POC to Production
+
+When promoting POC to production-ready:
+
+1. ✅ Add comprehensive test coverage
+2. ✅ Test edge cases and error states
+3. ✅ Add performance tests if applicable
+4. ✅ Test keyboard navigation thoroughly
+5. ✅ Test screen reader compatibility
+6. ✅ Add visual regression tests
+
+### Example: Complete POC Test Suite
+
+**Component Test:** `NetworkGraphView.spec.cy.tsx`
+
+```tsx
+describe('NetworkGraphView (POC)', () => {
+  it('should be accessible', () => {
+    cy.injectAxe()
+    cy.mountWithProviders(<NetworkGraphView />)
+    cy.checkAccessibility()
+  })
+})
+```
+
+**E2E Test:** `network-graph-access.spec.cy.ts`
+
+```tsx
+import { WorkspaceEdgePanel } from '@pages/WorkspaceEdgePanel'
+
+describe('Network Graph Access (POC)', () => {
+  beforeEach(() => {
+    cy.visit('/workspace')
+  })
+
+  it('should access network graph visualization', () => {
+    // Navigate to edge panel
+    cy.getByTestId('workspace-edge-node').click()
+    cy.getByTestId('edge-open-panel').click()
+
+    // Access network graph tab
+    const edgePanel = new WorkspaceEdgePanel()
+    edgePanel.openNetworkGraphTab()
+    edgePanel.verifyNetworkGraphVisible()
+  })
+})
+```
+
+---
+
 ## Table of Contents
 
 1. [Cypress Testing Guidelines](#cypress-testing-guidelines) ⚠️ **COMPREHENSIVE CYPRESS REFERENCE**
