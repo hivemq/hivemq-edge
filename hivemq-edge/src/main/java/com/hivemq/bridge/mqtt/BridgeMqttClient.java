@@ -235,13 +235,13 @@ public class BridgeMqttClient {
             final SettableFuture<Void> stopFuture = SettableFuture.create();
             stopFutureRef.set(stopFuture);
             final long stopStartTime = log.isDebugEnabled() ? System.nanoTime() : 0;
+            stopped.set(true);
             CompletableFuture.allOf(mqtt5Client.disconnect()).thenRun(() -> {
                 if (log.isDebugEnabled()) {
                     final long stopMicros = (System.nanoTime() - stopStartTime) / 1000;
                     log.debug("Bridge '{}' disconnected in {} μs", bridge.getId(), stopMicros);
                 }
                 stopFutureRef.getAndSet(null).set(null);
-                stopped.set(true);
                 operationState.set(OperationState.IDLE);
                 perBridgeMetrics.clearAll(metricRegistry);
                 if (log.isInfoEnabled()) {
