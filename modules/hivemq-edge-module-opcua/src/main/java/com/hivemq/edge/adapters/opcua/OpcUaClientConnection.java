@@ -126,7 +126,7 @@ public class OpcUaClientConnection {
 
             // Add timeout to connection attempt to prevent hanging forever
             // Wrap synchronous connect() call with CompletableFuture timeout
-            final long connectionTimeoutSeconds = config.getConnectionOptions().connectionTimeout();
+            final long connectionTimeoutSecondsMs = config.getConnectionOptions().connectionTimeoutMs();
             try {
                 CompletableFuture.runAsync(() -> {
                     try {
@@ -134,13 +134,13 @@ public class OpcUaClientConnection {
                     } catch (final UaException e) {
                         throw new RuntimeException(e);
                     }
-                }).get(connectionTimeoutSeconds, TimeUnit.SECONDS);
+                }).get(connectionTimeoutSecondsMs, TimeUnit.MILLISECONDS);
                 log.debug("OPC UA client connected successfully for adapter '{}'", adapterId);
             } catch (final TimeoutException e) {
-                log.error("Connection timeout after {} seconds for OPC UA adapter '{}'", connectionTimeoutSeconds, adapterId);
+                log.error("Connection timeout after {} milliseconds for OPC UA adapter '{}'", connectionTimeoutSecondsMs, adapterId);
                 eventService
                         .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                        .withMessage("Connection timeout after " + connectionTimeoutSeconds + " seconds for adapter '" + adapterId + "'")
+                        .withMessage("Connection timeout after " + connectionTimeoutSecondsMs + " milliseconds for adapter '" + adapterId + "'")
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);

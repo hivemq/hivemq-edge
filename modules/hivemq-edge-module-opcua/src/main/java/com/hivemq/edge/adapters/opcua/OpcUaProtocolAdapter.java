@@ -258,7 +258,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
 
-        final long healthCheckIntervalSeconds = config.getConnectionOptions().healthCheckInterval();
+        final long healthCheckIntervalMs = config.getConnectionOptions().healthCheckIntervalMs();
         final ScheduledFuture<?> future = healthCheckScheduler.scheduleAtFixedRate(() -> {
             // Check if adapter was stopped before health check executes
             if (stopped) {
@@ -283,7 +283,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             } else {
                 log.debug("Health check passed for adapter '{}'", adapterId);
             }
-        }, healthCheckIntervalSeconds, healthCheckIntervalSeconds, TimeUnit.SECONDS);
+        }, healthCheckIntervalMs, healthCheckIntervalMs, TimeUnit.MILLISECONDS);
 
         // Store future so it can be cancelled if needed
         final ScheduledFuture<?> oldFuture = healthCheckFuture.getAndSet(future);
@@ -291,8 +291,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             oldFuture.cancel(false);
         }
 
-        log.debug("Scheduled connection health check every {} seconds for adapter '{}'",
-                healthCheckIntervalSeconds, adapterId);
+        log.debug("Scheduled connection health check every {} milliseconds for adapter '{}'",
+                healthCheckIntervalMs, adapterId);
     }
 
     /**
@@ -507,13 +507,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 this.opcUaClientConnection.set(null);
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
 
-                final long retryIntervalSeconds = config.getConnectionOptions().retryInterval();
+                final long retryIntervalMs = config.getConnectionOptions().retryIntervalMs();
                 if (throwable != null) {
-                    log.warn("OPC UA adapter '{}' connection failed, will retry in {} seconds",
-                            adapterId, retryIntervalSeconds, throwable);
+                    log.warn("OPC UA adapter '{}' connection failed, will retry in {} milliseconds",
+                            adapterId, retryIntervalMs, throwable);
                 } else {
-                    log.warn("OPC UA adapter '{}' connection returned false, will retry in {} seconds",
-                            adapterId, retryIntervalSeconds);
+                    log.warn("OPC UA adapter '{}' connection returned false, will retry in {} milliseconds",
+                            adapterId, retryIntervalMs);
                 }
 
                 // Schedule retry attempt
@@ -535,7 +535,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
 
-        final long retryIntervalSeconds = config.getConnectionOptions().retryInterval();
+        final long retryIntervalMs = config.getConnectionOptions().retryIntervalMs();
         final ScheduledFuture<?> future = retryScheduler.schedule(() -> {
             // Check if adapter was stopped before retry executes
             if (stopped || this.parsedConfig == null || this.moduleServices == null) {
@@ -562,7 +562,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             } else {
                 log.debug("OPC UA adapter '{}' retry skipped - connection already exists", adapterId);
             }
-        }, retryIntervalSeconds, TimeUnit.SECONDS);
+        }, retryIntervalMs, TimeUnit.MILLISECONDS);
 
         // Store future so it can be cancelled if needed
         final ScheduledFuture<?> oldFuture = retryFuture.getAndSet(future);

@@ -6,29 +6,29 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import static java.util.Objects.requireNonNullElse;
 
 public record ConnectionOptions(
-        @JsonProperty("sessionTimeout")
-        @ModuleConfigField(title = "Session Timeout (seconds)",
+        @JsonProperty("sessionTimeoutMs")
+        @ModuleConfigField(title = "Session Timeout (milliseconds)",
                            description = "OPC UA session timeout in seconds. Session will be renewed at this interval.",
-                           numberMin = 10,
-                           numberMax = 3600,
+                           numberMin = 10 * 1000,
+                           numberMax = 3600 * 1000,
                            defaultValue = ""+DEFAULT_SESSION_TIMEOUT)
-        Long sessionTimeout,
+        Long sessionTimeoutMs,
 
-        @JsonProperty("requestTimeout")
-        @ModuleConfigField(title = "Request Timeout (seconds)",
+        @JsonProperty("requestTimeoutMs")
+        @ModuleConfigField(title = "Request Timeout (milliseconds)",
                    description = "Timeout for OPC UA requests in seconds",
-                   numberMin = 5,
-                   numberMax = 300,
+                   numberMin = 5 * 1000,
+                   numberMax = 300 * 1000,
                    defaultValue = ""+DEFAULT_REQUEST_TIMEOUT)
-        Long requestTimeout,
+        Long requestTimeoutMs,
 
-        @JsonProperty("keepAliveInterval")
-        @ModuleConfigField(title = "Keep-Alive Interval (seconds)",
+        @JsonProperty("keepAliveIntervalMs")
+        @ModuleConfigField(title = "Keep-Alive Interval (milliseconds)",
                    description = "Interval between OPC UA keep-alive pings in seconds",
-                   numberMin = 1,
-                   numberMax = 60,
+                   numberMin = 1000,
+                   numberMax = 60 * 1000,
                    defaultValue = ""+DEFAULT_KEEP_ALIVE_INTERVAL)
-        Long keepAliveInterval,
+        Long keepAliveIntervalMs,
 
         @JsonProperty("keepAliveFailuresAllowed")
         @ModuleConfigField(title = "Keep-Alive Failures Allowed",
@@ -38,29 +38,29 @@ public record ConnectionOptions(
                    defaultValue = ""+DEFAULT_KEEP_ALIVE_FAILURES_ALLOWED)
         Integer keepAliveFailuresAllowed,
 
-        @JsonProperty("connectionTimeout")
-        @ModuleConfigField(title = "Connection Timeout (seconds)",
+        @JsonProperty("connectionTimeoutMs")
+        @ModuleConfigField(title = "Connection Timeout (milliseconds)",
                    description = "Timeout for establishing connection to OPC UA server in seconds",
-                   numberMin = 2,
-                   numberMax = 300,
+                   numberMin = 2 * 1000,
+                   numberMax = 300 * 1000,
                    defaultValue = ""+DEFAULT_CONNECTION_TIMEOUT)
-        Long connectionTimeout,
+        Long connectionTimeoutMs,
 
-        @JsonProperty("healthCheckInterval")
-        @ModuleConfigField(title = "Health Check Interval (seconds)",
+        @JsonProperty("healthCheckIntervalMs")
+        @ModuleConfigField(title = "Health Check Interval (milliseconds)",
                    description = "Interval between connection health checks in seconds",
-                   numberMin = 10,
-                   numberMax = 300,
+                   numberMin = 10 * 1000,
+                   numberMax = 300 * 1000,
                    defaultValue = ""+DEFAULT_HEALTHCHECK_INTERVAL)
-        Long healthCheckInterval,
+        Long healthCheckIntervalMs,
 
-        @JsonProperty("retryInterval")
-        @ModuleConfigField(title = "Retry Interval (seconds)",
+        @JsonProperty("retryIntervalMs")
+        @ModuleConfigField(title = "Retry Interval (milliseconds)",
                    description = "Interval between connection retry attempts in seconds",
-                   numberMin = 5,
-                   numberMax = 300,
+                   numberMin = 5 * 1000,
+                   numberMax = 300 * 1000,
                    defaultValue = ""+DEFAULT_RETRY_INTERVAL)
-        Long retryInterval,
+        Long retryIntervalMs,
 
         @JsonProperty("autoReconnect")
         @ModuleConfigField(title = "Automatic Reconnection",
@@ -68,24 +68,24 @@ public record ConnectionOptions(
                    defaultValue = ""+DEFAULT_AUTO_RECONNECT)
         Boolean autoReconnect) {
 
-    public static final long DEFAULT_SESSION_TIMEOUT = 120L;
-    public static final long DEFAULT_KEEP_ALIVE_INTERVAL = 10L;
+    public static final long DEFAULT_SESSION_TIMEOUT = 120L * 1000;
+    public static final long DEFAULT_KEEP_ALIVE_INTERVAL = 10L * 1000;
     public static final int DEFAULT_KEEP_ALIVE_FAILURES_ALLOWED = 3;
     public static final boolean DEFAULT_AUTO_RECONNECT = true;
-    public static final long DEFAULT_REQUEST_TIMEOUT = 30;
-    public static final long DEFAULT_CONNECTION_TIMEOUT = 30;
-    public static final long DEFAULT_HEALTHCHECK_INTERVAL = 30;
-    public static final long DEFAULT_RETRY_INTERVAL = 30;
+    public static final long DEFAULT_REQUEST_TIMEOUT = 30 * 1000;
+    public static final long DEFAULT_CONNECTION_TIMEOUT = 30 * 1000;
+    public static final long DEFAULT_HEALTHCHECK_INTERVAL = 30 * 1000;
+    public static final long DEFAULT_RETRY_INTERVAL = 30 * 1000;
 
     public ConnectionOptions {
         // Timeout configurations with sensible defaults
-        sessionTimeout = requireNonNullElse(sessionTimeout, DEFAULT_SESSION_TIMEOUT);
-        requestTimeout = requireNonNullElse(requestTimeout, DEFAULT_REQUEST_TIMEOUT);
-        keepAliveInterval = requireNonNullElse(keepAliveInterval, DEFAULT_KEEP_ALIVE_INTERVAL);
+        sessionTimeoutMs = requireNonNullElse(sessionTimeoutMs, DEFAULT_SESSION_TIMEOUT);
+        requestTimeoutMs = requireNonNullElse(requestTimeoutMs, DEFAULT_REQUEST_TIMEOUT);
+        keepAliveIntervalMs = requireNonNullElse(keepAliveIntervalMs, DEFAULT_KEEP_ALIVE_INTERVAL);
         keepAliveFailuresAllowed = requireNonNullElse(keepAliveFailuresAllowed, DEFAULT_KEEP_ALIVE_FAILURES_ALLOWED);
-        connectionTimeout = requireNonNullElse(connectionTimeout, DEFAULT_CONNECTION_TIMEOUT);
-        healthCheckInterval = requireNonNullElse(healthCheckInterval, DEFAULT_HEALTHCHECK_INTERVAL);
-        retryInterval = requireNonNullElse(retryInterval, DEFAULT_RETRY_INTERVAL);
+        connectionTimeoutMs = requireNonNullElse(connectionTimeoutMs, DEFAULT_CONNECTION_TIMEOUT);
+        healthCheckIntervalMs = requireNonNullElse(healthCheckIntervalMs, DEFAULT_HEALTHCHECK_INTERVAL);
+        retryIntervalMs = requireNonNullElse(retryIntervalMs, DEFAULT_RETRY_INTERVAL);
         autoReconnect = requireNonNullElse(autoReconnect, DEFAULT_AUTO_RECONNECT);
     }
 
