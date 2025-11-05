@@ -1,1 +1,1 @@
-this is the end
+Of our elaborate plans, the end

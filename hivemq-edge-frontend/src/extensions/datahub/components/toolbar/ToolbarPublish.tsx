@@ -1,3 +1,4 @@
+import ApiErrorToastDevMode from '@datahub/components/helpers/ApiErrorToastDevMode.tsx'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -7,7 +8,8 @@ import type { UseToastOptions } from '@chakra-ui/react'
 import { Button, Icon, useToast } from '@chakra-ui/react'
 import { MdPublishedWithChanges } from 'react-icons/md'
 
-import type { BehaviorPolicy, DataPolicy, PolicySchema, Script } from '@/api/__generated__'
+import type { BehaviorPolicy, DataPolicy, PolicySchema, ProblemDetails, Script } from '@/api/__generated__'
+import { ApiError } from '@/api/__generated__'
 
 import { useCreateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useCreateDataPolicy.ts'
 import { useCreateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useCreateBehaviorPolicy.ts'
@@ -215,13 +217,17 @@ export const ToolbarPublish: FC = () => {
       })
       .catch((error) => {
         let message
-        if (error instanceof Error) message = error.message
+        let description = undefined
+        if (error instanceof ApiError) {
+          message = error.message
+          description = error.body as ProblemDetails
+        } else if (error instanceof Error) message = error.message
         else message = String(error)
 
         manageToast(`publish-error-${selectedNode?.type}`, {
           ...dataHubToastOption,
           title: t('publish.error.title', { source: selectedNode?.type }),
-          description: message.toString(),
+          description: <ApiErrorToastDevMode body={description} message={message} />,
           status: 'error',
         })
       })

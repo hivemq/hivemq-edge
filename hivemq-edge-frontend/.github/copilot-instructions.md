@@ -52,6 +52,7 @@ This directory contains comprehensive task documentation, progress tracking, and
 
 ## Important Guidelines
 
+- **DataHub Architecture**: [.tasks/DATAHUB_ARCHITECTURE.md](../.tasks/DATAHUB_ARCHITECTURE.md) - DataHub designer architecture, state management, E2E testing patterns
 - **Design Guidelines**: [.tasks/DESIGN_GUIDELINES.md](../.tasks/DESIGN_GUIDELINES.md) - UI component patterns, button variants, styling conventions
 - **Testing Guidelines**: [.tasks/TESTING_GUIDELINES.md](../.tasks/TESTING_GUIDELINES.md) - Mandatory accessibility testing, component test patterns
 

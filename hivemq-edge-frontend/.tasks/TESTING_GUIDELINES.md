@@ -111,6 +111,50 @@ Toolbar
 
 ---
 
+## Custom Cypress Commands
+
+### ✅ MANDATORY: Use Custom Commands for Common Patterns
+
+**CRITICAL REQUIREMENT:** Always use custom Cypress commands instead of verbose native Cypress code for better readability and consistency.
+
+#### data-testid Selector
+
+**ALWAYS use `cy.getByTestId()` instead of `cy.get('[data-testid="..."]')`**
+
+❌ **WRONG - Verbose and inconsistent:**
+
+```typescript
+cy.get('[data-testid="my-button"]').click()
+cy.get('[data-testid="dialog-title"]').should('be.visible')
+```
+
+✅ **CORRECT - Clean and consistent:**
+
+```typescript
+cy.getByTestId('my-button').click()
+cy.getByTestId('dialog-title').should('be.visible')
+```
+
+**Benefits:**
+
+- Shorter and more readable
+- Consistent across all tests
+- Easier to refactor if selector strategy changes
+- Clear intent (looking for test IDs specifically)
+
+#### Other Custom Commands
+
+**Available custom commands you MUST use:**
+
+- `cy.mountWithProviders()` - Mount React components with providers
+- `cy.injectAxe()` - Inject axe-core for accessibility testing
+- `cy.checkAccessibility()` - Run accessibility checks (DO NOT use `cy.checkA11y()` directly!)
+- `cy.getByTestId(id)` - Select elements by data-testid (DO NOT use `cy.get('[data-testid="..."]')`)
+
+**Always check for existing custom commands before writing verbose alternatives!**
+
+---
+
 ## Accessibility Testing
 
 ### ✅ MANDATORY: Accessibility Test for Every Component
@@ -127,14 +171,38 @@ it('should be accessible', () => {
 })
 ```
 
+#### ⚠️ CRITICAL: Use cy.checkAccessibility() NOT cy.checkA11y()
+
+**ALWAYS use the custom command `cy.checkAccessibility()` instead of `cy.checkA11y()` directly.**
+
+❌ **WRONG - DO NOT USE:**
+
+```tsx
+cy.checkA11y() // Never use this directly!
+```
+
+✅ **CORRECT - Use custom command:**
+
+```tsx
+cy.checkAccessibility() // Always use our custom command
+```
+
+**Why:**
+
+- `cy.checkAccessibility()` provides better and consistent props
+- Standardized error handling
+- Team-wide consistency
+- Easier to update globally if needed
+
 #### Key Requirements
 
 1. **Test Name:** MUST be exactly `"should be accessible"`
 2. **Order:** Should typically be the last test in the describe block
 3. **Setup:** Must call `cy.injectAxe()` before mounting
-4. **Props:** Use meaningful, representative props that show the component's real usage
-5. **Interactions:** Optionally test accessibility during/after user interactions
-6. **Screenshot:** Optionally capture a screenshot for PR documentation
+4. **Command:** MUST use `cy.checkAccessibility()` NOT `cy.checkA11y()`
+5. **Props:** Use meaningful, representative props that show the component's real usage
+6. **Interactions:** Optionally test accessibility during/after user interactions
+7. **Screenshot:** Optionally capture a screenshot for PR documentation
 
 ### ⚠️ CRITICAL: Select Components MUST Have Accessible Names
 
@@ -773,620 +841,5 @@ it('should be accessible', () => {
 
   // Or check specific rules
   cy.checkAccessibility({
-    runOnly: {
-      type: 'tag',
-      values: ['wcag2a', 'wcag2aa'],
-    },
-  })
-
-  // Or exclude certain rules if necessary (document why!)
-  cy.checkAccessibility({
-    rules: {
-      'color-contrast': { enabled: false }, // Explain: Using brand colors, verified manually
-    },
-  })
-})
+    runOnly:
 ```
-
----
-
-## Benefits of This Approach
-
-1. **Consistency**: Every component has accessibility verification
-2. **Early Detection**: Catch accessibility issues during development
-3. **Documentation**: Screenshots provide visual references
-4. **Compliance**: Helps meet WCAG standards
-5. **Maintainability**: Easy to find and update accessibility tests
-6. **PR Review**: Visual documentation aids code review
-
----
-
-## Related Guidelines
-
-- [Design Guidelines](./.tasks/DESIGN_GUIDELINES.md) - Button variants and UI patterns
-- [Task Documentation](./.tasks/README.md) - Development workflow
-
----
-
-## References
-
-- Task 33168 - Duplicate Combiner Modal (example implementation)
-- [axe-core Documentation](https://github.com/dequelabs/axe-core)
-- [Cypress Accessibility Testing](https://docs.cypress.io/guides/testing-strategies/accessibility-testing)
-- [WCAG Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
-
----
-
-## Dynamic IDs and Partial Selectors
-
-### Problem: UUID-Based TestIds
-
-When components generate testIds with dynamic UUIDs (e.g., `mapping-item-{uuid}`), you cannot use exact testId matches in your tests. This is common for list items, dynamically created elements, or any component that uses generated IDs.
-
-#### ❌ Wrong - Attempting to Use Unknown UUID
-
-```typescript
-// This will fail because the UUID is generated at runtime
-cy.getByTestId('mapping-item-abc-123-def-456')
-cy.getByTestId('mapping-item-0') // Index doesn't work either
-```
-
-#### ✅ Correct - Use Attribute Starts-With Selector
-
-```typescript
-// Use CSS attribute selector to match testIds that start with a pattern
-cy.get('[data-testid^="mapping-item-"]').first()
-cy.get('[data-testid^="mapping-item-"]').eq(0) // First item
-cy.get('[data-testid^="mapping-item-"]').eq(1) // Second item
-cy.get('[data-testid^="mapping-item-"]').should('have.length', 3) // Count items
-```
-
-### When to Use Partial Selectors
-
-Use attribute starts-with selectors (`^=`) when:
-
-- **Dynamic IDs**: UUIDs, timestamps, or any generated values
-- **List items**: When you need to select by position/index
-- **Multiple instances**: When the exact ID is unknowable at test time
-- **Generated content**: Items created dynamically by the application
-
-### Common Patterns
-
-#### Selecting First/Last Item
-
-```typescript
-// First item
-cy.get('[data-testid^="mapping-item-"]').first()
-
-// Last item
-cy.get('[data-testid^="mapping-item-"]').last()
-
-// By index
-cy.get('[data-testid^="mapping-item-"]').eq(2) // Third item (0-indexed)
-```
-
-#### Selecting by Content
-
-```typescript
-// Find item containing specific text
-cy.get('[data-testid^="mapping-destination-"]').contains('my/destination').should('be.visible')
-```
-
-#### Counting Items
-
-```typescript
-// Verify number of items
-cy.get('[data-testid^="mapping-item-"]').should('have.length', 5)
-```
-
-#### Iterating Over Items
-
-```typescript
-// Loop through all items
-cy.get('[data-testid^="mapping-item-"]').each(($item, index) => {
-  cy.wrap($item).should('be.visible')
-  cy.wrap($item).find('[data-testid^="mapping-destination-"]').should('exist')
-})
-```
-
-### Real Example: CombinerMappingsList
-
-From the duplicate combiner modal tests:
-
-```typescript
-it('should display existing mappings in modal', () => {
-  // ... create combiner with mappings ...
-
-  // Attempt duplicate to show modal
-  workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
-  workspacePage.toolbar.combine.click()
-
-  // ✅ Verify mappings list container
-  workspacePage.duplicateCombinerModal.mappingsList.should('be.visible')
-
-  // ✅ Select first mapping item (UUID is unknown)
-  cy.get('[data-testid^="mapping-item-"]').first().should('be.visible')
-
-  // ✅ Verify destination text in first mapping
-  cy.get('[data-testid^="mapping-destination-"]').first().should('contain.text', 'my / destination')
-
-  // ✅ Count total mappings
-  cy.get('[data-testid^="mapping-item-"]').should('have.length', 1)
-})
-```
-
----
-
-## Page Object Linking
-
-### Why Link Page Objects to Components
-
-Page Objects should include JSDoc comments that link directly to the source components they represent. This creates a direct path from test code to implementation code.
-
-**Benefits:**
-
-- ✅ **IDE Navigation**: Ctrl+Click (or Cmd+Click) to jump directly to the component
-- ✅ **Clear Source of Truth**: No guessing where testIds are defined
-- ✅ **Easier Maintenance**: When components change, you know which tests to update
-- ✅ **Documentation**: New team members understand the relationship immediately
-- ✅ **Refactoring Safety**: Find all usages when renaming components or testIds
-
-### Required Pattern
-
-**Step 1: Import the component types** (even if unused, suppress ESLint warning)
-
-```typescript
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { DuplicateCombinerModal, CombinerMappingsList } from '@/modules/Workspace/components/modals'
-```
-
-**Step 2: Use `@see ComponentName` in JSDoc** (WebStorm will link automatically)
-
-```typescript
-/**
- * Page Object for the Duplicate Combiner Detection Modal
- * @see DuplicateCombinerModal
- * @see CombinerMappingsList
- */
-duplicateCombinerModal = {
-  /**
-   * Container for the list of combiner mappings
-   * @see CombinerMappingsList
-   * @note Use `cy.get('[data-testid^="mapping-item-"]')` to select individual mappings with dynamic UUIDs
-   */
-  get mappingsList() {
-    return cy.getByTestId('mappings-list')
-  },
-
-  /**
-   * Empty state message when no mappings exist
-   * @see CombinerMappingsList
-   */
-  get mappingsListEmpty() {
-    return cy.getByTestId('mappings-list-empty')
-  },
-}
-```
-
-### What to Include
-
-1. **Component-level JSDoc**: At the top of the page object group
-2. **Property-level JSDoc**: For each getter
-3. **@see Links**: Path to the source component file
-4. **@note Annotations**: Special instructions (e.g., dynamic IDs, partial selectors)
-5. **Multiple Links**: If the page object spans multiple components
-
-### Real-World Example
-
-```typescript
-export class WorkspacePage extends ShellPage {
-  /**
-   * Page Object for the Duplicate Combiner Detection Modal
-   * @see {@link src/modules/Workspace/components/modals/DuplicateCombinerModal.tsx}
-   * @see {@link src/modules/Workspace/components/modals/CombinerMappingsList.tsx}
-   */
-  duplicateCombinerModal = {
-    /**
-     * Main modal container
-     * @see {@link src/modules/Workspace/components/modals/DuplicateCombinerModal.tsx}
-     */
-    get modal() {
-      return cy.getByTestId('duplicate-combiner-modal')
-    },
-
-    /**
-     * Container for the list of combiner mappings
-     * @see {@link src/modules/Workspace/components/modals/CombinerMappingsList.tsx}
-     * @note Use `cy.get('[data-testid^="mapping-item-"]')` to select individual mappings with dynamic UUIDs
-     */
-    get mappingsList() {
-      return cy.getByTestId('mappings-list')
-    },
-
-    /**
-     * Action buttons in modal footer
-     * @see {@link src/modules/Workspace/components/modals/DuplicateCombinerModal.tsx}
-     */
-    buttons: {
-      /**
-       * Cancel button - closes modal without action
-       */
-      get cancel() {
-        return cy.getByTestId('modal-button-cancel')
-      },
-
-      /**
-       * Use Existing button - navigates to existing combiner (primary action)
-       */
-      get useExisting() {
-        return cy.getByTestId('modal-button-use-existing')
-      },
-    },
-  }
-}
-```
-
-### Maintenance Workflow
-
-When updating a component:
-
-1. **Component Change**: Update testId in component file
-2. **Find Usages**: IDE shows all page objects that reference it via `@see` link
-3. **Update Page Object**: Update the testId and JSDoc if needed
-4. **Update Tests**: Tests using the page object are automatically correct
-
-### Checklist for Page Objects
-
-- [ ] Component-level JSDoc with `@see` link
-- [ ] Property-level JSDoc for each getter
-- [ ] `@see` links point to correct component file paths
-- [ ] `@note` annotations for special cases (dynamic IDs, partial selectors)
-- [ ] Links verified with Ctrl+Click navigation in IDE
-- [ ] Comments describe the element's purpose, not just its testId
-
----
-
-## Cypress Aliases for Dynamic Data
-
-### Problem: Managing Dynamic IDs Across Test Steps
-
-When tests create resources with dynamic IDs (e.g., combiners, mappings), you need to track those IDs to use them in later assertions or interactions.
-
-#### ❌ Wrong - Using Constants or Arrays
-
-```typescript
-// BAD: Fixed constant doesn't work for multiple items
-const COMBINER_ID = 'combiner-123'
-
-// BAD: Arrays are difficult to manage in Cypress
-const createdIds: string[] = []
-cy.intercept('POST', '/api/combiners', (req) => {
-  createdIds.push(req.body.id) // Hard to clean up between tests
-})
-```
-
-#### ✅ Correct - Use Cypress Aliases
-
-```typescript
-// GOOD: Store dynamic ID in Cypress alias
-cy.intercept('POST', '/api/v1/management/combiners', (req) => {
-  req.continue((res) => {
-    const combiner = res.body as Combiner
-    cy.wrap(combiner.id).as('firstCombinerId') // ✅ Store in alias
-  })
-}).as('postCombiner')
-
-// Later: Retrieve and use the alias
-cy.get('@firstCombinerId').then((combinerId) => {
-  cy.getByTestId(`combiner-node-${combinerId}`).should('be.visible')
-})
-```
-
-### Why Aliases Are Better
-
-- ✅ **Automatic Cleanup**: Aliases are reset between tests
-- ✅ **Idiomatic Cypress**: Standard Cypress pattern
-- ✅ **Type-Safe**: Works with `.then()` for proper typing
-- ✅ **No Manual State**: No arrays or variables to manage
-- ✅ **Chainable**: Integrates with Cypress command chain
-
-### Common Patterns
-
-#### Storing Multiple IDs
-
-```typescript
-let isFirstPost = true
-
-cy.intercept('POST', '/api/v1/management/combiners', (req) => {
-  req.continue((res) => {
-    const combiner = res.body as Combiner
-    if (isFirstPost) {
-      cy.wrap(combiner.id).as('firstCombinerId')
-      isFirstPost = false
-    } else {
-      cy.wrap(combiner.id).as('secondCombinerId')
-    }
-  })
-}).as('postCombiner')
-
-// Use both IDs later
-cy.get('@firstCombinerId').then((id1) => {
-  cy.getByTestId(`combiner-${id1}`).should('be.visible')
-})
-
-cy.get('@secondCombinerId').then((id2) => {
-  cy.getByTestId(`combiner-${id2}`).should('be.visible')
-})
-```
-
-#### Using in Assertions
-
-```typescript
-// Store the ID
-cy.intercept('POST', '/api/combiners', (req) => {
-  req.continue((res) => {
-    cy.wrap(res.body.id).as('combinerId')
-  })
-})
-
-// Use in URL assertion
-cy.get('@combinerId').then((id) => {
-  cy.url().should('include', `/combiners/${id}`)
-})
-
-// Use in element assertion
-cy.get('@combinerId').then((id) => {
-  cy.getByTestId(`combiner-item-${id}`).should('contain.text', 'My Combiner')
-})
-```
-
-### Real Example from Duplicate Combiner Tests
-
-```typescript
-it('should navigate to existing combiner when "Use Existing" is clicked', () => {
-  // Store the combiner ID when created
-  cy.intercept('POST', '/api/v1/management/combiners', (req) => {
-    req.continue((res) => {
-      const combiner = res.body as Combiner
-      cy.wrap(combiner.id).as('combinerId')
-    })
-  }).as('postCombiner')
-
-  // Create first combiner
-  workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
-  workspacePage.toolbar.combine.click()
-  cy.wait('@postCombiner')
-
-  // Attempt duplicate
-  workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
-  workspacePage.toolbar.combine.click()
-
-  // Click "Use Existing"
-  workspacePage.duplicateCombinerModal.buttons.useExisting.click()
-
-  // Verify navigation to the stored combiner ID
-  cy.get('@combinerId').then((id) => {
-    cy.url().should('include', id as string)
-  })
-})
-```
-
-### Key Takeaways
-
-1. **Always use aliases** for dynamic IDs generated during tests
-2. **Use `cy.wrap().as()`** to store values in intercepts
-3. **Use `cy.get('@alias').then()`** to retrieve and use values
-4. **Name aliases clearly**: `firstCombinerId`, `newMappingId`, etc.
-5. **Don't use arrays or external variables** - they don't clean up properly
-
----
-
-## Code Coverage Exclusions
-
-### JSON Schema and UI Schema Files
-
-**JSON Schema and UI Schema files are declarative data structures, not logic, and do not require test coverage.**
-Add the following comment at the top of schema files to exclude them from coverage:
-
-```typescript
-/* istanbul ignore file -- @preserve */
-/**
- * File description
- */
-```
-
-**When to use:**
-
-- `*.json-schema.ts` files (e.g., `layout-options.json-schema.ts`)
-- `*.ui-schema.ts` files (e.g., `layout-options.ui-schema.ts`)
-- Other files containing pure declarative configuration data
-  **Example:**
-
-```typescript
-/* istanbul ignore file -- @preserve */
-/**
- * JSON Schema for Layout Options
- */
-import type { RJSFSchema } from '@rjsf/utils'
-export const dagreLayoutSchema: RJSFSchema = {
-  type: 'object',
-  properties: {
-    ranksep: { type: 'number', default: 50 },
-    // ... more schema definitions
-  },
-}
-```
-
-**Why exclude schemas:**
-
-- T## Code Coverage Exclusions
-
-### JSON Schema and UI Schema Files
-
-**JSON Schema and UI Schema files are declarat C### JSON Schema and UI Schca**JSON Schema and UI Schema files vaAdd the following comment at the top of schema files to exclude them from coverage:
-
-````typescript
-/* istanbul icd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && rm src/modules/Workspace/utils/layout/constraint-utils.spec.ts src/modules/Workspace/hooks/useLayoutEngine.spec.ts
-cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && npm test -- constraint-utils.spec.ts 2>&1 | tail -50
-cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && cat >> .tasks-log/25337_00_SESSION_INDEX.md << 'EOF'
-### 📄 08 - Code Coverage Improvements
-**File:** `25337_08_Code_Coverage_Improvements.md`
-Improved code coverage for final gaps:
-- Schema files excluded with istanbul ignore
-- constraint-utils.ts fully tested (8 new tests)
-- useLayoutEngine.ts covered by integration tests
-- TESTING_GUIDELINES updated with coverage exclusions
-### Istanbul Ignore Variants
-**For entire files:**
-```typescript
-/* istanbul ignore file -- @preserve */
-````
-
-Use at the top of files containing pure declarative data (schemas, configs).
-**For single statements:**
-
-```typescript
-/* istanbul ignore next -- @preserve */
-someFunction() // This specific line will be ignored
-```
-
-## Use when you need to ignore a specific line or statement, not the whole file.
-
-## Debug Logging
-
-### Using the Debug Library
-
-**Never use `console.log`, `console.warn`, or `console.error` for debugging.** These are code smells in production code and flagged by static analysis tools.
-**Use the `debug` library instead:**
-
-```typescript
-import debug from 'debug'
-const log = debug('namespace:subnamespace:component')
-// Use throughout your code
-log('This is a debug message')
-log('Value:', someValue)
-log('Complex object:', { foo, bar })
-```
-
-### Namespace Convention
-
-Use colon-separated segments for fine-grained filtering:
-
-````typescript
-// Feature-level namespaces
-const log = debug('workspace:layout:engine')        // Main layout engine
-const log = debug('workspace:layout:dagre')         // Dagre algorithm
-const log = debug('workspace:layout:cola-force')    // Cola force algorithm
-const log = debug('workspace:layout:radial-hub')    // Radial hub algorithm
-const log = debug('workspace:uti## Debug Logging
-### Using the Debug Library
-**Never use `console.log`, `console.warn`, or `console.error` fors
-### Using the D* **Never use `console.log`,ne**Use the `debug` library instead:**
-```typescript
-import debug from 'debug'
-const log = debug('namespace:subnamespace:component')
-// Use throughout your cope```typescript
-import debug from 'de= import debugayconst log =// Enable multi// Use throughout your code
-log('This is a debug mespilog('This is a debug messag log('Value:', someValue)
-log(e.log('Complex object:', de```
-### Namespace Convention
-Use coay##t:Use colon-separated segac```typescript
-// Feature-level namespaces
-const log = dt // Feature-ln*const log = debug('workspao-const log = debug('workspace:layout:dagre')         // Dagre algorithm
-cgsconst log = debug('workspace:layout:cola-force')    // Cola force algroconst log = debug('workspace:layout:radial-hub')    // Radial hub algoriths const log = debug('workspace:uti## Debug Logging
-### Using the Debug Librabu### Using the Debug Library
-**Never use `consolyo**Never use `console.log`, a### Using the D* **Never use `console.log`,ne**Use the `debug` lio ```typescript
-import debug from 'debug'
-const log = debug('namespace:subnamespacstimport debugaiconst log = debug('names e// Use throughout your cope```typescript
-import debufuimport debug from 'de= import debugaycotulog('This is a debug mespilog('This is a debug messag log('Value:', someValue)
-log(e.log(
- log(e.log('Complex object:', de```
-### Namespace Convention
-Use coay##t:Use c`d### Namespace Convention
-Use coaynsUse coay##t:Use colon-sF
-cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && cat >> .tasks/25337-workspace-auto-layout/TASK_SUMMARY.md << 'EOF'
----
-## Debug Namespaces
-The workspace auto-layout feature uses the `debug` library for all logging. Console statements have been replaced with namespaced debug loggers for better control and zero production overhead.
-### Layout Feature Namespaces
-| Namespace | Purpose | File |
-|-----------|---------|------|
-| `workspace:layout:engine` | Main layout engine orchestration | `useLayoutEngine.ts` |
-| `workspace:layout:dagre` | Dagre hierarchical tree algorithm | `dagre-layout.ts` |
-| `workspace:layout:cola-force` | WebCola force-directed algorithm | `cola-force-layout.ts` |
-| `workspace:layout:cola-constrained` | WebCola constraint-based algorithm | `cola-constrained-layout.ts` |
-| `workspace:layout:radial-hub` | Radial hub-and-spoke algorithm | `radial-hub-layout.ts` |
-| `workspace:layout:registry` | Layout algorithm registry | `layout-registry.ts` |
-| `workspace:utils:topics` | To---
-## Debug Namespaces
-The workspace auto-layout feature uses the `debug` library for all logging. Console statements have been rep*'#```The workspace auto a### Layout Feature Namespaces
-| Namespace | Purpose | File |
-|-----------|---------|------|
-| `workspace:layout:engine` | Main layout engine orchestration | `useLayoutEngine.ts` |
-| `workspacne| Namespace | Purpose | File w|-----------|---------|------ c| `workspace:layout:engine` |in| `workspace:layout:dagre` | Dagre hierarchical tree algorithm | `dagre-layout.ts` |
-|bu| `workspace:layout:cola-force` | WebCola force-directed algorithm | `cola-force-la c| `workspace:layout:cola-constrained` | WebColacd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && cat >> .tasks/REPORTING_STRATEGY.md << 'EOF'
-## Debug Namespaces Section in TASK_SUMMARY
-### When to Include
-When a task adds or modifies logging/debugging functionality using the `debug` library, include a "Debug Namespaces" section in the `TASK_SUMMARY.md`.
-### Section Structure
-```markdown
-## Debug Namespaces
-Brief description of what the feature uses debug for.
-### [Feature Name] Namespaces
-| Namespace | Purpose | File |
-|-----------|---------|------|
-| `module:feature:component` | Description | `filename.ts` |
-| `module:feature:algorithm` | Description | `algorithm.ts` |
-### Usage
-**Enable all [feature] debugging:**
-```javascript
-localStorage.debug = 'module:feature:*'
-````
-
-**Enable specific component:**
-
-```javascript
-localStorage.debug = 'module:feature:component'
-```
-
-### Benefits
-
-- List key benefits of using debug
-- Zero runtime cost, fine-grained control, etc.
-
-````
-### Example (from Task 25337)
-```markdown
-## Debug Namespaces
-The workspa## Debug Namespaces Section in TASK_SUMMARY
-### When to Include
-When a task adds or modifies logging/debuggingur### When to Include
-When a task adds or mo-|When a task adds out### Section Structure
-```markdown
-## Debug Namespaces
-Brief description of what the feature uses debug for.
-### [Feature Name] Namespaces
-| Namespaceut```markdown
-## Debugas## Debug NlSBrief description rk### [Feature Name] Namespaces
-| Namespace | Purpose  a| Namespace | Purpose | Fileor|-----------|---------|------at| `module:feature:component` cl| `module:feature:algorithm` | Description | `algorithm.ts`s*### Usage
-**Enable all [feature] debugging:**
-```javascript
-cu**Enablen ```javascript
-localStorage.debug =sslocalStoragelw```
-**Enable specific component:**
-```kd**n
-```javascript
-localStorage.deS.localStoragele```
-### Benefits
-- List key benefits of using **## a- List key d - Zero runtime cost, fine-grainedg ```
-### Example (from Task 25337)
-```markdocd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && cat >> .tasks-log/25337_00_SESSION_INDEX.md << 'EOF'
-### 📄 09 - Debug Library Migration
-**File:** `25337_09_Debug_Library_Migration.md`
-Replaced all console statements with debug library:
-- 31 console.* statements replaced
-- 7 namespaced debug loggers created
-- TESTING_GUIDELINES updated with debug docs
-- TASK_SUMMARY updated with namespace table
-- REPORTING_STRATEGY updated with documentation pattern
-````
