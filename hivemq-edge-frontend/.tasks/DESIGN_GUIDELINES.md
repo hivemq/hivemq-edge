@@ -1,6 +1,6 @@
 # HiveMQ Edge Frontend - Design Guidelines
 
-**Last Updated:** October 24, 2025
+**Last Updated:** November 4, 2025
 
 ---
 
@@ -263,6 +263,130 @@ Based on the codebase, these custom button variants are available:
 
 ---
 
+## Card Component Pattern
+
+**CRITICAL:** Use Chakra UI's `Card` component with proper semantic structure for panels, details views, and content sections with distinct header/body/footer regions.
+
+### ✅ Correct Pattern: Card with Semantic Structure
+
+```tsx
+import { Card, CardHeader, CardBody, CardFooter, Heading, Text, Button } from '@chakra-ui/react'
+;<Card size="sm">
+  <CardHeader>
+    <Heading size="sm">Title</Heading>
+  </CardHeader>
+
+  <CardBody>
+    <Text>Content goes here</Text>
+  </CardBody>
+
+  <CardFooter>
+    <Button>Action</Button>
+  </CardFooter>
+</Card>
+```
+
+### ❌ Incorrect Pattern: Manual Structure with VStack
+
+```tsx
+// DON'T manually create card-like structures
+<VStack>
+  <HStack>
+    <Heading>Title</Heading>
+  </HStack>
+  <Box>Content</Box>
+  <ButtonGroup>Actions</ButtonGroup>
+</VStack>
+```
+
+### When to Use Card
+
+**Use Card for:**
+
+- Details panels (e.g., node details, configuration panels)
+- Content sections with clear header/body/footer separation
+- Dashboard widgets
+- Info cards with actions
+- Preview panels
+
+**Don't use Card for:**
+
+- Simple text groupings (use Box)
+- List items (use ListItem)
+- Table rows (use Tr)
+- Navigation sections (use Box/VStack)
+
+### Card Sizes
+
+```tsx
+<Card size="sm">   {/* Compact - for panels, sidebars */}
+<Card size="md">   {/* Default - for main content */}
+<Card size="lg">   {/* Large - for prominent sections */}
+```
+
+### Optional Sections
+
+**CardHeader and CardFooter are optional:**
+
+```tsx
+// Body only - no header or footer
+<Card>
+  <CardBody>
+    <Text>Simple content</Text>
+  </CardBody>
+</Card>
+
+// Header and body only - no footer
+<Card>
+  <CardHeader>
+    <Heading size="sm">Title</Heading>
+  </CardHeader>
+  <CardBody>
+    <Text>Content</Text>
+  </CardBody>
+</Card>
+```
+
+### Benefits of Card Pattern
+
+1. **Semantic HTML** - Proper content structure
+2. **Consistent Styling** - Built-in spacing, borders, shadows
+3. **Accessibility** - Screen reader friendly structure
+4. **Theme Integration** - Respects theme customizations
+5. **Responsive** - Adapts to different screen sizes
+
+### Example: Details Panel
+
+```tsx
+const NetworkGraphDetailsPanel: FC<Props> = ({ node, onClose }) => (
+  <Card size="sm">
+    <CardHeader>
+      <HStack justify="space-between">
+        <Heading size="sm">Node Details</Heading>
+        <IconButton icon={<CloseIcon />} onClick={onClose} />
+      </HStack>
+    </CardHeader>
+
+    <CardBody>
+      <VStack align="stretch" spacing={4}>
+        <Badge>{node.type}</Badge>
+        <Text>{node.label}</Text>
+        {/* More content */}
+      </VStack>
+    </CardBody>
+
+    <CardFooter>
+      <ButtonGroup>
+        <Button variant="outline">View Config</Button>
+        <Button variant="primary">Apply Filter</Button>
+      </ButtonGroup>
+    </CardFooter>
+  </Card>
+)
+```
+
+---
+
 ## Checklist for New Components
 
 When creating buttons in new components:
@@ -292,3 +416,169 @@ This guideline affects components that use Chakra UI `<Button>` components, incl
 
 - Task 33168 - Duplicate Combiner Modal implementation
 - Chakra UI theme configuration in `src/modules/Theme/`
+
+---
+
+## Form Controls Pattern
+
+**CRITICAL:** Always wrap form inputs (Select, Input, Textarea, Checkbox, Radio, etc.) in `FormControl` with `FormLabel` for consistency, accessibility, and testability.
+
+### ✅ Correct Pattern: FormControl + FormLabel
+
+```tsx
+import { FormControl, FormLabel, Input, Select } from '@chakra-ui/react'
+
+<FormControl>
+  <FormLabel>Username</FormLabel>
+  <Input placeholder="Enter username" />
+</FormControl>
+
+<FormControl>
+  <FormLabel>Start from:</FormLabel>
+  <Select placeholder="Select an option">
+    <option value="1">Option 1</option>
+    <option value="2">Option 2</option>
+  </Select>
+</FormControl>
+
+<FormControl>
+  <FormLabel>Direction:</FormLabel>
+  <RadioGroup value={value} onChange={setValue}>
+    <Stack direction="row">
+      <Radio value="1">Option 1</Radio>
+      <Radio value="2">Option 2</Radio>
+    </Stack>
+  </RadioGroup>
+</FormControl>
+```
+
+### ❌ Incorrect Pattern: Manual Labels
+
+```tsx
+// DON'T use separate Text/Box for labels
+<Box>
+  <Text fontSize="sm" fontWeight="medium" mb={2}>
+    Username
+  </Text>
+  <Input placeholder="Enter username" />
+</Box>
+
+// DON'T use heading for labels
+<VStack>
+  <Heading size="sm">Start from:</Heading>
+  <Select>...</Select>
+</VStack>
+```
+
+### Benefits of FormControl Pattern
+
+1. **Semantic HTML** - Proper `<label>` elements with `for` attribute
+2. **Accessibility** - Screen readers associate labels with inputs
+3. **Consistent Spacing** - Built-in Chakra spacing between label and input
+4. **Testing** - Easy to select inputs by label text
+   ```tsx
+   // Test can use: screen.getByLabelText('Username')
+   ```
+5. **Validation States** - FormControl handles isInvalid, isRequired, isDisabled
+6. **Helper Text** - FormHelperText and FormErrorMessage components
+
+### With Helper Text and Error State
+
+```tsx
+<FormControl isInvalid={!!error} isRequired>
+  <FormLabel>Email address</FormLabel>
+  <Input type="email" />
+  <FormHelperText>We'll never share your email.</FormHelperText>
+  <FormErrorMessage>{error}</FormErrorMessage>
+</FormControl>
+```
+
+### With chakra-react-select
+
+```tsx
+import { Select } from 'chakra-react-select'
+;<FormControl>
+  <FormLabel>Choose node:</FormLabel>
+  <Select<NodeOption>
+    placeholder="Select..."
+    options={options}
+    value={value}
+    onChange={setValue}
+    isClearable
+    isSearchable
+  />
+</FormControl>
+```
+
+### Testing Benefits
+
+**With FormControl + FormLabel:**
+
+```tsx
+// ✅ Consistent test pattern across all forms
+const input = screen.getByLabelText('Username')
+await userEvent.type(input, 'john')
+```
+
+**Without FormControl (manual labels):**
+
+```tsx
+// ❌ Brittle - must use data-testid or complex queries
+const input = screen.getByTestId('username-input')
+// or
+const input = screen.getByPlaceholderText('Enter username')
+```
+
+### When to Use FormControl
+
+**Always use for:**
+
+- Text inputs (`Input`, `Textarea`)
+- Selects (Chakra `Select`, `chakra-react-select`)
+- Radio groups (`RadioGroup`)
+- Checkbox groups
+- Date pickers
+- Number inputs
+- Any user input field
+
+**Don't use for:**
+
+- Buttons (use directly)
+- Display-only text
+- Icons or badges
+- Navigation elements
+
+### Validation and States
+
+```tsx
+<FormControl isInvalid={!!error} isRequired isDisabled={isLoading}>
+  <FormLabel>Required field</FormLabel>
+  <Input />
+  {error && <FormErrorMessage>{error}</FormErrorMessage>}
+</FormControl>
+```
+
+**Props:**
+
+- `isRequired` - Shows asterisk, sets aria-required
+- `isInvalid` - Shows error state, sets aria-invalid
+- `isDisabled` - Disables all child inputs
+- `isReadOnly` - Makes inputs read-only
+
+---
+
+## Checklist for New Forms
+
+When creating forms:
+
+- [ ] All inputs wrapped in `FormControl`
+- [ ] Each FormControl has a `FormLabel`
+- [ ] Required fields use `isRequired` prop
+- [ ] Validation uses `isInvalid` + `FormErrorMessage`
+- [ ] Helper text uses `FormHelperText`
+- [ ] No manual `Text` or `Box` used for labels
+- [ ] Tests use `getByLabelText()` for inputs
+
+---
+
+**Last Updated:** November 4, 2025
