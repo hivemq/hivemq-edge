@@ -17,15 +17,13 @@
 package com.hivemq.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 public final class ObjectMapperUtil {
     public final static ObjectMapper NO_PRETTY_PRINT_WITH_JAVA_TIME =
-            new ObjectMapper().registerModule(new JavaTimeModule()).disable(SerializationFeature.INDENT_OUTPUT);
+            ObjectMapperBuilder.builder().enableJavaTimeModule().build();
 
     public final static ObjectMapper PRETTY_PRINT_WITH_JAVA_TIME =
-            new ObjectMapper().registerModule(new JavaTimeModule()).enable(SerializationFeature.INDENT_OUTPUT);
+            ObjectMapperBuilder.builder().enableJavaTimeModule().enableIndentOutput().build();
 
     private ObjectMapperUtil() {
     }
