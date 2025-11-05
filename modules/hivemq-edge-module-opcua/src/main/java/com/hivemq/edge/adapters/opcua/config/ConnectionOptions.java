@@ -8,7 +8,7 @@ import static java.util.Objects.requireNonNullElse;
 public record ConnectionOptions(
         @JsonProperty("sessionTimeoutMs")
         @ModuleConfigField(title = "Session Timeout (milliseconds)",
-                           description = "OPC UA session timeout in seconds. Session will be renewed at this interval.",
+                           description = "OPC UA session timeout in milliseconds. Session will be renewed at this interval.",
                            numberMin = 10 * 1000,
                            numberMax = 3600 * 1000,
                            defaultValue = ""+DEFAULT_SESSION_TIMEOUT)
