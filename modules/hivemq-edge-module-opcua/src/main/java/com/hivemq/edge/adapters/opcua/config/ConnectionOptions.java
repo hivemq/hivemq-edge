@@ -16,7 +16,7 @@ public record ConnectionOptions(
 
         @JsonProperty("requestTimeoutMs")
         @ModuleConfigField(title = "Request Timeout (milliseconds)",
-                   description = "Timeout for OPC UA requests in seconds",
+                   description = "Timeout for OPC UA requests in milliseconds",
                    numberMin = 5 * 1000,
                    numberMax = 300 * 1000,
                    defaultValue = ""+DEFAULT_REQUEST_TIMEOUT)
@@ -24,7 +24,7 @@ public record ConnectionOptions(
 
         @JsonProperty("keepAliveIntervalMs")
         @ModuleConfigField(title = "Keep-Alive Interval (milliseconds)",
-                   description = "Interval between OPC UA keep-alive pings in seconds",
+                   description = "Interval between OPC UA keep-alive pings in milliseconds",
                    numberMin = 1000,
                    numberMax = 60 * 1000,
                    defaultValue = ""+DEFAULT_KEEP_ALIVE_INTERVAL)
@@ -40,7 +40,7 @@ public record ConnectionOptions(
 
         @JsonProperty("connectionTimeoutMs")
         @ModuleConfigField(title = "Connection Timeout (milliseconds)",
-                   description = "Timeout for establishing connection to OPC UA server in seconds",
+                   description = "Timeout for establishing connection to OPC UA server in milliseconds",
                    numberMin = 2 * 1000,
                    numberMax = 300 * 1000,
                    defaultValue = ""+DEFAULT_CONNECTION_TIMEOUT)
@@ -48,7 +48,7 @@ public record ConnectionOptions(
 
         @JsonProperty("healthCheckIntervalMs")
         @ModuleConfigField(title = "Health Check Interval (milliseconds)",
-                   description = "Interval between connection health checks in seconds",
+                   description = "Interval between connection health checks in milliseconds",
                    numberMin = 10 * 1000,
                    numberMax = 300 * 1000,
                    defaultValue = ""+DEFAULT_HEALTHCHECK_INTERVAL)
@@ -56,7 +56,7 @@ public record ConnectionOptions(
 
         @JsonProperty("retryIntervalMs")
         @ModuleConfigField(title = "Retry Interval (milliseconds)",
-                   description = "Interval between connection retry attempts in seconds",
+                   description = "Interval between connection retry attempts in milliseconds",
                    numberMin = 5 * 1000,
                    numberMax = 300 * 1000,
                    defaultValue = ""+DEFAULT_RETRY_INTERVAL)
