@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
@@ -43,7 +42,6 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
-import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -56,17 +54,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
-    private static final long RETRY_TIMEOUT_MILLIS = 10000;
-    private static final long RETRY_INTERVAL_MILLIS = 200;
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -120,16 +114,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
 
         final OpcUaClientConnection conn;
-        if (opcUaClientConnection.compareAndSet(null,
-                conn = new OpcUaClientConnection(adapterId,
-                        tagList,
-                        protocolAdapterState,
-                        input.moduleServices().protocolAdapterTagStreamingService(),
-                        dataPointFactory,
-                        input.moduleServices().eventService(),
-                        protocolAdapterMetricsService,
-                        config,
-                        lastSubscriptionId))) {
+        if (opcUaClientConnection.compareAndSet(null, conn = new OpcUaClientConnection(adapterId,
+                tagList,
+                protocolAdapterState,
+                input.moduleServices().protocolAdapterTagStreamingService(),
+                dataPointFactory,
+                input.moduleServices().eventService(),
+                protocolAdapterMetricsService,
+                config,
+                lastSubscriptionId))) {
 
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             CompletableFuture.supplyAsync(() -> conn.start(parsedConfig)).whenComplete((success, throwable) -> {
@@ -272,48 +265,25 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             output.fail("Discovery failed: ClientConnection not connected or not initialized");
             return;
         }
-        final long startTime = System.currentTimeMillis();
-        while (true) {
-            final Optional<OpcUaClient> optionalOpcUaClient = conn.client();
-            if (optionalOpcUaClient.isPresent()) {
-                final OpcUaClient opcUaClient = optionalOpcUaClient.get();
-                final JsonSchemaGenerator jsonSchemaGenerator = new JsonSchemaGenerator(opcUaClient);
-                Optional<JsonNode> optionalMqttPayloadJsonSchema;
-                try {
-                    optionalMqttPayloadJsonSchema = jsonSchemaGenerator.createMqttPayloadJsonSchema(tag).get();
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    log.error("Failed to wait for client to create schema '{}'", tagName, e);
-                    output.fail("Failed to wait for client to create schema '" + tagName + "'");
-                    break;
-                } catch (final Exception e) {
-                    optionalMqttPayloadJsonSchema = Optional.empty();
-                }
-                if (optionalMqttPayloadJsonSchema.isPresent()) {
-                    log.debug("Schema inferred for tag='{}'", tagName);
-                    output.finish(optionalMqttPayloadJsonSchema.get());
-                    break;
-                } else if (System.currentTimeMillis() - startTime < RETRY_TIMEOUT_MILLIS) {
-                    log.debug("Retry creating tag schema for '{}'", tagName);
-                } else {
-                    log.error("No schema inferred for tag='{}'", tagName);
-                    output.fail("No schema inferred for tag='" + tagName + "'");
-                    break;
-                }
-            } else {
-                log.error("Discovery failed: Client not connected or not initialized");
-                output.fail("Discovery failed: Client not connected or not initialized");
-                break;
-            }
-            try {
-                TimeUnit.MILLISECONDS.sleep(RETRY_TIMEOUT_MILLIS);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.error("Failed to wait for client to create schema '{}'", tagName, e);
-                output.fail("Failed to wait for client to create schema '" + tagName + "'");
-                break;
-            }
-        }
+        conn.client()
+                .ifPresentOrElse(client -> new JsonSchemaGenerator(client).createMqttPayloadJsonSchema(tag)
+                        .whenComplete((result, throwable) -> {
+                            if (throwable == null) {
+                                result.ifPresentOrElse(schema -> {
+                                    log.debug("Schema inferred for tag='{}'", tagName);
+                                    output.finish(schema);
+                                }, () -> {
+                                    log.error("No schema inferred for tag='{}'", tagName);
+                                    output.fail("No schema inferred for tag='" + tagName + "'");
+                                });
+                            } else {
+                                log.error("Exception while creating tag schema for '{}'", tagName, throwable);
+                                output.fail(throwable, null);
+                            }
+                        }), () -> {
+                    log.error("Discovery failed: Client not connected or not initialized");
+                    output.fail("Discovery failed: Client not connected or not initialized");
+                });
     }
 
     @Override
