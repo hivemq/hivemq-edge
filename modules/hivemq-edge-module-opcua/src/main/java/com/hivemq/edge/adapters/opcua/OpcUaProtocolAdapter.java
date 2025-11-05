@@ -278,16 +278,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             if (optionalOpcUaClient.isPresent()) {
                 final OpcUaClient opcUaClient = optionalOpcUaClient.get();
                 final JsonSchemaGenerator jsonSchemaGenerator = new JsonSchemaGenerator(opcUaClient);
-                final Optional<JsonNode> optionalMqttPayloadJsonSchema;
+                Optional<JsonNode> optionalMqttPayloadJsonSchema;
                 try {
                     optionalMqttPayloadJsonSchema = jsonSchemaGenerator.createMqttPayloadJsonSchema(tag).get();
-                } catch (final Exception e) {
-                    if (e instanceof InterruptedException) {
-                        Thread.currentThread().interrupt();
-                    }
-                    log.error("Exception while creating tag schema for '{}'", tagName, e);
-                    output.fail(e, null);
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.error("Failed to wait for client to create schema '{}'", tagName, e);
+                    output.fail("Failed to wait for client to create schema '" + tagName + "'");
                     break;
+                } catch (final Exception e) {
+                    optionalMqttPayloadJsonSchema = Optional.empty();
                 }
                 if (optionalMqttPayloadJsonSchema.isPresent()) {
                     log.debug("Schema inferred for tag='{}'", tagName);
