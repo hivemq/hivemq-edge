@@ -116,17 +116,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         // Reset stopped flag
         stopped = false;
 
-        final ParsedConfig parsedConfig;
+        final ParsedConfig newlyParsedConfig;
         final var result = ParsedConfig.fromConfig(config);
         if (result instanceof Failure<ParsedConfig, String>(final String failure)) {
             log.error("Failed to parse configuration for OPC UA client: {}", failure);
             output.failStart(new IllegalStateException(failure),
                     "Failed to parse configuration for OPC UA client");
             return;
-        } else if (result instanceof Success<ParsedConfig, String>(final ParsedConfig result1)) {
-            parsedConfig = result1;
+        } else if (result instanceof Success<ParsedConfig, String>(final ParsedConfig successfullyParsedConfig)) {
+            newlyParsedConfig = successfullyParsedConfig;
             // Store for reconnection
-            this.parsedConfig = result1;
+            this.parsedConfig = successfullyParsedConfig;
             this.moduleServices = input.moduleServices();
         } else {
             output.failStart(new IllegalStateException("Unexpected result type: " + result.getClass().getName()),
@@ -147,7 +147,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
 
             // Attempt initial connection asynchronously
-            attemptConnection(conn, parsedConfig, input);
+            attemptConnection(conn, newlyParsedConfig, input);
 
             // Adapter starts successfully even if connection isn't established yet
             // Hardware may come online later and automatic retry will connect
