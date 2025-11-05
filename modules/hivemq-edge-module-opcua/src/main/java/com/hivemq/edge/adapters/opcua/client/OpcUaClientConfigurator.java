@@ -54,10 +54,9 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
             log.info("Using Application URI from certificate: {}", applicationUri);
         }
 
-        // Convert seconds to milliseconds for SDK configuration
-        final long sessionTimeoutMs = config.getConnectionOptions().sessionTimeout() * 1000;
-        final long requestTimeoutMs = config.getConnectionOptions().requestTimeout() * 1000;
-        final long keepAliveIntervalMs = config.getConnectionOptions().keepAliveInterval() * 1000;
+        final long sessionTimeoutMs = config.getConnectionOptions().sessionTimeoutMs();
+        final long requestTimeoutMs = config.getConnectionOptions().requestTimeoutMs();
+        final long keepAliveIntervalMs = config.getConnectionOptions().keepAliveIntervalMs();
 
         configBuilder
                 .setApplicationName(LocalizedText.english(Constants.OPCUA_APPLICATION_NAME))
@@ -70,8 +69,8 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
                 .setKeepAliveInterval(UInteger.valueOf(keepAliveIntervalMs))
                 .setKeepAliveFailuresAllowed(UInteger.valueOf(config.getConnectionOptions().keepAliveFailuresAllowed()));
 
-        log.info("Configured OPC UA timeouts: session={}s, request={}s, keepAlive={}s, failuresAllowed={}",
-                config.getConnectionOptions().sessionTimeout(), config.getConnectionOptions().requestTimeout(), config.getConnectionOptions().keepAliveInterval(), config.getConnectionOptions().keepAliveFailuresAllowed());
+        log.info("Configured OPC UA timeouts: session={}ms, request={}ms, keepAlive={}ms, failuresAllowed={}",
+                config.getConnectionOptions().sessionTimeoutMs(), config.getConnectionOptions().requestTimeoutMs(), config.getConnectionOptions().keepAliveIntervalMs(), config.getConnectionOptions().keepAliveFailuresAllowed());
         log.info("TLS is enabled: {}", parsedConfig.tlsEnabled());
         if (parsedConfig.tlsEnabled()) {
             if (log.isDebugEnabled()) {

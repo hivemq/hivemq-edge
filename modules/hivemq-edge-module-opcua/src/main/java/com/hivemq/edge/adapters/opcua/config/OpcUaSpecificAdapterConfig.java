@@ -100,8 +100,6 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         this.opcuaToMqttConfig = requireNonNullElseGet(opcuaToMqttConfig, OpcUaToMqttConfig::defaultOpcUaToMqttConfig);
         this.security = requireNonNullElse(security, new Security(Constants.DEFAULT_SECURITY_POLICY));
         this.connectionOptions = requireNonNullElseGet(connectionOptions, ConnectionOptions::defaultConnectionOptions);
-
-        System.out.println("WTF !!! " + this);
     }
 
 
