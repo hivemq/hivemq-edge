@@ -71,11 +71,11 @@ export const loadScripts = (
   for (const fct of functions) {
     const [, functionName, functionVersion] = fct.functionId.split(':')
     if (!functionName || !functionVersion)
-      throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }) as string)
+      throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }))
 
     const scriptFamily = scripts.filter((script) => script.id === functionName)
     if (scriptFamily.length === 0)
-      throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }) as string)
+      throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }))
 
     let functionScript: Script | undefined
     if (functionVersion === SCRIPT_FUNCTION_LATEST) {
@@ -84,7 +84,7 @@ export const loadScripts = (
       functionScript = scriptFamily.find((s) => s.version?.toString() === functionVersion)
     }
     if (!functionScript)
-      throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }) as string)
+      throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }))
 
     const functionScriptNode: Node<FunctionData> = {
       id: getNodeId(DataHubNodeType.FUNCTION),
