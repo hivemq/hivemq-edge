@@ -70,6 +70,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull BridgeService bridgeService;
     private final @NotNull SystemInformation systemInformation;
+    private final @NotNull Object bridgeUpdateLock = new Object();
 
     @Inject
     public BridgeResourceImpl(
@@ -214,21 +215,25 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
                     "Unable to change the id of a bridge, this field is immutable");
         }
 
-        final MqttBridge previousBridgeConfig = getBridge(bridgeId);
-        if (previousBridgeConfig == null) {
-            return ErrorResponseUtil.errorResponse(new BridgeNotFoundError(String.format("Bridge not found by id '%s'",
-                    bridgeId)));
-        }
-        if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-            return ErrorResponseUtil.errorResponse(new InvalidQueryParameterErrors(errorMessages.toErrorList()));
-        } else {
-            //-- Modify the configuration
-            configurationService.bridgeExtractor().removeBridge(bridgeId);
-            final MqttBridge newBridgeConfig = unconvert(bridge);
-            configurationService.bridgeExtractor().addBridge(newBridgeConfig);
-            //-- Restart the new configuration on a new connection
-            bridgeService.restartBridge(bridgeId, newBridgeConfig);
-            return Response.ok().build();
+        // Synchronize on the bridge extractor to prevent concurrent updates from causing race conditions
+        // where one thread removes a bridge while another is checking for its existence
+        synchronized (configurationService.bridgeExtractor()) {
+            final MqttBridge previousBridgeConfig = getBridge(bridgeId);
+            if (previousBridgeConfig == null) {
+                return ErrorResponseUtil.errorResponse(new BridgeNotFoundError(String.format("Bridge not found by id '%s'",
+                        bridgeId)));
+            }
+            if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
+                return ErrorResponseUtil.errorResponse(new InvalidQueryParameterErrors(errorMessages.toErrorList()));
+            } else {
+                //-- Modify the configuration atomically
+                configurationService.bridgeExtractor().removeBridge(bridgeId);
+                final MqttBridge newBridgeConfig = unconvert(bridge);
+                configurationService.bridgeExtractor().addBridge(newBridgeConfig);
+                //-- Restart the new configuration on a new connection
+                bridgeService.restartBridge(bridgeId, newBridgeConfig);
+                return Response.ok().build();
+            }
         }
     }
 
