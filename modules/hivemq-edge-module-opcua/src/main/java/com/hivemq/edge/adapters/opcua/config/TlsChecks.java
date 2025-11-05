@@ -31,7 +31,7 @@ public enum TlsChecks {
      * Jackson creator method for deserialization.
      *
      * @param value the string value from JSON
-     * @return the corresponding MsgSecurityMode
+     * @return the corresponding TlsChecks
      */
     @JsonCreator
     public static @Nullable TlsChecks fromString(final @Nullable String value) {
