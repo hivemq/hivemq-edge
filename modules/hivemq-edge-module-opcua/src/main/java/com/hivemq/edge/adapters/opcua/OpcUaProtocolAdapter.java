@@ -258,7 +258,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
 
-        final int healthCheckIntervalSeconds = config.getHealthCheckInterval();
+        final int healthCheckIntervalSeconds = config.getConnectionOptions().healthCheckInterval();
         final ScheduledFuture<?> future = healthCheckScheduler.scheduleAtFixedRate(() -> {
             // Check if adapter was stopped before health check executes
             if (stopped) {
@@ -273,7 +273,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             }
 
             if (!conn.isHealthy()) {
-                if (config.isAutoReconnect()) {
+                if (config.getConnectionOptions().autoReconnect()) {
                     log.warn("Health check failed for adapter '{}' - triggering automatic reconnection", adapterId);
                     reconnect();
                 } else {
@@ -507,7 +507,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 this.opcUaClientConnection.set(null);
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
 
-                final int retryIntervalSeconds = config.getRetryInterval();
+                final int retryIntervalSeconds = config.getConnectionOptions().retryInterval();
                 if (throwable != null) {
                     log.warn("OPC UA adapter '{}' connection failed, will retry in {} seconds",
                             adapterId, retryIntervalSeconds, throwable);
@@ -535,7 +535,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
 
-        final int retryIntervalSeconds = config.getRetryInterval();
+        final int retryIntervalSeconds = config.getConnectionOptions().retryInterval();
         final ScheduledFuture<?> future = retryScheduler.schedule(() -> {
             // Check if adapter was stopped before retry executes
             if (stopped || this.parsedConfig == null || this.moduleServices == null) {

@@ -33,7 +33,7 @@ class OpcUaClientConfiguratorTest {
 
     // Minimal config for tests - defaults will be used for timeout values
     private static final OpcUaSpecificAdapterConfig TEST_CONFIG =
-            new OpcUaSpecificAdapterConfig("opc.tcp://test:4840", false, null, null, null, null, null, null, null, null, null, null, null, null, null);
+            new OpcUaSpecificAdapterConfig("opc.tcp://test:4840", false, null, null, null, null, null, null);
 
     @Test
     void testAccept_withExtractedUri_usesExtractedUri() {

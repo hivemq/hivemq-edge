@@ -55,9 +55,9 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
         }
 
         // Convert seconds to milliseconds for SDK configuration
-        final int sessionTimeoutMs = config.getSessionTimeout() * 1000;
-        final int requestTimeoutMs = config.getRequestTimeout() * 1000;
-        final int keepAliveIntervalMs = config.getKeepAliveInterval() * 1000;
+        final int sessionTimeoutMs = config.getConnectionOptions().sessionTimeout() * 1000;
+        final int requestTimeoutMs = config.getConnectionOptions().requestTimeout() * 1000;
+        final int keepAliveIntervalMs = config.getConnectionOptions().keepAliveInterval() * 1000;
 
         configBuilder
                 .setApplicationName(LocalizedText.english(Constants.OPCUA_APPLICATION_NAME))
@@ -68,10 +68,10 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
                 .setSessionTimeout(UInteger.valueOf(sessionTimeoutMs))
                 .setRequestTimeout(UInteger.valueOf(requestTimeoutMs))
                 .setKeepAliveInterval(UInteger.valueOf(keepAliveIntervalMs))
-                .setKeepAliveFailuresAllowed(UInteger.valueOf(config.getKeepAliveFailuresAllowed()));
+                .setKeepAliveFailuresAllowed(UInteger.valueOf(config.getConnectionOptions().keepAliveFailuresAllowed()));
 
         log.info("Configured OPC UA timeouts: session={}s, request={}s, keepAlive={}s, failuresAllowed={}",
-                config.getSessionTimeout(), config.getRequestTimeout(), config.getKeepAliveInterval(), config.getKeepAliveFailuresAllowed());
+                config.getConnectionOptions().sessionTimeout(), config.getConnectionOptions().requestTimeout(), config.getConnectionOptions().keepAliveInterval(), config.getConnectionOptions().keepAliveFailuresAllowed());
         log.info("TLS is enabled: {}", parsedConfig.tlsEnabled());
         if (parsedConfig.tlsEnabled()) {
             if (log.isDebugEnabled()) {
