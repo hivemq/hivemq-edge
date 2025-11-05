@@ -24,6 +24,11 @@
       "id": "opcuaToMqtt",
       "title": "OPC UA to MQTT",
       "properties": ["opcuaToMqtt"]
+    },
+    {
+      "id": "connectionOptions",
+      "title": "Connection Options",
+      "properties": ["connectionOptions"]
     }
   ],
   "id": {
@@ -34,7 +39,7 @@
     "ui:order": ["publishingInterval", "serverQueueSize", "*"]
   },
   "tls": {
-    "ui:order": ["enabled", "keystore", "truststore"],
+    "ui:order": ["enabled", "tlsChecks", "keystore", "truststore"],
     "keystore": {
       "ui:order": ["path", "password", "privateKeyPassword"]
     },
