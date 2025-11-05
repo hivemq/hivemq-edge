@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Node } from '@xyflow/react'
 import { Card, CardBody } from '@chakra-ui/react'
 import type { UiSchema } from '@rjsf/utils'
@@ -29,6 +29,9 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFo
   const { nodes } = useDataHubDraftStore()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
   const [formData, setFormData] = useState<FunctionData | null>(null)
+
+  // Track programmatic updates to prevent cascade
+  const isProgrammaticUpdateRef = useRef(false)
 
   useEffect(() => {
     if (!allScripts) return
@@ -78,14 +81,23 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFo
 
   const onReactFlowSchemaFormChange = useCallback(
     (changeEvent: IChangeEvent, id?: string | undefined) => {
+      // Ignore onChange events triggered by programmatic updates
+      if (isProgrammaticUpdateRef.current) {
+        isProgrammaticUpdateRef.current = false
+        return
+      }
+
+      // Handle name change - load script or create new draft
       if (id?.includes('name')) {
         const selectedScript = allScripts?.items?.findLast((script) => script.id === changeEvent.formData.name)
+
+        isProgrammaticUpdateRef.current = true
         if (selectedScript) {
           setFormData({
             name: selectedScript.id,
             type: 'Javascript',
             version: selectedScript.version || ResourceWorkingVersion.MODIFIED,
-            description: changeEvent.formData.description,
+            description: selectedScript.description,
             sourceCode: atob(selectedScript.source),
             internalVersions: getScriptFamilies(allScripts?.items || [])[selectedScript.id].versions,
             internalStatus: ResourceStatus.LOADED,
@@ -100,30 +112,39 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFo
         }
         return
       }
-      if (
-        (id?.includes('sourceCode') || id?.includes('description')) &&
-        formData &&
-        formData.internalStatus === ResourceStatus.LOADED
-      ) {
-        setFormData({
-          ...formData,
-          version: ResourceWorkingVersion.MODIFIED,
-          internalStatus: ResourceStatus.MODIFIED,
-        })
-        return
-      }
+
+      // Handle version change - load specific version
       if (id?.includes('version') && formData) {
         const versionedScript = allScripts?.items?.find(
-          (script) => script.id === formData.name && script.version?.toString() === changeEvent.formData.version
+          (script) =>
+            script.id === formData.name && script.version?.toString() === changeEvent.formData.version.toString()
         )
         if (versionedScript) {
+          isProgrammaticUpdateRef.current = true
           setFormData({
             ...formData,
             version: changeEvent.formData.version,
             description: versionedScript.description,
             sourceCode: atob(versionedScript.source),
+            internalStatus: ResourceStatus.LOADED,
           })
         }
+        return
+      }
+
+      // Handle sourceCode or description change - mark as modified
+      if (
+        (id?.includes('sourceCode') || id?.includes('description')) &&
+        formData &&
+        formData.internalStatus === ResourceStatus.LOADED
+      ) {
+        isProgrammaticUpdateRef.current = true
+        setFormData({
+          ...formData,
+          ...changeEvent.formData,
+          version: ResourceWorkingVersion.MODIFIED,
+          internalStatus: ResourceStatus.MODIFIED,
+        })
         return
       }
     },
