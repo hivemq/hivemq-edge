@@ -56,6 +56,6 @@ public record Tls (@JsonProperty("enabled")
     }
 
     public static @NotNull Tls defaultTls() {
-        return new Tls(false, TlsChecks.NONE, null, null);
+        return new Tls(false, TlsChecks.STANDARD, null, null);
     }
 }
