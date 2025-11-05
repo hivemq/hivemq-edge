@@ -43,10 +43,15 @@ This directory contains:
 ├── README.md                          ← This file
 ├── ACTIVE_TASKS.md                    ← Master index of all tasks
 ├── AUTONOMY_TEMPLATE.md               ← AI guidelines & best practices
+├── CODE_COMMENTS_GUIDELINES.md        ← Rules for code comments & documentation
 ├── CYPRESS_BEST_PRACTICES.md          ← Cypress guidelines & best practices
+├── DATAHUB_ARCHITECTURE.md            ← DataHub architecture & E2E testing guide
+├── DESIGN_GUIDELINES.md               ← UI/UX design patterns & standards
 ├── ERROR_MESSAGE_TRACING_PATTERN.md   ← Full-Stack Error Tracing guidelines
+├── I18N_GUIDELINES.md                 ← Internationalization guidelines
 ├── MONACO_TESTING_GUIDE.md            ← Monaco Editor Testing Guide for Cypress
 ├── QUICK_START.md                     ← User guide for resuming work
+├── TESTING_GUIDELINES.md              ← Comprehensive testing standards
 ├── WEBSTORM_SETUP.md                  ← IDE configuration guide
 ├── WEBSTORM_TEMPLATES.md              ← Live templates for WebStorm
 ├── FOR_CONSIDERATION.md               ← Future improvements

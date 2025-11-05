@@ -2,14 +2,17 @@ import type { FC } from 'react'
 import type { AlertStatus } from '@chakra-ui/react'
 import { Alert, AlertDescription, AlertIcon, AlertTitle, Box, Text } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
+
 import { PolicyDryRunStatus } from '@datahub/types.ts'
 
 interface PolicySummaryReportProps {
-  status: PolicyDryRunStatus | undefined
-  onOpenPublish?: () => void
-  onClearPolicy?: () => void
+  status?: PolicyDryRunStatus
 }
 
+/**
+ * Displays a simple alert based on the policy validation status.
+ * Used for all validation states (SUCCESS, FAILURE, IDLE, etc.)
+ */
 const PolicySummaryReport: FC<PolicySummaryReportProps> = ({ status }) => {
   const { t } = useTranslation('datahub')
   const alertStatus: AlertStatus =
