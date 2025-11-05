@@ -14,14 +14,23 @@ import {
   DrawerContent,
   DrawerFooter,
   DrawerHeader,
+  VStack,
   useDisclosure,
 } from '@chakra-ui/react'
 
 import PolicySummaryReport from '@datahub/components/helpers/PolicySummaryReport.tsx'
 import PolicyErrorReport from '@datahub/components/helpers/PolicyErrorReport.tsx'
+import PolicyOverview from '@datahub/components/helpers/PolicyOverview.tsx'
+import ResourcesBreakdown from '@datahub/components/helpers/ResourcesBreakdown.tsx'
+import PolicyJsonView from '@datahub/components/helpers/PolicyJsonView.tsx'
 import { ToolbarPublish } from '@datahub/components/toolbar/ToolbarPublish'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { PolicyDryRunStatus } from '@datahub/types.ts'
+import {
+  extractPolicySummary,
+  extractResourcesSummary,
+  extractPolicyPayload,
+} from '@datahub/utils/policy-summary.utils.ts'
 
 import { ANIMATION } from '@/modules/Theme/utils.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore'
@@ -33,8 +42,8 @@ const DryRunPanelController = () => {
   const navigate = useNavigate()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { fitView } = useReactFlow()
-  const { nodes } = useDataHubDraftStore()
-  const { status, getErrors } = usePolicyChecksStore()
+  const { nodes, status: designerStatus } = useDataHubDraftStore()
+  const { status, getErrors, report } = usePolicyChecksStore()
 
   const errorNodeFrom = useCallback((id: string) => nodes.find((node) => node.id === id), [nodes])
 
@@ -69,17 +78,38 @@ const DryRunPanelController = () => {
               <PolicySummaryReport status={status} />
             </CardHeader>
             <CardBody>
-              <PolicyErrorReport
-                errors={getErrors() || []}
-                onFitView={(id) => {
-                  const errorNode = errorNodeFrom(id)
-                  if (errorNode) onShowNode(errorNode)
-                }}
-                onOpenConfig={(id) => {
-                  const errorNode = errorNodeFrom(id)
-                  if (errorNode) onShowEditor(errorNode)
-                }}
-              />
+              {status === PolicyDryRunStatus.SUCCESS ? (
+                // Success: Show comprehensive summary
+                <VStack spacing={4} align="stretch">
+                  {(() => {
+                    const policySummary =
+                      report && designerStatus ? extractPolicySummary(report, designerStatus) : undefined
+                    const resources = report ? extractResourcesSummary(report) : []
+                    const payload = report ? extractPolicyPayload(report) : undefined
+
+                    return (
+                      <>
+                        {policySummary && <PolicyOverview summary={policySummary} />}
+                        {resources.length > 0 && <ResourcesBreakdown resources={resources} />}
+                        {payload && <PolicyJsonView payload={payload} />}
+                      </>
+                    )
+                  })()}
+                </VStack>
+              ) : (
+                // Failure/Error: Show error report
+                <PolicyErrorReport
+                  errors={getErrors() || []}
+                  onFitView={(id) => {
+                    const errorNode = errorNodeFrom(id)
+                    if (errorNode) onShowNode(errorNode)
+                  }}
+                  onOpenConfig={(id) => {
+                    const errorNode = errorNodeFrom(id)
+                    if (errorNode) onShowEditor(errorNode)
+                  }}
+                />
+              )}
             </CardBody>
           </Card>
         </DrawerBody>

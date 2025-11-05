@@ -1,6 +1,8 @@
+import type { IconProps } from '@chakra-ui/react'
 import { Icon } from '@chakra-ui/react'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { IconType } from 'react-icons'
 
 import { GrStatusUnknown, GrValidate } from 'react-icons/gr'
 import { LuFunctionSquare } from 'react-icons/lu'
@@ -12,31 +14,33 @@ import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
 
 import { DataHubNodeType } from '../../types.ts'
 
-const iconMapping: Record<string, (label: string) => JSX.Element> = {
-  [DataHubNodeType.ADAPTOR]: (label) => <Icon as={PiPlugsConnectedFill} boxSize="24px" aria-label={label} />,
-  [DataHubNodeType.BRIDGE]: (label) => <Icon as={PiBridgeThin} boxSize="24px" aria-label={label} />,
-  [DataHubNodeType.TOPIC_FILTER]: (label) => <Icon as={SiMqtt} boxSize="16px" aria-label={label} />,
-  [DataHubNodeType.CLIENT_FILTER]: (label) => <Icon as={AiOutlineCloudServer} boxSize="24px" aria-label={label} />,
-  [DataHubNodeType.DATA_POLICY]: (label) => <Icon as={MdPolicy} boxSize="24px" aria-label={label} />,
-  [DataHubNodeType.BEHAVIOR_POLICY]: (label) => <Icon as={MdPolicy} boxSize="24px" aria-label={label} />,
-  [DataHubNodeType.VALIDATOR]: (label) => <Icon as={GrValidate} boxSize="24px" aria-label={label} />,
-  [DataHubNodeType.SCHEMA]: (label) => <Icon as={MdSchema} boxSize="24px" aria-label={label} />,
-  [DataHubNodeType.OPERATION]: (label) => <Icon as={AiOutlineInteraction} boxSize="24px" aria-label={label} />,
-  [DataHubNodeType.FUNCTION]: (label) => <Icon as={LuFunctionSquare} boxSize="24px" aria-label={label} />,
-  [DataHubNodeType.TRANSITION]: (label) => <Icon as={TbTransitionRight} boxSize="24px" aria-label={label} />,
+// Simple mapping of node types to icon configuration
+const iconMapping: Record<string, { icon: IconType; boxSize: string }> = {
+  [DataHubNodeType.ADAPTOR]: { icon: PiPlugsConnectedFill, boxSize: '24px' },
+  [DataHubNodeType.BRIDGE]: { icon: PiBridgeThin, boxSize: '24px' },
+  [DataHubNodeType.TOPIC_FILTER]: { icon: SiMqtt, boxSize: '16px' },
+  [DataHubNodeType.CLIENT_FILTER]: { icon: AiOutlineCloudServer, boxSize: '24px' },
+  [DataHubNodeType.DATA_POLICY]: { icon: MdPolicy, boxSize: '24px' },
+  [DataHubNodeType.BEHAVIOR_POLICY]: { icon: MdPolicy, boxSize: '24px' },
+  [DataHubNodeType.VALIDATOR]: { icon: GrValidate, boxSize: '24px' },
+  [DataHubNodeType.SCHEMA]: { icon: MdSchema, boxSize: '24px' },
+  [DataHubNodeType.OPERATION]: { icon: AiOutlineInteraction, boxSize: '24px' },
+  [DataHubNodeType.FUNCTION]: { icon: LuFunctionSquare, boxSize: '24px' },
+  [DataHubNodeType.TRANSITION]: { icon: TbTransitionRight, boxSize: '24px' },
 }
 
-interface NodeIconProps {
+interface NodeIconProps extends Omit<IconProps, 'as'> {
   type: DataHubNodeType | string | undefined
 }
 
-const NodeIcon: FC<NodeIconProps> = ({ type }) => {
+const NodeIcon: FC<NodeIconProps> = ({ type, ...iconProps }) => {
   const { t } = useTranslation('datahub')
 
-  if (!type || !iconMapping[type]) {
-    return <Icon as={GrStatusUnknown} boxSize="24px" aria-label={t('workspace.nodes.type')} />
-  }
-  return iconMapping[type](t('workspace.nodes.type', { context: type }))
+  // Get icon configuration or use default
+  const config = type && iconMapping[type] ? iconMapping[type] : { icon: GrStatusUnknown, boxSize: '24px' }
+  const ariaLabel = type ? t('workspace.nodes.type', { context: type }) : t('workspace.nodes.type')
+
+  return <Icon as={config.icon} boxSize={config.boxSize} {...iconProps} aria-label={ariaLabel} />
 }
 
 export default NodeIcon
