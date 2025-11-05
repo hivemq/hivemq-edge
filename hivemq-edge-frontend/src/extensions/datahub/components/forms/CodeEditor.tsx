@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { WidgetProps } from '@rjsf/utils'
 import { labelValue } from '@rjsf/utils'
 import { Editor, useMonaco } from '@monaco-editor/react'
-import { FormControl, FormLabel, Text, VStack } from '@chakra-ui/react'
+import { FormControl, FormLabel, Text, useColorModeValue, useToken, VStack } from '@chakra-ui/react'
 import { getChakra } from '@/components/rjsf/utils/getChakra'
 import { generateWidgets } from '@rjsf/chakra-ui'
 
@@ -15,6 +15,9 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
   const monaco = useMonaco()
   const [isLoaded, setIsLoaded] = useState(false)
 
+  const [editorBgLight, editorBgDark] = useToken('colors', ['white', 'gray.200'])
+  const editorBackgroundColor = useColorModeValue(editorBgLight, editorBgDark)
+
   const { TextareaWidget } = generateWidgets()
 
   useEffect(() => {
@@ -23,7 +26,35 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
     }
   }, [monaco])
 
-  const isReadOnly = useMemo(() => props.readonly || props.options.readonly, [props.readonly, props.options.readonly])
+  const isReadOnly = useMemo(() => {
+    return props.readonly || props.options.readonly || props.disabled || props.options.disabled
+  }, [props.readonly, props.options.readonly, props.options.disabled, props.disabled])
+
+  useEffect(() => {
+    if (monaco) {
+      monaco.editor.defineTheme('lightTheme', {
+        base: 'vs',
+        inherit: true,
+        rules: [],
+        colors: {
+          'editor.background': editorBackgroundColor,
+        },
+      })
+    }
+
+    if (monaco && isReadOnly) {
+      monaco.editor.defineTheme('readOnlyTheme', {
+        base: 'vs',
+        inherit: false,
+        rules: [
+          { token: '', foreground: '#808080' }, // Gray for all tokens
+        ],
+        colors: {
+          'editor.foreground': '#808080',
+        },
+      })
+    }
+  }, [monaco, isReadOnly, editorBackgroundColor])
 
   if (!isLoaded) {
     const { options, ...rest } = props
@@ -57,6 +88,7 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
           defaultLanguage={lng}
           defaultValue={props.value}
           value={props.value}
+          theme={isReadOnly ? 'readOnlyTheme' : 'lightTheme'}
           onChange={(event) => props.onChange(event)}
           options={{ readOnly: isReadOnly }}
         />

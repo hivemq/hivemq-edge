@@ -50,7 +50,7 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFo
   }, [error])
 
   const getUISchema = (script: FunctionData | null): UiSchema => {
-    const { internalStatus, internalVersions } = script || {}
+    const { internalVersions } = script || {}
     return {
       type: {
         'ui:widget': 'hidden',
@@ -64,16 +64,11 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onFo
       version: {
         'ui:widget': 'datahub:version',
         'ui:options': {
-          readonly:
-            internalStatus === ResourceStatus.DRAFT || internalStatus === ResourceStatus.MODIFIED || !internalStatus,
           selectOptions: internalVersions,
         },
       },
       sourceCode: {
         'ui:widget': 'text/javascript',
-        'ui:options': {
-          // readonly: !internalStatus,
-        },
       },
       description: {
         'ui:placeholder': 'A short description for this version',

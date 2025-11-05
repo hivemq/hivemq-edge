@@ -135,12 +135,8 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onForm
   }
 
   const getUISchema = (schema: SchemaData | null): UiSchema => {
-    const { internalStatus, internalVersions } = schema || {}
+    const { internalVersions } = schema || {}
     return {
-      // 'ui:order':
-      //   internalStatus === ResourceStatus.DRAFT || !internalStatus
-      //     ? ['name', 'type', 'schemaSource', 'messageType', 'version']
-      //     : ['name', 'version', 'schemaSource', 'messageType', 'type'],
       name: {
         'ui:widget': 'datahub:schema-name',
         'ui:options': {
@@ -150,22 +146,11 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onForm
       version: {
         'ui:widget': 'datahub:version',
         'ui:options': {
-          readonly:
-            internalStatus === ResourceStatus.DRAFT || internalStatus === ResourceStatus.MODIFIED || !internalStatus,
           selectOptions: internalVersions,
-        },
-      },
-      type: {
-        'ui:options': {
-          readonly:
-            internalStatus === ResourceStatus.LOADED || internalStatus === ResourceStatus.MODIFIED || !internalStatus,
         },
       },
       schemaSource: {
         'ui:widget': 'application/schema+json',
-        'ui:options': {
-          readonly: !internalStatus,
-        },
       },
     }
   }
