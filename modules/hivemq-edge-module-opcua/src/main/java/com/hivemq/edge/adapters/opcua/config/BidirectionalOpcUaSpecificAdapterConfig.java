@@ -32,14 +32,7 @@ public class BidirectionalOpcUaSpecificAdapterConfig extends OpcUaSpecificAdapte
             @JsonProperty("tls") final @Nullable Tls tls,
             @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
             @JsonProperty("security") final @Nullable Security security,
-            @JsonProperty("sessionTimeout") final @Nullable Integer sessionTimeout,
-            @JsonProperty("requestTimeout") final @Nullable Integer requestTimeout,
-            @JsonProperty("keepAliveInterval") final @Nullable Integer keepAliveInterval,
-            @JsonProperty("keepAliveFailuresAllowed") final @Nullable Integer keepAliveFailuresAllowed,
-            @JsonProperty("connectionTimeout") final @Nullable Integer connectionTimeout,
-            @JsonProperty("healthCheckInterval") final @Nullable Integer healthCheckInterval,
-            @JsonProperty("retryInterval") final @Nullable Integer retryInterval,
-            @JsonProperty("autoReconnect") final @Nullable Boolean autoReconnect) {
-        super(uri, overrideUri, applicationUri, auth, tls, opcuaToMqttConfig, security, sessionTimeout, requestTimeout, keepAliveInterval, keepAliveFailuresAllowed, connectionTimeout, healthCheckInterval, retryInterval, autoReconnect);
+            @JsonProperty("connectionOptions") final @Nullable ConnectionOptions connectionOptions) {
+        super(uri, overrideUri, applicationUri, auth, tls, opcuaToMqttConfig, security, connectionOptions);
     }
 }

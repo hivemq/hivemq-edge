@@ -46,9 +46,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -129,7 +126,7 @@ public class OpcUaClientConnection {
 
             // Add timeout to connection attempt to prevent hanging forever
             // Wrap synchronous connect() call with CompletableFuture timeout
-            final int connectionTimeoutSeconds = config.getConnectionTimeout();
+            final int connectionTimeoutSeconds = config.getConnectionOptions().connectionTimeout();
             try {
                 CompletableFuture.runAsync(() -> {
                     try {
