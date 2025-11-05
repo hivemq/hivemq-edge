@@ -238,7 +238,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             // Create a minimal ProtocolAdapterStartInput for attemptConnection
             final ProtocolAdapterStartInput input = new ProtocolAdapterStartInput() {
                 @Override
-                public ModuleServices moduleServices() {
+                public @NotNull ModuleServices moduleServices() {
                     return moduleServices;
                 }
             };
@@ -517,7 +517,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 }
 
                 // Schedule retry attempt
-                scheduleRetry(parsedConfig, input);
+                scheduleRetry(input);
             }
         });
     }
@@ -525,9 +525,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     /**
      * Schedules a retry attempt after configured retry interval.
      */
-    private void scheduleRetry(
-            final @NotNull ParsedConfig parsedConfig,
-            final @NotNull ProtocolAdapterStartInput input) {
+    private void scheduleRetry(final @NotNull ProtocolAdapterStartInput input) {
 
         // Check if adapter has been stopped
         if (stopped) {
