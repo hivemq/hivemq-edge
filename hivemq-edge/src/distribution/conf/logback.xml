@@ -143,6 +143,7 @@
     <logger name="com.google.common.util.concurrent.Futures.CombinedFuture" level="OFF"/>
     <logger name="oshi" level="ERROR"/>
     <logger name="io.netty" level="WARN"/>
+    <logger name="io.grpc.netty" level="WARN"/>
     <logger name="org.eclipse.milo" level="WARN"/>
 
 </configuration>

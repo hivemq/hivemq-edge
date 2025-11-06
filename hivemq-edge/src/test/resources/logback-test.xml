@@ -34,6 +34,7 @@
     </logger>
 
     <logger name="io.netty.util" level="OFF"/>
+    <logger name="io.grpc.netty" level="INFO"/>
     <logger name="com.hivemq.codec.decoder" level="OFF"/>
     <logger name="jetbrains.exodus" level="WARN"/>
     <logger name="com.google.common.util.concurrent.Futures.CombinedFuture" level="OFF"/>
