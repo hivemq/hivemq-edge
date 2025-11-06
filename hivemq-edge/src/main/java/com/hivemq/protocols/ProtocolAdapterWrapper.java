@@ -189,7 +189,14 @@ public class ProtocolAdapterWrapper {
             if (writingEnabled && isWriting()) {
                 final AtomicBoolean futureCompleted = new AtomicBoolean(false);
                 final AtomicBoolean firstCallToStatusListener = new AtomicBoolean(true);
-                final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+                final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(
+                        1,
+                        runnable -> {
+                            final Thread t = new Thread(runnable);
+                            t.setDaemon(false);
+                            return t;
+                        }
+                );
                 scheduler.schedule(() -> {
                     if (futureCompleted.compareAndSet(false, true)) {
                         log.error("Protocol adapter with id {} start writing failed because of timeout.",
