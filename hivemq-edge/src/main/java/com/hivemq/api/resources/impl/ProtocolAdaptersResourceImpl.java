@@ -390,7 +390,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 }
             });
             case RESTART -> protocolAdapterManager.stopAsync(adapterId, false)
-                    .thenRun(() -> protocolAdapterManager.startAsync(adapterId))
+                    .thenCompose(ignore -> protocolAdapterManager.startAsync(adapterId))
                     .whenComplete((result, throwable) -> {
                         if (throwable != null) {
                             log.error("Failed to restart adapter '{}'.", adapterId, throwable);
