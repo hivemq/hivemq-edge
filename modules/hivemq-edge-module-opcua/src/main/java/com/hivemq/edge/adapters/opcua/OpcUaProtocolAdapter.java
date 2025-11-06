@@ -48,6 +48,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,9 +77,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull OpcUaSpecificAdapterConfig config;
-    private final @NotNull ScheduledExecutorService retryScheduler = Executors.newSingleThreadScheduledExecutor();
+    private volatile @Nullable ScheduledExecutorService retryScheduler = null;
     private final @NotNull AtomicReference<ScheduledFuture<?>> retryFuture = new AtomicReference<>();
-    private final @NotNull ScheduledExecutorService healthCheckScheduler = Executors.newSingleThreadScheduledExecutor();
+    private volatile @Nullable ScheduledExecutorService healthCheckScheduler = null;
     private final @NotNull AtomicReference<ScheduledFuture<?>> healthCheckFuture = new AtomicReference<>();
 
     // Stored for reconnection - set during start()
@@ -115,6 +116,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
         // Reset stopped flag
         stopped = false;
+
+        startSchedulers();
 
         final ParsedConfig newlyParsedConfig;
         final var result = ParsedConfig.fromConfig(config);
@@ -310,9 +313,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
      * Shuts down both retry and health check schedulers.
      * Uses immediate shutdown to cancel all pending tasks.
      */
-    private void shutdownSchedulers() {
+    private synchronized void shutdownSchedulers() {
         // Shutdown retry scheduler - use shutdownNow() to cancel pending tasks immediately
-        if (!retryScheduler.isShutdown()) {
+        final var retryScheduler = this.retryScheduler;
+        final var healthCheckScheduler = this.healthCheckScheduler;
+        this.retryScheduler = null;
+        this.healthCheckScheduler = null;
+        if (retryScheduler != null && !retryScheduler.isShutdown()) {
             retryScheduler.shutdownNow();
             try {
                 retryScheduler.awaitTermination(5, TimeUnit.SECONDS);
@@ -322,7 +329,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
 
         // Shutdown health check scheduler - use shutdownNow() to cancel pending tasks immediately
-        if (!healthCheckScheduler.isShutdown()) {
+        if (healthCheckScheduler != null && !healthCheckScheduler.isShutdown()) {
             healthCheckScheduler.shutdownNow();
             try {
                 healthCheckScheduler.awaitTermination(5, TimeUnit.SECONDS);
@@ -330,6 +337,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    /**
+     * Initiates both retry and health check schedulers.
+     */
+    private synchronized void startSchedulers() {
+        retryScheduler = Executors.newSingleThreadScheduledExecutor();
+        healthCheckScheduler = Executors.newSingleThreadScheduledExecutor();
     }
 
     @Override
