@@ -44,7 +44,7 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
     @Override
     public void accept(final @NotNull OpcUaClientConfigBuilder configBuilder) {
         // Use Application URI from certificate if available, otherwise fall back to default
-        final String applicationUri = parsedConfig.applicationUri() != null
+        final String applicationUri = (parsedConfig.applicationUri() != null && !parsedConfig.applicationUri().isBlank())
                 ? parsedConfig.applicationUri()
                 : Constants.OPCUA_APPLICATION_URI;
 

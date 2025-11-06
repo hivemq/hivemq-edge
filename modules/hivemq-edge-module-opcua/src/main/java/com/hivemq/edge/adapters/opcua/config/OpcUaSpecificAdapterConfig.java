@@ -58,8 +58,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
 
     @JsonProperty("applicationUri")
     @ModuleConfigField(title = "Application URI Override",
-                       description = "Overrides the Application URI used for OPC UA client identification. If not specified, the URI from the certificate SAN extension is used, or the default URI 'urn:hivemq:edge:client' as fallback.",
-                       format = ModuleConfigField.FieldType.URI)
+                       description = "Overrides the Application URI used for OPC UA client identification. If not specified, the URI from the certificate SAN extension is used, or the default URI 'urn:hivemq:edge:client' as fallback.")
     private final @Nullable String applicationUri;
 
     @JsonProperty("auth")
@@ -89,12 +88,12 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
             @JsonProperty("applicationUri") final @Nullable String applicationUri,
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
-            @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
+            @JsonProperty("opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
             @JsonProperty("security") final @Nullable Security security,
             @JsonProperty("connectionOptions") final @Nullable ConnectionOptions connectionOptions) {
         this.uri = uri;
         this.overrideUri = requireNonNullElse(overrideUri, false);
-        this.applicationUri = (applicationUri != null && !applicationUri.isBlank()) ? applicationUri : null;
+        this.applicationUri = (applicationUri != null && !applicationUri.isBlank()) ? applicationUri : "";
         this.auth = auth;
         this.tls = requireNonNullElseGet(tls, Tls::defaultTls);
         this.opcuaToMqttConfig = requireNonNullElseGet(opcuaToMqttConfig, OpcUaToMqttConfig::defaultOpcUaToMqttConfig);

@@ -18,7 +18,7 @@
     {
       "id": "coreFields",
       "title": "Connection",
-      "properties": ["id", "uri", "overrideUri", "security", "tls", "auth"]
+      "properties": ["id", "uri", "overrideUri", "applicationUri", "security", "tls", "auth"]
     },
     {
       "id": "opcuaToMqtt",
@@ -34,7 +34,7 @@
   "id": {
     "ui:disabled": true
   },
-  "ui:order": ["id", "uri", "overrideUri", "security", "tls", "auth", "*"],
+  "ui:order": ["id", "uri", "overrideUri", "applicationUri", "security", "tls", "auth", "*"],
   "opcuaToMqtt": {
     "ui:order": ["publishingInterval", "serverQueueSize", "*"]
   },
