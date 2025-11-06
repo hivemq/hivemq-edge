@@ -16,6 +16,7 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
   const monaco = useMonaco()
   const [isLoaded, setIsLoaded] = useState(false)
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
+  const isUserEditingRef = useRef(false)
 
   const [editorBgLight, editorBgDark] = useToken('colors', ['white', 'gray.200'])
   const editorBackgroundColor = useColorModeValue(editorBgLight, editorBgDark)
@@ -26,9 +27,27 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
     editorRef.current = editor
   }
 
+  const handleEditorChange = (value: string | undefined) => {
+    // Mark that user is editing to prevent programmatic updates from interfering
+    isUserEditingRef.current = true
+    props.onChange(value)
+
+    // Reset the flag after a short delay to allow programmatic updates again
+    setTimeout(() => {
+      isUserEditingRef.current = false
+    }, 100)
+  }
+
   useEffect(() => {
-    if (editorRef.current && props.value !== editorRef.current.getValue()) {
+    if (editorRef.current && !isUserEditingRef.current && props.value !== editorRef.current.getValue()) {
+      // Preserve cursor position during programmatic updates
+      const position = editorRef.current.getPosition()
       editorRef.current.setValue(props.value || '')
+
+      // Restore cursor position if it was valid
+      if (position) {
+        editorRef.current.setPosition(position)
+      }
     }
   }, [props.value])
 
@@ -100,7 +119,7 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
           defaultLanguage={lng}
           defaultValue={props.value}
           theme={isReadOnly ? 'readOnlyTheme' : 'lightTheme'}
-          onChange={(event) => props.onChange(event)}
+          onChange={handleEditorChange}
           onMount={handleEditorMount}
           options={{ readOnly: isReadOnly }}
         />
