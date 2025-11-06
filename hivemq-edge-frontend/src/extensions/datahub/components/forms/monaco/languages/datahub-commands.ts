@@ -1,41 +1,12 @@
 import type { MonacoInstance } from '../types'
 import type { editor, languages } from 'monaco-editor'
+import transformTemplate from '../templates/transform-template.js?raw'
 
 /**
  * DataHub Transform boilerplate template
+ * Loaded from: src/extensions/datahub/components/forms/monaco/templates/transform-template.js
  */
-const DATAHUB_TRANSFORM_TEMPLATE = `/**
- * @param {InitContext} initContext - Context providing setup methods
- */
-function init(initContext) {
-  // Create branches for message routing (optional)
-  // const errorBranch = initContext.addBranch('error-handling');
-
-  // Create client connection state (optional)
-  // const messageCount = initContext.addClientConnectionState('count', 0);
-}
-
-/**
- * @param {Publish} publish - The MQTT PUBLISH packet to transform
- * @param {TransformContext} context - Transformation context
- * @returns {Publish|null} The transformed message, or null to drop it
- */
-function transform(publish, context) {
-  // Example: Add timestamp to payload
-  // publish.payload.timestamp = Date.now();
-
-  // Example: Modify topic
-  // publish.topic = 'processed/' + publish.topic;
-
-  // Example: Add user property (MQTT 5)
-  // publish.userProperties.push({
-  //   name: 'processedBy',
-  //   value: 'datahub-transform'
-  // });
-
-  return publish;
-}
-`
+const DATAHUB_TRANSFORM_TEMPLATE = transformTemplate
 
 /**
  * Register custom Monaco commands/actions for DataHub

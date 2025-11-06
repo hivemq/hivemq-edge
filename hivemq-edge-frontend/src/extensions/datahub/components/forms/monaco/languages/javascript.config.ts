@@ -1,5 +1,5 @@
 import type { MonacoInstance } from '../types'
-import { DATAHUB_TYPES } from '../types/datahub-types'
+import datahubTransformsTypes from '../types/datahub-transforms.d.ts?raw'
 import { configureDataHubFeatures } from './datahub-commands'
 
 /**
@@ -77,9 +77,12 @@ export const configureJavaScript = (monaco: MonacoInstance) => {
 
   // Add DataHub Transform API type definitions for IntelliSense
   console.log('[DataHub JavaScript Config] Loading type definitions...')
-  console.log('[DataHub JavaScript Config] Type definitions length:', DATAHUB_TYPES.length)
+  console.log('[DataHub JavaScript Config] Type definitions length:', datahubTransformsTypes.length)
 
-  monaco.languages.typescript.javascriptDefaults.addExtraLib(DATAHUB_TYPES, 'ts:filename/datahub-transforms.d.ts')
+  monaco.languages.typescript.javascriptDefaults.addExtraLib(
+    datahubTransformsTypes,
+    'ts:filename/datahub-transforms.d.ts'
+  )
 
   console.log('[DataHub JavaScript Config] Type definitions loaded successfully')
 
