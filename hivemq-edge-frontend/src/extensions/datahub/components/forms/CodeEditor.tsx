@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import debug from 'debug'
 import { Editor, useMonaco } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
 import type { WidgetProps } from '@rjsf/utils'
@@ -11,6 +12,8 @@ import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { getChakra } from '@/components/rjsf/utils/getChakra'
 import monacoConfig from './monaco/monacoConfig'
 
+const debugLogger = debug('DataHub:monaco')
+
 const CodeEditor = (lng: string, props: WidgetProps) => {
   const { t } = useTranslation('datahub')
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
@@ -22,7 +25,7 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
 
   // Debug logging
   useEffect(() => {
-    console.log(`[Monaco ${lng}] Monaco instance:`, monaco ? 'LOADED' : 'NOT LOADED')
+    debugLogger(`[${lng}] Monaco instance:`, monaco ? 'LOADED' : 'NOT LOADED')
   }, [monaco, lng])
 
   const [editorBgLight, editorBgDark] = useToken('colors', ['white', 'gray.200'])
@@ -30,8 +33,64 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
 
   const { TextareaWidget } = generateWidgets()
 
+  /**
+   * Monaco Editor Keyboard Shortcuts:
+   *
+   * Code Completion:
+   * - Ctrl+Space (Windows/Linux) or Cmd+Space (Mac) - Manually trigger suggestions
+   * - Ctrl+I - Alternative trigger for suggestions
+   * - Tab - Accept selected suggestion
+   * - Enter - Accept selected suggestion
+   * - Esc - Dismiss suggestion widget
+   *
+   * Other:
+   * - Ctrl+/ - Toggle line comment
+   * - Ctrl+F - Find
+   * - Ctrl+H - Find and Replace
+   * - Alt+Up/Down - Move line up/down
+   */
   const handleEditorMount = (editor: editor.IStandaloneCodeEditor) => {
     editorRef.current = editor
+
+    // Fix: Monaco's keyboard handler doesn't process SPACE correctly in some contexts
+    // Manually handle SPACE key insertion
+    const editorDom = editor.getDomNode()
+    if (editorDom) {
+      editorDom.addEventListener(
+        'keydown',
+        (e) => {
+          if (e.key === ' ') {
+            // Monaco's keyboard handler is broken for SPACE - manually insert it
+            const position = editor.getPosition()
+            const model = editor.getModel()
+            if (position && model) {
+              e.preventDefault()
+              e.stopPropagation()
+
+              // Manually insert space
+              editor.executeEdits('keyboard', [
+                {
+                  range: {
+                    startLineNumber: position.lineNumber,
+                    startColumn: position.column,
+                    endLineNumber: position.lineNumber,
+                    endColumn: position.column,
+                  },
+                  text: ' ',
+                },
+              ])
+
+              // Move cursor after the space
+              editor.setPosition({
+                lineNumber: position.lineNumber,
+                column: position.column + 1,
+              })
+            }
+          }
+        },
+        { capture: true }
+      )
+    }
   }
 
   const handleEditorChange = (value: string | undefined) => {
@@ -65,7 +124,7 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
   useEffect(() => {
     if (monaco && !isConfigured) {
       try {
-        console.log('[Monaco] Configuring languages and themes...')
+        debugLogger(`[${lng}] Configuring languages and themes...`)
         // Configure all languages
         monacoConfig.configureLanguages(monaco)
 
@@ -77,9 +136,9 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
 
         setIsConfigured(true)
         setIsLoaded(true)
-        console.log('[Monaco] Configuration complete!')
+        debugLogger(`[${lng}] Configuration complete!`)
       } catch (error) {
-        console.error('[Monaco] Failed to configure:', error)
+        debugLogger(`[${lng}] Failed to configure:`, error)
         setIsLoaded(true) // Fall back to basic editor
       }
     }
@@ -103,7 +162,7 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
 
   if (!isLoaded) {
     const { options, ...rest } = props
-    console.log(`[CodeEditor ${lng}] Monaco not loaded, using TextArea fallback`)
+    debugLogger(`[${lng}] Monaco not loaded, using TextArea fallback`)
 
     return (
       <>
@@ -137,7 +196,7 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
           onChange={handleEditorChange}
           onMount={(editor) => {
             handleEditorMount(editor)
-            console.log(`[Monaco ${lng}] Monaco Editor mounted successfully`)
+            debugLogger(`[${lng}] Monaco Editor mounted successfully`)
           }}
           options={editorOptions}
         />

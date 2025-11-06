@@ -40,7 +40,7 @@ export const getEditorOptions = (
 
     // Formatting
     formatOnPaste: true,
-    formatOnType: false, // Can be annoying while typing
+    formatOnType: false,
 
     // Accessibility
     accessibilitySupport: 'auto',
@@ -52,40 +52,34 @@ export const getEditorOptions = (
   // Language-specific options
   const languageOptions: Record<string, Partial<editor.IStandaloneEditorConstructionOptions>> = {
     javascript: {
-      // IntelliSense options for JavaScript
       quickSuggestions: {
         other: true,
         comments: false,
         strings: true,
       },
       suggestOnTriggerCharacters: true,
-      acceptSuggestionOnCommitCharacter: true,
       acceptSuggestionOnEnter: 'on',
       tabCompletion: 'on',
       wordBasedSuggestions: 'matchingDocuments',
       parameterHints: {
         enabled: true,
       },
-      snippetSuggestions: 'inline',
     },
     json: {
-      // IntelliSense for JSON
       quickSuggestions: {
         other: true,
         comments: false,
         strings: true,
       },
       suggestOnTriggerCharacters: true,
-      acceptSuggestionOnCommitCharacter: true,
       acceptSuggestionOnEnter: 'on',
       tabCompletion: 'on',
-      wordBasedSuggestions: 'off', // Schema-based only
+      wordBasedSuggestions: 'off',
       parameterHints: {
         enabled: true,
       },
     },
     proto: {
-      // Basic options for Protobuf
       quickSuggestions: {
         other: true,
         comments: false,

@@ -1,4 +1,7 @@
+import debug from 'debug'
 import type { MonacoInstance } from '../types'
+
+const debugLogger = debug('DataHub:monaco')
 
 /**
  * Common schema properties shared across all JSON Schema versions
@@ -134,7 +137,7 @@ const JSON_SCHEMA_2020_12 = {
  * Configure JSON language with schema validation for multiple JSON Schema versions
  */
 export const configureJSON = (monaco: MonacoInstance) => {
-  console.log('[Monaco JSON] Configuring JSON language with JSON Schema meta-schemas (Draft-04, Draft-07, 2020-12)...')
+  debugLogger(`[json] Configuring JSON language with JSON Schema meta-schemas (Draft-04, Draft-07, 2020-12)...`)
 
   // Register multiple JSON Schema meta-schemas
   monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
@@ -175,5 +178,5 @@ export const configureJSON = (monaco: MonacoInstance) => {
     selectionRanges: true,
   })
 
-  console.log('[Monaco JSON] Configuration complete - 3 JSON Schema versions registered')
+  debugLogger('[json] Configuration complete - 3 JSON Schema versions registered')
 }
