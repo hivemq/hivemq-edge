@@ -57,6 +57,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -156,8 +158,8 @@ public class ProtocolAdapterManager {
     public void shutdown() {
         protocolAdapters.values().forEach(entry -> {
             try {
-                entry.stopAsync(true).get();
-            } catch (final InterruptedException | ExecutionException e) {
+                entry.stopAsync(true).get(5, TimeUnit.SECONDS);
+            } catch (final InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Exception happened while shutting down adapter: ", e);
             }
         });
