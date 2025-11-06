@@ -47,6 +47,9 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -55,6 +58,7 @@ import java.util.stream.Collectors;
 public class ProtocolAdapterWrapper {
 
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterWrapper.class);
+    private static final int WRITE_FUTURE_COMPLETE_DELAY = 300;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ProtocolAdapter adapter;
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
@@ -184,17 +188,28 @@ public class ProtocolAdapterWrapper {
 
             if (writingEnabled && isWriting()) {
                 final AtomicBoolean futureCompleted = new AtomicBoolean(false);
+                final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+                scheduler.schedule(() -> {
+                    if (futureCompleted.compareAndSet(false, true)) {
+                        log.error("Protocol adapter with id {} start writing failed because of timeout.",
+                                adapter.getId());
+                        future.complete(false);
+                    }
+                }, WRITE_FUTURE_COMPLETE_DELAY, TimeUnit.SECONDS);
+                future.thenAccept(success -> scheduler.shutdown());
                 protocolAdapterState.setConnectionStatusListener(status -> {
                     switch (status) {
-                        case CONNECTED -> {
+                        case CONNECTED, STATELESS -> {
                             if (futureCompleted.compareAndSet(false, true)) {
                                 try {
                                     if (startWritingAsync(protocolAdapterWritingService).get()) {
                                         log.info("Successfully started adapter with id {}", adapter.getId());
                                         future.complete(true);
                                     } else {
-                                        log.error("Protocol adapter start writing failed as data hub is not available.");
-                                        future.complete(true);
+                                        log.error(
+                                                "Protocol adapter with id {} start writing failed as data hub is not available.",
+                                                adapter.getId());
+                                        future.complete(false);
                                     }
                                 } catch (final Exception e) {
                                     log.error("Failed to start writing for adapter with id {}.", adapter.getId(), e);
@@ -202,12 +217,12 @@ public class ProtocolAdapterWrapper {
                                 }
                             }
                         }
-                        case ERROR -> {
+                        case ERROR, DISCONNECTED, UNKNOWN -> {
                             if (futureCompleted.compareAndSet(false, true)) {
                                 log.error("Failed to start writing for adapter with id {} because the status is {}.",
                                         adapter.getId(),
                                         status);
-                                future.complete(true);
+                                future.complete(false);
                             }
                         }
                     }
