@@ -9,14 +9,21 @@ import { FormControl, FormLabel, Text, useColorModeValue, useToken, VStack } fro
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { getChakra } from '@/components/rjsf/utils/getChakra'
+import monacoConfig from './monaco/monacoConfig'
 
 const CodeEditor = (lng: string, props: WidgetProps) => {
   const { t } = useTranslation('datahub')
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
   const monaco = useMonaco()
   const [isLoaded, setIsLoaded] = useState(false)
+  const [isConfigured, setIsConfigured] = useState(false)
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const isUserEditingRef = useRef(false)
+
+  // Debug logging
+  useEffect(() => {
+    console.log(`[Monaco ${lng}] Monaco instance:`, monaco ? 'LOADED' : 'NOT LOADED')
+  }, [monaco, lng])
 
   const [editorBgLight, editorBgDark] = useToken('colors', ['white', 'gray.200'])
   const editorBackgroundColor = useColorModeValue(editorBgLight, editorBgDark)
@@ -51,44 +58,52 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
     }
   }, [props.value])
 
-  useEffect(() => {
-    if (monaco) {
-      setIsLoaded(true)
-    }
-  }, [monaco])
-
   const isReadOnly = useMemo(() => {
-    return props.readonly || props.options.readonly || props.disabled || props.options.disabled
+    return !!(props.readonly || props.options.readonly || props.disabled || props.options.disabled)
   }, [props.readonly, props.options.readonly, props.options.disabled, props.disabled])
 
   useEffect(() => {
-    if (monaco) {
-      monaco.editor.defineTheme('lightTheme', {
-        base: 'vs',
-        inherit: true,
-        rules: [],
-        colors: {
-          'editor.background': editorBackgroundColor,
-        },
-      })
-    }
+    if (monaco && !isConfigured) {
+      try {
+        console.log('[Monaco] Configuring languages and themes...')
+        // Configure all languages
+        monacoConfig.configureLanguages(monaco)
 
-    if (monaco && isReadOnly) {
-      monaco.editor.defineTheme('readOnlyTheme', {
-        base: 'vs',
-        inherit: false,
-        rules: [
-          { token: '', foreground: '#808080' }, // Gray for all tokens
-        ],
-        colors: {
-          'editor.foreground': '#808080',
-        },
+        // Configure themes
+        monacoConfig.configureThemes(monaco, {
+          backgroundColor: editorBackgroundColor,
+          isReadOnly,
+        })
+
+        setIsConfigured(true)
+        setIsLoaded(true)
+        console.log('[Monaco] Configuration complete!')
+      } catch (error) {
+        console.error('[Monaco] Failed to configure:', error)
+        setIsLoaded(true) // Fall back to basic editor
+      }
+    }
+  }, [monaco, isConfigured, editorBackgroundColor, isReadOnly])
+
+  // Update theme when background color or readonly state changes
+  useEffect(() => {
+    if (monaco && isConfigured) {
+      monacoConfig.configureThemes(monaco, {
+        backgroundColor: editorBackgroundColor,
+        isReadOnly,
       })
     }
-  }, [monaco, isReadOnly, editorBackgroundColor])
+  }, [monaco, isConfigured, editorBackgroundColor, isReadOnly])
+
+  // Get enhanced editor options
+  const editorOptions = useMemo(() => {
+    if (!isConfigured) return { readOnly: isReadOnly }
+    return monacoConfig.getEditorOptions(lng, isReadOnly)
+  }, [lng, isReadOnly, isConfigured])
 
   if (!isLoaded) {
     const { options, ...rest } = props
+    console.log(`[CodeEditor ${lng}] Monaco not loaded, using TextArea fallback`)
 
     return (
       <>
@@ -120,10 +135,12 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
           defaultValue={props.value}
           theme={isReadOnly ? 'readOnlyTheme' : 'lightTheme'}
           onChange={handleEditorChange}
-          onMount={handleEditorMount}
-          options={{ readOnly: isReadOnly }}
+          onMount={(editor) => {
+            handleEditorMount(editor)
+            console.log(`[Monaco ${lng}] Monaco Editor mounted successfully`)
+          }}
+          options={editorOptions}
         />
-        )
       </VStack>
     </FormControl>
   )
