@@ -45,6 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -69,7 +70,7 @@ public class ProtocolAdapterWrapper {
     private final @NotNull ProtocolAdapterConfig config;
     private final @NotNull NorthboundConsumerFactory northboundConsumerFactory;
     private final @NotNull TagManager tagManager;
-    private final List<NorthboundTagConsumer> consumers = new ArrayList<>();
+    private final List<NorthboundTagConsumer> consumers = Collections.synchronizedList(new ArrayList<>());
     private final AtomicReference<CompletableFuture<Void>> startFutureRef = new AtomicReference<>(null);
     private final AtomicReference<CompletableFuture<Void>> stopFutureRef = new AtomicReference<>(null);
     private final AtomicReference<OperationState> operationState = new AtomicReference<>(OperationState.IDLE);
@@ -189,14 +190,11 @@ public class ProtocolAdapterWrapper {
             if (writingEnabled && isWriting()) {
                 final AtomicBoolean futureCompleted = new AtomicBoolean(false);
                 final AtomicBoolean firstCallToStatusListener = new AtomicBoolean(true);
-                final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(
-                        1,
-                        runnable -> {
-                            final Thread t = new Thread(runnable);
-                            t.setDaemon(false);
-                            return t;
-                        }
-                );
+                final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, runnable -> {
+                    final Thread t = new Thread(runnable);
+                    t.setDaemon(false);
+                    return t;
+                });
                 scheduler.schedule(() -> {
                     if (futureCompleted.compareAndSet(false, true)) {
                         log.error("Protocol adapter with id {} start writing failed because of timeout.",
