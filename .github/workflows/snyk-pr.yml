@@ -1,3 +1,4 @@
+#Checking the sny GH action issue
 name: Run Snyk scan on PRs
 
 on:
