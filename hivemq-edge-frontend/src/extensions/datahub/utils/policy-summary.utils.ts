@@ -80,8 +80,13 @@ export function extractResourcesSummary(report: DryRunResults<unknown, never>[] 
   // Extract summary for each resource
   return finalSummary.resources
     .filter((resource) => {
+      const version = (resource.node.data as { version?: ResourceWorkingVersion | number })?.version
+
       // Only process schemas and scripts
-      return resource.node.type === DataHubNodeType.SCHEMA || resource.node.type === DataHubNodeType.FUNCTION
+      return (
+        (resource.node.type === DataHubNodeType.SCHEMA || resource.node.type === DataHubNodeType.FUNCTION) &&
+        (version === ResourceWorkingVersion.DRAFT || version === ResourceWorkingVersion.MODIFIED)
+      )
     })
     .map((resource): ResourceSummary => {
       const nodeType = resource.node.type
