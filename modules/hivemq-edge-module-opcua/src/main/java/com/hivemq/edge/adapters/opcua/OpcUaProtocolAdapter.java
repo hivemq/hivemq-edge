@@ -61,6 +61,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -81,6 +82,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull AtomicReference<ScheduledFuture<?>> retryFuture = new AtomicReference<>();
     private volatile @Nullable ScheduledExecutorService healthCheckScheduler = null;
     private final @NotNull AtomicReference<ScheduledFuture<?>> healthCheckFuture = new AtomicReference<>();
+
+    // Lock to prevent concurrent reconnections
+    private final @NotNull ReentrantLock reconnectLock = new ReentrantLock();
 
     // Stored for reconnection - set during start()
     private volatile ParsedConfig parsedConfig;
@@ -174,22 +178,28 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         // Set stopped flag to prevent new scheduling
         stopped = true;
 
-        // Cancel any pending retries and health checks
-        cancelRetry();
-        cancelHealthCheck();
+        // Acquire reconnect lock to ensure we don't stop while reconnecting
+        reconnectLock.lock();
+        try {
+            // Cancel any pending retries and health checks
+            cancelRetry();
+            cancelHealthCheck();
 
-        // Shutdown schedulers immediately to prevent new tasks
-        shutdownSchedulers();
+            // Shutdown schedulers immediately to prevent new tasks
+            shutdownSchedulers();
 
-        // Clear stored configuration to prevent reconnection after stop
-        this.parsedConfig = null;
-        this.moduleServices = null;
+            // Clear stored configuration to prevent reconnection after stop
+            this.parsedConfig = null;
+            this.moduleServices = null;
 
-        final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
-        if (conn != null) {
-            conn.stop();
-        } else {
-            log.info("Tried stopping stopped OPC UA protocol adapter {}", adapterId);
+            final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
+            if (conn != null) {
+                conn.stop();
+            } else {
+                log.info("Tried stopping stopped OPC UA protocol adapter {}", adapterId);
+            }
+        } finally {
+            reconnectLock.unlock();
         }
         output.stoppedSuccessfully();
     }
@@ -198,56 +208,67 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
      * Triggers reconnection by stopping the current connection and creating a new one.
      * Used for runtime reconnection when health check detects issues.
      * Requires that start() has been called previously to initialize parsedConfig and moduleServices.
+     * Uses tryLock to prevent concurrent reconnections without blocking the health check scheduler.
      */
     private void reconnect() {
-        // Check if adapter has been stopped
-        if (stopped) {
-            log.debug("Skipping reconnection for adapter '{}' - adapter has been stopped", adapterId);
+        // Try to acquire lock - return immediately if another reconnection is in progress
+        if (!reconnectLock.tryLock()) {
+            log.debug("Reconnection already in progress for adapter '{}' - skipping", adapterId);
             return;
         }
 
-        log.info("Reconnecting OPC UA adapter '{}'", adapterId);
+        try {
+            // Check if adapter has been stopped
+            if (stopped) {
+                log.debug("Skipping reconnection for adapter '{}' - adapter has been stopped", adapterId);
+                return;
+            }
 
-        // Verify we have the necessary configuration
-        if (parsedConfig == null || moduleServices == null) {
-            log.error("Cannot reconnect OPC UA adapter '{}' - adapter has not been started yet", adapterId);
-            return;
-        }
+            log.info("Reconnecting OPC UA adapter '{}'", adapterId);
 
-        // Cancel any pending retries and health checks
-        cancelRetry();
-        cancelHealthCheck();
+            // Verify we have the necessary configuration
+            if (parsedConfig == null || moduleServices == null) {
+                log.error("Cannot reconnect OPC UA adapter '{}' - adapter has not been started yet", adapterId);
+                return;
+            }
 
-        // Stop and clean up current connection
-        final OpcUaClientConnection oldConn = opcUaClientConnection.getAndSet(null);
-        if (oldConn != null) {
-            oldConn.stop();
-            log.debug("Stopped old connection for OPC UA adapter '{}'", adapterId);
-        }
+            // Cancel any pending retries and health checks
+            cancelRetry();
+            cancelHealthCheck();
 
-        // Create new connection
-        final OpcUaClientConnection newConn = new OpcUaClientConnection(adapterId,
-                tagList,
-                protocolAdapterState,
-                moduleServices.protocolAdapterTagStreamingService(),
-                dataPointFactory,
-                moduleServices.eventService(),
-                protocolAdapterMetricsService,
-                config);
+            // Stop and clean up current connection
+            final OpcUaClientConnection oldConn = opcUaClientConnection.getAndSet(null);
+            if (oldConn != null) {
+                oldConn.stop();
+                log.debug("Stopped old connection for OPC UA adapter '{}'", adapterId);
+            }
 
-        // Set as current connection and attempt connection with retry logic
-        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-        if (opcUaClientConnection.compareAndSet(null, newConn)) {
-            // Create a minimal ProtocolAdapterStartInput for attemptConnection
-            final ProtocolAdapterStartInput input = new ProtocolAdapterStartInput() {
-                @Override
-                public @NotNull ModuleServices moduleServices() {
-                    return moduleServices;
-                }
-            };
-            attemptConnection(newConn, parsedConfig, input);
-        } else {
-            log.warn("OPC UA adapter '{}' reconnect failed - another connection was created concurrently", adapterId);
+            // Create new connection
+            final OpcUaClientConnection newConn = new OpcUaClientConnection(adapterId,
+                    tagList,
+                    protocolAdapterState,
+                    moduleServices.protocolAdapterTagStreamingService(),
+                    dataPointFactory,
+                    moduleServices.eventService(),
+                    protocolAdapterMetricsService,
+                    config);
+
+            // Set as current connection and attempt connection with retry logic
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            if (opcUaClientConnection.compareAndSet(null, newConn)) {
+                // Create a minimal ProtocolAdapterStartInput for attemptConnection
+                final ProtocolAdapterStartInput input = new ProtocolAdapterStartInput() {
+                    @Override
+                    public @NotNull ModuleServices moduleServices() {
+                        return moduleServices;
+                    }
+                };
+                attemptConnection(newConn, parsedConfig, input);
+            } else {
+                log.warn("OPC UA adapter '{}' reconnect failed - another connection was created concurrently", adapterId);
+            }
+        } finally {
+            reconnectLock.unlock();
         }
     }
 
