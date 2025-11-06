@@ -49,7 +49,6 @@ mtconnect-protocol = "1.0.0"
 netty = "4.2.7.Final"
 pmd = "6.55.0"
 postgresql = "42.7.8"
-protobuf = "4.32.1"
 shrinkwrap = "1.2.6"
 slf4j = "2.0.17"
 spotBugs = "4.9.4"
@@ -150,7 +149,6 @@ plc4j-api = { module = "org.apache.plc4x:plc4j-api", version.ref = "apache-plc4x
 plc4j-s7 = { module = "org.apache.plc4x:plc4j-driver-s7", version.ref = "apache-plc4x" }
 plc4j-transport-raw-socket = { module = "org.apache.plc4x:plc4j-transport-raw-socket", version.ref = "apache-plc4x" }
 postgresql= { module = "org.postgresql:postgresql", version.ref = "postgresql" }
-protobuf = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 shrinkwrap-api = { module = "org.jboss.shrinkwrap:shrinkwrap-api", version.ref = "shrinkwrap" }
 shrinkwrap-impl = { module = "org.jboss.shrinkwrap:shrinkwrap-impl-base", version.ref = "shrinkwrap" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
