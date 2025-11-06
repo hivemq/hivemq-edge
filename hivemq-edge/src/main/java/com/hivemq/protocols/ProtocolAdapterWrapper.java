@@ -188,6 +188,7 @@ public class ProtocolAdapterWrapper {
 
             if (writingEnabled && isWriting()) {
                 final AtomicBoolean futureCompleted = new AtomicBoolean(false);
+                final AtomicBoolean firstCallToStatusListener = new AtomicBoolean(true);
                 final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
                 scheduler.schedule(() -> {
                     if (futureCompleted.compareAndSet(false, true)) {
@@ -198,31 +199,37 @@ public class ProtocolAdapterWrapper {
                 }, WRITE_FUTURE_COMPLETE_DELAY, TimeUnit.SECONDS);
                 future.thenAccept(success -> scheduler.shutdown());
                 protocolAdapterState.setConnectionStatusListener(status -> {
-                    switch (status) {
-                        case CONNECTED, STATELESS -> {
-                            if (futureCompleted.compareAndSet(false, true)) {
-                                try {
-                                    if (startWritingAsync(protocolAdapterWritingService).get()) {
-                                        log.info("Successfully started adapter with id {}", adapter.getId());
+                    if (firstCallToStatusListener.get()) {
+                        firstCallToStatusListener.set(false);
+                    } else {
+                        switch (status) {
+                            case CONNECTED, STATELESS -> {
+                                if (futureCompleted.compareAndSet(false, true)) {
+                                    try {
+                                        if (startWritingAsync(protocolAdapterWritingService).get()) {
+                                            log.info("Successfully started adapter with id {}", adapter.getId());
+                                            future.complete(true);
+                                        } else {
+                                            log.error(
+                                                    "Protocol adapter with id {} start writing failed as data hub is not available.",
+                                                    adapter.getId());
+                                            future.complete(false);
+                                        }
+                                    } catch (final Exception e) {
+                                        log.error("Failed to start writing for adapter with id {}.",
+                                                adapter.getId(),
+                                                e);
                                         future.complete(true);
-                                    } else {
-                                        log.error(
-                                                "Protocol adapter with id {} start writing failed as data hub is not available.",
-                                                adapter.getId());
-                                        future.complete(false);
                                     }
-                                } catch (final Exception e) {
-                                    log.error("Failed to start writing for adapter with id {}.", adapter.getId(), e);
-                                    future.complete(true);
                                 }
                             }
-                        }
-                        case ERROR, DISCONNECTED, UNKNOWN -> {
-                            if (futureCompleted.compareAndSet(false, true)) {
-                                log.error("Failed to start writing for adapter with id {} because the status is {}.",
-                                        adapter.getId(),
-                                        status);
-                                future.complete(false);
+                            case ERROR, DISCONNECTED, UNKNOWN -> {
+                                if (futureCompleted.compareAndSet(false, true)) {
+                                    log.error("Failed to start writing for adapter with id {} because the status is {}.",
+                                            adapter.getId(),
+                                            status);
+                                    future.complete(false);
+                                }
                             }
                         }
                     }
