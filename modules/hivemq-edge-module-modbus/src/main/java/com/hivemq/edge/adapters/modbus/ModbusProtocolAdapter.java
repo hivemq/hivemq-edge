@@ -165,7 +165,10 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                     .get();
             } catch (final InterruptedException | ExecutionException e) {
                 log.error("Unable to stop the connection to the Modbus server", e);
+                output.failStop(e, "Error encountered closing connection to Modbus server.");
             }
+        } else {
+            output.stoppedSuccessfully();
         }
     }
 
