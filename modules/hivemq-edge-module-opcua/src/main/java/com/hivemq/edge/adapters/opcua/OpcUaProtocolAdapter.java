@@ -394,6 +394,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void discoverValues(
             final @NotNull ProtocolAdapterDiscoveryInput input,
             final @NotNull ProtocolAdapterDiscoveryOutput output) {
+        if (stopped) {
+            log.debug("Discovery operation skipped for adapter '{}' - adapter has been stopped", adapterId);
+            output.fail("Discovery failed: Adapter has been stopped");
+            return;
+        }
         if (input.getRootNode() == null) {
             log.error("Discovery failed: Root node is null");
             output.fail("Root node is null");
@@ -427,6 +432,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
     @Override
     public void write(final @NotNull WritingInput input, final @NotNull WritingOutput output) {
+        if (stopped) {
+            log.debug("Write operation skipped for adapter '{}' - adapter has been stopped", adapterId);
+            output.fail("Write failed: Adapter has been stopped");
+            return;
+        }
         final WritingContext writeContext = input.getWritingContext();
         final OpcUaPayload opcUAWritePayload = (OpcUaPayload) input.getWritingPayload();
         final String tagName = writeContext.getTagName();
@@ -474,6 +484,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void createTagSchema(
             final @NotNull TagSchemaCreationInput input,
             final @NotNull TagSchemaCreationOutput output) {
+        if (stopped) {
+            log.debug("Create tag schema operation skipped for adapter '{}' - adapter has been stopped", adapterId);
+            output.fail("Create tag schema failed: Adapter has been stopped");
+            return;
+        }
         final String tagName = input.getTagName();
         final OpcuaTag tag = tagNameToTag.get(tagName);
         if (tag == null) {
