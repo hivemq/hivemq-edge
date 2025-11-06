@@ -99,31 +99,37 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
     @Override
     public void start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
-        log.debug("Loading PostgreSQL Driver");
+        // Set the context classloader to ensure JDBC drivers can be found
+        final ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
         try {
-            Class.forName("org.postgresql.Driver");
-        } catch (final ClassNotFoundException e) {
-            output.failStart(e, null);
-            return;
+            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+
+            log.debug("Loading PostgreSQL Driver");
+            try {
+                Class.forName("org.postgresql.Driver", true, getClass().getClassLoader());
+            } catch (final ClassNotFoundException e) {
+                output.failStart(e, null);
+                return;
+            }
+
+            log.debug("Loading MariaDB Driver (for MySQL)");
+            try {
+                Class.forName("org.mariadb.jdbc.Driver", true, getClass().getClassLoader());
+            } catch (final ClassNotFoundException e) {
+                output.failStart(e, null);
+                return;
+            }
+
+            log.debug("Loading MS SQL Driver");
+            try {
+                Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver", true, getClass().getClassLoader());
+            } catch (final ClassNotFoundException e) {
+                output.failStart(e, null);
+                return;
+            }
+        } finally {
+            Thread.currentThread().setContextClassLoader(originalClassLoader);
         }
-
-        log.debug("Loading MariaDB Driver (for MySQL)");
-        try {
-            Class.forName("org.mariadb.jdbc.Driver");
-        } catch (final ClassNotFoundException e) {
-            output.failStart(e, null);
-            return;
-        }
-
-        log.debug("Loading MS SQL Driver");
-        try {
-            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDataSource");
-        } catch (final ClassNotFoundException e) {
-            output.failStart(e, null);
-            return;
-        }
-
-
 
         databaseConnection.connect();
 
