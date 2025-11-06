@@ -1,4 +1,6 @@
 import type { MonacoInstance } from '../types'
+import { DATAHUB_TYPES } from '../types/datahub-types'
+import { configureDataHubFeatures } from './datahub-commands'
 
 /**
  * Configure JavaScript/TypeScript language features
@@ -13,16 +15,21 @@ export const configureJavaScript = (monaco: MonacoInstance) => {
     noEmit: true,
     esModuleInterop: true,
     allowJs: true,
-    checkJs: false, // Don't type-check, just provide IntelliSense
+    checkJs: true, // Enable type checking for better IntelliSense
+    strict: false, // Not too strict for user scripts
+    noLib: false, // Include standard library
   })
 
   // Enable diagnostics for better error detection
   monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
     noSemanticValidation: false, // Enable semantic validation
     noSyntaxValidation: false, // Enable syntax validation
+    noSuggestionDiagnostics: false, // Enable suggestion diagnostics
     diagnosticCodesToIgnore: [
       1108, // Return statement outside function (for snippets)
       1375, // 'await' expressions are only allowed within async functions
+      2304, // Cannot find name (for user-defined variables)
+      7006, // Parameter implicitly has 'any' type
     ],
   })
 
@@ -65,6 +72,19 @@ export const configureJavaScript = (monaco: MonacoInstance) => {
       declare var Number: any;
       declare var Boolean: any;
     `,
-    'global.d.ts'
+    'ts:filename/global.d.ts'
   )
+
+  // Add DataHub Transform API type definitions for IntelliSense
+  console.log('[DataHub JavaScript Config] Loading type definitions...')
+  console.log('[DataHub JavaScript Config] Type definitions length:', DATAHUB_TYPES.length)
+
+  monaco.languages.typescript.javascriptDefaults.addExtraLib(DATAHUB_TYPES, 'ts:filename/datahub-transforms.d.ts')
+
+  console.log('[DataHub JavaScript Config] Type definitions loaded successfully')
+
+  // Register DataHub-specific commands and code actions
+  configureDataHubFeatures(monaco)
+
+  console.log('[DataHub JavaScript Config] Configuration complete!')
 }

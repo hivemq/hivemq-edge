@@ -60,9 +60,27 @@ export const getEditorOptions = (
       suggestOnTriggerCharacters: true,
       acceptSuggestionOnEnter: 'on',
       tabCompletion: 'on',
-      wordBasedSuggestions: 'matchingDocuments',
+      wordBasedSuggestions: 'off', // Use only TypeScript-based suggestions
       parameterHints: {
         enabled: true,
+        cycle: true, // Allow cycling through parameter hints
+      },
+      suggest: {
+        showFunctions: true,
+        showFields: true,
+        showVariables: true,
+        showConstants: true,
+        showInterfaces: true,
+        showProperties: true,
+        showMethods: true,
+        showKeywords: true,
+        showWords: false, // Don't suggest random words from document
+        showSnippets: true,
+      },
+      // Enable hover tooltips
+      hover: {
+        enabled: true,
+        delay: 300,
       },
     },
     json: {

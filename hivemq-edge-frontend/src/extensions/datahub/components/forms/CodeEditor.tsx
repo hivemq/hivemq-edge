@@ -11,6 +11,7 @@ import { FormControl, FormLabel, Text, useColorModeValue, useToken, VStack } fro
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { getChakra } from '@/components/rjsf/utils/getChakra'
 import monacoConfig from './monaco/monacoConfig'
+import { addDataHubActionsToEditor } from './monaco/languages/datahub-commands'
 
 const debugLogger = debug('DataHub:monaco')
 
@@ -51,6 +52,17 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
    */
   const handleEditorMount = (editor: editor.IStandaloneCodeEditor) => {
     editorRef.current = editor
+
+    // Add DataHub custom actions to JavaScript editors
+    if (lng === 'javascript' && monaco) {
+      try {
+        addDataHubActionsToEditor(editor, monaco)
+        debugLogger('[javascript] DataHub actions added to editor')
+      } catch (error) {
+        console.error('[DataHub] Failed to add custom actions:', error)
+        debugLogger('[javascript] Failed to add DataHub actions:', error)
+      }
+    }
 
     // Fix: Monaco's keyboard handler doesn't process SPACE correctly in some contexts
     // Manually handle SPACE key insertion
@@ -142,7 +154,7 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
         setIsLoaded(true) // Fall back to basic editor
       }
     }
-  }, [monaco, isConfigured, editorBackgroundColor, isReadOnly])
+  }, [monaco, isConfigured, editorBackgroundColor, isReadOnly, lng])
 
   // Update theme when background color or readonly state changes
   useEffect(() => {
