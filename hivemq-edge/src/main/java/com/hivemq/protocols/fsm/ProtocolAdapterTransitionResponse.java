@@ -18,9 +18,58 @@ package com.hivemq.protocols.fsm;
 
 import org.jetbrains.annotations.NotNull;
 
-public record ProtocolAdapterTransitionResponse(ProtocolAdapterState state, ProtocolAdapterTransitionStatus status,
-                                                String message, Throwable error) {
-    public ProtocolAdapterTransitionResponse(final @NotNull ProtocolAdapterState state) {
-        this(state, ProtocolAdapterTransitionStatus.Success, null, null);
+import java.util.Map;
+
+public record ProtocolAdapterTransitionResponse(ProtocolAdapterState fromState, ProtocolAdapterState toState,
+                                                ProtocolAdapterTransitionStatus status, String message,
+                                                Throwable error) {
+
+    public static final String FROM_STATE = "fromState";
+    public static final String TO_STATE = "toState";
+    public static final String STATE = "state";
+
+    public static ProtocolAdapterTransitionResponse success(
+            final @NotNull ProtocolAdapterState fromState,
+            final @NotNull ProtocolAdapterState toState) {
+        return new ProtocolAdapterTransitionResponse(fromState,
+                toState,
+                ProtocolAdapterTransitionStatus.Success,
+                I18nProtocolAdapterMessage.FSM_TRANSITION_SUCCESS_TRANSITIONED_FROM_STATE_TO_STATE.get(Map.of(FROM_STATE,
+                        fromState.name(),
+                        TO_STATE,
+                        toState.name())),
+                null);
+    }
+
+    public static ProtocolAdapterTransitionResponse notChanged(final @NotNull ProtocolAdapterState state) {
+        return new ProtocolAdapterTransitionResponse(state,
+                state,
+                ProtocolAdapterTransitionStatus.NotChanged,
+                I18nProtocolAdapterMessage.FSM_TRANSITION_SUCCESS_STATE_IS_NOT_TRANSITIONED.get(Map.of(STATE,
+                        state.name())),
+                null);
+    }
+
+    public static ProtocolAdapterTransitionResponse failure(final @NotNull ProtocolAdapterState state) {
+        return new ProtocolAdapterTransitionResponse(state,
+                ProtocolAdapterState.Error,
+                ProtocolAdapterTransitionStatus.Failure,
+                I18nProtocolAdapterMessage.FSM_TRANSITION_FAILURE_TRANSITIONED_FROM_STATE_TO_ERROR.get(Map.of(STATE,
+                        state.name())),
+                null);
+    }
+
+    public static ProtocolAdapterTransitionResponse failure(
+            final @NotNull ProtocolAdapterState fromState,
+            final @NotNull ProtocolAdapterState toState) {
+        return new ProtocolAdapterTransitionResponse(fromState,
+                toState,
+                ProtocolAdapterTransitionStatus.Failure,
+                I18nProtocolAdapterMessage.FSM_TRANSITION_FAILURE_UNABLE_TO_TRANSITION_FROM_STATE_TO_STATE.get(Map.of(
+                        FROM_STATE,
+                        fromState.name(),
+                        TO_STATE,
+                        toState.name())),
+                null);
     }
 }
