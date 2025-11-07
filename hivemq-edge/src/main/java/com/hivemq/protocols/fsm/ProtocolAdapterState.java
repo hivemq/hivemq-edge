@@ -41,9 +41,8 @@ public enum ProtocolAdapterState {
         final ProtocolAdapterState fromState = ProtocolAdapterState.Starting;
         return switch (toState) {
             case Starting -> ProtocolAdapterTransitionResponse.notChanged(fromState);
-            case Started -> ProtocolAdapterTransitionResponse.success(fromState, toState);
-            case Stopping, Stopped -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
-            default -> ProtocolAdapterTransitionResponse.failure(fromState);
+            case Started, Stopping, Error -> ProtocolAdapterTransitionResponse.success(fromState, toState);
+            default -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
         };
     }
 
@@ -52,10 +51,9 @@ public enum ProtocolAdapterState {
             final @NotNull ProtocolAdapterInstance instance) {
         final ProtocolAdapterState fromState = ProtocolAdapterState.Started;
         return switch (toState) {
-            case Starting, Stopped -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
             case Started -> ProtocolAdapterTransitionResponse.notChanged(fromState);
-            case Stopping -> ProtocolAdapterTransitionResponse.success(fromState, toState);
-            default -> ProtocolAdapterTransitionResponse.failure(fromState);
+            case Stopping, Error -> ProtocolAdapterTransitionResponse.success(fromState, toState);
+            default -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
         };
     }
 
@@ -64,10 +62,9 @@ public enum ProtocolAdapterState {
             final @NotNull ProtocolAdapterInstance instance) {
         final ProtocolAdapterState fromState = ProtocolAdapterState.Stopping;
         return switch (toState) {
-            case Starting, Started -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
             case Stopping -> ProtocolAdapterTransitionResponse.notChanged(fromState);
-            case Stopped -> ProtocolAdapterTransitionResponse.success(fromState, toState);
-            default -> ProtocolAdapterTransitionResponse.failure(fromState);
+            case Stopped, Error -> ProtocolAdapterTransitionResponse.success(fromState, toState);
+            default -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
         };
     }
 
@@ -77,9 +74,8 @@ public enum ProtocolAdapterState {
         final ProtocolAdapterState fromState = ProtocolAdapterState.Stopped;
         return switch (toState) {
             case Starting -> ProtocolAdapterTransitionResponse.success(fromState, toState);
-            case Started, Stopping -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
             case Stopped -> ProtocolAdapterTransitionResponse.notChanged(fromState);
-            case Error -> ProtocolAdapterTransitionResponse.failure(fromState);
+            default -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
         };
     }
 
@@ -89,8 +85,8 @@ public enum ProtocolAdapterState {
         final ProtocolAdapterState fromState = ProtocolAdapterState.Error;
         return switch (toState) {
             case Starting -> ProtocolAdapterTransitionResponse.success(fromState, toState);
-            case Started, Stopping, Stopped -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
-            default -> ProtocolAdapterTransitionResponse.notChanged(toState);
+            case Error -> ProtocolAdapterTransitionResponse.notChanged(fromState);
+            default -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
         };
     }
 
