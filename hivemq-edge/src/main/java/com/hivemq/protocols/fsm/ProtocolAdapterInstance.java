@@ -37,14 +37,13 @@ public class ProtocolAdapterInstance {
 
     public synchronized @NotNull ProtocolAdapterTransitionResponse transitionTo(final @NotNull ProtocolAdapterState newState) {
         final ProtocolAdapterTransitionResponse response = state.transition(newState, this);
-        if (response.status() == ProtocolAdapterTransitionStatus.Success) {
-            this.state = response.state();
-        } else {
-            // Handle error (logging, throwing exception, etc.)
-            switch (response.status()) {
-                default -> {
-                    // TODO
-                }
+        this.state = response.toState();
+        switch (response.status()) {
+            case Success -> {
+            }
+            case Failure -> {
+            }
+            case NotChanged -> {
             }
         }
         return response;

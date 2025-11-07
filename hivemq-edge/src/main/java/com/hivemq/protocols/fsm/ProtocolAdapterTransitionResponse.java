@@ -45,16 +45,7 @@ public record ProtocolAdapterTransitionResponse(ProtocolAdapterState fromState, 
         return new ProtocolAdapterTransitionResponse(state,
                 state,
                 ProtocolAdapterTransitionStatus.NotChanged,
-                I18nProtocolAdapterMessage.FSM_TRANSITION_SUCCESS_STATE_IS_NOT_TRANSITIONED.get(Map.of(STATE,
-                        state.name())),
-                null);
-    }
-
-    public static ProtocolAdapterTransitionResponse failure(final @NotNull ProtocolAdapterState state) {
-        return new ProtocolAdapterTransitionResponse(state,
-                ProtocolAdapterState.Error,
-                ProtocolAdapterTransitionStatus.Failure,
-                I18nProtocolAdapterMessage.FSM_TRANSITION_FAILURE_TRANSITIONED_FROM_STATE_TO_ERROR.get(Map.of(STATE,
+                I18nProtocolAdapterMessage.FSM_TRANSITION_SUCCESS_STATE_IS_UNCHANGED.get(Map.of(STATE,
                         state.name())),
                 null);
     }
