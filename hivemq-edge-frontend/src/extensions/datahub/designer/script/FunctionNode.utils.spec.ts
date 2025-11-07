@@ -109,6 +109,22 @@ describe('formatScriptName', () => {
 
     expect(formatScriptName(MOCK_NODE_SCRIPT)).toEqual('fn:my-name:latest')
   })
+
+  it('should format a short version of the id of the script', async () => {
+    const MOCK_NODE_SCRIPT: Node<FunctionData> = {
+      id: 'node-id',
+      type: DataHubNodeType.FUNCTION,
+      data: {
+        type: 'Javascript',
+        name: 'my-name',
+        version: ResourceWorkingVersion.DRAFT,
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    expect(formatScriptName(MOCK_NODE_SCRIPT, false)).toEqual('my-name:latest')
+  })
 })
 
 describe('loadScripts', () => {
