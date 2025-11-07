@@ -19,6 +19,7 @@ import { loadTopicFilter } from '@datahub/designer/topic_filter/TopicFilterNode.
 import { loadValidators } from '@datahub/designer/validator/ValidatorNode.utils.ts'
 import { loadDataPolicyPipelines } from '@datahub/designer/operation/OperationNode.utils.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { DATAHUB_TOAST_ID, dataHubToastOption } from '@datahub/utils/toast.utils.ts'
 import { loadBehaviorPolicy } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
 import { loadClientFilter } from '@datahub/designer/client_filter/ClientFilterNode.utils.ts'
@@ -170,6 +171,13 @@ export const BehaviorPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
 const PolicyEditorLoader: FC = () => {
   const { t } = useTranslation('datahub')
   const { policyType, policyId } = useParams()
+  const { reset } = usePolicyChecksStore()
+
+  useEffect(() => {
+    if (policyType) {
+      reset()
+    }
+  }, [policyType, reset])
 
   if (!policyType || !(policyType in DesignerPolicyType))
     return <ErrorMessage type={t('error.notDefined.title')} message={t('error.notDefined.description')} />
