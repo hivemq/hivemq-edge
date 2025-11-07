@@ -2,7 +2,11 @@
 
 import type { WidgetProps } from '@rjsf/utils'
 import { JavascriptEditor } from '@datahub/components/forms/CodeEditor.tsx'
-import { setMonacoCursorPosition, triggerMonacoAutocomplete, waitForSuggestWidget } from './monacoTestHelpers'
+import {
+  setMonacoCursorPosition,
+  triggerMonacoAutocomplete,
+  waitForSuggestWidget,
+} from './__test-utils__/monacoTestHelpers.ts'
 
 const getMockProps = (): WidgetProps => ({
   id: 'javascript-editor-test',

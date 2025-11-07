@@ -2,7 +2,11 @@
 
 import type { WidgetProps } from '@rjsf/utils'
 import { JSONSchemaEditor } from '@datahub/components/forms/CodeEditor.tsx'
-import { setMonacoCursorPosition, triggerMonacoAutocomplete, waitForSuggestWidget } from './monacoTestHelpers'
+import {
+  setMonacoCursorPosition,
+  triggerMonacoAutocomplete,
+  waitForSuggestWidget,
+} from './__test-utils__/monacoTestHelpers.ts'
 
 describe('Monaco JSON', () => {
   describe('Integration Tests (Configuration Verification)', () => {

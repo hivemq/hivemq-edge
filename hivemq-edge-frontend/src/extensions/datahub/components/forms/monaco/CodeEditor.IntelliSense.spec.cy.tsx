@@ -7,7 +7,7 @@ import {
   setMonacoCursorPosition,
   triggerMonacoAutocomplete,
   waitForSuggestWidget,
-} from './monacoTestHelpers'
+} from './__test-utils__/monacoTestHelpers.ts'
 
 const getMockProps = (): WidgetProps => ({
   id: 'javascript-editor-test',
