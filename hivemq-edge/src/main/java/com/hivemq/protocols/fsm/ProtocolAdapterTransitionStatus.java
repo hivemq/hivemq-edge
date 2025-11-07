@@ -19,4 +19,5 @@ package com.hivemq.protocols.fsm;
 public enum ProtocolAdapterTransitionStatus {
     Success,
     Failure,
+    NotChanged,
 }
