@@ -1,3 +1,4 @@
+import type { MockInstance } from 'vitest'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { configureProtobuf } from './protobuf.config'
 import type { MonacoInstance } from '../types'
@@ -24,7 +25,7 @@ describe('Protobuf Config', () => {
   })
 
   it('should register custom protobuf language when not built-in', () => {
-    ;(mockMonaco.languages.getLanguages as any).mockReturnValue([])
+    ;(mockMonaco.languages.getLanguages as unknown as MockInstance).mockReturnValue([])
 
     configureProtobuf(mockMonaco)
 
@@ -34,7 +35,7 @@ describe('Protobuf Config', () => {
   })
 
   it('should add completion provider when built-in support exists', () => {
-    ;(mockMonaco.languages.getLanguages as any).mockReturnValue([{ id: 'proto' }])
+    ;(mockMonaco.languages.getLanguages as unknown as MockInstance).mockReturnValue([{ id: 'proto' }])
 
     configureProtobuf(mockMonaco)
 
@@ -43,7 +44,7 @@ describe('Protobuf Config', () => {
   })
 
   it('should log when built-in protobuf support is detected', () => {
-    ;(mockMonaco.languages.getLanguages as any).mockReturnValue([{ id: 'protobuf' }])
+    ;(mockMonaco.languages.getLanguages as unknown as MockInstance).mockReturnValue([{ id: 'protobuf' }])
 
     configureProtobuf(mockMonaco)
 
@@ -51,7 +52,7 @@ describe('Protobuf Config', () => {
   })
 
   it('should log when registering custom protobuf language', () => {
-    ;(mockMonaco.languages.getLanguages as any).mockReturnValue([])
+    ;(mockMonaco.languages.getLanguages as unknown as MockInstance).mockReturnValue([])
 
     configureProtobuf(mockMonaco)
 
@@ -59,7 +60,7 @@ describe('Protobuf Config', () => {
   })
 
   it('should register completion provider with keywords and types', () => {
-    ;(mockMonaco.languages.getLanguages as any).mockReturnValue([])
+    ;(mockMonaco.languages.getLanguages as unknown as MockInstance).mockReturnValue([])
 
     configureProtobuf(mockMonaco)
 
