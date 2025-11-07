@@ -260,14 +260,6 @@ public class ProtocolAdapterWrapper {
                                 future.complete(false);
                             }
                         }
-                        case ERROR -> {
-                            if (futureCompleted.compareAndSet(false, true)) {
-                                log.error("Failed to start writing for adapter with id {} because the status is {}.",
-                                        adapter.getId(),
-                                        status);
-                                future.complete(true);
-                            }
-                        }
                     }
                 });
             } else {
