@@ -1,13 +1,18 @@
 ## Root Cause Found
+
 **Problem:** Protobuf config had NO CompletionItemProvider registered!
 The code only had:
-- ✅ `setMonarchTokensProvider` - Syntax highlighting  
+
+- ✅ `setMonarchTokensProvider` - Syntax highlighting
 - ✅ `setLanguageConfiguration` - Auto-closing, comments
 - ❌ **MISSING**: `registerCompletionItemProvider` - IntelliSense/autocomplete
-Without CompletionItemProvider, Monaco only shows word-based suggestions from existing document content.
+  Without CompletionItemProvider, Monaco only shows word-based suggestions from existing document content.
+
 ## Solution Implemented
+
 **Added CompletionItemProvider:**
-```typescript
+
+````typescript
 monaco.languages.registerCompletionItemProvider('proto', {
   provideCompletionItems: () => {
     const suggestions: any[] = []
@@ -38,14 +43,16 @@ cat >> /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/.tasks/38053
 ---
 ## ✅ VERIFIED - Protobuf IntelliSense Working!
 **User confirmed in live app:**
-```
+````
+
 [DataHub Protobuf Config] Checking for protobuf support...
 [DataHub Protobuf Config] Built-in protobuf support detected, adding completion provider
 [DataHub Protobuf Config] Completion provider registered with 17 keywords and 15 types
+
 ```
 **User confirmed:** "And I have auto-completion" ✅
 ### What Was Fixed
-**Problem:** 
+**Problem:**
 - Protobuf config was skipping CompletionItemProvider registration when Monaco had built-in support
 - Only word-based completion from existing document content worked
 **Solution:**
@@ -80,7 +87,7 @@ cat >> /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/.tasks/38053
 1. **monacoTestHelpers.spec.ts** - Stub test (Cypress-specific, tested via component tests)
 2. **themes/themes.spec.ts** - Full coverage for theme configuration
 3. **languages/javascript.config.spec.ts** - JavaScript configuration tests
-4. **languages/json.config.spec.ts** - JSON configuration tests  
+4. **languages/json.config.spec.ts** - JSON configuration tests
 5. **languages/protobuf.config.spec.ts** - Protobuf configuration tests
 6. **languages/datahub-commands.spec.ts** - Command registration tests
 7. **monacoConfig.spec.ts** - Main configuration tests
@@ -94,9 +101,11 @@ cat >> /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/.tasks/38053
 **All 29 unit tests passing!**
 ### Summary
 ```
-Test Files  7 passed (7)
-     Tests  29 passed (29)
-  Duration  978ms
+
+Test Files 7 passed (7)
+Tests 29 passed (29)
+Duration 978ms
+
 ```
 ### Key Learnings
 1. **Never test console output** - User feedback was correct, console is ephemeral and unreliable in CI
@@ -120,7 +129,7 @@ See: UNIT_TESTS_SUMMARY.md for full details
 **User request:** datahub-commands.ts had only 47.82% coverage (lines 33-51, 65-94 uncovered)
 **Solution:** Added 8 new tests to cover:
 1. The `run` function inside `addDataHubActionsToEditor` (template insertion logic)
-2. The `provideCodeActions` function (code action provider logic)  
+2. The `provideCodeActions` function (code action provider logic)
 3. Error handling for missing model
 **Tests added:**
 - registerDataHubCommands: 1 test
@@ -129,9 +138,11 @@ See: UNIT_TESTS_SUMMARY.md for full details
 - configureDataHubFeatures (new): 1 test
 **Results:**
 ```
-Test Files  7 passed (7)
-     Tests  37 passed (37)  ← Increased from 29
-  Duration  1.48s
+
+Test Files 7 passed (7)
+Tests 37 passed (37) ← Increased from 29
+Duration 1.48s
+
 ```
 **Coverage improvement:**
 - Before: 47.82% (lines 33-51, 65-94 uncovered)
@@ -154,7 +165,7 @@ Test Files  7 passed (7)
 - ✅ datahub-commands coverage improved from 47.82% to 90%+
 - ✅ NO console testing
 - ✅ All Monaco configuration files covered
-### Protobuf Tests  
+### Protobuf Tests
 - ✅ 28 Monaco Cypress integration tests passing
 - ✅ Using monacoTestHelpers consistently
 ### E2E Tests for PR
@@ -164,3 +175,4 @@ Test Files  7 passed (7)
 - ✅ Tests create screenshots in cypress/screenshots/
 - ✅ Tagged with @percy for visual regression
 ---
+```
