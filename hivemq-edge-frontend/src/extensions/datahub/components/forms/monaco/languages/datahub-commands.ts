@@ -1,6 +1,9 @@
+import debug from 'debug'
 import type { MonacoInstance } from '../types'
 import type { editor, languages } from 'monaco-editor'
 import transformTemplate from '../templates/transform-template.js?raw'
+
+const debugLogger = debug('DataHub:monaco:js')
 
 /**
  * DataHub Transform boilerplate template
@@ -15,7 +18,7 @@ const DATAHUB_TRANSFORM_TEMPLATE = transformTemplate
 export const registerDataHubCommands = () => {
   // This is called during Monaco initialization
   // Editor-specific actions are added when each editor instance mounts
-  console.log('[DataHub Commands] Command registration complete')
+  debugLogger('[DataHub Commands] Command registration complete')
 }
 
 /**
@@ -30,7 +33,7 @@ export const addDataHubActionsToEditor = (editor: editor.IStandaloneCodeEditor, 
     contextMenuGroupId: 'navigation',
     contextMenuOrder: 1.5,
     run: (ed) => {
-      console.log('[DataHub Commands] Template insertion command triggered!')
+      debugLogger('Template insertion command triggered!')
 
       const model = ed.getModel()
       if (!model) {
@@ -45,14 +48,14 @@ export const addDataHubActionsToEditor = (editor: editor.IStandaloneCodeEditor, 
         },
       ])
 
-      console.log('[DataHub Commands] Template inserted - replaced entire content')
+      debugLogger('Template inserted - replaced entire content')
 
       // Format the document
       ed.getAction('editor.action.formatDocument')?.run()
     },
   })
 
-  console.log('[DataHub Commands] Editor actions added')
+  debugLogger('Editor actions added')
 }
 
 /**

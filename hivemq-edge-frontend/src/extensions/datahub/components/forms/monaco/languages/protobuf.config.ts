@@ -1,4 +1,6 @@
+import debug from 'debug'
 import type { MonacoInstance } from '../types'
+const debugLogger = debug('DataHub:monaco:protobuf')
 
 /**
  * Check if Monaco has built-in protobuf support
@@ -80,13 +82,7 @@ const registerProtobufCompletionProvider = (monaco: MonacoInstance) => {
     },
   })
 
-  console.log(
-    '[DataHub Protobuf Config] Completion provider registered with',
-    keywords.length,
-    'keywords and',
-    typeKeywords.length,
-    'types'
-  )
+  debugLogger('Completion provider registered with', keywords.length, 'keywords and', typeKeywords.length, 'types')
 }
 
 /**
@@ -94,7 +90,7 @@ const registerProtobufCompletionProvider = (monaco: MonacoInstance) => {
  * This is a simplified version for proto3 syntax
  */
 const registerProtobufLanguage = (monaco: MonacoInstance) => {
-  console.log('[DataHub Protobuf Config] Registering protobuf language...')
+  debugLogger('Registering protobuf language...')
 
   // Register the language
   monaco.languages.register({ id: 'proto' })
@@ -213,14 +209,14 @@ const registerProtobufLanguage = (monaco: MonacoInstance) => {
  * Configure Protobuf language support
  */
 export const configureProtobuf = (monaco: MonacoInstance) => {
-  console.log('[DataHub Protobuf Config] Checking for protobuf support...')
+  debugLogger('Checking for protobuf support...')
 
   if (!hasProtobufSupport(monaco)) {
-    console.log('[DataHub Protobuf Config] No built-in support found, registering custom protobuf language')
+    debugLogger('No built-in support found, registering custom protobuf language')
     // Monaco doesn't have built-in proto support, register it
     registerProtobufLanguage(monaco)
   } else {
-    console.log('[DataHub Protobuf Config] Built-in protobuf support detected, adding completion provider')
+    debugLogger('Built-in protobuf support detected, adding completion provider')
     // Monaco has built-in support, but still add our completion provider
     registerProtobufCompletionProvider(monaco)
   }

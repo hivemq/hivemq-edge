@@ -59,7 +59,6 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
         addDataHubActionsToEditor(editor, monaco)
         debugLogger('[javascript] DataHub actions added to editor')
       } catch (error) {
-        console.error('[DataHub] Failed to add custom actions:', error)
         debugLogger('[javascript] Failed to add DataHub actions:', error)
       }
     }
