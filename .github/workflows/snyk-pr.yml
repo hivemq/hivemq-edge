@@ -32,7 +32,7 @@ jobs:
           token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
 
       - name: Check for new issues
-        uses: hivemq/hivemq-snyk-composite-action@dbe0008ff5a165ad9caf42e7cb2c52d378bd4667 # v2.3.0
+        uses: hivemq/hivemq-snyk-composite-action@1d331dc2fa50d64a3ffd4dc48e5ac316db6d4d6b # v2.3.0
         with:
           snyk-args: --org=hivemq-edge --configuration-matching=^runtimeClasspath$ -d hivemq-edge/hivemq-edge
           artifact-name: snyk-report-hivemq-edge
@@ -46,7 +46,7 @@ jobs:
           node-version: '20.13.1'
 
       - name: Check for new issues (hivemq-edge-frontend)
-        uses: hivemq/hivemq-snyk-composite-action@dbe0008ff5a165ad9caf42e7cb2c52d378bd4667 # v2.3.0
+        uses: hivemq/hivemq-snyk-composite-action@1d331dc2fa50d64a3ffd4dc48e5ac316db6d4d6b # v2.3.0
         with:
           snyk-args: --org=hivemq-edge --configuration-matching=^runtimeClasspath$ -d hivemq-edge/hivemq-edge-frontend
           artifact-name: snyk-report-hivemq-edge-frontend
