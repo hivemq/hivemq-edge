@@ -34,6 +34,11 @@ describe('FunctionPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
     cy.intercept('/api/v1/data-hub/scripts', { items: [{ ...mockScript, type: SchemaType.PROTOBUF }] })
+
+    // Ignore Monaco worker loading errors
+    cy.on('uncaught:exception', (err) => {
+      return !(err.message.includes('importScripts') || err.message.includes('worker'))
+    })
   })
 
   it('should render loading and error states', () => {
