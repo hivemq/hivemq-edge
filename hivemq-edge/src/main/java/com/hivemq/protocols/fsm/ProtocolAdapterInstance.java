@@ -16,34 +16,80 @@
 
 package com.hivemq.protocols.fsm;
 
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProtocolAdapterInstance {
-    protected @NotNull ProtocolAdapterState state;
-    protected @NotNull ProtocolAdapterConnectionState connectionState;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterInstance.class);
+    protected final @NotNull ProtocolAdapter adapter;
+    protected volatile @NotNull ProtocolAdapterState state;
+    protected volatile @NotNull ProtocolAdapterConnectionState northboundConnectionState;
+    protected volatile @NotNull ProtocolAdapterConnectionState southboundConnectionState;
 
-    public ProtocolAdapterInstance() {
-        connectionState = ProtocolAdapterConnectionState.Closed;
+    public ProtocolAdapterInstance(final @NotNull ProtocolAdapter adapter) {
+        this.adapter = adapter;
+        northboundConnectionState = ProtocolAdapterConnectionState.Closed;
+        southboundConnectionState = ProtocolAdapterConnectionState.Closed;
         state = ProtocolAdapterState.Stopped;
+    }
+
+    public @NotNull ProtocolAdapterConnectionState getSouthboundConnectionState() {
+        return southboundConnectionState;
     }
 
     public @NotNull ProtocolAdapterState getState() {
         return state;
     }
 
-    public @NotNull ProtocolAdapterConnectionState getConnectionState() {
-        return connectionState;
+    public @NotNull ProtocolAdapterConnectionState getNorthboundConnectionState() {
+        return northboundConnectionState;
+    }
+
+    public @NotNull String getAdapterId() {
+        return adapter.getId();
+    }
+
+    public void start() {
+        final ProtocolAdapterTransitionResponse response = transitionTo(ProtocolAdapterState.Starting);
+        if (response.status().isSuccess()) {
+            startNorthbound();
+            startSouthbound();
+        }
+    }
+
+    public void stop() {
+        transitionTo(ProtocolAdapterState.Stopping);
+    }
+
+    protected void startNorthbound() {
+
+    }
+
+    protected void startSouthbound() {
+
     }
 
     public synchronized @NotNull ProtocolAdapterTransitionResponse transitionTo(final @NotNull ProtocolAdapterState newState) {
-        final ProtocolAdapterTransitionResponse response = state.transition(newState, this);
-        this.state = response.toState();
+        final ProtocolAdapterState fromState = state;
+        final ProtocolAdapterTransitionResponse response = fromState.transition(newState, this);
+        state = response.toState();
         switch (response.status()) {
             case Success -> {
+                LOGGER.debug("Protocol adapter '{}' transitioned from {} to {} successfully.",
+                        fromState,
+                        state,
+                        getAdapterId());
             }
             case Failure -> {
+                LOGGER.error("Protocol adapter '{}' failed to transition from {} to {}.",
+                        fromState,
+                        state,
+                        getAdapterId());
             }
             case NotChanged -> {
+                LOGGER.warn("Protocol adapter '{}' state {} is unchanged.", state, getAdapterId());
             }
         }
         return response;
