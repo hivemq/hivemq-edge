@@ -123,18 +123,13 @@ public class OpcUaClientConnection {
                         ignore -> {},
                         new OpcUaClientConfigurator(adapterId, parsedConfig, config));
             client.addFaultListener(faultListener);
+            client.addSessionActivityListener(activityListener);
 
             // Add timeout to connection attempt to prevent hanging forever
             // Wrap synchronous connect() call with CompletableFuture timeout
             final long connectionTimeoutSecondsMs = config.getConnectionOptions().connectionTimeoutMs();
             try {
-                CompletableFuture.runAsync(() -> {
-                    try {
-                        client.connect();
-                    } catch (final UaException e) {
-                        throw new RuntimeException(e);
-                    }
-                }).get(connectionTimeoutSecondsMs, TimeUnit.MILLISECONDS);
+                client.connectAsync().get(connectionTimeoutSecondsMs, TimeUnit.MILLISECONDS);
                 log.debug("OPC UA client connected successfully for adapter '{}'", adapterId);
             } catch (final TimeoutException e) {
                 log.error("Connection timeout after {} milliseconds for OPC UA adapter '{}'", connectionTimeoutSecondsMs, adapterId);
@@ -201,7 +196,6 @@ public class OpcUaClientConnection {
 
         context.set(new ConnectionContext(subscription.getClient(), faultListener, activityListener, subscriptionLifecycleHandler));
         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
-        client.addSessionActivityListener(activityListener);
 
         log.info("Client created and connected successfully");
         return true;
@@ -243,7 +237,7 @@ public class OpcUaClientConnection {
 
         try {
             // Check 1: Session is active
-            if (ctx.client().getSession().isEmpty()) {
+            if (protocolAdapterState.getConnectionStatus() == ProtocolAdapterState.ConnectionStatus.DISCONNECTED) {
                 log.debug("Connection health check failed: session inactive for adapter '{}'", adapterId);
                 return false;
             }
@@ -255,7 +249,7 @@ public class OpcUaClientConnection {
             }
 
             return true;
-        } catch (final UaException e) {
+        } catch (final Exception e) {
             log.debug("Connection health check failed with exception for adapter '{}'", adapterId, e);
             return false;
         }

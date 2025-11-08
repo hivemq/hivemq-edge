@@ -64,7 +64,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     final @NotNull OpcUaSpecificAdapterConfig config;
 
     // Track last keep-alive timestamp for health monitoring
-    private volatile long lastKeepAliveTimestamp = System.currentTimeMillis();
+    private volatile long lastKeepAliveTimestamp;
 
     public OpcUaSubscriptionLifecycleHandler(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -83,6 +83,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         this.client = client;
         this.dataPointFactory = dataPointFactory;
         this.tags = tags;
+        this.lastKeepAliveTimestamp = System.currentTimeMillis();
         nodeIdToTag = tags.stream()
                 .collect(Collectors.toMap(tag -> NodeId.parse(tag.getDefinition().getNode()), Function.identity()));
     }
@@ -100,7 +101,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         return createNewSubscription(client)
                 .map(subscription -> {
                     subscription.setPublishingInterval((double) config.getOpcuaToMqttConfig().publishingInterval());
-                    subscription.setSubscriptionListener(new OpcUaSubscriptionLifecycleHandler(protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, dataPointFactory, config));
+                    subscription.setSubscriptionListener(this);
                     if(syncTagsAndMonitoredItems(subscription, tags, config)) {
                         return subscription;
                     } else {
