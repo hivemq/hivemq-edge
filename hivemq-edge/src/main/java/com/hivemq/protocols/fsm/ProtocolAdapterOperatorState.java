@@ -16,13 +16,8 @@
 
 package com.hivemq.protocols.fsm;
 
-public enum ProtocolAdapterTransitionStatus {
-    Success,
-    Failure,
-    NotChanged,
+public enum ProtocolAdapterOperatorState {
+    Idle,
+    Running,
     ;
-
-    public boolean isSuccess() {
-        return this == Success;
-    }
 }
