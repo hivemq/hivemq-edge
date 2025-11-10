@@ -129,7 +129,13 @@ public class OpcUaClientConnection {
             // Wrap synchronous connect() call with CompletableFuture timeout
             final long connectionTimeoutSecondsMs = config.getConnectionOptions().connectionTimeoutMs();
             try {
-                client.connectAsync().get(connectionTimeoutSecondsMs, TimeUnit.MILLISECONDS);
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        client.connect();
+                    } catch (final UaException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).get(connectionTimeoutSecondsMs, TimeUnit.MILLISECONDS);
                 log.debug("OPC UA client connected successfully for adapter '{}'", adapterId);
             } catch (final TimeoutException e) {
                 log.error("Connection timeout after {} milliseconds for OPC UA adapter '{}'", connectionTimeoutSecondsMs, adapterId);
