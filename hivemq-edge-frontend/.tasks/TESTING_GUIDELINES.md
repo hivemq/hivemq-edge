@@ -17,6 +17,7 @@
 - ❌ Create completion documentation without test verification
 - ❌ Claim "tests should work" or make assumptions
 - ❌ Mark test-related work as done without green test results
+- ❌ Run every Cypress test unless instructed to do so
 
 **ALWAYS:**
 
@@ -25,6 +26,7 @@
 - ✅ See the actual pass/fail counts
 - ✅ Fix failures immediately
 - ✅ Include real test results in completion documentation
+- ✅ Run individual Cypress tests, using the --spec option
 
 ### Required Test Commands
 

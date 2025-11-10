@@ -1,344 +1,395 @@
-# Internationalization (i18n) Guidelines
+# HiveMQ Edge Frontend - i18n Guidelines
 
-## Overview
+**Last Updated:** November 10, 2025
 
-This codebase uses **i18next** for internationalization. While currently only English (US) is supported, **all text must be externalized** to locale files to maintain consistency and enable future localization.
+---
 
-## ⚠️ CRITICAL RULE
+## 🌍 Core Principles
 
-**NEVER hardcode user-facing text strings in components.**
+### 1. ✅ ALWAYS Use Plain String Keys
 
-This is a **very bad practice** and **MUST be avoided at all cost**.
+**CRITICAL:** Translation keys must ALWAYS be plain strings, never template literals or concatenations.
 
-❌ **WRONG:**
-
-```typescript
-<Button>Save</Button>
-<Text>Layout Options</Text>
-<aria-label="Delete preset">
-```
-
-✅ **CORRECT:**
+❌ **WRONG - Template Literals:**
 
 ```typescript
-<Button>{t('common.actions.save')}</Button>
-<Text>{t('workspace.autoLayout.options.title')}</Text>
-<aria-label={t('workspace.autoLayout.presets.actions.delete')}>
+// Hard to find in IDE, prone to typos
+t(`${someVar}.name`)
+t(`workspace.wizard.${entityType}.description`)
 ```
 
-## Setup
-
-### Supported Language
-
-- **Code:** `en` (English US)
-- **Display:** English (United States)
-
-### Locale Files Structure
-
-```
-src/locales/en/
-├── components.json    # Reusable UI components
-├── translation.json   # Main application modules
-└── schemas.json       # RJSF schema internationalization (experimental)
-```
-
-### File Usage
-
-- **`components.json`** - Generic, reusable components (buttons, inputs, common UI)
-- **`translation.json`** - Module-specific text (workspace, adapters, bridges, etc.)
-- **`schemas.json`** - Tentative approach for RJSF form internationalization
-
-## Implementation
-
-### 1. Import and Setup Hook
+✅ **CORRECT - Plain Strings:**
 
 ```typescript
-import { useTranslation } from 'react-i18next'
+// Easy to find, IDE can validate
+t('workspace.wizard.entityType.name', { context: entityType })
+t('workspace.wizard.entityType.description', { context: entityType })
+```
 
-const MyComponent: FC = () => {
-  const { t } = useTranslation()
+**Why:**
 
-  // Use t() function for all strings
-  return <Button>{t('myModule.action')}</Button>
+- IDE tooling can find and validate keys
+- No runtime string concatenation errors
+- Easy to refactor and search
+- Clear in code reviews
+
+---
+
+## 📝 Pattern: Using i18next Context
+
+When you have multiple variations of the same key (e.g., different entity types), use **i18next context** instead of nested objects or template literals.
+
+### Example: Entity Type Names
+
+**Metadata:**
+
+```typescript
+export interface EntityTypeMetadata {
+  type: EntityType // 'ADAPTER', 'BRIDGE', etc.
+  icon: IconType
+  category: 'entity' | 'integration'
+  // ❌ NO: i18nKey: string
+}
+
+export const ENTITY_TYPE_METADATA: Record<EntityType, EntityTypeMetadata> = {
+  [EntityType.ADAPTER]: {
+    type: EntityType.ADAPTER, // ✅ Use type as context value
+    icon: LuDatabase,
+    category: 'entity',
+  },
+  // ... more types
 }
 ```
 
-### 2. Key Structure Best Practices
-
-Follow hierarchical namespacing:
-
-```json
-{
-  "module": {
-    "feature": {
-      "element": {
-        "property": "Text value"
-      }
-    }
-  }
-}
-```
-
-**Example from workspace.autoLayout:**
-
-```json
-{
-  "workspace": {
-    "autoLayout": {
-      "options": {
-        "title": "Layout Options",
-        "actions": {
-          "cancel": "Cancel",
-          "apply": "Apply Options"
-        }
-      },
-      "presets": {
-        "tooltip": "Saved Presets",
-        "actions": {
-          "save": "Save Current Layout",
-          "delete": "Delete preset"
-        }
-      }
-    }
-  }
-}
-```
-
-### 3. Good Key Examples
+**Component:**
 
 ```typescript
-// ✅ Clear hierarchy
-t('workspace.autoLayout.options.title')
-t('workspace.autoLayout.options.actions.apply')
-t('workspace.autoLayout.presets.toast.saved')
-
-// ✅ Common actions can be reused
-t('common.actions.save')
-t('common.actions.cancel')
-t('common.actions.delete')
-
-// ✅ aria-labels for accessibility
-aria-label={t('workspace.autoLayout.options.aria-label')}
-```
-
-### 4. Interpolation
-
-Use placeholders for dynamic content:
-
-**In locale file:**
-
-```json
-{
-  "presets": {
-    "toast": {
-      "saved": "\"{{name}}\" saved",
-      "loaded": "\"{{name}}\" loaded"
-    }
-  }
-}
-```
-
-**In component:**
-
-```typescript
-toast({
-  description: t('workspace.autoLayout.presets.toast.saved', {
-    name: presetName,
-  }),
-})
-```
-
-### 5. Pluralization
-
-```json
-{
-  "items": {
-    "count_one": "{{count}} item",
-    "count_other": "{{count}} items"
-  }
-}
-```
-
-```typescript
-t('items.count', { count: nodes.length })
-```
-
-## Component Checklist
-
-When creating or reviewing a component, check for:
-
-- [ ] `useTranslation()` hook imported and used
-- [ ] All button text uses `t()`
-- [ ] All labels use `t()`
-- [ ] All headings use `t()`
-- [ ] All messages (toast, modal, alert) use `t()`
-- [ ] All `aria-label` attributes use `t()`
-- [ ] All placeholder text uses `t()`
-- [ ] All tooltips use `t()`
-- [ ] No English strings hardcoded in JSX
-- [ ] New keys added to appropriate locale file
-
-## Good Reference Example
-
-See `LayoutSelector.tsx` for proper i18n structure:
-
-```typescript
-const LayoutSelector: FC = () => {
+const EntityTypeCard = ({ metadata }) => {
   const { t } = useTranslation()
 
   return (
-    <Tooltip label={t('workspace.autoLayout.selector.tooltip')}>
-      <Select>
-        {algorithms.map(algo => (
-          <option key={algo.type} value={algo.type}>
-            {t(`workspace.autoLayout.algorithms.${algo.type}.name`)}
-          </option>
-        ))}
-      </Select>
-    </Tooltip>
+    <div>
+      {/* ✅ Plain string key + context */}
+      <h3>{t('workspace.wizard.entityType.name', { context: metadata.type })}</h3>
+      <p>{t('workspace.wizard.entityType.description', { context: metadata.type })}</p>
+    </div>
   )
 }
 ```
 
-## Where to Add Keys
-
-### Module-Specific Text → `translation.json`
+**Translation JSON:**
 
 ```json
 {
-  "workspace": { ... },
-  "bridges": { ... },
-  "adapters": { ... }
-}
-```
-
-### Generic Components → `components.json`
-
-```json
-{
-  "button": {
-    "save": "Save",
-    "cancel": "Cancel"
-  },
-  "pagination": { ... }
-}
-```
-
-### RJSF Forms → `schemas.json` (experimental)
-
-```json
-{
-  "fields": {
-    "name": {
-      "label": "Name",
-      "help": "Enter a unique name"
+  "workspace": {
+    "wizard": {
+      "entityType": {
+        "name_ADAPTER": "Adapter",
+        "name_BRIDGE": "Bridge",
+        "name_COMBINER": "Combiner",
+        "description_ADAPTER": "Connect to external protocols",
+        "description_BRIDGE": "Connect to another MQTT broker",
+        "description_COMBINER": "Merge data from multiple sources"
+      }
     }
   }
 }
 ```
 
-## Common Patterns
+**How i18next Context Works:**
 
-### Buttons in Footer
-
-```typescript
-<ButtonGroup>
-  <Button onClick={onCancel}>
-    {t('common.actions.cancel')}
-  </Button>
-  <Button variant="primary" type="submit">
-    {t('workspace.autoLayout.options.actions.apply')}
-  </Button>
-</ButtonGroup>
-```
-
-### Modal Headers
-
-```typescript
-<ModalHeader>
-  {t('workspace.autoLayout.presets.modal.title')}
-</ModalHeader>
-```
-
-### Toast Messages
-
-```typescript
-toast({
-  title: t('workspace.autoLayout.presets.toast.saved.title'),
-  description: t('workspace.autoLayout.presets.toast.saved.description', {
-    name: preset.name,
-  }),
-  status: 'success',
-})
-```
-
-### Conditional Messages
-
-```typescript
-{isLoading ? (
-  <Text>{t('common.status.loading')}</Text>
-) : (
-  <Text>{t('workspace.data.ready')}</Text>
-)}
-```
-
-## Migration Strategy
-
-If you find hardcoded strings:
-
-1. **Identify the module/feature context**
-2. **Create appropriate keys in locale file**
-3. **Add `useTranslation()` hook if missing**
-4. **Replace strings with `t()` calls**
-5. **Test that text displays correctly**
-
-## Anti-Patterns to Avoid
-
-❌ **String concatenation**
-
-```typescript
-// WRONG
-<Text>{t('hello') + ' ' + userName}</Text>
-
-// CORRECT
-<Text>{t('greeting', { name: userName })}</Text>
-```
-
-❌ **Hardcoded defaults**
-
-```typescript
-// WRONG
-const title = someValue || 'Default Title'
-
-// CORRECT
-const title = someValue || t('common.defaults.title')
-```
-
-❌ **Mixed hardcoded and translated**
-
-```typescript
-// WRONG
-<Button>Save {t('item')}</Button>
-
-// CORRECT
-<Button>{t('actions.saveItem')}</Button>
-```
-
-## Why This Matters
-
-1. **Consistency** - All text changes in one place
-2. **Future i18n** - Easy to add languages later
-3. **Content Management** - Non-developers can update text
-4. **Accessibility** - Screen readers get proper context
-5. **Testing** - Can test with mock translations
-6. **Professional** - Industry standard practice
-
-## Even if restructuring later...
-
-**Start with i18n from day one!**
-
-It's easier to restructure keys than to hunt down hardcoded strings across hundreds of components.
+1. You call `t('key', { context: 'VALUE' })`
+2. i18next looks for `key_VALUE`
+3. If found, returns that translation
+4. If not found, falls back to `key`
 
 ---
 
-**Remember: No hardcoded strings. Ever. Use i18n.** 🌍
+## 🎯 Real-World Example: Wizard Entity Types
+
+### ❌ OLD Approach (Template Literals)
+
+```typescript
+// Metadata - had to store full i18n path
+export const ENTITY_TYPE_METADATA = {
+  [EntityType.ADAPTER]: {
+    i18nKey: 'workspace.wizard.entityType.adapter',  // ❌ String duplication
+  },
+}
+
+// Component - template literal
+{t(`${metadata.i18nKey}.name`)}  // ❌ Hard to find in IDE
+{t(`${metadata.i18nKey}.description`)}  // ❌ Prone to typos
+
+// JSON - nested objects
+{
+  "entityType": {
+    "adapter": {
+      "name": "Adapter",
+      "description": "..."
+    },
+    "bridge": {
+      "name": "Bridge",
+      "description": "..."
+    }
+  }
+}
+```
+
+### ✅ NEW Approach (Context Pattern)
+
+```typescript
+// Metadata - just store the type
+export const ENTITY_TYPE_METADATA = {
+  [EntityType.ADAPTER]: {
+    type: EntityType.ADAPTER,  // ✅ Single source of truth
+  },
+}
+
+// Component - plain string keys
+{t('workspace.wizard.entityType.name', { context: metadata.type })}  // ✅ IDE can find
+{t('workspace.wizard.entityType.description', { context: metadata.type })}  // ✅ Clear
+
+// JSON - flat with context suffix
+{
+  "entityType": {
+    "name_ADAPTER": "Adapter",
+    "name_BRIDGE": "Bridge",
+    "description_ADAPTER": "Connect to external protocols",
+    "description_BRIDGE": "Connect to another MQTT broker"
+  }
+}
+```
+
+---
+
+## 🔍 Benefits of Context Pattern
+
+### 1. **IDE Integration** ✅
+
+- Cmd/Ctrl+Click on key navigates to JSON
+- Find All References works
+- Rename refactoring works
+- JSON schema validation
+
+### 2. **Type Safety** ✅
+
+```typescript
+// IDE knows these are plain strings
+t('workspace.wizard.entityType.name')  // ✅ Can validate
+t(`workspace.wizard.${var}.name`)      // ❌ Cannot validate
+```
+
+### 3. **Maintainability** ✅
+
+- Easy to find all usages
+- No string concatenation bugs
+- Clear what keys are used
+- Refactoring is safe
+
+### 4. **Code Reviews** ✅
+
+```typescript
+// Reviewer can immediately see what key is used
+t('workspace.wizard.entityType.name', { context: 'ADAPTER' }) // ✅ Clear
+
+// Reviewer has no idea what this resolves to
+t(`${metadata.i18nKey}.name`) // ❌ Unclear
+```
+
+---
+
+## 📋 Implementation Checklist
+
+When adding new i18n keys with variations:
+
+- [ ] Use plain string keys in `t()` calls
+- [ ] Pass variation as `context` parameter
+- [ ] In JSON, use `key_CONTEXT` pattern
+- [ ] Remove any `i18nKey` or similar fields from metadata
+- [ ] Store only the context value (e.g., `type`) in metadata
+- [ ] Test that all variations render correctly
+
+---
+
+## 🚫 Anti-Patterns to Avoid
+
+### ❌ Template Literals
+
+```typescript
+t(`${prefix}.${key}`) // Hard to find, error-prone
+```
+
+### ❌ String Concatenation
+
+```typescript
+t(baseKey + '.name') // Can't validate, typo-prone
+```
+
+### ❌ Storing Full Keys in Data
+
+```typescript
+const metadata = {
+  i18nKey: 'workspace.wizard.adapter', // Duplication, not DRY
+}
+```
+
+### ❌ Nested Objects for Variations
+
+```json
+{
+  "adapter": { "name": "..." },
+  "bridge": { "name": "..." }
+}
+
+// Use context pattern instead
+```
+
+---
+
+## ✅ Correct Patterns
+
+### Plain Strings
+
+```typescript
+t('workspace.wizard.title') // ✅ Always
+```
+
+### With Interpolation
+
+```typescript
+t('workspace.wizard.step', { current: 1, total: 4 }) // ✅ Plain key
+```
+
+### With Context
+
+```typescript
+t('workspace.wizard.entityType.name', { context: type }) // ✅ Plain key + context
+```
+
+### With Pluralization
+
+```typescript
+t('workspace.items', { count: 5 }) // ✅ i18next handles plurals
+```
+
+---
+
+## 🎓 Learning Resources
+
+### i18next Context Documentation
+
+- [Official Docs](https://www.i18next.com/translation-function/context)
+
+### Key Points:
+
+1. Context is part of i18next core
+2. Use `_CONTEXT` suffix in JSON keys
+3. Automatic fallback to base key
+4. Works with all i18next features
+
+---
+
+## 📝 Examples in Codebase
+
+### Wizard Entity Types
+
+**File:** `src/modules/Workspace/components/wizard/steps/SelectEntityTypeStep.tsx`
+
+```typescript
+t('workspace.wizard.entityType.name', { context: metadata.type })
+t('workspace.wizard.entityType.description', { context: metadata.type })
+```
+
+**File:** `src/locales/en/translation.json`
+
+```json
+{
+  "entityType": {
+    "name_ADAPTER": "Adapter",
+    "name_BRIDGE": "Bridge",
+    "description_ADAPTER": "Connect to external protocols",
+    "description_BRIDGE": "Connect to another MQTT broker"
+  }
+}
+```
+
+---
+
+## 🔧 Migration Guide
+
+If you find template literals in code:
+
+### 1. Identify the Pattern
+
+```typescript
+// OLD
+t(`${metadata.i18nKey}.name`)
+```
+
+### 2. Determine the Context Value
+
+```typescript
+// What varies? The entity type
+// metadata.i18nKey might be 'workspace.wizard.entityType.adapter'
+// The varying part is 'adapter' (or metadata.type = 'ADAPTER')
+```
+
+### 3. Refactor to Context
+
+```typescript
+// NEW
+t('workspace.wizard.entityType.name', { context: metadata.type })
+```
+
+### 4. Update JSON
+
+```json
+// OLD
+{
+  "adapter": { "name": "Adapter" },
+  "bridge": { "name": "Bridge" }
+}
+
+// NEW
+{
+  "name_ADAPTER": "Adapter",
+  "name_BRIDGE": "Bridge"
+}
+```
+
+### 5. Remove Unnecessary Fields
+
+```typescript
+// OLD
+interface Metadata {
+  i18nKey: string // Remove this
+}
+
+// NEW
+interface Metadata {
+  type: EntityType // Use this as context
+}
+```
+
+---
+
+## ✅ Summary
+
+**Golden Rule:** `t()` calls must use **plain string keys**, always.
+
+**For Variations:** Use **i18next context** with `_SUFFIX` pattern in JSON.
+
+**Benefits:**
+
+- IDE tooling works
+- Easy to find and refactor
+- Type-safe
+- Maintainable
+- No runtime concatenation
+
+---
+
+**Date:** November 10, 2025  
+**Task:** 99999-workspace-operation-wizard  
+**Pattern Established In:** SelectEntityTypeStep component refactoring
