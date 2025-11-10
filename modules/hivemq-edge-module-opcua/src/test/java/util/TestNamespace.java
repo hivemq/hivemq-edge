@@ -31,6 +31,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -161,11 +162,46 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
         return nodeId.toParseableString();
     }
 
+    private @NotNull String addTestArrayNode(
+            final @NotNull String name,
+            final @NotNull NodeId typeId,
+            final @NotNull Supplier<Object> valueCallback,
+            final @NotNull NodeId nodeId,
+            final int dimension) {
+        final UaVariableNode node = new UaVariableNode.UaVariableNodeBuilder(getNodeContext()).setNodeId(nodeId)
+                .setAccessLevel(AccessLevel.READ_WRITE)
+                .setBrowseName(newQualifiedName(name))
+                .setDisplayName(LocalizedText.english(name))
+                .setDataType(typeId)
+                .setArrayDimensions(new UInteger[]{UInteger.valueOf(dimension)})
+                .setTypeDefinition(NodeIds.BaseDataVariableType)
+                .build();
+
+        node.setValue(new DataValue(new Variant(null)));
+
+        node.getFilterChain()
+                .addLast(AttributeFilters.getValue(ctx -> new DataValue(new Variant(valueCallback.get()))));
+
+        getNodeManager().addNode(node);
+        requireNonNull(dynamicFolder).addOrganizes(node);
+
+        return nodeId.toParseableString();
+    }
+
     public @NotNull String addNode(
             final @NotNull String name,
             final @NotNull NodeId typeId,
             final @NotNull Supplier<Object> valueCallback,
             final long nodeIdPart) {
         return addTestNode(name, typeId, valueCallback, newNodeId(nodeIdPart));
+    }
+
+    public @NotNull String addArrayNode(
+            final @NotNull String name,
+            final @NotNull NodeId typeId,
+            final @NotNull Supplier<Object> valueCallback,
+            final long nodeIdPart,
+            final int dimension) {
+        return addTestArrayNode(name, typeId, valueCallback, newNodeId(nodeIdPart), dimension);
     }
 }
