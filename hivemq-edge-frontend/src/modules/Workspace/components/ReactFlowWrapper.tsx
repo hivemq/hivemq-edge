@@ -17,6 +17,10 @@ import StatusListener from '@/modules/Workspace/components/controls/StatusListen
 import CanvasControls from '@/modules/Workspace/components/controls/CanvasControls.tsx'
 import SelectionListener from '@/modules/Workspace/components/controls/SelectionListener.tsx'
 import CanvasToolbar from '@/modules/Workspace/components/controls/CanvasToolbar.tsx'
+import WizardProgressBar from '@/modules/Workspace/components/wizard/WizardProgressBar.tsx'
+import GhostNodeRenderer from '@/modules/Workspace/components/wizard/GhostNodeRenderer.tsx'
+import WizardConfigurationPanel from '@/modules/Workspace/components/wizard/WizardConfigurationPanel.tsx'
+import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import MonitoringEdge from '@/modules/Workspace/components/edges/MonitoringEdge.tsx'
 import {
   NodeAdapter,
@@ -35,6 +39,7 @@ import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
 
 const ReactFlowWrapper = () => {
   const { t } = useTranslation()
+  const { isActive: isWizardActive } = useWizardStore((state) => ({ isActive: state.isActive }))
   const { nodes: newNodes, edges: newEdges } = useGetFlowElements()
   const nodeTypes = useMemo(
     () => ({
@@ -97,6 +102,16 @@ const ReactFlowWrapper = () => {
     [edges, nodes, onNodesChange]
   )
 
+  // Cleanup wizard on unmount to prevent orphaned state
+  useEffect(() => {
+    return () => {
+      const { isActive, actions } = useWizardStore.getState()
+      if (isActive) {
+        actions.cancelWizard()
+      }
+    }
+  }, [])
+
   return (
     <ReactFlow
       id="edge-workspace-canvas"
@@ -114,12 +129,18 @@ const ReactFlowWrapper = () => {
       proOptions={proOptions}
       role="region"
       aria-label={t('workspace.canvas.aria-label')}
+      // Disable interactions when wizard is active
+      nodesDraggable={!isWizardActive}
+      elementsSelectable={!isWizardActive}
+      selectionOnDrag={!isWizardActive}
     >
       <Box role="group" aria-label={t('workspace.canvas.toolbar.container')} aria-controls="edge-workspace-canvas">
         <CanvasToolbar />
         <SelectionListener />
         <StatusListener />
         <CanvasControls />
+        <WizardProgressBar />
+        <GhostNodeRenderer />
         <MiniMap
           zoomable
           pannable
@@ -142,6 +163,7 @@ const ReactFlowWrapper = () => {
       </Box>
       <Background />
       <SuspenseOutlet />
+      <WizardConfigurationPanel />
     </ReactFlow>
   )
 }

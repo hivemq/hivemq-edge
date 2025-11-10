@@ -488,6 +488,7 @@
       "installation": "This adapter needs to be installed separately. Check the instructions"
     },
     "error": {
+      "title": "Error",
       "loading": "We cannot load your adapters for the time being. Please try again later"
     },
     "loading": {
@@ -1100,6 +1101,79 @@
     "datahub": {
       "aria-label": "Open the Data Hub policy",
       "list": "Show all the policies"
+    },
+    "wizard": {
+      "trigger": {
+        "buttonLabel": "Create New",
+        "buttonAriaLabel": "Create new entity or integration point",
+        "menuTitle": "What would you like to create?",
+        "disabledTooltip": "Complete or cancel current wizard first"
+      },
+      "category": {
+        "entities": "Entities",
+        "integrationPoints": "Integration Points"
+      },
+      "entityType": {
+        "name_ADAPTER": "Adapter",
+        "name_BRIDGE": "Bridge",
+        "name_COMBINER": "Combiner",
+        "name_ASSET_MAPPER": "Asset Mapper",
+        "name_GROUP": "Group",
+        "name_TAG": "Tags",
+        "name_TOPIC_FILTER": "Topic Filters",
+        "name_DATA_MAPPING_NORTH": "Data Mapping (Northbound)",
+        "name_DATA_MAPPING_SOUTH": "Data Mapping (Southbound)",
+        "name_DATA_COMBINING": "Data Combining"
+      },
+      "progress": {
+        "ariaLabel": "Wizard progress",
+        "stepLabel": "Step {{current}} of {{total}}",
+        "progressAriaLabel": "{{percent}} percent complete",
+        "backLabel": "Back",
+        "nextLabel": "Next",
+        "completeLabel": "Complete",
+        "cancelLabel": "Cancel",
+        "cancelAriaLabel": "Cancel wizard and return to workspace",
+        "step_step_ADAPTER_0": "Review adapter preview",
+        "step_step_ADAPTER_1": "Select protocol type",
+        "step_step_ADAPTER_2": "Configure adapter settings",
+        "step_step_BRIDGE_0": "Review bridge preview",
+        "step_step_BRIDGE_1": "Configure bridge settings",
+        "step_step_COMBINER_0": "Select data sources",
+        "step_step_COMBINER_1": "Review combiner preview",
+        "step_step_COMBINER_2": "Configure combining logic",
+        "step_step_ASSET_MAPPER_0": "Select data sources and Pulse Agent",
+        "step_step_ASSET_MAPPER_1": "Review asset mapper preview",
+        "step_step_ASSET_MAPPER_2": "Configure asset mappings",
+        "step_step_GROUP_0": "Select nodes to group",
+        "step_step_GROUP_1": "Review group preview",
+        "step_step_GROUP_2": "Configure group settings",
+        "step_step_TAG_0": "Select device node",
+        "step_step_TAG_1": "Configure tags",
+        "step_step_TOPIC_FILTER_0": "Select Edge Broker",
+        "step_step_TOPIC_FILTER_1": "Configure topic filters",
+        "step_step_DATA_MAPPING_NORTH_0": "Select adapter",
+        "step_step_DATA_MAPPING_NORTH_1": "Configure northbound mappings",
+        "step_step_DATA_MAPPING_SOUTH_0": "Select adapter",
+        "step_step_DATA_MAPPING_SOUTH_1": "Configure southbound mappings",
+        "step_step_DATA_COMBINING_0": "Select combiner",
+        "step_step_DATA_COMBINING_1": "Configure combining logic"
+      },
+      "configPanel": {
+        "ariaLabel": "Wizard configuration panel"
+      },
+      "adapter": {
+        "selectProtocol": "Select Protocol Type",
+        "selectProtocolDescription": "Choose the protocol adapter you want to create",
+        "showSearch": "Show Search & Filters",
+        "hideSearch": "Hide Search & Filters",
+        "configure": "Configure Adapter",
+        "back": "Back",
+        "submit": "Create Adapter"
+      },
+      "success": {
+        "adapterCreated": "{{name}} has been created successfully"
+      }
     },
     "topicWheel": {
       "control": {
