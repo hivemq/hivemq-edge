@@ -20,11 +20,6 @@ import org.jetbrains.annotations.NotNull;
 public class BridgeConstants {
 
     /**
-     * Special connect user property to disable the overload protection on bridge clients.
-     */
-    public static final @NotNull String HMQ_BRIDGE_TOKEN = "hmq-bridge-token";
-
-    /**
      * Special publish user property that holds a counter to prevent loops.
      */
     public static final @NotNull String HMQ_BRIDGE_HOP_COUNT = "hmq-bridge-hop-count";
