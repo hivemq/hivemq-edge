@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
@@ -42,6 +43,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.IdType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,9 +96,11 @@ public class OpcUaToJsonConverter {
     }
 
     private static JsonElement convertValue(
-            final @NotNull Object value,
+            final @Nullable Object value,
             final @NotNull EncodingContext serializationContext) {
-        if (value instanceof final DataValue dv) {
+        if(value == null) {
+            return JsonNull.INSTANCE;
+        } else if (value instanceof final DataValue dv) {
             return convertValue(dv.getValue(), serializationContext);
         } else if (value instanceof final Boolean b) {
             return new JsonPrimitive(b);
