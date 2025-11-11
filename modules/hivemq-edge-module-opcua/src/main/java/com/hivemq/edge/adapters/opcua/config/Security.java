@@ -37,7 +37,7 @@ public record Security(@JsonProperty("policy") @ModuleConfigField(title = "OPC U
                        @JsonProperty("messageSecurityMode")
                        @JsonInclude(JsonInclude.Include.NON_NULL)
                        @ModuleConfigField(title = "Message Security Mode",
-                                         description = "Message security mode (None, Sign, SignAndEncrypt). If not specified, defaults based on policy: None→None, others→SignAndEncrypt.",
+                                         description = "Message security mode (None, Sign, SignAndEncrypt). If not specified, defaults based on the select OPC UA Security Policy: None→None, others→SignAndEncrypt.",
                                          required = false) @Nullable MsgSecurityMode messageSecurityMode) {
 
     public Security(@JsonProperty("policy") final @Nullable SecPolicy policy,
