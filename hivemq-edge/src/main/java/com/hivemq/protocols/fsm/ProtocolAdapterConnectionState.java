@@ -21,26 +21,107 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.Function;
 
 public enum ProtocolAdapterConnectionState {
-    Closed(context -> 0),
-    Closing(context -> 0),
-    Connected(context -> 0),
-    Connecting(context -> 0),
-    Disconnected(context -> 0),
-    Disconnecting(context -> 0),
-    Error(context -> 0),
-    ErrorClosing(context -> 0),
+    Closed(ProtocolAdapterConnectionState::transitionFromClosed),
+    Closing(ProtocolAdapterConnectionState::transitionFromClosing),
+    Connected(ProtocolAdapterConnectionState::transitionFromConnected),
+    Connecting(ProtocolAdapterConnectionState::transitionFromConnecting),
+    Disconnected(ProtocolAdapterConnectionState::transitionFromDisconnected),
+    Disconnecting(ProtocolAdapterConnectionState::transitionFromDisconnecting),
+    Error(ProtocolAdapterConnectionState::transitionFromError),
+    ErrorClosing(ProtocolAdapterConnectionState::transitionFromErrorClosing),
     ;
 
-    private final @NotNull Function<Object, Integer> transitionFunction;
+    private final @NotNull Function<ProtocolAdapterConnectionState, ProtocolAdapterConnectionTransitionResponse>
+            transitionFunction;
 
-    ProtocolAdapterConnectionState(@NotNull final Function<Object, Integer> transitionFunction) {
+    ProtocolAdapterConnectionState(@NotNull final Function<ProtocolAdapterConnectionState, ProtocolAdapterConnectionTransitionResponse> transitionFunction) {
         this.transitionFunction = transitionFunction;
     }
 
-    public @NotNull Integer transition(
-            final @NotNull ProtocolAdapterConnectionState targetState,
-            final @NotNull Object context) {
-        return transitionFunction.apply(context);
+    public static @NotNull ProtocolAdapterConnectionTransitionResponse transitionFromClosed(
+            final @NotNull ProtocolAdapterConnectionState toState) {
+        final ProtocolAdapterConnectionState fromState = ProtocolAdapterConnectionState.Closed;
+        return switch (toState) {
+            case Closed -> ProtocolAdapterConnectionTransitionResponse.notChanged(fromState);
+            case Disconnected -> ProtocolAdapterConnectionTransitionResponse.success(fromState, toState);
+            default -> ProtocolAdapterConnectionTransitionResponse.failure(fromState, toState);
+        };
+    }
+
+    public static @NotNull ProtocolAdapterConnectionTransitionResponse transitionFromClosing(
+            final @NotNull ProtocolAdapterConnectionState toState) {
+        final ProtocolAdapterConnectionState fromState = ProtocolAdapterConnectionState.Closing;
+        return switch (toState) {
+            case Closing -> ProtocolAdapterConnectionTransitionResponse.notChanged(fromState);
+            case Closed -> ProtocolAdapterConnectionTransitionResponse.success(fromState, toState);
+            default -> ProtocolAdapterConnectionTransitionResponse.failure(fromState, toState);
+        };
+    }
+
+    public static @NotNull ProtocolAdapterConnectionTransitionResponse transitionFromConnected(
+            final @NotNull ProtocolAdapterConnectionState toState) {
+        final ProtocolAdapterConnectionState fromState = ProtocolAdapterConnectionState.Connected;
+        return switch (toState) {
+            case Connected -> ProtocolAdapterConnectionTransitionResponse.notChanged(fromState);
+            case Disconnecting, Closing, ErrorClosing ->
+                    ProtocolAdapterConnectionTransitionResponse.success(fromState, toState);
+            default -> ProtocolAdapterConnectionTransitionResponse.failure(fromState, toState);
+        };
+    }
+
+    public static @NotNull ProtocolAdapterConnectionTransitionResponse transitionFromConnecting(
+            final @NotNull ProtocolAdapterConnectionState toState) {
+        final ProtocolAdapterConnectionState fromState = ProtocolAdapterConnectionState.Connecting;
+        return switch (toState) {
+            case Connecting -> ProtocolAdapterConnectionTransitionResponse.notChanged(fromState);
+            case Connected, Error -> ProtocolAdapterConnectionTransitionResponse.success(fromState, toState);
+            default -> ProtocolAdapterConnectionTransitionResponse.failure(fromState, toState);
+        };
+    }
+
+    public static @NotNull ProtocolAdapterConnectionTransitionResponse transitionFromDisconnected(
+            final @NotNull ProtocolAdapterConnectionState toState) {
+        final ProtocolAdapterConnectionState fromState = ProtocolAdapterConnectionState.Disconnected;
+        return switch (toState) {
+            case Disconnected -> ProtocolAdapterConnectionTransitionResponse.notChanged(fromState);
+            case Connecting -> ProtocolAdapterConnectionTransitionResponse.success(fromState, toState);
+            default -> ProtocolAdapterConnectionTransitionResponse.failure(fromState, toState);
+        };
+    }
+
+    public static @NotNull ProtocolAdapterConnectionTransitionResponse transitionFromDisconnecting(
+            final @NotNull ProtocolAdapterConnectionState toState) {
+        final ProtocolAdapterConnectionState fromState = ProtocolAdapterConnectionState.Disconnecting;
+        return switch (toState) {
+            case Disconnecting -> ProtocolAdapterConnectionTransitionResponse.notChanged(fromState);
+            case Connecting -> ProtocolAdapterConnectionTransitionResponse.success(fromState, toState);
+            default -> ProtocolAdapterConnectionTransitionResponse.failure(fromState, toState);
+        };
+    }
+
+    public static @NotNull ProtocolAdapterConnectionTransitionResponse transitionFromError(
+            final @NotNull ProtocolAdapterConnectionState toState) {
+        final ProtocolAdapterConnectionState fromState = ProtocolAdapterConnectionState.Error;
+        return switch (toState) {
+            case Error -> ProtocolAdapterConnectionTransitionResponse.notChanged(fromState);
+            case Disconnected -> ProtocolAdapterConnectionTransitionResponse.success(fromState, toState);
+            default -> ProtocolAdapterConnectionTransitionResponse.failure(fromState, toState);
+        };
+    }
+
+    public static @NotNull ProtocolAdapterConnectionTransitionResponse transitionFromErrorClosing(
+            final @NotNull ProtocolAdapterConnectionState toState) {
+        final ProtocolAdapterConnectionState fromState = ProtocolAdapterConnectionState.ErrorClosing;
+        return switch (toState) {
+            case ErrorClosing -> ProtocolAdapterConnectionTransitionResponse.notChanged(fromState);
+            case Error -> ProtocolAdapterConnectionTransitionResponse.success(fromState, toState);
+            default -> ProtocolAdapterConnectionTransitionResponse.failure(fromState, toState);
+        };
+    }
+
+    public @NotNull ProtocolAdapterConnectionTransitionResponse transition(
+            final @NotNull ProtocolAdapterConnectionState toState) {
+        return transitionFunction.apply(toState);
     }
 
     public boolean isClosed() {
