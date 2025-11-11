@@ -17,10 +17,8 @@
 package com.hivemq.protocols.fsm;
 
 import com.hivemq.common.i18n.StringTemplate;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -45,8 +43,6 @@ public class ProtocolAdapterStateTest {
             Set.of(ProtocolAdapterState.Starting),
             ProtocolAdapterState.Error,
             Set.of(ProtocolAdapterState.Starting));
-    @Mock
-    private @NotNull ProtocolAdapterInstance protocolAdapterInstance;
 
     @Test
     public void whenEverythingWorks_thenTransitionShouldWork() {
@@ -55,8 +51,7 @@ public class ProtocolAdapterStateTest {
             final Set<ProtocolAdapterState> possibleToStates = PROTOCOL_ADAPTER_STATE_MAP_MAP.get(fromState);
             assertThat(possibleToStates).isNotNull();
             states.forEach(toState -> {
-                final ProtocolAdapterTransitionResponse response =
-                        fromState.transition(toState, protocolAdapterInstance);
+                final ProtocolAdapterTransitionResponse response = fromState.transition(toState);
                 switch (response.status()) {
                     case Success -> {
                         assertThat(possibleToStates).contains(toState);

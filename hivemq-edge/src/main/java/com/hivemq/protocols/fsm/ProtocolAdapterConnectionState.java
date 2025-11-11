@@ -42,4 +42,36 @@ public enum ProtocolAdapterConnectionState {
             final @NotNull Object context) {
         return transitionFunction.apply(context);
     }
+
+    public boolean isClosed() {
+        return this == Closed;
+    }
+
+    public boolean isClosing() {
+        return this == Closing;
+    }
+
+    public boolean isConnected() {
+        return this == Connected;
+    }
+
+    public boolean isConnecting() {
+        return this == Connecting;
+    }
+
+    public boolean isDisconnecting() {
+        return this == Disconnecting;
+    }
+
+    public boolean isDisconnected() {
+        return this == Disconnected;
+    }
+
+    public boolean isError() {
+        return this == Error;
+    }
+
+    public boolean isErrorClosing() {
+        return this == ErrorClosing;
+    }
 }
