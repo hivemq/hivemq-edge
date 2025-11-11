@@ -17,18 +17,19 @@
 package com.hivemq.protocols.fsm;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ProtocolAdapterInstance {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterInstance.class);
+public class ProtocolAdapterWrapper2 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterWrapper2.class);
     protected final @NotNull ProtocolAdapter adapter;
     protected volatile @NotNull ProtocolAdapterState state;
     protected volatile @NotNull ProtocolAdapterConnectionState northboundConnectionState;
     protected volatile @NotNull ProtocolAdapterConnectionState southboundConnectionState;
 
-    public ProtocolAdapterInstance(final @NotNull ProtocolAdapter adapter) {
+    public ProtocolAdapterWrapper2(final @NotNull ProtocolAdapter adapter) {
         this.adapter = adapter;
         northboundConnectionState = ProtocolAdapterConnectionState.Closed;
         southboundConnectionState = ProtocolAdapterConnectionState.Closed;
@@ -51,45 +52,66 @@ public class ProtocolAdapterInstance {
         return adapter.getId();
     }
 
-    public void start() {
-        final ProtocolAdapterTransitionResponse response = transitionTo(ProtocolAdapterState.Starting);
+    public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+        return adapter.getProtocolAdapterInformation();
+    }
+
+    public boolean start() {
+        LOGGER.info("Starting protocol adapter {}.", getAdapterId());
+        ProtocolAdapterTransitionResponse response = transitionTo(ProtocolAdapterState.Starting);
         if (response.status().isSuccess()) {
-            startNorthbound();
-            startSouthbound();
+            boolean success = startNorthbound();
+            success = success || startSouthbound();
+            if (success) {
+                response = transitionTo(ProtocolAdapterState.Started);
+            } else {
+                response = transitionTo(ProtocolAdapterState.Error);
+            }
         }
+        return response.status().isSuccess();
     }
 
-    public void stop() {
-        transitionTo(ProtocolAdapterState.Stopping);
+    public boolean stop(final boolean destroy) {
+        LOGGER.info("Stopping protocol adapter {}.", getAdapterId());
+        ProtocolAdapterTransitionResponse response = transitionTo(ProtocolAdapterState.Stopping);
+        if (response.status().isSuccess()) {
+
+            response = transitionTo(ProtocolAdapterState.Stopped);
+        }
+        return response.status().isSuccess();
     }
 
-    protected void startNorthbound() {
-
+    protected boolean startNorthbound() {
+        LOGGER.info("Starting northbound for protocol adapter {}.", getAdapterId());
+        northboundConnectionState = ProtocolAdapterConnectionState.Connected;
+        return northboundConnectionState.isConnected();
     }
 
-    protected void startSouthbound() {
-
+    protected boolean startSouthbound() {
+        LOGGER.info("Starting southbound for protocol adapter {}.", getAdapterId());
+        southboundConnectionState = ProtocolAdapterConnectionState.Connected;
+        return southboundConnectionState.isConnected();
     }
 
     public synchronized @NotNull ProtocolAdapterTransitionResponse transitionTo(final @NotNull ProtocolAdapterState newState) {
         final ProtocolAdapterState fromState = state;
-        final ProtocolAdapterTransitionResponse response = fromState.transition(newState, this);
+        final ProtocolAdapterTransitionResponse response = fromState.transition(newState);
         state = response.toState();
         switch (response.status()) {
             case Success -> {
                 LOGGER.debug("Protocol adapter '{}' transitioned from {} to {} successfully.",
+                        getAdapterId(),
                         fromState,
-                        state,
-                        getAdapterId());
+                        state);
             }
             case Failure -> {
                 LOGGER.error("Protocol adapter '{}' failed to transition from {} to {}.",
+                        getAdapterId(),
                         fromState,
-                        state,
-                        getAdapterId());
+                        state);
             }
             case NotChanged -> {
-                LOGGER.warn("Protocol adapter '{}' state {} is unchanged.", state, getAdapterId());
+                LOGGER.warn("Protocol adapter '{}' state {} is unchanged.", getAdapterId(), state);
             }
         }
         return response;
