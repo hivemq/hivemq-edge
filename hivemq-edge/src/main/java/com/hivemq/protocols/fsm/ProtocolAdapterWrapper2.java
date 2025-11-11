@@ -31,8 +31,8 @@ public class ProtocolAdapterWrapper2 {
 
     public ProtocolAdapterWrapper2(final @NotNull ProtocolAdapter adapter) {
         this.adapter = adapter;
-        northboundConnectionState = ProtocolAdapterConnectionState.Closed;
-        southboundConnectionState = ProtocolAdapterConnectionState.Closed;
+        northboundConnectionState = ProtocolAdapterConnectionState.Disconnected;
+        southboundConnectionState = ProtocolAdapterConnectionState.Disconnected;
         state = ProtocolAdapterState.Stopped;
     }
 
@@ -61,7 +61,7 @@ public class ProtocolAdapterWrapper2 {
         ProtocolAdapterTransitionResponse response = transitionTo(ProtocolAdapterState.Starting);
         if (response.status().isSuccess()) {
             boolean success = startNorthbound();
-            success = success || startSouthbound();
+            success = success && startSouthbound();
             if (success) {
                 response = transitionTo(ProtocolAdapterState.Started);
             } else {
@@ -75,22 +75,55 @@ public class ProtocolAdapterWrapper2 {
         LOGGER.info("Stopping protocol adapter {}.", getAdapterId());
         ProtocolAdapterTransitionResponse response = transitionTo(ProtocolAdapterState.Stopping);
         if (response.status().isSuccess()) {
-
-            response = transitionTo(ProtocolAdapterState.Stopped);
+            final boolean southboundSuccess = stopSouthbound();
+            final boolean northboundSuccess = stopNorthbound();
+            if (northboundSuccess && southboundSuccess) {
+                response = transitionTo(ProtocolAdapterState.Stopped);
+            } else {
+                response = transitionTo(ProtocolAdapterState.Error);
+            }
         }
         return response.status().isSuccess();
     }
 
     protected boolean startNorthbound() {
         LOGGER.info("Starting northbound for protocol adapter {}.", getAdapterId());
-        northboundConnectionState = ProtocolAdapterConnectionState.Connected;
-        return northboundConnectionState.isConnected();
+        ProtocolAdapterConnectionTransitionResponse response =
+                transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connecting);
+        if (response.status().isSuccess()) {
+            response = transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connected);
+        }
+        return response.status().isSuccess();
     }
 
     protected boolean startSouthbound() {
         LOGGER.info("Starting southbound for protocol adapter {}.", getAdapterId());
-        southboundConnectionState = ProtocolAdapterConnectionState.Connected;
-        return southboundConnectionState.isConnected();
+        ProtocolAdapterConnectionTransitionResponse response =
+                transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Connecting);
+        if (response.status().isSuccess()) {
+            response = transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Connected);
+        }
+        return response.status().isSuccess();
+    }
+
+    protected boolean stopNorthbound() {
+        LOGGER.info("Stopping northbound for protocol adapter {}.", getAdapterId());
+        ProtocolAdapterConnectionTransitionResponse response =
+                transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Disconnecting);
+        if (response.status().isSuccess()) {
+            response = transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Disconnected);
+        }
+        return response.status().isSuccess();
+    }
+
+    protected boolean stopSouthbound() {
+        LOGGER.info("Stopping southbound for protocol adapter {}.", getAdapterId());
+        ProtocolAdapterConnectionTransitionResponse response =
+                transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Disconnecting);
+        if (response.status().isSuccess()) {
+            response = transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Disconnected);
+        }
+        return response.status().isSuccess();
     }
 
     public synchronized @NotNull ProtocolAdapterTransitionResponse transitionTo(final @NotNull ProtocolAdapterState newState) {
@@ -112,6 +145,60 @@ public class ProtocolAdapterWrapper2 {
             }
             case NotChanged -> {
                 LOGGER.warn("Protocol adapter '{}' state {} is unchanged.", getAdapterId(), state);
+            }
+        }
+        return response;
+    }
+
+    public synchronized @NotNull ProtocolAdapterConnectionTransitionResponse transitionSouthboundConnectionTo(
+            final @NotNull ProtocolAdapterConnectionState newState) {
+        final ProtocolAdapterConnectionState fromState = southboundConnectionState;
+        final ProtocolAdapterConnectionTransitionResponse response = fromState.transition(newState);
+        southboundConnectionState = response.toState();
+        switch (response.status()) {
+            case Success -> {
+                LOGGER.debug("Protocol adapter '{}' southbound connection transitioned from {} to {} successfully.",
+                        getAdapterId(),
+                        fromState,
+                        southboundConnectionState);
+            }
+            case Failure -> {
+                LOGGER.error("Protocol adapter '{}' southbound connection failed to transition from {} to {}.",
+                        getAdapterId(),
+                        fromState,
+                        southboundConnectionState);
+            }
+            case NotChanged -> {
+                LOGGER.warn("Protocol adapter '{}' southbound connection state {} is unchanged.",
+                        getAdapterId(),
+                        southboundConnectionState);
+            }
+        }
+        return response;
+    }
+
+    public synchronized @NotNull ProtocolAdapterConnectionTransitionResponse transitionNorthboundConnectionTo(
+            final @NotNull ProtocolAdapterConnectionState newState) {
+        final ProtocolAdapterConnectionState fromState = northboundConnectionState;
+        final ProtocolAdapterConnectionTransitionResponse response = fromState.transition(newState);
+        northboundConnectionState = response.toState();
+        switch (response.status()) {
+            case Success -> {
+                LOGGER.debug("Protocol adapter '{}' northbound connection transitioned from {} to {} successfully.",
+                        getAdapterId(),
+                        fromState,
+                        northboundConnectionState);
+            }
+            case Failure -> {
+                LOGGER.error("Protocol adapter '{}' northbound connection failed to transition from {} to {}.",
+                        getAdapterId(),
+                        fromState,
+                        northboundConnectionState);
+            }
+            case NotChanged -> {
+                LOGGER.warn("Protocol adapter '{}' northbound connection state {} is unchanged.",
+                        getAdapterId(),
+                        northboundConnectionState);
             }
         }
         return response;

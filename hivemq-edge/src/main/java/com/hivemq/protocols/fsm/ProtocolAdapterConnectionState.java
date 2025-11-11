@@ -94,7 +94,7 @@ public enum ProtocolAdapterConnectionState {
         final ProtocolAdapterConnectionState fromState = ProtocolAdapterConnectionState.Disconnecting;
         return switch (toState) {
             case Disconnecting -> ProtocolAdapterConnectionTransitionResponse.notChanged(fromState);
-            case Connecting -> ProtocolAdapterConnectionTransitionResponse.success(fromState, toState);
+            case Connecting, Disconnected -> ProtocolAdapterConnectionTransitionResponse.success(fromState, toState);
             default -> ProtocolAdapterConnectionTransitionResponse.failure(fromState, toState);
         };
     }
