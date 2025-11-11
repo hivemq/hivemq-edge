@@ -134,6 +134,7 @@ milo-dtd-reader = { module = "org.eclipse.milo:milo-dtd-reader", version.ref = "
 milo-encoding-json = { module = "org.eclipse.milo:milo-encoding-json", version.ref = "milo" }
 milo-encoding-xml = { module = "org.eclipse.milo:milo-encoding-xml", version.ref = "milo" }
 milo-server = { module = "org.eclipse.milo:milo-sdk-server", version.ref = "milo" }
+milo-stack-core = { module = "org.eclipse.milo:milo-stack-core", version.ref = "milo" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 mqtt-sn-codec = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn-codec" }
 mssql = { module = "com.microsoft.sqlserver:mssql-jdbc", version.ref = "mssql" }

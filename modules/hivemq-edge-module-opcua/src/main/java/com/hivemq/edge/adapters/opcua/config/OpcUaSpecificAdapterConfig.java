@@ -62,13 +62,21 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
     private final @Nullable String applicationUri;
 
     @JsonProperty("auth")
+    @ModuleConfigField(title = "Authentication Configuration",
+                       description = "Select the authentication mode to use for connecting.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final @Nullable Auth auth;
 
     @JsonProperty("tls")
+    @ModuleConfigField(title = "TLS Configuration",
+                       description = "Configure TLS for use with X509 or connecting to a TLS enabled OPC UA server.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private final @NotNull Tls tls;
 
     @JsonProperty("security")
+    @ModuleConfigField(title = "Message Security Configuration",
+                       description = "Configure how the security of PC UA messages should be treated.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private final @NotNull Security security;
 
     @JsonProperty(value = "opcuaToMqtt")
