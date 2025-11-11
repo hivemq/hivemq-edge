@@ -13,7 +13,9 @@ import { useWizardState } from '@/modules/Workspace/hooks/useWizardStore'
 import { EntityType } from './types'
 import { getWizardStep } from './utils/wizardMetadata'
 
-import WizardAdapterConfiguration from './WizardAdapterConfiguration.tsx'
+import WizardAdapterConfiguration from './WizardAdapterConfiguration'
+import WizardBridgeConfiguration from './WizardBridgeConfiguration'
+import WizardCombinerConfiguration from './WizardCombinerConfiguration'
 
 /**
  * Main configuration panel for wizard
@@ -30,7 +32,14 @@ const WizardConfigurationPanel: FC = () => {
 
   // Get step configuration to check if this step requires configuration
   const stepConfig = getWizardStep(entityType, currentStep)
-  const showsConfigurationPanel = stepConfig?.requiresConfiguration || stepConfig?.requiresSelection
+
+  // Selection steps use floating Panel, not Drawer
+  // Don't show Drawer for selection steps
+  if (stepConfig?.requiresSelection) {
+    return null
+  }
+
+  const showsConfigurationPanel = stepConfig?.requiresConfiguration
 
   // Don't show panel on steps that don't need it (e.g., ghost preview step)
   if (!showsConfigurationPanel) {
@@ -38,21 +47,22 @@ const WizardConfigurationPanel: FC = () => {
   }
 
   const renderConfigurationContent = () => {
+    // Route to entity-specific configuration
     switch (entityType) {
       case EntityType.ADAPTER:
         return <WizardAdapterConfiguration />
 
       case EntityType.BRIDGE:
-        // TODO: Implement bridge configuration
-        return <div>Bridge configuration coming soon</div>
+        return <WizardBridgeConfiguration />
 
       case EntityType.COMBINER:
-        // TODO: Implement combiner configuration
-        return <div>Combiner configuration coming soon</div>
+        // Combiner has its own Drawer - render directly without wrapper
+        return <WizardCombinerConfiguration />
 
       case EntityType.ASSET_MAPPER:
-        // TODO: Implement asset mapper configuration
-        return <div>Asset Mapper configuration coming soon</div>
+        // Asset Mapper uses same schema as Combiner, just with Pulse Agent auto-included
+        // Reuse Combiner configuration component
+        return <WizardCombinerConfiguration />
 
       case EntityType.GROUP:
         // TODO: Implement group configuration
@@ -63,25 +73,38 @@ const WizardConfigurationPanel: FC = () => {
     }
   }
 
-  return (
-    <Drawer
-      isOpen={true}
-      placement="right"
-      onClose={() => {
-        // Don't allow closing via overlay/escape during wizard
-        // User must use Cancel button in progress bar
-      }}
-      closeOnOverlayClick={false}
-      closeOnEsc={false}
-      size="lg"
-      variant="hivemq"
-    >
-      <DrawerOverlay />
-      <DrawerContent aria-label={t('workspace.wizard.configPanel.ariaLabel')} data-testid="wizard-configuration-panel">
-        {renderConfigurationContent()}
-      </DrawerContent>
-    </Drawer>
-  )
+  // Some components (like CombinerMappingManager) have their own Drawer
+  // Check if we need to wrap in a Drawer
+  // Both Combiner and Asset Mapper reuse CombinerMappingManager which has its own Drawer
+  const needsDrawerWrapper = entityType !== EntityType.COMBINER && entityType !== EntityType.ASSET_MAPPER
+
+  if (needsDrawerWrapper) {
+    return (
+      <Drawer
+        isOpen={true}
+        placement="right"
+        onClose={() => {
+          // Don't allow closing via overlay/escape during wizard
+          // User must use Cancel button in progress bar
+        }}
+        closeOnOverlayClick={false}
+        closeOnEsc={false}
+        size="lg"
+        variant="hivemq"
+      >
+        <DrawerOverlay />
+        <DrawerContent
+          aria-label={t('workspace.wizard.configPanel.ariaLabel')}
+          data-testid="wizard-configuration-panel"
+        >
+          {renderConfigurationContent()}
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
+  // Render component directly (it has its own Drawer)
+  return <>{renderConfigurationContent()}</>
 }
 
 export default WizardConfigurationPanel

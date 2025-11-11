@@ -110,15 +110,26 @@ export const WIZARD_REGISTRY: Record<WizardType, WizardMetadata> = {
         index: 0,
         descriptionKey: 'step_COMBINER_0', // "Select data sources"
         requiresSelection: true,
+        selectionConstraints: {
+          minNodes: 2,
+          allowedNodeTypes: ['ADAPTER_NODE', 'BRIDGE_NODE'],
+          // Only allow adapters with COMBINE capability
+          // Note: customFilter will be enhanced by WizardSelectionRestrictions with protocol adapter data
+          customFilter: (node) => {
+            // Bridges are always allowed
+            if (node.type === 'BRIDGE_NODE') return true
+
+            // For adapters, we need to check the protocol definition
+            // This will be handled by WizardSelectionRestrictions which has access to protocol adapters
+            return node.type === 'ADAPTER_NODE'
+          },
+          // Flag to indicate we need protocol adapter capabilities check
+          requiresProtocolCapabilities: ['COMBINE'],
+        },
       },
       {
         index: 1,
-        descriptionKey: 'step_COMBINER_1', // "Review combiner preview"
-        showsGhostNodes: true,
-      },
-      {
-        index: 2,
-        descriptionKey: 'step_COMBINER_2', // "Configure combining logic"
+        descriptionKey: 'step_COMBINER_1', // "Configure combining logic"
         requiresConfiguration: true,
       },
     ],
@@ -133,17 +144,28 @@ export const WIZARD_REGISTRY: Record<WizardType, WizardMetadata> = {
     steps: [
       {
         index: 0,
-        descriptionKey: 'step_ASSET_MAPPER_0', // "Select data sources and Pulse Agent"
+        descriptionKey: 'step_ASSET_MAPPER_0', // "Select data sources" (Pulse Agent auto-included)
         requiresSelection: true,
+        selectionConstraints: {
+          minNodes: 3, // Minimum: 1 Pulse Agent (auto-selected) + 2 data sources
+          allowedNodeTypes: ['ADAPTER_NODE', 'BRIDGE_NODE'],
+          // Same as Combiner: only allow adapters with COMBINE capability
+          // Note: customFilter will be enhanced by WizardSelectionRestrictions with protocol adapter data
+          customFilter: (node) => {
+            // Bridges are always allowed
+            if (node.type === 'BRIDGE_NODE') return true
+
+            // For adapters, we need to check the protocol definition
+            // This will be handled by WizardSelectionRestrictions which has access to protocol adapters
+            return node.type === 'ADAPTER_NODE'
+          },
+          // Flag to indicate we need protocol adapter capabilities check
+          requiresProtocolCapabilities: ['COMBINE'],
+        },
       },
       {
         index: 1,
-        descriptionKey: 'step_ASSET_MAPPER_1', // "Review asset mapper preview"
-        showsGhostNodes: true,
-      },
-      {
-        index: 2,
-        descriptionKey: 'step_ASSET_MAPPER_2', // "Configure asset mappings"
+        descriptionKey: 'step_ASSET_MAPPER_1', // "Configure asset mappings"
         requiresConfiguration: true,
       },
     ],
@@ -160,6 +182,10 @@ export const WIZARD_REGISTRY: Record<WizardType, WizardMetadata> = {
         index: 0,
         descriptionKey: 'step_GROUP_0', // "Select nodes to group"
         requiresSelection: true,
+        selectionConstraints: {
+          minNodes: 2,
+          // No allowedNodeTypes restriction - can select any type
+        },
       },
       {
         index: 1,

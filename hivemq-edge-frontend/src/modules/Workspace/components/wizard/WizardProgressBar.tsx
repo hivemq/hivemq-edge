@@ -12,7 +12,7 @@ import { CloseIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons'
 
 import Panel from '@/components/react-flow/Panel.tsx'
 import { useWizardState, useWizardActions } from '@/modules/Workspace/hooks/useWizardStore'
-import { getStepDescriptionKey } from './utils/wizardMetadata'
+import { getStepDescriptionKey, getWizardStep } from './utils/wizardMetadata'
 
 /**
  * Progress bar component for the wizard
@@ -20,7 +20,7 @@ import { getStepDescriptionKey } from './utils/wizardMetadata'
  */
 const WizardProgressBar: FC = () => {
   const { t } = useTranslation()
-  const { isActive, entityType, currentStep, totalSteps } = useWizardState()
+  const { isActive, entityType, currentStep, totalSteps, selectedNodeIds, selectionConstraints } = useWizardState()
   const { cancelWizard, nextStep, previousStep } = useWizardActions()
 
   // Don't render if wizard is not active
@@ -37,6 +37,19 @@ const WizardProgressBar: FC = () => {
 
   // Calculate progress percentage
   const progressPercent = totalSteps > 0 ? ((currentStep + 1) / totalSteps) * 100 : 0
+
+  // Check if current step has selection requirements
+  const stepConfig = getWizardStep(entityType, currentStep)
+  const hasSelectionRequirements = stepConfig?.requiresSelection && selectionConstraints
+
+  // Validate selection if step requires it
+  let canProceed = true
+  if (hasSelectionRequirements) {
+    const { minNodes = 0, maxNodes = Infinity } = selectionConstraints
+    const hasMinimum = selectedNodeIds.length >= minNodes
+    const withinMaximum = selectedNodeIds.length <= maxNodes
+    canProceed = hasMinimum && withinMaximum
+  }
 
   return (
     <Panel
@@ -108,6 +121,7 @@ const WizardProgressBar: FC = () => {
               size="sm"
               rightIcon={!isLastStep ? <Icon as={ChevronRightIcon} /> : undefined}
               onClick={nextStep}
+              isDisabled={!canProceed}
               aria-label={
                 isLastStep ? t('workspace.wizard.progress.completeLabel') : t('workspace.wizard.progress.nextLabel')
               }

@@ -10,7 +10,8 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 
 import type { WizardStore, WizardState, WizardType, GhostNode, GhostEdge } from '../components/wizard/types'
-import { getWizardStepCount } from '../components/wizard/utils/wizardMetadata'
+import { getWizardStepCount, getWizardStep } from '../components/wizard/utils/wizardMetadata'
+import useWorkspaceStore from './useWorkspaceStore'
 
 /**
  * Initial wizard state
@@ -46,13 +47,28 @@ export const useWizardStore = create<WizardStore>()(
           // Get metadata from registry to determine total steps
           const totalSteps = getWizardStepCount(type)
 
+          // Get step 0 configuration to check for selection constraints
+          const step0Config = getWizardStep(type, 0)
+          const initialConstraints = step0Config?.selectionConstraints || null
+
+          // Asset Mapper auto-selects the Pulse Agent
+          let initialSelection: string[] = []
+          if (type === 'ASSET_MAPPER') {
+            // Find Pulse Agent node(s) and auto-select the first one
+            const nodes = useWorkspaceStore.getState().nodes
+            const pulseNode = nodes.find((n) => n.type === 'PULSE_NODE')
+            if (pulseNode) {
+              initialSelection = [pulseNode.id]
+            }
+          }
+
           set({
             isActive: true,
             entityType: type,
             currentStep: 0,
             totalSteps,
-            selectedNodeIds: [],
-            selectionConstraints: null,
+            selectedNodeIds: initialSelection, // Auto-select Pulse Agent for Asset Mapper
+            selectionConstraints: initialConstraints, // Set constraints from step 0
             ghostNodes: [],
             ghostEdges: [],
             configurationData: {},
@@ -77,11 +93,16 @@ export const useWizardStore = create<WizardStore>()(
          * Move to the next step in the wizard
          */
         nextStep: () => {
-          const { currentStep, totalSteps } = get()
+          const { currentStep, totalSteps, entityType } = get()
 
-          if (currentStep < totalSteps - 1) {
+          if (currentStep < totalSteps - 1 && entityType) {
+            const nextStepIndex = currentStep + 1
+            const nextStepConfig = getWizardStep(entityType, nextStepIndex)
+            const nextConstraints = nextStepConfig?.selectionConstraints || null
+
             set({
-              currentStep: currentStep + 1,
+              currentStep: nextStepIndex,
+              selectionConstraints: nextConstraints, // Update constraints for new step
               errorMessage: null,
             })
           }
@@ -91,11 +112,16 @@ export const useWizardStore = create<WizardStore>()(
          * Move to the previous step in the wizard
          */
         previousStep: () => {
-          const { currentStep } = get()
+          const { currentStep, entityType } = get()
 
-          if (currentStep > 0) {
+          if (currentStep > 0 && entityType) {
+            const prevStepIndex = currentStep - 1
+            const prevStepConfig = getWizardStep(entityType, prevStepIndex)
+            const prevConstraints = prevStepConfig?.selectionConstraints || null
+
             set({
-              currentStep: currentStep - 1,
+              currentStep: prevStepIndex,
+              selectionConstraints: prevConstraints, // Update constraints for previous step
               errorMessage: null,
             })
           }
@@ -165,7 +191,17 @@ export const useWizardStore = create<WizardStore>()(
          * Deselect a node during interactive selection
          */
         deselectNode: (nodeId: string) => {
-          const { selectedNodeIds } = get()
+          const { selectedNodeIds, entityType } = get()
+
+          // For Asset Mapper, prevent deselection of Pulse Agent
+          if (entityType === 'ASSET_MAPPER') {
+            const nodes = useWorkspaceStore.getState().nodes
+            const node = nodes.find((n) => n.id === nodeId)
+            if (node?.type === 'PULSE_NODE') {
+              // Don't allow deselecting Pulse Agent in Asset Mapper
+              return
+            }
+          }
 
           set({
             selectedNodeIds: selectedNodeIds.filter((id: string) => id !== nodeId),
@@ -300,6 +336,8 @@ export const useWizardState = () =>
     entityType: state.entityType,
     currentStep: state.currentStep,
     totalSteps: state.totalSteps,
+    selectedNodeIds: state.selectedNodeIds,
+    selectionConstraints: state.selectionConstraints,
     errorMessage: state.errorMessage,
   }))
 

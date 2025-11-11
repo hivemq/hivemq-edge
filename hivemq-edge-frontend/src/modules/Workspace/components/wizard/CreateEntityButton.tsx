@@ -23,6 +23,8 @@ import {
 import { ChevronDownIcon } from '@chakra-ui/icons'
 import { LuPlus } from 'react-icons/lu'
 
+import { Capability } from '@/api/__generated__'
+import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability'
 import { useWizardState, useWizardActions } from '@/modules/Workspace/hooks/useWizardStore'
 import { getEntityWizardTypes, getIntegrationWizardTypes, getWizardIcon } from './utils/wizardMetadata'
 import type { WizardType } from './types'
@@ -34,12 +36,29 @@ const CreateEntityButton: FC = () => {
   const { t } = useTranslation()
   const { isActive } = useWizardState()
   const { startWizard } = useWizardActions()
+  const { data: hasPulse } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
 
   const entityTypes = getEntityWizardTypes()
   const integrationTypes = getIntegrationWizardTypes()
 
+  // Track which wizards are implemented
+  // Note: Combiner, Asset Mapper, and Group enabled after Subtask 9 (Selection System)
+  const implementedWizards = new Set(['ADAPTER', 'BRIDGE', 'COMBINER', 'ASSET_MAPPER', 'GROUP'])
+
   const handleSelectWizard = (type: WizardType) => {
     startWizard(type)
+  }
+
+  const isWizardImplemented = (type: WizardType): boolean => {
+    return implementedWizards.has(type)
+  }
+
+  const isWizardAvailable = (type: WizardType): boolean => {
+    // Asset Mapper requires Pulse capability
+    if (type === 'ASSET_MAPPER' && !hasPulse) {
+      return false
+    }
+    return isWizardImplemented(type)
   }
 
   return (
@@ -64,15 +83,39 @@ const CreateEntityButton: FC = () => {
           <MenuGroup title={t('workspace.wizard.category.entities')}>
             {entityTypes.map((type) => {
               const IconComponent = getWizardIcon(type)
+              const isAvailable = isWizardAvailable(type)
+              const isImplemented = isWizardImplemented(type)
+              const isPulseRequired = type === 'ASSET_MAPPER' && !hasPulse
+
               return (
                 <MenuItem
                   key={type}
                   icon={<Icon as={IconComponent} boxSize={4} />}
                   onClick={() => handleSelectWizard(type)}
                   data-testid={`wizard-option-${type}`}
+                  isDisabled={!isAvailable}
+                  opacity={isAvailable ? 1 : 0.5}
+                  cursor={isAvailable ? 'pointer' : 'not-allowed'}
+                  title={
+                    isPulseRequired
+                      ? t('workspace.wizard.assetMapper.requiresPulse')
+                      : !isImplemented
+                        ? 'Coming soon'
+                        : undefined
+                  }
                 >
                   <HStack spacing={2} align="center">
                     <Text>{t('workspace.wizard.entityType.name', { context: type })}</Text>
+                    {isPulseRequired && (
+                      <Text fontSize="xs" color="gray.500">
+                        (Requires Pulse)
+                      </Text>
+                    )}
+                    {!isImplemented && !isPulseRequired && (
+                      <Text fontSize="xs" color="gray.500">
+                        (Coming soon)
+                      </Text>
+                    )}
                   </HStack>
                 </MenuItem>
               )
@@ -85,15 +128,27 @@ const CreateEntityButton: FC = () => {
           <MenuGroup title={t('workspace.wizard.category.integrationPoints')}>
             {integrationTypes.map((type) => {
               const IconComponent = getWizardIcon(type)
+              const isAvailable = isWizardAvailable(type)
+              const isImplemented = isWizardImplemented(type)
+
               return (
                 <MenuItem
                   key={type}
                   icon={<Icon as={IconComponent} boxSize={4} />}
                   onClick={() => handleSelectWizard(type)}
                   data-testid={`wizard-option-${type}`}
+                  isDisabled={!isAvailable}
+                  opacity={isAvailable ? 1 : 0.5}
+                  cursor={isAvailable ? 'pointer' : 'not-allowed'}
+                  title={!isImplemented ? 'Coming soon' : undefined}
                 >
                   <HStack spacing={2} align="center">
                     <Text>{t('workspace.wizard.entityType.name', { context: type })}</Text>
+                    {!isImplemented && (
+                      <Text fontSize="xs" color="gray.500">
+                        (Coming soon)
+                      </Text>
+                    )}
                   </HStack>
                 </MenuItem>
               )

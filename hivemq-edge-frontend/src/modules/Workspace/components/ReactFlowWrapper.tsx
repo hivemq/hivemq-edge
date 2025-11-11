@@ -2,7 +2,7 @@ import { type MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo } f
 import { useTranslation } from 'react-i18next'
 import type { Node, NodePositionChange } from '@xyflow/react'
 import { ReactFlow, Background, getIncomers, getOutgoers } from '@xyflow/react'
-import { Box } from '@chakra-ui/react'
+import { Box, useToast } from '@chakra-ui/react'
 
 import '@xyflow/react/dist/style.css'
 
@@ -19,8 +19,11 @@ import SelectionListener from '@/modules/Workspace/components/controls/Selection
 import CanvasToolbar from '@/modules/Workspace/components/controls/CanvasToolbar.tsx'
 import WizardProgressBar from '@/modules/Workspace/components/wizard/WizardProgressBar.tsx'
 import GhostNodeRenderer from '@/modules/Workspace/components/wizard/GhostNodeRenderer.tsx'
+import WizardSelectionRestrictions from '@/modules/Workspace/components/wizard/WizardSelectionRestrictions.tsx'
+import WizardSelectionPanel from '@/modules/Workspace/components/wizard/WizardSelectionPanel.tsx'
 import WizardConfigurationPanel from '@/modules/Workspace/components/wizard/WizardConfigurationPanel.tsx'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
+import { useProtocolAdaptersContext } from '@/modules/Workspace/components/wizard/ProtocolAdaptersContext'
 import MonitoringEdge from '@/modules/Workspace/components/edges/MonitoringEdge.tsx'
 import {
   NodeAdapter,
@@ -39,7 +42,9 @@ import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
 
 const ReactFlowWrapper = () => {
   const { t } = useTranslation()
+  const toast = useToast()
   const { isActive: isWizardActive } = useWizardStore((state) => ({ isActive: state.isActive }))
+  const { protocolAdapters } = useProtocolAdaptersContext()
   const { nodes: newNodes, edges: newEdges } = useGetFlowElements()
   const nodeTypes = useMemo(
     () => ({
@@ -112,6 +117,116 @@ const ReactFlowWrapper = () => {
     }
   }, [])
 
+  /**
+   * Handle node clicks during wizard selection mode
+   */
+  const onNodeClick = useCallback(
+    (_event: ReactMouseEvent, node: Node) => {
+      // Only handle clicks when wizard is active with selection constraints
+      const { isActive, selectionConstraints, selectedNodeIds, actions } = useWizardStore.getState()
+
+      console.log('🔍 Node clicked:', {
+        nodeId: node.id,
+        nodeType: node.type,
+        isActive,
+        hasConstraints: !!selectionConstraints,
+        allowedTypes: selectionConstraints?.allowedNodeTypes,
+      })
+
+      if (!isActive || !selectionConstraints) {
+        // Normal mode - let default behavior handle it
+        console.log('⏭️ Not in selection mode')
+        return
+      }
+
+      // Check if node is selectable based on constraints
+      const isGhost = node.data?.isGhost
+      const isEdgeNode = node.id === 'EDGE_NODE'
+
+      if (isGhost || isEdgeNode) {
+        console.log('🚫 Ghost or edge node - not selectable')
+        return // Can't select ghost or edge nodes
+      }
+
+      // Check allowed types
+      const { allowedNodeTypes = [], customFilter, requiresProtocolCapabilities } = selectionConstraints
+      if (allowedNodeTypes.length > 0 && !allowedNodeTypes.includes(node.type || '')) {
+        console.log('🚫 Node type not allowed:', node.type, 'allowed:', allowedNodeTypes)
+        return // Type not allowed
+      }
+
+      // Check protocol adapter capabilities for ADAPTER_NODE types
+      if (node.type === 'ADAPTER_NODE' && requiresProtocolCapabilities && requiresProtocolCapabilities.length > 0) {
+        const adapterType = node.data?.type
+
+        if (!adapterType) {
+          console.log('🚫 Missing adapter type on node:', node.id)
+          return
+        }
+
+        // If protocol adapters not loaded yet, skip capability check
+        // WizardSelectionRestrictions handles visual filtering
+        if (!protocolAdapters) {
+          console.log('⏳ Protocol adapters not loaded yet, skipping capability check')
+        } else {
+          // Protocol adapters loaded - check capabilities
+          const protocolAdapter = protocolAdapters.find((p) => p.id === adapterType)
+          if (!protocolAdapter || !protocolAdapter.capabilities) {
+            console.log('🚫 Protocol adapter not found or has no capabilities:', adapterType)
+            return
+          }
+
+          const hasAllCapabilities = requiresProtocolCapabilities.every((cap) =>
+            protocolAdapter.capabilities?.includes(cap)
+          )
+
+          if (!hasAllCapabilities) {
+            console.log('🚫 Adapter missing required capabilities:', {
+              required: requiresProtocolCapabilities,
+              has: protocolAdapter.capabilities,
+            })
+            return
+          }
+        }
+      }
+
+      // If custom filter provided, apply it
+      if (customFilter && !customFilter(node)) {
+        console.log('🚫 Node filtered out by custom filter')
+        return
+      }
+
+      // All checks passed - toggle selection
+      const isSelected = selectedNodeIds.includes(node.id)
+      console.log(isSelected ? '➖ Deselecting node' : '➕ Selecting node')
+
+      if (isSelected) {
+        // Deselect
+        actions.deselectNode(node.id)
+      } else {
+        // Check max constraint before selecting
+        const { maxNodes = Infinity } = selectionConstraints
+        if (selectedNodeIds.length >= maxNodes) {
+          // Show toast: max reached
+          toast({
+            title: t('workspace.wizard.selection.maxReached'),
+            description: t('workspace.wizard.selection.maxReachedDescription', { count: maxNodes }),
+            status: 'warning',
+            duration: 3000,
+            isClosable: true,
+          })
+          return
+        }
+
+        // Select
+        actions.selectNode(node.id)
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, toast]
+    // protocolAdapters from context is intentionally not in deps to avoid unnecessary re-renders
+  )
+
   return (
     <ReactFlow
       id="edge-workspace-canvas"
@@ -122,6 +237,7 @@ const ReactFlowWrapper = () => {
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onNodeDrag={onReactFlowNodeDrag}
+      onNodeClick={onNodeClick}
       fitView
       snapToGrid={true}
       nodesConnectable={false}
@@ -141,6 +257,8 @@ const ReactFlowWrapper = () => {
         <CanvasControls />
         <WizardProgressBar />
         <GhostNodeRenderer />
+        <WizardSelectionRestrictions />
+        <WizardSelectionPanel />
         <MiniMap
           zoomable
           pannable
