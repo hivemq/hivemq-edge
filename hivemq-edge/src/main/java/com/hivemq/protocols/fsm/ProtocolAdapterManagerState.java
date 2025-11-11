@@ -16,7 +16,7 @@
 
 package com.hivemq.protocols.fsm;
 
-public enum ProtocolAdapterOperatorState {
+public enum ProtocolAdapterManagerState {
     Idle,
     Running,
     ;

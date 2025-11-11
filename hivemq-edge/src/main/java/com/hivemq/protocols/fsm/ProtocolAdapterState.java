@@ -18,7 +18,7 @@ package com.hivemq.protocols.fsm;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public enum ProtocolAdapterState {
     Starting(ProtocolAdapterState::transitionFromStarting),
@@ -28,16 +28,14 @@ public enum ProtocolAdapterState {
     Error(ProtocolAdapterState::transitionFromError),
     ;
 
-    private final @NotNull BiFunction<ProtocolAdapterState, ProtocolAdapterInstance, ProtocolAdapterTransitionResponse>
-            transitionFunction;
+    private final @NotNull Function<ProtocolAdapterState, ProtocolAdapterTransitionResponse> transitionFunction;
 
-    ProtocolAdapterState(@NotNull final BiFunction<ProtocolAdapterState, ProtocolAdapterInstance, ProtocolAdapterTransitionResponse> transitionFunction) {
+    ProtocolAdapterState(@NotNull final Function<ProtocolAdapterState, ProtocolAdapterTransitionResponse> transitionFunction) {
         this.transitionFunction = transitionFunction;
     }
 
     public static @NotNull ProtocolAdapterTransitionResponse transitionFromStarting(
-            final @NotNull ProtocolAdapterState toState,
-            final @NotNull ProtocolAdapterInstance instance) {
+            final @NotNull ProtocolAdapterState toState) {
         final ProtocolAdapterState fromState = ProtocolAdapterState.Starting;
         return switch (toState) {
             case Starting -> ProtocolAdapterTransitionResponse.notChanged(fromState);
@@ -47,8 +45,7 @@ public enum ProtocolAdapterState {
     }
 
     public static @NotNull ProtocolAdapterTransitionResponse transitionFromStarted(
-            final @NotNull ProtocolAdapterState toState,
-            final @NotNull ProtocolAdapterInstance instance) {
+            final @NotNull ProtocolAdapterState toState) {
         final ProtocolAdapterState fromState = ProtocolAdapterState.Started;
         return switch (toState) {
             case Started -> ProtocolAdapterTransitionResponse.notChanged(fromState);
@@ -58,8 +55,7 @@ public enum ProtocolAdapterState {
     }
 
     public static @NotNull ProtocolAdapterTransitionResponse transitionFromStopping(
-            final @NotNull ProtocolAdapterState toState,
-            final @NotNull ProtocolAdapterInstance instance) {
+            final @NotNull ProtocolAdapterState toState) {
         final ProtocolAdapterState fromState = ProtocolAdapterState.Stopping;
         return switch (toState) {
             case Stopping -> ProtocolAdapterTransitionResponse.notChanged(fromState);
@@ -69,8 +65,7 @@ public enum ProtocolAdapterState {
     }
 
     public static @NotNull ProtocolAdapterTransitionResponse transitionFromStopped(
-            final @NotNull ProtocolAdapterState toState,
-            final @NotNull ProtocolAdapterInstance instance) {
+            final @NotNull ProtocolAdapterState toState) {
         final ProtocolAdapterState fromState = ProtocolAdapterState.Stopped;
         return switch (toState) {
             case Starting -> ProtocolAdapterTransitionResponse.success(fromState, toState);
@@ -80,8 +75,7 @@ public enum ProtocolAdapterState {
     }
 
     public static @NotNull ProtocolAdapterTransitionResponse transitionFromError(
-            final @NotNull ProtocolAdapterState toState,
-            final @NotNull ProtocolAdapterInstance instance) {
+            final @NotNull ProtocolAdapterState toState) {
         final ProtocolAdapterState fromState = ProtocolAdapterState.Error;
         return switch (toState) {
             case Starting -> ProtocolAdapterTransitionResponse.success(fromState, toState);
@@ -91,8 +85,27 @@ public enum ProtocolAdapterState {
     }
 
     public @NotNull ProtocolAdapterTransitionResponse transition(
-            final @NotNull ProtocolAdapterState toState,
-            final @NotNull ProtocolAdapterInstance instance) {
-        return transitionFunction.apply(toState, instance);
+            final @NotNull ProtocolAdapterState toState) {
+        return transitionFunction.apply(toState);
+    }
+
+    public boolean isStarting() {
+        return this == Starting;
+    }
+
+    public boolean isStarted() {
+        return this == Started;
+    }
+
+    public boolean isStopping() {
+        return this == Stopping;
+    }
+
+    public boolean isStopped() {
+        return this == Stopped;
+    }
+
+    public boolean isError() {
+        return this == Error;
     }
 }
