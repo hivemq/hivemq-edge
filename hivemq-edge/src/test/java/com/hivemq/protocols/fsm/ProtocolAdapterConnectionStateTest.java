@@ -46,7 +46,7 @@ public class ProtocolAdapterConnectionStateTest {
             ProtocolAdapterConnectionState.Disconnected,
             Set.of(ProtocolAdapterConnectionState.Connecting),
             ProtocolAdapterConnectionState.Disconnecting,
-            Set.of(ProtocolAdapterConnectionState.Connecting),
+            Set.of(ProtocolAdapterConnectionState.Connecting, ProtocolAdapterConnectionState.Disconnected),
             ProtocolAdapterConnectionState.Error,
             Set.of(ProtocolAdapterConnectionState.Disconnected),
             ProtocolAdapterConnectionState.ErrorClosing,
