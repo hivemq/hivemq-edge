@@ -279,7 +279,7 @@ public class BridgeService {
         }
 
         try {
-            bridgeAndClient.mqttClient().stop().get(10, TimeUnit.SECONDS);
+            bridgeAndClient.mqttClient().stop().get(30, TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Interrupted while stopping bridge '{}': {}", bridgeId, e.getMessage());
@@ -288,8 +288,17 @@ public class BridgeService {
             log.warn("Execution error while stopping bridge '{}': {}", bridgeId, e.getMessage());
             log.debug("Execution exception details", e);
         } catch (final TimeoutException e) {
-            log.warn("Timeout (10s) while stopping bridge '{}', proceeding with cleanup", bridgeId);
+            log.warn("Timeout (30s) while stopping bridge '{}', attempting forced disconnect", bridgeId);
             log.debug("Timeout exception details", e);
+            try {
+                // Attempt forced disconnect on timeout - the underlying client may still have pending reconnections
+                client.getMqtt5Client().disconnect().get(5, TimeUnit.SECONDS);
+                log.info("Forced disconnect of bridge '{}' succeeded", bridgeId);
+            } catch (final Exception forcedDisconnectEx) {
+                log.error("Forced disconnect of bridge '{}' failed, client may remain active: {}",
+                        bridgeId, forcedDisconnectEx.getMessage());
+                log.debug("Forced disconnect exception details", forcedDisconnectEx);
+            }
         } finally {
             final long durationMs = System.currentTimeMillis() - start;
             if (log.isInfoEnabled()) {

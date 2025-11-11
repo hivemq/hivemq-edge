@@ -366,6 +366,13 @@ public class BridgeMqttClient {
 
         //-- Bind connection listeners to maintain status
         builder.addConnectedListener(context -> {
+            // Check if this is a dangling client that reconnected after being stopped
+            if (stopped.get()) {
+                log.warn("Bridge '{}' connected but is marked as stopped - disconnecting immediately to prevent dangling client",
+                        bridge.getId());
+                mqtt5Client.disconnect();
+                return;
+            }
             log.info("Bridge '{}' connected to {}:{}", bridge.getId(), bridge.getHost(), bridge.getPort());
             connected.set(true);
             final int forwarderCount = forwarders.size();
@@ -400,8 +407,10 @@ public class BridgeMqttClient {
             //auto-reconnect
             if (stopped.get()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Bridge '{}' is stopped, not attempting reconnection", bridge.getId());
+                    log.debug("Bridge '{}' is stopped, canceling any pending reconnections", bridge.getId());
                 }
+                // Explicitly cancel reconnection to prevent dangling clients
+                context.getReconnector().reconnect(false);
                 return;
             }
             if (context.getSource() != MqttDisconnectSource.USER) {
