@@ -260,12 +260,55 @@ Agent Actions:
    - Updated after each subtask completion
    - Provides a complete historical record of task progress
 
-3. **CONVERSATION_SUBTASK_N.md** - Full conversation history for subtask N
+3. **CONVERSATION_SUBTASK_N.md** - Decisions and execution record for subtask N
 
-   - One file per subtask (where N is the subtask number from TASK_SUMMARY)
-   - Contains the complete dialogue and decision-making process
-   - Records all feedback, iterations, and problem-solving steps
-   - Preserves context for understanding how subtask was completed
+   - **PURPOSE**: Record DECISIONS made and ACTIONS taken, NOT chat history
+   - **KEEP IT CONCISE**: Focus on WHY decisions were made and WHAT was done
+   - **ONE FILE PER SUBTASK**: Where N is the subtask number from TASK_SUMMARY
+
+   **WHAT TO INCLUDE**:
+
+   - ✅ Key decisions and rationale
+   - ✅ Technical approach chosen
+   - ✅ Files created/modified
+   - ✅ Problems encountered and solutions
+   - ✅ Next actions needed
+
+   **WHAT TO EXCLUDE**:
+
+   - ❌ Code snippets (code is in the codebase)
+   - ❌ Step-by-step implementation details
+   - ❌ Full error messages and stack traces
+   - ❌ Multiple versions of the same information
+   - ❌ Conversational back-and-forth
+
+   **LENGTH GUIDELINE**: Aim for 50-150 lines, MAX 200 lines
+
+   **GOOD EXAMPLE**:
+
+   ```
+   ## Decision: Use TypeScript .d.ts for type definitions
+   - User wanted maintainable approach, not hardcoded strings
+   - Implemented Vite `?raw` import
+   - Result: Single source of truth, easy to edit
+
+   ### Files Changed
+   - datahub-transforms.d.ts (created)
+   - javascript.config.ts (loads types)
+   ```
+
+   **BAD EXAMPLE** (too verbose):
+
+   ```
+   I tried approach A which failed because...
+   Then I realized I should try B...
+   Here's the code I wrote:
+   [100 lines of code]
+   But that had an error:
+   [50 lines of stack trace]
+   So then I fixed it by...
+   [another 100 lines of code]
+   ```
 
 4. **SESSION_FEEDBACK.md** - Lessons learned and retrospective notes
 

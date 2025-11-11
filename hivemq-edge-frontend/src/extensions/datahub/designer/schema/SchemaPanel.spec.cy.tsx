@@ -33,6 +33,11 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
 describe('SchemaPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+
+    // Ignore Monaco worker loading errors
+    cy.on('uncaught:exception', (err) => {
+      return !(err.message.includes('importScripts') || err.message.includes('worker'))
+    })
   })
 
   it('should render loading and error states', () => {
@@ -109,7 +114,7 @@ describe('SchemaPanel', () => {
   })
 
   it('should load an existing schema', () => {
-    cy.intercept('/api/v1/data-hub/schemas', { items: [{ ...mockSchemaTempHumidity, type: SchemaType.PROTOBUF }] })
+    cy.intercept('/api/v1/data-hub/schemas', { items: [{ ...mockSchemaTempHumidity, type: SchemaType.JSON }] })
     cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
 
     // Select an existing schema
@@ -119,15 +124,14 @@ describe('SchemaPanel', () => {
 
     // Verify existing schema loaded
     cy.get('#root_name-label + div').should('contain.text', 'my-schema-id')
-    cy.get('#root_type-label + div').should('contain.text', 'PROTOBUF')
+    cy.get('#root_type-label + div').should('contain.text', 'JSON')
     cy.get('#root_version-label + div').should('contain.text', '1')
 
-    // Verify type is disabled and version is enabled
-    cy.get('#root_type-label + div input').should('be.disabled')
+    cy.get('#root_type-label + div input').should('not.be.disabled')
     cy.get('#root_version-label + div input').should('not.be.disabled')
 
     // Verify Monaco Editor shows the schema
-    cy.get('#root_schemaSource').find('.monaco-editor').should('be.visible')
+    cy.get('#root_schemaSource', { timeout: 10000 }).find('.monaco-editor').should('be.visible')
   })
 
   it('should handle schema type changes correctly', () => {
@@ -153,7 +157,7 @@ describe('SchemaPanel', () => {
   })
 
   it('should show MODIFIED state when schema is edited', () => {
-    cy.intercept('/api/v1/data-hub/schemas', { items: [{ ...mockSchemaTempHumidity, type: SchemaType.PROTOBUF }] })
+    cy.intercept('/api/v1/data-hub/schemas', { items: [{ ...mockSchemaTempHumidity, type: SchemaType.JSON }] })
 
     const onFormChange = cy.stub().as('onFormChange')
     cy.mountWithProviders(<SchemaPanel selectedNode="3" onFormSubmit={onFormChange} />, { wrapper })
@@ -169,10 +173,7 @@ describe('SchemaPanel', () => {
     cy.get('#root_schemaSource').find('.monaco-editor').should('be.visible')
     cy.get('#root_schemaSource').find('.monaco-editor .view-lines').should('exist')
 
-    // To test the MODIFIED state, we verify the logic:
-    // When a loaded schema's schemaSource field changes, version should become MODIFIED
-    // Since we can't easily manipulate Monaco in component tests, we verify the UI state
-    cy.get('#root_type-label + div input').should('be.disabled')
+    cy.get('#root_type-label + div input').should('not.be.disabled')
     cy.get('#root_version-label + div input').should('not.be.disabled')
 
     // Verify that the version selector shows available versions

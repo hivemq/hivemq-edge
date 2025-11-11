@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Node } from '@xyflow/react'
 import type { CustomValidator, UiSchema } from '@rjsf/utils'
 import type { IChangeEvent } from '@rjsf/core'
@@ -28,6 +28,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onForm
   const { nodes } = useDataHubDraftStore()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
   const [formData, setFormData] = useState<SchemaData | null>(null)
+  const isProgrammaticUpdateRef = useRef(false)
 
   useEffect(() => {
     if (!allSchemas) return
@@ -46,10 +47,19 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onForm
 
   const onReactFlowSchemaFormChange = useCallback(
     (changeEvent: IChangeEvent, id?: string | undefined) => {
-      // id have form "root_XXXXXX", which makes the test unsafe
+      // Ignore onChange events triggered by programmatic updates
+      if (isProgrammaticUpdateRef.current) {
+        isProgrammaticUpdateRef.current = false
+        return
+      }
+
+      // TODO[NVL] id have form "root_XXXXXX", so conditions are not particularly type-safe as expected
+
+      // Handle name change - load schema/type or create a new draft
       if (id?.includes('name')) {
         const schema = allSchemas?.items?.findLast((schema) => schema.id === changeEvent.formData.name)
         if (schema) {
+          isProgrammaticUpdateRef.current = true
           setFormData({
             name: schema.id,
             type: enumFromStringValue(SchemaType, schema.type) || SchemaType.JSON,
@@ -58,7 +68,12 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onForm
             internalVersions: getSchemaFamilies(allSchemas?.items || [])[schema.id].versions,
             internalStatus: ResourceStatus.LOADED,
           })
+          // Reset flag after React processes the state update
+          queueMicrotask(() => {
+            isProgrammaticUpdateRef.current = false
+          })
         } else {
+          isProgrammaticUpdateRef.current = true
           setFormData({
             internalStatus: ResourceStatus.DRAFT,
             name: changeEvent.formData.name,
@@ -66,36 +81,80 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onForm
             version: ResourceWorkingVersion.DRAFT,
             schemaSource: MOCK_JSONSCHEMA_SCHEMA,
           })
+          // Reset flag after React processes the state update
+          queueMicrotask(() => {
+            isProgrammaticUpdateRef.current = false
+          })
         }
+        return
       }
+
+      // Handle type change - update schema source based on type
       if (id?.includes('type') && formData) {
         if (formData.type !== changeEvent.formData.type) {
+          isProgrammaticUpdateRef.current = true
           setFormData({
             ...formData,
             type: changeEvent.formData.type,
             schemaSource: changeEvent.formData.type === SchemaType.JSON ? MOCK_JSONSCHEMA_SCHEMA : MOCK_PROTOBUF_SCHEMA,
+            version:
+              formData.version === ResourceWorkingVersion.DRAFT
+                ? ResourceWorkingVersion.DRAFT
+                : ResourceWorkingVersion.MODIFIED,
+            internalStatus:
+              formData.internalStatus === ResourceStatus.DRAFT ? ResourceStatus.DRAFT : ResourceStatus.MODIFIED,
+          })
+          // Reset flag after React processes the state update
+          queueMicrotask(() => {
+            isProgrammaticUpdateRef.current = false
           })
         }
+        return
       }
-      if (id?.includes('schemaSource') && formData && formData.internalStatus === ResourceStatus.LOADED) {
-        setFormData({
-          ...formData,
-          version: ResourceWorkingVersion.MODIFIED,
-          internalStatus: ResourceStatus.MODIFIED,
-        })
-      }
+
+      // Handle version change - load specific version
       if (id?.includes('version') && formData) {
         const schema = allSchemas?.items?.find(
-          (schema) => schema.id === formData.name && schema.version?.toString() === changeEvent.formData.version
+          (schema) =>
+            schema.id === formData.name && schema.version?.toString() === changeEvent.formData.version.toString()
         )
 
         if (schema) {
+          isProgrammaticUpdateRef.current = true
           setFormData({
             ...formData,
             version: changeEvent.formData.version,
             schemaSource: atob(schema.schemaDefinition),
+            internalStatus: ResourceStatus.LOADED,
+          })
+          // Reset flag after React processes the state update
+          queueMicrotask(() => {
+            isProgrammaticUpdateRef.current = false
           })
         }
+        return
+      }
+
+      // Handle schemaSource change - mark as modified
+      if (id?.includes('schemaSource') && formData) {
+        if (formData.internalStatus === ResourceStatus.LOADED || formData.internalStatus === ResourceStatus.DRAFT) {
+          isProgrammaticUpdateRef.current = true
+          setFormData({
+            ...formData,
+            schemaSource: changeEvent.formData.schemaSource,
+            version:
+              formData.version === ResourceWorkingVersion.DRAFT
+                ? ResourceWorkingVersion.DRAFT
+                : ResourceWorkingVersion.MODIFIED,
+            internalStatus:
+              formData.internalStatus === ResourceStatus.DRAFT ? ResourceStatus.DRAFT : ResourceStatus.MODIFIED,
+          })
+          // Reset flag after React processes the state update
+          queueMicrotask(() => {
+            isProgrammaticUpdateRef.current = false
+          })
+        }
+        return
       }
     },
     [allSchemas?.items, formData]
@@ -135,12 +194,8 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onForm
   }
 
   const getUISchema = (schema: SchemaData | null): UiSchema => {
-    const { internalStatus, internalVersions } = schema || {}
+    const { internalVersions } = schema || {}
     return {
-      // 'ui:order':
-      //   internalStatus === ResourceStatus.DRAFT || !internalStatus
-      //     ? ['name', 'type', 'schemaSource', 'messageType', 'version']
-      //     : ['name', 'version', 'schemaSource', 'messageType', 'type'],
       name: {
         'ui:widget': 'datahub:schema-name',
         'ui:options': {
@@ -150,22 +205,11 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onForm
       version: {
         'ui:widget': 'datahub:version',
         'ui:options': {
-          readonly:
-            internalStatus === ResourceStatus.DRAFT || internalStatus === ResourceStatus.MODIFIED || !internalStatus,
           selectOptions: internalVersions,
         },
       },
-      type: {
-        'ui:options': {
-          readonly:
-            internalStatus === ResourceStatus.LOADED || internalStatus === ResourceStatus.MODIFIED || !internalStatus,
-        },
-      },
       schemaSource: {
-        'ui:widget': 'application/schema+json',
-        'ui:options': {
-          readonly: !internalStatus,
-        },
+        'ui:widget': schema?.type === SchemaType.PROTOBUF ? 'application/octet-stream' : 'application/schema+json',
       },
     }
   }

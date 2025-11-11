@@ -205,6 +205,171 @@ This approach:
 - ✅ More reliable (waits for actual readiness)
 - ✅ Self-documenting code (clear what you're waiting for)
 
+---
+
+## Testing Monaco IntelliSense: Integration Tests vs Component Tests
+
+### The Challenge with IntelliSense Testing
+
+Monaco's autocomplete/IntelliSense is particularly difficult to test with real user events in Cypress because:
+
+1. **Hidden textarea**: Monaco uses a hidden `<textarea>` with complex event handling
+2. **Non-deterministic timing**: Autocomplete triggers based on internal debouncing and parsing
+3. **Virtual rendering**: Suggestion widgets are rendered in a virtual layer
+4. **Complex keyboard events**: Monaco intercepts and transforms keyboard events
+
+### Attempted Approach: Real User Events
+
+```typescript
+// ❌ This approach is UNRELIABLE in Cypress
+it('should show autocomplete when user types', () => {
+  cy.get('.monaco-editor').click()
+  cy.realType('publish.') // Even with cypress-real-events
+  cy.get('.suggest-widget').should('be.visible') // Flaky!
+})
+```
+
+**Why it fails:**
+
+- Monaco's event handling is too complex for simulated events
+- Timing issues: autocomplete may not trigger reliably
+- Different behavior in headless mode vs headed mode
+- Tests become flaky and hard to maintain
+
+### Recommended Approach: Integration Tests via Monaco API
+
+Instead of simulating user events, test that Monaco is **correctly configured** by using the editor API:
+
+```typescript
+describe('Monaco IntelliSense - Integration Tests (Configuration Verification)', () => {
+  it('should provide autocomplete for publish parameter with JSDoc', () => {
+    const code = `/**
+ * @param {Publish} publish
+ */
+function transform(publish, context) {
+  publish.
+}`
+
+    cy.mountWithProviders(<JavascriptEditor value={code} />)
+    cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+    cy.wait(2000) // Allow Monaco to parse and configure
+
+    cy.window().then((win) => {
+      const editor = win.monaco.editor.getEditors()[0]
+
+      // Position cursor programmatically
+      editor.setPosition({ lineNumber: 5, column: 11 })
+      editor.focus()
+
+      // Trigger autocomplete via API
+      editor.trigger('test', 'editor.action.triggerSuggest', {})
+    })
+
+    // Verify autocomplete appears
+    cy.get('.monaco-editor .suggest-widget', { timeout: 5000 }).should('be.visible')
+  })
+})
+```
+
+**What this tests:**
+
+- ✅ Type definitions are loaded correctly
+- ✅ JSDoc parsing works
+- ✅ IntelliSense configuration is correct
+- ✅ Autocomplete widget can appear
+- ✅ Suggestions are generated for the types
+
+**What this doesn't test:**
+
+- ❌ Real user keyboard events
+- ❌ Natural autocomplete triggering (typing ".")
+- ❌ User-perceived behavior in production
+
+### Are These Real Component Tests?
+
+**Honest answer: No, they're integration tests.**
+
+These tests:
+
+- Mount a React component ✅
+- But then bypass the component interface ❌
+- Manipulate Monaco internals via `window.monaco` ❌
+- Test implementation details, not user behavior ❌
+
+**They're better described as:**
+
+- **Configuration verification tests** - ensuring Monaco is set up correctly
+- **Integration tests** - testing that our code integrates with Monaco API correctly
+- **API contract tests** - verifying the Monaco API behaves as expected
+
+### Recommended Testing Strategy
+
+**1. Integration Tests (Current Approach - Component Test Suite)**
+
+- Test Monaco configuration via API
+- Verify type definitions are loaded
+- Verify autocomplete can be triggered programmatically
+- Fast, reliable, stable
+
+```typescript
+// Keep these in CodeEditor.IntelliSense.spec.cy.tsx
+describe('Monaco IntelliSense - Integration Tests', () => {
+  // Use Monaco API to verify configuration
+})
+```
+
+**2. E2E Tests (Real User Behavior - E2E Test Suite)**
+
+- Test actual user typing in the full application
+- Verify autocomplete appears during real workflow
+- Slower, but tests actual user experience
+
+```typescript
+// Add to cypress/e2e/datahub/transform-editor.cy.ts
+describe('DataHub Transform Editor - User Workflow', () => {
+  it('shows autocomplete when editing transform function', () => {
+    cy.visit('/datahub/data-policies/new')
+    // Navigate to transform editor
+    cy.get('.javascript-editor').click()
+
+    // Real user typing (may be flaky, but tests real behavior)
+    cy.focused().type('console.')
+
+    // Check autocomplete appears (with generous timeout)
+    cy.get('.suggest-widget', { timeout: 10000 }).should('be.visible')
+  })
+})
+```
+
+**3. Manual Testing**
+
+- Final verification that IntelliSense works in real usage
+- Cannot be automated reliably
+
+### Summary: Best Practices for Monaco IntelliSense Tests
+
+| Test Type       | What to Test                | How to Test             | Location        |
+| --------------- | --------------------------- | ----------------------- | --------------- |
+| **Integration** | Monaco configured correctly | Monaco API calls        | Component tests |
+| **E2E**         | User can see autocomplete   | Real typing in full app | E2E tests       |
+| **Manual**      | Natural user experience     | Human testing           | N/A             |
+
+**For IntelliSense tests:**
+
+1. ✅ Keep current integration tests - they verify the feature is configured
+2. ✅ Rename describe blocks to be honest: "Integration Tests (Configuration Verification)"
+3. ✅ Add 1-2 E2E tests for real user workflow
+4. ✅ Accept that some things need manual verification
+
+**Key Insight:** Integration tests via Monaco API are **good enough** for CI/CD because:
+
+- They catch configuration bugs (missing types, wrong setup)
+- They're fast and stable
+- They don't break on minor UI changes
+- Real user behavior can be verified in E2E tests + manual testing
+
+---
+
 ## Recommendation
 
 For your SchemaPanel tests, I recommend:

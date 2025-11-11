@@ -1,1 +1,1 @@
-Of everything that stands, the end
+No safety or surprise, the end

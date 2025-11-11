@@ -49,7 +49,6 @@ export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagList
     }
 
     const handleDelete = (index: number) => {
-      console.log(index)
       const newValues = [...(props.formData || [])]
       newValues.splice(index, 1)
       props.onChange(newValues)
