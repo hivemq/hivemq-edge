@@ -60,7 +60,7 @@ const inferEntityTypeFromNode = (node: Node | undefined): EntityType => {
     case NodeTypes.ADAPTER_NODE:
       return EntityType.ADAPTER
     case NodeTypes.BRIDGE_NODE:
-      return EntityType.MQTT_BRIDGE
+      return EntityType.BRIDGE
     case NodeTypes.EDGE_NODE:
       return EntityType.EDGE_BROKER
     case NodeTypes.PULSE_NODE:

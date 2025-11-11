@@ -200,7 +200,7 @@ export interface WizardActions {
   clearGhostNodes: () => void
 
   /** Set an error message */
-  setError: (message: string) => void
+  setError: (message: string | null) => void
 
   /** Clear the current error */
   clearError: () => void
