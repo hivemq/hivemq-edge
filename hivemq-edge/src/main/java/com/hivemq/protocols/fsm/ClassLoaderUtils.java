@@ -18,9 +18,21 @@ package com.hivemq.protocols.fsm;
 
 import org.jetbrains.annotations.NotNull;
 
-public interface ProtocolAdapterTransition {
-    @NotNull ProtocolAdapterTransitionResponse transition(
-            final @NotNull ProtocolAdapterState toState,
-            final @NotNull ProtocolAdapterInstance session,
-            final @NotNull ProtocolAdapterTransitionRequest request);
+import java.util.function.Supplier;
+
+public final class ClassLoaderUtils {
+    private ClassLoaderUtils() {
+    }
+
+    public static <T> @NotNull T runWithContextLoader(
+            final @NotNull ClassLoader contextLoader,
+            final @NotNull Supplier<T> wrapperSupplier) {
+        final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(contextLoader);
+            return wrapperSupplier.get();
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
+    }
 }
