@@ -1140,11 +1140,9 @@
         "step_step_BRIDGE_0": "Review bridge preview",
         "step_step_BRIDGE_1": "Configure bridge settings",
         "step_step_COMBINER_0": "Select data sources",
-        "step_step_COMBINER_1": "Review combiner preview",
-        "step_step_COMBINER_2": "Configure combining logic",
-        "step_step_ASSET_MAPPER_0": "Select data sources and Pulse Agent",
-        "step_step_ASSET_MAPPER_1": "Review asset mapper preview",
-        "step_step_ASSET_MAPPER_2": "Configure asset mappings",
+        "step_step_COMBINER_1": "Configure combining logic",
+        "step_step_ASSET_MAPPER_0": "Select data sources",
+        "step_step_ASSET_MAPPER_1": "Configure asset mappings",
         "step_step_GROUP_0": "Select nodes to group",
         "step_step_GROUP_1": "Review group preview",
         "step_step_GROUP_2": "Configure group settings",
@@ -1171,8 +1169,60 @@
         "back": "Back",
         "submit": "Create Adapter"
       },
+      "bridge": {
+        "configure": "Configure Bridge",
+        "back": "Back",
+        "submit": "Create Bridge"
+      },
       "success": {
-        "adapterCreated": "{{name}} has been created successfully"
+        "adapterCreated": "{{name}} has been created successfully",
+        "bridgeCreated": "{{name}} has been created successfully"
+      },
+      "selection": {
+        "title": "Select Nodes",
+        "description_one": "Select at least {{count}} node to continue",
+        "description_other": "Select at least {{count}} nodes to continue",
+        "selected": "Selected",
+        "next": "Next",
+        "back": "Back",
+        "remove": "Remove from selection",
+        "clickToSelect": "Click nodes on the canvas to select them",
+        "minWarning_one": "Select at least {{count}} more node to continue",
+        "minWarning_other": "Select at least {{count}} more nodes to continue",
+        "maxExceeded_one": "Maximum of {{count}} node exceeded",
+        "maxExceeded_other": "Maximum of {{count}} nodes exceeded",
+        "maxReached": "Maximum reached",
+        "maxReachedDescription_one": "You can only select {{count}} node",
+        "maxReachedDescription_other": "You can only select {{count}} nodes",
+        "allowedTypes": "You can select:",
+        "selectMoreTooltip_one": "Select at least {{count}} node first",
+        "selectMoreTooltip_other": "Select at least {{count}} nodes first"
+      },
+      "combiner": {
+        "back": "Back to Selection",
+        "create": "Create Combiner",
+        "success": {
+          "title": "Combiner Created",
+          "message": "{{name}} has been created successfully"
+        },
+        "error": {
+          "title": "Creation Failed",
+          "message": "Failed to create combiner. Please try again."
+        }
+      },
+      "assetMapper": {
+        "back": "Back to Selection",
+        "create": "Create Asset Mapper",
+        "requiresPulse": "Pulse Asset Management capability required",
+        "pulseAgentRequired": "Pulse Agent automatically included",
+        "success": {
+          "title": "Asset Mapper Created",
+          "message": "{{name}} has been created successfully"
+        },
+        "error": {
+          "title": "Creation Failed",
+          "message": "Failed to create asset mapper. Please try again."
+        }
       }
     },
     "topicWheel": {

@@ -42,6 +42,19 @@ export const GHOST_STYLE_ENHANCED = {
 }
 
 /**
+ * Selectable ghost node styling - allows clicking to see edge highlighting
+ */
+export const GHOST_STYLE_SELECTABLE = {
+  opacity: 0.75,
+  border: '3px dashed #4299E1',
+  backgroundColor: '#EBF8FF',
+  boxShadow: '0 0 0 4px rgba(66, 153, 225, 0.4), 0 0 20px rgba(66, 153, 225, 0.6)',
+  pointerEvents: 'all' as const, // Allow interaction
+  cursor: 'pointer' as const,
+  transition: 'all 0.3s ease',
+}
+
+/**
  * Ghost edge styling
  */
 export const GHOST_EDGE_STYLE = {
@@ -114,47 +127,60 @@ export const createGhostBridge = (id: string, label: string = 'New Bridge'): Gho
 }
 
 /**
- * Create a ghost combiner node
+ * Create a ghost combiner node positioned near EDGE node
+ * Uses a UUID for the ID to satisfy validation requirements
  */
-export const createGhostCombiner = (id: string, label: string = 'New Combiner'): GhostNode => {
+export const createGhostCombiner = (id: string, edgeNode: Node, label: string = 'New Combiner'): GhostNode => {
+  // Position to the right of EDGE node
+  const pos = {
+    x: edgeNode.position.x + 400,
+    y: edgeNode.position.y,
+  }
+
+  // Generate a UUID for the combiner ID to satisfy validation
+  const combinerId = crypto.randomUUID()
+
   return {
     ...GHOST_BASE,
-    id: `ghost-${id}`,
-    type: 'COMBINER_NODE',
-    position: { x: 200, y: 200 },
+    id: `ghost-combiner-${id}`, // Node ID can be descriptive
+    type: NodeTypes.COMBINER_NODE,
+    position: pos,
+    selectable: true, // Override base - allow selection
+    draggable: false, // Keep non-draggable
+    connectable: false, // Keep non-connectable
     data: {
       isGhost: true,
-      label,
-      id: `ghost-${id}`,
+      label, // Required by GhostNode type
+      // Required Combiner fields
+      id: combinerId, // Use UUID for combiner data ID
+      name: label,
+      description: 'Preview of new combiner',
+      // sources: EntityReferenceList with empty items
+      sources: {
+        items: [],
+      },
+      // mappings: DataCombiningList with empty items
+      mappings: {
+        items: [],
+      },
+      // Status for node display
       status: {
         connection: 'STATELESS',
         runtime: 'STOPPED',
       },
     },
-    style: GHOST_STYLE,
+    style: GHOST_STYLE_SELECTABLE, // Use selectable style
   }
 }
 
 /**
  * Create a ghost asset mapper (Pulse) node
+ * Asset Mapper IS a Combiner, just with Pulse Agent auto-included in sources
+ * Reuse createGhostCombiner to avoid duplication
  */
-export const createGhostAssetMapper = (id: string, label: string = 'New Asset Mapper'): GhostNode => {
-  return {
-    ...GHOST_BASE,
-    id: `ghost-${id}`,
-    type: 'PULSE_NODE',
-    position: { x: 200, y: 200 },
-    data: {
-      isGhost: true,
-      label,
-      id: `ghost-${id}`,
-      status: {
-        connection: 'STATELESS',
-        runtime: 'STOPPED',
-      },
-    },
-    style: GHOST_STYLE,
-  }
+export const createGhostAssetMapper = (id: string, edgeNode: Node, label: string = 'New Asset Mapper'): GhostNode => {
+  // Asset Mapper uses exact same structure as Combiner
+  return createGhostCombiner(id, edgeNode, label)
 }
 
 /**
@@ -189,10 +215,16 @@ export const createGhostNodeForType = (entityType: EntityType, id: string = 'pre
       return createGhostAdapter(id)
     case EntityType.BRIDGE:
       return createGhostBridge(id)
-    case EntityType.COMBINER:
-      return createGhostCombiner(id)
-    case EntityType.ASSET_MAPPER:
-      return createGhostAssetMapper(id)
+    case EntityType.COMBINER: {
+      // Create combiner with dummy edge node position
+      const dummyEdgeNode = { position: { x: 0, y: 0 } } as Node
+      return createGhostCombiner(id, dummyEdgeNode)
+    }
+    case EntityType.ASSET_MAPPER: {
+      // Asset Mapper uses same structure as Combiner
+      const dummyEdgeNode = { position: { x: 0, y: 0 } } as Node
+      return createGhostAssetMapper(id, dummyEdgeNode)
+    }
     case EntityType.GROUP:
       return createGhostGroup(id)
     default:
@@ -339,6 +371,124 @@ export const createGhostAdapterGroup = (
   return {
     nodes: [adapterNode, deviceNode],
     edges: [edgeToEdge, edgeToDevice],
+  }
+}
+
+/**
+ * Calculate ghost bridge position using the same algorithm as real nodes
+ * Bridges appear below the EDGE node
+ */
+export const calculateGhostBridgePosition = (
+  nbBridges: number,
+  edgeNodePos: XYPosition
+): { bridgePos: XYPosition; hostPos: XYPosition } => {
+  // Calculate centered position for next bridge
+  const totalBridges = nbBridges + 1
+  const centerOffset = (totalBridges - 1) / 2
+
+  const bridgePos = {
+    x: edgeNodePos.x + POS_NODE_INC.x * (nbBridges - centerOffset),
+    y: edgeNodePos.y + POS_NODE_INC.y,
+  }
+
+  const hostPos = {
+    x: bridgePos.x,
+    y: bridgePos.y + 250, // HOST is 250px below BRIDGE
+  }
+
+  return { bridgePos, hostPos }
+}
+
+/**
+ * Create a complete ghost bridge group (BRIDGE + HOST + connections)
+ * This provides a full preview of what will be created
+ */
+export const createGhostBridgeGroup = (
+  id: string,
+  nbBridges: number,
+  edgeNode: Node,
+  label: string = 'New Bridge'
+): GhostNodeGroup => {
+  const { bridgePos, hostPos } = calculateGhostBridgePosition(nbBridges, edgeNode.position)
+
+  // Create BRIDGE ghost node
+  const bridgeNode: GhostNode = {
+    ...GHOST_BASE,
+    id: `ghost-bridge-${id}`,
+    type: NodeTypes.BRIDGE_NODE,
+    position: bridgePos,
+    sourcePosition: Position.Top,
+    data: {
+      isGhost: true,
+      label,
+      id: `ghost-bridge-${id}`,
+      status: {
+        connection: 'STATELESS',
+        runtime: 'STOPPED',
+      },
+    },
+    style: GHOST_STYLE_ENHANCED,
+  }
+
+  // Create HOST ghost node
+  const hostNode: GhostNode = {
+    ...GHOST_BASE,
+    id: `ghost-host-${id}`,
+    type: NodeTypes.HOST_NODE,
+    position: hostPos,
+    targetPosition: Position.Top,
+    data: {
+      isGhost: true,
+      label: `${label} Host`,
+    },
+    style: GHOST_STYLE_ENHANCED,
+  }
+
+  // Create edge from BRIDGE to EDGE node
+  const edgeToEdge: GhostEdge = {
+    id: `ghost-edge-bridge-to-edge-${id}`,
+    source: `ghost-bridge-${id}`,
+    target: IdStubs.EDGE_NODE,
+    targetHandle: 'Bottom',
+    type: EdgeTypes.DYNAMIC_EDGE,
+    focusable: false,
+    animated: true,
+    style: GHOST_EDGE_STYLE,
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: '#4299E1',
+    },
+    data: {
+      isGhost: true,
+    },
+  }
+
+  // Create edge from BRIDGE to HOST
+  const edgeToHost: GhostEdge = {
+    id: `ghost-edge-bridge-to-host-${id}`,
+    source: `ghost-bridge-${id}`,
+    target: `ghost-host-${id}`,
+    sourceHandle: 'Bottom',
+    type: EdgeTypes.DYNAMIC_EDGE,
+    focusable: false,
+    animated: true,
+    style: GHOST_EDGE_STYLE,
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: '#4299E1',
+    },
+    data: {
+      isGhost: true,
+    },
+  }
+
+  return {
+    nodes: [bridgeNode, hostNode],
+    edges: [edgeToEdge, edgeToHost],
   }
 }
 

@@ -44,6 +44,8 @@ export interface WizardStepConfig {
   descriptionKey: string
   /** Whether this step requires node selection */
   requiresSelection?: boolean
+  /** Selection constraints for this step */
+  selectionConstraints?: SelectionConstraints
   /** Whether this step requires configuration */
   requiresConfiguration?: boolean
   /** Whether this step shows ghost nodes */
@@ -64,6 +66,12 @@ export interface SelectionConstraints {
   requiredNodeIds?: string[]
   /** Whether to exclude nodes that are already in groups */
   excludeGrouped?: boolean
+  /** Custom filter function for advanced filtering (e.g., adapter capabilities) */
+  customFilter?: (node: Node) => boolean
+  /** Required protocol adapter capabilities (e.g., ['COMBINE']) - only for ADAPTER_NODE types */
+  requiresProtocolCapabilities?: string[]
+  /** Protocol adapter types data (for capability checking) - injected by WizardSelectionRestrictions */
+  _protocolAdapters?: Array<{ id: string | undefined; capabilities?: string[] }>
 }
 
 /**
