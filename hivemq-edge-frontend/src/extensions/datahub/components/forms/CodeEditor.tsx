@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import debug from 'debug'
 import { Editor, useMonaco } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
 import type { WidgetProps } from '@rjsf/utils'
@@ -9,22 +10,98 @@ import { FormControl, FormLabel, Text, useColorModeValue, useToken, VStack } fro
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { getChakra } from '@/components/rjsf/utils/getChakra'
+import monacoConfig from './monaco/monacoConfig'
+import { addDataHubActionsToEditor } from './monaco/languages/datahub-commands'
+
+const debugLogger = debug('DataHub:monaco')
 
 const CodeEditor = (lng: string, props: WidgetProps) => {
   const { t } = useTranslation('datahub')
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
   const monaco = useMonaco()
   const [isLoaded, setIsLoaded] = useState(false)
+  const [isConfigured, setIsConfigured] = useState(false)
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const isUserEditingRef = useRef(false)
+
+  // Debug logging
+  useEffect(() => {
+    debugLogger(`[${lng}] Monaco instance:`, monaco ? 'LOADED' : 'NOT LOADED')
+  }, [monaco, lng])
 
   const [editorBgLight, editorBgDark] = useToken('colors', ['white', 'gray.200'])
   const editorBackgroundColor = useColorModeValue(editorBgLight, editorBgDark)
 
   const { TextareaWidget } = generateWidgets()
 
+  /**
+   * Monaco Editor Keyboard Shortcuts:
+   *
+   * Code Completion:
+   * - Ctrl+Space (Windows/Linux) or Cmd+Space (Mac) - Manually trigger suggestions
+   * - Ctrl+I - Alternative trigger for suggestions
+   * - Tab - Accept selected suggestion
+   * - Enter - Accept selected suggestion
+   * - Esc - Dismiss suggestion widget
+   *
+   * Other:
+   * - Ctrl+/ - Toggle line comment
+   * - Ctrl+F - Find
+   * - Ctrl+H - Find and Replace
+   * - Alt+Up/Down - Move line up/down
+   */
   const handleEditorMount = (editor: editor.IStandaloneCodeEditor) => {
     editorRef.current = editor
+
+    // Add DataHub custom actions to JavaScript editors
+    if (lng === 'javascript' && monaco) {
+      try {
+        addDataHubActionsToEditor(editor, monaco)
+        debugLogger('[javascript] DataHub actions added to editor')
+      } catch (error) {
+        debugLogger('[javascript] Failed to add DataHub actions:', error)
+      }
+    }
+
+    // Fix: Monaco's keyboard handler doesn't process SPACE correctly in some contexts
+    // Manually handle SPACE key insertion
+    const editorDom = editor.getDomNode()
+    if (editorDom) {
+      editorDom.addEventListener(
+        'keydown',
+        (e) => {
+          if (e.key === ' ') {
+            // Monaco's keyboard handler is broken for SPACE - manually insert it
+            const position = editor.getPosition()
+            const model = editor.getModel()
+            if (position && model) {
+              e.preventDefault()
+              e.stopPropagation()
+
+              // Manually insert space
+              editor.executeEdits('keyboard', [
+                {
+                  range: {
+                    startLineNumber: position.lineNumber,
+                    startColumn: position.column,
+                    endLineNumber: position.lineNumber,
+                    endColumn: position.column,
+                  },
+                  text: ' ',
+                },
+              ])
+
+              // Move cursor after the space
+              editor.setPosition({
+                lineNumber: position.lineNumber,
+                column: position.column + 1,
+              })
+            }
+          }
+        },
+        { capture: true }
+      )
+    }
   }
 
   const handleEditorChange = (value: string | undefined) => {
@@ -51,44 +128,52 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
     }
   }, [props.value])
 
-  useEffect(() => {
-    if (monaco) {
-      setIsLoaded(true)
-    }
-  }, [monaco])
-
   const isReadOnly = useMemo(() => {
-    return props.readonly || props.options.readonly || props.disabled || props.options.disabled
+    return !!(props.readonly || props.options.readonly || props.disabled || props.options.disabled)
   }, [props.readonly, props.options.readonly, props.options.disabled, props.disabled])
 
   useEffect(() => {
-    if (monaco) {
-      monaco.editor.defineTheme('lightTheme', {
-        base: 'vs',
-        inherit: true,
-        rules: [],
-        colors: {
-          'editor.background': editorBackgroundColor,
-        },
-      })
-    }
+    if (monaco && !isConfigured) {
+      try {
+        debugLogger(`[${lng}] Configuring languages and themes...`)
+        // Configure all languages
+        monacoConfig.configureLanguages(monaco)
 
-    if (monaco && isReadOnly) {
-      monaco.editor.defineTheme('readOnlyTheme', {
-        base: 'vs',
-        inherit: false,
-        rules: [
-          { token: '', foreground: '#808080' }, // Gray for all tokens
-        ],
-        colors: {
-          'editor.foreground': '#808080',
-        },
+        // Configure themes
+        monacoConfig.configureThemes(monaco, {
+          backgroundColor: editorBackgroundColor,
+          isReadOnly,
+        })
+
+        setIsConfigured(true)
+        setIsLoaded(true)
+        debugLogger(`[${lng}] Configuration complete!`)
+      } catch (error) {
+        debugLogger(`[${lng}] Failed to configure:`, error)
+        setIsLoaded(true) // Fall back to basic editor
+      }
+    }
+  }, [monaco, isConfigured, editorBackgroundColor, isReadOnly, lng])
+
+  // Update theme when background color or readonly state changes
+  useEffect(() => {
+    if (monaco && isConfigured) {
+      monacoConfig.configureThemes(monaco, {
+        backgroundColor: editorBackgroundColor,
+        isReadOnly,
       })
     }
-  }, [monaco, isReadOnly, editorBackgroundColor])
+  }, [monaco, isConfigured, editorBackgroundColor, isReadOnly])
+
+  // Get enhanced editor options
+  const editorOptions = useMemo(() => {
+    if (!isConfigured) return { readOnly: isReadOnly }
+    return monacoConfig.getEditorOptions(lng, isReadOnly)
+  }, [lng, isReadOnly, isConfigured])
 
   if (!isLoaded) {
     const { options, ...rest } = props
+    debugLogger(`[${lng}] Monaco not loaded, using TextArea fallback`)
 
     return (
       <>
@@ -120,10 +205,12 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
           defaultValue={props.value}
           theme={isReadOnly ? 'readOnlyTheme' : 'lightTheme'}
           onChange={handleEditorChange}
-          onMount={handleEditorMount}
-          options={{ readOnly: isReadOnly }}
+          onMount={(editor) => {
+            handleEditorMount(editor)
+            debugLogger(`[${lng}] Monaco Editor mounted successfully`)
+          }}
+          options={editorOptions}
         />
-        )
       </VStack>
     </FormControl>
   )

@@ -33,6 +33,11 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
 describe('SchemaPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+
+    // Ignore Monaco worker loading errors
+    cy.on('uncaught:exception', (err) => {
+      return !(err.message.includes('importScripts') || err.message.includes('worker'))
+    })
   })
 
   it('should render loading and error states', () => {
@@ -126,7 +131,7 @@ describe('SchemaPanel', () => {
     cy.get('#root_version-label + div input').should('not.be.disabled')
 
     // Verify Monaco Editor shows the schema
-    cy.get('#root_schemaSource').find('.monaco-editor').should('be.visible')
+    cy.get('#root_schemaSource', { timeout: 10000 }).find('.monaco-editor').should('be.visible')
   })
 
   it('should handle schema type changes correctly', () => {

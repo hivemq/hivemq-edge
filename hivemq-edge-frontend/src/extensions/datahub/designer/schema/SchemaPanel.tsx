@@ -209,7 +209,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, onForm
         },
       },
       schemaSource: {
-        'ui:widget': 'application/schema+json',
+        'ui:widget': schema?.type === SchemaType.PROTOBUF ? 'application/octet-stream' : 'application/schema+json',
       },
     }
   }

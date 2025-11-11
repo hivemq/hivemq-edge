@@ -52,7 +52,6 @@ const ConfigurationPanel: FC<ConfigurationPanelProps> = ({ groupKeys, onSubmit }
                   validator={validator}
                   onChange={(e) => console.log('onChange', e)}
                   onSubmit={(e) => {
-                    console.log('onSubmit', e.formData.groups)
                     onSubmit(e.formData.groups)
                     onClose()
                   }}
