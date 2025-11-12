@@ -67,6 +67,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -211,13 +212,22 @@ public class BridgeMqttClient {
                                             perBridgeMetrics))
                                     .send());
                         }
-                        CompletableFuture.allOf(subFutures.build().toArray(new CompletableFuture[0])).thenRun(() -> {
-                            if (log.isInfoEnabled()) {
-                                log.info("Bridge '{}' started successfully", bridge.getId());
-                            }
-                            startFutureRef.getAndSet(null).set(null);
-                            operationState.set(OperationState.IDLE);
-                        });
+                        CompletableFuture.allOf(subFutures.build().toArray(new CompletableFuture[0]))
+                                .handle((result, exception) -> {
+                                    if (log.isInfoEnabled()) {
+                                        if (exception == null) {
+                                            log.info("Bridge '{}' started successfully", bridge.getId());
+                                        } else {
+                                            log.error("Bridge '{}' started with an internal error {}",
+                                                    bridge.getId(),
+                                                    exception.getMessage(),
+                                                    exception);
+                                        }
+                                    }
+                                    startFutureRef.getAndSet(null).set(null);
+                                    operationState.set(OperationState.IDLE);
+                                    return null;
+                                });
                         return null;
                     });
             return startFuture;
@@ -230,6 +240,18 @@ public class BridgeMqttClient {
     }
 
     public synchronized @NotNull ListenableFuture<Void> stop() {
+        final ListenableFuture<Void> startFuture = startFutureRef.get();
+        if (startFuture != null) {
+            try {
+                log.debug("Waiting for bridge '{}' is being started before it can be stopped", bridge.getId());
+                startFuture.get();
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.debug("Interrupted while waiting for bridge '{}' start", bridge.getId());
+            } catch (final ExecutionException e) {
+                log.debug("While waiting for bridge '{}' start, there is an error {}", bridge.getId(), e.getMessage());
+            }
+        }
         if (operationState.compareAndSet(OperationState.IDLE, OperationState.STOPPING) ||
                 operationState.compareAndSet(OperationState.STARTING, OperationState.STOPPING)) {
             log.info("Stopping bridge '{}'", bridge.getId());
