@@ -230,16 +230,20 @@ public class BridgeMqttClient {
     }
 
     public synchronized @NotNull ListenableFuture<Void> stop() {
-        if (operationState.compareAndSet(OperationState.IDLE, OperationState.STOPPING)) {
+        if (operationState.compareAndSet(OperationState.IDLE, OperationState.STOPPING) ||
+                operationState.compareAndSet(OperationState.STARTING, OperationState.STOPPING)) {
             log.info("Stopping bridge '{}'", bridge.getId());
             final SettableFuture<Void> stopFuture = SettableFuture.create();
             stopFutureRef.set(stopFuture);
             final long stopStartTime = log.isDebugEnabled() ? System.nanoTime() : 0;
             stopped.set(true);
-            CompletableFuture.allOf(mqtt5Client.disconnect()).thenRun(() -> {
+            mqtt5Client.disconnect().handle((result, exception) -> {
                 if (log.isDebugEnabled()) {
                     final long stopMicros = (System.nanoTime() - stopStartTime) / 1000;
                     log.debug("Bridge '{}' disconnected in {} μs", bridge.getId(), stopMicros);
+                    if (exception != null) {
+                        log.debug("Bridge '{}' disconnected with an internal error {}", bridge.getId(), exception.getMessage(), exception);
+                    }
                 }
                 stopFutureRef.getAndSet(null).set(null);
                 operationState.set(OperationState.IDLE);
@@ -247,6 +251,7 @@ public class BridgeMqttClient {
                 if (log.isInfoEnabled()) {
                     log.info("Bridge '{}' stopped successfully", bridge.getId());
                 }
+                return null;
             });
             return stopFuture;
         }
