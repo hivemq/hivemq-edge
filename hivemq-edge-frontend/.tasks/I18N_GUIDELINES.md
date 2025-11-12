@@ -242,6 +242,7 @@ const metadata = {
   "bridge": { "name": "..." }
 }
 
+
 // Use context pattern instead
 ```
 

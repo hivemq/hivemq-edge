@@ -2,7 +2,100 @@
 
 **Task ID:** 38111  
 **Created:** November 10, 2025  
-**Last Updated:** November 10, 2025
+**Last Updated:** November 11, 2025
+
+---
+
+## 🌟 Key Achievement: Reusable Interactive Selection System
+
+**Status:** ✅ Production-Ready  
+**Design Document:** [SUBTASK_9.25_SELECTION_DESIGN.md](./SUBTASK_9.25_SELECTION_DESIGN.md)  
+**Completed:** November 11, 2025
+
+### Overview
+
+The **Interactive Selection System** is a fully reusable, declarative pattern for wizard steps that require users to select nodes from the canvas. This system powers the Combiner, Asset Mapper, and Group wizards, providing:
+
+- **Visual Filtering:** Hides non-selectable nodes, highlights valid targets
+- **Ghost Nodes & Edges:** Real-time preview of connections as user selects
+- **Floating Panel:** Non-blocking UI showing selected nodes with validation
+- **Constraint Validation:** Declarative min/max, node type filtering
+- **Accessibility:** Proper ARIA labels, keyboard navigation, screen reader support
+
+### Architecture Components
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Selection System Flow                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. Wizard Metadata (Declarative Constraints)                   │
+│     ┌────────────────────────────────────────────────┐          │
+│     │ selectionConstraints: {                        │          │
+│     │   minNodes: 2,                                 │          │
+│     │   maxNodes: Infinity,                          │          │
+│     │   allowedNodeTypes: ['ADAPTER_NODE']           │          │
+│     │ }                                              │          │
+│     └────────────────────────────────────────────────┘          │
+│                          ↓                                       │
+│  2. WizardSelectionRestrictions (Visual Filtering)              │
+│     - Hides non-allowed nodes                                   │
+│     - Highlights selectable targets (blue border)               │
+│     - Creates ghost edges (selected → ghost combiner)           │
+│     - Manages ghost lifecycle (persist until wizard end)        │
+│                          ↓                                       │
+│  3. ReactFlowWrapper.onNodeClick (Event Handler)                │
+│     - Checks constraints                                        │
+│     - Toggles selection                                         │
+│     - Enforces max nodes                                        │
+│     - Shows toast on violation                                  │
+│                          ↓                                       │
+│  4. WizardSelectionPanel (Floating UI)                          │
+│     - Lists selected nodes (scrollable)                         │
+│     - Shows validation status                                   │
+│     - Provides "Next" button (disabled until valid)             │
+│     - Doesn't block canvas interaction                          │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Key Design Decisions
+
+1. **Declarative Constraints:** Wizard metadata defines what's selectable - no imperative code needed
+2. **React Flow Panel:** Floating UI instead of Drawer - doesn't block canvas
+3. **Ghost Persistence:** Ghost nodes/edges stay visible throughout wizard (not just selection step)
+4. **Selectable Ghost:** Ghost combiner can be clicked to highlight all edges
+5. **Proper Pluralization:** Uses i18next count-based pluralization (no "node(s)")
+
+### Usage Pattern
+
+```typescript
+// In wizardMetadata.ts - Define constraints declaratively
+{
+  index: 0,
+  requiresSelection: true,
+  selectionConstraints: {
+    minNodes: 2,
+    allowedNodeTypes: ['ADAPTER_NODE', 'BRIDGE_NODE'],
+  },
+}
+
+// That's it! System handles:
+// ✅ Visual filtering
+// ✅ Ghost edges
+// ✅ Validation
+// ✅ UI feedback
+```
+
+### Benefits
+
+- **Reusable:** Works for any wizard needing selection (Combiner, Asset Mapper, Group)
+- **Declarative:** Just specify constraints, system handles UX
+- **Accessible:** Full ARIA support, keyboard navigation
+- **Visual:** Real-time ghost preview, edge highlighting
+- **Maintainable:** Clean separation of concerns
+
+**See:** [SUBTASK_9.25_SELECTION_DESIGN.md](./SUBTASK_9.25_SELECTION_DESIGN.md) for complete design documentation.
 
 ---
 
