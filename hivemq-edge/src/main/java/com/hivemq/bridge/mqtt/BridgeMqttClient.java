@@ -67,7 +67,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -242,18 +241,16 @@ public class BridgeMqttClient {
     public synchronized @NotNull ListenableFuture<Void> stop() {
         stopped.set(true);
         final ListenableFuture<Void> startFuture = startFutureRef.get();
-        if (startFuture != null) {
+        if (startFuture != null && !startFuture.isCancelled()) {
             try {
                 log.debug("Waiting for bridge '{}' start before it can be stopped", bridge.getId());
-                startFuture.get();
+                startFuture.cancel(true);
                 log.debug("Bridge '{}' is started before it is stopped", bridge.getId());
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.debug("Interrupted while waiting for bridge '{}' start", bridge.getId());
             } catch (final Exception e) {
-                log.debug("While waiting for bridge '{}' start, there is an error {}", bridge.getId(), e.getMessage());
+                log.debug("While canceling bridge '{}' start, there is an error {}", bridge.getId(), e.getMessage());
             }
         }
+        startFutureRef.set(null);
         if (operationState.compareAndSet(OperationState.IDLE, OperationState.STOPPING) ||
                 operationState.compareAndSet(OperationState.STARTING, OperationState.STOPPING)) {
             log.info("Stopping bridge '{}'", bridge.getId());
@@ -438,13 +435,21 @@ public class BridgeMqttClient {
                     log.debug("Bridge '{}' is stopped, canceling any pending reconnections", bridge.getId());
                 }
                 final SettableFuture<Void> startFuture = startFutureRef.get();
-                if (startFuture != null) {
-                    startFuture.set(null);
-                    startFutureRef.set(null);
+                if (startFuture != null && !startFuture.isCancelled()) {
+                    try {
+                        startFuture.cancel(true);
+                    }  catch (final Exception e) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("While canceling bridge '{}' start, there is an error {}",
+                                    bridge.getId(),
+                                    e.getMessage());
+                        }
+                    }
                     if (log.isDebugEnabled()) {
                         log.debug("Bridge '{}' start process is canceled", bridge.getId());
                     }
                 }
+                startFutureRef.set(null);
                 // Explicitly cancel reconnection to prevent dangling clients
                 context.getReconnector().reconnect(false);
                 return;
