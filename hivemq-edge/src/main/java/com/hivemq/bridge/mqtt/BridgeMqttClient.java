@@ -243,7 +243,7 @@ public class BridgeMqttClient {
         final ListenableFuture<Void> startFuture = startFutureRef.get();
         if (startFuture != null) {
             try {
-                log.debug("Waiting for bridge '{}' is being started before it can be stopped", bridge.getId());
+                log.debug("Waiting for bridge '{}' start before it can be stopped", bridge.getId());
                 startFuture.get();
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
