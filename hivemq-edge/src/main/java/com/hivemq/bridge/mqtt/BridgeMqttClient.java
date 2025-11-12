@@ -246,10 +246,11 @@ public class BridgeMqttClient {
             try {
                 log.debug("Waiting for bridge '{}' start before it can be stopped", bridge.getId());
                 startFuture.get();
+                log.debug("Bridge '{}' is started before it is stopped", bridge.getId());
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.debug("Interrupted while waiting for bridge '{}' start", bridge.getId());
-            } catch (final ExecutionException e) {
+            } catch (final Exception e) {
                 log.debug("While waiting for bridge '{}' start, there is an error {}", bridge.getId(), e.getMessage());
             }
         }
@@ -435,6 +436,14 @@ public class BridgeMqttClient {
             if (stopped.get()) {
                 if (log.isDebugEnabled()) {
                     log.debug("Bridge '{}' is stopped, canceling any pending reconnections", bridge.getId());
+                }
+                final SettableFuture<Void> startFuture = startFutureRef.get();
+                if (startFuture != null) {
+                    startFuture.set(null);
+                    startFutureRef.set(null);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Bridge '{}' start process is canceled", bridge.getId());
+                    }
                 }
                 // Explicitly cancel reconnection to prevent dangling clients
                 context.getReconnector().reconnect(false);
