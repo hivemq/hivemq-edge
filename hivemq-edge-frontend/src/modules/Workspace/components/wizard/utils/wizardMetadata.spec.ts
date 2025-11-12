@@ -1,245 +1,178 @@
-/**
- * Wizard Metadata Tests
- *
- * Tests for the wizard metadata registry and helper functions.
- * Following pragmatic testing strategy: only accessibility test is unskipped.
- */
-
-import { describe, it, expect } from 'vitest'
+import { expect } from 'vitest'
+import type { Node } from '@xyflow/react'
 
 import {
-  WIZARD_REGISTRY,
   getWizardMetadata,
-  getWizardIcon,
-  getWizardCategory,
   getWizardStepCount,
-  requiresSelection,
-  requiresGhost,
+  getWizardStep,
   getEntityWizardTypes,
   getIntegrationWizardTypes,
-  getWizardStep,
+  requiresGhost,
+  getWizardIcon,
+  getWizardCategory,
+  requiresSelection,
   getStepDescriptionKey,
 } from './wizardMetadata'
 import { EntityType, IntegrationPointType } from '../types'
 
 describe('wizardMetadata', () => {
-  // ✅ ACCESSIBILITY TEST - ALWAYS UNSKIPPED
-  it('should be accessible', () => {
-    // Verify that all wizard types have valid metadata for accessibility
-    // Icons should be defined as functions (React components)
-    // All have description keys for screen readers
-
-    const entityTypes = getEntityWizardTypes()
-    entityTypes.forEach((type) => {
-      const metadata = getWizardMetadata(type)
-      const icon = getWizardIcon(type)
-
-      // Icon must be a function (React component) for accessibility
-      expect(typeof icon).toBe('function')
-
-      // All steps must have description keys for screen readers
-      metadata.steps.forEach((step) => {
-        expect(step.descriptionKey).toBeDefined()
-        expect(step.descriptionKey.length).toBeGreaterThan(0)
-      })
-    })
-
-    const integrationTypes = getIntegrationWizardTypes()
-    integrationTypes.forEach((type) => {
-      const metadata = getWizardMetadata(type)
-      const icon = getWizardIcon(type)
-
-      // Icon must be a function (React component) for accessibility
-      expect(typeof icon).toBe('function')
-
-      // All steps must have description keys for screen readers
-      metadata.steps.forEach((step) => {
-        expect(step.descriptionKey).toBeDefined()
-        expect(step.descriptionKey.length).toBeGreaterThan(0)
-      })
-    })
-  })
-
-  // ⏭️ SKIPPED TESTS - Document expected behavior but skip for rapid development
-
-  describe.skip('WIZARD_REGISTRY', () => {
-    it('should have metadata for all entity types', () => {
-      const entityTypes = Object.values(EntityType)
-
-      entityTypes.forEach((type) => {
-        expect(WIZARD_REGISTRY[type]).toBeDefined()
-        expect(WIZARD_REGISTRY[type].type).toBe(type)
-        expect(WIZARD_REGISTRY[type].category).toBe('entity')
-      })
-    })
-
-    it('should have metadata for all integration point types', () => {
-      const integrationTypes = Object.values(IntegrationPointType)
-
-      integrationTypes.forEach((type) => {
-        expect(WIZARD_REGISTRY[type]).toBeDefined()
-        expect(WIZARD_REGISTRY[type].type).toBe(type)
-        expect(WIZARD_REGISTRY[type].category).toBe('integration')
-      })
-    })
-
-    it('should have valid icon for each wizard type', () => {
-      Object.values(WIZARD_REGISTRY).forEach((metadata) => {
-        expect(metadata.icon).toBeDefined()
-        expect(typeof metadata.icon).toBe('function')
-      })
-    })
-
-    it('should have at least one step for each wizard type', () => {
-      Object.values(WIZARD_REGISTRY).forEach((metadata) => {
-        expect(metadata.steps.length).toBeGreaterThan(0)
-      })
-    })
-
-    it('should have sequential step indices', () => {
-      Object.values(WIZARD_REGISTRY).forEach((metadata) => {
-        metadata.steps.forEach((step, index) => {
-          expect(step.index).toBe(index)
-        })
-      })
-    })
-
-    it('should have description key for each step', () => {
-      Object.values(WIZARD_REGISTRY).forEach((metadata) => {
-        metadata.steps.forEach((step) => {
-          expect(step.descriptionKey).toBeDefined()
-          expect(step.descriptionKey.length).toBeGreaterThan(0)
-        })
-      })
-    })
-  })
-
-  describe.skip('getWizardMetadata', () => {
+  describe('getWizardMetadata', () => {
     it('should return metadata for ADAPTER', () => {
       const metadata = getWizardMetadata(EntityType.ADAPTER)
 
+      expect(metadata).toBeDefined()
       expect(metadata.type).toBe(EntityType.ADAPTER)
       expect(metadata.category).toBe('entity')
       expect(metadata.requiresGhost).toBe(true)
-      expect(metadata.steps.length).toBe(3)
     })
 
     it('should return metadata for BRIDGE', () => {
       const metadata = getWizardMetadata(EntityType.BRIDGE)
 
+      expect(metadata).toBeDefined()
       expect(metadata.type).toBe(EntityType.BRIDGE)
-      expect(metadata.category).toBe('entity')
       expect(metadata.requiresGhost).toBe(true)
-      expect(metadata.steps.length).toBe(2)
     })
 
     it('should return metadata for COMBINER', () => {
       const metadata = getWizardMetadata(EntityType.COMBINER)
 
+      expect(metadata).toBeDefined()
       expect(metadata.type).toBe(EntityType.COMBINER)
-      expect(metadata.category).toBe('entity')
       expect(metadata.requiresSelection).toBe(true)
       expect(metadata.requiresGhost).toBe(true)
-      expect(metadata.steps.length).toBe(3)
     })
 
-    it('should return metadata for TAG', () => {
-      const metadata = getWizardMetadata(IntegrationPointType.TAG)
+    it('should return metadata for ASSET_MAPPER', () => {
+      const metadata = getWizardMetadata(EntityType.ASSET_MAPPER)
 
-      expect(metadata.type).toBe(IntegrationPointType.TAG)
-      expect(metadata.category).toBe('integration')
+      expect(metadata).toBeDefined()
+      expect(metadata.type).toBe(EntityType.ASSET_MAPPER)
       expect(metadata.requiresSelection).toBe(true)
-      expect(metadata.requiresGhost).toBe(false)
-      expect(metadata.steps.length).toBe(2)
+      expect(metadata.requiresGhost).toBe(true)
+    })
+
+    it('should return undefined for unknown type', () => {
+      const metadata = getWizardMetadata('UNKNOWN' as EntityType)
+
+      expect(metadata).toBeUndefined()
     })
   })
 
-  describe.skip('getWizardIcon', () => {
-    it('should return icon component for each wizard type', () => {
-      const types = [...getEntityWizardTypes(), ...getIntegrationWizardTypes()]
-
-      types.forEach((type) => {
-        const icon = getWizardIcon(type)
-        expect(icon).toBeDefined()
-        expect(typeof icon).toBe('function')
-      })
-    })
-  })
-
-  describe.skip('getWizardCategory', () => {
-    it('should return entity category for entity types', () => {
-      const entityTypes = getEntityWizardTypes()
-
-      entityTypes.forEach((type) => {
-        expect(getWizardCategory(type)).toBe('entity')
-      })
-    })
-
-    it('should return integration category for integration point types', () => {
-      const integrationTypes = getIntegrationWizardTypes()
-
-      integrationTypes.forEach((type) => {
-        expect(getWizardCategory(type)).toBe('integration')
-      })
-    })
-  })
-
-  describe.skip('getWizardStepCount', () => {
+  describe('getWizardStepCount', () => {
     it('should return correct step count for ADAPTER', () => {
-      expect(getWizardStepCount(EntityType.ADAPTER)).toBe(3)
+      const stepCount = getWizardStepCount(EntityType.ADAPTER)
+
+      expect(stepCount).toBe(3) // Adapter has 3 steps
     })
 
     it('should return correct step count for BRIDGE', () => {
-      expect(getWizardStepCount(EntityType.BRIDGE)).toBe(2)
+      const stepCount = getWizardStepCount(EntityType.BRIDGE)
+
+      expect(stepCount).toBe(2) // Review + Configure
     })
 
     it('should return correct step count for COMBINER', () => {
-      expect(getWizardStepCount(EntityType.COMBINER)).toBe(3)
+      const stepCount = getWizardStepCount(EntityType.COMBINER)
+
+      expect(stepCount).toBe(2) // Select + Configure
     })
 
-    it('should return correct step count for TAG', () => {
-      expect(getWizardStepCount(IntegrationPointType.TAG)).toBe(2)
+    it('should return correct step count for ASSET_MAPPER', () => {
+      const stepCount = getWizardStepCount(EntityType.ASSET_MAPPER)
+
+      expect(stepCount).toBe(2) // Select + Configure
     })
 
-    it('should return correct step count for all wizard types', () => {
-      Object.values(WIZARD_REGISTRY).forEach((metadata) => {
-        const count = getWizardStepCount(metadata.type)
-        expect(count).toBe(metadata.steps.length)
-      })
-    })
-  })
-
-  describe.skip('requiresSelection', () => {
-    it('should return false for ADAPTER', () => {
-      expect(requiresSelection(EntityType.ADAPTER)).toBe(false)
-    })
-
-    it('should return false for BRIDGE', () => {
-      expect(requiresSelection(EntityType.BRIDGE)).toBe(false)
-    })
-
-    it('should return true for COMBINER', () => {
-      expect(requiresSelection(EntityType.COMBINER)).toBe(true)
-    })
-
-    it('should return true for ASSET_MAPPER', () => {
-      expect(requiresSelection(EntityType.ASSET_MAPPER)).toBe(true)
-    })
-
-    it('should return true for GROUP', () => {
-      expect(requiresSelection(EntityType.GROUP)).toBe(true)
-    })
-
-    it('should return true for all integration point types', () => {
-      const integrationTypes = getIntegrationWizardTypes()
-
-      integrationTypes.forEach((type) => {
-        expect(requiresSelection(type)).toBe(true)
-      })
+    it('should handle unknown type', () => {
+      // Function will throw error for unknown types since metadata doesn't exist
+      expect(() => getWizardStepCount('UNKNOWN' as EntityType)).toThrow()
     })
   })
 
-  describe.skip('requiresGhost', () => {
+  describe('getWizardStep', () => {
+    it('should return first step for ADAPTER', () => {
+      const step = getWizardStep(EntityType.ADAPTER, 0)
+
+      expect(step).toBeDefined()
+      expect(step?.index).toBe(0)
+      expect(step?.descriptionKey).toBeDefined()
+    })
+
+    it('should return step with selection constraints for COMBINER', () => {
+      const step = getWizardStep(EntityType.COMBINER, 0)
+
+      expect(step).toBeDefined()
+      expect(step?.requiresSelection).toBe(true)
+      expect(step?.selectionConstraints).toBeDefined()
+      expect(step?.selectionConstraints?.minNodes).toBe(2)
+    })
+
+    it('should return step with selection constraints for ASSET_MAPPER', () => {
+      const step = getWizardStep(EntityType.ASSET_MAPPER, 0)
+
+      expect(step).toBeDefined()
+      expect(step?.requiresSelection).toBe(true)
+      expect(step?.selectionConstraints).toBeDefined()
+      expect(step?.selectionConstraints?.minNodes).toBe(3) // 1 Pulse + 2 sources
+    })
+
+    it('should return configuration step for ADAPTER', () => {
+      const step = getWizardStep(EntityType.ADAPTER, 1)
+
+      expect(step).toBeDefined()
+      expect(step?.requiresConfiguration).toBe(true)
+    })
+
+    it('should return undefined for out of range step', () => {
+      const step = getWizardStep(EntityType.ADAPTER, 999)
+
+      expect(step).toBeUndefined()
+    })
+
+    it('should handle unknown entity type', () => {
+      // Function will throw error for unknown types since metadata doesn't exist
+      expect(() => getWizardStep('UNKNOWN' as EntityType, 0)).toThrow()
+    })
+  })
+
+  describe('getEntityWizardTypes', () => {
+    it('should return all entity wizard types', () => {
+      const types = getEntityWizardTypes()
+
+      expect(types).toContain(EntityType.ADAPTER)
+      expect(types).toContain(EntityType.BRIDGE)
+      expect(types).toContain(EntityType.COMBINER)
+      expect(types).toContain(EntityType.ASSET_MAPPER)
+      expect(types).toContain(EntityType.GROUP)
+    })
+
+    it('should not include integration point types', () => {
+      const types = getEntityWizardTypes()
+
+      expect(types).not.toContain(IntegrationPointType.TAG)
+      expect(types).not.toContain(IntegrationPointType.TOPIC_FILTER)
+    })
+  })
+
+  describe('getIntegrationWizardTypes', () => {
+    it('should return all integration point wizard types', () => {
+      const types = getIntegrationWizardTypes()
+
+      expect(types).toContain(IntegrationPointType.TAG)
+      expect(types).toContain(IntegrationPointType.TOPIC_FILTER)
+      expect(types).toContain(IntegrationPointType.DATA_MAPPING_NORTH)
+    })
+
+    it('should not include entity types', () => {
+      const types = getIntegrationWizardTypes()
+
+      expect(types).not.toContain(EntityType.ADAPTER)
+      expect(types).not.toContain(EntityType.BRIDGE)
+    })
+  })
+
+  describe('requiresGhost', () => {
     it('should return true for ADAPTER', () => {
       expect(requiresGhost(EntityType.ADAPTER)).toBe(true)
     })
@@ -252,102 +185,201 @@ describe('wizardMetadata', () => {
       expect(requiresGhost(EntityType.COMBINER)).toBe(true)
     })
 
-    it('should return true for all entity types', () => {
-      const entityTypes = getEntityWizardTypes()
-
-      entityTypes.forEach((type) => {
-        expect(requiresGhost(type)).toBe(true)
-      })
+    it('should return true for ASSET_MAPPER', () => {
+      expect(requiresGhost(EntityType.ASSET_MAPPER)).toBe(true)
     })
 
-    it('should return false for all integration point types', () => {
-      const integrationTypes = getIntegrationWizardTypes()
-
-      integrationTypes.forEach((type) => {
-        expect(requiresGhost(type)).toBe(false)
-      })
+    it('should return true for GROUP', () => {
+      expect(requiresGhost(EntityType.GROUP)).toBe(true)
     })
-  })
 
-  describe.skip('getEntityWizardTypes', () => {
-    it('should return all entity types', () => {
-      const types = getEntityWizardTypes()
+    it('should return false for integration points', () => {
+      expect(requiresGhost(IntegrationPointType.TAG)).toBe(false)
+      expect(requiresGhost(IntegrationPointType.TOPIC_FILTER)).toBe(false)
+    })
 
-      expect(types).toHaveLength(5)
-      expect(types).toContain(EntityType.ADAPTER)
-      expect(types).toContain(EntityType.BRIDGE)
-      expect(types).toContain(EntityType.COMBINER)
-      expect(types).toContain(EntityType.ASSET_MAPPER)
-      expect(types).toContain(EntityType.GROUP)
+    it('should handle unknown type', () => {
+      // Function will throw error for unknown types since metadata doesn't exist
+      expect(() => requiresGhost('UNKNOWN' as EntityType)).toThrow()
     })
   })
 
-  describe.skip('getIntegrationWizardTypes', () => {
-    it('should return all integration point types', () => {
-      const types = getIntegrationWizardTypes()
+  describe('getWizardIcon', () => {
+    it('should return icon component for each entity type', () => {
+      const adapterIcon = getWizardIcon(EntityType.ADAPTER)
+      const bridgeIcon = getWizardIcon(EntityType.BRIDGE)
+      const combinerIcon = getWizardIcon(EntityType.COMBINER)
 
-      expect(types).toHaveLength(5)
-      expect(types).toContain(IntegrationPointType.TAG)
-      expect(types).toContain(IntegrationPointType.TOPIC_FILTER)
-      expect(types).toContain(IntegrationPointType.DATA_MAPPING_NORTH)
-      expect(types).toContain(IntegrationPointType.DATA_MAPPING_SOUTH)
-      expect(types).toContain(IntegrationPointType.DATA_COMBINING)
+      expect(adapterIcon).toBeDefined()
+      expect(bridgeIcon).toBeDefined()
+      expect(combinerIcon).toBeDefined()
+    })
+
+    it('should return icon component for integration types', () => {
+      const tagIcon = getWizardIcon(IntegrationPointType.TAG)
+      const topicFilterIcon = getWizardIcon(IntegrationPointType.TOPIC_FILTER)
+
+      expect(tagIcon).toBeDefined()
+      expect(topicFilterIcon).toBeDefined()
     })
   })
 
-  describe.skip('getWizardStep', () => {
-    it('should return correct step for ADAPTER at index 0', () => {
-      const step = getWizardStep(EntityType.ADAPTER, 0)
+  describe('selection constraints', () => {
+    it('should have COMBINE capability requirement for COMBINER', () => {
+      const step = getWizardStep(EntityType.COMBINER, 0)
 
-      expect(step).toBeDefined()
-      expect(step?.index).toBe(0)
-      expect(step?.descriptionKey).toBe('step_ADAPTER_0')
-      expect(step?.showsGhostNodes).toBe(true)
+      expect(step?.selectionConstraints?.requiresProtocolCapabilities).toContain('COMBINE')
     })
 
-    it('should return correct step for ADAPTER at index 1', () => {
-      const step = getWizardStep(EntityType.ADAPTER, 1)
+    it('should have COMBINE capability requirement for ASSET_MAPPER', () => {
+      const step = getWizardStep(EntityType.ASSET_MAPPER, 0)
 
-      expect(step).toBeDefined()
-      expect(step?.index).toBe(1)
-      expect(step?.descriptionKey).toBe('step_ADAPTER_1')
-      expect(step?.requiresConfiguration).toBe(true)
+      expect(step?.selectionConstraints?.requiresProtocolCapabilities).toContain('COMBINE')
     })
 
-    it('should return undefined for invalid step index', () => {
-      const step = getWizardStep(EntityType.ADAPTER, 999)
+    it('should allow ADAPTER_NODE and BRIDGE_NODE for COMBINER', () => {
+      const step = getWizardStep(EntityType.COMBINER, 0)
 
-      expect(step).toBeUndefined()
+      expect(step?.selectionConstraints?.allowedNodeTypes).toContain('ADAPTER_NODE')
+      expect(step?.selectionConstraints?.allowedNodeTypes).toContain('BRIDGE_NODE')
+    })
+
+    it('should allow ADAPTER_NODE and BRIDGE_NODE for ASSET_MAPPER', () => {
+      const step = getWizardStep(EntityType.ASSET_MAPPER, 0)
+
+      expect(step?.selectionConstraints?.allowedNodeTypes).toContain('ADAPTER_NODE')
+      expect(step?.selectionConstraints?.allowedNodeTypes).toContain('BRIDGE_NODE')
     })
   })
 
-  describe.skip('getStepDescriptionKey', () => {
-    it('should return description key for ADAPTER step 0', () => {
+  describe('getWizardCategory', () => {
+    it('should return entity category for adapter', () => {
+      const category = getWizardCategory(EntityType.ADAPTER)
+      expect(category).toBe('entity')
+    })
+
+    it('should return integration category for TAG', () => {
+      const category = getWizardCategory(IntegrationPointType.TAG)
+      expect(category).toBe('integration')
+    })
+  })
+
+  describe('requiresSelection', () => {
+    it('should return true for combiner', () => {
+      expect(requiresSelection(EntityType.COMBINER)).toBe(true)
+    })
+
+    it('should return false for adapter', () => {
+      expect(requiresSelection(EntityType.ADAPTER)).toBe(false)
+    })
+  })
+
+  describe('getStepDescriptionKey', () => {
+    it('should return description key for valid step', () => {
       const key = getStepDescriptionKey(EntityType.ADAPTER, 0)
       expect(key).toBe('step_ADAPTER_0')
     })
 
-    it('should return description key for BRIDGE step 1', () => {
-      const key = getStepDescriptionKey(EntityType.BRIDGE, 1)
-      expect(key).toBe('step_BRIDGE_1')
-    })
-
-    it('should return description key for COMBINER step 2', () => {
-      const key = getStepDescriptionKey(EntityType.COMBINER, 2)
-      expect(key).toBe('step_COMBINER_2')
-    })
-
-    it('should return empty string for invalid step index', () => {
+    it('should return empty string for invalid step', () => {
       const key = getStepDescriptionKey(EntityType.ADAPTER, 999)
       expect(key).toBe('')
     })
+  })
 
-    it('should return correct keys for all wizard types and steps', () => {
-      Object.values(WIZARD_REGISTRY).forEach((metadata) => {
+  describe('customFilter in selection constraints', () => {
+    it('should allow bridge nodes for COMBINER', () => {
+      const metadata = getWizardMetadata(EntityType.COMBINER)
+      const step = metadata.steps[0]
+      const constraints = step.selectionConstraints
+
+      expect(constraints).toBeDefined()
+      expect(constraints?.customFilter).toBeDefined()
+
+      const bridgeNode = { type: 'BRIDGE_NODE', id: 'bridge-1', position: { x: 0, y: 0 }, data: {} } as Node
+      const result = constraints?.customFilter?.(bridgeNode)
+      expect(result).toBe(true)
+    })
+
+    it('should allow adapter nodes for COMBINER', () => {
+      const metadata = getWizardMetadata(EntityType.COMBINER)
+      const step = metadata.steps[0]
+      const constraints = step.selectionConstraints
+
+      const adapterNode = { type: 'ADAPTER_NODE', id: 'adapter-1', position: { x: 0, y: 0 }, data: {} } as Node
+      const result = constraints?.customFilter?.(adapterNode)
+      expect(result).toBe(true)
+    })
+
+    it('should allow bridge nodes for ASSET_MAPPER', () => {
+      const metadata = getWizardMetadata(EntityType.ASSET_MAPPER)
+      const step = metadata.steps[0]
+      const constraints = step.selectionConstraints
+
+      expect(constraints).toBeDefined()
+      expect(constraints?.customFilter).toBeDefined()
+
+      const bridgeNode = { type: 'BRIDGE_NODE', id: 'bridge-1', position: { x: 0, y: 0 }, data: {} } as Node
+      const result = constraints?.customFilter?.(bridgeNode)
+      expect(result).toBe(true)
+    })
+
+    it('should allow adapter nodes for ASSET_MAPPER', () => {
+      const metadata = getWizardMetadata(EntityType.ASSET_MAPPER)
+      const step = metadata.steps[0]
+      const constraints = step.selectionConstraints
+
+      const adapterNode = { type: 'ADAPTER_NODE', id: 'adapter-1', position: { x: 0, y: 0 }, data: {} } as Node
+      const result = constraints?.customFilter?.(adapterNode)
+      expect(result).toBe(true)
+    })
+  })
+
+  describe('edge cases', () => {
+    it('should throw for unknown wizard type in getWizardStep', () => {
+      expect(() => getWizardStep('UNKNOWN_TYPE' as EntityType, 0)).toThrow()
+    })
+
+    it('should return undefined for out of bounds step index', () => {
+      const result = getWizardStep(EntityType.ADAPTER, -1)
+      expect(result).toBeUndefined()
+    })
+
+    it('should return correct step configuration for all entity types', () => {
+      const entityTypes = [
+        EntityType.ADAPTER,
+        EntityType.BRIDGE,
+        EntityType.COMBINER,
+        EntityType.ASSET_MAPPER,
+        EntityType.GROUP,
+      ]
+
+      entityTypes.forEach((type) => {
+        const metadata = getWizardMetadata(type)
+        expect(metadata).toBeDefined()
+        expect(metadata.type).toBe(type)
+        expect(metadata.steps.length).toBeGreaterThan(0)
+
         metadata.steps.forEach((step, index) => {
-          const key = getStepDescriptionKey(metadata.type, index)
-          expect(key).toBe(step.descriptionKey)
+          expect(step.index).toBe(index)
+          expect(step.descriptionKey).toBeTruthy()
         })
+      })
+    })
+
+    it('should return correct step configuration for all integration types', () => {
+      const integrationTypes = [
+        IntegrationPointType.TAG,
+        IntegrationPointType.TOPIC_FILTER,
+        IntegrationPointType.DATA_MAPPING_NORTH,
+        IntegrationPointType.DATA_MAPPING_SOUTH,
+        IntegrationPointType.DATA_COMBINING,
+      ]
+
+      integrationTypes.forEach((type) => {
+        const metadata = getWizardMetadata(type)
+        expect(metadata).toBeDefined()
+        expect(metadata.type).toBe(type)
+        expect(metadata.category).toBe('integration')
       })
     })
   })

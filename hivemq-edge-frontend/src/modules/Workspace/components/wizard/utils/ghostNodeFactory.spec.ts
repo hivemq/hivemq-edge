@@ -1,11 +1,5 @@
-/**
- * Ghost Node Factory Tests
- *
- * Tests for ghost node factory functions.
- * Following pragmatic testing strategy: only accessibility test is unskipped.
- */
-
-import { describe, it, expect } from 'vitest'
+import { expect } from 'vitest'
+import type { Node, Edge } from '@xyflow/react'
 
 import {
   createGhostAdapter,
@@ -13,439 +7,525 @@ import {
   createGhostCombiner,
   createGhostAssetMapper,
   createGhostGroup,
-  createGhostNodeForType,
   isGhostNode,
   getGhostNodeIds,
   removeGhostNodes,
-  GHOST_STYLE,
-  GHOST_STYLE_ENHANCED,
-  GHOST_EDGE_STYLE,
-  createGhostAdapterGroup,
-  calculateGhostAdapterPosition,
-  isGhostEdge,
   removeGhostEdges,
+  createGhostNodeForType,
+  calculateGhostAdapterPosition,
+  createGhostAdapterGroup,
+  calculateGhostBridgePosition,
+  createGhostBridgeGroup,
+  isGhostEdge,
 } from './ghostNodeFactory'
 import { EntityType } from '../types'
+import { NodeTypes } from '@/modules/Workspace/types'
 
 describe('ghostNodeFactory', () => {
-  // ✅ ACCESSIBILITY TEST - ALWAYS UNSKIPPED
-  it('should be accessible', () => {
-    // Ghost nodes should have proper accessibility properties
-    const ghostNode = createGhostAdapter('test')
+  const mockEdgeNode: Node = {
+    id: 'EDGE_NODE',
+    type: 'EDGE_NODE',
+    position: { x: 100, y: 100 },
+    data: {},
+  }
 
-    // Should not be interactive (accessibility feature)
-    expect(ghostNode.draggable).toBe(false)
-    expect(ghostNode.selectable).toBe(false)
-    expect(ghostNode.connectable).toBe(false)
-
-    // Should have isGhost flag for screen readers to identify
-    expect(ghostNode.data.isGhost).toBe(true)
-
-    // Should have pointer-events: none for accessibility
-    expect(ghostNode.style?.pointerEvents).toBe('none')
-  })
-
-  // ⏭️ SKIPPED TESTS - Document expected behavior but skip for rapid development
-
-  describe.skip('createGhostAdapter', () => {
+  describe('createGhostAdapter', () => {
     it('should create a ghost adapter node', () => {
-      const node = createGhostAdapter('test-id')
+      const ghost = createGhostAdapter('test-id')
 
-      expect(node.id).toBe('ghost-test-id')
-      expect(node.type).toBe('ADAPTER_NODE')
-      expect(node.data.isGhost).toBe(true)
-      expect(node.data.label).toBe('New Adapter')
+      expect(ghost).toBeDefined()
+      expect(ghost.id).toBe('ghost-test-id')
+      expect(ghost.type).toBe('ADAPTER_NODE')
+      expect(ghost.data.isGhost).toBe(true)
+      expect(ghost.selectable).toBe(false)
+      expect(ghost.draggable).toBe(false)
     })
 
-    it('should accept custom label', () => {
-      const node = createGhostAdapter('test-id', 'My Custom Adapter')
+    it('should use provided label', () => {
+      const ghost = createGhostAdapter('test-id', 'Custom Label')
 
-      expect(node.data.label).toBe('My Custom Adapter')
-    })
-
-    it('should have ghost styling', () => {
-      const node = createGhostAdapter('test-id')
-
-      expect(node.style).toEqual(GHOST_STYLE)
-    })
-
-    it('should not be interactive', () => {
-      const node = createGhostAdapter('test-id')
-
-      expect(node.draggable).toBe(false)
-      expect(node.selectable).toBe(false)
-      expect(node.connectable).toBe(false)
+      expect(ghost.data.label).toBe('Custom Label')
     })
   })
 
-  describe.skip('createGhostBridge', () => {
+  // createGhostDevice - not exported, skipping test
+
+  describe('createGhostBridge', () => {
     it('should create a ghost bridge node', () => {
-      const node = createGhostBridge('test-id')
+      const ghost = createGhostBridge('test-id')
 
-      expect(node.id).toBe('ghost-test-id')
-      expect(node.type).toBe('BRIDGE_NODE')
-      expect(node.data.isGhost).toBe(true)
+      expect(ghost).toBeDefined()
+      expect(ghost.id).toBe('ghost-test-id')
+      expect(ghost.type).toBe('BRIDGE_NODE')
+      expect(ghost.data.isGhost).toBe(true)
     })
   })
 
-  describe.skip('createGhostCombiner', () => {
+  describe('createGhostCombiner', () => {
     it('should create a ghost combiner node', () => {
-      const node = createGhostCombiner('test-id')
+      const ghost = createGhostCombiner('test-id', mockEdgeNode)
 
-      expect(node.id).toBe('ghost-test-id')
-      expect(node.type).toBe('COMBINER_NODE')
-      expect(node.data.isGhost).toBe(true)
+      expect(ghost).toBeDefined()
+      expect(ghost.id).toContain('ghost-combiner')
+      expect(ghost.type).toBe('COMBINER_NODE')
+      expect(ghost.data.isGhost).toBe(true)
+      expect(ghost.selectable).toBe(true) // Combiner ghost is selectable
+    })
+
+    it('should position relative to edge node', () => {
+      const ghost = createGhostCombiner('test-id', mockEdgeNode)
+
+      expect(ghost.position.x).toBeGreaterThan(mockEdgeNode.position.x)
+      expect(ghost.position.y).toBe(mockEdgeNode.position.y)
+    })
+
+    it('should have sources and mappings structure', () => {
+      const ghost = createGhostCombiner('test-id', mockEdgeNode)
+
+      expect(ghost.data).toBeDefined()
+      // Type assertion needed for dynamic data structure
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = ghost.data as any
+      expect(data.sources).toBeDefined()
+      expect(data.sources.items).toEqual([])
+      expect(data.mappings).toBeDefined()
+      expect(data.mappings.items).toEqual([])
+    })
+
+    it('should have UUID for ID validation', () => {
+      const ghost = createGhostCombiner('test-id', mockEdgeNode)
+
+      // UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      expect(ghost.data.id).toMatch(uuidRegex)
     })
   })
 
-  describe.skip('createGhostAssetMapper', () => {
+  describe('createGhostAssetMapper', () => {
     it('should create a ghost asset mapper node', () => {
-      const node = createGhostAssetMapper('test-id')
+      const ghost = createGhostAssetMapper('test-id', mockEdgeNode)
 
-      expect(node.id).toBe('ghost-test-id')
-      expect(node.type).toBe('PULSE_NODE')
-      expect(node.data.isGhost).toBe(true)
+      expect(ghost).toBeDefined()
+      expect(ghost.type).toBe('COMBINER_NODE') // Asset Mapper IS a Combiner
+      expect(ghost.data.isGhost).toBe(true)
+    })
+
+    it('should reuse Combiner structure', () => {
+      const combinerGhost = createGhostCombiner('test-id', mockEdgeNode, 'Test Combiner')
+      const assetMapperGhost = createGhostAssetMapper('test-id', mockEdgeNode, 'Test Asset Mapper')
+
+      // Should have same structure (both use createGhostCombiner)
+      expect(assetMapperGhost.type).toBe(combinerGhost.type)
+      expect(assetMapperGhost.data.sources).toBeDefined()
+      expect(assetMapperGhost.data.mappings).toBeDefined()
     })
   })
 
-  describe.skip('createGhostGroup', () => {
+  describe('createGhostGroup', () => {
     it('should create a ghost group node', () => {
-      const node = createGhostGroup('test-id')
+      const ghost = createGhostGroup('test-id')
 
-      expect(node.id).toBe('ghost-test-id')
-      expect(node.type).toBe('CLUSTER_NODE')
-      expect(node.data.isGhost).toBe(true)
+      expect(ghost.id).toBe('ghost-test-id')
+      expect(ghost.type).toBe('CLUSTER_NODE')
+      expect(ghost.data.isGhost).toBe(true)
+      expect(ghost.data.label).toBe('New Group')
+      expect(ghost.data.childrenNodeIds).toEqual([])
     })
 
-    it('should have larger dimensions', () => {
-      const node = createGhostGroup('test-id')
+    it('should use custom label', () => {
+      const ghost = createGhostGroup('test-id', 'My Custom Group')
 
-      expect(node.style?.width).toBe(300)
-      expect(node.style?.height).toBe(200)
-    })
-  })
-
-  describe.skip('createGhostNodeForType', () => {
-    it('should create adapter for ADAPTER type', () => {
-      const node = createGhostNodeForType(EntityType.ADAPTER)
-
-      expect(node).not.toBeNull()
-      expect(node?.type).toBe('ADAPTER_NODE')
+      expect(ghost.data.label).toBe('My Custom Group')
     })
 
-    it('should create bridge for BRIDGE type', () => {
-      const node = createGhostNodeForType(EntityType.BRIDGE)
+    it('should have correct dimensions', () => {
+      const ghost = createGhostGroup('test-id')
 
-      expect(node).not.toBeNull()
-      expect(node?.type).toBe('BRIDGE_NODE')
-    })
-
-    it('should create combiner for COMBINER type', () => {
-      const node = createGhostNodeForType(EntityType.COMBINER)
-
-      expect(node).not.toBeNull()
-      expect(node?.type).toBe('COMBINER_NODE')
-    })
-
-    it('should create asset mapper for ASSET_MAPPER type', () => {
-      const node = createGhostNodeForType(EntityType.ASSET_MAPPER)
-
-      expect(node).not.toBeNull()
-      expect(node?.type).toBe('PULSE_NODE')
-    })
-
-    it('should create group for GROUP type', () => {
-      const node = createGhostNodeForType(EntityType.GROUP)
-
-      expect(node).not.toBeNull()
-      expect(node?.type).toBe('CLUSTER_NODE')
-    })
-
-    it('should use custom id', () => {
-      const node = createGhostNodeForType(EntityType.ADAPTER, 'custom-id')
-
-      expect(node?.id).toBe('ghost-custom-id')
+      expect(ghost.style?.width).toBe(300)
+      expect(ghost.style?.height).toBe(200)
     })
   })
 
-  describe.skip('isGhostNode', () => {
-    it('should return true for ghost nodes', () => {
-      const ghostNode = createGhostAdapter('test')
+  describe('createGhostNodeForType', () => {
+    it('should create ghost adapter for ADAPTER type', () => {
+      const ghost = createGhostNodeForType(EntityType.ADAPTER, 'test-id')
+
+      expect(ghost).not.toBeNull()
+      expect(ghost?.type).toBe(NodeTypes.ADAPTER_NODE)
+    })
+
+    it('should create ghost bridge for BRIDGE type', () => {
+      const ghost = createGhostNodeForType(EntityType.BRIDGE, 'test-id')
+
+      expect(ghost).not.toBeNull()
+      expect(ghost?.type).toBe(NodeTypes.BRIDGE_NODE)
+    })
+
+    it('should create ghost combiner for COMBINER type', () => {
+      const ghost = createGhostNodeForType(EntityType.COMBINER, 'test-id')
+
+      expect(ghost).not.toBeNull()
+      expect(ghost?.type).toBe(NodeTypes.COMBINER_NODE)
+    })
+
+    it('should create ghost combiner for ASSET_MAPPER type', () => {
+      const ghost = createGhostNodeForType(EntityType.ASSET_MAPPER, 'test-id')
+
+      expect(ghost).not.toBeNull()
+      expect(ghost?.type).toBe(NodeTypes.COMBINER_NODE)
+    })
+
+    it('should create ghost group for GROUP type', () => {
+      const ghost = createGhostNodeForType(EntityType.GROUP, 'test-id')
+
+      expect(ghost).not.toBeNull()
+      expect(ghost?.type).toBe('CLUSTER_NODE')
+    })
+
+    it('should return null for unknown type', () => {
+      const ghost = createGhostNodeForType('UNKNOWN_TYPE' as EntityType, 'test-id')
+
+      expect(ghost).toBeNull()
+    })
+  })
+
+  describe('calculateGhostAdapterPosition', () => {
+    it('should calculate position for first adapter', () => {
+      const edgeNodePos = { x: 500, y: 300 }
+      const { adapterPos, devicePos } = calculateGhostAdapterPosition(0, edgeNodePos)
+
+      expect(adapterPos).toBeDefined()
+      expect(devicePos).toBeDefined()
+      expect(devicePos.y).toBeLessThan(adapterPos.y) // Device is above adapter
+    })
+
+    it('should calculate positions for multiple adapters', () => {
+      const edgeNodePos = { x: 500, y: 300 }
+      const pos1 = calculateGhostAdapterPosition(0, edgeNodePos)
+      const pos2 = calculateGhostAdapterPosition(1, edgeNodePos)
+      const pos3 = calculateGhostAdapterPosition(2, edgeNodePos)
+
+      // Positions should vary as adapters are added
+      expect(pos1.adapterPos).toBeDefined()
+      expect(pos2.adapterPos).toBeDefined()
+      expect(pos3.adapterPos).toBeDefined()
+
+      // Y positions should match (same row until MAX_ADAPTERS)
+      expect(pos1.adapterPos.y).toBe(pos2.adapterPos.y)
+    })
+
+    it('should handle multiple rows when exceeding MAX_ADAPTERS', () => {
+      const edgeNodePos = { x: 500, y: 300 }
+      const pos = calculateGhostAdapterPosition(10, edgeNodePos) // More than MAX_ADAPTERS (6)
+
+      expect(pos.adapterPos.y).toBeLessThan(edgeNodePos.y) // Should be in a different row
+    })
+  })
+
+  describe('createGhostAdapterGroup', () => {
+    it('should create adapter with device node and edges', () => {
+      const edgeNode = { id: 'EDGE_NODE', position: { x: 500, y: 300 } } as Node
+      const group = createGhostAdapterGroup('test-id', 0, edgeNode)
+
+      expect(group.nodes).toHaveLength(2) // Adapter + Device
+      expect(group.edges).toHaveLength(2) // Adapter->Edge + Device->Adapter
+    })
+
+    it('should use custom label', () => {
+      const edgeNode = { id: 'EDGE_NODE', position: { x: 500, y: 300 } } as Node
+      const group = createGhostAdapterGroup('test-id', 0, edgeNode, 'Custom Adapter')
+
+      const adapterNode = group.nodes.find((n) => n.type === NodeTypes.ADAPTER_NODE)
+      expect(adapterNode?.data.label).toBe('Custom Adapter')
+    })
+
+    it('should create edges with correct source and target', () => {
+      const edgeNode = { id: 'EDGE_NODE', position: { x: 500, y: 300 } } as Node
+      const group = createGhostAdapterGroup('test-id', 0, edgeNode)
+
+      const edgeToEdge = group.edges.find((e) => e.target === 'edge') // IdStubs.EDGE_NODE = 'edge'
+      expect(edgeToEdge).toBeDefined()
+      expect(edgeToEdge?.source).toBe('ghost-adapter-test-id')
+
+      const edgeToDevice = group.edges.find((e) => e.target === 'ghost-adapter-test-id')
+      expect(edgeToDevice).toBeDefined()
+      expect(edgeToDevice?.source).toBe('ghost-device-test-id')
+    })
+
+    it('should set ghost edges to animated', () => {
+      const edgeNode = { id: 'EDGE_NODE', position: { x: 500, y: 300 } } as Node
+      const group = createGhostAdapterGroup('test-id', 0, edgeNode)
+
+      group.edges.forEach((edge) => {
+        expect(edge.animated).toBe(true)
+        expect(edge.data?.isGhost).toBe(true)
+      })
+    })
+  })
+
+  describe('calculateGhostBridgePosition', () => {
+    it('should calculate position for first bridge', () => {
+      const edgeNodePos = { x: 500, y: 300 }
+      const { bridgePos, hostPos } = calculateGhostBridgePosition(0, edgeNodePos)
+
+      expect(bridgePos).toBeDefined()
+      expect(hostPos).toBeDefined()
+      expect(hostPos.y).toBeGreaterThan(bridgePos.y) // Host is below bridge
+    })
+
+    it('should calculate centered positions for multiple bridges', () => {
+      const edgeNodePos = { x: 500, y: 300 }
+      const pos1 = calculateGhostBridgePosition(0, edgeNodePos)
+      const pos2 = calculateGhostBridgePosition(1, edgeNodePos)
+
+      expect(pos1.bridgePos.x).not.toBe(pos2.bridgePos.x)
+    })
+
+    it('should maintain 250px vertical spacing between bridge and host', () => {
+      const edgeNodePos = { x: 500, y: 300 }
+      const { bridgePos, hostPos } = calculateGhostBridgePosition(0, edgeNodePos)
+
+      expect(hostPos.y - bridgePos.y).toBe(250)
+    })
+  })
+
+  describe('createGhostBridgeGroup', () => {
+    it('should create bridge with host node and edges', () => {
+      const edgeNode = { id: 'EDGE_NODE', position: { x: 500, y: 300 } } as Node
+      const group = createGhostBridgeGroup('test-id', 0, edgeNode)
+
+      expect(group.nodes).toHaveLength(2) // Bridge + Host
+      expect(group.edges).toHaveLength(2) // Bridge->Edge + Bridge->Host
+    })
+
+    it('should use custom label', () => {
+      const edgeNode = { id: 'EDGE_NODE', position: { x: 500, y: 300 } } as Node
+      const group = createGhostBridgeGroup('test-id', 0, edgeNode, 'Custom Bridge')
+
+      const bridgeNode = group.nodes.find((n) => n.type === NodeTypes.BRIDGE_NODE)
+      expect(bridgeNode?.data.label).toBe('Custom Bridge')
+    })
+
+    it('should create edges with correct source and target', () => {
+      const edgeNode = { id: 'EDGE_NODE', position: { x: 500, y: 300 } } as Node
+      const group = createGhostBridgeGroup('test-id', 0, edgeNode)
+
+      const edgeToEdge = group.edges.find((e) => e.target === 'edge') // IdStubs.EDGE_NODE = 'edge'
+      expect(edgeToEdge).toBeDefined()
+      expect(edgeToEdge?.source).toBe('ghost-bridge-test-id')
+
+      const edgeToHost = group.edges.find((e) => e.target === 'ghost-host-test-id')
+      expect(edgeToHost).toBeDefined()
+      expect(edgeToHost?.source).toBe('ghost-bridge-test-id')
+    })
+
+    it('should set correct handles for edges', () => {
+      const edgeNode = { id: 'EDGE_NODE', position: { x: 500, y: 300 } } as Node
+      const group = createGhostBridgeGroup('test-id', 0, edgeNode)
+
+      const edgeToEdge = group.edges.find((e) => e.target === 'edge') // IdStubs.EDGE_NODE = 'edge'
+      expect(edgeToEdge).toBeDefined()
+      expect(edgeToEdge?.targetHandle).toBe('Bottom')
+
+      const edgeToHost = group.edges.find((e) => e.target === 'ghost-host-test-id')
+      expect(edgeToHost).toBeDefined()
+      expect(edgeToHost?.sourceHandle).toBe('Bottom')
+    })
+  })
+
+  describe('isGhostNode', () => {
+    it('should identify ghost nodes', () => {
+      const ghostNode = createGhostAdapter('test-id')
 
       expect(isGhostNode(ghostNode)).toBe(true)
     })
 
-    it('should return false for regular nodes', () => {
-      const regularNode = {
-        id: 'regular',
+    it('should identify real nodes', () => {
+      const realNode = {
+        id: 'real-1',
+        type: 'ADAPTER_NODE',
+        position: { x: 0, y: 0 },
         data: { isGhost: false },
       }
 
-      expect(isGhostNode(regularNode)).toBe(false)
+      expect(isGhostNode(realNode)).toBe(false)
     })
 
-    it('should return false for nodes without isGhost flag', () => {
+    it('should handle nodes without data', () => {
       const node = {
-        id: 'regular',
+        data: undefined,
+      }
+
+      expect(isGhostNode(node)).toBe(false)
+    })
+
+    it('should handle nodes without isGhost property', () => {
+      const node = {
+        id: 'node-1',
+        type: 'ADAPTER_NODE',
+        position: { x: 0, y: 0 },
         data: {},
       }
 
       expect(isGhostNode(node)).toBe(false)
     })
-
-    it('should return false for nodes without data', () => {
-      const node = {
-        id: 'regular',
-      }
-
-      expect(isGhostNode(node)).toBe(false)
-    })
   })
 
-  describe.skip('getGhostNodeIds', () => {
-    it('should return IDs of ghost nodes', () => {
-      const nodes = [
-        createGhostAdapter('1'),
-        { id: 'regular-1', data: {} },
-        createGhostBridge('2'),
-        { id: 'regular-2', data: {} },
-      ]
+  describe('getGhostNodeIds', () => {
+    it('should extract ghost node IDs', () => {
+      const ghost1 = createGhostAdapter('test-1')
+      const ghost2 = createGhostBridge('test-2')
+      const realNode = {
+        id: 'real-1',
+        type: 'ADAPTER_NODE',
+        position: { x: 0, y: 0 },
+        data: { isGhost: false },
+      }
 
+      const nodes = [ghost1, realNode, ghost2]
       const ghostIds = getGhostNodeIds(nodes)
 
-      expect(ghostIds).toEqual(['ghost-1', 'ghost-2'])
+      expect(ghostIds).toHaveLength(2)
+      expect(ghostIds).toContain(ghost1.id)
+      expect(ghostIds).toContain(ghost2.id)
+      expect(ghostIds).not.toContain(realNode.id)
     })
 
-    it('should return empty array if no ghost nodes', () => {
-      const nodes = [
-        { id: 'regular-1', data: {} },
-        { id: 'regular-2', data: {} },
-      ]
+    it('should return empty array for no ghost nodes', () => {
+      const realNode = {
+        id: 'real-1',
+        type: 'ADAPTER_NODE',
+        position: { x: 0, y: 0 },
+        data: { isGhost: false },
+      }
 
-      const ghostIds = getGhostNodeIds(nodes)
+      const ghostIds = getGhostNodeIds([realNode])
 
       expect(ghostIds).toEqual([])
     })
   })
 
-  describe.skip('removeGhostNodes', () => {
-    it('should remove ghost nodes from array', () => {
-      const nodes = [
-        createGhostAdapter('1'),
-        { id: 'regular-1', data: {} },
-        createGhostBridge('2'),
-        { id: 'regular-2', data: {} },
-      ]
+  describe('removeGhostNodes', () => {
+    it('should remove ghost nodes from list', () => {
+      const ghost1 = createGhostAdapter('test-1')
+      const ghost2 = createGhostBridge('test-2')
+      const realNode = {
+        id: 'real-1',
+        type: 'ADAPTER_NODE',
+        position: { x: 0, y: 0 },
+        data: { isGhost: false },
+      }
 
-      const realNodes = removeGhostNodes(nodes)
+      const nodes = [ghost1, realNode, ghost2]
+      const filteredNodes = removeGhostNodes(nodes)
 
-      expect(realNodes).toHaveLength(2)
-      expect(realNodes[0].id).toBe('regular-1')
-      expect(realNodes[1].id).toBe('regular-2')
+      expect(filteredNodes).toHaveLength(1)
+      expect(filteredNodes[0]).toEqual(realNode)
     })
 
-    it('should return all nodes if no ghost nodes', () => {
-      const nodes = [
-        { id: 'regular-1', data: {} },
-        { id: 'regular-2', data: {} },
-      ]
+    it('should return all nodes if none are ghosts', () => {
+      const realNode1 = {
+        id: 'real-1',
+        type: 'ADAPTER_NODE',
+        position: { x: 0, y: 0 },
+        data: { isGhost: false },
+      }
+      const realNode2 = {
+        id: 'real-2',
+        type: 'BRIDGE_NODE',
+        position: { x: 100, y: 100 },
+        data: { isGhost: false },
+      }
 
-      const result = removeGhostNodes(nodes)
+      const nodes = [realNode1, realNode2]
+      const filteredNodes = removeGhostNodes(nodes)
 
-      expect(result).toEqual(nodes)
-    })
-
-    it('should return empty array if all are ghost nodes', () => {
-      const nodes = [createGhostAdapter('1'), createGhostBridge('2')]
-
-      const result = removeGhostNodes(nodes)
-
-      expect(result).toEqual([])
-    })
-  })
-
-  describe.skip('GHOST_STYLE', () => {
-    it('should have semi-transparent opacity', () => {
-      expect(GHOST_STYLE.opacity).toBe(0.6)
-    })
-
-    it('should have dashed border', () => {
-      expect(GHOST_STYLE.border).toContain('dashed')
-    })
-
-    it('should have pointer-events none', () => {
-      expect(GHOST_STYLE.pointerEvents).toBe('none')
-    })
-
-    it('should have light blue color scheme', () => {
-      expect(GHOST_STYLE.border).toContain('#4299E1')
-      expect(GHOST_STYLE.backgroundColor).toBe('#EBF8FF')
+      expect(filteredNodes).toEqual(nodes)
     })
   })
 
-  describe.skip('createGhostAdapterGroup', () => {
-    const mockEdgeNode = {
-      id: 'EDGE_NODE',
-      position: { x: 300, y: 200 },
-      type: 'EDGE_NODE',
-      data: {},
-    }
+  describe('removeGhostEdges', () => {
+    it('should remove ghost edges from list', () => {
+      const ghostEdge = {
+        id: 'ghost-edge-1',
+        source: 'ghost-1',
+        target: 'EDGE_NODE',
+        data: { isGhost: true },
+      }
+      const realEdge = {
+        id: 'edge-1',
+        source: 'node-1',
+        target: 'node-2',
+        data: { isGhost: false },
+      }
 
-    it('should create adapter and device nodes with edges', () => {
-      const group = createGhostAdapterGroup('test', 0, mockEdgeNode)
+      const edges = [ghostEdge, realEdge]
+      const filteredEdges = removeGhostEdges(edges)
 
-      expect(group.nodes).toHaveLength(2)
-      expect(group.edges).toHaveLength(2)
+      expect(filteredEdges).toHaveLength(1)
+      expect(filteredEdges[0]).toEqual(realEdge)
     })
 
-    it('should create adapter node with correct properties', () => {
-      const group = createGhostAdapterGroup('test', 0, mockEdgeNode)
-      const adapterNode = group.nodes[0]
+    it('should handle edges without data', () => {
+      const edge = {
+        id: 'edge-1',
+        source: 'node-1',
+        target: 'node-2',
+      }
 
-      expect(adapterNode.id).toBe('ghost-adapter-test')
-      expect(adapterNode.type).toBe('ADAPTER_NODE')
-      expect(adapterNode.data.isGhost).toBe(true)
-      expect(adapterNode.style).toEqual(GHOST_STYLE_ENHANCED)
-    })
+      const filteredEdges = removeGhostEdges([edge])
 
-    it('should create device node with correct properties', () => {
-      const group = createGhostAdapterGroup('test', 0, mockEdgeNode)
-      const deviceNode = group.nodes[1]
-
-      expect(deviceNode.id).toBe('ghost-device-test')
-      expect(deviceNode.type).toBe('DEVICE_NODE')
-      expect(deviceNode.data.isGhost).toBe(true)
-      expect(deviceNode.style).toEqual(GHOST_STYLE_ENHANCED)
-    })
-
-    it('should create edge from adapter to edge node', () => {
-      const group = createGhostAdapterGroup('test', 0, mockEdgeNode)
-      const edge = group.edges[0]
-
-      expect(edge.id).toBe('ghost-edge-adapter-to-edge-test')
-      expect(edge.source).toBe('ghost-adapter-test')
-      expect(edge.target).toBe('EDGE_NODE')
-      expect(edge.animated).toBe(true)
-    })
-
-    it('should create edge from device to adapter', () => {
-      const group = createGhostAdapterGroup('test', 0, mockEdgeNode)
-      const edge = group.edges[1]
-
-      expect(edge.id).toBe('ghost-edge-device-to-adapter-test')
-      expect(edge.source).toBe('ghost-device-test')
-      expect(edge.target).toBe('ghost-adapter-test')
-      expect(edge.animated).toBe(true)
-    })
-
-    it('should position device above adapter', () => {
-      const group = createGhostAdapterGroup('test', 0, mockEdgeNode)
-      const adapterNode = group.nodes[0]
-      const deviceNode = group.nodes[1]
-
-      expect(deviceNode.position.y).toBeLessThan(adapterNode.position.y)
-      expect(deviceNode.position.x).toBe(adapterNode.position.x)
+      expect(filteredEdges).toHaveLength(1)
+      expect(filteredEdges[0]).toEqual(edge)
     })
   })
 
-  describe.skip('calculateGhostAdapterPosition', () => {
-    const edgeNodePos = { x: 300, y: 200 }
+  describe('ghost node styling', () => {
+    it('should have ghost styling for non-selectable ghosts', () => {
+      const ghost = createGhostAdapter('test-id')
 
-    it('should calculate position for first adapter', () => {
-      const { adapterPos, devicePos } = calculateGhostAdapterPosition(0, edgeNodePos)
-
-      expect(adapterPos.x).toBeDefined()
-      expect(adapterPos.y).toBeDefined()
-      expect(devicePos.x).toBe(adapterPos.x)
-      expect(devicePos.y).toBeLessThan(adapterPos.y)
+      expect(ghost.style).toBeDefined()
+      expect(ghost.style?.opacity).toBeLessThan(1)
     })
 
-    it('should offset position for multiple adapters', () => {
-      const pos0 = calculateGhostAdapterPosition(0, edgeNodePos)
-      const pos1 = calculateGhostAdapterPosition(1, edgeNodePos)
+    it('should have selectable styling for combiner ghost', () => {
+      const ghost = createGhostCombiner('test-id', mockEdgeNode)
 
-      expect(pos1.adapterPos.x).not.toBe(pos0.adapterPos.x)
-    })
-
-    it('should handle more than 10 adapters (second row)', () => {
-      const pos10 = calculateGhostAdapterPosition(10, edgeNodePos)
-      const pos0 = calculateGhostAdapterPosition(0, edgeNodePos)
-
-      expect(pos10.adapterPos.y).not.toBe(pos0.adapterPos.y)
-    })
-
-    it('should maintain GLUE_SEPARATOR distance between adapter and device', () => {
-      const { adapterPos, devicePos } = calculateGhostAdapterPosition(0, edgeNodePos)
-      const GLUE_SEPARATOR = 200
-
-      expect(adapterPos.y - devicePos.y).toBe(GLUE_SEPARATOR)
+      expect(ghost.selectable).toBe(true)
+      expect(ghost.style).toBeDefined()
     })
   })
 
-  describe.skip('isGhostEdge', () => {
-    it('should identify ghost edge by id prefix', () => {
-      const edge = { id: 'ghost-edge-test', source: 'a', target: 'b' }
+  describe('isGhostEdge', () => {
+    it('should identify ghost edges', () => {
+      const ghostEdge: Edge = {
+        id: 'edge-1',
+        source: 'ghost-1',
+        target: 'node-2',
+        data: { isGhost: true },
+      }
 
-      expect(isGhostEdge(edge)).toBe(true)
+      expect(isGhostEdge(ghostEdge)).toBe(true)
     })
 
-    it('should identify ghost edge by data flag', () => {
-      const edge = { id: 'regular-edge', source: 'a', target: 'b', data: { isGhost: true } }
+    it('should identify real edges', () => {
+      const realEdge: Edge = {
+        id: 'edge-1',
+        source: 'node-1',
+        target: 'node-2',
+      }
 
-      expect(isGhostEdge(edge)).toBe(true)
+      expect(isGhostEdge(realEdge)).toBe(false)
     })
 
-    it('should return false for regular edges', () => {
-      const edge = { id: 'regular-edge', source: 'a', target: 'b' }
+    it('should handle edges without data', () => {
+      const edge: Edge = {
+        id: 'edge-1',
+        source: 'node-1',
+        target: 'node-2',
+      }
 
       expect(isGhostEdge(edge)).toBe(false)
-    })
-  })
-
-  describe.skip('removeGhostEdges', () => {
-    it('should remove ghost edges from array', () => {
-      const edges = [
-        { id: 'ghost-edge-1', source: 'a', target: 'b' },
-        { id: 'regular-edge-1', source: 'c', target: 'd' },
-        { id: 'ghost-edge-2', source: 'e', target: 'f', data: { isGhost: true } },
-      ]
-
-      const realEdges = removeGhostEdges(edges)
-
-      expect(realEdges).toHaveLength(1)
-      expect(realEdges[0].id).toBe('regular-edge-1')
-    })
-  })
-
-  describe.skip('GHOST_STYLE_ENHANCED', () => {
-    it('should have higher opacity than basic style', () => {
-      expect(GHOST_STYLE_ENHANCED.opacity).toBeGreaterThan(GHOST_STYLE.opacity)
-    })
-
-    it('should have glowing box shadow', () => {
-      expect(GHOST_STYLE_ENHANCED.boxShadow).toContain('rgba(66, 153, 225')
-    })
-
-    it('should have thicker dashed border', () => {
-      expect(GHOST_STYLE_ENHANCED.border).toContain('3px')
-    })
-
-    it('should have transition for smooth animations', () => {
-      expect(GHOST_STYLE_ENHANCED.transition).toBeDefined()
-    })
-  })
-
-  describe.skip('GHOST_EDGE_STYLE', () => {
-    it('should have blue stroke color', () => {
-      expect(GHOST_EDGE_STYLE.stroke).toBe('#4299E1')
-    })
-
-    it('should have dashed line pattern', () => {
-      expect(GHOST_EDGE_STYLE.strokeDasharray).toBe('5,5')
-    })
-
-    it('should have semi-transparent opacity', () => {
-      expect(GHOST_EDGE_STYLE.opacity).toBe(0.6)
     })
   })
 })

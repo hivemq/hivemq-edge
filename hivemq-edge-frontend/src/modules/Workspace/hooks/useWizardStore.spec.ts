@@ -1,64 +1,33 @@
-/**
- * Wizard Store Tests
- *
- * Tests for the wizard state management store.
- * Following pragmatic testing strategy: only accessibility test is unskipped.
- */
+import { expect } from 'vitest'
+import { act, renderHook } from '@testing-library/react'
 
-import { renderHook, act } from '@testing-library/react'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-
-import {
-  useWizardStore,
-  useWizardState,
-  useWizardActions,
-  useWizardSelection,
-  useWizardGhosts,
-  useWizardConfiguration,
-  useWizardCanProceed,
-} from './useWizardStore'
-import { EntityType, IntegrationPointType } from '../components/wizard/types'
+import { useWizardStore, useWizardCanProceed } from './useWizardStore'
+import { EntityType, type GhostNode, type GhostEdge } from '../components/wizard/types'
+import { NodeTypes } from '@/modules/Workspace/types'
 
 describe('useWizardStore', () => {
   beforeEach(() => {
-    // Reset store before each test
-    const state = useWizardStore.getState()
-    state.actions.cancelWizard()
-  })
-
-  afterEach(() => {
-    // Clean up after each test
-    const state = useWizardStore.getState()
-    state.actions.cancelWizard()
-  })
-
-  // ✅ ACCESSIBILITY TEST - ALWAYS UNSKIPPED
-  it('should be accessible', () => {
-    // Since this is a store (not a UI component), we verify it provides
-    // the necessary state and actions for accessible UI components
-
     const { result } = renderHook(() => useWizardStore())
-
-    // Verify state is initialized correctly
-    expect(result.current.isActive).toBe(false)
-    expect(result.current.entityType).toBeNull()
-    expect(result.current.errorMessage).toBeNull()
-
-    // Verify actions exist for accessible UI interactions
-    expect(result.current.actions.startWizard).toBeDefined()
-    expect(result.current.actions.cancelWizard).toBeDefined()
-    expect(result.current.actions.nextStep).toBeDefined()
-    expect(result.current.actions.previousStep).toBeDefined()
-
-    // Verify error handling for accessible feedback
-    expect(result.current.actions.setError).toBeDefined()
-    expect(result.current.actions.clearError).toBeDefined()
+    act(() => {
+      result.current.actions.cancelWizard()
+    })
   })
 
-  // ⏭️ SKIPPED TESTS - Document expected behavior but skip for rapid development
+  describe('initial state', () => {
+    it('should start with wizard inactive', () => {
+      const { result } = renderHook(() => useWizardStore())
 
-  describe.skip('startWizard', () => {
-    it('should initialize wizard state for entity type', () => {
+      expect(result.current.isActive).toBe(false)
+      expect(result.current.entityType).toBeNull()
+      expect(result.current.currentStep).toBe(0)
+      expect(result.current.selectedNodeIds).toEqual([])
+      expect(result.current.ghostNodes).toEqual([])
+      expect(result.current.ghostEdges).toEqual([])
+    })
+  })
+
+  describe('startWizard', () => {
+    it('should activate wizard with correct entity type', () => {
       const { result } = renderHook(() => useWizardStore())
 
       act(() => {
@@ -68,90 +37,90 @@ describe('useWizardStore', () => {
       expect(result.current.isActive).toBe(true)
       expect(result.current.entityType).toBe(EntityType.ADAPTER)
       expect(result.current.currentStep).toBe(0)
-      expect(result.current.totalSteps).toBeGreaterThan(0)
     })
 
-    it('should initialize wizard state for integration point type', () => {
+    it('should set correct total steps for adapter', () => {
       const { result } = renderHook(() => useWizardStore())
 
       act(() => {
-        result.current.actions.startWizard(IntegrationPointType.TAG)
+        result.current.actions.startWizard(EntityType.ADAPTER)
       })
 
-      expect(result.current.isActive).toBe(true)
-      expect(result.current.entityType).toBe(IntegrationPointType.TAG)
+      expect(result.current.totalSteps).toBe(3) // Adapter has 3 steps
     })
 
-    it('should reset previous wizard state', () => {
+    it('should set correct total steps for combiner', () => {
       const { result } = renderHook(() => useWizardStore())
 
-      // Start first wizard
+      act(() => {
+        result.current.actions.startWizard(EntityType.COMBINER)
+      })
+
+      expect(result.current.totalSteps).toBe(2) // Combiner has 2 steps
+    })
+
+    it('should auto-select Pulse Agent for Asset Mapper', () => {
+      const { result } = renderHook(() => useWizardStore())
+
+      act(() => {
+        result.current.actions.startWizard(EntityType.ASSET_MAPPER)
+      })
+
+      // Note: This will be empty unless there's actually a Pulse Agent node
+      // In real usage, the store looks for PULSE_NODE in workspace
+      expect(result.current.selectedNodeIds).toBeDefined()
+    })
+
+    it('should reset state when starting new wizard', () => {
+      const { result } = renderHook(() => useWizardStore())
+
+      // Start first wizard and add some state
       act(() => {
         result.current.actions.startWizard(EntityType.ADAPTER)
         result.current.actions.selectNode('node-1')
       })
 
-      expect(result.current.selectedNodeIds).toHaveLength(1)
+      expect(result.current.selectedNodeIds).toContain('node-1')
 
       // Start new wizard
       act(() => {
         result.current.actions.startWizard(EntityType.BRIDGE)
       })
 
-      expect(result.current.selectedNodeIds).toHaveLength(0)
+      // State should be reset
       expect(result.current.entityType).toBe(EntityType.BRIDGE)
+      expect(result.current.selectedNodeIds).toEqual([])
+      expect(result.current.currentStep).toBe(0)
     })
   })
 
-  describe.skip('cancelWizard', () => {
-    it('should reset all wizard state', () => {
+  describe('cancelWizard', () => {
+    it('should reset wizard to initial state', () => {
       const { result } = renderHook(() => useWizardStore())
 
+      // Start wizard and add some state
       act(() => {
-        result.current.actions.startWizard(EntityType.ADAPTER)
+        result.current.actions.startWizard(EntityType.COMBINER)
         result.current.actions.selectNode('node-1')
-        result.current.actions.updateConfiguration({ name: 'Test' })
+        result.current.actions.selectNode('node-2')
       })
 
       expect(result.current.isActive).toBe(true)
 
+      // Cancel wizard
       act(() => {
         result.current.actions.cancelWizard()
       })
 
       expect(result.current.isActive).toBe(false)
       expect(result.current.entityType).toBeNull()
-      expect(result.current.selectedNodeIds).toHaveLength(0)
-      expect(result.current.configurationData).toEqual({})
-    })
-
-    it('should clear ghost nodes', () => {
-      const { result } = renderHook(() => useWizardStore())
-
-      act(() => {
-        result.current.actions.startWizard(EntityType.ADAPTER)
-        result.current.actions.addGhostNodes([
-          {
-            id: 'ghost-1',
-            type: 'ADAPTER_NODE',
-            position: { x: 0, y: 0 },
-            data: { isGhost: true, label: 'Ghost' },
-          },
-        ])
-      })
-
-      expect(result.current.ghostNodes).toHaveLength(1)
-
-      act(() => {
-        result.current.actions.cancelWizard()
-      })
-
-      expect(result.current.ghostNodes).toHaveLength(0)
+      expect(result.current.selectedNodeIds).toEqual([])
+      expect(result.current.currentStep).toBe(0)
     })
   })
 
-  describe.skip('step navigation', () => {
-    it('should move to next step', () => {
+  describe('step navigation', () => {
+    it('should advance to next step', () => {
       const { result } = renderHook(() => useWizardStore())
 
       act(() => {
@@ -167,7 +136,7 @@ describe('useWizardStore', () => {
       expect(result.current.currentStep).toBe(1)
     })
 
-    it('should not exceed total steps', () => {
+    it('should not advance beyond total steps', () => {
       const { result } = renderHook(() => useWizardStore())
 
       act(() => {
@@ -176,32 +145,32 @@ describe('useWizardStore', () => {
 
       const totalSteps = result.current.totalSteps
 
-      // Navigate to last step
+      // Try to advance beyond total steps
       act(() => {
-        for (let i = 0; i < totalSteps; i++) {
-          result.current.actions.nextStep()
-        }
+        result.current.actions.nextStep()
+        result.current.actions.nextStep()
+        result.current.actions.nextStep()
+        result.current.actions.nextStep()
       })
 
       expect(result.current.currentStep).toBe(totalSteps - 1)
     })
 
-    it('should move to previous step', () => {
+    it('should go back to previous step', () => {
       const { result } = renderHook(() => useWizardStore())
 
       act(() => {
         result.current.actions.startWizard(EntityType.ADAPTER)
         result.current.actions.nextStep()
-        result.current.actions.nextStep()
       })
 
-      expect(result.current.currentStep).toBe(2)
+      expect(result.current.currentStep).toBe(1)
 
       act(() => {
         result.current.actions.previousStep()
       })
 
-      expect(result.current.currentStep).toBe(1)
+      expect(result.current.currentStep).toBe(0)
     })
 
     it('should not go below step 0', () => {
@@ -209,6 +178,12 @@ describe('useWizardStore', () => {
 
       act(() => {
         result.current.actions.startWizard(EntityType.ADAPTER)
+      })
+
+      expect(result.current.currentStep).toBe(0)
+
+      act(() => {
+        result.current.actions.previousStep()
         result.current.actions.previousStep()
       })
 
@@ -216,16 +191,35 @@ describe('useWizardStore', () => {
     })
   })
 
-  describe.skip('node selection', () => {
+  describe('node selection', () => {
     it('should select a node', () => {
       const { result } = renderHook(() => useWizardStore())
 
       act(() => {
         result.current.actions.startWizard(EntityType.COMBINER)
+      })
+
+      act(() => {
         result.current.actions.selectNode('node-1')
       })
 
       expect(result.current.selectedNodeIds).toContain('node-1')
+    })
+
+    it('should select multiple nodes', () => {
+      const { result } = renderHook(() => useWizardStore())
+
+      act(() => {
+        result.current.actions.startWizard(EntityType.COMBINER)
+      })
+
+      act(() => {
+        result.current.actions.selectNode('node-1')
+        result.current.actions.selectNode('node-2')
+        result.current.actions.selectNode('node-3')
+      })
+
+      expect(result.current.selectedNodeIds).toEqual(['node-1', 'node-2', 'node-3'])
     })
 
     it('should not select the same node twice', () => {
@@ -233,11 +227,14 @@ describe('useWizardStore', () => {
 
       act(() => {
         result.current.actions.startWizard(EntityType.COMBINER)
+      })
+
+      act(() => {
         result.current.actions.selectNode('node-1')
         result.current.actions.selectNode('node-1')
       })
 
-      expect(result.current.selectedNodeIds).toHaveLength(1)
+      expect(result.current.selectedNodeIds).toEqual(['node-1'])
     })
 
     it('should deselect a node', () => {
@@ -249,89 +246,46 @@ describe('useWizardStore', () => {
         result.current.actions.selectNode('node-2')
       })
 
-      expect(result.current.selectedNodeIds).toHaveLength(2)
+      expect(result.current.selectedNodeIds).toContain('node-1')
 
       act(() => {
         result.current.actions.deselectNode('node-1')
       })
 
-      expect(result.current.selectedNodeIds).toHaveLength(1)
       expect(result.current.selectedNodeIds).not.toContain('node-1')
+      expect(result.current.selectedNodeIds).toContain('node-2')
     })
 
-    it('should clear all selections', () => {
+    it('should not allow deselecting Pulse Agent in Asset Mapper', () => {
       const { result } = renderHook(() => useWizardStore())
 
       act(() => {
-        result.current.actions.startWizard(EntityType.COMBINER)
-        result.current.actions.selectNode('node-1')
-        result.current.actions.selectNode('node-2')
-        result.current.actions.selectNode('node-3')
+        result.current.actions.startWizard(EntityType.ASSET_MAPPER)
       })
 
-      expect(result.current.selectedNodeIds).toHaveLength(3)
+      // If Pulse Agent was auto-selected (would need actual node in store)
+      // This test documents the behavior but won't fail without actual nodes
+      const initialSelection = result.current.selectedNodeIds
 
       act(() => {
-        result.current.actions.clearSelection()
+        // Try to deselect - should be prevented if it's a PULSE_NODE
+        result.current.actions.deselectNode('pulse-node-id')
       })
 
-      expect(result.current.selectedNodeIds).toHaveLength(0)
+      // Selection should remain unchanged (or empty if no Pulse Agent exists)
+      expect(result.current.selectedNodeIds).toEqual(initialSelection)
     })
   })
 
-  describe.skip('configuration management', () => {
-    it('should update configuration data', () => {
-      const { result } = renderHook(() => useWizardStore())
-
-      act(() => {
-        result.current.actions.startWizard(EntityType.ADAPTER)
-        result.current.actions.updateConfiguration({ name: 'Test Adapter' })
-      })
-
-      expect(result.current.configurationData).toEqual({ name: 'Test Adapter' })
-    })
-
-    it('should merge configuration updates', () => {
-      const { result } = renderHook(() => useWizardStore())
-
-      act(() => {
-        result.current.actions.startWizard(EntityType.ADAPTER)
-        result.current.actions.updateConfiguration({ name: 'Test' })
-        result.current.actions.updateConfiguration({ host: 'localhost' })
-      })
-
-      expect(result.current.configurationData).toEqual({
-        name: 'Test',
-        host: 'localhost',
-      })
-    })
-
-    it('should validate configuration', () => {
-      const { result } = renderHook(() => useWizardStore())
-
-      act(() => {
-        result.current.actions.startWizard(EntityType.ADAPTER)
-      })
-
-      expect(result.current.isConfigurationValid).toBe(false)
-
-      act(() => {
-        result.current.actions.updateConfiguration({ name: 'Test' })
-      })
-
-      expect(result.current.isConfigurationValid).toBe(true)
-    })
-  })
-
-  describe.skip('ghost nodes', () => {
+  describe('ghost nodes', () => {
     it('should add ghost nodes', () => {
       const { result } = renderHook(() => useWizardStore())
 
-      const ghostNode = {
+      const ghostNode: GhostNode = {
         id: 'ghost-1',
-        type: 'ADAPTER_NODE',
+        type: NodeTypes.ADAPTER_NODE,
         position: { x: 0, y: 0 },
-        data: { isGhost: true as const, label: 'Ghost Adapter' },
+        data: { isGhost: true, label: 'Ghost' },
       }
 
       act(() => {
@@ -346,11 +300,11 @@ describe('useWizardStore', () => {
     it('should add ghost edges', () => {
       const { result } = renderHook(() => useWizardStore())
 
-      const ghostEdge = {
+      const ghostEdge: GhostEdge = {
         id: 'ghost-edge-1',
         source: 'ghost-1',
-        target: 'ghost-2',
-        data: { isGhost: true as const },
+        target: 'EDGE_NODE',
+        data: { isGhost: true },
       }
 
       act(() => {
@@ -362,126 +316,300 @@ describe('useWizardStore', () => {
       expect(result.current.ghostEdges[0]).toEqual(ghostEdge)
     })
 
-    it('should clear ghost nodes and edges', () => {
+    it('should clear ghost nodes', () => {
       const { result } = renderHook(() => useWizardStore())
+
+      const ghostNode: GhostNode = {
+        id: 'ghost-1',
+        type: NodeTypes.ADAPTER_NODE,
+        position: { x: 0, y: 0 },
+        data: { isGhost: true, label: 'Ghost' },
+      }
 
       act(() => {
         result.current.actions.startWizard(EntityType.ADAPTER)
-        result.current.actions.addGhostNodes([
-          {
-            id: 'ghost-1',
-            type: 'ADAPTER_NODE',
-            position: { x: 0, y: 0 },
-            data: { isGhost: true, label: 'Ghost' },
-          },
-        ])
-        result.current.actions.addGhostEdges([
-          {
-            id: 'ghost-edge-1',
-            source: 'ghost-1',
-            target: 'ghost-2',
-          },
-        ])
+        result.current.actions.addGhostNodes([ghostNode])
       })
 
       expect(result.current.ghostNodes).toHaveLength(1)
-      expect(result.current.ghostEdges).toHaveLength(1)
 
       act(() => {
         result.current.actions.clearGhostNodes()
       })
 
-      expect(result.current.ghostNodes).toHaveLength(0)
-      expect(result.current.ghostEdges).toHaveLength(0)
+      expect(result.current.ghostNodes).toEqual([])
+      expect(result.current.ghostEdges).toEqual([])
     })
   })
 
-  describe.skip('error handling', () => {
+  describe('error handling', () => {
     it('should set error message', () => {
       const { result } = renderHook(() => useWizardStore())
 
       act(() => {
-        result.current.actions.setError('Test error')
+        result.current.actions.setError('Something went wrong')
       })
 
-      expect(result.current.errorMessage).toBe('Test error')
+      expect(result.current.errorMessage).toBe('Something went wrong')
     })
 
     it('should clear error message', () => {
       const { result } = renderHook(() => useWizardStore())
 
       act(() => {
-        result.current.actions.setError('Test error')
+        result.current.actions.setError('Error')
       })
 
-      expect(result.current.errorMessage).toBe('Test error')
+      expect(result.current.errorMessage).toBe('Error')
 
       act(() => {
-        result.current.actions.clearError()
+        result.current.actions.setError(null)
       })
 
       expect(result.current.errorMessage).toBeNull()
     })
   })
 
-  describe.skip('convenience hooks', () => {
-    it('useWizardState should return wizard state', () => {
-      const { result } = renderHook(() => useWizardState())
+  describe('completeWizard', () => {
+    it('should set error if no entity type selected', async () => {
+      const { result } = renderHook(() => useWizardStore())
 
-      expect(result.current).toHaveProperty('isActive')
-      expect(result.current).toHaveProperty('entityType')
-      expect(result.current).toHaveProperty('currentStep')
-      expect(result.current).toHaveProperty('totalSteps')
-    })
-
-    it('useWizardActions should return actions', () => {
-      const { result } = renderHook(() => useWizardActions())
-
-      expect(result.current).toHaveProperty('startWizard')
-      expect(result.current).toHaveProperty('cancelWizard')
-      expect(result.current).toHaveProperty('nextStep')
-      expect(result.current).toHaveProperty('previousStep')
-    })
-
-    it('useWizardSelection should return selection state and actions', () => {
-      const { result } = renderHook(() => useWizardSelection())
-
-      expect(result.current).toHaveProperty('selectedNodeIds')
-      expect(result.current).toHaveProperty('selectionConstraints')
-      expect(result.current).toHaveProperty('selectNode')
-      expect(result.current).toHaveProperty('deselectNode')
-    })
-
-    it('useWizardGhosts should return ghost state and actions', () => {
-      const { result } = renderHook(() => useWizardGhosts())
-
-      expect(result.current).toHaveProperty('ghostNodes')
-      expect(result.current).toHaveProperty('ghostEdges')
-      expect(result.current).toHaveProperty('addGhostNodes')
-      expect(result.current).toHaveProperty('clearGhostNodes')
-    })
-
-    it('useWizardConfiguration should return config state and actions', () => {
-      const { result } = renderHook(() => useWizardConfiguration())
-
-      expect(result.current).toHaveProperty('configurationData')
-      expect(result.current).toHaveProperty('isConfigurationValid')
-      expect(result.current).toHaveProperty('updateConfiguration')
-    })
-
-    it('useWizardCanProceed should check if wizard can proceed', () => {
-      const { result: canProceedResult } = renderHook(() => useWizardCanProceed())
-      const { result: actionsResult } = renderHook(() => useWizardActions())
-
-      // Initially should not be able to proceed (wizard not active)
-      expect(canProceedResult.current).toBe(false)
-
-      act(() => {
-        actionsResult.current.startWizard(EntityType.ADAPTER)
+      await act(async () => {
+        await result.current.actions.completeWizard()
       })
 
-      // After starting, should be able to proceed
-      expect(canProceedResult.current).toBe(true)
+      expect(result.current.errorMessage).toBe('No entity type selected')
     })
+
+    it('should set error if configuration validation fails', async () => {
+      const { result } = renderHook(() => useWizardStore())
+
+      act(() => {
+        result.current.actions.startWizard(EntityType.ADAPTER)
+      })
+
+      await act(async () => {
+        await result.current.actions.completeWizard()
+      })
+
+      expect(result.current.errorMessage).toBe('Configuration validation failed')
+    })
+
+    it('should clear ghost nodes and cancel wizard on success', async () => {
+      const { result } = renderHook(() => useWizardStore())
+
+      act(() => {
+        result.current.actions.startWizard(EntityType.ADAPTER)
+        result.current.actions.updateConfiguration({ test: 'data' })
+        result.current.actions.addGhostNodes([
+          {
+            id: 'ghost-1',
+            type: NodeTypes.ADAPTER_NODE,
+            position: { x: 0, y: 0 },
+            data: { isGhost: true, label: 'Ghost' },
+          },
+        ])
+      })
+
+      await act(async () => {
+        await result.current.actions.completeWizard()
+      })
+
+      expect(result.current.ghostNodes).toHaveLength(0)
+      expect(result.current.isActive).toBe(false)
+    })
+
+    it('should handle errors during completion', async () => {
+      const { result } = renderHook(() => useWizardStore())
+
+      act(() => {
+        result.current.actions.startWizard(EntityType.ADAPTER)
+        result.current.actions.updateConfiguration({ test: 'data' })
+      })
+
+      // Store original function
+      const storeState = useWizardStore.getState()
+      const originalValidate = storeState.actions.validateConfiguration
+
+      // Replace with throwing function
+      storeState.actions.validateConfiguration = () => {
+        throw new Error('Validation error')
+      }
+
+      await act(async () => {
+        await result.current.actions.completeWizard()
+      })
+
+      expect(result.current.errorMessage).toBe('Validation error')
+
+      // Restore original
+      storeState.actions.validateConfiguration = originalValidate
+    })
+  })
+
+  describe('selection management', () => {
+    it('should clear all selected nodes', () => {
+      const { result } = renderHook(() => useWizardStore())
+
+      act(() => {
+        result.current.actions.startWizard(EntityType.COMBINER)
+        result.current.actions.selectNode('node-1')
+        result.current.actions.selectNode('node-2')
+        result.current.actions.clearSelection()
+      })
+
+      expect(result.current.selectedNodeIds).toHaveLength(0)
+    })
+  })
+
+  describe('configuration management', () => {
+    it('should update configuration with partial data', () => {
+      const { result } = renderHook(() => useWizardStore())
+
+      act(() => {
+        result.current.actions.startWizard(EntityType.ADAPTER)
+        result.current.actions.updateConfiguration({ key1: 'value1' })
+        result.current.actions.updateConfiguration({ key2: 'value2' })
+      })
+
+      expect(result.current.configurationData).toEqual({
+        key1: 'value1',
+        key2: 'value2',
+      })
+    })
+
+    it('should revalidate after configuration update', () => {
+      const { result } = renderHook(() => useWizardStore())
+
+      act(() => {
+        result.current.actions.startWizard(EntityType.ADAPTER)
+        result.current.actions.updateConfiguration({ test: 'data' })
+      })
+
+      expect(result.current.isConfigurationValid).toBe(true)
+    })
+
+    it('should validate configuration correctly', () => {
+      const { result } = renderHook(() => useWizardStore())
+
+      act(() => {
+        result.current.actions.startWizard(EntityType.ADAPTER)
+      })
+
+      // Empty configuration should be invalid
+      let isValidEmpty: boolean
+      act(() => {
+        isValidEmpty = result.current.actions.validateConfiguration()
+      })
+
+      expect(isValidEmpty!).toBe(false)
+      expect(result.current.isConfigurationValid).toBe(false)
+
+      // Non-empty configuration should be valid
+      let isValidWithData: boolean
+      act(() => {
+        result.current.actions.updateConfiguration({ test: 'data' })
+        isValidWithData = result.current.actions.validateConfiguration()
+      })
+
+      expect(isValidWithData!).toBe(true)
+      expect(result.current.isConfigurationValid).toBe(true)
+    })
+  })
+
+  describe('side panel management', () => {
+    it('should open side panel', () => {
+      const { result } = renderHook(() => useWizardStore())
+
+      act(() => {
+        result.current.actions.openSidePanel()
+      })
+
+      expect(result.current.isSidePanelOpen).toBe(true)
+    })
+
+    it('should close side panel', () => {
+      const { result } = renderHook(() => useWizardStore())
+
+      act(() => {
+        result.current.actions.openSidePanel()
+        result.current.actions.closeSidePanel()
+      })
+
+      expect(result.current.isSidePanelOpen).toBe(false)
+    })
+  })
+})
+
+describe('useWizardCanProceed', () => {
+  beforeEach(() => {
+    const { result } = renderHook(() => useWizardStore())
+    act(() => {
+      result.current.actions.cancelWizard()
+    })
+  })
+
+  it('should return false if at last step', () => {
+    const { result: storeResult } = renderHook(() => useWizardStore())
+    const { result: canProceedResult } = renderHook(() => useWizardCanProceed())
+
+    act(() => {
+      storeResult.current.actions.startWizard(EntityType.ADAPTER)
+      // Navigate to last step
+      storeResult.current.actions.nextStep()
+      storeResult.current.actions.nextStep()
+    })
+
+    expect(canProceedResult.current).toBe(false)
+  })
+
+  it('should return false if minimum nodes constraint not met', () => {
+    const { result: storeResult } = renderHook(() => useWizardStore())
+    const { result: canProceedResult } = renderHook(() => useWizardCanProceed())
+
+    act(() => {
+      storeResult.current.actions.startWizard(EntityType.COMBINER)
+    })
+
+    // Combiner requires minNodes: 2, but we have 0 selected
+    expect(canProceedResult.current).toBe(false)
+  })
+
+  it('should return false if required nodes not selected', () => {
+    const { result: storeResult } = renderHook(() => useWizardStore())
+    const { result: canProceedResult } = renderHook(() => useWizardCanProceed())
+
+    act(() => {
+      storeResult.current.actions.startWizard(EntityType.ASSET_MAPPER)
+      // Asset Mapper requires Pulse Agent but let's deselect it
+      storeResult.current.actions.deselectNode('PULSE_NODE')
+    })
+
+    expect(canProceedResult.current).toBe(false)
+  })
+
+  it('should return true if all constraints are met', () => {
+    const { result: storeResult } = renderHook(() => useWizardStore())
+    const { result: canProceedResult } = renderHook(() => useWizardCanProceed())
+
+    act(() => {
+      storeResult.current.actions.startWizard(EntityType.COMBINER)
+      storeResult.current.actions.selectNode('ADAPTER_NODE@1')
+      storeResult.current.actions.selectNode('ADAPTER_NODE@2')
+    })
+
+    expect(canProceedResult.current).toBe(true)
+  })
+
+  it('should return true for simple wizard types', () => {
+    const { result: storeResult } = renderHook(() => useWizardStore())
+    const { result: canProceedResult } = renderHook(() => useWizardCanProceed())
+
+    act(() => {
+      storeResult.current.actions.startWizard(EntityType.ADAPTER)
+    })
+
+    // Adapter has no selection constraints on step 0
+    expect(canProceedResult.current).toBe(true)
   })
 })

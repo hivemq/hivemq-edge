@@ -17,7 +17,6 @@ import type { Bridge } from '@/api/__generated__'
 import { bridgeSchema, bridgeUISchema } from '@/api/schemas'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges'
 
-import LoaderSpinner from '@/components/Chakra/LoaderSpinner'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import { customUniqueBridgeValidate } from '@/modules/Bridges/utils/validation-utils'
 
@@ -50,19 +49,6 @@ const WizardBridgeForm: FC<WizardBridgeFormProps> = ({ onSubmit, onBack }) => {
     if (data.formData) {
       onSubmit(data.formData)
     }
-  }
-
-  if (!bridgeSchema) {
-    return (
-      <>
-        <DrawerHeader borderBottomWidth="1px">
-          <DrawerCloseButton onClick={onBack} />
-        </DrawerHeader>
-        <DrawerBody>
-          <LoaderSpinner />
-        </DrawerBody>
-      </>
-    )
   }
 
   return (

@@ -75,7 +75,7 @@ const WizardProtocolSelector: FC<WizardProtocolSelectorProps> = ({ onSelect }) =
       </DrawerHeader>
 
       {/* Body with optional search and protocol browser */}
-      <DrawerBody>
+      <DrawerBody tabIndex={0}>
         {isLoading && <LoaderSpinner />}
 
         {isError && (
@@ -135,6 +135,7 @@ const WizardProtocolSelector: FC<WizardProtocolSelectorProps> = ({ onSelect }) =
           size="sm"
           variant={showSearch ? 'solid' : 'outline'}
           onClick={() => setShowSearch(!showSearch)}
+          data-testid={showSearch ? 'search-toggle-active' : 'search-toggle-inactive'}
         >
           {showSearch ? t('workspace.wizard.adapter.hideSearch') : t('workspace.wizard.adapter.showSearch')}
         </Button>
