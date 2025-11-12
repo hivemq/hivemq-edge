@@ -25,6 +25,9 @@ public enum TlsChecks {
     @JsonProperty("NONE")
     NONE("NONE"),
 
+    @JsonProperty("APPLICATION_URI")
+    APPLICATION_URI("APPLICATION_URI"),
+
     @JsonProperty("STANDARD")
     STANDARD("STANDARD"),
 

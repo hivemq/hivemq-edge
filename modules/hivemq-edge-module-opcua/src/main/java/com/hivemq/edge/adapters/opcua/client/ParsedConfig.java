@@ -128,6 +128,9 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
     private static @NotNull CertificateValidator createServerCertificateValidator(final @NotNull List<X509Certificate> trustedCerts, final @NotNull TlsChecks tlsChecks) {
         return switch (tlsChecks) {
             case NONE -> new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
+                    Set.of(),
+                    new MemoryCertificateQuarantine());
+            case APPLICATION_URI -> new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
                     ValidationCheck.NO_OPTIONAL_CHECKS,
                     new MemoryCertificateQuarantine());
             case STANDARD -> new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),

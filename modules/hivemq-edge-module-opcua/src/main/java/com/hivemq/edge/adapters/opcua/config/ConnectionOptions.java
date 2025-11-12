@@ -70,7 +70,7 @@ public record ConnectionOptions(
         Long healthCheckIntervalMs,
 
         @JsonProperty("retryIntervalMs")
-        @ModuleConfigField(title = "Retry Interval (milliseconds)",
+        @ModuleConfigField(title = "Connection Retry Interval (milliseconds)",
                    description = "Interval between connection retry attempts in milliseconds",
                    numberMin = 5 * 1000,
                    numberMax = 300 * 1000,
