@@ -241,4 +241,383 @@ class ProtocolAdaptersResourceImplTest {
             assertEquals(domainTag.toModel(), domainTagList.getItems().get(i));
         }
     }
+
+    @Test
+    void testDeleteTagInUseByNorthboundMapping() {
+        when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
+
+        final String adapterId = "test-adapter";
+        final String tagName = "temperature";
+
+        final com.hivemq.configuration.entity.adapter.NorthboundMappingEntity northboundMapping =
+                new com.hivemq.configuration.entity.adapter.NorthboundMappingEntity(
+                        tagName,
+                        "test/topic",
+                        1,
+                        null,
+                        false,
+                        true,
+                        List.of(),
+                        null);
+
+        final com.hivemq.configuration.entity.adapter.TagEntity tagEntity =
+                new com.hivemq.configuration.entity.adapter.TagEntity(
+                        tagName,
+                        "description",
+                        Map.of("address", "test"));
+
+        final ProtocolAdapterEntity adapterEntity = new ProtocolAdapterEntity(
+                adapterId,
+                "opcua",
+                1,
+                Map.of(),
+                List.of(northboundMapping),
+                List.of(),
+                List.of(tagEntity));
+
+        when(protocolAdapterExtractor.getAdapterByAdapterId(adapterId)).thenReturn(Optional.of(adapterEntity));
+
+        final Response response = protocolAdaptersResource.deleteAdapterDomainTags(adapterId, tagName);
+
+        assertEquals(409, response.getStatus());
+    }
+
+    @Test
+    void testDeleteTagInUseBySouthboundMapping() {
+        when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
+
+        final String adapterId = "test-adapter";
+        final String tagName = "valve-control";
+
+        final com.hivemq.configuration.entity.adapter.SouthboundMappingEntity southboundMapping =
+                new com.hivemq.configuration.entity.adapter.SouthboundMappingEntity(
+                        tagName,
+                        "commands/valve/+",
+                        null,
+                        "schema");
+
+        final com.hivemq.configuration.entity.adapter.TagEntity tagEntity =
+                new com.hivemq.configuration.entity.adapter.TagEntity(
+                        tagName,
+                        "description",
+                        Map.of("address", "test"));
+
+        final ProtocolAdapterEntity adapterEntity = new ProtocolAdapterEntity(
+                adapterId,
+                "modbus",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(southboundMapping),
+                List.of(tagEntity));
+
+        when(protocolAdapterExtractor.getAdapterByAdapterId(adapterId)).thenReturn(Optional.of(adapterEntity));
+
+        final Response response = protocolAdaptersResource.deleteAdapterDomainTags(adapterId, tagName);
+
+        assertEquals(409, response.getStatus());
+    }
+
+    @Test
+    void testDeleteTagInUseByBothMappings() {
+        when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
+
+        final String adapterId = "test-adapter";
+        final String tagName = "sensor-data";
+
+        final com.hivemq.configuration.entity.adapter.NorthboundMappingEntity northboundMapping =
+                new com.hivemq.configuration.entity.adapter.NorthboundMappingEntity(
+                        tagName,
+                        "sensors/data",
+                        1,
+                        null,
+                        false,
+                        true,
+                        List.of(),
+                        null);
+
+        final com.hivemq.configuration.entity.adapter.SouthboundMappingEntity southboundMapping =
+                new com.hivemq.configuration.entity.adapter.SouthboundMappingEntity(
+                        tagName,
+                        "commands/sensor/+",
+                        null,
+                        "schema");
+
+        final com.hivemq.configuration.entity.adapter.TagEntity tagEntity =
+                new com.hivemq.configuration.entity.adapter.TagEntity(
+                        tagName,
+                        "description",
+                        Map.of("address", "test"));
+
+        final ProtocolAdapterEntity adapterEntity = new ProtocolAdapterEntity(
+                adapterId,
+                "opcua",
+                1,
+                Map.of(),
+                List.of(northboundMapping),
+                List.of(southboundMapping),
+                List.of(tagEntity));
+
+        when(protocolAdapterExtractor.getAdapterByAdapterId(adapterId)).thenReturn(Optional.of(adapterEntity));
+
+        final Response response = protocolAdaptersResource.deleteAdapterDomainTags(adapterId, tagName);
+
+        assertEquals(409, response.getStatus());
+    }
+
+    @Test
+    void testDeleteTagNotInUse() {
+        when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
+
+        final String adapterId = "test-adapter";
+        final String tagName = "unused-tag";
+
+        final com.hivemq.configuration.entity.adapter.TagEntity tagEntity =
+                new com.hivemq.configuration.entity.adapter.TagEntity(
+                        tagName,
+                        "description",
+                        Map.of("address", "test"));
+
+        final ProtocolAdapterEntity adapterEntity = new ProtocolAdapterEntity(
+                adapterId,
+                "opcua",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(tagEntity));
+
+        when(protocolAdapterExtractor.getAdapterByAdapterId(adapterId)).thenReturn(Optional.of(adapterEntity));
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final Response response = protocolAdaptersResource.deleteAdapterDomainTags(adapterId, tagName);
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void testUpdateTagRenameInUse() {
+        when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
+
+        final String adapterId = "test-adapter";
+        final String oldTagName = "temperature";
+        final String newTagName = "temp-sensor";
+
+        final com.hivemq.configuration.entity.adapter.NorthboundMappingEntity northboundMapping =
+                new com.hivemq.configuration.entity.adapter.NorthboundMappingEntity(
+                        oldTagName,
+                        "test/topic",
+                        1,
+                        null,
+                        false,
+                        true,
+                        List.of(),
+                        null);
+
+        final com.hivemq.configuration.entity.adapter.TagEntity tagEntity =
+                new com.hivemq.configuration.entity.adapter.TagEntity(
+                        oldTagName,
+                        "description",
+                        Map.of("address", "test"));
+
+        final ProtocolAdapterEntity adapterEntity = new ProtocolAdapterEntity(
+                adapterId,
+                "opcua",
+                1,
+                Map.of(),
+                List.of(northboundMapping),
+                List.of(),
+                List.of(tagEntity));
+
+        when(protocolAdapterExtractor.getAdapterByAdapterId(adapterId)).thenReturn(Optional.of(adapterEntity));
+
+        final com.hivemq.edge.api.model.DomainTag updatedTag = new com.hivemq.edge.api.model.DomainTag()
+                .name(newTagName)
+                .description("description")
+                .definition(objectMapper.valueToTree(Map.of("address", "test")));
+
+        final Response response = protocolAdaptersResource.updateAdapterDomainTag(adapterId, oldTagName, updatedTag);
+
+        assertEquals(409, response.getStatus());
+    }
+
+    @Test
+    void testUpdateTagRenameNotInUse() {
+        when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
+
+        final String adapterId = "test-adapter";
+        final String oldTagName = "temperature";
+        final String newTagName = "temp-sensor";
+
+        final com.hivemq.configuration.entity.adapter.TagEntity tagEntity =
+                new com.hivemq.configuration.entity.adapter.TagEntity(
+                        oldTagName,
+                        "description",
+                        Map.of("address", "test"));
+
+        final ProtocolAdapterEntity adapterEntity = new ProtocolAdapterEntity(
+                adapterId,
+                "opcua",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(tagEntity));
+
+        when(protocolAdapterExtractor.getAdapterByAdapterId(adapterId)).thenReturn(Optional.of(adapterEntity));
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final com.hivemq.edge.api.model.DomainTag updatedTag = new com.hivemq.edge.api.model.DomainTag()
+                .name(newTagName)
+                .description("description")
+                .definition(objectMapper.valueToTree(Map.of("address", "test")));
+
+        final Response response = protocolAdaptersResource.updateAdapterDomainTag(adapterId, oldTagName, updatedTag);
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void testUpdateTagWithoutRename() {
+        when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
+
+        final String adapterId = "test-adapter";
+        final String tagName = "temperature";
+
+        final com.hivemq.configuration.entity.adapter.NorthboundMappingEntity northboundMapping =
+                new com.hivemq.configuration.entity.adapter.NorthboundMappingEntity(
+                        tagName,
+                        "test/topic",
+                        1,
+                        null,
+                        false,
+                        true,
+                        List.of(),
+                        null);
+
+        final com.hivemq.configuration.entity.adapter.TagEntity tagEntity =
+                new com.hivemq.configuration.entity.adapter.TagEntity(
+                        tagName,
+                        "description",
+                        Map.of("address", "test"));
+
+        final ProtocolAdapterEntity adapterEntity = new ProtocolAdapterEntity(
+                adapterId,
+                "opcua",
+                1,
+                Map.of(),
+                List.of(northboundMapping),
+                List.of(),
+                List.of(tagEntity));
+
+        when(protocolAdapterExtractor.getAdapterByAdapterId(adapterId)).thenReturn(Optional.of(adapterEntity));
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final com.hivemq.edge.api.model.DomainTag updatedTag = new com.hivemq.edge.api.model.DomainTag()
+                .name(tagName)
+                .description("updated description")
+                .definition(objectMapper.valueToTree(Map.of("address", "new-address")));
+
+        final Response response = protocolAdaptersResource.updateAdapterDomainTag(adapterId, tagName, updatedTag);
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void testBulkUpdateRemovingTagInUse() {
+        when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
+
+        final String adapterId = "test-adapter";
+        final String tag1Name = "temperature";
+        final String tag2Name = "pressure";
+
+        final com.hivemq.configuration.entity.adapter.NorthboundMappingEntity northboundMapping =
+                new com.hivemq.configuration.entity.adapter.NorthboundMappingEntity(
+                        tag1Name,
+                        "test/topic",
+                        1,
+                        null,
+                        false,
+                        true,
+                        List.of(),
+                        null);
+
+        final com.hivemq.configuration.entity.adapter.TagEntity tag1Entity =
+                new com.hivemq.configuration.entity.adapter.TagEntity(
+                        tag1Name,
+                        "description",
+                        Map.of("address", "test1"));
+
+        final com.hivemq.configuration.entity.adapter.TagEntity tag2Entity =
+                new com.hivemq.configuration.entity.adapter.TagEntity(
+                        tag2Name,
+                        "description",
+                        Map.of("address", "test2"));
+
+        final ProtocolAdapterEntity adapterEntity = new ProtocolAdapterEntity(
+                adapterId,
+                "opcua",
+                1,
+                Map.of(),
+                List.of(northboundMapping),
+                List.of(),
+                List.of(tag1Entity, tag2Entity));
+
+        when(protocolAdapterExtractor.getAdapterByAdapterId(adapterId)).thenReturn(Optional.of(adapterEntity));
+
+        // Only include tag2 in the new list (removing tag1 which is in use)
+        final DomainTagList newTagList = new DomainTagList()
+                .items(List.of(new com.hivemq.edge.api.model.DomainTag()
+                        .name(tag2Name)
+                        .description("description")
+                        .definition(objectMapper.valueToTree(Map.of("address", "test2")))));
+
+        final Response response = protocolAdaptersResource.updateAdapterDomainTags(adapterId, newTagList);
+
+        assertEquals(409, response.getStatus());
+    }
+
+    @Test
+    void testBulkUpdateRemovingTagNotInUse() {
+        when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
+
+        final String adapterId = "test-adapter";
+        final String tag1Name = "temperature";
+        final String tag2Name = "pressure";
+
+        final com.hivemq.configuration.entity.adapter.TagEntity tag1Entity =
+                new com.hivemq.configuration.entity.adapter.TagEntity(
+                        tag1Name,
+                        "description",
+                        Map.of("address", "test1"));
+
+        final com.hivemq.configuration.entity.adapter.TagEntity tag2Entity =
+                new com.hivemq.configuration.entity.adapter.TagEntity(
+                        tag2Name,
+                        "description",
+                        Map.of("address", "test2"));
+
+        final ProtocolAdapterEntity adapterEntity = new ProtocolAdapterEntity(
+                adapterId,
+                "opcua",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(tag1Entity, tag2Entity));
+
+        when(protocolAdapterExtractor.getAdapterByAdapterId(adapterId)).thenReturn(Optional.of(adapterEntity));
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        // Only include tag2 in the new list (removing tag1 which is NOT in use)
+        final DomainTagList newTagList = new DomainTagList()
+                .items(List.of(new com.hivemq.edge.api.model.DomainTag()
+                        .name(tag2Name)
+                        .description("description")
+                        .definition(objectMapper.valueToTree(Map.of("address", "test2")))));
+
+        final Response response = protocolAdaptersResource.updateAdapterDomainTags(adapterId, newTagList);
+
+        assertEquals(200, response.getStatus());
+    }
 }

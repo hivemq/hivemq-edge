@@ -479,24 +479,29 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                             .stream()
                             .filter(tag -> !tag.getName().equals(decodedTagName))
                             .toList();
-                    if (newTagList.size() != oldInstance.getTags().size()) {
-                        final ProtocolAdapterEntity newConfig = new ProtocolAdapterEntity(oldInstance.getAdapterId(),
-                                oldInstance.getProtocolId(),
-                                oldInstance.getConfigVersion(),
-                                oldInstance.getConfig(),
-                                oldInstance.getNorthboundMappings(),
-                                oldInstance.getSouthboundMappings(),
-                                oldInstance.getTags()
-                                        .stream()
-                                        .filter(tag -> !tag.getName().equals(decodedTagName))
-                                        .toList());
-                        if (!configExtractor.updateAdapter(newConfig)) {
-                            return adapterCannotBeUpdatedError(adapterId);
-                        }
-                        return Response.ok().build();
-                    } else {
+                    if (newTagList.size() == oldInstance.getTags().size()) {
+                        // Tag doesn't exist
                         return errorResponse(new DomainTagNotFoundError(decodedTagName));
                     }
+
+                    // Validate that the tag is not in use
+                    final Optional<Response> validationError = validateTagNotInUse(oldInstance, decodedTagName);
+                    if (validationError.isPresent()) {
+                        return validationError.get();
+                    }
+
+                    // Proceed with deletion
+                    final ProtocolAdapterEntity newConfig = new ProtocolAdapterEntity(oldInstance.getAdapterId(),
+                            oldInstance.getProtocolId(),
+                            oldInstance.getConfigVersion(),
+                            oldInstance.getConfig(),
+                            oldInstance.getNorthboundMappings(),
+                            oldInstance.getSouthboundMappings(),
+                            newTagList);
+                    if (!configExtractor.updateAdapter(newConfig)) {
+                        return adapterCannotBeUpdatedError(adapterId);
+                    }
+                    return Response.ok().build();
                 }).orElseGet(adapterNotFoundError(adapterId)) :
                 errorResponse(new ConfigWritingDisabled());
     }
@@ -509,6 +514,18 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
         return systemInformation.isConfigWriteable() ?
                 configExtractor.getAdapterByAdapterId(adapterId).map(oldInstance -> {
+                    // Check if this is a rename operation (tag name is changing)
+                    final boolean isRename = !decodedTagName.equals(domainTag.getName());
+
+                    if (isRename) {
+                        // Validate that old tag name is not in use before allowing rename
+                        final Optional<Response> validationError = validateTagNotInUse(oldInstance, decodedTagName);
+                        if (validationError.isPresent()) {
+                            return validationError.get();
+                        }
+                    }
+
+                    // Proceed with update
                     final AtomicBoolean updated = new AtomicBoolean(false);
                     final var newTagList = oldInstance.getTags().stream().map(tag -> {
                         if (tag.getName().equals(decodedTagName)) {
@@ -546,6 +563,27 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @NotNull DomainTagList domainTagList) {
         return systemInformation.isConfigWriteable() ?
                 configExtractor.getAdapterByAdapterId(adapterId).map(oldInstance -> {
+                    // Find tags that are being removed (exist in old list but not in new list)
+                    final Set<String> newTagNames = domainTagList.getItems()
+                            .stream()
+                            .map(com.hivemq.edge.api.model.DomainTag::getName)
+                            .collect(Collectors.toSet());
+
+                    final List<String> removedTags = oldInstance.getTags()
+                            .stream()
+                            .map(TagEntity::getName)
+                            .filter(oldTagName -> !newTagNames.contains(oldTagName))
+                            .toList();
+
+                    // Validate that none of the removed tags are in use
+                    for (final String removedTag : removedTags) {
+                        final Optional<Response> validationError = validateTagNotInUse(oldInstance, removedTag);
+                        if (validationError.isPresent()) {
+                            return validationError.get();
+                        }
+                    }
+
+                    // Proceed with update
                     if (!configExtractor.updateAdapter(new ProtocolAdapterEntity(oldInstance.getAdapterId(),
                             oldInstance.getProtocolId(),
                             oldInstance.getConfigVersion(),
@@ -864,6 +902,54 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return new TagEntity(dmt.getName(),
                 dmt.getDescription(),
                 objectMapper.convertValue(dmt.getDefinition(), AS_MAP_TYPE_REF));
+    }
+
+    /**
+     * Validates that a tag is not referenced in any northbound or southbound mappings.
+     *
+     * @param adapter The adapter configuration to check
+     * @param tagName The name of the tag to validate
+     * @return Optional containing error Response if tag is in use, empty Optional otherwise
+     */
+    private @NotNull Optional<Response> validateTagNotInUse(
+            final @NotNull ProtocolAdapterEntity adapter,
+            final @NotNull String tagName) {
+
+        // Collect all northbound mappings that reference this tag
+        final List<String> northboundUsages = adapter.getNorthboundMappings()
+                .stream()
+                .filter(mapping -> mapping.getTagName().equals(tagName))
+                .map(mapping -> "northbound mapping with topic '" + mapping.getTopic() + "'")
+                .toList();
+
+        // Collect all southbound mappings that reference this tag
+        final List<String> southboundUsages = adapter.getSouthboundMappings()
+                .stream()
+                .filter(mapping -> mapping.getTagName().equals(tagName))
+                .map(mapping -> "southbound mapping with topic filter '" + mapping.getTopicFilter() + "'")
+                .toList();
+
+        // If tag is in use, return error with full details
+        if (!northboundUsages.isEmpty() || !southboundUsages.isEmpty()) {
+            final List<String> allUsages = new ArrayList<>();
+            allUsages.addAll(northboundUsages);
+            allUsages.addAll(southboundUsages);
+
+            final String errorMessage = String.format(
+                    "Cannot delete or rename tag '%s' for adapter '%s' because it is referenced in %d mapping(s): [%s]. " +
+                    "Please remove or update these mappings before deleting or renaming the tag.",
+                    tagName,
+                    adapter.getAdapterId(),
+                    allUsages.size(),
+                    String.join(", ", allUsages));
+
+            log.warn("Tag deletion/rename blocked for adapter '{}': tag '{}' is used in {} mapping(s)",
+                    adapter.getAdapterId(), tagName, allUsages.size());
+
+            return Optional.of(errorResponse(new com.hivemq.api.errors.adapters.DomainTagInUseError(errorMessage)));
+        }
+
+        return Optional.empty();
     }
 
     private void validateAdapterSchema(
