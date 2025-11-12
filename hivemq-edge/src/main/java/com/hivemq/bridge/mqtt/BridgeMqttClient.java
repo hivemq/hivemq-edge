@@ -240,6 +240,7 @@ public class BridgeMqttClient {
     }
 
     public synchronized @NotNull ListenableFuture<Void> stop() {
+        stopped.set(true);
         final ListenableFuture<Void> startFuture = startFutureRef.get();
         if (startFuture != null) {
             try {
@@ -258,7 +259,6 @@ public class BridgeMqttClient {
             final SettableFuture<Void> stopFuture = SettableFuture.create();
             stopFutureRef.set(stopFuture);
             final long stopStartTime = log.isDebugEnabled() ? System.nanoTime() : 0;
-            stopped.set(true);
             mqtt5Client.disconnect().handle((result, exception) -> {
                 if (log.isDebugEnabled()) {
                     final long stopMicros = (System.nanoTime() - stopStartTime) / 1000;
