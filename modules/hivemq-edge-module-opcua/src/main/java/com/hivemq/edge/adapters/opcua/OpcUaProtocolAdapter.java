@@ -149,7 +149,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 dataPointFactory,
                 input.moduleServices().eventService(),
                 protocolAdapterMetricsService,
-                config))) {
+                config,
+                this::reconnect))) {
 
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
 
@@ -251,7 +252,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                     dataPointFactory,
                     moduleServices.eventService(),
                     protocolAdapterMetricsService,
-                    config);
+                    config,
+                    this::reconnect);
 
             // Set as current connection and attempt connection with retry logic
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
@@ -602,7 +604,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                     dataPointFactory,
                     this.moduleServices.eventService(),
                     protocolAdapterMetricsService,
-                    config);
+                    config,
+                    this::reconnect);
 
             // Set as current connection and attempt
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);

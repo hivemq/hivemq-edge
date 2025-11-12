@@ -81,12 +81,19 @@ public record ConnectionOptions(
         @ModuleConfigField(title = "Automatic Reconnection",
                    description = "Enable automatic reconnection when health check detects connection issues",
                    defaultValue = ""+DEFAULT_AUTO_RECONNECT)
-        Boolean autoReconnect) {
+        Boolean autoReconnect,
+
+        @JsonProperty("reconnectOnServiceFault")
+        @ModuleConfigField(title = "Reconnect on Service Fault",
+                   description = "Enable automatic reconnection when critical OPC UA service faults occur (e.g., session invalid, subscription lost). Recommended to keep enabled.",
+                   defaultValue = ""+DEFAULT_RECONNECT_ON_SERVICE_FAULT)
+        Boolean reconnectOnServiceFault) {
 
     public static final long DEFAULT_SESSION_TIMEOUT = 120L * 1000;
     public static final long DEFAULT_KEEP_ALIVE_INTERVAL = 10L * 1000;
     public static final int DEFAULT_KEEP_ALIVE_FAILURES_ALLOWED = 3;
     public static final boolean DEFAULT_AUTO_RECONNECT = true;
+    public static final boolean DEFAULT_RECONNECT_ON_SERVICE_FAULT = true;
     public static final long DEFAULT_REQUEST_TIMEOUT = 30 * 1000;
     public static final long DEFAULT_CONNECTION_TIMEOUT = 30 * 1000;
     public static final long DEFAULT_HEALTHCHECK_INTERVAL = 30 * 1000;
@@ -102,10 +109,12 @@ public record ConnectionOptions(
         healthCheckIntervalMs = requireNonNullElse(healthCheckIntervalMs, DEFAULT_HEALTHCHECK_INTERVAL);
         retryIntervalMs = requireNonNullElse(retryIntervalMs, DEFAULT_RETRY_INTERVAL);
         autoReconnect = requireNonNullElse(autoReconnect, DEFAULT_AUTO_RECONNECT);
+        reconnectOnServiceFault = requireNonNullElse(reconnectOnServiceFault, DEFAULT_RECONNECT_ON_SERVICE_FAULT);
     }
 
     public static ConnectionOptions defaultConnectionOptions() {
         return new ConnectionOptions(DEFAULT_SESSION_TIMEOUT, DEFAULT_REQUEST_TIMEOUT, DEFAULT_KEEP_ALIVE_INTERVAL,
-                DEFAULT_KEEP_ALIVE_FAILURES_ALLOWED, DEFAULT_CONNECTION_TIMEOUT, DEFAULT_HEALTHCHECK_INTERVAL, DEFAULT_RETRY_INTERVAL, DEFAULT_AUTO_RECONNECT);
+                DEFAULT_KEEP_ALIVE_FAILURES_ALLOWED, DEFAULT_CONNECTION_TIMEOUT, DEFAULT_HEALTHCHECK_INTERVAL,
+                DEFAULT_RETRY_INTERVAL, DEFAULT_AUTO_RECONNECT, DEFAULT_RECONNECT_ON_SERVICE_FAULT);
     }
 }

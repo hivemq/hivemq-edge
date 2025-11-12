@@ -65,6 +65,7 @@ public class OpcUaClientConnection {
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
 
     private final @NotNull AtomicReference<ConnectionContext> context = new AtomicReference<>();
+    private final @NotNull Runnable reconnectionCallback;
 
     OpcUaClientConnection(
             final @NotNull String adapterId,
@@ -74,7 +75,8 @@ public class OpcUaClientConnection {
             final @NotNull DataPointFactory dataPointFactory,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
-            final @NotNull OpcUaSpecificAdapterConfig config) {
+            final @NotNull OpcUaSpecificAdapterConfig config,
+            final @NotNull Runnable reconnectionCallback) {
         this.config = config;
         this.tagStreamingService = tagStreamingService;
         this.dataPointFactory = dataPointFactory;
@@ -83,12 +85,18 @@ public class OpcUaClientConnection {
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
         this.tags = tags;
+        this.reconnectionCallback = reconnectionCallback;
     }
 
     synchronized boolean start(final ParsedConfig parsedConfig) {
         log.debug("Subscribing to OPC UA client");
         final OpcUaClient client;
-        final var faultListener = new OpcUaServiceFaultListener(protocolAdapterMetricsService, eventService, adapterId);
+        final boolean reconnectOnServiceFault = config.getConnectionOptions().reconnectOnServiceFault();
+        final var faultListener = new OpcUaServiceFaultListener(protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                reconnectionCallback,
+                reconnectOnServiceFault);
         final var activityListener = new OpcUaSessionActivityListener(protocolAdapterMetricsService, eventService, adapterId, protocolAdapterState);
 
         // Determine preferred MessageSecurityMode with intelligent defaults
