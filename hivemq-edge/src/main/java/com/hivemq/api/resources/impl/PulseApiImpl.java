@@ -645,11 +645,6 @@ public class PulseApiImpl implements PulseApi {
             if (!Objects.equals(schema, asset.getSchema())) {
                 return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetSchemaError(assetId)));
             }
-            final Optional<String> optionalDuplicateMappingId = dataCombining.getFirstDuplicateMappingId();
-            if (optionalDuplicateMappingId.isPresent()) {
-                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceForAssetMapperError(
-                        optionalDuplicateMappingId.get())));
-            }
             final UUID mappingId = asset.getMapping().getId();
             final UUID dataCombiningId = dataCombining.id();
             if (oldDataCombiner == null) {
