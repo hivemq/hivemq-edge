@@ -23,11 +23,15 @@ import com.hivemq.edge.modules.api.events.model.EventImpl;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
+    private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterStateImpl.class);
+
     private final @NotNull AtomicReference<RuntimeStatus> runtimeStatus;
     private final @NotNull AtomicReference<ConnectionStatus> connectionStatus;
     private final @NotNull AtomicReference<@Nullable String> lastErrorMessage;
@@ -51,6 +55,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
 
     @Override
     public boolean setConnectionStatus(final @NotNull ConnectionStatus connectionStatus) {
+        log.debug("Setting connection status of adapter '{}' to '{}'", adapterId, connectionStatus);
         Preconditions.checkNotNull(connectionStatus);
         final var changed = this.connectionStatus.getAndSet(connectionStatus) != connectionStatus;
         if (changed) {
@@ -105,6 +110,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
 
     @Override
     public void setRuntimeStatus(final @NotNull RuntimeStatus status) {
+        log.debug("Setting runtime status of adapter '{}' to '{}'", adapterId, status);
         runtimeStatus.set(status);
     }
 
