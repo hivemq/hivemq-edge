@@ -207,7 +207,7 @@ public class ProtocolAdapterWrapper {
                     if (!scheduledFuture.isCancelled()) {
                         scheduledFuture.cancel(true);
                     }
-                    scheduler.shutdown();
+                    scheduler.shutdownNow();
                 });
                 protocolAdapterState.setConnectionStatusListener(status -> {
                     // Skip only the initial DISCONNECTED status on first call, but process any other status
