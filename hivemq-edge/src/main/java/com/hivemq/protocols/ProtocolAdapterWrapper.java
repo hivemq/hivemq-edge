@@ -208,37 +208,42 @@ public class ProtocolAdapterWrapper {
                 }, WRITE_FUTURE_COMPLETE_DELAY, TimeUnit.SECONDS);
                 future.thenAccept(success -> scheduler.shutdown());
                 protocolAdapterState.setConnectionStatusListener(status -> {
-                    if (firstCallToStatusListener.get()) {
-                        firstCallToStatusListener.set(false);
-                    } else {
-                        switch (status) {
-                            case CONNECTED, STATELESS -> {
-                                if (futureCompleted.compareAndSet(false, true)) {
-                                    try {
-                                        if (startWritingAsync(protocolAdapterWritingService).get()) {
-                                            log.info("Successfully started adapter with id {}", adapter.getId());
-                                            future.complete(true);
-                                        } else {
-                                            log.error(
-                                                    "Protocol adapter with id {} start writing failed as data hub is not available.",
-                                                    adapter.getId());
-                                            future.complete(false);
-                                        }
-                                    } catch (final Exception e) {
-                                        log.error("Failed to start writing for adapter with id {}.",
-                                                adapter.getId(),
-                                                e);
+                    // Skip only the initial DISCONNECTED status on first call, but process any other status
+                    // (including ERROR) immediately. This prevents race conditions where the adapter fails
+                    // to connect before the listener is fully set up.
+                    if (firstCallToStatusListener.compareAndSet(true, false) &&
+                            status == ProtocolAdapterState.ConnectionStatus.DISCONNECTED) {
+                        // Ignore initial DISCONNECTED status - adapter hasn't tried to connect yet
+                        log.trace("Ignoring initial DISCONNECTED status for adapter {}", adapter.getId());
+                        return;
+                    }
+
+                    // Process all other statuses (including ERROR on first call, or any subsequent status changes)
+                    switch (status) {
+                        case CONNECTED, STATELESS -> {
+                            if (futureCompleted.compareAndSet(false, true)) {
+                                try {
+                                    if (startWritingAsync(protocolAdapterWritingService).get()) {
+                                        log.info("Successfully started adapter with id {}", adapter.getId());
                                         future.complete(true);
+                                    } else {
+                                        log.error(
+                                                "Protocol adapter with id {} start writing failed as data hub is not available.",
+                                                adapter.getId());
+                                        future.complete(false);
                                     }
+                                } catch (final Exception e) {
+                                    log.error("Failed to start writing for adapter with id {}.", adapter.getId(), e);
+                                    future.complete(true);
                                 }
                             }
-                            case ERROR, DISCONNECTED, UNKNOWN -> {
-                                if (futureCompleted.compareAndSet(false, true)) {
-                                    log.error("Failed to start writing for adapter with id {} because the status is {}.",
-                                            adapter.getId(),
-                                            status);
-                                    future.complete(false);
-                                }
+                        }
+                        case ERROR, DISCONNECTED, UNKNOWN -> {
+                            if (futureCompleted.compareAndSet(false, true)) {
+                                log.error("Failed to start writing for adapter with id {} because the status is {}.",
+                                        adapter.getId(),
+                                        status);
+                                future.complete(false);
                             }
                         }
                     }
