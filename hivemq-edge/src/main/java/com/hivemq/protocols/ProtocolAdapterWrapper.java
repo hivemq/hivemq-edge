@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -194,19 +195,20 @@ public class ProtocolAdapterWrapper {
             if (writingEnabled && isWriting()) {
                 final AtomicBoolean futureCompleted = new AtomicBoolean(false);
                 final AtomicBoolean firstCallToStatusListener = new AtomicBoolean(true);
-                final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, runnable -> {
-                    final Thread t = new Thread(runnable);
-                    t.setDaemon(false);
-                    return t;
-                });
-                scheduler.schedule(() -> {
+                final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+                final ScheduledFuture<?> scheduledFuture = scheduler.schedule(() -> {
                     if (futureCompleted.compareAndSet(false, true)) {
                         log.error("Protocol adapter with id {} start writing failed because of timeout.",
                                 adapter.getId());
                         future.complete(false);
                     }
                 }, WRITE_FUTURE_COMPLETE_DELAY, TimeUnit.SECONDS);
-                future.thenAccept(success -> scheduler.shutdown());
+                future.thenAccept(success -> {
+                    if (!scheduledFuture.isCancelled()) {
+                        scheduledFuture.cancel(true);
+                    }
+                    scheduler.shutdown();
+                });
                 protocolAdapterState.setConnectionStatusListener(status -> {
                     // Skip only the initial DISCONNECTED status on first call, but process any other status
                     // (including ERROR) immediately. This prevents race conditions where the adapter fails
