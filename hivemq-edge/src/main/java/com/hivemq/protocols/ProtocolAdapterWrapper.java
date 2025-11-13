@@ -47,7 +47,9 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -75,6 +77,8 @@ public class ProtocolAdapterWrapper {
     private final AtomicReference<CompletableFuture<Void>> startFutureRef = new AtomicReference<>(null);
     private final AtomicReference<CompletableFuture<Void>> stopFutureRef = new AtomicReference<>(null);
     private final AtomicReference<OperationState> operationState = new AtomicReference<>(OperationState.IDLE);
+    private final AtomicReference<ScheduledExecutorService> schedulerRef = new AtomicReference<>(null);
+    private final AtomicReference<ScheduledFuture<?>> schedulerFutureRef = new AtomicReference<>(null);
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
@@ -183,6 +187,13 @@ public class ProtocolAdapterWrapper {
         }
     }
 
+    private void cleanUpScheduler() {
+        Optional.ofNullable(schedulerFutureRef.getAndSet(null))
+                .filter(scheduledFuture -> !scheduledFuture.isCancelled())
+                .ifPresent(scheduledFuture -> scheduledFuture.cancel(true));
+        Optional.ofNullable(schedulerRef.getAndSet(null)).ifPresent(ExecutorService::shutdownNow);
+    }
+
     private @NotNull CompletableFuture<Boolean> attemptStartingConsumers(
             final boolean writingEnabled,
             final @NotNull EventService eventService) {
@@ -195,27 +206,21 @@ public class ProtocolAdapterWrapper {
             if (writingEnabled && isWriting()) {
                 final AtomicBoolean futureCompleted = new AtomicBoolean(false);
                 final AtomicBoolean firstCallToStatusListener = new AtomicBoolean(true);
-                final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-                    final Thread thread  = new Thread(runnable);
+                cleanUpScheduler();
+                schedulerRef.set(Executors.newSingleThreadScheduledExecutor(runnable -> {
+                    final Thread thread = new Thread(runnable);
                     thread.setName("adapter-start-timeout-thread-" + adapter.getId());
                     thread.setDaemon(false);
                     return thread;
-                });
-                final long startTime = System.currentTimeMillis();
-                final ScheduledFuture<?> scheduledFuture = scheduler.schedule(() -> {
-                    if (((System.currentTimeMillis() - startTime) > (WRITE_FUTURE_COMPLETE_DELAY - 1) * 1000) &&
-                            futureCompleted.compareAndSet(false, true)) {
+                }));
+                schedulerFutureRef.set(schedulerRef.get().schedule(() -> {
+                    if (futureCompleted.compareAndSet(false, true)) {
                         log.error("Protocol adapter with id {} start writing failed because of timeout.",
                                 adapter.getId());
                         future.complete(false);
                     }
-                }, WRITE_FUTURE_COMPLETE_DELAY, TimeUnit.SECONDS);
-                future.thenAccept(success -> {
-                    if (!scheduledFuture.isCancelled()) {
-                        scheduledFuture.cancel(true);
-                    }
-                    scheduler.shutdownNow();
-                });
+                }, WRITE_FUTURE_COMPLETE_DELAY, TimeUnit.SECONDS));
+                future.thenAccept(success -> cleanUpScheduler());
                 protocolAdapterState.setConnectionStatusListener(status -> {
                     // Skip only the initial DISCONNECTED status on first call, but process any other status
                     // (including ERROR) immediately. This prevents race conditions where the adapter fails
@@ -277,7 +282,7 @@ public class ProtocolAdapterWrapper {
         if (existingStopFuture != null) {
             return existingStopFuture;
         }
-
+        cleanUpScheduler();
         // Try to atomically transition from IDLE to STOPPING
         if (!operationState.compareAndSet(OperationState.IDLE, OperationState.STOPPING)) {
             // State changed between check and set, retry
