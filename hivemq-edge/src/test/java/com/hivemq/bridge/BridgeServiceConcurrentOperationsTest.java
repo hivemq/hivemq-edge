@@ -30,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -50,15 +51,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Integration test for BridgeService to verify that concurrent add/remove operations
- * don't leave dangling MQTT clients that continue to reconnect after being stopped.
- * <p>
- * Tests the fixes for:
- * 1. Increased stop timeout (30s)
- * 2. Forced termination on timeout
- * 3. Canceling scheduled reconnections
- */
 class BridgeServiceConcurrentOperationsTest {
 
     private @Nullable BridgeService bridgeService;
@@ -290,6 +282,279 @@ class BridgeServiceConcurrentOperationsTest {
         requireNonNull(bridgeService).updateBridges(List.of());
         verify(mockClient2, times(1)).stop();
         assertTrue(client2Stops.get() >= 1, "Bridge 2 client should be stopped");
+    }
+
+    /**
+     * CORNER CASE: Bridge update with different port number while client is reconnecting
+     * Ensures old client is stopped even if it's in reconnection loop
+     */
+    @Test
+    void testBridgeUpdateDuringReconnection_oldClientStopped() {
+        final MqttBridge bridge1 = createTestBridge("reconnect-bridge", 1883);
+        final BridgeMqttClient mockClient1 = mock(BridgeMqttClient.class);
+
+        // Simulate client in reconnection loop
+        when(mockClient1.start()).thenReturn(Futures.immediateFuture(null));
+        when(mockClient1.isConnected()).thenReturn(false);
+        when(mockClient1.getActiveForwarders()).thenReturn(List.of());
+        when(mockClient1.getBridge()).thenReturn(bridge1);
+        when(mockClient1.createForwarders()).thenReturn(List.of());
+        when(mockClient1.stop()).thenReturn(Futures.immediateFuture(null));
+
+        when(requireNonNull(clientFactory).createRemoteClient(any())).thenReturn(mockClient1);
+
+        // Add bridge
+        requireNonNull(bridgeService).updateBridges(List.of(bridge1));
+
+        // Update to different port (simulating config change)
+        final MqttBridge bridge2 = createTestBridge("reconnect-bridge", 8883);
+        final BridgeMqttClient mockClient2 = createMockClient(bridge2, new AtomicInteger(0), false);
+        when(requireNonNull(clientFactory).createRemoteClient(any())).thenReturn(mockClient2);
+
+        requireNonNull(bridgeService).updateBridges(List.of(bridge2));
+
+        // Verify old client was stopped (even if reconnecting)
+        verify(mockClient1, times(1)).stop();
+        verify(mockClient2, times(1)).start();
+    }
+
+    /**
+     * CORNER CASE: Multiple rapid bridge updates (config changes coming in quickly)
+     * Ensures intermediate clients are properly stopped
+     */
+    @Test
+    void testRapidBridgeUpdates_allIntermediateClientsStopped() {
+        final String bridgeId = "rapid-update-bridge";
+        final List<BridgeMqttClient> allClients = new ArrayList<>();
+
+        // Create 5 different bridge configs with different ports
+        for (int i = 0; i < 5; i++) {
+            final int port = 2000 + i;
+            final MqttBridge bridge = createTestBridge(bridgeId, port);
+            final BridgeMqttClient mockClient = createMockClient(bridge, new AtomicInteger(0), false);
+            allClients.add(mockClient);
+
+            when(requireNonNull(clientFactory).createRemoteClient(any())).thenReturn(mockClient);
+
+            // Update bridge rapidly
+            requireNonNull(bridgeService).updateBridges(List.of(bridge));
+
+            // Small delay between updates
+            try {
+                Thread.sleep(10);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        // Verify: First 4 clients should be stopped, 5th should be running
+        for (int i = 0; i < 4; i++) {
+            verify(allClients.get(i), times(1)).stop();
+        }
+        // Last client should still be running
+        verify(allClients.get(4), times(1)).start();
+        verify(allClients.get(4), never()).stop();
+    }
+
+    /**
+     * CORNER CASE: Bridge update while stop is in progress (timeout scenario)
+     * Ensures system doesn't get stuck waiting for old client to stop
+     */
+    @Test
+    void testUpdateWhileStopInProgress_doesNotBlock() throws Exception {
+        final String bridgeId = "stop-in-progress-bridge";
+        final MqttBridge bridge1 = createTestBridge(bridgeId, 1883);
+        final SettableFuture<Void> stopFuture = SettableFuture.create();
+
+        final BridgeMqttClient slowStopClient = mock(BridgeMqttClient.class);
+        when(slowStopClient.start()).thenReturn(Futures.immediateFuture(null));
+        when(slowStopClient.stop()).thenReturn(stopFuture); // Never completes
+        when(slowStopClient.isConnected()).thenReturn(true);
+        when(slowStopClient.getActiveForwarders()).thenReturn(List.of());
+        when(slowStopClient.getBridge()).thenReturn(bridge1);
+        when(slowStopClient.createForwarders()).thenReturn(List.of());
+        when(slowStopClient.getMqtt5Client()).thenReturn(mock(Mqtt5AsyncClient.class));
+
+        when(requireNonNull(clientFactory).createRemoteClient(bridge1)).thenReturn(slowStopClient);
+
+        // Add initial bridge
+        requireNonNull(bridgeService).updateBridges(List.of(bridge1));
+
+        // Set up the second bridge and its mock client before the async operation
+        final MqttBridge bridge2 = createTestBridge(bridgeId, 8883);
+        final BridgeMqttClient mockClient2 = createMockClient(bridge2, new AtomicInteger(0), false);
+        when(requireNonNull(clientFactory).createRemoteClient(bridge2)).thenReturn(mockClient2);
+
+        // Start update in background (will block on stop)
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        final CompletableFuture<Void> updateFuture =
+                CompletableFuture.runAsync(() -> requireNonNull(bridgeService).updateBridges(List.of(bridge2)),
+                        executor);
+
+        // Wait a bit to let update start
+        Thread.sleep(500);
+
+        // Complete the stop after delay
+        stopFuture.set(null);
+
+        // Update should eventually complete (with timeout)
+        updateFuture.get(35, TimeUnit.SECONDS); // Slightly longer than stop timeout
+
+        executor.shutdown();
+        assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS));
+    }
+
+    /**
+     * CORNER CASE: Remove bridge that's currently failing to connect
+     * Ensures failed/failing bridges can still be removed cleanly
+     */
+    @Test
+    void testRemoveBridgeWhileConnectionFailing() {
+        final MqttBridge bridge = createTestBridge("failing-bridge");
+        final BridgeMqttClient mockClient = mock(BridgeMqttClient.class);
+
+        // Simulate connection failure
+        when(mockClient.start()).thenReturn(Futures.immediateFailedFuture(new RuntimeException("Connection refused")));
+        when(mockClient.stop()).thenReturn(Futures.immediateFuture(null));
+        when(mockClient.isConnected()).thenReturn(false);
+        when(mockClient.getActiveForwarders()).thenReturn(List.of());
+        when(mockClient.getBridge()).thenReturn(bridge);
+        when(mockClient.createForwarders()).thenReturn(List.of());
+
+        when(requireNonNull(clientFactory).createRemoteClient(bridge)).thenReturn(mockClient);
+
+        // Add bridge (will fail to connect)
+        requireNonNull(bridgeService).updateBridges(List.of(bridge));
+
+        // Remove bridge (should succeed even though connection failed)
+        requireNonNull(bridgeService).updateBridges(List.of());
+
+        // Verify client was stopped
+        verify(mockClient, times(1)).stop();
+    }
+
+    /**
+     * CORNER CASE: Concurrent updates to different bridges
+     * Ensures multiple bridge operations don't interfere with each other
+     */
+    @Test
+    void testConcurrentUpdatesToDifferentBridges() throws Exception {
+        final int numBridges = 5;
+        final CountDownLatch startLatch = new CountDownLatch(1);
+        final CountDownLatch completionLatch = new CountDownLatch(numBridges);
+        final AtomicBoolean errorOccurred = new AtomicBoolean(false);
+
+        try (final ExecutorService threadPool = Executors.newFixedThreadPool(numBridges)) {
+            for (int i = 0; i < numBridges; i++) {
+                final String bridgeId = "concurrent-bridge-" + i;
+                final int port = 3000 + i;
+
+                threadPool.submit(() -> {
+                    try {
+                        startLatch.await();
+
+                        final MqttBridge bridge = createTestBridge(bridgeId, port);
+                        final BridgeMqttClient mockClient = createMockClient(bridge, new AtomicInteger(0), false);
+                        when(requireNonNull(clientFactory).createRemoteClient(any())).thenReturn(mockClient);
+
+                        // Add bridge
+                        requireNonNull(bridgeService).updateBridges(List.of(bridge));
+
+                        // Update bridge
+                        final MqttBridge updatedBridge = createTestBridge(bridgeId, port + 100);
+                        final BridgeMqttClient updatedClient =
+                                createMockClient(updatedBridge, new AtomicInteger(0), false);
+                        when(requireNonNull(clientFactory).createRemoteClient(any())).thenReturn(updatedClient);
+                        requireNonNull(bridgeService).updateBridges(List.of(updatedBridge));
+
+                        // Remove bridge
+                        requireNonNull(bridgeService).updateBridges(List.of());
+
+                    } catch (final Exception e) {
+                        errorOccurred.set(true);
+                    } finally {
+                        completionLatch.countDown();
+                    }
+                });
+            }
+
+            startLatch.countDown();
+            assertTrue(completionLatch.await(30, TimeUnit.SECONDS), "All concurrent operations should complete");
+            assertFalse(errorOccurred.get(),
+                    "No errors should occur during concurrent operations on different bridges");
+        }
+    }
+
+    /**
+     * CORNER CASE: Bridge with same ID but completely different config
+     * (different host, port, client ID, etc.)
+     * Ensures complete bridge replacement works correctly
+     */
+    @Test
+    void testBridgeReplacementWithCompletelyDifferentConfig() {
+        final String bridgeId = "replacement-bridge";
+
+        // Original bridge
+        final MqttBridge.Builder builder1 = new MqttBridge.Builder().withId(bridgeId)
+                .withHost("original.example.com")
+                .withPort(1883)
+                .withClientId("original-client")
+                .withLocalSubscriptions(List.of())
+                .withRemoteSubscriptions(List.of());
+        final MqttBridge bridge1 = builder1.build();
+
+        final BridgeMqttClient mockClient1 = createMockClient(bridge1, new AtomicInteger(0), false);
+        when(requireNonNull(clientFactory).createRemoteClient(bridge1)).thenReturn(mockClient1);
+
+        requireNonNull(bridgeService).updateBridges(List.of(bridge1));
+
+        // Completely different bridge with same ID
+        final MqttBridge.Builder builder2 = new MqttBridge.Builder().withId(bridgeId)
+                .withHost("replacement.example.com")
+                .withPort(8883)
+                .withClientId("replacement-client")
+                .withLocalSubscriptions(List.of())
+                .withRemoteSubscriptions(List.of());
+        final MqttBridge bridge2 = builder2.build();
+
+        final BridgeMqttClient mockClient2 = createMockClient(bridge2, new AtomicInteger(0), false);
+        when(requireNonNull(clientFactory).createRemoteClient(bridge2)).thenReturn(mockClient2);
+
+        requireNonNull(bridgeService).updateBridges(List.of(bridge2));
+
+        // Verify old client stopped, new client started
+        verify(mockClient1, times(1)).stop();
+        verify(mockClient2, times(1)).start();
+    }
+
+    /**
+     * CORNER CASE: Empty bridge list update (remove all bridges at once)
+     * Ensures bulk removal works correctly
+     */
+    @Test
+    void testRemoveAllBridgesAtOnce() {
+        final List<BridgeMqttClient> allClients = new ArrayList<>();
+        final List<MqttBridge> allBridges = new ArrayList<>();
+
+        // Add multiple bridges
+        for (int i = 0; i < 5; i++) {
+            final MqttBridge bridge = createTestBridge("bulk-remove-bridge-" + i);
+            final BridgeMqttClient mockClient = createMockClient(bridge, new AtomicInteger(0), false);
+            allClients.add(mockClient);
+            allBridges.add(bridge);
+            // Stub each bridge individually to avoid overwriting previous stubs
+            when(requireNonNull(clientFactory).createRemoteClient(bridge)).thenReturn(mockClient);
+        }
+
+        requireNonNull(bridgeService).updateBridges(allBridges);
+
+        // Remove all at once
+        requireNonNull(bridgeService).updateBridges(List.of());
+
+        // Verify all clients were stopped
+        for (final BridgeMqttClient client : allClients) {
+            verify(client, times(1)).stop();
+        }
     }
 
     /**
