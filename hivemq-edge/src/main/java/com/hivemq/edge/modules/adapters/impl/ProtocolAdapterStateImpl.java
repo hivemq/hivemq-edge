@@ -26,11 +26,12 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
-    private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterStateImpl.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterStateImpl.class);
 
     private final @NotNull AtomicReference<RuntimeStatus> runtimeStatus;
     private final @NotNull AtomicReference<ConnectionStatus> connectionStatus;
@@ -39,6 +40,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
     private final @NotNull AtomicReference<Consumer<ConnectionStatus>> connectionStatusListener;
+    private final @NotNull AtomicBoolean shuttingDown;
 
     public ProtocolAdapterStateImpl(
             final @NotNull EventService eventService,
@@ -49,18 +51,24 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
         this.protocolId = protocolId;
         this.runtimeStatus = new AtomicReference<>(RuntimeStatus.STOPPED);
         this.connectionStatus = new AtomicReference<>(ConnectionStatus.DISCONNECTED);
-        this.lastErrorMessage = new AtomicReference<>(null);
+        this.lastErrorMessage = new AtomicReference<>();
         this.connectionStatusListener = new AtomicReference<>();
+        this.shuttingDown = new AtomicBoolean();
     }
 
     @Override
     public boolean setConnectionStatus(final @NotNull ConnectionStatus connectionStatus) {
+        // Prevent state changes during shutdown to avoid race conditions
+        if (shuttingDown.get()) {
+            log.trace("Ignoring connection status change for adapter '{}' during shutdown", adapterId);
+            return false;
+        }
         log.debug("Setting connection status of adapter '{}' to '{}'", adapterId, connectionStatus);
         Preconditions.checkNotNull(connectionStatus);
         final var changed = this.connectionStatus.getAndSet(connectionStatus) != connectionStatus;
         if (changed) {
             final var listener = connectionStatusListener.get();
-            if (listener != null) {
+            if (listener != null && !shuttingDown.get()) {
                 listener.accept(connectionStatus);
             }
         }
@@ -123,5 +131,23 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
         final ConnectionStatus currentStatus = connectionStatus.get();
         connectionStatusListener.set(listener);
         listener.accept(currentStatus);
+    }
+
+    /**
+     * Marks this adapter state as shutting down, preventing further state changes and listener callbacks.
+     * This is called when the adapter is being stopped or destroyed to avoid race conditions during cleanup.
+     */
+    public void markShuttingDown() {
+        shuttingDown.set(true);
+        // Clear the listener to prevent any further callbacks
+        connectionStatusListener.set(null);
+    }
+
+    /**
+     * Clears the shutting down flag, allowing state changes again.
+     * This should be called if an adapter restart is needed after a failed stop.
+     */
+    public void clearShuttingDown() {
+        shuttingDown.set(false);
     }
 }

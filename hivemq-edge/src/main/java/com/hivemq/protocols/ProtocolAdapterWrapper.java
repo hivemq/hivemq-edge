@@ -111,6 +111,8 @@ public class ProtocolAdapterWrapper {
             // State changed between check and set, retry
             return startAsync(writingEnabled, moduleServices);
         }
+        // Clear shutdown flag when starting adapter to allow state changes
+        protocolAdapterState.clearShuttingDown();
         initStartAttempt();
         final var output = new ProtocolAdapterStartOutputImpl();
         final var input = new ProtocolAdapterStartInputImpl(moduleServices);
@@ -161,6 +163,8 @@ public class ProtocolAdapterWrapper {
 
     private void stopAfterFailedStart() {
         log.warn("Stopping adapter with id {} after a failed start", adapter.getId());
+        // Mark as shutting down to prevent race conditions
+        protocolAdapterState.markShuttingDown();
         final var stopInput = new ProtocolAdapterStopInputImpl();
         final var stopOutput = new ProtocolAdapterStopOutputImpl();
         stopPolling(protocolAdapterPollingService);
@@ -267,6 +271,9 @@ public class ProtocolAdapterWrapper {
             log.info("Stop operation already in progress for adapter with id '{}', returning existing future", getId());
             return existingFuture;
         }
+
+        // Mark the adapter state as shutting down to prevent race conditions with async operations
+        protocolAdapterState.markShuttingDown();
 
         consumers.forEach(tagManager::removeConsumer);
         final var input = new ProtocolAdapterStopInputImpl();
