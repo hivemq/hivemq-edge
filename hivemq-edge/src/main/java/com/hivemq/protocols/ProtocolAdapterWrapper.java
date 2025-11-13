@@ -221,14 +221,12 @@ public class ProtocolAdapterWrapper {
                     }
                 }, WRITE_FUTURE_COMPLETE_DELAY, TimeUnit.SECONDS));
                 future.thenAccept(success -> cleanUpScheduler());
+                final var initialConnectionStatus = protocolAdapterState.getConnectionStatus();
                 protocolAdapterState.setConnectionStatusListener(status -> {
-                    // Skip only the initial DISCONNECTED status on first call, but process any other status
-                    // (including ERROR) immediately. This prevents race conditions where the adapter fails
-                    // to connect before the listener is fully set up.
-                    if (firstCallToStatusListener.compareAndSet(true, false) &&
-                            status == ProtocolAdapterState.ConnectionStatus.DISCONNECTED) {
-                        // Ignore initial DISCONNECTED status - adapter hasn't tried to connect yet
-                        log.trace("Ignoring initial DISCONNECTED status for adapter {}", adapter.getId());
+                    if (firstCallToStatusListener.compareAndSet(true, false) && status == initialConnectionStatus) {
+                        log.trace("Ignoring initial status {} for adapter {}",
+                                initialConnectionStatus,
+                                adapter.getId());
                         return;
                     }
 
