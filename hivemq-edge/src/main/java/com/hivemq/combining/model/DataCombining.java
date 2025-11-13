@@ -57,30 +57,4 @@ public record DataCombining(UUID id, DataCombiningSources sources, DataCombining
                 destination().toPersistence(),
                 instructions().stream().map(InstructionEntity::from).toList());
     }
-
-    public boolean isPrimaryReferenceFound() {
-        final DataIdentifierReference primaryReference = sources().primaryReference();
-        if (primaryReference == null || primaryReference.isIdEmpty()) {
-            return false;
-        }
-        return instructions().stream()
-                .map(com.hivemq.persistence.mappings.fieldmapping.Instruction::dataIdentifierReference)
-                .filter(Objects::nonNull)
-                .anyMatch(reference -> Objects.equals(reference, primaryReference));
-    }
-
-    public @NotNull Optional<String> getFirstDuplicateMappingId() {
-        final Set<String> idSet = new HashSet<>();
-        for (final String id : instructions().stream()
-                .map(Instruction::dataIdentifierReference)
-                .filter(Objects::nonNull)
-                .filter(dataIdentifierReference -> !dataIdentifierReference.isIdEmpty())
-                .map(DataIdentifierReference::id)
-                .toList()) {
-            if (!idSet.add(id)) {
-                return Optional.of(id);
-            }
-        }
-        return Optional.empty();
-    }
 }
