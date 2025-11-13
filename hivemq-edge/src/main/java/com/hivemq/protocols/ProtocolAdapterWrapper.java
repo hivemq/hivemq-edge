@@ -221,28 +221,32 @@ public class ProtocolAdapterWrapper {
                     // Process all other statuses (including ERROR on first call, or any subsequent status changes)
                     switch (status) {
                         case CONNECTED, STATELESS -> {
-                            if (futureCompleted.compareAndSet(false, true)) {
-                                try {
-                                    if (startWritingAsync(protocolAdapterWritingService).get()) {
-                                        log.info("Successfully started adapter with id {}", adapter.getId());
+                            try {
+                                if (startWritingAsync(protocolAdapterWritingService).get()) {
+                                    log.info("Successfully started adapter with id {}", adapter.getId());
+                                    if (futureCompleted.compareAndSet(false, true)) {
                                         future.complete(true);
-                                    } else {
-                                        log.error(
-                                                "Protocol adapter with id {} start writing failed as data hub is not available.",
-                                                adapter.getId());
+                                    }
+                                } else {
+                                    log.error(
+                                            "Protocol adapter with id {} start writing failed as data hub is not available.",
+                                            adapter.getId());
+                                    if (futureCompleted.compareAndSet(false, true)) {
                                         future.complete(false);
                                     }
-                                } catch (final Exception e) {
-                                    log.error("Failed to start writing for adapter with id {}.", adapter.getId(), e);
+                                }
+                            } catch (final Exception e) {
+                                log.error("Failed to start writing for adapter with id {}.", adapter.getId(), e);
+                                if (futureCompleted.compareAndSet(false, true)) {
                                     future.complete(true);
                                 }
                             }
                         }
                         case ERROR, DISCONNECTED, UNKNOWN -> {
+                            log.error("Failed to start writing for adapter with id {} because the status is {}.",
+                                    adapter.getId(),
+                                    status);
                             if (futureCompleted.compareAndSet(false, true)) {
-                                log.error("Failed to start writing for adapter with id {} because the status is {}.",
-                                        adapter.getId(),
-                                        status);
                                 future.complete(false);
                             }
                         }
