@@ -286,7 +286,7 @@ export const useWizardStore = create<WizardStore>()(
         /**
          * Set an error message
          */
-        setError: (message: string) => {
+        setError: (message: string | null) => {
           set({
             errorMessage: message,
           })
