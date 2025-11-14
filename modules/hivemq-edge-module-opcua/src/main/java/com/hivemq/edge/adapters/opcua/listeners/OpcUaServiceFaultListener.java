@@ -105,6 +105,7 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
     private boolean isCriticalFault(final @NotNull StatusCode statusCode) {
         final long code = statusCode.getValue();
         return code == StatusCodes.Bad_SessionIdInvalid ||
+                code == StatusCodes.Bad_NoSubscription ||
                 code == StatusCodes.Bad_SessionClosed ||
                 code == StatusCodes.Bad_SecureChannelClosed ||
                 code == StatusCodes.Bad_SubscriptionIdInvalid ||
