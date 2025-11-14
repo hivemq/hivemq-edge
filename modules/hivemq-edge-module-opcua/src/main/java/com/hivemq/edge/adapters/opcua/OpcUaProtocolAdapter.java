@@ -153,7 +153,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 this::reconnect))) {
 
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-
             // Attempt initial connection asynchronously
             attemptConnection(conn, newlyParsedConfig, input);
 

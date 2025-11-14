@@ -136,10 +136,10 @@ public class ProtocolAdapterWrapper {
                 //we still return the initial error since that's the most significant information
                 return CompletableFuture.failedFuture(error);
             } else {
+                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
                 return attemptStartingConsumers(writingEnabled,
                         moduleServices.eventService()).handle((success, startException) -> {
                     if (startException == null) {
-                        protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
                         if (success) {
                             log.debug("Successfully started adapter with id {}", adapter.getId());
                         } else {
