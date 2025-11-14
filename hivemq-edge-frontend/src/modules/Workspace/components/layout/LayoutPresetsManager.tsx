@@ -131,7 +131,7 @@ const LayoutPresetsManager: FC = () => {
         </Tooltip>
         <Portal>
           <MenuList>
-            <MenuItem icon={<Icon as={LuSave} />} onClick={onOpen}>
+            <MenuItem data-testid="workspace-layout-preset-save" icon={<Icon as={LuSave} />} onClick={onOpen}>
               {t('workspace.autoLayout.presets.actions.save')}
             </MenuItem>
 

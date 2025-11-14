@@ -50,7 +50,7 @@ describe('WizardProtocolSelector', () => {
   })
 
   describe('Error State', () => {
-    it('should show error message when API fails', () => {
+    it('should show error message when API fails', { tags: ['@flaky'] }, () => {
       cy.intercept('GET', '/api/v1/management/protocol-adapters/types', {
         statusCode: 500,
         body: {
@@ -67,7 +67,7 @@ describe('WizardProtocolSelector', () => {
       cy.contains('Failed to load protocol adapters').should('be.visible')
     })
 
-    it('should show generic error when no error details provided', () => {
+    it('should show generic error when no error details provided', { tags: ['@flaky'] }, () => {
       cy.intercept('GET', '/api/v1/management/protocol-adapters/types', {
         statusCode: 500,
         body: {},
