@@ -329,8 +329,10 @@ public class ProtocolAdapterWrapper {
                     }
                     if (throwable == null) {
                         log.info("Stopped adapter with id {}", adapter.getId());
+                        stopFuture.complete(null);
                     } else {
                         log.error("Error stopping adapter with id {}", adapter.getId(), throwable);
+                        stopFuture.completeExceptionally(throwable);
                     }
                 });
 

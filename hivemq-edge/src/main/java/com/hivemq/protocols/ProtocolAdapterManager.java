@@ -286,7 +286,8 @@ public class ProtocolAdapterManager {
 
     public @NotNull CompletableFuture<Void> stopAsync(final @NotNull String protocolAdapterId, final boolean destroy) {
         Preconditions.checkNotNull(protocolAdapterId);
-        return getProtocolAdapterWrapperByAdapterId(protocolAdapterId).map(wrapper -> stopAsync(wrapper, destroy))
+        return getProtocolAdapterWrapperByAdapterId(protocolAdapterId)
+                .map(wrapper -> stopAsync(wrapper, destroy))
                 .orElseGet(() -> CompletableFuture.failedFuture(new ProtocolAdapterException("Adapter '" +
                         protocolAdapterId +
                         "'not found.")));
