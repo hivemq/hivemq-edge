@@ -82,7 +82,6 @@ const WizardAdapterForm: FC<WizardAdapterFormProps> = ({ protocolId, onSubmit, o
 
   return (
     <>
-      {/* Header with close button and protocol info */}
       <DrawerHeader borderBottomWidth="1px">
         <DrawerCloseButton onClick={onBack} />
         <Heading size="md">{t('workspace.wizard.adapter.configure')}</Heading>
@@ -91,7 +90,6 @@ const WizardAdapterForm: FC<WizardAdapterFormProps> = ({ protocolId, onSubmit, o
         </Box>
       </DrawerHeader>
 
-      {/* Body with form - scrollable */}
       <DrawerBody>
         <ChakraRJSForm
           id="wizard-adapter-form"
@@ -102,12 +100,10 @@ const WizardAdapterForm: FC<WizardAdapterFormProps> = ({ protocolId, onSubmit, o
           // @ts-ignore - Types need fixing
           customValidate={customUniqueAdapterValidate(schema, allAdapters)}
         >
-          {/* Hide default submit button - we use the one in footer */}
           <Box display="none" />
         </ChakraRJSForm>
       </DrawerBody>
 
-      {/* Footer with Back and Submit buttons */}
       <DrawerFooter borderTopWidth="1px">
         <Flex width="100%" justifyContent="space-between">
           <Button variant="outline" onClick={onBack}>

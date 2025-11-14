@@ -65,7 +65,6 @@ const WizardProtocolSelector: FC<WizardProtocolSelectorProps> = ({ onSelect }) =
 
   return (
     <>
-      {/* Header with close button */}
       <DrawerHeader borderBottomWidth="1px">
         <DrawerCloseButton onClick={cancelWizard} />
         <Heading size="md">{t('workspace.wizard.adapter.selectProtocol')}</Heading>
@@ -74,7 +73,6 @@ const WizardProtocolSelector: FC<WizardProtocolSelectorProps> = ({ onSelect }) =
         </Text>
       </DrawerHeader>
 
-      {/* Body with optional search and protocol browser */}
       <DrawerBody tabIndex={0}>
         {isLoading && <LoaderSpinner />}
 
@@ -128,7 +126,6 @@ const WizardProtocolSelector: FC<WizardProtocolSelectorProps> = ({ onSelect }) =
         )}
       </DrawerBody>
 
-      {/* Footer with search toggle */}
       <DrawerFooter borderTopWidth="1px" justifyContent="center">
         <Button
           leftIcon={<SearchIcon />}

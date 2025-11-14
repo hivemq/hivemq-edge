@@ -68,7 +68,6 @@ const WizardProgressBar: FC = () => {
         maxW="800px"
       >
         <HStack spacing={4} align="center" justify="space-between">
-          {/* Left side: Step info */}
           <Box flex="1">
             <HStack spacing={2} mb={2}>
               <Text fontWeight="bold" fontSize="sm" color="gray.600" _dark={{ color: 'gray.400' }}>
@@ -79,7 +78,6 @@ const WizardProgressBar: FC = () => {
               </Text>
             </HStack>
 
-            {/* Progress bar */}
             <Progress
               value={progressPercent}
               size="sm"
@@ -91,7 +89,6 @@ const WizardProgressBar: FC = () => {
               })}
             />
 
-            {/* Step description */}
             {stepDescription && (
               <Text fontSize="sm" color="gray.700" _dark={{ color: 'gray.300' }}>
                 {stepDescription}
@@ -99,9 +96,7 @@ const WizardProgressBar: FC = () => {
             )}
           </Box>
 
-          {/* Right side: Navigation buttons */}
           <ButtonGroup spacing={2}>
-            {/* Back button - only show after first step */}
             {!isFirstStep && (
               <Button
                 variant="outline"
@@ -115,7 +110,6 @@ const WizardProgressBar: FC = () => {
               </Button>
             )}
 
-            {/* Next/Complete button */}
             <Button
               variant="primary"
               size="sm"
@@ -130,7 +124,6 @@ const WizardProgressBar: FC = () => {
               {isLastStep ? t('workspace.wizard.progress.completeLabel') : t('workspace.wizard.progress.nextLabel')}
             </Button>
 
-            {/* Cancel button */}
             <Button
               variant="ghost"
               size="sm"
