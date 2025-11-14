@@ -287,12 +287,12 @@ public class ProtocolAdapterWrapper {
             return existingStopFuture;
         }
         cleanUpScheduler();
+        cleanUpStartFuture();
         // Try to atomically transition from IDLE to STOPPING
         if (!operationState.compareAndSet(OperationState.IDLE, OperationState.STOPPING)) {
             // State changed between check and set, retry
             return stopAsync(destroy);
         }
-        cleanUpStartFuture();
         // Double-check that no stop future exists
         final var existingFuture = stopFutureRef.get();
         if (existingFuture != null) {
