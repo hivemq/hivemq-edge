@@ -69,6 +69,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
   const { combinerId, tabId } = useParams()
   const { nodes, onUpdateNode, onNodesChange } = useWorkspaceStore()
   const toast = useToast(BASE_TOAST_OPTION)
+  const [hasCompletedSuccessfully, setHasCompletedSuccessfully] = useBoolean(false)
 
   const selectedNode = useMemo(() => {
     if (wizardContext?.isWizardMode) {
@@ -86,7 +87,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
                 .map((nodeId) => {
                   const node = nodes.find((n) => n.id === nodeId)
                   if (!node) {
-                    console.warn(`Node not found: ${nodeId}`)
+                    combinerLog(`Node not found: ${nodeId}`)
                     return null
                   }
                   const getType = (): EntityType => {
@@ -120,7 +121,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
               .map((nodeId) => {
                 const node = nodes.find((n) => n.id === nodeId)
                 if (!node) {
-                  console.warn(`Node not found: ${nodeId}`)
+                  combinerLog(`Node not found: ${nodeId}`)
                   return null
                 }
                 const getType = (): EntityType => {
@@ -249,7 +250,9 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
       wizardContext
         .onComplete(combinerData)
         .then(() => {
-          handleClose()
+          // Success: close drawer immediately
+          // Ghost nodes are manually removed in WizardCombinerConfiguration (like bridge wizard)
+          setHasCompletedSuccessfully.on()
         })
         .catch((error) => {
           toast({
@@ -323,7 +326,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
 
   return (
     <Drawer
-      isOpen={wizardContext?.isWizardMode || isOpen}
+      isOpen={wizardContext?.isWizardMode ? !hasCompletedSuccessfully : isOpen}
       placement="right"
       size="lg"
       onClose={handleClose}

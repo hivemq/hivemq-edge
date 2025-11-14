@@ -69,9 +69,9 @@ export interface SelectionConstraints {
   /** Custom filter function for advanced filtering (e.g., adapter capabilities) */
   customFilter?: (node: Node) => boolean
   /** Required protocol adapter capabilities (e.g., ['COMBINE']) - only for ADAPTER_NODE types */
-  requiresProtocolCapabilities?: string[]
+  requiresProtocolCapabilities?: Array<'READ' | 'DISCOVER' | 'WRITE' | 'COMBINE'>
   /** Protocol adapter types data (for capability checking) - injected by WizardSelectionRestrictions */
-  _protocolAdapters?: Array<{ id: string | undefined; capabilities?: string[] }>
+  _protocolAdapters?: Array<{ id?: string; capabilities?: Array<'READ' | 'DISCOVER' | 'WRITE' | 'COMBINE'> }>
 }
 
 /**
