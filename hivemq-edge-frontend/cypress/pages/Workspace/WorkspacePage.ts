@@ -60,7 +60,7 @@ export class WorkspacePage extends ShellPage {
 
     presetsMenu: {
       get saveOption() {
-        return cy.get('[role="menu"] [role="menuitem"]').first()
+        return cy.getByTestId('workspace-layout-preset-save')
       },
 
       presetItem(name: string) {

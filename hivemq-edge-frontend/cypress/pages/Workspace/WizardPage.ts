@@ -223,13 +223,11 @@ export class WizardPage extends Page {
     },
 
     get selectedNodes() {
-      cy.log('XXXXXX')
       return this.selectedNodesList.find('li')
     },
 
     // Get specific selected node by ID
     selectedNode(nodeId: string) {
-      cy.log('XXXXXX', nodeId)
       return this.selectedNodesList.findByTestId(`wizard-selection-listItem-${nodeId}`)
     },
 
