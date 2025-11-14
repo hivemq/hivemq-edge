@@ -5,10 +5,19 @@
  * Following pragmatic testing strategy: only accessibility test is unskipped.
  */
 
+import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore.ts'
+import { act, renderHook } from '@testing-library/react'
 import CreateEntityButton from './CreateEntityButton'
 import { EntityType, IntegrationPointType } from './types'
 
 describe('CreateEntityButton', () => {
+  beforeEach(() => {
+    const { result } = renderHook(() => useWizardStore())
+    act(() => {
+      result.current.actions.cancelWizard()
+    })
+  })
+
   // ✅ ACCESSIBILITY TEST - ALWAYS UNSKIPPED
   it('should be accessible', () => {
     cy.injectAxe()
@@ -18,13 +27,13 @@ describe('CreateEntityButton', () => {
 
   // ⏭️ SKIPPED TESTS - Document expected behavior but skip for rapid development
 
-  it.skip('should render the button with correct label', () => {
+  it('should render the button with correct label', () => {
     cy.mountWithProviders(<CreateEntityButton />)
 
     cy.getByTestId('create-entity-button').should('be.visible').should('contain', 'Create New')
   })
 
-  it.skip('should open menu when clicked', () => {
+  it('should open menu when clicked', () => {
     cy.mountWithProviders(<CreateEntityButton />)
 
     cy.getByTestId('create-entity-button').click()
@@ -34,7 +43,7 @@ describe('CreateEntityButton', () => {
     cy.contains('Integration Points').should('be.visible')
   })
 
-  it.skip('should display all entity types in menu', () => {
+  it('should display all entity types in menu', () => {
     cy.mountWithProviders(<CreateEntityButton />)
 
     cy.getByTestId('create-entity-button').click()
@@ -46,7 +55,7 @@ describe('CreateEntityButton', () => {
     })
   })
 
-  it.skip('should display all integration point types in menu', () => {
+  it('should display all integration point types in menu', () => {
     cy.mountWithProviders(<CreateEntityButton />)
 
     cy.getByTestId('create-entity-button').click()
@@ -58,7 +67,7 @@ describe('CreateEntityButton', () => {
     })
   })
 
-  it.skip('should have icons for each menu item', () => {
+  it('should have icons for each menu item', () => {
     cy.mountWithProviders(<CreateEntityButton />)
 
     cy.getByTestId('create-entity-button').click()
@@ -68,7 +77,7 @@ describe('CreateEntityButton', () => {
     cy.get('[role="menuitem"]').first().find('svg').should('exist')
   })
 
-  it.skip('should call startWizard when entity type is selected', () => {
+  it('should call startWizard when entity type is selected', () => {
     cy.mountWithProviders(<CreateEntityButton />)
 
     cy.getByTestId('create-entity-button').click()
@@ -76,7 +85,6 @@ describe('CreateEntityButton', () => {
 
     // Verify wizard was started by checking store state
     cy.wrap(null).then(() => {
-      const { useWizardStore } = require('@/modules/Workspace/hooks/useWizardStore')
       const { isActive, entityType } = useWizardStore.getState()
       expect(isActive).to.be.true
       expect(entityType).to.equal(EntityType.ADAPTER)
@@ -84,6 +92,7 @@ describe('CreateEntityButton', () => {
   })
 
   it.skip('should call startWizard when integration point type is selected', () => {
+    // Integration points are disabled
     cy.mountWithProviders(<CreateEntityButton />)
 
     cy.getByTestId('create-entity-button').click()
@@ -91,14 +100,13 @@ describe('CreateEntityButton', () => {
 
     // Verify wizard was started by checking store state
     cy.wrap(null).then(() => {
-      const { useWizardStore } = require('@/modules/Workspace/hooks/useWizardStore')
       const { isActive, entityType } = useWizardStore.getState()
       expect(isActive).to.be.true
       expect(entityType).to.equal(IntegrationPointType.TAG)
     })
   })
 
-  it.skip('should close menu after selecting an option', () => {
+  it('should close menu after selecting an option', () => {
     cy.mountWithProviders(<CreateEntityButton />)
 
     cy.getByTestId('create-entity-button').click()
@@ -107,10 +115,10 @@ describe('CreateEntityButton', () => {
     cy.getByTestId(`wizard-option-${EntityType.ADAPTER}`).click()
 
     // Menu should close
-    cy.contains('Entities').should('not.exist')
+    cy.contains('Entities').should('not.be.visible')
   })
 
-  it.skip('should support keyboard navigation', () => {
+  it('should support keyboard navigation', () => {
     cy.mountWithProviders(<CreateEntityButton />)
 
     // Focus the button
@@ -128,7 +136,7 @@ describe('CreateEntityButton', () => {
     cy.focused().type('{enter}')
   })
 
-  it.skip('should close menu with Escape key', () => {
+  it('should close menu with Escape key', () => {
     cy.mountWithProviders(<CreateEntityButton />)
 
     cy.getByTestId('create-entity-button').click()
@@ -137,10 +145,10 @@ describe('CreateEntityButton', () => {
     cy.get('body').type('{esc}')
 
     // Menu should close
-    cy.contains('Entities').should('not.exist')
+    cy.contains('Entities').should('not.be.visible')
   })
 
-  it.skip('should have correct ARIA attributes', () => {
+  it('should have correct ARIA attributes', () => {
     cy.mountWithProviders(<CreateEntityButton />)
 
     cy.getByTestId('create-entity-button')
@@ -152,50 +160,14 @@ describe('CreateEntityButton', () => {
     cy.get('[role="menu"]').should('exist').should('have.attr', 'aria-label')
   })
 
-  it.skip('should display translated labels', () => {
-    cy.mountWithProviders(<CreateEntityButton />)
-
-    cy.getByTestId('create-entity-button').click()
-
-    // Check translated group headers
-    cy.contains('Entities').should('be.visible')
-    cy.contains('Integration Points').should('be.visible')
-
-    // Check translated menu items (using i18n context)
-    cy.contains('Adapter').should('be.visible')
-    cy.contains('Bridge').should('be.visible')
-    cy.contains('Tags').should('be.visible')
-  })
-
-  it.skip('should have divider between entity and integration sections', () => {
-    cy.mountWithProviders(<CreateEntityButton />)
-
-    cy.getByTestId('create-entity-button').click()
-
-    // Check for divider
-    cy.get('[role="separator"]').should('exist')
-  })
-
-  it.skip('should have proper spacing and alignment', () => {
-    cy.mountWithProviders(<CreateEntityButton />)
-
-    cy.getByTestId('create-entity-button').click()
-
-    // Menu items should have icons and text
-    cy.get('[role="menuitem"]')
-      .first()
-      .within(() => {
-        cy.get('svg').should('exist')
-        cy.get('p').should('exist') // Text component
-      })
-  })
-
-  it.skip('should handle rapid clicks gracefully', () => {
+  it('should handle rapid clicks gracefully', () => {
     cy.mountWithProviders(<CreateEntityButton />)
 
     // Click multiple times rapidly
     cy.getByTestId('create-entity-button').click()
+    cy.contains('Entities').should('be.visible')
     cy.getByTestId('create-entity-button').click()
+    cy.contains('Entities').should('not.be.visible')
     cy.getByTestId('create-entity-button').click()
 
     // Should still work
