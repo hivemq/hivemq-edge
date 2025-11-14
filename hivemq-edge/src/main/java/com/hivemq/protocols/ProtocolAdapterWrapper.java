@@ -300,31 +300,34 @@ public class ProtocolAdapterWrapper {
         final var input = new ProtocolAdapterStopInputImpl();
         final var output = new ProtocolAdapterStopOutputImpl();
 
-        final var stopFuture = CompletableFuture.supplyAsync(() -> {
-            stopPolling(protocolAdapterPollingService);
-            stopWriting(protocolAdapterWritingService);
-            try {
-                adapter.stop(input, output);
-            } catch (final Throwable throwable) {
-                output.getOutputFuture().completeExceptionally(throwable);
-            }
-            return output.getOutputFuture();
-        }).thenCompose(Function.identity()).whenComplete((result, throwable) -> {
-            if (destroy) {
-                log.info("Destroying adapter with id '{}'", getId());
-                adapter.destroy();
-            }
-            if (throwable == null) {
-                log.info("Stopped adapter with id {}", adapter.getId());
-            } else {
-                log.error("Error stopping adapter with id {}", adapter.getId(), throwable);
-            }
-            protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-            operationState.set(OperationState.IDLE);
-            stopFutureRef.set(null);
-        });
-
+        final var stopFuture = new CompletableFuture<Void>();
         stopFutureRef.set(stopFuture);
+        CompletableFuture.supplyAsync(() -> {
+                stopPolling(protocolAdapterPollingService);
+                stopWriting(protocolAdapterWritingService);
+                try {
+                    adapter.stop(input, output);
+                } catch (final Throwable throwable) {
+                    output.getOutputFuture().completeExceptionally(throwable);
+                }
+                return output.getOutputFuture();
+            }).thenCompose(Function.identity())
+            .whenComplete((result, throwable) -> {
+                if (destroy) {
+                    log.info("Destroying adapter with id '{}'", getId());
+                    adapter.destroy();
+                }
+                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+                operationState.set(OperationState.IDLE);
+                stopFutureRef.set(null);
+                if (throwable == null) {
+                    log.info("Stopped adapter with id {}", adapter.getId());
+                    stopFuture.complete(null);
+                } else {
+                    log.error("Error stopping adapter with id {}", adapter.getId(), throwable);
+                    stopFuture.completeExceptionally(throwable);
+                }
+            });
 
         return stopFuture;
     }
