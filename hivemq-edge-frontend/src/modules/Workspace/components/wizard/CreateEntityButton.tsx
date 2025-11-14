@@ -79,7 +79,6 @@ const CreateEntityButton: FC = () => {
 
       <Portal>
         <MenuList maxH="400px" overflowY="auto" role="menu" aria-label={t('workspace.wizard.trigger.menuTitle')}>
-          {/* Entity Wizards Section */}
           <MenuGroup title={t('workspace.wizard.category.entities')}>
             {entityTypes.map((type) => {
               const IconComponent = getWizardIcon(type)
@@ -124,7 +123,6 @@ const CreateEntityButton: FC = () => {
 
           <MenuDivider />
 
-          {/* Integration Point Wizards Section */}
           <MenuGroup title={t('workspace.wizard.category.integrationPoints')}>
             {integrationTypes.map((type) => {
               const IconComponent = getWizardIcon(type)

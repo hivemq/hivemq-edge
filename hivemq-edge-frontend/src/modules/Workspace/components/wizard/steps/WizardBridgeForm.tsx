@@ -53,13 +53,11 @@ const WizardBridgeForm: FC<WizardBridgeFormProps> = ({ onSubmit, onBack }) => {
 
   return (
     <>
-      {/* Header with close button */}
       <DrawerHeader borderBottomWidth="1px">
         <DrawerCloseButton onClick={onBack} />
         <Heading size="md">{t('workspace.wizard.bridge.configure')}</Heading>
       </DrawerHeader>
 
-      {/* Body with form - scrollable */}
       <DrawerBody>
         <ChakraRJSForm
           id="wizard-bridge-form"
@@ -70,7 +68,6 @@ const WizardBridgeForm: FC<WizardBridgeFormProps> = ({ onSubmit, onBack }) => {
         />
       </DrawerBody>
 
-      {/* Footer with Back and Submit buttons */}
       <DrawerFooter borderTopWidth="1px">
         <Flex width="100%" justifyContent="space-between">
           <Button variant="outline" onClick={onBack}>

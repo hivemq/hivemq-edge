@@ -70,8 +70,15 @@ const WizardSelectionPanel: FC = () => {
 
   return (
     <Panel position="top-right" style={{ margin: '10px', pointerEvents: 'all' }}>
-      <Card minW="320px" maxW="380px" maxH="calc(100vh - 200px)" boxShadow="xl" bg="white" _dark={{ bg: 'gray.800' }}>
-        {/* Header */}
+      <Card
+        data-testid="wizard-selection-panel"
+        minW="320px"
+        maxW="380px"
+        maxH="calc(100vh - 200px)"
+        boxShadow="xl"
+        bg="white"
+        _dark={{ bg: 'gray.800' }}
+      >
         <CardHeader borderBottomWidth="1px" pb={3}>
           <HStack justify="space-between" align="start">
             <VStack align="start" spacing={1} flex={1}>
@@ -84,20 +91,17 @@ const WizardSelectionPanel: FC = () => {
           </HStack>
         </CardHeader>
 
-        {/* Body - scrollable */}
         <CardBody overflowY="auto" maxH="calc(100vh - 350px)">
           <VStack spacing={3} align="stretch">
-            {/* Selection Progress */}
             <HStack justify="space-between">
               <Text fontSize="sm" fontWeight="medium">
                 {t('workspace.wizard.selection.selected')}
               </Text>
-              <Badge colorScheme={canProceed ? 'green' : 'orange'} fontSize="sm">
+              <Badge data-testid="wizard-selection-count" colorScheme={canProceed ? 'green' : 'orange'} fontSize="sm">
                 {getProgressText()}
               </Badge>
             </HStack>
 
-            {/* Asset Mapper Info */}
             {isAssetMapper && (
               <Alert status="info" fontSize="sm">
                 <AlertIcon />
@@ -105,7 +109,6 @@ const WizardSelectionPanel: FC = () => {
               </Alert>
             )}
 
-            {/* Empty State */}
             {selectedNodes.length === 0 && (
               <Alert status="info" fontSize="sm">
                 <AlertIcon />
@@ -113,15 +116,14 @@ const WizardSelectionPanel: FC = () => {
               </Alert>
             )}
 
-            {/* Selected Nodes List - Scrollable */}
             {selectedNodes.length > 0 && (
-              <List spacing={2} maxH="300px" overflowY="auto">
+              <List data-testid="wizard-selection-list" spacing={2} maxH="300px" overflowY="auto">
                 {selectedNodes.map((node) => {
                   const isPulseAgent = node.type === NodeTypes.PULSE_NODE
                   const canRemove = !(isAssetMapper && isPulseAgent)
 
                   return (
-                    <ListItem key={node.id}>
+                    <ListItem key={node.id} data-testid={`wizard-selection-listItem-${node.data.id}`}>
                       <Card variant="outline" size="sm">
                         <CardBody py={2} px={3}>
                           <HStack justify="space-between">
@@ -161,9 +163,8 @@ const WizardSelectionPanel: FC = () => {
               </List>
             )}
 
-            {/* Validation Warnings */}
             {!hasMinimum && selectedNodeIds.length > 0 && (
-              <Alert status="warning" fontSize="sm">
+              <Alert status="warning" fontSize="sm" data-testid="wizard-selection-validation">
                 <AlertIcon />
                 <Text fontSize="sm">
                   {t('workspace.wizard.selection.minWarning', { count: minNodes - selectedNodeIds.length })}
@@ -178,7 +179,6 @@ const WizardSelectionPanel: FC = () => {
               </Alert>
             )}
 
-            {/* Helpful Info */}
             {allowedNodeTypes.length > 0 && selectedNodeIds.length === 0 && (
               <Alert status="info" variant="subtle" fontSize="xs">
                 <VStack align="start" spacing={1} w="full">
@@ -192,9 +192,9 @@ const WizardSelectionPanel: FC = () => {
           </VStack>
         </CardBody>
 
-        {/* Footer with Next button */}
         <Box borderTopWidth="1px" p={3}>
           <Button
+            data-testid="wizard-selection-next"
             variant="primary"
             isDisabled={!canProceed}
             onClick={nextStep}
