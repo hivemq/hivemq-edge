@@ -18,11 +18,7 @@ package com.hivemq.edge.adapters.opcua.config.opcua2mqtt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
-
-import static java.util.Objects.requireNonNullElse;
+import org.jetbrains.annotations.NotNull;
 
 public record OpcUaToMqttConfig (@JsonProperty("serverQueueSize")
                                  @ModuleConfigField(title = "OPC UA server queue size",
@@ -40,6 +36,10 @@ public record OpcUaToMqttConfig (@JsonProperty("serverQueueSize")
 
     @JsonCreator
     public OpcUaToMqttConfig{
+    }
+
+    public static @NotNull OpcUaToMqttConfig defaultOpcUaToMqttConfig() {
+        return new OpcUaToMqttConfig(1, 1000);
     }
 
 }

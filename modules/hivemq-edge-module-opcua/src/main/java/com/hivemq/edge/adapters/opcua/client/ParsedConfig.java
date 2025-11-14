@@ -19,6 +19,7 @@ import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.TlsChecks;
 import com.hivemq.edge.adapters.opcua.config.Truststore;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import com.hivemq.edge.adapters.opcua.security.CertificateTrustListManager;
@@ -57,7 +58,7 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
         CertificateValidator certValidator = null;
         if (tlsEnabled) {
             final var truststore = adapterConfig.getTls().truststore();
-            final var certOptional = getTrustedCerts(truststore).map(ParsedConfig::createServerCertificateValidator);
+            final var certOptional = getTrustedCerts(truststore).map(trustedCerts ->  createServerCertificateValidator(trustedCerts, adapterConfig.getTls().tlsChecks()));
             if (certOptional.isEmpty()) {
                 return Failure.of("Failed to create certificate validator, check truststore configuration");
             }
@@ -124,10 +125,21 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
         return Optional.of(KeystoreUtil.getCertificatesFromDefaultTruststore());
     }
 
-    private static @NotNull CertificateValidator createServerCertificateValidator(final @NotNull List<X509Certificate> trustedCerts) {
-        return new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
-                Set.of(ValidationCheck.VALIDITY, ValidationCheck.REVOCATION, ValidationCheck.REVOCATION_LISTS),
-                new MemoryCertificateQuarantine());
+    private static @NotNull CertificateValidator createServerCertificateValidator(final @NotNull List<X509Certificate> trustedCerts, final @NotNull TlsChecks tlsChecks) {
+        return switch (tlsChecks) {
+            case NONE -> new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
+                    Set.of(),
+                    new MemoryCertificateQuarantine());
+            case APPLICATION_URI -> new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
+                    ValidationCheck.NO_OPTIONAL_CHECKS,
+                    new MemoryCertificateQuarantine());
+            case STANDARD -> new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
+                    Set.of(ValidationCheck.APPLICATION_URI, ValidationCheck.VALIDITY, ValidationCheck.REVOCATION, ValidationCheck.REVOCATION_LISTS),
+                    new MemoryCertificateQuarantine());
+            case ALL -> new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
+                    ValidationCheck.ALL_OPTIONAL_CHECKS,
+                    new MemoryCertificateQuarantine());
+        };
     }
 
     private static @NotNull Optional<KeystoreUtil.KeyPairWithChain> getKeyPairWithChain(final @NotNull Keystore keystore) {

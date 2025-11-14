@@ -16,8 +16,10 @@
 package com.hivemq.edge.adapters.opcua.client;
 
 import com.hivemq.edge.adapters.opcua.Constants;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClientConfigBuilder;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,16 +33,18 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
 
     private final @NotNull String adapterId;
     private final @NotNull ParsedConfig parsedConfig;
+    private final @NotNull OpcUaSpecificAdapterConfig config;
 
-    public OpcUaClientConfigurator(final @NotNull String adapterId, final @NotNull ParsedConfig parsedConfig) {
+    public OpcUaClientConfigurator(final @NotNull String adapterId, final @NotNull ParsedConfig parsedConfig, final @NotNull OpcUaSpecificAdapterConfig config) {
         this.adapterId = adapterId;
         this.parsedConfig = parsedConfig;
+        this.config = config;
     }
 
     @Override
     public void accept(final @NotNull OpcUaClientConfigBuilder configBuilder) {
         // Use Application URI from certificate if available, otherwise fall back to default
-        final String applicationUri = parsedConfig.applicationUri() != null
+        final String applicationUri = (parsedConfig.applicationUri() != null && !parsedConfig.applicationUri().isBlank())
                 ? parsedConfig.applicationUri()
                 : Constants.OPCUA_APPLICATION_URI;
 
@@ -50,12 +54,23 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
             log.info("Using Application URI from certificate: {}", applicationUri);
         }
 
+        final long sessionTimeoutMs = config.getConnectionOptions().sessionTimeoutMs();
+        final long requestTimeoutMs = config.getConnectionOptions().requestTimeoutMs();
+        final long keepAliveIntervalMs = config.getConnectionOptions().keepAliveIntervalMs();
+
         configBuilder
                 .setApplicationName(LocalizedText.english(Constants.OPCUA_APPLICATION_NAME))
                 .setApplicationUri(applicationUri)
                 .setProductUri(Constants.OPCUA_PRODUCT_URI)
-                .setSessionName(() -> Constants.OPCUA_SESSION_NAME_PREFIX + adapterId);
+                .setSessionName(() -> Constants.OPCUA_SESSION_NAME_PREFIX + adapterId)
+                // Configure timeouts to prevent silent disconnects
+                .setSessionTimeout(UInteger.valueOf(sessionTimeoutMs))
+                .setRequestTimeout(UInteger.valueOf(requestTimeoutMs))
+                .setKeepAliveInterval(UInteger.valueOf(keepAliveIntervalMs))
+                .setKeepAliveFailuresAllowed(UInteger.valueOf(config.getConnectionOptions().keepAliveFailuresAllowed()));
 
+        log.info("Configured OPC UA timeouts: session={}ms, request={}ms, keepAlive={}ms, failuresAllowed={}",
+                config.getConnectionOptions().sessionTimeoutMs(), config.getConnectionOptions().requestTimeoutMs(), config.getConnectionOptions().keepAliveIntervalMs(), config.getConnectionOptions().keepAliveFailuresAllowed());
         log.info("TLS is enabled: {}", parsedConfig.tlsEnabled());
         if (parsedConfig.tlsEnabled()) {
             if (log.isDebugEnabled()) {

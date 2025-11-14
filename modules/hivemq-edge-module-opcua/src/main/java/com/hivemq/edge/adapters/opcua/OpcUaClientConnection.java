@@ -36,7 +36,6 @@ import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.UaException;
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,10 +44,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
-import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 public class OpcUaClientConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
@@ -63,6 +65,7 @@ public class OpcUaClientConnection {
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
 
     private final @NotNull AtomicReference<ConnectionContext> context = new AtomicReference<>();
+    private final @NotNull Runnable reconnectionCallback;
 
     OpcUaClientConnection(
             final @NotNull String adapterId,
@@ -73,7 +76,7 @@ public class OpcUaClientConnection {
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull OpcUaSpecificAdapterConfig config,
-            final @NotNull AtomicReference<UInteger> lastSubscriptionId) {
+            final @NotNull Runnable reconnectionCallback) {
         this.config = config;
         this.tagStreamingService = tagStreamingService;
         this.dataPointFactory = dataPointFactory;
@@ -82,12 +85,18 @@ public class OpcUaClientConnection {
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
         this.tags = tags;
+        this.reconnectionCallback = reconnectionCallback;
     }
 
     synchronized boolean start(final ParsedConfig parsedConfig) {
         log.debug("Subscribing to OPC UA client");
         final OpcUaClient client;
-        final var faultListener = new OpcUaServiceFaultListener(protocolAdapterMetricsService, eventService, adapterId);
+        final boolean reconnectOnServiceFault = config.getConnectionOptions().reconnectOnServiceFault();
+        final var faultListener = new OpcUaServiceFaultListener(protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                reconnectionCallback,
+                reconnectOnServiceFault);
         final var activityListener = new OpcUaSessionActivityListener(protocolAdapterMetricsService, eventService, adapterId, protocolAdapterState);
 
         // Determine preferred MessageSecurityMode with intelligent defaults
@@ -120,14 +129,60 @@ public class OpcUaClientConnection {
                         config.getUri(),
                         endpointFilter,
                         ignore -> {},
-                        new OpcUaClientConfigurator(adapterId, parsedConfig));
+                        new OpcUaClientConfigurator(adapterId, parsedConfig, config));
             client.addFaultListener(faultListener);
-            client.connect();
+            client.addSessionActivityListener(activityListener);
+
+            // Add timeout to connection attempt to prevent hanging forever
+            // Wrap synchronous connect() call with CompletableFuture timeout
+            final long connectionTimeoutSecondsMs = config.getConnectionOptions().connectionTimeoutMs();
+            try {
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        client.connect();
+                    } catch (final UaException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).get(connectionTimeoutSecondsMs, TimeUnit.MILLISECONDS);
+                log.debug("OPC UA client connected successfully for adapter '{}'", adapterId);
+            } catch (final TimeoutException e) {
+                log.error("Connection timeout after {} milliseconds for OPC UA adapter '{}'", connectionTimeoutSecondsMs, adapterId);
+                eventService
+                        .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                        .withMessage("Connection timeout after " + connectionTimeoutSecondsMs + " milliseconds for adapter '" + adapterId + "'")
+                        .withSeverity(Event.SEVERITY.ERROR)
+                        .fire();
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                quietlyCloseClient(client, false, faultListener, null);
+                return false;
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("Connection interrupted for OPC UA adapter '{}'", adapterId, e);
+                eventService
+                        .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                        .withMessage("Connection interrupted for adapter '" + adapterId + "'")
+                        .withSeverity(Event.SEVERITY.ERROR)
+                        .fire();
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                quietlyCloseClient(client, false, faultListener, null);
+                return false;
+            } catch (final ExecutionException e) {
+                final Throwable cause = e.getCause();
+                log.error("Connection failed for OPC UA adapter '{}'", adapterId, cause);
+                eventService
+                        .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                        .withMessage("Connection failed for adapter '" + adapterId + "': " + cause.getMessage())
+                        .withSeverity(Event.SEVERITY.ERROR)
+                        .fire();
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                quietlyCloseClient(client, false, faultListener, null);
+                return false;
+            }
         } catch (final UaException e) {
-            log.error("Unable to connect and subscribe to the OPC UA server for adapter '{}'", adapterId, e);
+            log.error("Unable to create OPC UA client for adapter '{}'", adapterId, e);
             eventService
                     .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                    .withMessage("Unable to connect and subscribe to the OPC UA server for adapter '" + adapterId + "'")
+                    .withMessage("Unable to create OPC UA client for adapter '" + adapterId + "'")
                     .withSeverity(Event.SEVERITY.ERROR)
                     .fire();
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
@@ -153,15 +208,16 @@ public class OpcUaClientConnection {
         final var subscription = subscriptionOptional.get();
         log.trace("Creating Subscription for OPC UA client");
 
-        context.set(new ConnectionContext(subscription.getClient(), faultListener, activityListener));
+        context.set(new ConnectionContext(subscription.getClient(), faultListener, activityListener, subscriptionLifecycleHandler));
         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
-        client.addSessionActivityListener(activityListener);
+
         log.info("Client created and connected successfully");
         return true;
     }
 
     synchronized void stop() {
         log.info("Stopping OPC UA client");
+
         final ConnectionContext ctx = context.get();
         if(ctx != null) {
             quietlyCloseClient(ctx.client(),true,  ctx.faultListener(), ctx.activityListener());
@@ -171,10 +227,45 @@ public class OpcUaClientConnection {
 
     void destroy() {
         log.info("Destroying OPC UA client");
+
         final ConnectionContext ctx = context.get();
         if(ctx != null) {
             quietlyCloseClient(ctx.client(), false, ctx.faultListener(), ctx.activityListener());
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        }
+    }
+
+    /**
+     * Checks if the connection is healthy by verifying both:
+     * 1. Session is active (client connection exists and session is present)
+     * 2. Keep-alive messages are being received (subscription is healthy)
+     *
+     * @return true if connection is healthy, false otherwise
+     */
+    public boolean isHealthy() {
+        final ConnectionContext ctx = context.get();
+        if (ctx == null) {
+            log.debug("Connection health check failed: no connection context");
+            return false;
+        }
+
+        try {
+            // Check 1: Session is active
+            if (protocolAdapterState.getConnectionStatus() == ProtocolAdapterState.ConnectionStatus.DISCONNECTED) {
+                log.debug("Connection health check failed: session inactive for adapter '{}'", adapterId);
+                return false;
+            }
+
+            // Check 2: Keep-alive is healthy
+            if (!ctx.subscriptionHandler().isKeepAliveHealthy()) {
+                log.debug("Connection health check failed: keep-alive timeout for adapter '{}'", adapterId);
+                return false;
+            }
+
+            return true;
+        } catch (final Exception e) {
+            log.debug("Connection health check failed with exception for adapter '{}'", adapterId, e);
+            return false;
         }
     }
 
@@ -237,6 +328,9 @@ public class OpcUaClientConnection {
         }
     }
 
-    private record ConnectionContext(@NotNull OpcUaClient client, @NotNull ServiceFaultListener faultListener, @NotNull SessionActivityListener activityListener) {
+    private record ConnectionContext(@NotNull OpcUaClient client,
+                                     @NotNull ServiceFaultListener faultListener,
+                                     @NotNull SessionActivityListener activityListener,
+                                     @NotNull OpcUaSubscriptionLifecycleHandler subscriptionHandler) {
     }
 }

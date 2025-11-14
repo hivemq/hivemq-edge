@@ -20,6 +20,7 @@ import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Tls;
+import com.hivemq.edge.adapters.opcua.config.TlsChecks;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.jetbrains.annotations.NotNull;
@@ -56,7 +57,8 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, new Keystore("path", null, null), null),
+                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
+                null,
                 null,
                 null);
 
@@ -65,14 +67,17 @@ class OpcUaEndpointFilterTest {
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris, MessageSecurityMode.SignAndEncrypt));
 
-        assertThat(result.isPresent()).isTrue();
-        assertThat(BASIC256SHA256.getSecurityPolicy().getUri()).isEqualTo(result.get().getSecurityPolicyUri());
+        assertThat(result)
+                .isPresent()
+                .get()
+                .extracting(EndpointDescription::getSecurityPolicyUri)
+                .isEqualTo(BASIC256SHA256.getSecurityPolicy().getUri());
     }
 
     @Test
     public void whenSingleEndpointConfigSetAndNoKeystorePresent_thenPickNoEndpoint() {
         final OpcUaSpecificAdapterConfig config =
-                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null);
+                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null, null);
 
         final String configUri = convertToUri(BASIC256SHA256);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", configUri, null, config);
@@ -86,7 +91,7 @@ class OpcUaEndpointFilterTest {
     public void whenSingleEndpointConfigSetAndNotAvailOnServer_thenPickNoEndpoint() {
         final String configUri = convertToUri(BASIC256SHA256);
         final OpcUaSpecificAdapterConfig config =
-                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null);
+                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null, null);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", configUri, null, config);
 
         final Optional<EndpointDescription> result =
@@ -98,14 +103,17 @@ class OpcUaEndpointFilterTest {
     @Test
     public void whenDefaultEndpointConfigSet_thenPickMatchingEndpoint() {
         final OpcUaSpecificAdapterConfig config =
-                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null);
+                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null, null);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", convertToUri(
                 DEFAULT_SECURITY_POLICY), null, config);
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris, MessageSecurityMode.None));
 
-        assertThat(result.isPresent()).isTrue();
-        assertThat(NONE.getSecurityPolicy().getUri()).isEqualTo(result.get().getSecurityPolicyUri());
+        assertThat(result)
+                .isPresent()
+                .get()
+                .extracting(EndpointDescription::getSecurityPolicyUri)
+                .isEqualTo(NONE.getSecurityPolicy().getUri());
     }
 
     @Test
@@ -115,7 +123,8 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, new Keystore("path", null, null), null),
+                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
+                null,
                 null,
                 null);
 
@@ -133,16 +142,22 @@ class OpcUaEndpointFilterTest {
         final Optional<EndpointDescription> resultSign = filterForSign.apply(endpoints);
 
         // Then - Sign endpoint is selected
-        assertThat(resultSign.isPresent()).isTrue();
-        assertThat(resultSign.get().getSecurityMode()).isEqualTo(MessageSecurityMode.Sign);
+        assertThat(resultSign)
+                .isPresent()
+                .get()
+                .extracting(EndpointDescription::getSecurityMode)
+                .isEqualTo(MessageSecurityMode.Sign);
 
         // When - Filter with SignAndEncrypt mode preference
         final OpcUaEndpointFilter filterForSignAndEncrypt = new OpcUaEndpointFilter("id", policyUri, MessageSecurityMode.SignAndEncrypt, config);
         final Optional<EndpointDescription> resultSignAndEncrypt = filterForSignAndEncrypt.apply(endpoints);
 
         // Then - SignAndEncrypt endpoint is selected
-        assertThat(resultSignAndEncrypt.isPresent()).isTrue();
-        assertThat(resultSignAndEncrypt.get().getSecurityMode()).isEqualTo(MessageSecurityMode.SignAndEncrypt);
+        assertThat(resultSignAndEncrypt)
+                .isPresent()
+                .get()
+                .extracting(EndpointDescription::getSecurityMode)
+                .isEqualTo(MessageSecurityMode.SignAndEncrypt);
     }
 
     @Test
@@ -152,7 +167,8 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, new Keystore("path", null, null), null),
+                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
+                null,
                 null,
                 null);
 
@@ -170,8 +186,11 @@ class OpcUaEndpointFilterTest {
         final Optional<EndpointDescription> result = filter.apply(endpoints);
 
         // Then - Any endpoint with matching policy is accepted (backwards compatible)
-        assertThat(result.isPresent()).isTrue();
-        assertThat(result.get().getSecurityPolicyUri()).isEqualTo(policyUri);
+        assertThat(result)
+                .isPresent()
+                .get()
+                .extracting(EndpointDescription::getSecurityPolicyUri)
+                .isEqualTo(policyUri);
     }
 
     @Test
@@ -181,7 +200,8 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, new Keystore("path", null, null), null),
+                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
+                null,
                 null,
                 null);
 

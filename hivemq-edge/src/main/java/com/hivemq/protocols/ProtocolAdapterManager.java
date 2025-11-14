@@ -57,6 +57,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -150,6 +152,17 @@ public class ProtocolAdapterManager {
             log.debug("Starting adapters");
         }
         protocolAdapterConfig.registerConsumer(this::refresh);
+    }
+
+    @VisibleForTesting
+    public void shutdown() {
+        protocolAdapters.values().forEach(entry -> {
+            try {
+                entry.stopAsync(true).get(5, TimeUnit.SECONDS);
+            } catch (final InterruptedException | ExecutionException | TimeoutException e) {
+                log.error("Exception happened while shutting down adapter: ", e);
+            }
+        });
     }
 
     public void refresh(final @NotNull List<ProtocolAdapterEntity> configs) {
@@ -264,7 +277,8 @@ public class ProtocolAdapterManager {
 
     public @NotNull CompletableFuture<Void> startAsync(final @NotNull String protocolAdapterId) {
         Preconditions.checkNotNull(protocolAdapterId);
-        return getProtocolAdapterWrapperByAdapterId(protocolAdapterId).map(this::startAsync)
+        return getProtocolAdapterWrapperByAdapterId(protocolAdapterId)
+                .map(this::startAsync)
                 .orElseGet(() -> CompletableFuture.failedFuture(new ProtocolAdapterException("Adapter '" +
                         protocolAdapterId +
                         "'not found.")));
@@ -272,7 +286,8 @@ public class ProtocolAdapterManager {
 
     public @NotNull CompletableFuture<Void> stopAsync(final @NotNull String protocolAdapterId, final boolean destroy) {
         Preconditions.checkNotNull(protocolAdapterId);
-        return getProtocolAdapterWrapperByAdapterId(protocolAdapterId).map(wrapper -> stopAsync(wrapper, destroy))
+        return getProtocolAdapterWrapperByAdapterId(protocolAdapterId)
+                .map(wrapper -> stopAsync(wrapper, destroy))
                 .orElseGet(() -> CompletableFuture.failedFuture(new ProtocolAdapterException("Adapter '" +
                         protocolAdapterId +
                         "'not found.")));
@@ -366,21 +381,23 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(wrapper);
         final String wid = wrapper.getId();
         log.info("Starting protocol-adapter '{}'.", wid);
-        return wrapper.startAsync(writingEnabled(), moduleServices).whenComplete((result, throwable) -> {
-            if (throwable == null) {
-                log.info("Protocol-adapter '{}' started successfully.", wid);
-                fireEvent(wrapper,
-                        HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED,
-                        Event.SEVERITY.INFO,
-                        "Adapter '" + wid + "' started OK.");
-            } else {
-                log.warn("Protocol-adapter '{}' could not be started, reason: {}", wid, "unknown");
-                fireEvent(wrapper,
-                        HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_ERROR,
-                        Event.SEVERITY.CRITICAL,
-                        "Error starting adapter '" + wid + "'.");
-            }
-        });
+        return wrapper
+                .startAsync(writingEnabled(), moduleServices)
+                .whenComplete((result, throwable) -> {
+                    if (throwable == null) {
+                        log.info("Protocol-adapter '{}' started successfully.", wid);
+                        fireEvent(wrapper,
+                                HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED,
+                                Event.SEVERITY.INFO,
+                                "Adapter '" + wid + "' started OK.");
+                    } else {
+                        log.warn("Protocol-adapter '{}' could not be started, reason: {}", wid, "unknown");
+                        fireEvent(wrapper,
+                                HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_ERROR,
+                                Event.SEVERITY.CRITICAL,
+                                "Error starting adapter '" + wid + "'.");
+                    }
+                });
     }
 
     private void fireEvent(
@@ -400,23 +417,25 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(wrapper);
         log.info("Stopping protocol-adapter '{}'.", wrapper.getId());
 
-        return wrapper.stopAsync(destroy).whenComplete((result, throwable) -> {
-            final Event.SEVERITY severity;
-            final String message;
-            final String wid = wrapper.getId();
-            final String protocolId = wrapper.getProtocolAdapterInformation().getProtocolId();
-            if (throwable == null) {
-                log.info("Protocol-adapter '{}' stopped successfully.", wid);
-                severity = Event.SEVERITY.INFO;
-                message = "Adapter '" + wid + "' stopped OK.";
-            } else {
-                log.warn("Protocol-adapter '{}' was unable to stop cleanly", wrapper.getId());
-                severity = Event.SEVERITY.CRITICAL;
-                message = "Error stopping adapter '" + wid + "'.";
-            }
-            wrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-            eventService.createAdapterEvent(wid, protocolId).withSeverity(severity).withMessage(message).fire();
-        });
+        return wrapper
+                .stopAsync(destroy)
+                .whenComplete((result, throwable) -> {
+                    wrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+                    final Event.SEVERITY severity;
+                    final String message;
+                    final String wid = wrapper.getId();
+                    final String protocolId = wrapper.getProtocolAdapterInformation().getProtocolId();
+                    if (throwable == null) {
+                        log.info("Protocol-adapter '{}' stopped successfully.", wid);
+                        severity = Event.SEVERITY.INFO;
+                        message = "Adapter '" + wid + "' stopped OK.";
+                    } else {
+                        log.warn("Protocol-adapter '{}' was unable to stop cleanly", wrapper.getId());
+                        severity = Event.SEVERITY.CRITICAL;
+                        message = "Error stopping adapter '" + wid + "'.";
+                    }
+                    eventService.createAdapterEvent(wid, protocolId).withSeverity(severity).withMessage(message).fire();
+                });
     }
 
     private void updateAdapter(final ProtocolAdapterConfig protocolAdapterConfig) {

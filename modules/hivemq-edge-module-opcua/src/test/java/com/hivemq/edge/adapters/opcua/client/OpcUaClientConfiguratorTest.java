@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.client;
 
 import com.hivemq.edge.adapters.opcua.Constants;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClientConfigBuilder;
 import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,10 @@ class OpcUaClientConfiguratorTest {
     private static final String ADAPTER_ID = "test-adapter";
     private static final String EXTRACTED_URI = "urn:hivemq:edge:testclient";
 
+    // Minimal config for tests - defaults will be used for timeout values
+    private static final OpcUaSpecificAdapterConfig TEST_CONFIG =
+            new OpcUaSpecificAdapterConfig("opc.tcp://test:4840", false, null, null, null, null, null, null);
+
     @Test
     void testAccept_withExtractedUri_usesExtractedUri() {
         // Given
@@ -42,7 +47,7 @@ class OpcUaClientConfiguratorTest {
                 EXTRACTED_URI  // Application URI from certificate
         );
 
-        final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig);
+        final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig, TEST_CONFIG);
         final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());
 
         // When
@@ -68,7 +73,7 @@ class OpcUaClientConfiguratorTest {
                 null  // No Application URI from certificate
         );
 
-        final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig);
+        final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig, TEST_CONFIG);
         final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());
 
         // When
@@ -94,7 +99,7 @@ class OpcUaClientConfiguratorTest {
                 null  // No Application URI
         );
 
-        final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig);
+        final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig, TEST_CONFIG);
         final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());
 
         // When
@@ -120,7 +125,7 @@ class OpcUaClientConfiguratorTest {
                 EXTRACTED_URI
         );
 
-        final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig);
+        final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig, TEST_CONFIG);
         final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());
 
         // When
@@ -145,7 +150,7 @@ class OpcUaClientConfiguratorTest {
                 null  // Explicitly null
         );
 
-        final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig);
+        final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig, TEST_CONFIG);
         final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());
 
         // When
@@ -172,7 +177,7 @@ class OpcUaClientConfiguratorTest {
                 configuredUri  // Configured override URI
         );
 
-        final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig);
+        final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig, TEST_CONFIG);
         final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());
 
         // When

@@ -22,18 +22,48 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.jetbrains.annotations.NotNull;
 
 public final class ObjectMapperBuilder {
+    private boolean failOnEmptyBeans;
     private boolean indentOutput;
     private boolean javaTimeModule;
-    private boolean failOnEmptyBeans;
+    private boolean sortPropertiesAlphabetically;
 
     private ObjectMapperBuilder() {
+        failOnEmptyBeans = false;
         indentOutput = false;
         javaTimeModule = false;
-        failOnEmptyBeans = false;
+        sortPropertiesAlphabetically = false;
     }
 
     public static @NotNull ObjectMapperBuilder builder() {
         return new ObjectMapperBuilder();
+    }
+
+    public @NotNull ObjectMapper build() {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        if (failOnEmptyBeans) {
+            objectMapper.enable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        } else {
+            objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        }
+        if (indentOutput) {
+            objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        } else {
+            objectMapper.disable(SerializationFeature.INDENT_OUTPUT);
+        }
+        if (javaTimeModule) {
+            objectMapper.registerModule(new JavaTimeModule());
+        }
+        if (sortPropertiesAlphabetically) {
+            objectMapper.enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
+        } else {
+            objectMapper.disable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
+        }
+        return objectMapper;
+    }
+
+    public @NotNull ObjectMapperBuilder enableFailOnEmptyBeans() {
+        failOnEmptyBeans = true;
+        return this;
     }
 
     public @NotNull ObjectMapperBuilder enableIndentOutput() {
@@ -46,26 +76,8 @@ public final class ObjectMapperBuilder {
         return this;
     }
 
-    public @NotNull ObjectMapperBuilder enableFailOnEmptyBeans() {
-        failOnEmptyBeans = true;
+    public @NotNull ObjectMapperBuilder enableSortPropertiesAlphabetically() {
+        sortPropertiesAlphabetically = true;
         return this;
-    }
-
-    public @NotNull ObjectMapper build() {
-        final ObjectMapper objectMapper = new ObjectMapper();
-        if (indentOutput) {
-            objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        } else {
-            objectMapper.disable(SerializationFeature.INDENT_OUTPUT);
-        }
-        if (javaTimeModule) {
-            objectMapper.registerModule(new JavaTimeModule());
-        }
-        if (failOnEmptyBeans) {
-            objectMapper.enable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-        } else {
-            objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-        }
-        return objectMapper;
     }
 }

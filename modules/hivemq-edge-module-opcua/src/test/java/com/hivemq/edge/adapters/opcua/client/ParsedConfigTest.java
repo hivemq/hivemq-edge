@@ -20,6 +20,7 @@ import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Security;
 import com.hivemq.edge.adapters.opcua.config.Tls;
+import com.hivemq.edge.adapters.opcua.config.TlsChecks;
 import com.hivemq.edge.adapters.opcua.config.Truststore;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
@@ -357,7 +358,7 @@ class ParsedConfigTest {
                 ? new Truststore(truststorePath, KEYSTORE_PASSWORD)
                 : null;
 
-        final Tls tls = new Tls(tlsEnabled, keystore, truststore);
+        final Tls tls = new Tls(tlsEnabled, TlsChecks.NONE, keystore, truststore);
         final Security security = new Security(SecPolicy.NONE);
         final OpcUaToMqttConfig opcUaToMqttConfig = new OpcUaToMqttConfig(1, 1000);
 
@@ -368,7 +369,7 @@ class ParsedConfigTest {
                 null,  // no auth
                 tls,
                 opcUaToMqttConfig,
-                security
-        );
+                security,
+                null);
     }
 }

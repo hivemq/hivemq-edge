@@ -105,6 +105,7 @@ hivemq-mqtt-client = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jackson-databind-nullable = { module = "org.openapitools:jackson-databind-nullable", version.ref = "jackson-nullable" }
 jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson" }
+jackson-datatype-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jdk8", version.ref = "jackson" }
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
 jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider", version.ref = "jackson" }
 jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotation-api" }
@@ -134,6 +135,7 @@ milo-dtd-reader = { module = "org.eclipse.milo:milo-dtd-reader", version.ref = "
 milo-encoding-json = { module = "org.eclipse.milo:milo-encoding-json", version.ref = "milo" }
 milo-encoding-xml = { module = "org.eclipse.milo:milo-encoding-xml", version.ref = "milo" }
 milo-server = { module = "org.eclipse.milo:milo-sdk-server", version.ref = "milo" }
+milo-stack-core = { module = "org.eclipse.milo:milo-stack-core", version.ref = "milo" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 mqtt-sn-codec = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn-codec" }
 mssql = { module = "com.microsoft.sqlserver:mssql-jdbc", version.ref = "mssql" }

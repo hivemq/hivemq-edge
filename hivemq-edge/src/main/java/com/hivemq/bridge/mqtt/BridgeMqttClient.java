@@ -211,13 +211,22 @@ public class BridgeMqttClient {
                                             perBridgeMetrics))
                                     .send());
                         }
-                        CompletableFuture.allOf(subFutures.build().toArray(new CompletableFuture[0])).thenRun(() -> {
-                            if (log.isInfoEnabled()) {
-                                log.info("Bridge '{}' started successfully", bridge.getId());
-                            }
-                            startFutureRef.getAndSet(null).set(null);
-                            operationState.set(OperationState.IDLE);
-                        });
+                        CompletableFuture.allOf(subFutures.build().toArray(new CompletableFuture[0]))
+                                .handle((result, exception) -> {
+                                    if (log.isInfoEnabled()) {
+                                        if (exception == null) {
+                                            log.info("Bridge '{}' started successfully", bridge.getId());
+                                        } else {
+                                            log.error("Bridge '{}' started with an internal error {}",
+                                                    bridge.getId(),
+                                                    exception.getMessage(),
+                                                    exception);
+                                        }
+                                    }
+                                    startFutureRef.getAndSet(null).set(null);
+                                    operationState.set(OperationState.IDLE);
+                                    return null;
+                                });
                         return null;
                     });
             return startFuture;
@@ -230,16 +239,31 @@ public class BridgeMqttClient {
     }
 
     public synchronized @NotNull ListenableFuture<Void> stop() {
-        if (operationState.compareAndSet(OperationState.IDLE, OperationState.STOPPING)) {
+        stopped.set(true);
+        final ListenableFuture<Void> startFuture = startFutureRef.get();
+        if (startFuture != null && !startFuture.isCancelled()) {
+            try {
+                log.debug("Waiting for bridge '{}' start before it can be stopped", bridge.getId());
+                startFuture.cancel(true);
+                log.debug("Bridge '{}' is started before it is stopped", bridge.getId());
+            } catch (final Exception e) {
+                log.debug("While canceling bridge '{}' start, there is an error {}", bridge.getId(), e.getMessage());
+            }
+        }
+        startFutureRef.set(null);
+        if (operationState.compareAndSet(OperationState.IDLE, OperationState.STOPPING) ||
+                operationState.compareAndSet(OperationState.STARTING, OperationState.STOPPING)) {
             log.info("Stopping bridge '{}'", bridge.getId());
             final SettableFuture<Void> stopFuture = SettableFuture.create();
             stopFutureRef.set(stopFuture);
             final long stopStartTime = log.isDebugEnabled() ? System.nanoTime() : 0;
-            stopped.set(true);
-            CompletableFuture.allOf(mqtt5Client.disconnect()).thenRun(() -> {
+            mqtt5Client.disconnect().handle((result, exception) -> {
                 if (log.isDebugEnabled()) {
                     final long stopMicros = (System.nanoTime() - stopStartTime) / 1000;
                     log.debug("Bridge '{}' disconnected in {} μs", bridge.getId(), stopMicros);
+                    if (exception != null) {
+                        log.debug("Bridge '{}' disconnected with an internal error {}", bridge.getId(), exception.getMessage(), exception);
+                    }
                 }
                 stopFutureRef.getAndSet(null).set(null);
                 operationState.set(OperationState.IDLE);
@@ -247,6 +271,7 @@ public class BridgeMqttClient {
                 if (log.isInfoEnabled()) {
                     log.info("Bridge '{}' stopped successfully", bridge.getId());
                 }
+                return null;
             });
             return stopFuture;
         }
@@ -366,6 +391,13 @@ public class BridgeMqttClient {
 
         //-- Bind connection listeners to maintain status
         builder.addConnectedListener(context -> {
+            // Check if this is a dangling client that reconnected after being stopped
+            if (stopped.get()) {
+                log.warn("Bridge '{}' connected but is marked as stopped - disconnecting immediately to prevent dangling client",
+                        bridge.getId());
+                mqtt5Client.disconnect();
+                return;
+            }
             log.info("Bridge '{}' connected to {}:{}", bridge.getId(), bridge.getHost(), bridge.getPort());
             connected.set(true);
             final int forwarderCount = forwarders.size();
@@ -400,8 +432,26 @@ public class BridgeMqttClient {
             //auto-reconnect
             if (stopped.get()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Bridge '{}' is stopped, not attempting reconnection", bridge.getId());
+                    log.debug("Bridge '{}' is stopped, canceling any pending reconnections", bridge.getId());
                 }
+                final SettableFuture<Void> startFuture = startFutureRef.get();
+                if (startFuture != null && !startFuture.isCancelled()) {
+                    try {
+                        startFuture.cancel(true);
+                    }  catch (final Exception e) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("While canceling bridge '{}' start, there is an error {}",
+                                    bridge.getId(),
+                                    e.getMessage());
+                        }
+                    }
+                    if (log.isDebugEnabled()) {
+                        log.debug("Bridge '{}' start process is canceled", bridge.getId());
+                    }
+                }
+                startFutureRef.set(null);
+                // Explicitly cancel reconnection to prevent dangling clients
+                context.getReconnector().reconnect(false);
                 return;
             }
             if (context.getSource() != MqttDisconnectSource.USER) {

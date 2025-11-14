@@ -50,6 +50,7 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.SubscriptionListener {
 
     private static final Logger log = LoggerFactory.getLogger(OpcUaSubscriptionLifecycleHandler.class);
+    private static final long KEEP_ALIVE_TIMEOUT_MS = 30_000; // 30 seconds
 
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ProtocolAdapterTagStreamingService tagStreamingService;
@@ -61,6 +62,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     private final @NotNull OpcUaClient client;
     private final @NotNull DataPointFactory dataPointFactory;
     final @NotNull OpcUaSpecificAdapterConfig config;
+
+    // Track last keep-alive timestamp for health monitoring
+    private volatile long lastKeepAliveTimestamp;
 
     public OpcUaSubscriptionLifecycleHandler(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -79,6 +83,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         this.client = client;
         this.dataPointFactory = dataPointFactory;
         this.tags = tags;
+        this.lastKeepAliveTimestamp = System.currentTimeMillis();
         nodeIdToTag = tags.stream()
                 .collect(Collectors.toMap(tag -> NodeId.parse(tag.getDefinition().getNode()), Function.identity()));
     }
@@ -96,7 +101,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         return createNewSubscription(client)
                 .map(subscription -> {
                     subscription.setPublishingInterval((double) config.getOpcuaToMqttConfig().publishingInterval());
-                    subscription.setSubscriptionListener(new OpcUaSubscriptionLifecycleHandler(protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, dataPointFactory, config));
+                    subscription.setSubscriptionListener(this);
                     if(syncTagsAndMonitoredItems(subscription, tags, config)) {
                         return subscription;
                     } else {
@@ -189,7 +194,23 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
     @Override
     public void onKeepAliveReceived(final @NotNull OpcUaSubscription subscription) {
+        lastKeepAliveTimestamp = System.currentTimeMillis();
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_KEEPALIVE_COUNT);
+
+        subscription.getSubscriptionId().ifPresent(subscriptionId -> {
+            log.debug("Keep-alive received for subscription {} of adapter '{}'", subscriptionId, adapterId);
+        });
+    }
+
+    /**
+     * Checks if keep-alive messages are being received within the expected timeout.
+     * Can be used for health monitoring to detect subscription issues.
+     *
+     * @return true if last keep-alive was received within KEEP_ALIVE_TIMEOUT_MS, false otherwise
+     */
+    public boolean isKeepAliveHealthy() {
+        final long timeSinceLastKeepAlive = System.currentTimeMillis() - lastKeepAliveTimestamp;
+        return timeSinceLastKeepAlive < KEEP_ALIVE_TIMEOUT_MS;
     }
 
     @Override

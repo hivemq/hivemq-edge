@@ -19,17 +19,23 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import static java.util.Objects.requireNonNullElse;
 
 public record Tls (@JsonProperty("enabled")
                    @ModuleConfigField(title = "Enable TLS",
                                       description = "Enables TLS encrypted connection",
                                       defaultValue = "false")
                    boolean enabled,
+
+                   @JsonProperty("tlsChecks")
+                   @ModuleConfigField(title = "Certificate validation",
+                                      description = "Allows to control the depth of a certificate validation",
+                                      defaultValue = "STANDARD")
+                   @Nullable TlsChecks tlsChecks,
 
                    @JsonProperty("keystore")
                    @JsonInclude(NON_NULL)
@@ -43,7 +49,13 @@ public record Tls (@JsonProperty("enabled")
                                       description = "Truststore which contains the trusted server certificates or trusted intermediates.")
                    @Nullable Truststore truststore
                    ) {
+
     @JsonCreator
-    public Tls{
+    public Tls {
+        tlsChecks = requireNonNullElse(tlsChecks, TlsChecks.STANDARD);
+    }
+
+    public static @NotNull Tls defaultTls() {
+        return new Tls(false, TlsChecks.STANDARD, null, null);
     }
 }

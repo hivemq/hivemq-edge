@@ -39,6 +39,7 @@ public class FakeEventService implements EventService {
         eventStore.add(event);
     }
 
+    @Override
     public @NotNull EventBuilder createAdapterEvent(final @NotNull String adapterId, final @NotNull String protocolId) {
         return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis())
                 .withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER, adapterId))
@@ -68,7 +69,7 @@ public class FakeEventService implements EventService {
     }
 
     @Override
-    public List<Event> readEvents(final @Nullable Long sinceTimestamp, final @Nullable Integer limit) {
+    public @NotNull List<Event> readEvents(final @Nullable Long sinceTimestamp, final @Nullable Integer limit) {
         return List.copyOf(eventStore);
     }
 }

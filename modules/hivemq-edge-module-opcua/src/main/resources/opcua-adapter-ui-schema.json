@@ -18,29 +18,28 @@
     {
       "id": "coreFields",
       "title": "Connection",
-      "properties": ["id", "uri", "overrideUri", "security", "tls", "auth"]
+      "properties": ["id", "uri", "overrideUri", "applicationUri", "security", "tls", "auth"]
     },
     {
       "id": "opcuaToMqtt",
       "title": "OPC UA to MQTT",
       "properties": ["opcuaToMqtt"]
+    },
+    {
+      "id": "connectionOptions",
+      "title": "Connection Options",
+      "properties": ["connectionOptions"]
     }
   ],
   "id": {
     "ui:disabled": true
   },
-  "ui:order": ["id", "uri", "overrideUri", "security", "tls", "auth", "*"],
+  "ui:order": ["id", "uri", "overrideUri", "applicationUri", "security", "tls", "auth", "*"],
   "opcuaToMqtt": {
     "ui:order": ["publishingInterval", "serverQueueSize", "*"]
   },
-  "tls": {
-    "ui:order": ["enabled", "keystore", "truststore"],
-    "keystore": {
-      "ui:order": ["path", "password", "privateKeyPassword"]
-    },
-    "truststore": {
-      "ui:order": ["enabled", "path", "password"]
-    }
+  "connectionOptions": {
+    "ui:order": ["autoReconnect", "sessionTimeoutMs", "connectionTimeoutMs","retryIntervalMs", "requestTimeoutMs", "keepAliveIntervalMs", "keepAliveFailuresAllowed",  "healthCheckIntervalMs", "*"]
   },
   "auth": {
     "basic": {
@@ -48,6 +47,24 @@
     },
     "x509": {
       "ui:order": ["enabled", "*"]
+    }
+  },
+  "security": {
+      "ui:order": ["policy", "messageSecurityMode", "*"]
+  },
+  "tls": {
+    "ui:order": ["enabled", "tlsChecks", "keystore", "truststore"],
+    "tlsChecks": {
+      "ui:enumNames": ["NONE: No checks are being performed on the TLS certificate.",
+        "APPLICATION_URI: Only the Application URI is validated.",
+        "STANDARD: The standard TLS checks are performed, including certificate",
+        "ALL: All available checks are performed"]
+    },
+    "keystore": {
+      "ui:order": ["path", "password", "privateKeyPassword"]
+    },
+    "truststore": {
+      "ui:order": ["enabled", "path", "password"]
     }
   }
 }

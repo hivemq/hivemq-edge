@@ -31,7 +31,8 @@ public class BidirectionalOpcUaSpecificAdapterConfig extends OpcUaSpecificAdapte
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
             @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
-            @JsonProperty("security") final @Nullable Security security) {
-        super(uri, overrideUri, applicationUri, auth, tls, opcuaToMqttConfig, security);
+            @JsonProperty("security") final @Nullable Security security,
+            @JsonProperty("connectionOptions") final @Nullable ConnectionOptions connectionOptions) {
+        super(uri, overrideUri, applicationUri, auth, tls, opcuaToMqttConfig, security, connectionOptions);
     }
 }

@@ -31,6 +31,7 @@ import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Security;
 import com.hivemq.edge.adapters.opcua.config.Tls;
+import com.hivemq.edge.adapters.opcua.config.TlsChecks;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
@@ -58,12 +59,14 @@ class OpcUaProtocolAdapterAuthTest {
 
     private final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> protocolAdapterInput = mock();
 
+    private ModuleServices moduleServices;
+
     @BeforeEach
     void setUp() {
         when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(),
                 "id",
                 "protocolId"));
-        final ModuleServices moduleServices = mock();
+        moduleServices = mock();
         when(moduleServices.adapterPublishService()).thenReturn(mock(ProtocolAdapterPublishService.class));
         when(moduleServices.eventService()).thenReturn(new FakeEventService());
         when(moduleServices.adapterPublishService()).thenReturn(mock(ProtocolAdapterPublishService.class));
@@ -99,6 +102,7 @@ class OpcUaProtocolAdapterAuthTest {
                 null,
                 null,
                 new OpcUaToMqttConfig(1, 1000),
+                null,
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
@@ -107,7 +111,7 @@ class OpcUaProtocolAdapterAuthTest {
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
-        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(protocolAdapterInput.moduleServices());
+        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(moduleServices);
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out);
 
@@ -127,6 +131,7 @@ class OpcUaProtocolAdapterAuthTest {
                 auth,
                 null,
                 null,
+                null,
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
@@ -134,7 +139,7 @@ class OpcUaProtocolAdapterAuthTest {
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
-        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(protocolAdapterInput.moduleServices());
+        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(moduleServices);
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out);
 
@@ -145,7 +150,7 @@ class OpcUaProtocolAdapterAuthTest {
     @Timeout(30)
     public void whenTlsAndNoSubscriptions_thenConnectSuccessfully() {
         final Security security = new Security(SecPolicy.NONE);
-        final Tls tls = new Tls(true, null, null);
+        final Tls tls = new Tls(true, TlsChecks.NONE, null, null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
@@ -153,13 +158,14 @@ class OpcUaProtocolAdapterAuthTest {
                 null,
                 tls,
                 null,
-                security);
+                security,
+                null);
         when(protocolAdapterInput.getConfig()).thenReturn(config);
 
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
-        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(protocolAdapterInput.moduleServices());
+        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(moduleServices);
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out);
 
@@ -174,13 +180,14 @@ class OpcUaProtocolAdapterAuthTest {
         final KeyChain root = KeyChain.createKeyChain("root");
 
         final var keystore = root.wrapInKeyStoreWithPrivateKey("keystore", "root", "password", "password");
-        final Tls tls = new Tls(true, new Keystore(keystore.getAbsolutePath(), "password", "password"), null);
+        final Tls tls = new Tls(true, TlsChecks.NONE, new Keystore(keystore.getAbsolutePath(), "password", "password"), null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
                 null,
                 auth,
                 tls,
+                null,
                 null,
                 null);
 
@@ -189,7 +196,7 @@ class OpcUaProtocolAdapterAuthTest {
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
-        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(protocolAdapterInput.moduleServices());
+        final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(moduleServices);
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out);
 

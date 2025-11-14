@@ -16,6 +16,7 @@
 package com.hivemq.edge.modules.api.events.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
@@ -30,7 +31,7 @@ import java.util.function.Consumer;
 
 public class EventBuilderImpl implements EventBuilder {
 
-    private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new Jdk8Module());
 
     private @Nullable EventImpl.SEVERITY severity;
     private @Nullable String message;

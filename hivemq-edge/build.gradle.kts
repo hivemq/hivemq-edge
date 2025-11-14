@@ -177,6 +177,7 @@ dependencies {
     // Jackson
     implementation(libs.jackson.jaxrs.json.provider)
     implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.jackson.datatype.jdk8)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.databind.nullable)
     implementation(libs.jackson.dataformat.xml)

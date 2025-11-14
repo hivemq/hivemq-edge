@@ -24,10 +24,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -102,12 +104,15 @@ public class ShutdownHooks {
         log.info("Shutting down HiveMQ. Please wait, this could take a while...");
         final ScheduledExecutorService executorService =
                 Executors.newSingleThreadScheduledExecutor(ThreadFactoryUtil.create("shutdown-log-executor"));
-        executorService.scheduleAtFixedRate(
-                () -> log.info(
-                        "Still shutting down HiveMQ. Waiting for remaining tasks to be executed. Do not shutdown HiveMQ."),
-                10, 10, TimeUnit.SECONDS);
+        final AtomicReference<HiveMQShutdownHook> currentRunnable = new AtomicReference<>();
+        executorService.scheduleAtFixedRate(() -> {
+            log.info("Still shutting down HiveMQ. Waiting for remaining tasks to be executed. Do not shutdown HiveMQ.");
+            Optional.ofNullable(currentRunnable.get())
+                    .ifPresent(hook -> log.info("Job '{}' is shutting down.", hook.name()));
+        }, 10, 10, TimeUnit.SECONDS);
         for (final HiveMQShutdownHook runnable : synchronousHooks.values()) {
             log.trace(MarkerFactory.getMarker("SHUTDOWN_HOOK"), "Running shutdown hook {}", runnable.name());
+            currentRunnable.set(runnable);
             runnable.run();
         }
         executorService.shutdown();

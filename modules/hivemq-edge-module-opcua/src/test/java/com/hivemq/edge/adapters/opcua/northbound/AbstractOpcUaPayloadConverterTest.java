@@ -105,6 +105,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 null,
                 null,
                 opcuaToMqttConfig,
+                null,
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
