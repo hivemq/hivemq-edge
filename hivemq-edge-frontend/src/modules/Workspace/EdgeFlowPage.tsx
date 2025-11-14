@@ -6,7 +6,7 @@ import PageContainer from '@/components/PageContainer.tsx'
 import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider.tsx'
 import ReactFlowWrapper from '@/modules/Workspace/components/ReactFlowWrapper.tsx'
 import WorkspaceOptionsDrawer from '@/modules/Workspace/components/drawers/WorkspaceOptionsDrawer.tsx'
-import { ProtocolAdaptersProvider } from '@/modules/Workspace/components/wizard/ProtocolAdaptersContext'
+import { ProtocolAdaptersProvider } from '@/modules/Workspace/components/wizard/hooks/ProtocolAdaptersProvider'
 
 const EdgeFlowPage: FC = () => {
   const { t } = useTranslation()

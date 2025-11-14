@@ -24,7 +24,7 @@ import WizardSelectionRestrictions from '@/modules/Workspace/components/wizard/W
 import WizardSelectionPanel from '@/modules/Workspace/components/wizard/WizardSelectionPanel.tsx'
 import WizardConfigurationPanel from '@/modules/Workspace/components/wizard/WizardConfigurationPanel.tsx'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
-import { useProtocolAdaptersContext } from '@/modules/Workspace/components/wizard/ProtocolAdaptersContext'
+import { useProtocolAdaptersContext } from '@/modules/Workspace/components/wizard/hooks/useProtocolAdaptersContext'
 import MonitoringEdge from '@/modules/Workspace/components/edges/MonitoringEdge.tsx'
 import {
   NodeAdapter,
