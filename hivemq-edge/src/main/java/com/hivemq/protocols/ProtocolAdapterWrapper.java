@@ -187,6 +187,12 @@ public class ProtocolAdapterWrapper {
         }
     }
 
+    private void cleanUpStartFuture() {
+        Optional.ofNullable(startFutureRef.getAndSet(null))
+                .filter(startFuture -> !startFuture.isCancelled())
+                .ifPresent(startFuture -> startFuture.cancel(true));
+    }
+
     private void cleanUpScheduler() {
         Optional.ofNullable(schedulerFutureRef.getAndSet(null))
                 .filter(scheduledFuture -> !scheduledFuture.isCancelled())
@@ -286,6 +292,7 @@ public class ProtocolAdapterWrapper {
             // State changed between check and set, retry
             return stopAsync(destroy);
         }
+        cleanUpStartFuture();
         // Double-check that no stop future exists
         final var existingFuture = stopFutureRef.get();
         if (existingFuture != null) {
