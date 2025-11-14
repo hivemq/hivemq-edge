@@ -1,18 +1,6 @@
-import type { ProtocolAdapter as ApiProtocolAdapter } from '@/api/__generated__'
-import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes'
-import { createContext, type FC, type ReactNode, useContext, useMemo } from 'react'
-
-interface ProtocolAdaptersContextValue {
-  protocolAdapters: ApiProtocolAdapter[] | undefined
-}
-
-export const ProtocolAdaptersContext = createContext<ProtocolAdaptersContextValue>({
-  protocolAdapters: undefined,
-})
-
-export const useProtocolAdaptersContext = () => {
-  return useContext(ProtocolAdaptersContext)
-}
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
+import { ProtocolAdaptersContext } from '@/modules/Workspace/components/wizard/hooks/ProtocolAdaptersContext.tsx'
+import { type FC, type ReactNode, useMemo } from 'react'
 
 /**
  * Provider component that fetches protocol adapters and provides them via context

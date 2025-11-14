@@ -9,7 +9,7 @@ import { useWizardState } from '@/modules/Workspace/hooks/useWizardStore'
 import { EdgeTypes, NodeTypes } from '@/modules/Workspace/types'
 import type { SelectionConstraints } from './types'
 import { GHOST_EDGE_STYLE } from './utils/ghostNodeFactory'
-import { useProtocolAdaptersContext } from './ProtocolAdaptersContext'
+import { useProtocolAdaptersContext } from './hooks/useProtocolAdaptersContext'
 
 const debugLog = debug('workspace:wizard:constraints')
 
