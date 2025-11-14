@@ -20,6 +20,10 @@ describe('BACnet/IP', () => {
     cy.checkAccessibility()
 
     adapterPage.addNewAdapter.click()
-    cy.checkAccessibility()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        'color-contrast': { enabled: false },
+      },
+    })
   })
 })

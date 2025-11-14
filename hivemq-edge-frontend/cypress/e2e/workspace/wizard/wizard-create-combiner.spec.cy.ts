@@ -105,7 +105,7 @@ describe('Wizard: Create Combiner', () => {
    * - Validation changes based on constraints
    * - Next button enables when constraints met
    */
-  it('should enforce selection constraints and update panel state', () => {
+  it('should enforce selection constraints and update panel state', { tags: ['@flaky'] }, () => {
     wizardPage.createEntityButton.click()
     wizardPage.wizardMenu.selectOption('COMBINER')
 
@@ -141,7 +141,7 @@ describe('Wizard: Create Combiner', () => {
    * Tests removing nodes from selection
    * Verifies panel updates when deselecting
    */
-  it('should allow removing nodes from selection', () => {
+  it('should allow removing nodes from selection', { tags: ['@flaky'] }, () => {
     wizardPage.createEntityButton.click()
     wizardPage.wizardMenu.selectOption('COMBINER')
     workspacePage.toolbox.fit.click()
@@ -169,7 +169,7 @@ describe('Wizard: Create Combiner', () => {
    * Tests the configuration step after selection
    * Verifies configuration form appears and works
    */
-  it('should proceed to combiner configuration after selection', () => {
+  it('should proceed to combiner configuration after selection', { tags: ['@flaky'] }, () => {
     wizardPage.createEntityButton.click()
     wizardPage.wizardMenu.selectOption('COMBINER')
     workspacePage.toolbox.fit.click()

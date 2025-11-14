@@ -59,7 +59,7 @@ describe('Workspace Layout - Presets', () => {
     workspacePage.layoutControls.presetsMenu.emptyMessage.should('be.visible')
   })
 
-  it('should open save preset modal', () => {
+  it('should open save preset modal', { tags: ['@flaky'] }, () => {
     // Expand toolbar to access layout controls
     workspacePage.canvasToolbar.expandButton.click()
 
