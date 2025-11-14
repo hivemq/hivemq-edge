@@ -42,11 +42,11 @@ describe('Wizard: Create Combiner', () => {
 
     cy.intercept('/api/v1/management/bridges', {
       items: [mockBridge],
-    }).as('getBridges')
+    })
 
     cy.intercept('GET', '/api/v1/management/topic-filters', {
       items: [MOCK_TOPIC_FILTER],
-    }).as('getTopicFilters')
+    })
 
     cy.intercept('POST', '/api/v1/management/combiners', {
       statusCode: 201,
@@ -194,7 +194,7 @@ describe('Wizard: Create Combiner', () => {
    * Ensures UI consistency when selecting different node combinations
    * Percy regression to catch any layout/styling issues
    */
-  it.only('should maintain visual consistency with maximum selection', { tags: ['@percy'] }, () => {
+  it('should maintain visual consistency with maximum selection', { tags: ['@percy'] }, () => {
     wizardPage.createEntityButton.click()
     wizardPage.wizardMenu.selectOption('COMBINER')
     workspacePage.toolbox.fit.click()
