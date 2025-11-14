@@ -33,12 +33,12 @@ describe('Wizard: Create Bridge', () => {
     // Existing bridges (so we don't create duplicates)
     cy.intercept('GET', '/api/v1/management/bridges', {
       items: [mockBridge],
-    }).as('getExistingBridges')
+    })
 
     // Existing adapters (for workspace state)
     cy.intercept('GET', '/api/v1/management/protocol-adapters/adapters', {
       items: [mockAdapter_OPCUA],
-    }).as('getAdapters')
+    })
 
     // POST to create new bridge - success response
     cy.intercept('POST', '/api/v1/management/bridges', {
