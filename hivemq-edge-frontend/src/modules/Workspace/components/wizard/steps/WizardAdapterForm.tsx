@@ -106,7 +106,7 @@ const WizardAdapterForm: FC<WizardAdapterFormProps> = ({ protocolId, onSubmit, o
 
       <DrawerFooter borderTopWidth="1px">
         <Flex width="100%" justifyContent="space-between">
-          <Button variant="outline" onClick={onBack}>
+          <Button variant="outline" onClick={onBack} data-testid="wizard-configuration-back">
             {t('workspace.wizard.adapter.back')}
           </Button>
           <Button variant="primary" type="submit" form="wizard-adapter-form">

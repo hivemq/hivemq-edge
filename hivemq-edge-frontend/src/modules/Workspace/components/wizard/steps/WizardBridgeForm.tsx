@@ -70,7 +70,7 @@ const WizardBridgeForm: FC<WizardBridgeFormProps> = ({ onSubmit, onBack }) => {
 
       <DrawerFooter borderTopWidth="1px">
         <Flex width="100%" justifyContent="space-between">
-          <Button variant="outline" onClick={onBack}>
+          <Button variant="outline" onClick={onBack} data-testid="wizard-configuration-back">
             {t('workspace.wizard.bridge.back')}
           </Button>
           <Button variant="primary" type="submit" form="wizard-bridge-form">
