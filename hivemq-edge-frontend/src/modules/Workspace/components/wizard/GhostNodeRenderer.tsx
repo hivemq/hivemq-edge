@@ -12,6 +12,7 @@ import { useReactFlow, MarkerType } from '@xyflow/react'
 import { useWizardState, useWizardGhosts } from '@/modules/Workspace/hooks/useWizardStore'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges'
+import { calculateBarycenter } from '@/modules/Workspace/utils/nodes-utils'
 import { requiresGhost } from './utils/wizardMetadata'
 import {
   createGhostAdapterGroup,
@@ -30,7 +31,7 @@ import { IdStubs, EdgeTypes } from '@/modules/Workspace/types'
  * Adds/removes ghost nodes based on wizard state
  */
 const GhostNodeRenderer: FC = () => {
-  const { isActive, entityType, currentStep } = useWizardState()
+  const { isActive, entityType, currentStep, selectedNodeIds } = useWizardState()
   const { ghostNodes, ghostEdges, addGhostNodes, addGhostEdges, clearGhostNodes } = useWizardGhosts()
   const { getNodes, setNodes, getEdges, setEdges, fitView } = useReactFlow()
   const { data: adapters } = useListProtocolAdapters()
@@ -242,6 +243,89 @@ const GhostNodeRenderer: FC = () => {
     fitView,
     bridges,
   ])
+
+  // Update ghost combiner position based on selected sources
+  useEffect(() => {
+    // Only for combiner and asset mapper wizards
+    if (!isActive || (entityType !== EntityType.COMBINER && entityType !== EntityType.ASSET_MAPPER)) {
+      return
+    }
+
+    // Need at least one source selected
+    if (!selectedNodeIds || selectedNodeIds.length === 0) {
+      return
+    }
+
+    // Find the ghost combiner/asset mapper node
+    const nodes = getNodes()
+    const ghostCombinerNode = nodes.find(
+      (n) => n.id.startsWith('ghost-combiner-') || n.id.startsWith('ghost-assetmapper-')
+    )
+
+    if (!ghostCombinerNode) {
+      return // Ghost not created yet
+    }
+
+    // Get selected source nodes with their CURRENT positions
+    const selectedNodes = nodes.filter((n) => selectedNodeIds.includes(n.id))
+
+    if (selectedNodes.length === 0) {
+      return
+    }
+
+    // Calculate barycenter of selected sources
+    const barycenter = calculateBarycenter(selectedNodes)
+
+    // Update ghost position to barycenter (slightly above sources)
+    const updatedNodes = nodes.map((node) => {
+      if (node.id === ghostCombinerNode.id) {
+        return {
+          ...node,
+          position: {
+            x: barycenter.x,
+            y: barycenter.y, //- POS_NODE_INC.y * 0.5,
+          },
+          // Add smooth transition animation
+          style: {
+            ...node.style,
+            transition: 'transform 0.3s ease-out',
+          },
+        }
+      }
+      return node
+    })
+
+    setNodes(updatedNodes)
+
+    // Update ghost edges from selected sources to ghost combiner
+    const edges = getEdges()
+    const realEdges = removeGhostEdges(edges)
+
+    // Keep the edge from ghost combiner to EDGE node
+    const ghostToEdgeEdge = ghostEdges.find((e) => e.source === ghostCombinerNode.id && e.target === IdStubs.EDGE_NODE)
+
+    // Create ghost edges from each selected source to ghost combiner
+    const ghostEdgesFromSources: GhostEdge[] = selectedNodes.map((sourceNode, index) => ({
+      id: `ghost-edge-source-${index}-${sourceNode.id}`,
+      source: sourceNode.id,
+      target: ghostCombinerNode.id,
+      type: EdgeTypes.DYNAMIC_EDGE,
+      animated: true,
+      focusable: false,
+      style: GHOST_EDGE_STYLE,
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 20,
+        height: 20,
+        color: '#4299E1',
+      },
+      data: { isGhost: true },
+    }))
+
+    // Combine all edges
+    const newGhostEdges = ghostToEdgeEdge ? [ghostToEdgeEdge, ...ghostEdgesFromSources] : ghostEdgesFromSources
+    setEdges([...realEdges, ...newGhostEdges])
+  }, [isActive, entityType, selectedNodeIds, getNodes, setNodes, getEdges, setEdges, ghostEdges])
 
   // Cleanup on unmount
   useEffect(() => {
