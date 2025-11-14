@@ -418,11 +418,8 @@ public class ProtocolAdapterManager {
 
         return wrapper
                 .stopAsync(destroy)
-                .thenApply(v -> {
-                    wrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-                    return v;
-                })
                 .whenComplete((result, throwable) -> {
+                    wrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
                     final Event.SEVERITY severity;
                     final String message;
                     final String wid = wrapper.getId();

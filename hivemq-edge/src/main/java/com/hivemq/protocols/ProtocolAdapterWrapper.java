@@ -158,7 +158,9 @@ public class ProtocolAdapterWrapper {
                             return success;
                         });
                     }
-                }).thenApply(ignored -> (Void) null).whenComplete((result, throwable) -> {
+                })
+                .thenApply(ignored -> (Void) null)
+                .whenComplete((result, throwable) -> {
                     //always clean up state
                     startFutureRef.set(null);
                     operationState.set(OperationState.IDLE);
@@ -316,7 +318,8 @@ public class ProtocolAdapterWrapper {
                     }
                     return output.getOutputFuture();
                 })
-                .thenApply(v -> {
+                .thenCompose(Function.identity())
+                .whenComplete((result, throwable) -> {
                     stopFutureRef.set(null);
                     protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
                     operationState.set(OperationState.IDLE);
@@ -324,10 +327,6 @@ public class ProtocolAdapterWrapper {
                         log.info("Destroying adapter with id '{}'", getId());
                         adapter.destroy();
                     }
-                    return v;
-                })
-                .thenCompose(Function.identity())
-                .whenComplete((result, throwable) -> {
                     if (throwable == null) {
                         log.info("Stopped adapter with id {}", adapter.getId());
                     } else {
