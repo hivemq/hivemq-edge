@@ -187,12 +187,6 @@ public class ProtocolAdapterWrapper {
         }
     }
 
-    private void cleanUpStartFuture() {
-        Optional.ofNullable(startFutureRef.getAndSet(null))
-                .filter(startFuture -> !startFuture.isCancelled())
-                .ifPresent(startFuture -> startFuture.cancel(true));
-    }
-
     private void cleanUpScheduler() {
         Optional.ofNullable(schedulerFutureRef.getAndSet(null))
                 .filter(scheduledFuture -> !scheduledFuture.isCancelled())
@@ -287,7 +281,6 @@ public class ProtocolAdapterWrapper {
             return existingStopFuture;
         }
         cleanUpScheduler();
-        cleanUpStartFuture();
         // Try to atomically transition from IDLE to STOPPING
         if (!operationState.compareAndSet(OperationState.IDLE, OperationState.STOPPING)) {
             // State changed between check and set, retry
