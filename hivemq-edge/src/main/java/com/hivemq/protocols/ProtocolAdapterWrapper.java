@@ -320,8 +320,8 @@ public class ProtocolAdapterWrapper {
                 log.error("Error stopping adapter with id {}", adapter.getId(), throwable);
             }
             protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-            stopFutureRef.set(null);
             operationState.set(OperationState.IDLE);
+            stopFutureRef.set(null);
         });
 
         stopFutureRef.set(stopFuture);
