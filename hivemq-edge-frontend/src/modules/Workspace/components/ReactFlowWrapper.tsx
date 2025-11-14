@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { Node, NodePositionChange } from '@xyflow/react'
 import { ReactFlow, Background, getIncomers, getOutgoers } from '@xyflow/react'
 import { Box, useToast } from '@chakra-ui/react'
+import debug from 'debug'
 
 import '@xyflow/react/dist/style.css'
 
@@ -39,6 +40,8 @@ import {
 import { DynamicEdge } from '@/modules/Workspace/components/edges/DynamicEdge'
 import { getGluedPosition, gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { proOptions } from '@/components/react-flow/react-flow.utils.ts'
+
+const debugLog = debug('workspace:wizard:selection')
 
 const ReactFlowWrapper = () => {
   const { t } = useTranslation()
@@ -125,17 +128,9 @@ const ReactFlowWrapper = () => {
       // Only handle clicks when wizard is active with selection constraints
       const { isActive, selectionConstraints, selectedNodeIds, actions } = useWizardStore.getState()
 
-      console.log('🔍 Node clicked:', {
-        nodeId: node.id,
-        nodeType: node.type,
-        isActive,
-        hasConstraints: !!selectionConstraints,
-        allowedTypes: selectionConstraints?.allowedNodeTypes,
-      })
-
       if (!isActive || !selectionConstraints) {
         // Normal mode - let default behavior handle it
-        console.log('⏭️ Not in selection mode')
+        debugLog('⏭️ Not in selection mode')
         return
       }
 
@@ -144,14 +139,14 @@ const ReactFlowWrapper = () => {
       const isEdgeNode = node.id === 'EDGE_NODE'
 
       if (isGhost || isEdgeNode) {
-        console.log('🚫 Ghost or edge node - not selectable')
+        debugLog('🚫 Ghost or edge node - not selectable')
         return // Can't select ghost or edge nodes
       }
 
       // Check allowed types
       const { allowedNodeTypes = [], customFilter, requiresProtocolCapabilities } = selectionConstraints
       if (allowedNodeTypes.length > 0 && !allowedNodeTypes.includes(node.type || '')) {
-        console.log('🚫 Node type not allowed:', node.type, 'allowed:', allowedNodeTypes)
+        debugLog('🚫 Node type not allowed:', node.type, 'allowed:', allowedNodeTypes)
         return // Type not allowed
       }
 
@@ -160,19 +155,19 @@ const ReactFlowWrapper = () => {
         const adapterType = node.data?.type
 
         if (!adapterType) {
-          console.log('🚫 Missing adapter type on node:', node.id)
+          debugLog('🚫 Missing adapter type on node:', node.id)
           return
         }
 
         // If protocol adapters not loaded yet, skip capability check
         // WizardSelectionRestrictions handles visual filtering
         if (!protocolAdapters) {
-          console.log('⏳ Protocol adapters not loaded yet, skipping capability check')
+          debugLog('⏳ Protocol adapters not loaded yet, skipping capability check')
         } else {
           // Protocol adapters loaded - check capabilities
           const protocolAdapter = protocolAdapters.find((p) => p.id === adapterType)
           if (!protocolAdapter || !protocolAdapter.capabilities) {
-            console.log('🚫 Protocol adapter not found or has no capabilities:', adapterType)
+            debugLog('🚫 Protocol adapter not found or has no capabilities:', adapterType)
             return
           }
 
@@ -181,7 +176,7 @@ const ReactFlowWrapper = () => {
           )
 
           if (!hasAllCapabilities) {
-            console.log('🚫 Adapter missing required capabilities:', {
+            debugLog('🚫 Adapter missing required capabilities:', {
               required: requiresProtocolCapabilities,
               has: protocolAdapter.capabilities,
             })
@@ -192,13 +187,13 @@ const ReactFlowWrapper = () => {
 
       // If custom filter provided, apply it
       if (customFilter && !customFilter(node)) {
-        console.log('🚫 Node filtered out by custom filter')
+        debugLog('🚫 Node filtered out by custom filter')
         return
       }
 
       // All checks passed - toggle selection
       const isSelected = selectedNodeIds.includes(node.id)
-      console.log(isSelected ? '➖ Deselecting node' : '➕ Selecting node')
+      debugLog(isSelected ? '➖ Deselecting node' : '➕ Selecting node')
 
       if (isSelected) {
         // Deselect
@@ -222,9 +217,8 @@ const ReactFlowWrapper = () => {
         actions.selectNode(node.id)
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, toast]
-    // protocolAdapters from context is intentionally not in deps to avoid unnecessary re-renders
+    [t, toast, protocolAdapters]
+    // protocolAdapters must be in deps to avoid stale closure when capabilities are checked
   )
 
   return (

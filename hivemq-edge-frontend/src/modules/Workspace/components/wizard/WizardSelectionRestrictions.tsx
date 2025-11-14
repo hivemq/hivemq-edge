@@ -1,22 +1,17 @@
-/**
- * Wizard Selection Restrictions
- *
- * Manages node visibility and ghost edges during selection steps.
- * - Hides non-selectable nodes
- * - Shows only selection targets
- * - Creates ghost edges from selected nodes to ghost combiner
- */
-
 import type { FC } from 'react'
 import { useEffect, useMemo } from 'react'
 import { useReactFlow, MarkerType } from '@xyflow/react'
 import type { Node, Edge } from '@xyflow/react'
+import debug from 'debug'
 
+import type { ProtocolAdapter } from '@/api/__generated__'
 import { useWizardState } from '@/modules/Workspace/hooks/useWizardStore'
 import { EdgeTypes, NodeTypes } from '@/modules/Workspace/types'
 import type { SelectionConstraints } from './types'
 import { GHOST_EDGE_STYLE } from './utils/ghostNodeFactory'
 import { useProtocolAdaptersContext } from './ProtocolAdaptersContext'
+
+const debugLog = debug('workspace:wizard:constraints')
 
 /**
  * Check if a node can be selected based on constraints
@@ -24,7 +19,7 @@ import { useProtocolAdaptersContext } from './ProtocolAdaptersContext'
 const checkConstraints = (
   node: Node,
   constraints: SelectionConstraints,
-  protocolAdapters?: Array<{ id: string; capabilities?: string[] }>
+  protocolAdapters?: ProtocolAdapter[]
 ): boolean => {
   // Ghost nodes are never selectable
   if (node.data?.isGhost) {
@@ -50,12 +45,16 @@ const checkConstraints = (
     constraints.requiresProtocolCapabilities.length > 0
   ) {
     const adapterType = node.data?.type // e.g., "opcua", "mqtt", etc.
+
     if (!adapterType || !protocolAdapters) {
+      debugLog('[WizardSelection] Missing adapterType or protocolAdapters')
       return false
     }
 
     const protocolAdapter = protocolAdapters.find((p) => p.id && p.id === adapterType)
+
     if (!protocolAdapter || !protocolAdapter.capabilities) {
+      debugLog('[WizardSelection] No protocol adapter or capabilities found')
       return false
     }
 
@@ -65,6 +64,7 @@ const checkConstraints = (
     )
 
     if (!hasAllCapabilities) {
+      debugLog('[WizardSelection] Protocol adapter does not meet required capabilities')
       return false
     }
   }
