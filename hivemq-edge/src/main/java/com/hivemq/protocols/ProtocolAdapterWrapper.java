@@ -121,46 +121,48 @@ public class ProtocolAdapterWrapper {
         initStartAttempt();
         final var output = new ProtocolAdapterStartOutputImpl();
         final var input = new ProtocolAdapterStartInputImpl(moduleServices);
-        final var startFuture = CompletableFuture.supplyAsync(() -> {
-            try {
-                adapter.start(input, output);
-            } catch (final Throwable throwable) {
-                output.getStartFuture().completeExceptionally(throwable);
-            }
-            return output.getStartFuture();
-        }).thenCompose(Function.identity()).handle((ignored, error) -> {
-            if (error != null) {
-                log.error("Error starting adapter", error);
-                stopAfterFailedStart();
-                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-                //we still return the initial error since that's the most significant information
-                return CompletableFuture.failedFuture(error);
-            } else {
-                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
-                return attemptStartingConsumers(writingEnabled,
-                        moduleServices.eventService()).handle((success, startException) -> {
-                    if (startException == null) {
-                        if (success) {
-                            log.debug("Successfully started adapter with id {}", adapter.getId());
-                        } else {
-                            log.debug("Partially started adapter with id {}", adapter.getId());
-                        }
-                    } else {
-                        log.error("Failed to start adapter with id {}", adapter.getId(), startException);
-                        stopAfterFailedStart();
-                        //we still return the initial error since that's the most significant information
-                        protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-                        throw new RuntimeException("Failed to start adapter with id " + adapter.getId(),
-                                startException);
+        final var startFuture = CompletableFuture
+                .supplyAsync(() -> {
+                    try {
+                        adapter.start(input, output);
+                    } catch (final Throwable throwable) {
+                        output.getStartFuture().completeExceptionally(throwable);
                     }
-                    return success;
+                    return output.getStartFuture();
+                })
+                .thenCompose(Function.identity()).handle((ignored, error) -> {
+                    if (error != null) {
+                        log.error("Error starting adapter", error);
+                        stopAfterFailedStart();
+                        protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+                        //we still return the initial error since that's the most significant information
+                        return CompletableFuture.failedFuture(error);
+                    } else {
+                        protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
+                        return attemptStartingConsumers(writingEnabled,
+                                moduleServices.eventService()).handle((success, startException) -> {
+                            if (startException == null) {
+                                if (success) {
+                                    log.debug("Successfully started adapter with id {}", adapter.getId());
+                                } else {
+                                    log.debug("Partially started adapter with id {}", adapter.getId());
+                                }
+                            } else {
+                                log.error("Failed to start adapter with id {}", adapter.getId(), startException);
+                                stopAfterFailedStart();
+                                //we still return the initial error since that's the most significant information
+                                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+                                throw new RuntimeException("Failed to start adapter with id " + adapter.getId(),
+                                        startException);
+                            }
+                            return success;
+                        });
+                    }
+                }).thenApply(ignored -> (Void) null).whenComplete((result, throwable) -> {
+                    //always clean up state
+                    startFutureRef.set(null);
+                    operationState.set(OperationState.IDLE);
                 });
-            }
-        }).thenApply(ignored -> (Void) null).whenComplete((result, throwable) -> {
-            //always clean up state
-            startFutureRef.set(null);
-            operationState.set(OperationState.IDLE);
-        });
 
         startFutureRef.set(startFuture);
         return startFuture;
@@ -302,33 +304,38 @@ public class ProtocolAdapterWrapper {
 
         final var stopFuture = new CompletableFuture<Void>();
         stopFutureRef.set(stopFuture);
-        CompletableFuture.supplyAsync(() -> {
-                stopPolling(protocolAdapterPollingService);
-                stopWriting(protocolAdapterWritingService);
-                try {
-                    adapter.stop(input, output);
-                } catch (final Throwable throwable) {
-                    output.getOutputFuture().completeExceptionally(throwable);
-                }
-                return output.getOutputFuture();
-            }).thenCompose(Function.identity())
-            .whenComplete((result, throwable) -> {
-                if (destroy) {
-                    log.info("Destroying adapter with id '{}'", getId());
-                    adapter.destroy();
-                }
-                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-                operationState.set(OperationState.IDLE);
-                stopFutureRef.set(null);
-                if (throwable == null) {
-                    log.info("Stopped adapter with id {}", adapter.getId());
-                    stopFuture.complete(null);
-                } else {
-                    log.error("Error stopping adapter with id {}", adapter.getId(), throwable);
-                    stopFuture.completeExceptionally(throwable);
-                }
-            });
 
+        final var actualFuture = CompletableFuture
+                .supplyAsync(() -> {
+                    stopPolling(protocolAdapterPollingService);
+                    stopWriting(protocolAdapterWritingService);
+                    try {
+                        adapter.stop(input, output);
+                    } catch (final Throwable throwable) {
+                        output.getOutputFuture().completeExceptionally(throwable);
+                    }
+                    return output.getOutputFuture();
+                })
+                .thenApply(v -> {
+                    stopFutureRef.set(null);
+                    protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+                    operationState.set(OperationState.IDLE);
+                    if (destroy) {
+                        log.info("Destroying adapter with id '{}'", getId());
+                        adapter.destroy();
+                    }
+                    return v;
+                })
+                .thenCompose(Function.identity())
+                .whenComplete((result, throwable) -> {
+                    if (throwable == null) {
+                        log.info("Stopped adapter with id {}", adapter.getId());
+                    } else {
+                        log.error("Error stopping adapter with id {}", adapter.getId(), throwable);
+                    }
+                });
+
+        stopFuture.thenCompose(v -> actualFuture);
         return stopFuture;
     }
 
