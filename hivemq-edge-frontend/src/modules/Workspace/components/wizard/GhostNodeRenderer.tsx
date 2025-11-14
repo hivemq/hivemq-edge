@@ -1,13 +1,7 @@
-/**
- * Ghost Node Renderer
- *
- * Renders ghost nodes and edges on the canvas during wizard flow.
- * Ghost nodes provide a preview of what will be created.
- */
-
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useReactFlow, MarkerType } from '@xyflow/react'
+import debug from 'debug'
 
 import { useWizardState, useWizardGhosts } from '@/modules/Workspace/hooks/useWizardStore'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters'
@@ -25,6 +19,8 @@ import {
 } from './utils/ghostNodeFactory'
 import { EntityType, type GhostEdge } from './types'
 import { IdStubs, EdgeTypes } from '@/modules/Workspace/types'
+
+const debugLog = debug('workspace:wizard:ghostnode')
 
 /**
  * Component that manages ghost node rendering
@@ -74,7 +70,7 @@ const GhostNodeRenderer: FC = () => {
       const edgeNode = getNodes().find((n) => n.id === IdStubs.EDGE_NODE)
 
       if (!edgeNode) {
-        console.warn('EDGE node not found, cannot create ghost nodes')
+        debugLog('EDGE node not found, cannot create ghost nodes')
         return
       }
 

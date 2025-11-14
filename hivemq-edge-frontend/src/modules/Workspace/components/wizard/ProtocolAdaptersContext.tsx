@@ -1,20 +1,9 @@
-/**
- * Protocol Adapters Context
- *
- * Provides protocol adapter type information to wizard components
- * for capability checking without causing re-render loops.
- */
-
-import { createContext, useContext, useMemo, type FC, type ReactNode } from 'react'
+import type { ProtocolAdapter as ApiProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes'
-
-interface ProtocolAdapter {
-  id: string | undefined
-  capabilities?: string[]
-}
+import { createContext, type FC, type ReactNode, useContext, useMemo } from 'react'
 
 interface ProtocolAdaptersContextValue {
-  protocolAdapters: ProtocolAdapter[] | undefined
+  protocolAdapters: ApiProtocolAdapter[] | undefined
 }
 
 export const ProtocolAdaptersContext = createContext<ProtocolAdaptersContextValue>({
@@ -32,26 +21,16 @@ export const ProtocolAdaptersProvider: FC<{ children: ReactNode }> = ({ children
   const { data: protocolAdapterTypes } = useGetAdapterTypes()
 
   const protocolAdaptersList = useMemo(() => {
-    const list = protocolAdapterTypes?.items
-      ?.filter((pa) => pa.id)
-      ?.map((protocolAdapter) => ({
-        id: protocolAdapter.id as string,
-        capabilities: protocolAdapter.capabilities || [],
-      }))
-
-    console.log('📋 Protocol Adapters Provider:', {
-      hasData: !!protocolAdapterTypes,
-      itemsCount: protocolAdapterTypes?.items?.length,
-      filteredCount: list?.length,
-      list,
-    })
-
-    return list
+    return protocolAdapterTypes?.items || []
   }, [protocolAdapterTypes])
 
-  return (
-    <ProtocolAdaptersContext.Provider value={{ protocolAdapters: protocolAdaptersList }}>
-      {children}
-    </ProtocolAdaptersContext.Provider>
+  // Memoize the context value to prevent infinite re-render loop
+  const contextValue = useMemo(
+    () => ({
+      protocolAdapters: protocolAdaptersList,
+    }),
+    [protocolAdaptersList]
   )
+
+  return <ProtocolAdaptersContext.Provider value={contextValue}>{children}</ProtocolAdaptersContext.Provider>
 }
