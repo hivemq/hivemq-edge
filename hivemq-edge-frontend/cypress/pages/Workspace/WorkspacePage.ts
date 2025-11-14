@@ -1,7 +1,5 @@
 import { EDGE_MENU_LINKS } from 'cypress/utils/constants.utils.ts'
 import { ShellPage } from '../ShellPage.ts'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { DuplicateCombinerModal, CombinerMappingsList } from '@/modules/Workspace/components/modals'
 
 export class WorkspacePage extends ShellPage {
   get navLink() {
@@ -60,7 +58,7 @@ export class WorkspacePage extends ShellPage {
 
     presetsMenu: {
       get saveOption() {
-        return cy.get('[role="menu"] [role="menuitem"]').first()
+        return cy.getByTestId('workspace-layout-preset-save')
       },
 
       presetItem(name: string) {

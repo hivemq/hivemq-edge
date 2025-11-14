@@ -112,6 +112,16 @@ describe('Pulse Assets', () => {
     })
 
     it('should add an asset to an existing mapper', () => {
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', { statusCode: 203, log: false })
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/**/northboundMappings', {
+        statusCode: 203,
+        log: false,
+      })
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/**/southboundMappings', {
+        statusCode: 203,
+        log: false,
+      })
+
       assetsPage.navLink.click()
       assetsPage.location.should('equal', '/app/pulse-assets')
 
@@ -144,7 +154,9 @@ describe('Pulse Assets', () => {
       assetMapperForm.field('mappings').table.noDataMessage.should('have.text', 'No data received yet.')
 
       assetMapperForm.formTab(0).click()
+      assetMapperForm.field('name').input.should('have.value', 'Non-existing mapper (new)')
       assetMapperForm.field('name').input.clear().type('my mapper')
+
       assetMapperForm.submit.click()
 
       workspacePage.combinerNodeContent(MOCK_MAIN_ASSET_MAPPER_ID).title.should('have.text', 'my mapper')

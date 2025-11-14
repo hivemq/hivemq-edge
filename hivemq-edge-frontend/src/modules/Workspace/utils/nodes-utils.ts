@@ -240,20 +240,18 @@ export const createAdapterNode = (
   return { nodeAdapter, edgeConnector, nodeDevice, deviceConnector }
 }
 
-export const createCombinerNode = (
-  combiner: Combiner,
-  index: number,
-  sources: Node[],
-  theme: Partial<WithCSSVar<Dict>>
-) => {
+export const createCombinerNode = (combiner: Combiner, sources: Node[], theme: Partial<WithCSSVar<Dict>>) => {
+  // Calculate barycenter of source nodes for deterministic positioning
+  const barycenter = calculateBarycenter(sources)
+
   const nodeCombiner: Node<Combiner, NodeTypes.COMBINER_NODE> = {
     id: combiner.id,
     type: NodeTypes.COMBINER_NODE,
     sourcePosition: Position.Bottom,
     data: combiner,
     position: {
-      x: POS_EDGE.x + POS_NODE_INC.x * index * 2,
-      y: POS_EDGE.y - POS_NODE_INC.y * 0.75,
+      x: barycenter.x,
+      y: barycenter.y,
     },
   }
 
@@ -337,6 +335,30 @@ export const createPulseNode = (theme: Partial<WithCSSVar<Dict>>, positionStorag
   }
 
   return { nodePulse, pulseConnector }
+}
+
+/**
+ * Calculate the barycenter (geometric center) of a set of nodes
+ * @param nodes - Array of nodes to calculate center from
+ * @returns XYPosition at the center of all nodes
+ */
+export const calculateBarycenter = (nodes: Node[]): XYPosition => {
+  if (nodes.length === 0) {
+    return { x: 0, y: 0 }
+  }
+
+  const sum = nodes.reduce(
+    (acc, node) => ({
+      x: acc.x + node.position.x,
+      y: acc.y + node.position.y,
+    }),
+    { x: 0, y: 0 }
+  )
+
+  return {
+    x: sum.x / nodes.length,
+    y: sum.y / nodes.length,
+  }
 }
 
 export const getDefaultMetricsFor = (node: Node): string[] => {

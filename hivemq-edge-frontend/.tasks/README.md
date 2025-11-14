@@ -44,16 +44,19 @@ This directory contains:
 ├── ACTIVE_TASKS.md                    ← Master index of all tasks
 ├── AUTONOMY_TEMPLATE.md               ← AI guidelines & best practices
 ├── CODE_COMMENTS_GUIDELINES.md        ← Rules for code comments & documentation
-├── CYPRESS_BEST_PRACTICES.md          ← Cypress guidelines & best practices
+├── CYPRESS_TESTING_GUIDELINES.md      ← ⭐ CONSOLIDATED Cypress testing reference (Nov 12, 2025)
+├── CYPRESS_LOGGING_INDEX.md           ← Master index (updated Nov 12, 2025 to reference consolidated doc)
 ├── DATAHUB_ARCHITECTURE.md            ← DataHub architecture & E2E testing guide
 ├── DESIGN_GUIDELINES.md               ← UI/UX design patterns & standards
 ├── ERROR_MESSAGE_TRACING_PATTERN.md   ← Full-Stack Error Tracing guidelines
 ├── I18N_GUIDELINES.md                 ← Internationalization guidelines
 ├── MONACO_TESTING_GUIDE.md            ← Monaco Editor Testing Guide for Cypress
 ├── QUICK_START.md                     ← User guide for resuming work
-├── TESTING_GUIDELINES.md              ← Comprehensive testing standards
+├── TESTING_GUIDELINES.md              ← Comprehensive testing standards (now references Cypress doc)
+├── USER_DOCUMENTATION_GUIDELINE.md    ← Guide for creating end-user documentation
 ├── WEBSTORM_SETUP.md                  ← IDE configuration guide
 ├── WEBSTORM_TEMPLATES.md              ← Live templates for WebStorm
+├── WORKSPACE_TESTING_GUIDELINES.md    ← Workspace-specific testing patterns
 ├── FOR_CONSIDERATION.md               ← Future improvements
 │
 └── {task-id}-{task-name}/             ← Individual task directories
@@ -64,6 +67,13 @@ This directory contains:
     ├── SESSION_FEEDBACK.md
     └── assets/                       ← Screenshots, diagrams, etc.
 ```
+
+**Deleted Files (Consolidated Nov 12, 2025):**
+
+- ❌ CYPRESS_BEST_PRACTICES.md → See CYPRESS_TESTING_GUIDELINES.md
+- ❌ CYPRESS_TESTING_BEST_PRACTICES.md → See CYPRESS_TESTING_GUIDELINES.md
+- ❌ CYPRESS_LOGGING_SETUP.md → See CYPRESS_TESTING_GUIDELINES.md
+- ❌ CYPRESS_LOGGING_VERIFICATION.md → See CYPRESS_TESTING_GUIDELINES.md
 
 ## For AI Agents
 
