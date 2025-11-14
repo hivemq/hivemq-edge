@@ -1,4 +1,4 @@
-# Task: 33811-workspace-operation-wizard
+# Task: 38111-workspace-operation-wizard
 
 ## Objective
 
@@ -122,7 +122,7 @@ You MUST also refer to the following guidelines and abide by them
 
 ## Additional considerations
 
-- Act as a senior designer to propose a god designer for the wizard. Promote simplicity, clarity, usability and accessibility.
+- Act as a senior designer to propose a good designer for the wizard. Promote simplicity, clarity, usability and accessibility.
 - Ensure that the development is gradual, breaking down your plan into manageable and accountable steps
 - The wizard must be future-proof, as this is a proof-of-concept that is likely to need revision. The list of wizard targets and steps is likely to be expanded in the future
 - Any React component MUST be designed reusing as much as possible from the existing ChakraUI components or the custom ones in the code base

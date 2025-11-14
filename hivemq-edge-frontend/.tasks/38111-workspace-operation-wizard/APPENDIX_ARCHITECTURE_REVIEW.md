@@ -8,6 +8,7 @@
 ## Executive Summary
 
 The workspace has **THREE competing sources of truth** for node/edge state:
+
 1. **`useWorkspaceStore`** (Zustand) - Persisted to localStorage, user modifications
 2. **`useGetFlowElements`** - Regenerated from backend API, initial positions
 3. **`useReactFlow`** - React Flow's internal state, actual rendering
@@ -34,6 +35,7 @@ const { getNodes } = useReactFlow()
 ```
 
 **Issues:**
+
 - ❌ No clear authority - which is "correct"?
 - ❌ Data can get out of sync
 - ❌ Mutations in one don't reflect in others
@@ -42,6 +44,7 @@ const { getNodes } = useReactFlow()
 ### Problem 2: Backend Data vs User Modifications Conflict
 
 **Current Flow:**
+
 ```
 1. Backend returns adapters/bridges (no position data)
 2. useGetFlowElements calculates initial positions
@@ -54,6 +57,7 @@ const { getNodes } = useReactFlow()
 ```
 
 **Example from code:**
+
 ```typescript
 // useGetFlowElements.ts line 138
 setNodes([nodeEdge, ...applyLayout(nodes, groups)])
@@ -63,11 +67,12 @@ setNodes([nodeEdge, ...applyLayout(nodes, groups)])
 ### Problem 3: No Stable Node IDs
 
 **Current ID generation:**
+
 ```typescript
 // For adapters
 id: `ADAPTER_NODE@${adapter.id}`
 
-// For bridges  
+// For bridges
 id: `BRIDGE_NODE@${bridge.id}`
 
 // For combiners
@@ -75,6 +80,7 @@ id: combiner.id // Uses backend UUID
 ```
 
 **Issues:**
+
 - ❌ Adapter IDs are user-defined strings, can change
 - ❌ Bridge IDs can change on backend
 - ❌ No guarantee of ID stability across sessions
@@ -84,6 +90,7 @@ id: combiner.id // Uses backend UUID
 ### Problem 4: Position Data Not Persisted to Backend
 
 **Current situation:**
+
 ```typescript
 // Backend Adapter type:
 {
@@ -103,6 +110,7 @@ id: combiner.id // Uses backend UUID
 ```
 
 **Problems:**
+
 - ❌ Position only in localStorage
 - ❌ Lost when localStorage cleared
 - ❌ Not synced across devices
@@ -112,23 +120,25 @@ id: combiner.id // Uses backend UUID
 ### Problem 5: useGetFlowElements Regenerates Everything
 
 **Current pattern:**
+
 ```typescript
 useEffect(() => {
   const nodes: Node[] = []
   const edges: Edge[] = []
-  
+
   // Recreate ALL nodes from scratch
   bridges?.forEach(bridge => {
     const { nodeBridge } = createBridgeNode(bridge, ...)
     nodes.push(nodeBridge)
   })
-  
+
   // ❌ This REPLACES everything, losing user changes
   setNodes([nodeEdge, ...applyLayout(nodes, groups)])
 }, [bridges, adapters, listeners, ...])
 ```
 
 **Why this is bad:**
+
 - Runs on EVERY backend data change
 - Recalculates positions from scratch
 - Attempts to preserve positions with `existingCombiner` check
@@ -138,11 +148,12 @@ useEffect(() => {
 ### Problem 6: Wizard Uses Both Stores
 
 **Wizard flow:**
+
 ```typescript
 // GhostNodeRenderer.tsx
 const { getNodes, setNodes } = useReactFlow() // ← Direct React Flow
 
-// WizardCombinerConfiguration.tsx  
+// WizardCombinerConfiguration.tsx
 const currentNodes = useWorkspaceStore.getState().nodes // ← Workspace store
 
 // ReactFlowWrapper.tsx (node click handler)
@@ -151,6 +162,7 @@ const { protocolAdapters } = useProtocolAdaptersContext()
 ```
 
 **Confusion:**
+
 - Which store has current positions?
 - Which store should wizard update?
 - How do changes propagate?
@@ -162,29 +174,34 @@ const { protocolAdapters } = useProtocolAdaptersContext()
 ### useWorkspaceStore Usage (20 locations)
 
 **Legitimate uses:**
+
 - ✅ `ReactFlowWrapper.tsx` - Main canvas, uses nodes/edges
 - ✅ `CombinerMappingManager.tsx` - Updates combiner data
 - ✅ `SearchEntities.tsx` - Searches nodes
 - ✅ `FilterSelection.tsx` - Filters nodes
 
 **Problematic uses:**
+
 - ⚠️ `useGetFlowElements.ts` - Reads workspace store to preserve positions
   - Should be single source, not coordinate between stores
 
 ### useReactFlow Usage (20 locations)
 
 **Legitimate uses:**
+
 - ✅ Individual node components - `updateNodeData()` for local updates
 - ✅ `ContextualToolbar.tsx` - `fitView()`, `getNodesBounds()`
 - ✅ Wizard components - Ghost node manipulation
 
 **Questionable uses:**
+
 - ⚠️ Wizard directly manipulating React Flow state
   - Should go through workspace store?
 
 ### useGetFlowElements Usage
 
 **Current role:**
+
 - ❌ Acts as "backend → React Flow" synchronizer
 - ❌ Regenerates all nodes on every backend change
 - ❌ Attempts to preserve user positions (fragile)
@@ -199,11 +216,12 @@ const { protocolAdapters } = useProtocolAdaptersContext()
 **React Flow supports TWO patterns:**
 
 #### Pattern A: Controlled (Recommended for complex apps)
+
 ```typescript
 const [nodes, setNodes] = useState(initialNodes)
 const [edges, setEdges] = useState(initialEdges)
 
-<ReactFlow 
+<ReactFlow
   nodes={nodes}
   edges={edges}
   onNodesChange={(changes) => {
@@ -213,8 +231,9 @@ const [edges, setEdges] = useState(initialEdges)
 ```
 
 #### Pattern B: Uncontrolled (Simple use cases)
+
 ```typescript
-<ReactFlow 
+<ReactFlow
   defaultNodes={initialNodes}
   defaultEdges={initialEdges}
 />
@@ -222,6 +241,7 @@ const [edges, setEdges] = useState(initialEdges)
 ```
 
 **Current implementation:**
+
 - Uses Pattern A (controlled) ✅
 - But state is in Zustand store (useWorkspaceStore) ✅
 - Conflict: useGetFlowElements ALSO tries to control state ❌
@@ -229,9 +249,11 @@ const [edges, setEdges] = useState(initialEdges)
 ### Recommendation 2: Single State Source
 
 **From React Flow docs:**
+
 > "Keep your nodes and edges state in ONE place. Don't duplicate state between React Flow internal state and external state."
 
 **Current violation:**
+
 - React Flow internal state (via useReactFlow)
 - Zustand store (useWorkspaceStore)
 - Hook state (useGetFlowElements local useState)
@@ -240,6 +262,7 @@ const [edges, setEdges] = useState(initialEdges)
 ### Recommendation 3: Backend Sync Pattern
 
 **React Flow recommended pattern:**
+
 ```typescript
 // 1. Load from backend
 const backendData = await fetchGraphData()
@@ -258,11 +281,12 @@ onNodesChange((changes) => {
 
 // 5. Periodically or on demand, save to backend
 const saveToBackend = debounce(() => {
-  savePositions(nodes.map(n => ({ id: n.id, position: n.position })))
+  savePositions(nodes.map((n) => ({ id: n.id, position: n.position })))
 }, 1000)
 ```
 
 **Current implementation:**
+
 - ❌ Doesn't merge, REPLACES all nodes
 - ❌ Doesn't save positions to backend
 - ❌ Relies on localStorage (fragile)
@@ -274,6 +298,7 @@ const saveToBackend = debounce(() => {
 ### Option 1: Zustand Store as Single Source (RECOMMENDED)
 
 **Architecture:**
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │                  Backend API                         │
@@ -308,27 +333,26 @@ const saveToBackend = debounce(() => {
 interface WorkspaceState {
   nodes: Node[]
   edges: Edge[]
-  
+
   // Track backend entity metadata
-  entityMetadata: Map<string, {
-    id: string
-    type: 'adapter' | 'bridge' | 'combiner'
-    backendId: string  // Original backend ID
-    lastSynced: number
-  }>
+  entityMetadata: Map<
+    string,
+    {
+      id: string
+      type: 'adapter' | 'bridge' | 'combiner'
+      backendId: string // Original backend ID
+      lastSynced: number
+    }
+  >
 }
 
 interface WorkspaceAction {
   // Existing
   onNodesChange: (changes: NodeChange[]) => void
-  
+
   // NEW: Sync with backend data
-  syncFromBackend: (data: {
-    adapters?: Adapter[]
-    bridges?: Bridge[]
-    combiners?: Combiner[]
-  }) => void
-  
+  syncFromBackend: (data: { adapters?: Adapter[]; bridges?: Bridge[]; combiners?: Combiner[] }) => void
+
   // NEW: Merge strategy
   mergeNodes: (newNodes: Node[]) => void
 }
@@ -340,33 +364,34 @@ interface WorkspaceAction {
 syncFromBackend: (data) => {
   const currentNodes = get().nodes
   const currentMetadata = get().entityMetadata
-  
+
   // Build new nodes from backend data
   const backendNodes: Node[] = []
-  
-  data.adapters?.forEach(adapter => {
+
+  data.adapters?.forEach((adapter) => {
     const nodeId = `ADAPTER_NODE@${adapter.id}`
-    const existingNode = currentNodes.find(n => n.id === nodeId)
-    
+    const existingNode = currentNodes.find((n) => n.id === nodeId)
+
     const newNode = createAdapterNode(adapter, theme)
-    
+
     // PRESERVE user position if node exists
     if (existingNode) {
       newNode.position = existingNode.position
       newNode.selected = existingNode.selected
       // Preserve other user modifications
     }
-    
+
     backendNodes.push(newNode)
   })
-  
+
   // Remove nodes for deleted backend entities
-  const backendIds = new Set(backendNodes.map(n => n.id))
-  const nodesToKeep = currentNodes.filter(n => 
-    n.data.isGhost || // Keep ghost nodes
-    backendIds.has(n.id) // Keep if in backend
+  const backendIds = new Set(backendNodes.map((n) => n.id))
+  const nodesToKeep = currentNodes.filter(
+    (n) =>
+      n.data.isGhost || // Keep ghost nodes
+      backendIds.has(n.id) // Keep if in backend
   )
-  
+
   // Merge: preserved nodes + new nodes
   set({ nodes: [...backendNodes] })
 }
@@ -375,15 +400,16 @@ syncFromBackend: (data) => {
 #### 3. Remove useGetFlowElements Hook
 
 **Replace with:**
+
 ```typescript
 // useBackendSync.ts
 const useBackendSync = () => {
   const { syncFromBackend } = useWorkspaceStore()
-  
+
   const { data: adapters } = useListProtocolAdapters()
   const { data: bridges } = useListBridges()
   const { data: combiners } = useListCombiners()
-  
+
   useEffect(() => {
     if (adapters || bridges || combiners) {
       syncFromBackend({ adapters, bridges, combiners })
@@ -393,13 +419,14 @@ const useBackendSync = () => {
 ```
 
 **Usage:**
+
 ```typescript
 // EdgeFlowPage.tsx or ReactFlowWrapper.tsx
 const EdgeWorkspace = () => {
   useBackendSync() // Just call this
-  
+
   const { nodes, edges, onNodesChange, onEdgesChange } = useWorkspaceStore()
-  
+
   return (
     <ReactFlow
       nodes={nodes}
@@ -414,6 +441,7 @@ const EdgeWorkspace = () => {
 #### 4. Position Persistence to Backend (Future)
 
 **Backend API changes needed:**
+
 ```typescript
 // New endpoint
 POST /api/v1/workspace/layout
@@ -429,22 +457,23 @@ GET /api/v1/workspace/layout
 ```
 
 **Store integration:**
+
 ```typescript
 // useWorkspaceStore.ts
 saveLayoutToBackend: debounce(() => {
-  const positions = get().nodes.map(n => ({
+  const positions = get().nodes.map((n) => ({
     id: n.data.id, // Backend ID
-    position: n.position
+    position: n.position,
   }))
-  
+
   api.saveWorkspaceLayout(positions)
 }, 2000)
 
 // Call after position changes
 onNodesChange: (changes) => {
   set({ nodes: applyNodeChanges(changes, get().nodes) })
-  
-  if (changes.some(c => c.type === 'position')) {
+
+  if (changes.some((c) => c.type === 'position')) {
     get().saveLayoutToBackend()
   }
 }
@@ -455,6 +484,7 @@ onNodesChange: (changes) => {
 ## Option 2: React Flow as Single Source
 
 **Architecture:**
+
 ```
 Backend API
      ↓
@@ -464,11 +494,13 @@ External store syncs FROM React Flow (not TO it)
 ```
 
 **Pros:**
+
 - Follows React Flow's internal state pattern
 - No risk of state conflicts
 - Simpler mental model
 
 **Cons:**
+
 - ❌ Harder to persist to localStorage
 - ❌ Harder to access state outside React Flow context
 - ❌ Wizard would need refactoring
@@ -483,12 +515,15 @@ External store syncs FROM React Flow (not TO it)
 **Keep both stores but with STRICT rules:**
 
 ### Rules:
+
 1. **useWorkspaceStore = Authority for nodes/edges**
+
    - Only place to call `setNodes()` / `setEdges()`
    - Syncs with backend via `syncFromBackend()`
    - Persisted to localStorage
 
 2. **useReactFlow = Read-only queries + utilities**
+
    - Only use for: `fitView()`, `getNodesBounds()`, `screenToFlowPosition()`
    - NEVER use: `setNodes()`, `setEdges()`, `addNodes()`, `deleteElements()`
    - Exception: Wizard ghost nodes (temporary, not persisted)
@@ -500,28 +535,23 @@ External store syncs FROM React Flow (not TO it)
 ### Implementation:
 
 #### Enforce boundaries:
+
 ```typescript
 // useWorkspaceStore.ts
 const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
   persist(
     (set, get) => ({
       // ... existing ...
-      
+
       // NEW: Explicit sync method
       syncFromBackend: (data) => {
-        const mergedNodes = mergeBackendData(
-          get().nodes,
-          data,
-          get().theme
-        )
+        const mergedNodes = mergeBackendData(get().nodes, data, get().theme)
         set({ nodes: mergedNodes })
       },
-      
+
       // NEW: Helper to get node by backend ID
       getNodeByBackendId: (backendId: string, type: 'adapter' | 'bridge') => {
-        return get().nodes.find(n => 
-          n.data?.id === backendId && n.type === `${type.toUpperCase()}_NODE`
-        )
+        return get().nodes.find((n) => n.data?.id === backendId && n.type === `${type.toUpperCase()}_NODE`)
       },
     }),
     {
@@ -538,16 +568,17 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
 ```
 
 #### Refactor useGetFlowElements:
+
 ```typescript
 // RENAME to useBackendSync.ts
 const useBackendSync = () => {
-  const syncFromBackend = useWorkspaceStore(state => state.syncFromBackend)
-  
+  const syncFromBackend = useWorkspaceStore((state) => state.syncFromBackend)
+
   // All the API hooks
   const { data: adapters } = useListProtocolAdapters()
   const { data: bridges } = useListBridges()
   // ...
-  
+
   useEffect(() => {
     syncFromBackend({
       adapters: adapters?.items,
@@ -560,19 +591,20 @@ const useBackendSync = () => {
 ```
 
 #### Update ReactFlowWrapper:
+
 ```typescript
 // ReactFlowWrapper.tsx
 const ReactFlowWrapper = () => {
   useBackendSync() // Sync backend data to store
-  
+
   const { nodes, edges, onNodesChange, onEdgesChange } = useWorkspaceStore()
-  
+
   // ❌ DON'T do this:
   // const { setNodes } = useReactFlow()
-  
+
   // ✅ DO use this for utilities:
   const { fitView, screenToFlowPosition } = useReactFlow()
-  
+
   return (
     <ReactFlow
       nodes={nodes}
@@ -591,8 +623,9 @@ const ReactFlowWrapper = () => {
 ### The Problem with Simple ID Matching
 
 **Current naive approach:**
+
 ```typescript
-const existingNode = currentNodes.find(n => n.id === nodeId)
+const existingNode = currentNodes.find((n) => n.id === nodeId)
 if (existingNode) {
   newNode.position = existingNode.position // ❌ DANGEROUS!
 }
@@ -601,6 +634,7 @@ if (existingNode) {
 **Critical Issues:**
 
 #### Issue 1: ID Reuse After Deletion
+
 ```
 Scenario:
 1. User creates HTTP adapter "sensor-1"
@@ -614,6 +648,7 @@ Scenario:
 ```
 
 #### Issue 2: Type Changes Not Detected
+
 ```
 Scenario:
 1. Bridge "production" exists
@@ -625,6 +660,7 @@ Scenario:
 ```
 
 #### Issue 3: Configuration Changes Break Assumptions
+
 ```
 Scenario:
 1. Adapter references topic "sensor/temp"
@@ -647,16 +683,16 @@ interface EntityFingerprint {
   // Primary identity
   id: string
   type: 'adapter' | 'bridge' | 'combiner' | 'listener' | 'pulse'
-  
+
   // Type-specific identity markers
   subType?: string // e.g., adapter protocol type: "http", "mqtt", "opcua"
-  
+
   // Configuration hash (detect meaningful changes)
   configHash: string
-  
+
   // Creation metadata
   createdAt?: number
-  
+
   // Version tracking
   version?: number
   etag?: string // If backend supports ETags
@@ -677,7 +713,7 @@ export const generateAdapterFingerprint = (adapter: Adapter): EntityFingerprint 
     type: adapter.type, // "http", "mqtt", etc.
     // Don't include position, last_modified, etc.
   }
-  
+
   return {
     id: adapter.id,
     type: 'adapter',
@@ -694,7 +730,7 @@ export const generateBridgeFingerprint = (bridge: Bridge): EntityFingerprint => 
     host: bridge.host, // Core identity attribute
     port: bridge.port,
   }
-  
+
   return {
     id: bridge.id,
     type: 'bridge',
@@ -721,10 +757,10 @@ export const generateCombinerFingerprint = (combiner: Combiner): EntityFingerpri
 interface EnhancedNodeData {
   // Original entity data
   ...originalData
-  
+
   // Add fingerprint
   _fingerprint?: EntityFingerprint
-  
+
   // Track when last synced
   _lastSynced?: number
 }
@@ -748,11 +784,11 @@ export const findMatchingNode = (
   currentNodes: Node[]
 ): MatchResult => {
   const warnings: string[] = []
-  
+
   // Step 1: Find candidate nodes by ID
   const nodeId = generateNodeId(backendEntity)
-  const candidateById = currentNodes.find(n => n.id === nodeId)
-  
+  const candidateById = currentNodes.find((n) => n.id === nodeId)
+
   if (!candidateById) {
     return {
       existingNode: null,
@@ -761,9 +797,9 @@ export const findMatchingNode = (
       warnings: [],
     }
   }
-  
+
   const existingFingerprint = candidateById.data?._fingerprint
-  
+
   if (!existingFingerprint) {
     // Old node without fingerprint - assume it's correct but warn
     warnings.push('Node has no fingerprint - cannot verify identity')
@@ -774,13 +810,11 @@ export const findMatchingNode = (
       warnings,
     }
   }
-  
+
   // Step 2: Verify type matches
   if (existingFingerprint.type !== backendFingerprint.type) {
     // CRITICAL: Type mismatch! This is a different entity!
-    warnings.push(
-      `Type mismatch: existing is ${existingFingerprint.type}, backend is ${backendFingerprint.type}`
-    )
+    warnings.push(`Type mismatch: existing is ${existingFingerprint.type}, backend is ${backendFingerprint.type}`)
     return {
       existingNode: null,
       confidence: 'none',
@@ -788,7 +822,7 @@ export const findMatchingNode = (
       warnings,
     }
   }
-  
+
   // Step 3: Verify subType matches (for adapters)
   if (existingFingerprint.subType !== backendFingerprint.subType) {
     warnings.push(
@@ -801,7 +835,7 @@ export const findMatchingNode = (
       warnings,
     }
   }
-  
+
   // Step 4: Check configuration hash
   if (existingFingerprint.configHash !== backendFingerprint.configHash) {
     // Configuration changed - this is OK, but note it
@@ -813,7 +847,7 @@ export const findMatchingNode = (
       warnings,
     }
   }
-  
+
   // Step 5: Perfect match!
   return {
     existingNode: candidateById,
@@ -832,24 +866,24 @@ export const findMatchingNode = (
 syncFromBackend: (data: BackendData) => {
   const currentNodes = get().nodes
   const theme = get().theme // Store theme for node creation
-  
+
   const mergedNodes: Node[] = []
   const orphanedNodes: Node[] = [] // Nodes that no longer exist in backend
-  const conflicts: Array<{node: Node, reason: string}> = []
-  
+  const conflicts: Array<{ node: Node; reason: string }> = []
+
   // Track which existing nodes we've matched
   const matchedNodeIds = new Set<string>()
-  
+
   // Process adapters
-  data.adapters?.forEach(adapter => {
+  data.adapters?.forEach((adapter) => {
     const fingerprint = generateAdapterFingerprint(adapter)
     const match = findMatchingNode(adapter, fingerprint, currentNodes)
-    
+
     // Create new node from backend data
     const newNode = createAdapterNode(adapter, theme)
     newNode.data._fingerprint = fingerprint
     newNode.data._lastSynced = Date.now()
-    
+
     if (match.confidence === 'high' || match.confidence === 'medium') {
       // PRESERVE user modifications
       const existingNode = match.existingNode!
@@ -857,9 +891,9 @@ syncFromBackend: (data: BackendData) => {
       newNode.selected = existingNode.selected
       newNode.style = existingNode.style
       // Preserve any user-added metadata
-      
+
       matchedNodeIds.add(existingNode.id)
-      
+
       if (match.warnings.length > 0) {
         console.warn(`[Merge] Adapter ${adapter.id}:`, match.warnings)
       }
@@ -868,87 +902,88 @@ syncFromBackend: (data: BackendData) => {
       const existingNode = match.existingNode!
       newNode.position = existingNode.position
       matchedNodeIds.add(existingNode.id)
-      
+
       console.warn(`[Merge] Low confidence match for adapter ${adapter.id}:`, match.reason)
     } else {
       // No match - this is a NEW node
       // Position will be calculated by layout algorithm
       console.log(`[Merge] New adapter detected: ${adapter.id}`)
     }
-    
+
     mergedNodes.push(newNode)
   })
-  
+
   // Process bridges (same pattern)
-  data.bridges?.forEach(bridge => {
+  data.bridges?.forEach((bridge) => {
     const fingerprint = generateBridgeFingerprint(bridge)
     const match = findMatchingNode(bridge, fingerprint, currentNodes)
-    
+
     const newNode = createBridgeNode(bridge, theme)
     newNode.data._fingerprint = fingerprint
     newNode.data._lastSynced = Date.now()
-    
+
     if (match.confidence === 'high' || match.confidence === 'medium') {
       newNode.position = match.existingNode!.position
       matchedNodeIds.add(match.existingNode!.id)
     }
-    
+
     mergedNodes.push(newNode)
   })
-  
+
   // Process combiners (same pattern)
-  data.combiners?.forEach(combiner => {
+  data.combiners?.forEach((combiner) => {
     const fingerprint = generateCombinerFingerprint(combiner)
     const match = findMatchingNode(combiner, fingerprint, currentNodes)
-    
+
     const sources = getSources(combiner, mergedNodes)
     const newNode = createCombinerNode(combiner, sources, theme)
     newNode.data._fingerprint = fingerprint
     newNode.data._lastSynced = Date.now()
-    
+
     if (match.confidence === 'high' || match.confidence === 'medium') {
       newNode.position = match.existingNode!.position
       matchedNodeIds.add(match.existingNode!.id)
     }
-    
+
     mergedNodes.push(newNode)
   })
-  
+
   // Identify orphaned nodes (deleted from backend)
-  currentNodes.forEach(node => {
+  currentNodes.forEach((node) => {
     if (!matchedNodeIds.has(node.id) && !node.data?.isGhost) {
       orphanedNodes.push(node)
     }
   })
-  
+
   // Handle orphaned nodes
   if (orphanedNodes.length > 0) {
-    console.warn(`[Merge] Found ${orphanedNodes.length} orphaned nodes (deleted from backend)`, 
-      orphanedNodes.map(n => ({ id: n.id, type: n.type }))
+    console.warn(
+      `[Merge] Found ${orphanedNodes.length} orphaned nodes (deleted from backend)`,
+      orphanedNodes.map((n) => ({ id: n.id, type: n.type }))
     )
-    
+
     // Option 1: Remove them (current backend is source of truth)
     // Option 2: Keep them temporarily with warning visual
     // Option 3: Ask user via dialog
-    
+
     // For now: Remove them
     // Future: Add "orphaned" visual state and let user decide
   }
-  
+
   // Add EDGE node (always present)
   const edgeNode = createEdgeNode(theme)
   mergedNodes.unshift(edgeNode)
-  
+
   // Update store
-  set({ 
+  set({
     nodes: mergedNodes,
     // Track merge metadata
     lastMerge: {
       timestamp: Date.now(),
-      newNodes: mergedNodes.filter(n => !matchedNodeIds.has(n.id)).length,
+      newNodes: mergedNodes.filter((n) => !matchedNodeIds.has(n.id)).length,
       updatedNodes: matchedNodeIds.size,
       orphanedNodes: orphanedNodes.length,
-    }
+    },
   })
 }
 ```
@@ -974,61 +1009,59 @@ export const fuzzyMatchNode = (
   unmatchedNodes: Node[]
 ): FuzzyMatchCandidate | null => {
   const candidates: FuzzyMatchCandidate[] = []
-  
-  unmatchedNodes.forEach(node => {
+
+  unmatchedNodes.forEach((node) => {
     // Skip if wrong type
     if (node.type !== 'ADAPTER_NODE') return
-    
+
     const fingerprint = node.data?._fingerprint
     if (!fingerprint) return
-    
+
     let score = 0
     const matched: string[] = []
-    
+
     // Same protocol type? +50 points
     if (fingerprint.subType === backendEntity.type) {
       score += 50
       matched.push('protocol-type')
     }
-    
+
     // Similar config? +30 points
     if (fingerprint.configHash === backendFingerprint.configHash) {
       score += 30
       matched.push('config-hash')
     }
-    
+
     // Same position in canvas? (spatial locality) +10 points
     const expectedPosition = calculateExpectedPosition(backendEntity)
-    const distance = Math.hypot(
-      node.position.x - expectedPosition.x,
-      node.position.y - expectedPosition.y
-    )
+    const distance = Math.hypot(node.position.x - expectedPosition.x, node.position.y - expectedPosition.y)
     if (distance < 100) {
       score += 10
       matched.push('position-nearby')
     }
-    
+
     // Created around same time? +10 points
     if (fingerprint.createdAt) {
       const timeDiff = Math.abs(fingerprint.createdAt - (backendEntity.createdAt || 0))
-      if (timeDiff < 60000) { // Within 1 minute
+      if (timeDiff < 60000) {
+        // Within 1 minute
         score += 10
         matched.push('creation-time')
       }
     }
-    
+
     if (score > 0) {
       candidates.push({ node, score, matchedAttributes: matched })
     }
   })
-  
+
   // Return highest scoring candidate if above threshold
   candidates.sort((a, b) => b.score - a.score)
-  
+
   if (candidates.length > 0 && candidates[0].score >= 50) {
     return candidates[0]
   }
-  
+
   return null
 }
 ```
@@ -1044,43 +1077,34 @@ export const fuzzyMatchNode = (
 ```typescript
 // useWorkspaceStore.ts initialization
 
-const migrateNodesWithFingerprints = (
-  nodes: Node[],
-  backendData: BackendData
-): Node[] => {
-  return nodes.map(node => {
+const migrateNodesWithFingerprints = (nodes: Node[], backendData: BackendData): Node[] => {
+  return nodes.map((node) => {
     // Skip if already has fingerprint
     if (node.data?._fingerprint) {
       return node
     }
-    
+
     // Try to generate fingerprint from current data
     let fingerprint: EntityFingerprint | undefined
-    
+
     if (node.type === 'ADAPTER_NODE') {
       // Find matching adapter in backend
-      const adapter = backendData.adapters?.find(a => 
-        `ADAPTER_NODE@${a.id}` === node.id
-      )
+      const adapter = backendData.adapters?.find((a) => `ADAPTER_NODE@${a.id}` === node.id)
       if (adapter) {
         fingerprint = generateAdapterFingerprint(adapter)
       }
     } else if (node.type === 'BRIDGE_NODE') {
-      const bridge = backendData.bridges?.find(b => 
-        `BRIDGE_NODE@${b.id}` === node.id
-      )
+      const bridge = backendData.bridges?.find((b) => `BRIDGE_NODE@${b.id}` === node.id)
       if (bridge) {
         fingerprint = generateBridgeFingerprint(bridge)
       }
     } else if (node.type === 'COMBINER_NODE') {
-      const combiner = backendData.combiners?.find(c => 
-        c.id === node.id
-      )
+      const combiner = backendData.combiners?.find((c) => c.id === node.id)
       if (combiner) {
         fingerprint = generateCombinerFingerprint(combiner)
       }
     }
-    
+
     if (fingerprint) {
       return {
         ...node,
@@ -1091,7 +1115,7 @@ const migrateNodesWithFingerprints = (
         },
       }
     }
-    
+
     // Can't determine fingerprint - mark for manual review
     console.warn(`[Migration] Cannot generate fingerprint for node ${node.id}`)
     return node
@@ -1104,6 +1128,7 @@ const migrateNodesWithFingerprints = (
 ### Conflict Resolution Strategies
 
 #### Strategy 1: Always Trust Backend (Current)
+
 ```typescript
 // If type mismatch, backend wins
 if (existingFingerprint.type !== backendFingerprint.type) {
@@ -1115,17 +1140,14 @@ if (existingFingerprint.type !== backendFingerprint.type) {
 **Cons:** Loses user positions when entity replaced
 
 #### Strategy 2: User Confirmation
+
 ```typescript
 // If type mismatch, ask user
 if (existingFingerprint.type !== backendFingerprint.type) {
   showConflictDialog({
     title: 'Entity Type Changed',
     message: `The entity "${nodeId}" changed from ${existingFingerprint.type} to ${backendFingerprint.type}`,
-    options: [
-      'Keep old position for new entity',
-      'Use default position for new entity',
-      'Manually review'
-    ]
+    options: ['Keep old position for new entity', 'Use default position for new entity', 'Manually review'],
   })
 }
 ```
@@ -1134,12 +1156,13 @@ if (existingFingerprint.type !== backendFingerprint.type) {
 **Cons:** Annoying for many changes
 
 #### Strategy 3: Heuristic-Based
+
 ```typescript
 // If types are "similar", preserve position
 const compatibleTypes = {
-  'adapter': ['adapter'],
-  'bridge': ['bridge'],
-  'combiner': ['combiner', 'asset_mapper'], // These are similar
+  adapter: ['adapter'],
+  bridge: ['bridge'],
+  combiner: ['combiner', 'asset_mapper'], // These are similar
 }
 
 if (areCompatibleTypes(existing.type, backend.type)) {
@@ -1153,14 +1176,13 @@ if (areCompatibleTypes(existing.type, backend.type)) {
 **Cons:** Complexity, might guess wrong
 
 #### Strategy 4: Spatial Clustering (RECOMMENDED)
+
 ```typescript
 // Group nearby nodes, preserve positions within groups
 // If entity type changes but others nearby didn't, likely intentional replacement
 
 const nearbyNodes = getNearbyNodes(existingNode, currentNodes, 200)
-const nearbyTypesChanged = nearbyNodes.filter(n => 
-  hasTypeChanged(n, backendData)
-)
+const nearbyTypesChanged = nearbyNodes.filter((n) => hasTypeChanged(n, backendData))
 
 if (nearbyTypesChanged.length === 0) {
   // Only this node changed - likely replacement
@@ -1185,76 +1207,76 @@ describe('Smart Merge', () => {
     it('generates stable fingerprints for same entity', () => {
       const adapter1 = { id: 'test', type: 'http', config: {...} }
       const adapter2 = { id: 'test', type: 'http', config: {...} }
-      
+
       expect(generateAdapterFingerprint(adapter1))
         .toEqual(generateAdapterFingerprint(adapter2))
     })
-    
+
     it('generates different fingerprints for different types', () => {
       const adapter = { id: 'test', type: 'http' }
       const bridge = { id: 'test', type: 'bridge' }
-      
+
       expect(generateAdapterFingerprint(adapter).configHash)
         .not.toEqual(generateBridgeFingerprint(bridge).configHash)
     })
   })
-  
+
   describe('Matching Algorithm', () => {
     it('detects type mismatch', () => {
       const backend = { id: 'test', type: 'mqtt' }
       const existing = createNode({ id: 'test', type: 'http' })
-      
+
       const match = findMatchingNode(backend, existing)
-      
+
       expect(match.confidence).toBe('none')
       expect(match.reason).toContain('Type mismatch')
     })
-    
+
     it('handles ID reuse correctly', () => {
       // Scenario: HTTP adapter deleted, MQTT adapter created with same ID
       const oldNode = createAdapterNode({ id: 'sensor', type: 'http' })
       const newBackend = { id: 'sensor', type: 'mqtt' }
-      
+
       const match = findMatchingNode(newBackend, [oldNode])
-      
+
       // Should NOT match - different subtype
       expect(match.existingNode).toBeNull()
     })
-    
+
     it('preserves position when config changes but identity same', () => {
-      const existing = createAdapterNode({ 
-        id: 'test', 
+      const existing = createAdapterNode({
+        id: 'test',
         type: 'http',
         config: { url: 'old' }
       })
       existing.position = { x: 999, y: 999 }
-      
-      const backend = { 
-        id: 'test', 
+
+      const backend = {
+        id: 'test',
         type: 'http',
         config: { url: 'new' } // Config changed
       }
-      
+
       const result = syncFromBackend({ adapters: [backend] })
-      
+
       expect(result.nodes[0].position).toEqual({ x: 999, y: 999 })
       expect(result.nodes[0].data.config.url).toBe('new')
     })
   })
-  
+
   describe('Orphaned Node Detection', () => {
     it('identifies nodes deleted from backend', () => {
       const existingNodes = [
         createAdapterNode({ id: 'keep' }),
         createAdapterNode({ id: 'delete' }),
       ]
-      
+
       const backendData = {
         adapters: [{ id: 'keep' }] // 'delete' missing
       }
-      
+
       const result = syncFromBackend(backendData, existingNodes)
-      
+
       expect(result.orphanedNodes).toHaveLength(1)
       expect(result.orphanedNodes[0].id).toContain('delete')
     })
@@ -1271,7 +1293,7 @@ describe('Smart Merge', () => {
 ```typescript
 // Build index for O(1) lookup
 const nodeIndex = new Map<string, Node>()
-currentNodes.forEach(node => {
+currentNodes.forEach((node) => {
   if (node.data?._fingerprint) {
     const key = `${node.data._fingerprint.type}:${node.data._fingerprint.configHash}`
     nodeIndex.set(key, node)
@@ -1331,7 +1353,10 @@ interface WorkspaceState {
 window.__debugWorkspace = () => {
   const store = useWorkspaceStore.getState()
   console.table(store.mergeHistory)
-  console.log('Orphaned nodes:', store.nodes.filter(n => n.data?._warning))
+  console.log(
+    'Orphaned nodes:',
+    store.nodes.filter((n) => n.data?._warning)
+  )
 }
 ```
 
@@ -1344,6 +1369,7 @@ window.__debugWorkspace = () => {
 **Goal:** Stop losing user positions
 
 **Tasks:**
+
 1. ✅ Add `syncFromBackend()` method to useWorkspaceStore
 2. ✅ Implement smart merge logic that preserves positions
 3. ✅ Update useGetFlowElements to use new sync method
@@ -1352,6 +1378,7 @@ window.__debugWorkspace = () => {
 **Estimated effort:** 4-6 hours
 
 **Files to modify:**
+
 - `useWorkspaceStore.ts` - Add syncFromBackend
 - `useGetFlowElements.ts` - Use syncFromBackend instead of setNodes
 - Add tests
@@ -1361,6 +1388,7 @@ window.__debugWorkspace = () => {
 **Goal:** Enforce boundaries
 
 **Tasks:**
+
 1. ✅ Audit all `useReactFlow` usage
 2. ✅ Replace `setNodes/setEdges` calls with store methods
 3. ✅ Keep only utility methods (`fitView`, `screenToFlowPosition`)
@@ -1369,6 +1397,7 @@ window.__debugWorkspace = () => {
 **Estimated effort:** 3-4 hours
 
 **Files to modify:**
+
 - Review all 20 useReactFlow usages
 - Likely no changes needed (most are utilities already)
 - Add ESLint rule to prevent `setNodes` outside store?
@@ -1378,6 +1407,7 @@ window.__debugWorkspace = () => {
 **Goal:** Reliable localStorage persistence
 
 **Tasks:**
+
 1. ✅ Add `entityMetadata` map to store
 2. ✅ Track backend ID → node ID mapping
 3. ✅ Handle backend ID changes gracefully
@@ -1386,6 +1416,7 @@ window.__debugWorkspace = () => {
 **Estimated effort:** 4-5 hours
 
 **Files to modify:**
+
 - `useWorkspaceStore.ts` - Add metadata tracking
 - `nodes-utils.ts` - Update node creation functions
 
@@ -1394,6 +1425,7 @@ window.__debugWorkspace = () => {
 **Goal:** Sync positions across devices
 
 **Tasks:**
+
 1. ⏳ Backend API: Add `/workspace/layout` endpoints
 2. ⏳ Store: Add `saveLayoutToBackend()` with debounce
 3. ⏳ Store: Load positions on init
@@ -1402,6 +1434,7 @@ window.__debugWorkspace = () => {
 **Estimated effort:** 8-10 hours (requires backend changes)
 
 **Dependencies:**
+
 - Backend team to implement endpoints
 - Decision on data model (per-user? per-workspace?)
 
@@ -1416,16 +1449,16 @@ window.__debugWorkspace = () => {
 
 ```typescript
 // In syncFromBackend
-data.adapters?.forEach(adapter => {
+data.adapters?.forEach((adapter) => {
   const nodeId = `ADAPTER_NODE@${adapter.id}`
-  const existingNode = currentNodes.find(n => n.id === nodeId)
-  
+  const existingNode = currentNodes.find((n) => n.id === nodeId)
+
   const newNode = createAdapterNode(adapter, theme)
-  
+
   if (existingNode) {
     newNode.position = existingNode.position // ← Add this
   }
-  
+
   nodes.push(newNode)
 })
 ```
@@ -1436,10 +1469,7 @@ data.adapters?.forEach(adapter => {
 **Fix:** Memoize better, only sync on actual changes
 
 ```typescript
-const adapterId = useMemo(() => 
-  adapters?.items?.map(a => a.id).join(','),
-  [adapters]
-)
+const adapterId = useMemo(() => adapters?.items?.map((a) => a.id).join(','), [adapters])
 
 useEffect(() => {
   syncFromBackend({ adapters: adapters?.items })
@@ -1449,30 +1479,36 @@ useEffect(() => {
 ### Fix 3: Clear Documentation
 
 **Add to README:**
-```markdown
+
+````markdown
 ## State Management Rules
 
 ### ✅ DO:
+
 - Use `useWorkspaceStore()` to access/modify nodes and edges
 - Use `useReactFlow()` for utilities: fitView, getNodesBounds, screenToFlowPosition
 - Let wizard use React Flow for ghost nodes (temporary state)
 
 ### ❌ DON'T:
+
 - Never call setNodes/setEdges from useReactFlow outside the store
 - Don't duplicate state between store and local component state
 - Don't directly modify nodes array - use onNodesChange
 
 ### Pattern:
+
 ```typescript
 // ✅ GOOD
 const { nodes, onNodesChange } = useWorkspaceStore()
 
-// ❌ BAD  
+// ❌ BAD
 const { getNodes, setNodes } = useReactFlow()
 const nodes = getNodes()
 setNodes([...nodes, newNode])
 ```
-```
+````
+
+````
 
 ---
 
@@ -1502,21 +1538,22 @@ describe('useWorkspaceStore.syncFromBackend', () => {
         position: { x: 999, y: 999 }
       }])
     })
-    
+
     // Act: Backend sends updated data (position not in backend)
     act(() => {
       result.current.syncFromBackend({
         adapters: [{ id: 'test', type: 'http', ... }]
       })
     })
-    
+
     // Assert: Position preserved
     expect(result.current.nodes[0].position).toEqual({ x: 999, y: 999 })
   })
 })
-```
+````
 
 #### Integration Tests:
+
 - Test full flow: backend update → position preserved
 - Test localStorage persistence
 - Test wizard interaction with main canvas
@@ -1548,17 +1585,20 @@ const [edges, setEdges] = useEdgesState(initialEdges)
 ```
 
 **For this app, would require:**
+
 - Move nodes/edges OUT of useWorkspaceStore
 - Store only app-specific state (filters, layout config)
 - Manage nodes/edges in ReactFlowWrapper with hooks
 - Implement custom persistence hook for localStorage
 
 **Pros:**
+
 - ✅ Follows React Flow best practices exactly
 - ✅ No state duplication
 - ✅ Simpler mental model
 
 **Cons:**
+
 - ❌ Large refactoring (weeks of work)
 - ❌ Need custom localStorage persistence
 - ❌ Lose Zustand devtools for nodes
@@ -1571,23 +1611,27 @@ const [edges, setEdges] = useEdgesState(initialEdges)
 ## Recommendations Summary
 
 ### Immediate (This Week):
+
 1. ✅ **Implement smart merge** in useWorkspaceStore
 2. ✅ **Preserve all positions** (adapters, bridges, combiners)
 3. ✅ **Add documentation** on state management rules
 4. ✅ **Audit useReactFlow usage** - ensure proper patterns
 
 ### Short Term (Next Sprint):
+
 1. ✅ **Rename useGetFlowElements** → useBackendSync
 2. ✅ **Add entity metadata tracking** for stable IDs
 3. ✅ **Add unit tests** for merge logic
 4. ✅ **Improve memoization** to reduce re-renders
 
 ### Long Term (Next Quarter):
+
 1. ⏳ **Backend position persistence** (requires API changes)
 2. ⏳ **Consider full refactor** to React Flow pattern (if pain continues)
 3. ⏳ **Evaluate moving to uncontrolled mode** (if complexity reduces)
 
 ### Avoid:
+
 - ❌ Adding more state sources
 - ❌ Direct React Flow state mutations outside store
 - ❌ Storing positions in multiple places
@@ -1597,18 +1641,21 @@ const [edges, setEdges] = useEdgesState(initialEdges)
 ## Decision Framework
 
 Choose **Option 1 (Zustand as single source)** if:
+
 - ✅ Want minimal changes to existing code
 - ✅ Need localStorage persistence NOW
 - ✅ Zustand devtools are valuable
 - ✅ Team comfortable with current architecture
 
 Choose **Option 3 (Hybrid with boundaries)** if:
+
 - ✅ Want best of both worlds
 - ✅ Willing to enforce patterns via code review
 - ✅ Need flexibility for wizard ghost nodes
 - ✅ Incremental migration preferred
 
 Choose **Alternative (React Flow pattern)** if:
+
 - ⏳ Starting fresh / major rewrite acceptable
 - ⏳ Want to follow React Flow best practices exactly
 - ⏳ Can invest weeks in refactoring
@@ -1619,6 +1666,7 @@ Choose **Alternative (React Flow pattern)** if:
 ## My Recommendation: **Hybrid (Option 3) + Phase 1-3 Immediately**
 
 **Why:**
+
 1. **Pragmatic** - Works with current architecture
 2. **Safe** - No breaking changes
 3. **Incremental** - Can migrate piece by piece
@@ -1626,8 +1674,9 @@ Choose **Alternative (React Flow pattern)** if:
 5. **Future-proof** - Sets up for backend persistence
 
 **Priority order:**
+
 1. Implement smart merge (Phase 1) - **CRITICAL**
-2. Document state rules - **HIGH**  
+2. Document state rules - **HIGH**
 3. Add position preservation for all entities - **HIGH**
 4. Clean up React Flow usage - **MEDIUM**
 5. Add metadata tracking - **MEDIUM**
@@ -1638,4 +1687,3 @@ Choose **Alternative (React Flow pattern)** if:
 ---
 
 **Status:** 📋 ANALYSIS COMPLETE - Ready for implementation decisions
-
