@@ -39,6 +39,18 @@ export class WizardPage extends Page {
     get nextButton() {
       return cy.getByTestId('wizard-next-button')
     },
+
+    get backButton() {
+      return cy.getByTestId('wizard-back-button')
+    },
+
+    get completeButton() {
+      return cy.getByTestId('wizard-complete-button')
+    },
+
+    get cancelButton() {
+      return cy.getByTestId('wizard-cancel-button')
+    },
   }
 
   /**
@@ -73,23 +85,19 @@ export class WizardPage extends Page {
         .or(this.node(nodeId).should('have.css', 'opacity', '0.5'))
     },
 
-    // Select a node (clicks it)
-    selectNode(nodeId: string) {
-      return this.node(nodeId).click()
-    },
+    // // Select a node (clicks it)
+    // selectNode(nodeId: string) {
+    //   return this.node(nodeId).click()
+    // },
 
     // Get ghost node (preview of what will be created)
     get ghostNode() {
-      return this.container.within(() => {
-        cy.get('[data-testid^="rf__node-ghost-"]')
-      })
+      return cy.get('[data-testid="rf__wrapper"] [data-testid^="rf__node-ghost-"]')
     },
 
     // Get ghost edges (preview of connections)
     get ghostEdges() {
-      return this.container.within(() => {
-        cy.get('[data-testid^="rf__edge-ghost-"]')
-      })
+      return cy.get('[data-testid="rf__wrapper"] [data-testid^="rf__edge-ghost-"]')
     },
   }
 
@@ -143,6 +151,14 @@ export class WizardPage extends Page {
       return cy.getByTestId('wizard-configuration-panel')
     },
 
+    get backButton() {
+      return cy.getByTestId('wizard-configuration-back')
+    },
+
+    get submitButton() {
+      return this.panel.find('button[type="submit"]').first()
+    },
+
     // Protocol-specific configuration form
     get configForm() {
       return this.panel.find('form#wizard-bridge-form')
@@ -156,8 +172,28 @@ export class WizardPage extends Page {
       return this.configForm.find('[data-testid="root_host"] input[name="root_host"]')
     },
 
+    get bridgePortInput() {
+      return this.configForm.find('[data-testid="root_port"] input[name="root_port"]')
+    },
+
     get bridgeClientIdInput() {
       return this.configForm.find('[data-testid="root_clientId"] input[name="root_clientId"]')
+    },
+
+    setBridgeId(id: string) {
+      return this.bridgeNameInput.clear().type(id)
+    },
+
+    setHost(host: string) {
+      return this.bridgeHostInput.clear().type(host)
+    },
+
+    setPort(port: string) {
+      return this.bridgePortInput.clear().type(port)
+    },
+
+    setClientId(clientId: string) {
+      return this.bridgeClientIdInput.clear().type(clientId)
     },
   }
 
@@ -173,28 +209,28 @@ export class WizardPage extends Page {
   selectionPanel = {
     // Panel container
     get panel() {
-      return cy.get('[data-testid="wizard-selection-panel"], [data-testid="wizard-progress-panel"]').first()
+      return cy.getByTestId('wizard-selection-panel')
     },
 
     // Selected nodes count - CRITICAL for testing constraints
     get selectedCount() {
-      return this.panel.within(() => {
-        cy.get('[data-testid="selection-count"]')
-      })
+      return this.panel.findByTestId('wizard-selection-count')
     },
 
     // List of selected node items
     get selectedNodesList() {
-      return this.panel.within(() => {
-        cy.get('[data-testid="selected-nodes-list"], ul, [role="list"]').first()
-      })
+      return this.panel.findByTestId('wizard-selection-list')
+    },
+
+    get selectedNodes() {
+      cy.log('XXXXXX')
+      return this.selectedNodesList.find('li')
     },
 
     // Get specific selected node by ID
     selectedNode(nodeId: string) {
-      return this.selectedNodesList.within(() => {
-        cy.contains(nodeId).parent()
-      })
+      cy.log('XXXXXX', nodeId)
+      return this.selectedNodesList.findByTestId(`wizard-selection-listItem-${nodeId}`)
     },
 
     // Remove button on selected node
@@ -208,22 +244,12 @@ export class WizardPage extends Page {
 
     // Validation message (min/max constraints)
     get validationMessage() {
-      return this.panel.within(() => {
-        cy.get('[data-testid="selection-validation"]')
-      })
+      return this.panel.findByTestId('wizard-selection-validation')
     },
 
     // Next button - CRITICAL state tracking
     get nextButton() {
-      return this.panel.within(() => {
-        cy.get('button, [role="button"]').filter((_, el) => {
-          return (
-            el.textContent?.includes('Next') ||
-            el.textContent?.includes('Continue') ||
-            el.textContent?.includes('Proceed')
-          )
-        })
-      })
+      return this.panel.findByTestId('wizard-selection-next')
     },
 
     // Check if next button is enabled
@@ -245,8 +271,29 @@ export class WizardPage extends Page {
 
   // ========== COMBINER CONFIGURATION ==========
   combinerConfig = {
+    get panel() {
+      return cy.get('[role="dialog"][aria-label="Manage Data combining mappings"]')
+    },
+
+    // Protocol-specific configuration form
     get configForm() {
-      return cy.get('form[data-testid="combiner-config-form"]')
+      return this.panel.find('form#combiner-main-form')
+    },
+
+    get backButton() {
+      return cy.getByTestId('wizard-configuration-back')
+    },
+
+    get submitButton() {
+      return this.panel.find('button[type="submit"]').first()
+    },
+
+    get combinerNameInput() {
+      return this.configForm.find('[data-testid="root_name"] input[name="root_name"]')
+    },
+
+    get bridgeHostInput() {
+      return this.configForm.find('[data-testid="root_host"] input[name="root_host"]')
     },
 
     getMappingInput(index: number) {
@@ -296,6 +343,13 @@ export class WizardPage extends Page {
   verifyNodesSelected = (count: number) => {
     this.getSelectedCount().should('equal', count.toString())
   }
+
+  // ========== UTILITY METHODS ==========
+
+  /**
+   * Start creating a bridge (open menu, select BRIDGE option)
+   */
+  startBridgeWizard = () => {}
 
   toast = {
     get success() {
