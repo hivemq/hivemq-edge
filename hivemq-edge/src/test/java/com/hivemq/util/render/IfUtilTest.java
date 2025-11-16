@@ -34,11 +34,21 @@ public class IfUtilTest {
         map.put("HIVEMQ_MQTTS_ENABLED", "false");
         setTempEnvVars(map);
 
-        final String testString = "${IF:HIVEMQ_MQTTS_ENABLED}hallo${IF:HIVEMQ_STUFF_ENABLED}GO AWAY${IF:HIVEMQ_STUFF_ENABLED}${IF:HIVEMQ_MQTTS_ENABLED}welt${IF:!HIVEMQ_HTTPS_ENABLED}!!!${IF:!HIVEMQ_HTTPS_ENABLED}9876543210";
-
+        final String testString = "header:" +
+                "${IF:HIVEMQ_MQTTS_ENABLED}" +
+                "hallo" +
+                "${IF:HIVEMQ_STUFF_ENABLED}" +
+                "GO AWAY" +
+                "${IF:HIVEMQ_STUFF_ENABLED}" +
+                "${IF:HIVEMQ_MQTTS_ENABLED}" +
+                "welt" +
+                "${IF:!HIVEMQ_HTTPS_ENABLED}" +
+                "!!!" +
+                "${IF:!HIVEMQ_HTTPS_ENABLED}" +
+                "9876543210";
         final String result = IfUtil.replaceIfPlaceHolders(testString);
 
-        assertEquals("welt!!!9876543210", result);
+        assertEquals("header:welt!!!9876543210", result);
     }
 
     /**
