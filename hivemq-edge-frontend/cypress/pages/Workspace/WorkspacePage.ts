@@ -49,7 +49,7 @@ export class WorkspacePage extends ShellPage {
     },
 
     get presetsButton() {
-      return cy.get('button[aria-label*="preset"]').first()
+      return cy.getByTestId('workspace-preset-trigger')
     },
 
     get optionsButton() {
@@ -61,14 +61,20 @@ export class WorkspacePage extends ShellPage {
         return cy.getByTestId('workspace-layout-preset-save')
       },
 
+      get presets() {
+        return cy.getByTestId('workspace-layout-preset-item')
+      },
+
       presetItem(name: string) {
-        return cy.get('[role="menu"]').within(() => {
-          cy.contains('[role="menuitem"]', name)
-        })
+        return cy.get("[data-preset='" + name + "']").findByTestId('workspace-layout-preset-item-open')
+      },
+
+      presetItemDelete(name: string) {
+        return cy.get("[data-preset='" + name + "']").findByTestId('workspace-layout-preset-item-delete')
       },
 
       get emptyMessage() {
-        return cy.get('[role="menu"]').contains('No saved presets')
+        return cy.getByTestId('workspace-layout-preset-empty')
       },
     },
 
