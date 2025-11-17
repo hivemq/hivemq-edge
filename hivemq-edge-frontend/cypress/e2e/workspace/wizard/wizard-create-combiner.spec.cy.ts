@@ -30,7 +30,18 @@ describe('Wizard: Create Combiner', () => {
   beforeEach(() => {
     // Base E2E interceptors
     cy_interceptCoreE2E()
-
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/**/northboundMappings', {
+      statusCode: 202,
+      log: false,
+    })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/**/southboundMappings', {
+      statusCode: 202,
+      log: false,
+    })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', {
+      statusCode: 202,
+      log: false,
+    })
     // Multiple adapters for selection
     cy.intercept('/api/v1/management/protocol-adapters/adapters', {
       items: [

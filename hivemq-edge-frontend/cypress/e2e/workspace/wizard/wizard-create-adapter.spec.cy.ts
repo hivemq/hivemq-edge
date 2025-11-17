@@ -26,6 +26,18 @@ describe('Wizard: Create Adapter', () => {
   beforeEach(() => {
     // Base interceptors for E2E
     cy_interceptCoreE2E()
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/**/northboundMappings', {
+      statusCode: 202,
+      log: false,
+    })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/**/southboundMappings', {
+      statusCode: 202,
+      log: false,
+    })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', {
+      statusCode: 202,
+      log: false,
+    })
 
     // Protocol types (for selection)
     cy.intercept('/api/v1/management/protocol-adapters/types', {
