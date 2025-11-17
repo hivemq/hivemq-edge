@@ -183,6 +183,57 @@ export const createGhostAssetMapper = (id: string, edgeNode: Node, label: string
   return createGhostCombiner(id, edgeNode, label)
 }
 
+export const createGhostCombinerGroup = (id: string, edgeNode: Node, entityType: EntityType): GhostNodeGroup => {
+  const ghostNode = createGhostCombiner(
+    id,
+    edgeNode,
+    entityType === EntityType.COMBINER ? 'New Combiner' : 'New Asset Mapper'
+  )
+
+  const edgeId = entityType === EntityType.COMBINER ? 'ghost-edge-combiner-to-edge' : 'ghost-edge-assetmapper-to-edge'
+
+  // Create ghost edge from asset mapper to EDGE node
+  const ghostEdge: GhostEdge = {
+    id: edgeId,
+    source: ghostNode.id,
+    target: edgeNode.id,
+    type: EdgeTypes.DYNAMIC_EDGE,
+    animated: true,
+    focusable: false,
+    style: GHOST_EDGE_STYLE,
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: '#4299E1',
+    },
+    data: { isGhost: true },
+  }
+
+  // // Create ghost edge from combiner to EDGE node
+  // const ghostEdge: GhostEdge = {
+  //   id: 'ghost-edge-combiner-to-edge',
+  //   source: ghostNode.id,
+  //   target: edgeNode.id,
+  //   type: EdgeTypes.DYNAMIC_EDGE,
+  //   animated: true,
+  //   focusable: false,
+  //   style: GHOST_EDGE_STYLE,
+  //   markerEnd: {
+  //     type: MarkerType.ArrowClosed,
+  //     width: 20,
+  //     height: 20,
+  //     color: '#4299E1',
+  //   },
+  //   data: { isGhost: true },
+  // }
+
+  return {
+    nodes: [ghostNode],
+    edges: [ghostEdge],
+  }
+}
+
 /**
  * Create a ghost group node
  */
@@ -291,6 +342,7 @@ export const createGhostAdapterGroup = (
 ): GhostNodeGroup => {
   const { adapterPos, devicePos } = calculateGhostAdapterPosition(nbAdapters, edgeNode.position)
 
+  console.log('XXXXX id', id)
   // Create ADAPTER ghost node
   const adapterNode: GhostNode = {
     ...GHOST_BASE,
@@ -331,7 +383,7 @@ export const createGhostAdapterGroup = (
     id: `ghost-edge-adapter-to-edge-${id}`,
     source: `ghost-adapter-${id}`,
     target: IdStubs.EDGE_NODE,
-    targetHandle: 'Top', // EDGE node has this handle
+    // targetHandle: 'Top', // EDGE node has this handle
     focusable: false,
     type: EdgeTypes.DYNAMIC_EDGE,
     animated: true,
@@ -350,8 +402,8 @@ export const createGhostAdapterGroup = (
   // Create edge from DEVICE to ADAPTER
   const edgeToDevice: GhostEdge = {
     id: `ghost-edge-device-to-adapter-${id}`,
-    source: `ghost-device-${id}`,
-    target: `ghost-adapter-${id}`,
+    target: `ghost-device-${id}`,
+    source: `ghost-adapter-${id}`,
     // No handles specified - ghost nodes use default positions
     focusable: false,
     type: EdgeTypes.DYNAMIC_EDGE,

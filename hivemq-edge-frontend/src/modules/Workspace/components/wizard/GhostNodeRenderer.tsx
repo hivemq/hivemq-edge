@@ -8,11 +8,11 @@ import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useList
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges'
 import { calculateBarycenter } from '@/modules/Workspace/utils/nodes-utils'
 import { requiresGhost } from './utils/wizardMetadata'
+import type { GhostNodeGroup } from './utils/ghostNodeFactory'
+import { createGhostCombinerGroup } from './utils/ghostNodeFactory'
 import {
   createGhostAdapterGroup,
   createGhostBridgeGroup,
-  createGhostCombiner,
-  createGhostAssetMapper,
   removeGhostNodes,
   removeGhostEdges,
   GHOST_EDGE_STYLE,
@@ -74,11 +74,10 @@ const GhostNodeRenderer: FC = () => {
         return
       }
 
-      // Create ghost for entity type
-      if (entityType === EntityType.ADAPTER) {
-        const nbAdapters = adapters?.length || 0
-        const ghostGroup = createGhostAdapterGroup('wizard-preview', nbAdapters, edgeNode)
-
+      /**#
+       * Create the ghost group
+       */
+      const addGhostGroup = (ghostGroup: GhostNodeGroup) => {
         // Add to wizard store
         addGhostNodes(ghostGroup.nodes)
         addGhostEdges(ghostGroup.edges)
@@ -93,116 +92,34 @@ const GhostNodeRenderer: FC = () => {
         setTimeout(() => {
           fitView({
             nodes: ghostGroup.nodes,
-            duration: 800,
-            padding: 0.3,
-          })
-        }, 100)
-      } else if (entityType === EntityType.BRIDGE) {
-        const nbBridges = bridges?.length || 0
-        const ghostGroup = createGhostBridgeGroup('wizard-preview', nbBridges, edgeNode)
-
-        // Add to wizard store
-        addGhostNodes(ghostGroup.nodes)
-        addGhostEdges(ghostGroup.edges)
-
-        // Add to React Flow
-        const nodes = getNodes()
-        const edges = getEdges()
-        setNodes([...nodes, ...ghostGroup.nodes])
-        setEdges([...edges, ...ghostGroup.edges])
-
-        // Focus viewport on ghost nodes with animation
-        setTimeout(() => {
-          fitView({
-            nodes: ghostGroup.nodes,
-            duration: 800,
-            padding: 0.3,
-          })
-        }, 100)
-      } else if (entityType === EntityType.COMBINER) {
-        // Create single ghost combiner node
-        const ghostNode = createGhostCombiner('wizard-preview', edgeNode)
-
-        // Create ghost edge from combiner to EDGE node
-        const ghostEdge: GhostEdge = {
-          id: 'ghost-edge-combiner-to-edge',
-          source: ghostNode.id,
-          target: edgeNode.id,
-          type: EdgeTypes.DYNAMIC_EDGE,
-          animated: true,
-          focusable: false,
-          style: GHOST_EDGE_STYLE,
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 20,
-            height: 20,
-            color: '#4299E1',
-          },
-          data: { isGhost: true },
-        }
-
-        // Add to wizard store
-        addGhostNodes([ghostNode])
-        addGhostEdges([ghostEdge])
-
-        // Add to React Flow
-        const nodes = getNodes()
-        const edges = getEdges()
-        setNodes([...nodes, ghostNode])
-        setEdges([...edges, ghostEdge])
-
-        // Focus viewport on ghost node
-        setTimeout(() => {
-          fitView({
-            nodes: [ghostNode],
-            duration: 800,
-            padding: 0.3,
-          })
-        }, 100)
-      } else if (entityType === EntityType.ASSET_MAPPER) {
-        // Asset Mapper uses same ghost structure as Combiner (it IS a Combiner)
-        const ghostNode = createGhostAssetMapper('wizard-preview', edgeNode)
-
-        // Create ghost edge from asset mapper to EDGE node
-        const ghostEdge: GhostEdge = {
-          id: 'ghost-edge-assetmapper-to-edge',
-          source: ghostNode.id,
-          target: edgeNode.id,
-          type: EdgeTypes.DYNAMIC_EDGE,
-          animated: true,
-          focusable: false,
-          style: GHOST_EDGE_STYLE,
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 20,
-            height: 20,
-            color: '#4299E1',
-          },
-          data: { isGhost: true },
-        }
-
-        // Add to wizard store
-        addGhostNodes([ghostNode])
-        addGhostEdges([ghostEdge])
-
-        // Add to React Flow
-        const nodes = getNodes()
-        const edges = getEdges()
-        setNodes([...nodes, ghostNode])
-        setEdges([...edges, ghostEdge])
-
-        // Focus viewport on ghost node
-        setTimeout(() => {
-          fitView({
-            nodes: [ghostNode],
             duration: 800,
             padding: 0.3,
           })
         }, 100)
       }
+
+      // Create ghost for entity type
+      if (entityType === EntityType.ADAPTER) {
+        const nbAdapters = adapters?.length || 0
+        const ghostGroup = createGhostAdapterGroup('wizard-preview', nbAdapters, edgeNode)
+
+        addGhostGroup(ghostGroup)
+      } else if (entityType === EntityType.BRIDGE) {
+        const nbBridges = bridges?.length || 0
+        const ghostGroup = createGhostBridgeGroup('wizard-preview', nbBridges, edgeNode)
+
+        addGhostGroup(ghostGroup)
+      } else if (entityType === EntityType.COMBINER) {
+        const ghostGroup = createGhostCombinerGroup('wizard-preview', edgeNode, entityType)
+
+        addGhostGroup(ghostGroup)
+      } else if (entityType === EntityType.ASSET_MAPPER) {
+        const ghostGroup = createGhostCombinerGroup('wizard-preview', edgeNode, entityType)
+
+        addGhostGroup(ghostGroup)
+      }
       // TODO: Add other entity types (GROUP)
     } else if (ghostNodes.length > 0 || ghostEdges.length > 0) {
-      // Wizard is active but not creating new ghosts - ensure existing ghosts are in React Flow
       const nodes = getNodes()
       const edges = getEdges()
 
