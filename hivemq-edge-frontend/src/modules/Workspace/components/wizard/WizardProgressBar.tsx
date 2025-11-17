@@ -79,7 +79,7 @@ const WizardProgressBar: FC = () => {
             </HStack>
 
             <Progress
-              value={progressPercent}
+              value={Math.round(progressPercent)}
               size="sm"
               colorScheme="blue"
               borderRadius="full"

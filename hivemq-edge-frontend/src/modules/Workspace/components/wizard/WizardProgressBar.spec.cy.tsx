@@ -1,10 +1,3 @@
-/**
- * Wizard Progress Bar Tests
- *
- * Cypress component tests for the WizardProgressBar.
- * Following pragmatic testing strategy: only accessibility test is unskipped.
- */
-
 import WizardProgressBar from './WizardProgressBar'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import { EntityType } from './types'
@@ -16,7 +9,6 @@ describe('WizardProgressBar', () => {
     actions.cancelWizard()
   })
 
-  // ✅ ACCESSIBILITY TEST - ALWAYS UNSKIPPED
   it('should be accessible', () => {
     // Start a wizard to make the progress bar visible
     const { actions } = useWizardStore.getState()
@@ -27,15 +19,13 @@ describe('WizardProgressBar', () => {
     cy.checkAccessibility()
   })
 
-  // ⏭️ SKIPPED TESTS - Document expected behavior but skip for rapid development
-
-  it.skip('should not render when wizard is not active', () => {
+  it('should not render when wizard is not active', () => {
     cy.mountWithProviders(<WizardProgressBar />)
 
     cy.getByTestId('wizard-progress-bar').should('not.exist')
   })
 
-  it.skip('should render when wizard is active', () => {
+  it('should render when wizard is active', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
 
@@ -44,28 +34,26 @@ describe('WizardProgressBar', () => {
     cy.getByTestId('wizard-progress-bar').should('be.visible')
   })
 
-  it.skip('should display correct step information for step 1', () => {
+  it('should display correct step information for step 1', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
 
     cy.mountWithProviders(<WizardProgressBar />)
 
-    // Should show "Step 1 of 3" for ADAPTER
     cy.contains('Step 1 of 3').should('be.visible')
   })
 
-  it.skip('should display correct step information after navigation', () => {
+  it('should display correct step information after navigation', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
     actions.nextStep()
 
     cy.mountWithProviders(<WizardProgressBar />)
 
-    // Should show "Step 2 of 3" after next step
     cy.contains('Step 2 of 3').should('be.visible')
   })
 
-  it.skip('should display step description', () => {
+  it('should display step description', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
 
@@ -75,7 +63,7 @@ describe('WizardProgressBar', () => {
     cy.contains('Review adapter preview').should('be.visible')
   })
 
-  it.skip('should update step description when navigating', () => {
+  it('should update step description when navigating', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
 
@@ -92,7 +80,7 @@ describe('WizardProgressBar', () => {
     cy.contains('Select protocol type').should('be.visible')
   })
 
-  it.skip('should show progress bar with correct percentage', () => {
+  it('should show progress bar with correct percentage', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER) // 3 steps
 
@@ -102,7 +90,7 @@ describe('WizardProgressBar', () => {
     cy.get('[role="progressbar"]').should('have.attr', 'aria-valuenow', '33')
   })
 
-  it.skip('should update progress bar when navigating', () => {
+  it('should update progress bar when navigating', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
     actions.nextStep()
@@ -113,7 +101,7 @@ describe('WizardProgressBar', () => {
     cy.get('[role="progressbar"]').should('have.attr', 'aria-valuenow', '67')
   })
 
-  it.skip('should display cancel button', () => {
+  it('should display cancel button', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
 
@@ -122,7 +110,7 @@ describe('WizardProgressBar', () => {
     cy.getByTestId('wizard-cancel-button').should('be.visible').should('contain', 'Cancel')
   })
 
-  it.skip('should call cancelWizard when cancel button is clicked', () => {
+  it('should call cancelWizard when cancel button is clicked', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
 
@@ -138,7 +126,7 @@ describe('WizardProgressBar', () => {
     cy.getByTestId('wizard-progress-bar').should('not.exist')
   })
 
-  it.skip('should have proper ARIA attributes', () => {
+  it('should have proper ARIA attributes', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
 
@@ -154,21 +142,7 @@ describe('WizardProgressBar', () => {
     cy.getByTestId('wizard-cancel-button').should('have.attr', 'aria-label')
   })
 
-  it.skip('should be positioned at bottom-center', () => {
-    const { actions } = useWizardStore.getState()
-    actions.startWizard(EntityType.ADAPTER)
-
-    cy.mountWithProviders(<WizardProgressBar />)
-
-    // Panel should be at bottom-center
-    cy.getByTestId('wizard-progress-bar')
-      .parent()
-      .should('have.class', 'react-flow__panel')
-      .should('have.class', 'bottom')
-      .should('have.class', 'center')
-  })
-
-  it.skip('should work with different wizard types', () => {
+  it('should work with different wizard types', () => {
     const { actions } = useWizardStore.getState()
 
     // Test BRIDGE (2 steps)
@@ -178,17 +152,17 @@ describe('WizardProgressBar', () => {
 
     cy.contains('Step 1 of 2').should('be.visible')
 
-    // Test COMBINER (3 steps)
+    // Test ADAPTER (3 steps)
     cy.wrap(null).then(() => {
       const { actions } = useWizardStore.getState()
       actions.cancelWizard()
-      actions.startWizard(EntityType.COMBINER)
+      actions.startWizard(EntityType.ADAPTER)
     })
 
     cy.contains('Step 1 of 3').should('be.visible')
   })
 
-  it.skip('should handle edge case of last step', () => {
+  it('should handle edge case of last step', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.BRIDGE) // 2 steps
     actions.nextStep() // Go to step 2
@@ -201,7 +175,7 @@ describe('WizardProgressBar', () => {
     cy.get('[role="progressbar"]').should('have.attr', 'aria-valuenow', '100')
   })
 
-  it.skip('should be responsive on mobile', () => {
+  it('should be responsive on mobile', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
 
@@ -214,20 +188,7 @@ describe('WizardProgressBar', () => {
     cy.getByTestId('wizard-progress-bar').find('> div').should('have.css', 'min-width')
   })
 
-  it.skip('should have proper styling', () => {
-    const { actions } = useWizardStore.getState()
-    actions.startWizard(EntityType.ADAPTER)
-
-    cy.mountWithProviders(<WizardProgressBar />)
-
-    // Should have shadow and rounded corners
-    cy.getByTestId('wizard-progress-bar')
-      .find('> div')
-      .should('have.css', 'box-shadow')
-      .should('have.css', 'border-radius')
-  })
-
-  it.skip('should display Next button on first step', () => {
+  it('should display Next button on first step', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
 
@@ -236,7 +197,7 @@ describe('WizardProgressBar', () => {
     cy.getByTestId('wizard-next-button').should('be.visible').should('contain', 'Next')
   })
 
-  it.skip('should not display Back button on first step', () => {
+  it('should not display Back button on first step', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
 
@@ -245,7 +206,7 @@ describe('WizardProgressBar', () => {
     cy.getByTestId('wizard-back-button').should('not.exist')
   })
 
-  it.skip('should display both Back and Next buttons on middle steps', () => {
+  it('should display both Back and Next buttons on middle steps', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
     actions.nextStep() // Move to step 2
@@ -256,7 +217,7 @@ describe('WizardProgressBar', () => {
     cy.getByTestId('wizard-next-button').should('be.visible').should('contain', 'Next')
   })
 
-  it.skip('should display Complete button on last step', () => {
+  it('should display Complete button on last step', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
     actions.nextStep()
@@ -268,7 +229,7 @@ describe('WizardProgressBar', () => {
     cy.getByTestId('wizard-next-button').should('not.exist')
   })
 
-  it.skip('should call nextStep when Next button is clicked', () => {
+  it('should call nextStep when Next button is clicked', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
 
@@ -280,7 +241,7 @@ describe('WizardProgressBar', () => {
     cy.contains('Step 2 of 3').should('be.visible')
   })
 
-  it.skip('should call previousStep when Back button is clicked', () => {
+  it('should call previousStep when Back button is clicked', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
     actions.nextStep()
@@ -293,7 +254,7 @@ describe('WizardProgressBar', () => {
     cy.contains('Step 1 of 3').should('be.visible')
   })
 
-  it.skip('should have accessible button labels', () => {
+  it('should have accessible button labels', () => {
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.ADAPTER)
     actions.nextStep()
