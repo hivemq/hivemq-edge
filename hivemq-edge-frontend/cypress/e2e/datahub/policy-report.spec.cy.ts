@@ -15,7 +15,7 @@ import type { DataHubFactory } from 'cypress/utils/intercept.utils.ts'
 import { cy_interceptCoreE2E, cy_interceptDataHubWithMockDB } from 'cypress/utils/intercept.utils.ts'
 import { datahubPage, loginPage, datahubDesignerPage } from 'cypress/pages'
 
-import { MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
+import { MOCK_CAPABILITY_DATAHUB } from '@/api/hooks/useFrontendServices/__handlers__'
 import { MOCK_DATAHUB_FUNCTIONS } from '@datahub/api/hooks/DataHubFunctionsService/__handlers__'
 
 /**
@@ -55,7 +55,7 @@ describe('DataHub - Policy Report Content', () => {
   beforeEach(() => {
     drop(mswDB)
     cy_interceptCoreE2E()
-    cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
+    cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_DATAHUB] })
     cy.intercept('/api/v1/data-hub/function-specs', {
       items: MOCK_DATAHUB_FUNCTIONS.items.map((specs) => {
         specs.metadata.inLicenseAllowed = true
