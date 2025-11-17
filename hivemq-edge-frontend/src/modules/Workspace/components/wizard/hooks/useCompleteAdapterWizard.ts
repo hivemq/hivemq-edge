@@ -1,13 +1,3 @@
-/**
- * useCompleteAdapterWizard Hook
- *
- * Handles the final step of the adapter wizard:
- * - Creates adapter via API
- * - Removes ghost nodes/edges
- * - Shows success/error feedback
- * - Completes wizard
- */
-
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@chakra-ui/react'
@@ -16,7 +6,7 @@ import { useReactFlow } from '@xyflow/react'
 import type { Adapter } from '@/api/__generated__'
 import { useCreateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useCreateProtocolAdapter'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
-import { removeGhostNodes, removeGhostEdges } from '../utils/ghostNodeFactory'
+import { useCompleteUtilities } from '@/modules/Workspace/components/wizard/hooks/useCompleteUtilities.ts'
 
 interface AdapterConfig extends Record<string, unknown> {
   id: string
@@ -25,9 +15,10 @@ interface AdapterConfig extends Record<string, unknown> {
 export const useCompleteAdapterWizard = () => {
   const { t } = useTranslation()
   const toast = useToast()
-  const { getNodes, setNodes, getEdges, setEdges } = useReactFlow()
+  const { getNodes, setNodes } = useReactFlow()
   const { mutateAsync: createAdapter } = useCreateProtocolAdapter()
   const [isCompleting, setIsCompleting] = useState(false)
+  const { handleTransitionSequence } = useCompleteUtilities()
 
   const completeWizard = async () => {
     setIsCompleting(true)
@@ -59,71 +50,7 @@ export const useCompleteAdapterWizard = () => {
       })
 
       // 2. TRANSITION SEQUENCE: Ghost → Real nodes
-      // ==========================================
-      // Current implementation uses time-based delays to create a smooth visual transition.
-      // This works well but could be improved with event-based triggers.
-      //
-      // CURRENT APPROACH:
-      // - API completes → Ghost fades out (500ms) → Wait 600ms → Remove ghost → Real nodes appear
-      // - Total perceived transition: ~600ms
-      //
-      // POTENTIAL IMPROVEMENTS:
-      // - Listen to React Query cache update event instead of fixed delay
-      // - Wait for actual DOM render of real nodes before removing ghosts
-      // - Use React Flow's onNodesChange to detect new nodes appearing
-      // - Coordinate with useGetFlowElements refresh cycle
-      // - Add loading skeleton/shimmer during transition
-      // - Morph ghost directly into real node (position already matches)
-      //
-      // CONSTRAINTS TO CONSIDER:
-      // - React Query invalidation timing (when does refetch complete?)
-      // - useGetFlowElements useEffect dependencies and execution order
-      // - React Flow render cycle (when are new nodes actually painted?)
-      // - Browser paint timing (requestAnimationFrame considerations)
-      // - User perception (anything under 300ms feels instant, 300-1000ms needs feedback)
-      //
-      // For now, the time-based approach provides a reliable, smooth transition.
-      // Future iteration could make this more robust with proper event coordination.
-
-      const nodes = getNodes()
-
-      // Fade out ghost nodes (blue glow dims to 30% opacity over 500ms)
-      const nodesWithFade = nodes.map((node) => {
-        if (node.data?.isGhost) {
-          return {
-            ...node,
-            style: {
-              ...node.style,
-              opacity: 0.3,
-              transition: 'opacity 0.5s ease-out',
-            },
-          }
-        }
-        return node
-      })
-
-      setNodes(nodesWithFade)
-
-      // 3. Wait for fade animation to complete and real nodes to appear
-      // The 600ms delay allows:
-      // - Ghost fade animation to complete (500ms)
-      // - React Query to invalidate and refetch (variable)
-      // - useGetFlowElements to process new data (variable)
-      // - React Flow to render new nodes (variable)
-      // TODO: Replace with event-based trigger when React Query cache updates
-      await new Promise((resolve) => setTimeout(resolve, 600))
-
-      // 4. Remove ghost nodes and edges
-      // By this point, real nodes should be visible at the same position
-      const realNodes = removeGhostNodes(getNodes())
-      const realEdges = removeGhostEdges(getEdges())
-
-      setNodes(realNodes)
-      setEdges(realEdges)
-
-      // 5. Complete wizard (clears store and resets state)
-      const { actions } = useWizardStore.getState()
-      actions.completeWizard()
+      await handleTransitionSequence()
 
       // 6. Highlight new adapter nodes briefly (visual feedback for successful creation)
       // Green glow appears after 100ms to give React Flow time to fully render the new nodes

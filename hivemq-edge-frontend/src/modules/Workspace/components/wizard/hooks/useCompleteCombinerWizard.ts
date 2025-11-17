@@ -1,13 +1,3 @@
-/**
- * useCompleteCombinerWizard Hook
- *
- * Handles the final step of the combiner/asset mapper wizard:
- * - Creates combiner via API
- * - Removes ghost nodes/edges
- * - Shows success/error feedback
- * - Completes wizard
- */
-
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@chakra-ui/react'
@@ -18,7 +8,7 @@ import { useCreateCombiner } from '@/api/hooks/useCombiners/useCreateCombiner'
 import { useCreateAssetMapper } from '@/api/hooks/useAssetMapper/useCreateAssetMapper'
 import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
-import { removeGhostNodes, removeGhostEdges } from '../utils/ghostNodeFactory'
+import { useCompleteUtilities } from '@/modules/Workspace/components/wizard/hooks/useCompleteUtilities.ts'
 
 interface UseCompleteCombinerWizardOptions {
   isAssetMapper: boolean
@@ -27,8 +17,9 @@ interface UseCompleteCombinerWizardOptions {
 export const useCompleteCombinerWizard = ({ isAssetMapper }: UseCompleteCombinerWizardOptions) => {
   const { t } = useTranslation()
   const toast = useToast(BASE_TOAST_OPTION)
-  const { getNodes, setNodes, getEdges, setEdges } = useReactFlow()
+  const { getNodes, setNodes } = useReactFlow()
   const { mutateAsync: createCombiner } = useCreateCombiner()
+  const { handleTransitionSequence } = useCompleteUtilities()
   const { mutateAsync: createAssetMapper } = useCreateAssetMapper()
   const [isCompleting, setIsCompleting] = useState(false)
 
@@ -45,39 +36,8 @@ export const useCompleteCombinerWizard = ({ isAssetMapper }: UseCompleteCombiner
         await createCombiner({ requestBody: combinerData })
       }
 
-      // 2. TRANSITION SEQUENCE: Ghost → Real nodes
-      const nodes = getNodes()
-
-      // Fade out ghost nodes (blue glow dims to 30% opacity over 500ms)
-      const nodesWithFade = nodes.map((node) => {
-        if (node.data?.isGhost) {
-          return {
-            ...node,
-            style: {
-              ...node.style,
-              opacity: 0.3,
-              transition: 'opacity 0.5s ease-out',
-            },
-          }
-        }
-        return node
-      })
-
-      setNodes(nodesWithFade)
-
-      // 3. Wait for fade animation to complete and real nodes to appear
-      await new Promise((resolve) => setTimeout(resolve, 600))
-
-      // 4. Remove ghost nodes and edges
-      const realNodes = removeGhostNodes(getNodes())
-      const realEdges = removeGhostEdges(getEdges())
-
-      setNodes(realNodes)
-      setEdges(realEdges)
-
-      // 5. Reset wizard state (we handle API and validation in this hook)
-      const { actions } = useWizardStore.getState()
-      actions.cancelWizard() // Direct reset without validation check
+      // // 2. TRANSITION SEQUENCE: Ghost → Real nodes
+      await handleTransitionSequence()
 
       // 6. Highlight new combiner node briefly (green glow for visual feedback)
       setTimeout(() => {

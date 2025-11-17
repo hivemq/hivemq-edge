@@ -24,7 +24,7 @@ import {
   useToast,
 } from '@chakra-ui/react'
 
-import type { Combiner } from '@/api/__generated__'
+import type { Combiner, EntityReferenceList } from '@/api/__generated__'
 import { AssetMapping, EntityType } from '@/api/__generated__'
 import { useDeleteCombiner, useUpdateCombiner } from '@/api/hooks/useCombiners/'
 import { useDeleteAssetMapper, useUpdateAssetMapper } from '@/api/hooks/useAssetMapper'
@@ -75,6 +75,26 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
     if (wizardContext?.isWizardMode) {
       // Wizard mode: check for ghost node first, otherwise create phantom
       const ghostCombiner = nodes.find((n) => n.id.startsWith('ghost-combiner-'))
+      const sources: EntityReferenceList = {
+        items: wizardContext.selectedNodeIds
+          .map((nodeId) => {
+            const node = nodes.find((n) => n.id === nodeId)
+            if (!node) {
+              combinerLog(`Node not found: ${nodeId}`)
+              return null
+            }
+            const getType = (): EntityType => {
+              if (node.type === NodeTypes.ADAPTER_NODE) return EntityType.ADAPTER
+              if (node.type === NodeTypes.BRIDGE_NODE) return EntityType.BRIDGE
+              if (node.type === NodeTypes.DEVICE_NODE) return EntityType.DEVICE
+              if (node.type === NodeTypes.PULSE_NODE) return EntityType.PULSE_AGENT
+              return EntityType.EDGE_BROKER
+            }
+            // Use node.data.id (entity ID), not node.id (React Flow node ID)
+            return { id: node.data.id, type: getType() }
+          })
+          .filter((item): item is { id: string; type: EntityType } => item !== null),
+      }
 
       if (ghostCombiner) {
         // Use ghost node with proper sources from wizard selection
@@ -82,26 +102,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
           ...ghostCombiner,
           data: {
             ...ghostCombiner.data,
-            sources: {
-              items: wizardContext.selectedNodeIds
-                .map((nodeId) => {
-                  const node = nodes.find((n) => n.id === nodeId)
-                  if (!node) {
-                    combinerLog(`Node not found: ${nodeId}`)
-                    return null
-                  }
-                  const getType = (): EntityType => {
-                    if (node.type === NodeTypes.ADAPTER_NODE) return EntityType.ADAPTER
-                    if (node.type === NodeTypes.BRIDGE_NODE) return EntityType.BRIDGE
-                    if (node.type === NodeTypes.DEVICE_NODE) return EntityType.DEVICE
-                    if (node.type === NodeTypes.PULSE_NODE) return EntityType.PULSE_AGENT
-                    return EntityType.EDGE_BROKER
-                  }
-                  // Use node.data.id (entity ID), not node.id (React Flow node ID)
-                  return { id: node.data.id, type: getType() }
-                })
-                .filter((item): item is { id: string; type: EntityType } => item !== null),
-            },
+            sources,
           },
         } as Node<Combiner>
       }
@@ -116,26 +117,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
           id: phantomId, // Use UUID for validation
           name: wizardContext.combinerName || 'New Combiner',
           description: '',
-          sources: {
-            items: wizardContext.selectedNodeIds
-              .map((nodeId) => {
-                const node = nodes.find((n) => n.id === nodeId)
-                if (!node) {
-                  combinerLog(`Node not found: ${nodeId}`)
-                  return null
-                }
-                const getType = (): EntityType => {
-                  if (node.type === NodeTypes.ADAPTER_NODE) return EntityType.ADAPTER
-                  if (node.type === NodeTypes.BRIDGE_NODE) return EntityType.BRIDGE
-                  if (node.type === NodeTypes.DEVICE_NODE) return EntityType.DEVICE
-                  if (node.type === NodeTypes.PULSE_NODE) return EntityType.PULSE_AGENT
-                  return EntityType.EDGE_BROKER
-                }
-                // Use node.data.id (entity ID), not node.id (React Flow node ID)
-                return { id: node.data.id, type: getType() }
-              })
-              .filter((item): item is { id: string; type: EntityType } => item !== null),
-          },
+          sources,
           mappings: { items: [] },
         },
       } as Node<Combiner>
