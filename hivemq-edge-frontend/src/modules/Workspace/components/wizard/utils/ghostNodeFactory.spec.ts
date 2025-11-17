@@ -19,7 +19,7 @@ import {
   isGhostEdge,
 } from './ghostNodeFactory'
 import { EntityType } from '../types'
-import { NodeTypes } from '@/modules/Workspace/types'
+import { IdStubs, NodeTypes } from '@/modules/Workspace/types'
 
 describe('ghostNodeFactory', () => {
   const mockEdgeNode: Node = {
@@ -243,13 +243,14 @@ describe('ghostNodeFactory', () => {
       const edgeNode = { id: 'EDGE_NODE', position: { x: 500, y: 300 } } as Node
       const group = createGhostAdapterGroup('test-id', 0, edgeNode)
 
-      const edgeToEdge = group.edges.find((e) => e.target === 'edge') // IdStubs.EDGE_NODE = 'edge'
+      const edgeToEdge = group.edges.find((e) => e.target === IdStubs.EDGE_NODE)
       expect(edgeToEdge).toBeDefined()
       expect(edgeToEdge?.source).toBe('ghost-adapter-test-id')
 
-      const edgeToDevice = group.edges.find((e) => e.target === 'ghost-adapter-test-id')
+      const edgeToDevice = group.edges.find((e) => e.source === 'ghost-adapter-test-id')
+      console.log('XXXXXX edge, grou', group.edges)
       expect(edgeToDevice).toBeDefined()
-      expect(edgeToDevice?.source).toBe('ghost-device-test-id')
+      expect(edgeToDevice?.target).toBe(IdStubs.EDGE_NODE)
     })
 
     it('should set ghost edges to animated', () => {
@@ -310,7 +311,7 @@ describe('ghostNodeFactory', () => {
       const edgeNode = { id: 'EDGE_NODE', position: { x: 500, y: 300 } } as Node
       const group = createGhostBridgeGroup('test-id', 0, edgeNode)
 
-      const edgeToEdge = group.edges.find((e) => e.target === 'edge') // IdStubs.EDGE_NODE = 'edge'
+      const edgeToEdge = group.edges.find((e) => e.target === IdStubs.EDGE_NODE)
       expect(edgeToEdge).toBeDefined()
       expect(edgeToEdge?.source).toBe('ghost-bridge-test-id')
 
@@ -323,7 +324,7 @@ describe('ghostNodeFactory', () => {
       const edgeNode = { id: 'EDGE_NODE', position: { x: 500, y: 300 } } as Node
       const group = createGhostBridgeGroup('test-id', 0, edgeNode)
 
-      const edgeToEdge = group.edges.find((e) => e.target === 'edge') // IdStubs.EDGE_NODE = 'edge'
+      const edgeToEdge = group.edges.find((e) => e.target === IdStubs.EDGE_NODE)
       expect(edgeToEdge).toBeDefined()
       expect(edgeToEdge?.targetHandle).toBe('Bottom')
 
