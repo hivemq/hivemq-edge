@@ -16,20 +16,17 @@
 package com.hivemq.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.slf4j.LoggerFactory;
 import util.TestKeyStoreGenerator;
 
@@ -48,6 +45,8 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -144,7 +143,7 @@ public class JaxrsSSLTests {
                 getTestServerAddress(HTTPS, TEST_HTTP_PORT, "test/get"),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-        Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
+        assertEquals(200,response.getStatusCode(),"Resource should exist");
     }
 
     @Test

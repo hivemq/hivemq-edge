@@ -16,15 +16,10 @@
 package com.hivemq.uns;
 
 import com.hivemq.api.utils.ApiValidation;
-import com.hivemq.edge.HiveMQEdgeConstants;
-import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.regex.Pattern;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon L Johnson
@@ -34,107 +29,107 @@ public class UnsModelTest {
     @Test
     void testApiAlphaNumValidation_empty_null() {
 
-        Assert.assertTrue("Empty string should be allowed when specified",
-                ApiValidation.validAlphaNumericSpaces("", true));
-        Assert.assertFalse("Empty string should NOT be allowed when specified",
-                ApiValidation.validAlphaNumericSpaces("", false));
+        assertTrue(ApiValidation.validAlphaNumericSpaces("", true),
+                "Empty string should be allowed when specified");
+        assertFalse(ApiValidation.validAlphaNumericSpaces("", false),
+                "Empty string should NOT be allowed when specified");
 
-        Assert.assertTrue("<null> string should be allowed when specified",
-                ApiValidation.validAlphaNumericSpaces(null, true));
-        Assert.assertFalse("<null> string should NOT be allowed when specified",
-                ApiValidation.validAlphaNumericSpaces(null, false));
+        assertTrue(ApiValidation.validAlphaNumericSpaces(null, true),
+                "<null> string should be allowed when specified");
+        assertFalse(ApiValidation.validAlphaNumericSpaces(null, false),
+                "<null> string should NOT be allowed when specified");
     }
 
     @Test
     void testApiAlphaNumSpacesValidation() {
 
-        Assert.assertTrue("Valid value (with spaces) should be valid",
-                ApiValidation.validAlphaNumericSpaces("valid value", false));
+        assertTrue(ApiValidation.validAlphaNumericSpaces("valid value", false),
+                "Valid value (with spaces) should be valid");
 
-        Assert.assertTrue("Valid value (without spaces) should be valid",
-                ApiValidation.validAlphaNumericSpaces("validvalue", false));
+        assertTrue(ApiValidation.validAlphaNumericSpaces("validvalue", false),
+                "Valid value (without spaces) should be valid");
 
-        Assert.assertTrue("Multi character should be valid",
-                ApiValidation.validAlphaNumericSpaces("vv", false));
+        assertTrue(ApiValidation.validAlphaNumericSpaces("vv", false),
+                "Multi character should be valid");
 
-        Assert.assertTrue("Multi character with space should be valid",
-                ApiValidation.validAlphaNumericSpaces("v ", false));
+        assertTrue(ApiValidation.validAlphaNumericSpaces("v ", false),
+                "Multi character with space should be valid");
 
-        Assert.assertTrue("Single character should be valid",
-                ApiValidation.validAlphaNumericSpaces("v", false));
+        assertTrue(ApiValidation.validAlphaNumericSpaces("v", false),
+                "Single character should be valid");
 
-        Assert.assertFalse("Special char should not be invalid",
-                ApiValidation.validAlphaNumericSpaces("\'", false));
+        assertFalse(ApiValidation.validAlphaNumericSpaces("\'", false),
+                "Special char should not be invalid");
 
-        Assert.assertTrue("Mixed case should be valid",
-                ApiValidation.validAlphaNumericSpaces("aAb", false));
+        assertTrue(ApiValidation.validAlphaNumericSpaces("aAb", false),
+                "Mixed case should be valid");
     }
 
     @Test
     void testApiAlphaNumValidation() {
 
-        Assert.assertFalse("Invalid value (with spaces) should be invalid",
-                ApiValidation.validAlphaNumeric("invalid value", false));
+        assertFalse(ApiValidation.validAlphaNumeric("invalid value", false),
+                "Invalid value (with spaces) should be invalid");
 
-        Assert.assertTrue("Valid value (without spaces) should be valid",
-                ApiValidation.validAlphaNumeric("validvalue", false));
+        assertTrue(ApiValidation.validAlphaNumeric("validvalue", false),
+                "Valid value (without spaces) should be valid");
 
-        Assert.assertTrue("Multi character should be valid",
-                ApiValidation.validAlphaNumeric("vv", false));
+        assertTrue(ApiValidation.validAlphaNumeric("vv", false),
+                "Multi character should be valid");
 
-        Assert.assertFalse("Multi character with space should NOT be valid",
-                ApiValidation.validAlphaNumeric("v ", false));
+        assertFalse(ApiValidation.validAlphaNumeric("v ", false),
+                "Multi character with space should NOT be valid");
 
-        Assert.assertTrue("Single character should be valid",
-                ApiValidation.validAlphaNumeric("v", false));
+        assertTrue(ApiValidation.validAlphaNumeric("v", false),
+                "Single character should be valid");
 
-        Assert.assertFalse("Special char should not be invalid",
-                ApiValidation.validAlphaNumeric("\'", false));
+        assertFalse(ApiValidation.validAlphaNumeric("\'", false),
+                "Special char should not be invalid");
 
-        Assert.assertTrue("Mixed case should be valid",
-                ApiValidation.validAlphaNumericSpaces("aAb", false));
+        assertTrue(ApiValidation.validAlphaNumericSpaces("aAb", false),
+                "Mixed case should be valid");
     }
 
     @Test
     void testApiAlphaNumSpacesAndDashesValidation() {
 
-        Assert.assertTrue("Valid value (with spaces) should be valid",
-                ApiValidation.validAlphaNumericSpacesAndDashes("valid value", false));
+        assertTrue(ApiValidation.validAlphaNumericSpacesAndDashes("valid value", false),
+                "Valid value (with spaces) should be valid");
 
-        Assert.assertTrue("Valid value (without spaces) should be valid",
-                ApiValidation.validAlphaNumericSpacesAndDashes("validvalue", false));
+        assertTrue(ApiValidation.validAlphaNumericSpacesAndDashes("validvalue", false),
+                "Valid value (without spaces) should be valid");
 
-        Assert.assertTrue("Multi character should be valid",
-                ApiValidation.validAlphaNumericSpacesAndDashes("vv", false));
+        assertTrue(ApiValidation.validAlphaNumericSpacesAndDashes("vv", false),
+                "Multi character should be valid");
 
-        Assert.assertTrue("Multi character with space should be valid",
-                ApiValidation.validAlphaNumericSpacesAndDashes("v ", false));
+        assertTrue(ApiValidation.validAlphaNumericSpacesAndDashes("v ", false),
+                "Multi character with space should be valid");
 
-        Assert.assertTrue("Single character should be valid",
-                ApiValidation.validAlphaNumericSpacesAndDashes("v", false));
+        assertTrue(ApiValidation.validAlphaNumericSpacesAndDashes("v", false),
+                "Single character should be valid");
 
-        Assert.assertFalse("Special char should not be invalid",
-                ApiValidation.validAlphaNumericSpacesAndDashes("\'", false));
+        assertFalse(ApiValidation.validAlphaNumericSpacesAndDashes("\'", false),
+                "Special char should not be invalid");
 
-        Assert.assertTrue("Mixed case should be valid",
-                ApiValidation.validAlphaNumericSpacesAndDashes("aAb", false));
+        assertTrue(ApiValidation.validAlphaNumericSpacesAndDashes("aAb", false),
+                "Mixed case should be valid");
 
-        Assert.assertTrue("Dashes should be valid",
-                ApiValidation.validAlphaNumericSpacesAndDashes("a-b", false));
+        assertTrue(ApiValidation.validAlphaNumericSpacesAndDashes("a-b", false),
+                "Dashes should be valid");
 
-        Assert.assertTrue("Leading dashes should be valid",
-                ApiValidation.validAlphaNumericSpacesAndDashes("-ab", false));
+        assertTrue(ApiValidation.validAlphaNumericSpacesAndDashes("-ab", false),
+                "Leading dashes should be valid");
 
-        Assert.assertTrue("Trailing dashes should be valid",
-                ApiValidation.validAlphaNumericSpacesAndDashes("ab-", false));
+        assertTrue(ApiValidation.validAlphaNumericSpacesAndDashes("ab-", false),
+                "Trailing dashes should be valid");
 
-        Assert.assertTrue("Underscores should be valid",
-                ApiValidation.validAlphaNumericSpacesAndDashes("a_b", false));
+        assertTrue(ApiValidation.validAlphaNumericSpacesAndDashes("a_b", false),
+                "Underscores should be valid");
 
-        Assert.assertTrue("Trailing Underscores should be valid",
-                ApiValidation.validAlphaNumericSpacesAndDashes("a_", false));
+        assertTrue(ApiValidation.validAlphaNumericSpacesAndDashes("a_", false),
+                "Trailing Underscores should be valid");
 
-        Assert.assertTrue("Leading Underscores should be valid",
-                ApiValidation.validAlphaNumericSpacesAndDashes("_a", false));
+        assertTrue(ApiValidation.validAlphaNumericSpacesAndDashes("_a", false),
+                "Leading Underscores should be valid");
     }
 }

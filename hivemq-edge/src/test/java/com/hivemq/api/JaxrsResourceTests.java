@@ -22,7 +22,6 @@ import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -34,6 +33,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -78,28 +78,28 @@ public class JaxrsResourceTests {
     public void testGetNotFoundResource() throws IOException {
         final HttpResponse response =
                 HttpUrlConnectionClient.get(null, getTestServerAddress("doesnt/exist"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should not exist", 404, response.getStatusCode());
+        assertEquals(404,response.getStatusCode(),"Resource should not exist");
     }
 
     @Test
     public void testGetResource() throws IOException {
         final HttpResponse response =
                 HttpUrlConnectionClient.get(null, getTestServerAddress("test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
+        assertEquals(200,response.getStatusCode(),"Resource should exist");
     }
 
     @Test
     public void testHeadResourceOK() throws IOException {
         final HttpResponse response =
                 HttpUrlConnectionClient.head(null, getTestServerAddress("test/head"), READ_TIMEOUT);
-        Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
+        assertEquals(200,response.getStatusCode(),"Resource should exist");
     }
 
     @Test
     public void testHeadResourceNotFound() throws IOException {
         final HttpResponse response =
                 HttpUrlConnectionClient.head(null, getTestServerAddress("test/head/not/found"), READ_TIMEOUT);
-        Assert.assertEquals("Resource should not exist", 404, response.getStatusCode());
+        assertEquals(404,response.getStatusCode(),"Resource should not exist");
     }
 
     @Test
@@ -109,10 +109,10 @@ public class JaxrsResourceTests {
                 new ByteArrayInputStream(JSON_ENTITY.getBytes(StandardCharsets.UTF_8)),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-        Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
-        Assert.assertEquals("Resource should have been echod back and match",
-                JSON_ENTITY,
-                new String(response.getResponseBody()));
+        assertEquals(200,response.getStatusCode(),"Resource should exist");
+        assertEquals(JSON_ENTITY,
+                new String(response.getResponseBody()),
+                "Resource should have been echod back and match");
     }
 
     @Test
@@ -124,10 +124,10 @@ public class JaxrsResourceTests {
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
         System.err.println(new String(response.getResponseBody()));
-        Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
-        Assert.assertEquals("Form data should be marshalled back matching expected format",
-                58,
-                response.getContentLength());
+        assertEquals(200,response.getStatusCode(),"Resource should exist");
+        assertEquals(58,
+                response.getContentLength(),
+                "Form data should be marshalled back matching expected format");
     }
 
     @Test
@@ -137,10 +137,10 @@ public class JaxrsResourceTests {
                 new ByteArrayInputStream(JSON_ENTITY.getBytes(StandardCharsets.UTF_8)),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-        Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
-        Assert.assertEquals("Resource should have been echod back and match",
-                JSON_ENTITY,
-                new String(response.getResponseBody()));
+        assertEquals(200,response.getStatusCode(),"Resource should exist");
+        assertEquals(JSON_ENTITY,
+                new String(response.getResponseBody()),
+                "Resource should have been echod back and match");
     }
 
     @Test
@@ -150,10 +150,10 @@ public class JaxrsResourceTests {
                 new ByteArrayInputStream(JSON_ENTITY.getBytes(StandardCharsets.UTF_8)),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-        Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
-        Assert.assertEquals("Resource should have been echod back and match",
-                JSON_ENTITY,
-                new String(response.getResponseBody()));
+        assertEquals(200,response.getStatusCode(),"Resource should exist");
+        assertEquals(JSON_ENTITY,
+                new String(response.getResponseBody()),
+                "Resource should have been echod back and match");
     }
 
     @Test
@@ -162,10 +162,10 @@ public class JaxrsResourceTests {
                 getTestServerAddress("test/get/myparam"),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-        Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
-        Assert.assertEquals("Resource should have been echod back and match",
-                "myparam",
-                new String(response.getResponseBody()));
+        assertEquals(200,response.getStatusCode(),"Resource should exist");
+        assertEquals("myparam",
+                new String(response.getResponseBody()),
+                "Resource should have been echod back and match");
     }
 
     @Test
@@ -174,9 +174,9 @@ public class JaxrsResourceTests {
                 getTestServerAddress("test/get/query?param=foo"),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-        Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
-        Assert.assertEquals("Resource should have been echod back and match",
-                "foo",
-                new String(response.getResponseBody()));
+        assertEquals(200,response.getStatusCode(),"Resource should exist");
+        assertEquals("foo",
+                new String(response.getResponseBody()),
+                "Resource should have been echod back and match");
     }
 }

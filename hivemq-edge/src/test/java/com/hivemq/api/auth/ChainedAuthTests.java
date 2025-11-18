@@ -39,7 +39,6 @@ import jakarta.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -53,6 +52,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -117,12 +118,12 @@ public class ChainedAuthTests {
                 new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-        Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
-        Assert.assertEquals("API authenticate response should be json",
-                MediaType.APPLICATION_JSON,
-                response.getContentType());
+        assertEquals(200,response.getStatusCode(),"Resource should be accepted");
+        assertEquals(MediaType.APPLICATION_JSON,
+                response.getContentType(),
+                "API authenticate response should be json");
         final ApiBearerToken token = mapper.readValue(response.getResponseBody(), ApiBearerToken.class);
-        Assert.assertNotNull("Response should contain a bearer token", token.getToken());
+        assertNotNull(token.getToken(), "Response should contain a bearer token");
     }
 
     @Test
@@ -156,12 +157,12 @@ public class ChainedAuthTests {
                 new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-        Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
-        Assert.assertEquals("API authenticate response should be json",
-                MediaType.APPLICATION_JSON,
-                response.getContentType());
+        assertEquals(200,response.getStatusCode(),"Resource should be accepted");
+        assertEquals(MediaType.APPLICATION_JSON,
+                response.getContentType(),
+                "API authenticate response should be json");
         final ApiBearerToken token = mapper.readValue(response.getResponseBody(), ApiBearerToken.class);
-        Assert.assertNotNull("Response should contain a bearer token", token.getToken());
+        assertNotNull(token.getToken(), "Response should contain a bearer token");
 
         //-- now validate the token against the UNSECURE API which returns whether its valid
         response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
@@ -169,7 +170,7 @@ public class ChainedAuthTests {
                 new ByteArrayInputStream(mapper.writeValueAsBytes(token)),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-        Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
+        assertEquals(200,response.getStatusCode(),"Resource should be accepted");
 
         //-- finally use it as a bear token header against a secure endpoint
 
@@ -184,9 +185,9 @@ public class ChainedAuthTests {
                 getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/user"),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-        Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
+        assertEquals(200,response.getStatusCode(),"Resource should be accepted");
         final ApiPrincipal user = mapper.readValue(response.getResponseBody(), ApiPrincipal.class);
-        Assert.assertEquals("Username should match that supplied at point of auth", "testuser", user.getName());
+        assertEquals("testuser",user.getName(),"Username should match that supplied at point of auth");
 
     }
 
@@ -200,9 +201,9 @@ public class ChainedAuthTests {
                 getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-        Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
+        assertEquals(200,response.getStatusCode(),"Resource should be accepted");
         final ApiPrincipal user = mapper.readValue(response.getResponseBody(), ApiPrincipal.class);
-        Assert.assertEquals("Username should match that supplied at point of auth", "testadmin", user.getName());
+        assertEquals("testadmin",user.getName(),"Username should match that supplied at point of auth");
     }
 
 }

@@ -20,14 +20,18 @@ import com.hivemq.api.auth.ApiRoles;
 import com.hivemq.api.auth.AuthenticationException;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon L Johnson
@@ -43,7 +47,7 @@ public class ApiJwtTests {
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(configuration);
         ApiPrincipal principal = new ApiPrincipal("Test-User", Set.of(ApiRoles.ADMIN));
         String token = provider.generateToken(principal);
-        Assert.assertNotNull("JWT Token should exist", token);
+        assertNotNull(token);
     }
 
     @Test
@@ -53,11 +57,11 @@ public class ApiJwtTests {
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(configuration);
         ApiPrincipal originalPrincipal = new ApiPrincipal("Test-User", Set.of(ApiRoles.ADMIN));
         String token = provider.generateToken(originalPrincipal);
-        Assert.assertNotNull("JWT Token should exist", token);
+        assertNotNull("JWT Token should exist", token);
         Optional<ApiPrincipal> verifiedTokenPrincipal = provider.verify(token);
-        Assert.assertTrue("Principal should be returned from token", verifiedTokenPrincipal.isPresent());
-        Assert.assertEquals("Principal roles should match", verifiedTokenPrincipal.get().getRoles(), originalPrincipal.getRoles());
-        Assert.assertEquals("Principal name should match", verifiedTokenPrincipal.get().getName(), originalPrincipal.getName());
+        assertTrue(verifiedTokenPrincipal.isPresent());
+        assertEquals(verifiedTokenPrincipal.get().getRoles(), originalPrincipal.getRoles());
+        assertEquals(verifiedTokenPrincipal.get().getName(), originalPrincipal.getName());
     }
 
     @Test
@@ -67,9 +71,9 @@ public class ApiJwtTests {
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(configuration);
         ApiPrincipal originalPrincipal = new ApiPrincipal("Test-User", Set.of(ApiRoles.ADMIN));
         String token = provider.generateToken(originalPrincipal);
-        Assert.assertNotNull("JWT Token should exist", token);
+        assertNotNull(token);
         Optional<ApiPrincipal> verifiedTokenPrincipal = provider.verify(token);
-        Assert.assertFalse("Principal should NOT be returned from token", verifiedTokenPrincipal.isPresent());
+        assertFalse(verifiedTokenPrincipal.isPresent());
     }
 
 }

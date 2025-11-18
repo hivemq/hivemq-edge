@@ -29,7 +29,6 @@ import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -42,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -94,7 +94,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be denied", 401, response.getStatusCode());
+        assertEquals(401,response.getStatusCode(),"Resource should be denied");
     }
 
     @Test
@@ -104,7 +104,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be denied", 401, response.getStatusCode());
+        assertEquals(401,response.getStatusCode(),"Resource should be denied");
     }
 
     @Test
@@ -114,7 +114,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be denied", 401, response.getStatusCode());
+        assertEquals(401,response.getStatusCode(),"Resource should be denied");
     }
 
     @Test
@@ -124,7 +124,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be denied", 403, response.getStatusCode());
+        assertEquals(403,response.getStatusCode(),"Resource should be denied");
     }
 
     @Test
@@ -134,7 +134,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
+        assertEquals(200,response.getStatusCode(),"Resource should be accepted");
     }
 
     @Test
@@ -144,7 +144,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/user"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
+        assertEquals(200,response.getStatusCode(),"Resource should be accepted");
     }
 
     @Test
@@ -154,7 +154,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/user"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be denied", 403, response.getStatusCode());
+        assertEquals(403,response.getStatusCode(),"Resource should be denied");
     }
 
     @Test
@@ -164,7 +164,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/permitall/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be allowed", 200, response.getStatusCode());
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed");
     }
 
     @Test
@@ -172,7 +172,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/permitall/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be allowed", 401, response.getStatusCode());
+        assertEquals(401,response.getStatusCode(),"Resource should be allowed");
     }
 
     @Test
@@ -180,7 +180,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/resource/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should not be allowed", 401, response.getStatusCode());
+        assertEquals(401,response.getStatusCode(),"Resource should not be allowed");
     }
 
     @Test
@@ -190,7 +190,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/resource/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be allowed", 200, response.getStatusCode());
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed");
     }
 
     @Test
@@ -200,7 +200,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/resource/get/onlyadmin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be allowed", 403, response.getStatusCode());
+        assertEquals(403,response.getStatusCode(),"Resource should be allowed");
     }
 
     @Test
@@ -210,7 +210,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/resource/get/onlyadmin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should be allowed", 200, response.getStatusCode());
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed");
     }
 
 
@@ -221,7 +221,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/permitall/get/adminonly"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should not be allowed", 403, response.getStatusCode());
+        assertEquals(403,response.getStatusCode(),"Resource should not be allowed");
     }
 
     @Test
@@ -231,7 +231,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/permitall/get/adminonly"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        Assert.assertEquals("Resource should not be allowed", 200, response.getStatusCode());
+        assertEquals(200,response.getStatusCode(),"Resource should not be allowed");
     }
 
 }
