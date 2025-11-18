@@ -108,8 +108,12 @@ const WizardSelectionRestrictions: FC = () => {
           selectable: true,
           style: {
             ...node.style,
+            opacity: undefined, // Clear dimming
+            filter: undefined, // Clear grayscale
             cursor: 'grab',
             border: undefined,
+            boxShadow: undefined,
+            transition: undefined,
             pointerEvents: undefined,
           },
         })
@@ -132,8 +136,12 @@ const WizardSelectionRestrictions: FC = () => {
           selectable: true,
           style: {
             ...node.style,
+            opacity: undefined, // Clear dimming
+            filter: undefined, // Clear grayscale
             cursor: 'grab',
             border: undefined,
+            boxShadow: undefined,
+            transition: undefined,
             pointerEvents: undefined,
           },
         }
@@ -211,23 +219,28 @@ const WizardSelectionRestrictions: FC = () => {
   }, [isActive, enhancedConstraints, currentStep, getNodes, setNodes])
 
   // Dim edges during selection mode to maintain topology context
+  // IMPORTANT: Only depend on isActive and enhancedConstraints, not on edges themselves
+  // This prevents re-running during node dragging which updates edge positions
   useEffect(() => {
     const edges = getEdges()
 
     // Restore edges when wizard is inactive
     if (!isActive) {
-      const realEdges = edges.filter((e) => !e.data?.isGhost)
-      const restoredEdges = realEdges.map((edge) => ({
-        ...edge,
-        style: {
-          ...edge.style,
-          opacity: undefined, // Remove opacity override
-        },
-        animated: edge.data?.originalAnimated ?? edge.animated,
-      }))
-      if (JSON.stringify(restoredEdges) !== JSON.stringify(realEdges)) {
-        setEdges(restoredEdges as Edge[])
-      }
+      const restoredEdges = edges
+        .filter((e) => !e.data?.isGhost) // Remove ghost edges
+        .map((edge) => ({
+          ...edge,
+          style: {
+            ...edge.style,
+            opacity: undefined, // Remove opacity override
+          },
+          animated: edge.data?.originalAnimated ?? edge.animated,
+          data: {
+            ...edge.data,
+            originalAnimated: undefined, // Clean up
+          },
+        }))
+      setEdges(restoredEdges as Edge[])
       return
     }
 
@@ -253,9 +266,10 @@ const WizardSelectionRestrictions: FC = () => {
           },
         }
       })
-      setEdges(dimmedEdges)
+      setEdges(dimmedEdges as Edge[])
     }
-  }, [isActive, enhancedConstraints, getEdges, setEdges])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive, enhancedConstraints]) // ONLY re-run when wizard state changes, not when edges change
 
   // Manage ghost edges based on selection
   useEffect(() => {
