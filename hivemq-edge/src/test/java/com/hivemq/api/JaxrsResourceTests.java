@@ -21,10 +21,10 @@ import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import org.jetbrains.annotations.NotNull;
-import org.junit.AfterClass;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.RandomPortGenerator;
@@ -50,8 +50,7 @@ public class JaxrsResourceTests {
     static final String JSON_ENTITY = "{\"key\":\"value\"}";
 
     protected static @NotNull JaxrsHttpServer server;
-
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         final JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
@@ -62,8 +61,7 @@ public class JaxrsResourceTests {
         server = new JaxrsHttpServer(mock(), List.of(config), null);
         server.startServer();
     }
-
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         server.stopServer();
     }

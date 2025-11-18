@@ -28,10 +28,10 @@ import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.junit.AfterClass;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,8 +60,7 @@ public class BasicAuthenticationTests {
 
     @Mock
     private static Injector injector;
-
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         final var config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
@@ -81,8 +80,7 @@ public class BasicAuthenticationTests {
         server = new JaxrsHttpServer(mock(), List.of(config), conf);
         server.startServer();
     }
-
-    @AfterClass
+    @AfterAll
     public static void tearDown(){
         server.stopServer();
     }

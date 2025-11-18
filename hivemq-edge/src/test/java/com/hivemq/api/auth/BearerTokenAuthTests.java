@@ -37,10 +37,10 @@ import com.hivemq.http.core.HttpUtils;
 import com.hivemq.http.error.ProblemDetails;
 import jakarta.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.junit.AfterClass;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,8 +68,7 @@ public class BearerTokenAuthTests {
     @Mock
     private static Injector injector;
     protected final Logger logger = LoggerFactory.getLogger(BearerTokenAuthTests.class);
-
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         final JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
@@ -97,8 +96,7 @@ public class BearerTokenAuthTests {
         server = new JaxrsHttpServer(mock(), List.of(config), conf);
         server.startServer();
     }
-
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         server.stopServer();
     }

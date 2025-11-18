@@ -38,10 +38,10 @@ import com.hivemq.http.error.ProblemDetails;
 import jakarta.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.jetbrains.annotations.NotNull;
-import org.junit.AfterClass;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,8 +66,7 @@ public class ChainedAuthTests {
     static final String HTTP = "http";
     protected static @NotNull JaxrsHttpServer server;
     protected final Logger logger = LoggerFactory.getLogger(ChainedAuthTests.class);
-
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         final JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
@@ -97,8 +96,7 @@ public class ChainedAuthTests {
         server = new JaxrsHttpServer(mock(), List.of(config), conf);
         server.startServer();
     }
-
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         server.stopServer();
     }

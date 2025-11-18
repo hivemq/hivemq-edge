@@ -23,11 +23,13 @@ import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
-import org.junit.After;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.slf4j.LoggerFactory;
 import util.TestKeyStoreGenerator;
 
@@ -63,8 +65,7 @@ public class JaxrsSSLTests {
     protected @NotNull JaxrsHttpServer server;
     protected @NotNull TestKeyStoreGenerator testKeyStoreGenerator;
     protected @NotNull SSLContext context;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         testKeyStoreGenerator = new TestKeyStoreGenerator();
         JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
@@ -87,8 +88,7 @@ public class JaxrsSSLTests {
         server = new JaxrsHttpServer(mock(), List.of(config), null);
         server.startServer();
     }
-
-    @After
+    @AfterEach
     public void tearDown() {
         server.stopServer();
         testKeyStoreGenerator.release();
@@ -147,11 +147,13 @@ public class JaxrsSSLTests {
         Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
     }
 
-    @Test(expected = SocketException.class)
-    public void testGetResourceOnWrongProtocol() throws IOException {
-        HttpUrlConnectionClient.get(null,
-                getTestServerAddress("http", TEST_HTTP_PORT, "test/get"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
+    @Test
+    public void testGetResourceOnWrongProtocol() {
+        assertThrows(SocketException.class, () -> {
+            HttpUrlConnectionClient.get(null,
+                    getTestServerAddress("http", TEST_HTTP_PORT, "test/get"),
+                    CONNECT_TIMEOUT,
+                    READ_TIMEOUT);
+        });
     }
 }
