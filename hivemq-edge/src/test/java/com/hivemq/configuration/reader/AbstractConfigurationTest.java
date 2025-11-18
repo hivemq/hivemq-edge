@@ -39,7 +39,7 @@ import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UsageTrackingConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.MockitoAnnotations;
@@ -68,8 +68,7 @@ public class AbstractConfigurationTest {
     InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
 
     BridgeExtractor bridgeConfiguration;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         listenerConfigurationService = new ListenerConfigurationServiceImpl();

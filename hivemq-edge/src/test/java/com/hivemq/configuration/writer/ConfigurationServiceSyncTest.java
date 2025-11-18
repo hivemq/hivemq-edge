@@ -29,7 +29,7 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.uns.config.ISA95;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;

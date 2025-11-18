@@ -15,7 +15,7 @@
  */
 package com.hivemq.util;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 import java.lang.annotation.Retention;
@@ -23,7 +23,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.Optional;
 
 import static com.hivemq.util.Reflections.getMethodAnnotationFromInterface;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReflectionsTest {
 
@@ -32,7 +34,7 @@ public class ReflectionsTest {
 
         final Optional<TestAnnotation> annotation = getMethodAnnotationFromInterface(TestClass.class.getMethod("doSomething", int.class), TestAnnotation.class);
 
-        assertEquals(true, annotation.isPresent());
+        assertTrue(annotation.isPresent());
     }
 
     @Test
@@ -40,7 +42,7 @@ public class ReflectionsTest {
 
         final Optional<TestAnnotation> annotation = getMethodAnnotationFromInterface(TestClass.class.getMethod("doSomething2", int.class), TestAnnotation.class);
 
-        assertEquals(false, annotation.isPresent());
+        assertFalse(annotation.isPresent());
     }
 
     @Test
@@ -48,7 +50,7 @@ public class ReflectionsTest {
 
         final Optional<TestAnnotation> annotation = getMethodAnnotationFromInterface(TestClass.class.getMethod("doSomething", int.class, int.class), TestAnnotation.class);
 
-        assertEquals(false, annotation.isPresent());
+        assertFalse(annotation.isPresent());
     }
 
     @Test
@@ -56,7 +58,7 @@ public class ReflectionsTest {
 
         final Optional<TestAnnotation> annotation = getMethodAnnotationFromInterface(Object.class.getMethod("equals", Object.class), TestAnnotation.class);
 
-        assertEquals(false, annotation.isPresent());
+        assertFalse(annotation.isPresent());
     }
 
 

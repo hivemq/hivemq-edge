@@ -17,13 +17,13 @@ package com.hivemq.configuration.reader;
 
 import com.google.common.io.Files;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("UnstableApiUsage")
 public class RestrictionConfiguratorTest extends AbstractConfigurationTest {

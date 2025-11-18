@@ -22,21 +22,22 @@ import com.hivemq.configuration.service.entity.MqttTlsWebsocketListener;
 import com.hivemq.configuration.service.entity.MqttWebsocketListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.fail;
 import static util.TlsTestUtil.createDefaultTLS;
 
 public class ListenerConfigurationServiceImplTest {
 
     private ListenerConfigurationServiceImpl listenerConfigurationService;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         listenerConfigurationService = new ListenerConfigurationServiceImpl();
     }
@@ -78,64 +79,67 @@ public class ListenerConfigurationServiceImplTest {
         assertSame(listenerConfigurationService.getTlsWebsocketListeners().get(0), mqttTlsWebsocketListener);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_add_invalid_listener_type() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            listenerConfigurationService.addListener(new Listener() {
+                @Override
+                public int getPort() {
+                    return 0;
+                }
 
-        listenerConfigurationService.addListener(new Listener() {
-            @Override
-            public int getPort() {
-                return 0;
-            }
+                @Override
+                public void setPort(final int port) {
 
-            @Override
-            public void setPort(final int port) {
+                }
 
-            }
+                @Override
+                public String getBindAddress() {
+                    return null;
+                }
 
-            @Override
-            public String getBindAddress() {
-                return null;
-            }
+                @Override
+                public String getReadableName() {
+                    return null;
+                }
 
-            @Override
-            public String getReadableName() {
-                return null;
-            }
+                @Override
+                public @NotNull String getName() {
+                    return "name";
+                }
 
-            @Override
-            public @NotNull String getName() {
-                return "name";
-            }
+                @Override
+                public @Nullable String getExternalHostname() {
+                    return null;
+                }
 
-            @Override
-            public @Nullable String getExternalHostname() {
-                return null;
-            }
-
+            });
         });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_add_invalid_listener_type_subclass_of_tcplistener() {
-
-        listenerConfigurationService.addListener(new MqttTcpListener(1883, "localhost") {
+        assertThrows(IllegalArgumentException.class, () -> {
+            listenerConfigurationService.addListener(new MqttTcpListener(1883, "localhost") {
+            });
         });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_add_invalid_listener_type_subclass_of_tlstcplistener() {
-
-        listenerConfigurationService.addListener(new MqttTlsTcpListener(1883, "localhost", createDefaultTLS()) {
+        assertThrows(IllegalArgumentException.class, () -> {
+            listenerConfigurationService.addListener(new MqttTlsTcpListener(1883, "localhost", createDefaultTLS()) {
+            });
         });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_add_invalid_listener_type_subclass_of_websocketlistener() {
-
-        final MqttWebsocketListener subclass = new MqttWebsocketListener(123, null, null, false, null, null, null) {
-        };
-
-        listenerConfigurationService.addListener(subclass);
+        assertThrows(IllegalArgumentException.class, () -> {
+            final MqttWebsocketListener subclass = new MqttWebsocketListener(123, null, null, false, null, null, null) {
+            };
+            listenerConfigurationService.addListener(subclass);
+        });
     }
 
     @Test

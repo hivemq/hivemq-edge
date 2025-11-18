@@ -16,10 +16,10 @@
 package com.hivemq.util;
 
 import com.hivemq.configuration.HivemqId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Florian Limpöck
@@ -37,7 +37,7 @@ public class ClientIdsTest {
 
             assertFalse(Utf8Utils.containsMustNotCharacters(next));
             assertFalse(Utf8Utils.hasControlOrNonCharacter(next));
-            assertEquals(true, next.length() >= 44);
+            assertTrue(next.length() >= 44);
 
         }
 

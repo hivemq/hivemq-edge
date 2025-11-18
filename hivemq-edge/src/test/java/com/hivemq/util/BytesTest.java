@@ -20,11 +20,12 @@ import com.google.common.primitives.Longs;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.commons.lang3.RandomUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class BytesTest {
 
@@ -83,10 +84,9 @@ public class BytesTest {
         assertEquals(0, prefixedBytes.length);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_get_prefixed_bytes_null_passed() throws Exception {
-
-        Bytes.getPrefixedBytes(null);
+        assertThrows(NullPointerException.class, () -> Bytes.getPrefixedBytes(null));
     }
 
     @Test
@@ -111,26 +111,24 @@ public class BytesTest {
         assertEquals(false, byteBuf.isReadable());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_prefixed_bytes_null_passed() throws Exception {
-
-        Bytes.prefixBytes(null, Unpooled.buffer());
+        assertThrows(NullPointerException.class, () -> Bytes.prefixBytes(null, Unpooled.buffer()));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_prefixed_bytes_null_buffer() throws Exception {
-
-        Bytes.prefixBytes(new byte[]{1, 2, 3}, null);
+        assertThrows(NullPointerException.class, () -> Bytes.prefixBytes(new byte[]{1, 2, 3}, null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_is_bit_setinvalid_argument_too_high() throws Exception {
-        Bytes.isBitSet((byte) 0, 8);
+        assertThrows(IllegalArgumentException.class, () -> Bytes.isBitSet((byte) 0, 8));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_is_bit_setinvalid_argument_too_small() throws Exception {
-        Bytes.isBitSet((byte) 0, -1);
+        assertThrows(IllegalArgumentException.class, () -> Bytes.isBitSet((byte) 0, -1));
     }
 
     @Test
@@ -293,9 +291,9 @@ public class BytesTest {
         assertEquals(10, Bytes.readLong(Longs.toByteArray(10L), 0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_read_long_buffer_overflow() throws Exception {
-        Bytes.readLong(new byte[10], 3);
+        assertThrows(IllegalArgumentException.class, () -> Bytes.readLong(new byte[10], 3));
     }
 
     @Test
@@ -303,9 +301,9 @@ public class BytesTest {
         assertEquals(10, Bytes.readInt(Ints.toByteArray(10), 0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_read_int_buffer_overflow() throws Exception {
-        Bytes.readLong(new byte[6], 3);
+        assertThrows(IllegalArgumentException.class, () -> Bytes.readLong(new byte[6], 3));
     }
 
     @Test
@@ -331,21 +329,21 @@ public class BytesTest {
         assertEquals(Integer.MIN_VALUE, Bytes.readInt(withOffset, 3));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_copy_int_to_array_to_short() {
         final byte[] bytes = new byte[7];
-        Bytes.copyIntToByteArray(Integer.MAX_VALUE, bytes, 4);
+        assertThrows(IllegalArgumentException.class, () -> Bytes.copyIntToByteArray(Integer.MAX_VALUE, bytes, 4));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_copy_int_to_array_offset_negative() {
         final byte[] bytes = new byte[10];
-        Bytes.copyIntToByteArray(Integer.MAX_VALUE, bytes, -1);
+        assertThrows(IllegalArgumentException.class, () -> Bytes.copyIntToByteArray(Integer.MAX_VALUE, bytes, -1));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_copy_int_to_array_null() {
-        Bytes.copyIntToByteArray(Integer.MAX_VALUE, null, 0);
+        assertThrows(NullPointerException.class, () -> Bytes.copyIntToByteArray(Integer.MAX_VALUE, null, 0));
     }
 
     @Test
@@ -372,21 +370,21 @@ public class BytesTest {
         assertEquals(Long.MIN_VALUE, Bytes.readLong(withOffset, 3));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_copy_long_to_array_to_short() {
         final byte[] bytes = new byte[11];
-        Bytes.copyLongToByteArray(Long.MAX_VALUE, bytes, 4);
+        assertThrows(IllegalArgumentException.class, () -> Bytes.copyLongToByteArray(Long.MAX_VALUE, bytes, 4));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_copy_long_to_array_offset_negative() {
         final byte[] bytes = new byte[10];
-        Bytes.copyLongToByteArray(Long.MAX_VALUE, bytes, -1);
+        assertThrows(IllegalArgumentException.class, () -> Bytes.copyLongToByteArray(Long.MAX_VALUE, bytes, -1));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_copy_long_to_array_null() {
-        Bytes.copyLongToByteArray(Long.MAX_VALUE, null, 0);
+        assertThrows(NullPointerException.class, () -> Bytes.copyLongToByteArray(Long.MAX_VALUE, null, 0));
     }
 
     @Test
@@ -412,20 +410,20 @@ public class BytesTest {
         assertEquals(65535, Bytes.readUnsignedShort(withOffset, 5));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_copy_short_less_than_zero() {
         final byte[] bytes = new byte[2];
-        Bytes.copyUnsignedShortToByteArray(-1, bytes, 0);
+        assertThrows(IllegalArgumentException.class, () -> Bytes.copyUnsignedShortToByteArray(-1, bytes, 0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_copy_short_more_than_max() {
         final byte[] bytes = new byte[2];
-        Bytes.copyUnsignedShortToByteArray(65535 + 1, bytes, 0);
+        assertThrows(IllegalArgumentException.class, () -> Bytes.copyUnsignedShortToByteArray(65535 + 1, bytes, 0));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_copy_short_null() {
-        Bytes.copyUnsignedShortToByteArray(65535, null, 0);
+        assertThrows(NullPointerException.class, () -> Bytes.copyUnsignedShortToByteArray(65535, null, 0));
     }
 }
