@@ -22,15 +22,15 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.netty.handler.timeout.IdleStateEvent.FIRST_READER_IDLE_STATE_EVENT;
 import static io.netty.handler.timeout.IdleStateEvent.FIRST_WRITER_IDLE_STATE_EVENT;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -44,8 +44,7 @@ public class NoTlsHandshakeIdleHandlerTest {
     private NoTlsHandshakeIdleHandler handler;
     private EmbeddedChannel channel;
     private AtomicBoolean userEventTriggered;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         mqttServerDisconnector = mock(MqttServerDisconnector.class);
         handler = new NoTlsHandshakeIdleHandler(mqttServerDisconnector);

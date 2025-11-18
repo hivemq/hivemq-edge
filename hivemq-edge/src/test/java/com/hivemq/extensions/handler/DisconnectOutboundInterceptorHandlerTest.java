@@ -42,9 +42,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
@@ -52,7 +53,7 @@ import util.TestConfigurationBootstrap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -70,8 +71,7 @@ public class DisconnectOutboundInterceptorHandlerTest {
     private @NotNull EmbeddedChannel channel;
     private @NotNull DisconnectInterceptorHandler handler;
     private @NotNull ClientConnection clientConnection;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         executor = new PluginTaskExecutor(new AtomicLong());
         executor.postConstruct();
@@ -106,7 +106,8 @@ public class DisconnectOutboundInterceptorHandlerTest {
         });
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_client_id_not_set() {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId(null);
         channel.writeOutbound(testDisconnect());
@@ -114,7 +115,8 @@ public class DisconnectOutboundInterceptorHandlerTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_channel_inactive() {
         channel.close();
 
@@ -123,7 +125,8 @@ public class DisconnectOutboundInterceptorHandlerTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_no_interceptors() {
         when(clientContext.getDisconnectOutboundInterceptors()).thenReturn(ImmutableList.of());
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
@@ -141,7 +144,8 @@ public class DisconnectOutboundInterceptorHandlerTest {
         assertEquals(disconnect.getReasonCode(), readDisconnect.getReasonCode());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_plugin_null() throws Exception {
         final DisconnectOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),
@@ -163,7 +167,8 @@ public class DisconnectOutboundInterceptorHandlerTest {
         assertEquals("reason", disconnect.getReasonString());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_modified() throws Exception {
         final DisconnectOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),
@@ -187,7 +192,8 @@ public class DisconnectOutboundInterceptorHandlerTest {
         assertEquals("modified", disconnect.getReasonString());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_exception() throws Exception {
         final DisconnectOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),

@@ -28,15 +28,15 @@ import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestConfigurationBootstrap;
 import util.TestMqttDecoder;
 import util.encoder.TestMessageEncoder;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 /**
@@ -49,8 +49,7 @@ public class Mqtt5DisconnectDecoderTest extends AbstractMqtt5DecoderTest {
 
     @Mock
     private @NotNull SecurityConfigurationService securityConfigurationService;
-
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
         when(securityConfigurationService.allowRequestProblemInformation()).thenReturn(true);

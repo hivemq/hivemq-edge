@@ -32,12 +32,12 @@ import com.hivemq.persistence.connection.ConnectionPersistence;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
@@ -59,8 +59,7 @@ public class DisconnectHandlerTest {
 
     MetricsHolder metricsHolder;
     private ClientConnection clientConnection;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
@@ -96,7 +95,7 @@ public class DisconnectHandlerTest {
 
         channel.writeInbound(new DISCONNECT(Mqtt5DisconnectReasonCode.SERVER_SHUTTING_DOWN, null, Mqtt5UserProperties.NO_USER_PROPERTIES, null, 2000L));
 
-        assertEquals(true, clientConnection.isSendWill());
+        assertTrue(clientConnection.isSendWill());
 
         //verify that the client was disconnected
         assertFalse(channel.isOpen());
@@ -108,7 +107,7 @@ public class DisconnectHandlerTest {
 
         channel.writeInbound(new DISCONNECT(Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION, null, Mqtt5UserProperties.NO_USER_PROPERTIES, null, 2000L));
 
-        assertEquals(false, clientConnection.isSendWill());
+        assertFalse(clientConnection.isSendWill());
 
         //verify that the client was disconnected
         assertFalse(channel.isOpen());

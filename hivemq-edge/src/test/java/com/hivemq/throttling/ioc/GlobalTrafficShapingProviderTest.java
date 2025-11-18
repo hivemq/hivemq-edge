@@ -20,17 +20,17 @@ import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.throttling.GlobalTrafficShaperExecutorShutdownHook;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
 public class GlobalTrafficShapingProviderTest {
@@ -41,16 +41,14 @@ public class GlobalTrafficShapingProviderTest {
     private RestrictionsConfigurationService configurationService;
 
     private ShutdownHooks shutdownHooks;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         closeableMock = MockitoAnnotations.openMocks(this);
         when(configurationService.incomingLimit()).thenReturn(20L);
 
         shutdownHooks = new ShutdownHooks();
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         for (final HiveMQShutdownHook hook : shutdownHooks.getShutdownHooks().values()) {
             hook.run();

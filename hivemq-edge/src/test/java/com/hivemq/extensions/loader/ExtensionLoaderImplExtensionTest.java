@@ -38,9 +38,14 @@ import org.apache.commons.io.FileUtils;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -54,11 +59,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyBoolean;
@@ -110,8 +115,7 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
     private @NotNull ExtensionLoaderImpl extensionLoader;
     private @NotNull ExtensionLoaderImpl realExtensionLoader;
     private @NotNull HiveMQExtensions hiveMQExtensions;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         hiveMQExtensions = new HiveMQExtensions(serverInformation);
         extensionLoader = new ExtensionLoaderImpl(classServiceLoader,
@@ -201,40 +205,46 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
         assertEquals(TestExtensionMainImpl.class, extensionClass);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_load_from_urls_list_of_urls_null() {
-        extensionLoader.loadFromUrls(null, "test-extension");
+
+        assertThatThrownBy(() -> extensionLoader.loadFromUrls(null, "test-extension"))
+                .isInstanceOf(NullPointerException.class);
     }
 
     /**************************
      * loadExtensions(...) Tests *
      **************************/
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_load_extensions_folder_null() {
-        extensionLoader.loadExtensions(null, false);
+        assertThatThrownBy(() -> extensionLoader.loadExtensions(null, false))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_load_extensions_folder_does_not_exist() throws Exception {
         final File extensionFolder = temporaryFolder.newFolder();
         assertTrue(extensionFolder.delete());
-        extensionLoader.loadExtensions(extensionFolder.toPath(), false);
+        assertThatThrownBy(() -> extensionLoader.loadExtensions(extensionFolder.toPath(), false))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_load_extensions_folder_not_readable() throws Exception {
         final File extensionFolder = temporaryFolder.newFolder();
         assertTrue(extensionFolder.setReadable(false));
-        extensionLoader.loadExtensions(extensionFolder.toPath(), false);
+        assertThatThrownBy(() -> extensionLoader.loadExtensions(extensionFolder.toPath(), false))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_load_extensions_folder_is_not_a_folder() throws Exception {
         final File extensionFolder = temporaryFolder.newFile();
-        extensionLoader.loadExtensions(extensionFolder.toPath(), false);
+        assertThatThrownBy(() -> extensionLoader.loadExtensions(extensionFolder.toPath(), false))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -654,7 +664,8 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
      * loadSingleExtension(...) Tests *
      *******************************/
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_load_single_extension_load_and_instantiate_enabled() throws Throwable {
         final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
         FileUtils.writeStringToFile(extensionFolder.toPath().resolve("hivemq-extension.xml").toFile(),
@@ -676,7 +687,8 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
         assertTrue(hiveMQExtension.isEnabled());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_load_single_extension_load_and_instantiate_no_noarg_constructor() throws Throwable {
         final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
         FileUtils.writeStringToFile(extensionFolder.toPath().resolve("hivemq-extension.xml").toFile(),
@@ -696,7 +708,8 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
         assertNull(hiveMQExtension);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_load_single_extension_when_load_constructor_throws_exception_then_extension_is_not_loaded()
             throws Exception {
         final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
@@ -717,7 +730,8 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
         assertNull(hiveMQExtension);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_load_single_extension_when_load_constructor_throws_error_then_extension_is_not_loaded()
             throws Exception {
         final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
@@ -739,7 +753,8 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
         assertNull(hiveMQExtension);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_load_single_extension_when_init_class_throws_error_then_extension_is_not_loaded()
             throws Exception {
         final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");

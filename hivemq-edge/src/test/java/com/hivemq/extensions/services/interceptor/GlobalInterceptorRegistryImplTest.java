@@ -19,8 +19,11 @@ package com.hivemq.extensions.services.interceptor;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.connack.ConnackOutboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.interceptor.connect.ConnectInboundInterceptorProvider;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -34,22 +37,23 @@ public class GlobalInterceptorRegistryImplTest {
     private final @NotNull Interceptors interceptors = mock(Interceptors.class);
 
     private @NotNull GlobalInterceptorRegistryImpl globalInterceptorRegistry;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         globalInterceptorRegistry = new GlobalInterceptorRegistryImpl(interceptors);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_add_null_connect_inbound() {
-        globalInterceptorRegistry.setConnectInboundInterceptorProvider(null);
+        assertThatThrownBy(() -> globalInterceptorRegistry.setConnectInboundInterceptorProvider(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_add_null_connack_outbound() {
-        globalInterceptorRegistry.setConnackOutboundInterceptorProvider(null);
+        assertThatThrownBy(() -> globalInterceptorRegistry.setConnackOutboundInterceptorProvider(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test

@@ -20,9 +20,10 @@ import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtensionEvent;
 import com.hivemq.extensions.HiveMQExtensions;
-import org.junit.After;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.ArgumentCaptor;
 
@@ -30,7 +31,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -43,13 +44,13 @@ public class ExtensionLifecycleHandlerImplTest {
     private final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final @NotNull ExtensionLifecycleHandlerImpl extensionLifecycleHandler =
             new ExtensionLifecycleHandlerImpl(hiveMQExtensions, executorService);
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         executorService.shutdown();
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_handleExtensionEvents_enable() throws Exception {
         final ImmutableList<HiveMQExtensionEvent> events = ImmutableList.of(new HiveMQExtensionEvent(
                 HiveMQExtensionEvent.Change.ENABLE,
@@ -62,7 +63,8 @@ public class ExtensionLifecycleHandlerImplTest {
         verify(hiveMQExtensions).extensionStart(eq("test-extension"));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void handleExtensionEvents_inStartPriority() throws Exception {
         final ImmutableList<HiveMQExtensionEvent> events = ImmutableList.of(new HiveMQExtensionEvent(
                 HiveMQExtensionEvent.Change.ENABLE,
@@ -95,7 +97,8 @@ public class ExtensionLifecycleHandlerImplTest {
         assertEquals("test-extension-1", allValues.get(3));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void handleExtensionEvents_inStartPriority_exception() throws Exception {
         when(hiveMQExtensions.extensionStart(eq("test-extension-100"))).thenThrow(new RuntimeException());
 
@@ -130,7 +133,8 @@ public class ExtensionLifecycleHandlerImplTest {
         assertEquals("test-extension-1", allValues.get(3));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_handleExtensionEvents_disable() throws Exception {
         final ImmutableList<HiveMQExtensionEvent> events = ImmutableList.of(new HiveMQExtensionEvent(
                 HiveMQExtensionEvent.Change.DISABLE,

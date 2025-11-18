@@ -20,9 +20,10 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.entity.Listener;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 import util.RandomPortGenerator;
 
@@ -50,8 +51,7 @@ public class EmbeddedHiveMQImplHttpTest {
     private @NotNull File conf;
     private int randomPort;
     private int randomApiPort;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         data = tmp.newFolder("data");
         license = tmp.newFolder("license");
@@ -85,7 +85,8 @@ public class EmbeddedHiveMQImplHttpTest {
         FileUtils.write(new File(conf, "config.xml"), configXmlString, StandardCharsets.UTF_8);
     }
 
-    @Test(timeout = 20000L)
+    @Test
+    @Timeout(20)
     public void embeddedHiveMQ_whenAdminApiEnabled_readsConfig() throws Exception {
         try (final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license)) {
             embeddedHiveMQ.start().join();

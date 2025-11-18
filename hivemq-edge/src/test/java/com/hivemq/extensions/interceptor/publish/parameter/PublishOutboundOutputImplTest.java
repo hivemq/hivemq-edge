@@ -18,9 +18,12 @@ package com.hivemq.extensions.interceptor.publish.parameter;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.packets.publish.ModifiableOutboundPublishImpl;
 import com.hivemq.extensions.packets.publish.PublishPacketImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertSame;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -58,7 +61,7 @@ public class PublishOutboundOutputImplTest {
         assertSame(newModifiablePacket, updated.getPublishPacket());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void test_prevent_twice() {
         final PluginOutPutAsyncer asyncer = mock(PluginOutPutAsyncer.class);
         final ModifiableOutboundPublishImpl modifiablePacket = mock(ModifiableOutboundPublishImpl.class);
@@ -66,6 +69,7 @@ public class PublishOutboundOutputImplTest {
         final PublishOutboundOutputImpl output = new PublishOutboundOutputImpl(asyncer, modifiablePacket);
 
         output.preventPublishDelivery();
-        output.preventPublishDelivery();
+        assertThatThrownBy(() -> output.preventPublishDelivery())
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 }

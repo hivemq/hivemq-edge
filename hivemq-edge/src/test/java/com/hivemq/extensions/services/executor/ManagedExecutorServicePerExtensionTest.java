@@ -18,18 +18,27 @@ package com.hivemq.extensions.services.executor;
 
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.CompletableScheduledFuture;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -37,7 +46,12 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -53,8 +67,7 @@ public class ManagedExecutorServicePerExtensionTest {
 
     private @NotNull ManagedExecutorServicePerExtension managedExecutorServicePerExtension;
     private @NotNull GlobalManagedExtensionExecutorService globalManagedPluginExecutorService;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         InternalConfigurations.MANAGED_EXTENSION_THREAD_POOL_KEEP_ALIVE_SEC.set(60);
         InternalConfigurations.MANAGED_EXTENSION_THREAD_POOL_THREADS_COUNT.set(4);
@@ -68,22 +81,23 @@ public class ManagedExecutorServicePerExtensionTest {
                 classLoader,
                 hiveMQExtensions);
     }
-
-    @After
+    @AfterEach
     public void tearDown() {
         new ManagedPluginExecutorShutdownHook(globalManagedPluginExecutorService, 10).run();
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     @SuppressWarnings("deprecation")
     public void test_shutdown_unsupported() {
-        managedExecutorServicePerExtension.shutdown();
+        assertThatThrownBy(() -> managedExecutorServicePerExtension.shutdown())
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     @SuppressWarnings("deprecation")
     public void test_shutdownNow_unsupported() {
-        managedExecutorServicePerExtension.shutdownNow();
+        assertThatThrownBy(() -> managedExecutorServicePerExtension.shutdownNow())
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
@@ -153,7 +167,8 @@ public class ManagedExecutorServicePerExtensionTest {
         assertTrue(schedule.isDone());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_schedule_callable() throws Exception {
         final CountDownLatch runLatch = new CountDownLatch(1);
         final CountDownLatch futureLatch = new CountDownLatch(1);
@@ -175,7 +190,8 @@ public class ManagedExecutorServicePerExtensionTest {
         assertTrue(futureLatch.await(10, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_schedule_callable_cancelled() throws Exception {
         final CountDownLatch runLatch = new CountDownLatch(1);
         final CountDownLatch exceptionLatch = new CountDownLatch(1);
@@ -198,7 +214,8 @@ public class ManagedExecutorServicePerExtensionTest {
         assertTrue(exceptionLatch.await(2, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_schedule_callable_plugin_stopped() throws Exception {
         final CountDownLatch runLatch = new CountDownLatch(1);
 
@@ -230,7 +247,7 @@ public class ManagedExecutorServicePerExtensionTest {
         assertTrue(runLatch.await(10, TimeUnit.SECONDS));
 
         final long delay = scheduledFuture.getDelay(TimeUnit.MILLISECONDS);
-        assertTrue("bad delay: " + delay, delay <= 10);
+        assertTrue(delay <= 10);
 
         // does not complete normally
         scheduledFuture.whenComplete((object, throwable) -> completeLatch.countDown());
@@ -262,7 +279,7 @@ public class ManagedExecutorServicePerExtensionTest {
         assertTrue(runLatch.await(10, TimeUnit.SECONDS));
 
         final long delay = scheduledFuture.getDelay(TimeUnit.MILLISECONDS);
-        assertTrue("bad delay: " + delay, delay <= 100);
+        assertTrue(delay <= 100);
 
         // does not complete normally
         scheduledFuture.whenComplete((object, throwable) -> completeLatch.countDown());
@@ -296,7 +313,7 @@ public class ManagedExecutorServicePerExtensionTest {
         assertTrue(runLatch.await(10, TimeUnit.SECONDS));
 
         final long delay = scheduledFuture.getDelay(TimeUnit.MILLISECONDS);
-        assertTrue("bad delay: " + delay, delay <= 10);
+        assertTrue(delay <= 10);
 
 
         // does not complete normally
@@ -335,7 +352,7 @@ public class ManagedExecutorServicePerExtensionTest {
         assertTrue(runLatch.await(10, TimeUnit.SECONDS));
 
         final long delay = scheduledFuture.getDelay(TimeUnit.MILLISECONDS);
-        assertTrue("bad delay: " + delay, delay <= 10);
+        assertTrue(delay <= 10);
 
         // does complete exceptionally
         scheduledFuture.whenComplete((object, throwable) -> {
@@ -404,7 +421,7 @@ public class ManagedExecutorServicePerExtensionTest {
         assertTrue(submit.isCompletedExceptionally());
 
         assertEquals("something is missing", throwableAtomicReference.get().getMessage());
-        assertTrue(throwableAtomicReference.get() instanceof NullPointerException);
+        assertInstanceOf(NullPointerException.class, throwableAtomicReference.get());
     }
 
     @Test
@@ -442,7 +459,7 @@ public class ManagedExecutorServicePerExtensionTest {
         assertTrue(submit.isCompletedExceptionally());
 
         assertEquals("something is missing", throwableAtomicReference.get().getMessage());
-        assertTrue(throwableAtomicReference.get() instanceof NullPointerException);
+        assertInstanceOf(NullPointerException.class, throwableAtomicReference.get());
     }
 
     @Test
@@ -570,8 +587,8 @@ public class ManagedExecutorServicePerExtensionTest {
         waitLatch.countDown();
     }
 
-    @Test(expected = TimeoutException.class)
-    public void test_invokeAny_callable_timeouts() throws Exception {
+    @Test
+    public void test_invokeAny_callable_timeouts() {
         final CountDownLatch calledLatch = new CountDownLatch(1);
 
         final List<Callable<String>> callableList = Stream.generate((Supplier<Callable<String>>) () -> () -> {
@@ -581,7 +598,8 @@ public class ManagedExecutorServicePerExtensionTest {
             return "test";
         }).limit(5).collect(Collectors.toList());
 
-        managedExecutorServicePerExtension.invokeAny(callableList, 100, TimeUnit.MILLISECONDS);
+        assertThatThrownBy(() -> managedExecutorServicePerExtension.invokeAny(callableList, 100, TimeUnit.MILLISECONDS))
+                .isInstanceOf(TimeoutException.class);
     }
 
     @Test

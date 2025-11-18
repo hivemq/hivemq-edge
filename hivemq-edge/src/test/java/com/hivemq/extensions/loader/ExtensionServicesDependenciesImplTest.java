@@ -33,19 +33,19 @@ import com.hivemq.extension.sdk.api.services.session.ClientService;
 import com.hivemq.extension.sdk.api.services.subscription.SubscriptionStore;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.services.executor.GlobalManagedExtensionExecutorService;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import util.IsolatedExtensionClassloaderUtil;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 public class ExtensionServicesDependenciesImplTest {
 
     private @NotNull ExtensionServicesDependenciesImpl extensionServicesDependencies;
-
-    @Before
+    @BeforeEach
     public void before() {
         extensionServicesDependencies = new ExtensionServicesDependenciesImpl(new MetricRegistry(),
                 mock(InitializerRegistry.class),
@@ -85,7 +85,8 @@ public class ExtensionServicesDependenciesImplTest {
         assertTrue(o instanceof InitializerRegistry);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_map_contains_security_registry() {
         final ImmutableMap<String, Object> dependenciesMap =
                 extensionServicesDependencies.getDependenciesMap(IsolatedExtensionClassloaderUtil.buildClassLoader());

@@ -24,14 +24,14 @@ import com.hivemq.extension.sdk.api.interceptor.subscribe.SubscribeInboundInterc
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 import com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl;
-import org.junit.Rule;
-import org.junit.Test;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import util.TestInterceptorUtil;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 /**

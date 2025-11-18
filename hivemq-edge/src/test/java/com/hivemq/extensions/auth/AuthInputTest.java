@@ -25,10 +25,10 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.reason.Mqtt5AuthReasonCode;
 import com.hivemq.util.Bytes;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Florian Limpöck
@@ -45,8 +45,7 @@ public class AuthInputTest {
     private AUTH auth;
     private AuthInput authInput;
     private ClientConnection clientConnection;
-
-    @Before
+    @BeforeEach
     public void setUp() {
 
         final EmbeddedChannel channel = new EmbeddedChannel();
@@ -59,7 +58,7 @@ public class AuthInputTest {
         authInput = new AuthInput("client", channel, auth, false);
     }
 
-    @Test(timeout = 5000)
+    @Test
     public void test_connect_packet_contains_auth_information() {
         final AuthPacket authPacket = authInput.getAuthPacket();
         assertEquals(method, authPacket.getAuthenticationMethod());

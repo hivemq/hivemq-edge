@@ -25,14 +25,17 @@ import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.extensions.packets.publish.ModifiableWillPublishImpl;
 import com.hivemq.extensions.packets.publish.WillPublishPacketImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Lukas Brandl
@@ -41,8 +44,7 @@ import static org.junit.Assert.*;
 public class ModifiableConnectPacketImplTest {
 
     private @NotNull ConfigurationService configurationService;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
     }
@@ -107,7 +109,7 @@ public class ModifiableConnectPacketImplTest {
         assertEquals("clientId", modifiablePacket.getClientId());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setClientId_null() {
         final ConnectPacketImpl packet = new ConnectPacketImpl(
                 MqttVersion.V_5,
@@ -129,10 +131,11 @@ public class ModifiableConnectPacketImplTest {
         final ModifiableConnectPacketImpl modifiablePacket =
                 new ModifiableConnectPacketImpl(packet, configurationService);
 
-        modifiablePacket.setClientId(null);
+        assertThatThrownBy(() -> modifiablePacket.setClientId(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setClientId_empty() {
         final ConnectPacketImpl packet = new ConnectPacketImpl(
                 MqttVersion.V_5,
@@ -154,10 +157,11 @@ public class ModifiableConnectPacketImplTest {
         final ModifiableConnectPacketImpl modifiablePacket =
                 new ModifiableConnectPacketImpl(packet, configurationService);
 
-        modifiablePacket.setClientId("");
+        assertThatThrownBy(() -> modifiablePacket.setClientId(""))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setClientId_invalid() {
         final ConnectPacketImpl packet = new ConnectPacketImpl(
                 MqttVersion.V_5,
@@ -179,10 +183,11 @@ public class ModifiableConnectPacketImplTest {
         final ModifiableConnectPacketImpl modifiablePacket =
                 new ModifiableConnectPacketImpl(packet, configurationService);
 
-        modifiablePacket.setClientId("\0");
+        assertThatThrownBy(() -> modifiablePacket.setClientId("\0"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setClientId_tooLong() {
         final ConnectPacketImpl packet = new ConnectPacketImpl(
                 MqttVersion.V_5,
@@ -205,7 +210,8 @@ public class ModifiableConnectPacketImplTest {
                 new ModifiableConnectPacketImpl(packet, configurationService);
 
         configurationService.restrictionsConfiguration().setMaxClientIdLength(10);
-        modifiablePacket.setClientId("0123456789_0123456789");
+        assertThatThrownBy(() -> modifiablePacket.setClientId("0123456789_0123456789"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -235,7 +241,7 @@ public class ModifiableConnectPacketImplTest {
         modifiablePacket.setCleanStart(true);
 
         assertTrue(modifiablePacket.isModified());
-        assertEquals(true, modifiablePacket.getCleanStart());
+        assertTrue(modifiablePacket.getCleanStart());
     }
 
     @Test
@@ -265,7 +271,7 @@ public class ModifiableConnectPacketImplTest {
         modifiablePacket.setCleanStart(false);
 
         assertFalse(modifiablePacket.isModified());
-        assertEquals(false, modifiablePacket.getCleanStart());
+        assertFalse(modifiablePacket.getCleanStart());
     }
 
     @Test
@@ -328,7 +334,7 @@ public class ModifiableConnectPacketImplTest {
         assertEquals(100, modifiablePacket.getSessionExpiryInterval());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setSessionExpiryInterval_largerThanMax() {
         final ConnectPacketImpl packet = new ConnectPacketImpl(
                 MqttVersion.V_5,
@@ -351,7 +357,8 @@ public class ModifiableConnectPacketImplTest {
                 new ModifiableConnectPacketImpl(packet, configurationService);
 
         configurationService.mqttConfiguration().setMaxSessionExpiryInterval(60);
-        modifiablePacket.setSessionExpiryInterval(61);
+        assertThatThrownBy(() -> modifiablePacket.setSessionExpiryInterval(61))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -414,7 +421,7 @@ public class ModifiableConnectPacketImplTest {
         assertEquals(60, modifiablePacket.getKeepAlive());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setKeepAlive_largerThanMax() {
         final ConnectPacketImpl packet = new ConnectPacketImpl(
                 MqttVersion.V_5,
@@ -437,7 +444,8 @@ public class ModifiableConnectPacketImplTest {
                 new ModifiableConnectPacketImpl(packet, configurationService);
 
         configurationService.mqttConfiguration().setKeepAliveMax(60);
-        modifiablePacket.setKeepAlive(61);
+        assertThatThrownBy(() -> modifiablePacket.setKeepAlive(61))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -560,7 +568,7 @@ public class ModifiableConnectPacketImplTest {
         assertEquals(1000, modifiablePacket.getMaximumPacketSize());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setMaximumPacketSize_largerThanMax() {
         final ConnectPacketImpl packet = new ConnectPacketImpl(
                 MqttVersion.V_5,
@@ -583,7 +591,8 @@ public class ModifiableConnectPacketImplTest {
                 new ModifiableConnectPacketImpl(packet, configurationService);
 
         configurationService.mqttConfiguration().setMaxPacketSize(60);
-        modifiablePacket.setMaximumPacketSize(61);
+        assertThatThrownBy(() -> modifiablePacket.setMaximumPacketSize(61))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -673,7 +682,7 @@ public class ModifiableConnectPacketImplTest {
         modifiablePacket.setRequestProblemInformation(false);
 
         assertTrue(modifiablePacket.isModified());
-        assertEquals(false, modifiablePacket.getRequestProblemInformation());
+        assertFalse(modifiablePacket.getRequestProblemInformation());
     }
 
     @Test
@@ -703,7 +712,7 @@ public class ModifiableConnectPacketImplTest {
         modifiablePacket.setRequestProblemInformation(true);
 
         assertFalse(modifiablePacket.isModified());
-        assertEquals(true, modifiablePacket.getRequestProblemInformation());
+        assertTrue(modifiablePacket.getRequestProblemInformation());
     }
 
     @Test
@@ -733,7 +742,7 @@ public class ModifiableConnectPacketImplTest {
         modifiablePacket.setRequestResponseInformation(false);
 
         assertTrue(modifiablePacket.isModified());
-        assertEquals(false, modifiablePacket.getRequestResponseInformation());
+        assertFalse(modifiablePacket.getRequestResponseInformation());
     }
 
     @Test
@@ -763,7 +772,7 @@ public class ModifiableConnectPacketImplTest {
         modifiablePacket.setRequestResponseInformation(true);
 
         assertFalse(modifiablePacket.isModified());
-        assertEquals(true, modifiablePacket.getRequestResponseInformation());
+        assertTrue(modifiablePacket.getRequestResponseInformation());
     }
 
     @Test
@@ -1036,7 +1045,7 @@ public class ModifiableConnectPacketImplTest {
         assertEquals(Optional.empty(), modifiablePacket.getAuthenticationMethod());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setAuthenticationMethod_invalid() {
         final ConnectPacketImpl packet = new ConnectPacketImpl(
                 MqttVersion.V_5,
@@ -1058,7 +1067,8 @@ public class ModifiableConnectPacketImplTest {
         final ModifiableConnectPacketImpl modifiablePacket =
                 new ModifiableConnectPacketImpl(packet, configurationService);
 
-        modifiablePacket.setAuthenticationMethod("\0");
+        assertThatThrownBy(() -> modifiablePacket.setAuthenticationMethod("\0"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

@@ -21,13 +21,16 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
 
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Yannick Weber
@@ -36,8 +39,7 @@ import static org.junit.Assert.*;
 public class ModifiablePubrecPacketImplTest {
 
     private @NotNull ConfigurationService configurationService;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
     }
@@ -102,14 +104,15 @@ public class ModifiablePubrecPacketImplTest {
         assertEquals(AckReasonCode.NO_MATCHING_SUBSCRIBERS, modifiablePacket.getReasonCode());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setReasonCode_null() {
         final PubrecPacketImpl packet = new PubrecPacketImpl(
                 1, AckReasonCode.SUCCESS, null, UserPropertiesImpl.of(ImmutableList.of()));
         final ModifiablePubrecPacketImpl modifiablePacket =
                 new ModifiablePubrecPacketImpl(packet, configurationService);
 
-        modifiablePacket.setReasonCode(null);
+        assertThatThrownBy(() -> modifiablePacket.setReasonCode(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -157,7 +160,7 @@ public class ModifiablePubrecPacketImplTest {
         assertEquals(AckReasonCode.UNSPECIFIED_ERROR, modifiablePacket.getReasonCode());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void setReasonCode_switchToError() {
         final PubrecPacketImpl packet = new PubrecPacketImpl(
                 1, AckReasonCode.SUCCESS, null, UserPropertiesImpl.of(ImmutableList.of()));
@@ -166,17 +169,19 @@ public class ModifiablePubrecPacketImplTest {
 
         assertFalse(modifiablePacket.isModified());
 
-        modifiablePacket.setReasonCode(AckReasonCode.UNSPECIFIED_ERROR);
+        assertThatThrownBy(() -> modifiablePacket.setReasonCode(AckReasonCode.UNSPECIFIED_ERROR))
+                .isInstanceOf(IllegalStateException.class);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void setReasonCode_switchFromError() {
         final PubrecPacketImpl packet = new PubrecPacketImpl(
                 1, AckReasonCode.UNSPECIFIED_ERROR, null, UserPropertiesImpl.of(ImmutableList.of()));
         final ModifiablePubrecPacketImpl modifiablePacket =
                 new ModifiablePubrecPacketImpl(packet, configurationService);
 
-        modifiablePacket.setReasonCode(AckReasonCode.SUCCESS);
+        assertThatThrownBy(() -> modifiablePacket.setReasonCode(AckReasonCode.SUCCESS))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test

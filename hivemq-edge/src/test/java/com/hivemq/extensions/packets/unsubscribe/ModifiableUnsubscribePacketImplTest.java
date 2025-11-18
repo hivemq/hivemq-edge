@@ -20,13 +20,16 @@ import com.hivemq.configuration.service.ConfigurationService;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Robin Atherton
@@ -35,8 +38,7 @@ import static org.junit.Assert.*;
 public class ModifiableUnsubscribePacketImplTest {
 
     private @NotNull ConfigurationService configurationService;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
     }
@@ -58,7 +60,7 @@ public class ModifiableUnsubscribePacketImplTest {
         assertEquals(ImmutableList.of("test1", "test2"), modifiablePacket.getTopicFilters());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setTopicFilters_tooMany() {
         final UnsubscribePacketImpl packet = new UnsubscribePacketImpl(
                 ImmutableList.of("topic1", "topic2"),
@@ -67,10 +69,11 @@ public class ModifiableUnsubscribePacketImplTest {
         final ModifiableUnsubscribePacketImpl modifiablePacket =
                 new ModifiableUnsubscribePacketImpl(packet, configurationService);
 
-        modifiablePacket.setTopicFilters(ImmutableList.of("test1", "test2", "test3"));
+        assertThatThrownBy(() -> modifiablePacket.setTopicFilters(ImmutableList.of("test1", "test2", "test3")))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setTopicFilters_tooFew() {
         final UnsubscribePacketImpl packet = new UnsubscribePacketImpl(
                 ImmutableList.of("topic1", "topic2"),
@@ -79,10 +82,11 @@ public class ModifiableUnsubscribePacketImplTest {
         final ModifiableUnsubscribePacketImpl modifiablePacket =
                 new ModifiableUnsubscribePacketImpl(packet, configurationService);
 
-        modifiablePacket.setTopicFilters(ImmutableList.of("test1"));
+        assertThatThrownBy(() -> modifiablePacket.setTopicFilters(ImmutableList.of("test1")))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setTopicFilters_null() {
         final UnsubscribePacketImpl packet = new UnsubscribePacketImpl(
                 ImmutableList.of("topic1", "topic2"),
@@ -91,10 +95,11 @@ public class ModifiableUnsubscribePacketImplTest {
         final ModifiableUnsubscribePacketImpl modifiablePacket =
                 new ModifiableUnsubscribePacketImpl(packet, configurationService);
 
-        modifiablePacket.setTopicFilters(null);
+        assertThatThrownBy(() -> modifiablePacket.setTopicFilters(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setTopicFilters_nullElement() {
         final UnsubscribePacketImpl packet = new UnsubscribePacketImpl(
                 ImmutableList.of("topic1", "topic2"),
@@ -103,7 +108,8 @@ public class ModifiableUnsubscribePacketImplTest {
         final ModifiableUnsubscribePacketImpl modifiablePacket =
                 new ModifiableUnsubscribePacketImpl(packet, configurationService);
 
-        modifiablePacket.setTopicFilters(Arrays.asList("test1", null));
+        assertThatThrownBy(() -> modifiablePacket.setTopicFilters(Arrays.asList("test1", null)))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test

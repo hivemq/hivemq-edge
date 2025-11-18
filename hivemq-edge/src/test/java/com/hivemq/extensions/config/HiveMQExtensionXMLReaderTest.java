@@ -19,15 +19,16 @@ package com.hivemq.extensions.config;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtensionEntity;
 import org.apache.commons.io.FileUtils;
-import org.junit.Rule;
-import org.junit.Test;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class HiveMQExtensionXMLReaderTest {
 
@@ -55,7 +56,8 @@ public class HiveMQExtensionXMLReaderTest {
         assertEquals("Some Author", hiveMQExtensionEntity.getAuthor());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_missing_id_in_plugin_meta() throws Exception {
         final File extensionXML = temporaryFolder.newFile("hivemq-extension.xml");
         FileUtils.writeStringToFile(extensionXML, "<hivemq-extension>" + //

@@ -18,9 +18,9 @@ package com.hivemq.extensions.interceptor.puback.parameter;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.packets.puback.ModifiablePubackPacketImpl;
 import com.hivemq.extensions.packets.puback.PubackPacketImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

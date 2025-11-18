@@ -26,14 +26,15 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Georg Held
@@ -42,8 +43,7 @@ public class ConnectPacketImplTest {
 
     private @NotNull ConnectPacketImpl connectPacket;
     private @NotNull ConnectPacketImpl emptyPacket;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         final CONNECT connect = new CONNECT.Mqtt5Builder()
                 .withClientIdentifier("client")
@@ -74,17 +74,20 @@ public class ConnectPacketImplTest {
         emptyPacket = new ConnectPacketImpl(empty, System.currentTimeMillis());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_maximum_packet_size() {
         assertEquals(Long.MAX_VALUE, connectPacket.getMaximumPacketSize());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_user_properties() {
         assertEquals(Mqtt5UserProperties.of(new MqttUserProperty("one", "one")).asList(), connectPacket.getUserProperties().asList());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_will_publish() {
         final Optional<WillPublishPacket> willPublish = connectPacket.getWillPublish();
         assertTrue(willPublish.isPresent());
@@ -96,71 +99,84 @@ public class ConnectPacketImplTest {
         assertEquals(0, publishPacket.getWillDelay());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_problem_information() {
         assertTrue(connectPacket.getRequestProblemInformation());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_response_information() {
         assertTrue(connectPacket.getRequestResponseInformation());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_topic_alias_maximum() {
         assertEquals(Integer.MAX_VALUE, connectPacket.getTopicAliasMaximum());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_receive_maximum() {
         assertEquals(Integer.MAX_VALUE, connectPacket.getReceiveMaximum());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_keep_alive() {
         assertEquals(Integer.MAX_VALUE, connectPacket.getKeepAlive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_clean_start() {
         assertTrue(connectPacket.getCleanStart());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_session_expiry() {
         assertEquals(Long.MAX_VALUE, connectPacket.getSessionExpiryInterval());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_client_identifier() {
         assertEquals("client", connectPacket.getClientId());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_user_name() {
         assertEquals("user", connectPacket.getUserName().get());
         assertFalse(emptyPacket.getUserName().isPresent());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_password() {
         assertEquals(ByteBuffer.wrap("password".getBytes()), connectPacket.getPassword().get());
         assertFalse(emptyPacket.getPassword().isPresent());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_auth_method() {
         assertEquals("method", connectPacket.getAuthenticationMethod().get());
         assertFalse(emptyPacket.getAuthenticationMethod().isPresent());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_auth_data() {
         assertEquals(ByteBuffer.wrap("data".getBytes()), connectPacket.getAuthenticationData().get());
         assertFalse(emptyPacket.getAuthenticationData().isPresent());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_mqtt_version() {
         assertEquals(MqttVersion.V_5, connectPacket.getMqttVersion());
     }

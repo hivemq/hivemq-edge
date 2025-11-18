@@ -22,11 +22,13 @@ import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Florian Limpöck
@@ -34,9 +36,10 @@ import static org.junit.Assert.*;
  */
 public class ServerInitiatedDisconnectInputImplTest {
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_construction_client_null() {
-        new ServerInitiatedDisconnectInputImpl(null, new EmbeddedChannel(), null, null, null);
+    
+        assertThrows(NullPointerException.class, () -> new ServerInitiatedDisconnectInputImpl(null, new EmbeddedChannel(), null, null, null));
     }
 
     @Test

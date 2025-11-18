@@ -20,6 +20,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.ExtensionMain;
+import org.assertj.core.api.Assertions;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.events.EventRegistry;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
@@ -53,9 +54,12 @@ import com.hivemq.extensions.services.initializer.InitializersImpl;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Java6Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import util.TestConfigurationBootstrap;
@@ -65,7 +69,7 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.function.Supplier;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -100,8 +104,7 @@ public class ExtensionStaticInitializerImplTest {
     private @NotNull TopicPermissionBuilder topicPermissionBuilder;
     private @NotNull PublishBuilder publishBuilder;
     private @NotNull WillPublishBuilder willPublishBuilder;
-
-    @Before
+    @BeforeEach
     public void before() {
         final ConfigurationService fullConfigurationService =
                 new TestConfigurationBootstrap().getConfigurationService();
@@ -344,17 +347,19 @@ public class ExtensionStaticInitializerImplTest {
         assertSame(topicSubscriptionBuilder, objectFromMap.get());
     }
 
-    @Test(expected = ExtensionLoadingException.class)
+    @Test
     public void test_exception_at_static_initialization() throws Exception {
         when(servicesDependencies.getDependenciesMap(any(IsolatedExtensionClassloader.class))).thenThrow(new RuntimeException(
                 "Test-Exception"));
-        createAndLoadExtension();
+        assertThatThrownBy(() -> createAndLoadExtension())
+                .isInstanceOf(ExtensionLoadingException.class);
     }
 
-    @Test(expected = ExtensionLoadingException.class)
+    @Test
     public void test_exception_at_static_builders_initialization() throws Exception {
         when(builderDependencies.getDependenciesMap()).thenThrow(new RuntimeException("Test-Exception"));
-        createAndLoadExtension();
+        assertThatThrownBy(() -> createAndLoadExtension())
+                .isInstanceOf(ExtensionLoadingException.class);
     }
 
     @NotNull

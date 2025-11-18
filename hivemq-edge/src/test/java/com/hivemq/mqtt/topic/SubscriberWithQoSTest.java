@@ -15,11 +15,13 @@
  */
 package com.hivemq.mqtt.topic;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.HashSet;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Dominik Obermaier
@@ -35,34 +37,37 @@ public class SubscriberWithQoSTest {
         //No exception was thrown, so this was successful
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_subscriber_null() throws Exception {
-        new SubscriberWithQoS(null, 0, (byte) 0, null, 0, null);
+    @Test
+    public void test_subscriber_null() {
+    
+        assertThrows(NullPointerException.class, () -> new SubscriberWithQoS(null, 0, (byte) 0, null, 0, null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void test_subscriber_qos_below_zero() throws Exception {
-        new SubscriberWithQoS("subscriber", -1, (byte) 0, null, 0, null);
+    @Test
+    public void test_subscriber_qos_below_zero() {
+    
+        assertThrows(IllegalArgumentException.class, () -> new SubscriberWithQoS("subscriber", -1, (byte) 0, null, 0, null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void test_subscriber_qos_higher_than_two() throws Exception {
-        new SubscriberWithQoS("subscriber", 3, (byte) 0, null, 0, null);
+    @Test
+    public void test_subscriber_qos_higher_than_two() {
+    
+        assertThrows(IllegalArgumentException.class, () -> new SubscriberWithQoS("subscriber", 3, (byte) 0, null, 0, null));
     }
 
     @Test
     public void test_with_mqtt5_flags() throws Exception {
         final SubscriberWithQoS subscriber = new SubscriberWithQoS("subscriber", 2, (byte) 14, null, 0, null);
 
-        assertEquals(true, subscriber.isSharedSubscription());
-        assertEquals(true, subscriber.isRetainAsPublished());
-        assertEquals(true, subscriber.isNoLocal());
+        assertTrue(subscriber.isSharedSubscription());
+        assertTrue(subscriber.isRetainAsPublished());
+        assertTrue(subscriber.isNoLocal());
 
         final SubscriberWithQoS subscriber2 = new SubscriberWithQoS("subscriber", 2, (byte) 9, null, 0, null);
 
-        assertEquals(false, subscriber2.isSharedSubscription());
-        assertEquals(false, subscriber2.isRetainAsPublished());
-        assertEquals(true, subscriber2.isNoLocal());
+        assertFalse(subscriber2.isSharedSubscription());
+        assertFalse(subscriber2.isRetainAsPublished());
+        assertTrue(subscriber2.isNoLocal());
     }
 
 

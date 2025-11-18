@@ -57,10 +57,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import util.DummyHandler;
@@ -76,7 +77,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -98,8 +99,7 @@ public class IncomingSubscribeHandlerTest {
     private @NotNull PluginTaskExecutor executor;
     private @NotNull AtomicReference<Message> messageAtomicReference;
     private @NotNull EmbeddedChannel channel;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         clientConnection = new ClientConnection(channel, publishFlushHandler);
         executor = new PluginTaskExecutor(new AtomicLong());
@@ -133,21 +133,22 @@ public class IncomingSubscribeHandlerTest {
         channel.pipeline().addFirst(subscribeHandler);
         channel.pipeline().addFirst(ChannelHandlerNames.MQTT_MESSAGE_ENCODER, new DummyHandler());
     }
-
-    @After
+    @AfterEach
     public void tearDown() {
         executor.stop();
         channel.close();
     }
 
-    @Test(timeout = 5000, expected = ClosedChannelException.class)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_channel_closed() {
         channel.close();
 
         channel.writeInbound(TestMessageUtil.createFullMqtt5Subscribe());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_client_id_not_set() {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId(null);
 
@@ -156,14 +157,16 @@ public class IncomingSubscribeHandlerTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_null() {
         channel.writeInbound(TestMessageUtil.createFullMqtt5Subscribe());
 
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_empty() {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -175,7 +178,8 @@ public class IncomingSubscribeHandlerTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_has_interceptors_change_topic_mqtt5() throws Exception {
         final ClientContextImpl clientContext = new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
 
@@ -202,7 +206,8 @@ public class IncomingSubscribeHandlerTest {
         assertEquals("topicmodified", message.getTopics().get(0).getTopic());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_has_interceptors_change_topic_mqtt3() throws Exception {
         final ClientContextImpl clientContext = new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
 
@@ -229,7 +234,8 @@ public class IncomingSubscribeHandlerTest {
         assertEquals("topicmodified", message.getTopics().get(0).getTopic());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_has_interceptors_throws_exception_mqtt5() throws Exception {
         final ClientContextImpl clientContext = new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
 
@@ -268,7 +274,8 @@ public class IncomingSubscribeHandlerTest {
         assertTrue(subackLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_has_interceptors_throws_exception_mqtt3_1() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -312,7 +319,8 @@ public class IncomingSubscribeHandlerTest {
         assertEquals(1, subackLatch.getCount());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_has_interceptors_timeouts_failure_mqtt3() throws Exception {
         final ClientContextImpl clientContext = new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
 
@@ -351,7 +359,8 @@ public class IncomingSubscribeHandlerTest {
         assertTrue(subackLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_has_interceptors_timeouts_failure() throws Exception {
         final ClientContextImpl clientContext = new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
 
@@ -389,7 +398,8 @@ public class IncomingSubscribeHandlerTest {
         assertTrue(subackLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_extension_null() throws Exception {
         final ClientContextImpl clientContext = new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
 

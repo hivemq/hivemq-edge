@@ -26,8 +26,8 @@ import com.hivemq.persistence.payload.PublishPayloadPersistence;
 
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestException;
@@ -67,9 +67,7 @@ public class PublishStatusFutureCallbackTest {
     private Channel channel;
 
     private String client;
-
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         MockitoAnnotations.initMocks(this);

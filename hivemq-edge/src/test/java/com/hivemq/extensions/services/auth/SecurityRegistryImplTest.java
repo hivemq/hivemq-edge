@@ -27,15 +27,17 @@ import com.hivemq.extension.sdk.api.services.auth.provider.EnhancedAuthenticator
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 import util.IsolatedExtensionClassloaderUtil;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -60,8 +62,7 @@ public class SecurityRegistryImplTest {
     private @NotNull EnhancedAuthenticatorProvider enhancedProvider2;
     private @NotNull EnhancedAuthenticator enhancedAuthenticator1;
     private @NotNull EnhancedAuthenticator enhancedAuthenticator2;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot()
                 .toPath(), new Class[]{
@@ -101,7 +102,8 @@ public class SecurityRegistryImplTest {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_set_authenticator_provider() {
         securityRegistry.setAuthenticatorProvider(provider1);
 
@@ -112,7 +114,8 @@ public class SecurityRegistryImplTest {
         assertSame(authenticator1, registeredAuthenticators.values().iterator().next().getAuthenticator(input));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_set_second_authenticator_provider_from_same_classloader() {
         securityRegistry.setAuthenticatorProvider(provider1);
         Map<String, WrappedAuthenticatorProvider> registeredAuthenticators =
@@ -128,7 +131,8 @@ public class SecurityRegistryImplTest {
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_set_enhanced_authenticator_provider() {
         securityRegistry.setEnhancedAuthenticatorProvider(enhancedProvider1);
 
@@ -140,7 +144,8 @@ public class SecurityRegistryImplTest {
                 registeredAuthenticators.values().iterator().next().getEnhancedAuthenticator(input));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_set_second_enhanced_authenticator_provider_from_same_classloader() {
         securityRegistry.setEnhancedAuthenticatorProvider(enhancedProvider1);
         Map<String, WrappedAuthenticatorProvider> registeredAuthenticators =
@@ -158,10 +163,12 @@ public class SecurityRegistryImplTest {
 
     }
 
-    @Test(timeout = 5000, expected = NullPointerException.class)
+    @Test
+    @Timeout(5)
     @SuppressWarnings("ConstantConditions")
     public void test_set_null_authenticator_provider() {
-        securityRegistry.setAuthenticatorProvider(null);
+        assertThatThrownBy(() -> securityRegistry.setAuthenticatorProvider(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     public static class TestProvider1 implements AuthenticatorProvider {

@@ -24,8 +24,8 @@ import com.hivemq.util.ClientIds;
 import com.hivemq.util.ReasonStrings;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import util.TestChannelAttribute;
@@ -34,7 +34,7 @@ import util.TestConfigurationBootstrap;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -56,8 +56,7 @@ public class Mqtt311ConnectDecoderInvalidFixedHeadersTest {
 
     @Parameterized.Parameter
     public byte invalidBitHeader;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         final Channel channel = mock(Channel.class);
         connacker = mock(MqttConnacker.class);

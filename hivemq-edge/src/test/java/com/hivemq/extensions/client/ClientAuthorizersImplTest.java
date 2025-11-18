@@ -22,16 +22,16 @@ import com.hivemq.extension.sdk.api.auth.parameter.SubscriptionAuthorizerInput;
 import com.hivemq.extension.sdk.api.auth.parameter.SubscriptionAuthorizerOutput;
 import com.hivemq.extensions.ExtensionPriorityComparator;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import util.IsolatedExtensionClassloaderUtil;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -45,8 +45,7 @@ public class ClientAuthorizersImplTest {
             mock(ExtensionPriorityComparator.class);
 
     private @NotNull ClientAuthorizersImpl authorizers;
-
-    @Before
+    @BeforeEach
     public void before() {
         when(extensionPriorityComparator.compare(any(),
                 any())).thenAnswer(invocation -> Integer.compare(invocation.getArguments()[0].hashCode(),

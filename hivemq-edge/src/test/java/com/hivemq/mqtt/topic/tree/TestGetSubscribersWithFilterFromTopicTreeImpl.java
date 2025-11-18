@@ -25,8 +25,8 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Random;
 import java.util.Set;
@@ -34,7 +34,7 @@ import java.util.function.Predicate;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.hasItems;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class TestGetSubscribersWithFilterFromTopicTreeImpl {
@@ -43,8 +43,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
     private static final byte sharedFlag = SubscriptionFlag.getDefaultFlags(true, false, false);
     private static final byte nonSharedFlag = SubscriptionFlag.getDefaultFlags(false, false, false);
-
-    @Before
+    @BeforeEach
     public void setUp() {
         topicTree = new LocalTopicTree(new MetricsHolder(new MetricRegistry()));
     }

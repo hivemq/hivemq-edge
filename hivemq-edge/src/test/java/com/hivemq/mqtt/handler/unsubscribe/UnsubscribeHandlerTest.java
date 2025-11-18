@@ -30,8 +30,8 @@ import com.hivemq.persistence.clientsession.SharedSubscriptionService;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.DummyHandler;
@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Queue;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -63,8 +63,7 @@ public class UnsubscribeHandlerTest {
 
     private @NotNull EmbeddedChannel channel;
     private final @NotNull ClientConnection clientConnection = new ClientConnection(channel, null);
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         unsubscribeHandler = new UnsubscribeHandler(clientSessionSubscriptionPersistence, sharedSubscriptionService);

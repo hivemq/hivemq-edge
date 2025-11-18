@@ -21,9 +21,9 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.classloader.ClassLoaderTestClass;
 import com.hivemq.extension.sdk.api.services.Services;
 import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import util.OnTheFlyCompilationUtil;
 
@@ -35,7 +35,7 @@ import java.util.Enumeration;
 import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class IsolatedExtensionClassloaderTest {
 
@@ -43,8 +43,7 @@ public class IsolatedExtensionClassloaderTest {
     public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     private @NotNull File folder;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         folder = temporaryFolder.newFolder();
     }

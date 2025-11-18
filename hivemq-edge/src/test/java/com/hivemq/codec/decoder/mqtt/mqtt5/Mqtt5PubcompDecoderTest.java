@@ -24,10 +24,10 @@ import com.hivemq.mqtt.message.pubcomp.PUBCOMP;
 import com.hivemq.mqtt.message.reason.Mqtt5PubCompReasonCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import util.TestMqttDecoder;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Waldemar Ruck

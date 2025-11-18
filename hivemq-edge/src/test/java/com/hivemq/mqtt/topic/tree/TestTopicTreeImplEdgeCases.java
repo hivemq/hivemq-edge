@@ -25,19 +25,18 @@ import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.hasItem;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestTopicTreeImplEdgeCases {
 
     private LocalTopicTree topicTree;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         InternalConfigurations.TOPIC_TREE_MAP_CREATION_THRESHOLD.set(1);
         topicTree = new LocalTopicTree(new MetricsHolder(new MetricRegistry()));

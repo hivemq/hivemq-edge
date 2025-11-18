@@ -45,9 +45,10 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
@@ -59,8 +60,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -81,8 +82,7 @@ public class ConnectInboundInterceptorHandlerTest {
     private @NotNull PluginTaskExecutor executor;
     private @NotNull EmbeddedChannel channel;
     private @NotNull ConnectInboundInterceptorHandler handler;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         executor = new PluginTaskExecutor(new AtomicLong());
         executor.postConstruct();
@@ -116,7 +116,8 @@ public class ConnectInboundInterceptorHandlerTest {
         });
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_client_id_not_set() {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId(null);
 
@@ -125,7 +126,8 @@ public class ConnectInboundInterceptorHandlerTest {
         assertNull(channel.readInbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_modify() throws Exception {
         final ConnectInboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),
@@ -146,7 +148,8 @@ public class ConnectInboundInterceptorHandlerTest {
         assertEquals("modified", connect.getClientIdentifier());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_null_interceptor() throws Exception {
         final ConnectInboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),
@@ -167,7 +170,8 @@ public class ConnectInboundInterceptorHandlerTest {
         assertEquals("client", connect.getClientIdentifier());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_timeout_failed() throws Exception {
         final ConnectInboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),
@@ -200,7 +204,8 @@ public class ConnectInboundInterceptorHandlerTest {
                 anyString());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_exception() throws Exception {
         final ConnectInboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),

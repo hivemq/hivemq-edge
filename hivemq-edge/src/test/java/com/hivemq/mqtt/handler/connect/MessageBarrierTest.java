@@ -29,8 +29,8 @@ import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import util.DummyHandler;
 import util.TestMessageUtil;
@@ -38,8 +38,8 @@ import util.TestMessageUtil;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_MESSAGE_BARRIER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @author Christoph Schäbel
@@ -48,8 +48,7 @@ public class MessageBarrierTest {
 
     private EmbeddedChannel channel;
     private MessageBarrier messageBarrier;
-
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
         final MqttServerDisconnector mqttServerDisconnector = new MqttServerDisconnectorImpl(new EventLog());
@@ -62,21 +61,21 @@ public class MessageBarrierTest {
 
     @Test
     public void test_default() {
-        assertEquals(false, messageBarrier.getConnectReceived());
+        assertFalse(messageBarrier.getConnectReceived());
     }
 
     @Test
     public void test_connect_sent() {
 
         channel.writeInbound(new CONNECT.Mqtt3Builder().withProtocolVersion(ProtocolVersion.MQTTv3_1_1).withClientIdentifier("clientID").build());
-        assertEquals(true, messageBarrier.getConnectReceived());
+        assertTrue(messageBarrier.getConnectReceived());
     }
 
     @Test
     public void test_message_sent_before_connect() {
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish());
-        assertEquals(false, channel.isActive());
+        assertFalse(channel.isActive());
 
     }
 
@@ -92,7 +91,7 @@ public class MessageBarrierTest {
         channel.writeInbound(TestMessageUtil.createMqtt3Publish());
         channel.writeInbound(new DISCONNECT());
 
-        assertEquals(true, channel.isActive());
+        assertTrue(channel.isActive());
         assertEquals(6, messageBarrier.getQueue().size());
     }
 

@@ -20,7 +20,7 @@ import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 

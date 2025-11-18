@@ -43,9 +43,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
@@ -57,8 +58,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -82,7 +83,7 @@ public class ConnackOutboundInterceptorHandlerTest {
     private @NotNull EmbeddedChannel channel;
     private @NotNull ConnackOutboundInterceptorHandler handler;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         executor = new PluginTaskExecutor(new AtomicLong());
         executor.postConstruct();
@@ -121,7 +122,8 @@ public class ConnackOutboundInterceptorHandlerTest {
         });
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_client_id_not_set() {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId(null);
 
@@ -138,7 +140,8 @@ public class ConnackOutboundInterceptorHandlerTest {
         assertEquals(initial, connack);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_no_interceptors() {
         when(interceptors.connackOutboundInterceptorProviders()).thenReturn(ImmutableMap.of());
 
@@ -154,7 +157,8 @@ public class ConnackOutboundInterceptorHandlerTest {
         assertEquals("server", connack.getServerReference());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_null_interceptors() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),
@@ -174,7 +178,8 @@ public class ConnackOutboundInterceptorHandlerTest {
         assertEquals("server", connack.getServerReference());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_modify() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),
@@ -195,7 +200,8 @@ public class ConnackOutboundInterceptorHandlerTest {
         assertEquals("modified", connack.getServerReference());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_plugin_null() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),
@@ -216,7 +222,8 @@ public class ConnackOutboundInterceptorHandlerTest {
         assertEquals("server", connack.getServerReference());
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_timeout_failed() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),
@@ -239,7 +246,8 @@ public class ConnackOutboundInterceptorHandlerTest {
         assertFalse(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_exception() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),

@@ -25,8 +25,6 @@ import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.bootstrap.netty.ChannelHandlerNames;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extension.sdk.api.packets.auth.DefaultAuthorizationBehaviour;
 import com.hivemq.extension.sdk.api.packets.auth.ModifiableDefaultPermissions;
@@ -75,18 +73,30 @@ import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.qos.IncomingMessageFlowPersistence;
 import com.hivemq.util.Checkpoints;
 import com.hivemq.util.ReasonStrings;
-import io.netty.channel.*;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.timeout.IdleStateHandler;
+import jakarta.inject.Provider;
 import net.jodah.concurrentunit.Waiter;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import util.*;
+import util.CollectUserEventsHandler;
+import util.DummyHandler;
+import util.TestConfigurationBootstrap;
+import util.TestMqttDecoder;
 
-import jakarta.inject.Provider;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -98,10 +108,22 @@ import static com.hivemq.configuration.service.InternalConfigurations.MQTT_CONNE
 import static com.hivemq.extension.sdk.api.auth.parameter.OverloadProtectionThrottlingLevel.NONE;
 import static com.hivemq.mqtt.message.connack.CONNACK.KEEP_ALIVE_NOT_SET;
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class ConnectHandlerTest {
@@ -130,8 +152,7 @@ public class ConnectHandlerTest {
     private ModifiableDefaultPermissions defaultPermissions;
     private MqttServerDisconnectorImpl serverDisconnector;
     private @NotNull ClientConnection clientConnection;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         MockitoAnnotations.initMocks(this);
@@ -181,8 +202,7 @@ public class ConnectHandlerTest {
 
         buildPipeline();
     }
-
-    @After
+    @AfterEach
     public void tearDown() {
         InternalConfigurations.AUTH_DENY_UNAUTHENTICATED_CONNECTIONS.set(true);
     }
@@ -626,7 +646,8 @@ public class ConnectHandlerTest {
         assertFalse(channel.pipeline().names().contains(ChannelHandlerNames.MQTT_CONNECT_HANDLER));
     }
 
-    @Test(timeout = 5_000)
+    @Test
+    @Timeout(5)
     public void test_client_takeover_mqtt3() throws Exception {
 
         final CountDownLatch disconnectEventLatch = new CountDownLatch(1);
@@ -672,7 +693,8 @@ public class ConnectHandlerTest {
         assertNull(disconnectMessage);
     }
 
-    @Test(timeout = 5_000)
+    @Test
+    @Timeout(5)
     public void test_client_takeover_mqtt5() throws Exception {
 
         final CountDownLatch disconnectEventLatch = new CountDownLatch(1);
@@ -1129,7 +1151,8 @@ public class ConnectHandlerTest {
      * Auth *
      ********/
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_auth_in_progress_message_handler_is_removed() {
         createHandler();
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthMethod("someMethod");
@@ -1147,7 +1170,8 @@ public class ConnectHandlerTest {
         assertEquals(ClientState.AUTHENTICATED, channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientState());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_auth_is_performed() {
         createHandler();
 
@@ -1160,7 +1184,8 @@ public class ConnectHandlerTest {
         verify(internalAuthServiceImpl, times(1)).authenticateConnect(any(), any(), any(), any());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_connack_success_if_no_authenticator_registered() {
         createHandler();
 
@@ -1177,7 +1202,8 @@ public class ConnectHandlerTest {
         assertTrue(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_connect_successfully_if_no_authenticator_present_and_no_auth_info_given() {
         createHandler();
 
@@ -1194,7 +1220,8 @@ public class ConnectHandlerTest {
         assertEquals(ClientState.AUTHENTICATED, channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientState());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_will_authorization_success() {
         createHandler();
 
@@ -1227,7 +1254,8 @@ public class ConnectHandlerTest {
         assertTrue(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_will_authorizer_success() {
         createHandler();
 
@@ -1251,7 +1279,8 @@ public class ConnectHandlerTest {
         assertTrue(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_will_authorizer_fail() {
         createHandler();
 
@@ -1275,7 +1304,8 @@ public class ConnectHandlerTest {
         assertFalse(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_will_authorizer_disconnect() {
         createHandler();
 
@@ -1302,7 +1332,8 @@ public class ConnectHandlerTest {
         assertFalse(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_will_authorizer_next_no_perms() {
         createHandler();
 
@@ -1326,7 +1357,8 @@ public class ConnectHandlerTest {
         assertFalse(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_will_authorizer_next_perms_avail_allow() {
         createHandler();
 
@@ -1354,7 +1386,8 @@ public class ConnectHandlerTest {
         assertTrue(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_will_authorizer_next_perms_avail_default_allow() {
         createHandler();
 
@@ -1381,7 +1414,8 @@ public class ConnectHandlerTest {
         assertTrue(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_will_authorizer_next_perms_avail_deny() {
         createHandler();
 
@@ -1409,7 +1443,8 @@ public class ConnectHandlerTest {
         assertFalse(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_will_authorizer_next_perms_avail_default_deny() {
         createHandler();
 
@@ -1434,7 +1469,8 @@ public class ConnectHandlerTest {
         assertFalse(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_will_authorization_fail() {
         createHandler();
 
@@ -1460,7 +1496,8 @@ public class ConnectHandlerTest {
         assertFalse(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_set_client_settings() {
         createHandler();
         when(connectionPersistence.persistIfAbsent(any())).thenReturn(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get());
@@ -1483,7 +1520,8 @@ public class ConnectHandlerTest {
         assertEquals(123, connect.getReceiveMaximum());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_contextWantsPasswordErasure_passwordCleared() {
         createHandler();
         final CONNECT connect = new CONNECT.Mqtt5Builder().withClientIdentifier("client").build();
@@ -1498,7 +1536,8 @@ public class ConnectHandlerTest {
         assertNull(clientConnectionContext.getAuthPassword());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_contextDoesNotWantPasswordErasure_passwordKept() {
         createHandler();
         final CONNECT connect = new CONNECT.Mqtt5Builder().withClientIdentifier("client").build();
@@ -1513,7 +1552,8 @@ public class ConnectHandlerTest {
         assertNotNull(clientConnectionContext.getAuthPassword());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_contextDoesNotDecidePasswordErasure_passwordKeptOrCleared() {
         createHandler();
         final CONNECT connect =

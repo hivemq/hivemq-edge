@@ -17,12 +17,12 @@ package com.hivemq.mqtt.topic.tree;
 
 import com.codahale.metrics.Counter;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.hamcrest.core.IsIterableContaining.hasItems;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MatchingNodeSubscriptionsTest {
 

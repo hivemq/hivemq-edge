@@ -30,16 +30,16 @@ import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import util.IsolatedExtensionClassloaderUtil;
 
 import java.util.Iterator;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -58,8 +58,7 @@ public class LifecycleEventListenersImplTest {
 
     private @NotNull LifecycleEventListenersImpl lifecycleEventListeners;
     private @NotNull ConnectionPersistence connectionPersistence;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         connectionPersistence = new ConnectionPersistenceImpl();
         lifecycleEventListeners = new LifecycleEventListenersImpl(hiveMQExtensions);

@@ -31,9 +31,12 @@ import com.hivemq.extensions.services.PluginServiceRateLimitService;
 import com.hivemq.extensions.services.executor.GlobalManagedExtensionExecutorService;
 import com.hivemq.persistence.RetainedMessage;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -44,7 +47,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
@@ -68,8 +71,7 @@ public class RetainedMessageStoreImplTest {
     private AsyncIteratorFactory asyncIteratorFactory;
 
     private GlobalManagedExtensionExecutorService managedPluginExecutorService;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         closeableMock = MockitoAnnotations.openMocks(this);
         managedPluginExecutorService = new GlobalManagedExtensionExecutorService(Mockito.mock(ShutdownHooks.class));
@@ -77,85 +79,71 @@ public class RetainedMessageStoreImplTest {
         retainedMessageStore = new RetainedMessageStoreImpl(retainedMessagePersistence, managedPluginExecutorService, pluginServiceRateLimitService, asyncIteratorFactory);
         when(pluginServiceRateLimitService.rateLimitExceeded()).thenReturn(false);
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         managedPluginExecutorService.shutdown();
         closeableMock.close();
     }
 
-    @Test(expected = RateLimitExceededException.class)
-    public void test_get_retained_message_rate_limit_exceeded() throws Throwable {
+    @Test
+    public void test_get_retained_message_rate_limit_exceeded() {
 
         when(pluginServiceRateLimitService.rateLimitExceeded()).thenReturn(true);
-        try {
-            retainedMessageStore.getRetainedMessage("topic").get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> retainedMessageStore.getRetainedMessage("topic").get())
+                .hasCauseInstanceOf(RateLimitExceededException.class);
 
     }
 
-    @Test(expected = RateLimitExceededException.class)
-    public void test_clear_rate_limit_exceeded() throws Throwable {
+    @Test
+    public void test_clear_rate_limit_exceeded() {
 
         when(pluginServiceRateLimitService.rateLimitExceeded()).thenReturn(true);
-        try {
-            retainedMessageStore.clear().get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> retainedMessageStore.clear().get())
+                .hasCauseInstanceOf(RateLimitExceededException.class);
 
     }
 
-    @Test(expected = RateLimitExceededException.class)
-    public void test_remove_rate_limit_exceeded() throws Throwable {
+    @Test
+    public void test_remove_rate_limit_exceeded() {
 
         when(pluginServiceRateLimitService.rateLimitExceeded()).thenReturn(true);
-        try {
-            retainedMessageStore.remove("topic").get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> retainedMessageStore.remove("topic").get())
+                .hasCauseInstanceOf(RateLimitExceededException.class);
 
     }
 
-    @Test(expected = RateLimitExceededException.class)
-    public void test_add_or_replace_rate_limit_exceeded() throws Throwable {
+    @Test
+    public void test_add_or_replace_rate_limit_exceeded() {
 
         when(pluginServiceRateLimitService.rateLimitExceeded()).thenReturn(true);
-        try {
-            retainedMessageStore.addOrReplace(Mockito.mock(RetainedPublish.class)).get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> retainedMessageStore.addOrReplace(Mockito.mock(RetainedPublish.class)).get())
+                .hasCauseInstanceOf(RateLimitExceededException.class);
 
     }
 
-    @Test(expected = DoNotImplementException.class)
-    public void test_add_or_replace_bad_impl() throws Throwable {
-
-        try {
-            retainedMessageStore.addOrReplace(new TestRetainedPublish()).get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+    @Test
+    public void test_add_or_replace_bad_impl() {
+        assertThatThrownBy(() -> retainedMessageStore.addOrReplace(new TestRetainedPublish()).get())
+                .hasCauseInstanceOf(DoNotImplementException.class);
 
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_get_retained_message_null() {
-        retainedMessageStore.getRetainedMessage(null);
+    
+        assertThrows(NullPointerException.class, () -> retainedMessageStore.getRetainedMessage(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_remove_null() {
-        retainedMessageStore.remove(null);
+    
+        assertThrows(NullPointerException.class, () -> retainedMessageStore.remove(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_add_or_replace_null() {
-        retainedMessageStore.addOrReplace(null);
+    
+        assertThrows(NullPointerException.class, () -> retainedMessageStore.addOrReplace(null));
     }
 
     @Test
@@ -167,19 +155,19 @@ public class RetainedMessageStoreImplTest {
 
         assertTrue(retainedPublish.isPresent());
         assertEquals(Qos.AT_LEAST_ONCE, retainedPublish.get().getQos());
-        assertEquals(true, retainedPublish.get().getRetain());
+        assertTrue(retainedPublish.get().getRetain());
         assertEquals("topic", retainedPublish.get().getTopic());
         assertTrue(retainedPublish.get().getPayloadFormatIndicator().isPresent());
         assertEquals(PayloadFormatIndicator.UTF_8, retainedPublish.get().getPayloadFormatIndicator().get());
-        assertEquals(true, retainedPublish.get().getMessageExpiryInterval().isPresent());
+        assertTrue(retainedPublish.get().getMessageExpiryInterval().isPresent());
         assertEquals(12345L, retainedPublish.get().getMessageExpiryInterval().get().longValue());
-        assertEquals(true, retainedPublish.get().getResponseTopic().isPresent());
+        assertTrue(retainedPublish.get().getResponseTopic().isPresent());
         assertEquals("response_topic", retainedPublish.get().getResponseTopic().get());
-        assertEquals(true, retainedPublish.get().getContentType().isPresent());
+        assertTrue(retainedPublish.get().getContentType().isPresent());
         assertEquals("content_type", retainedPublish.get().getContentType().get());
-        assertEquals(true, retainedPublish.get().getCorrelationData().isPresent());
-        assertEquals(true, retainedPublish.get().getPayload().isPresent());
-        assertEquals(true, retainedPublish.get().getUserProperties().asList().isEmpty());
+        assertTrue(retainedPublish.get().getCorrelationData().isPresent());
+        assertTrue(retainedPublish.get().getPayload().isPresent());
+        assertTrue(retainedPublish.get().getUserProperties().asList().isEmpty());
 
     }
 
@@ -231,56 +219,44 @@ public class RetainedMessageStoreImplTest {
 
     }
 
-    @Test(expected = TestException.class)
-    public void test_get_retained_message_failed() throws Throwable {
+    @Test
+    public void test_get_retained_message_failed() {
 
         when(retainedMessagePersistence.get("topic")).thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
 
-        try {
-            retainedMessageStore.getRetainedMessage("topic").get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> retainedMessageStore.getRetainedMessage("topic").get())
+                .hasCauseInstanceOf(TestException.class);
 
     }
 
-    @Test(expected = TestException.class)
-    public void test_remove_failed() throws Throwable {
+    @Test
+    public void test_remove_failed() {
 
         when(retainedMessagePersistence.remove(eq("topic"))).thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
 
-        try {
-            retainedMessageStore.remove("topic").get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> retainedMessageStore.remove("topic").get())
+                .hasCauseInstanceOf(TestException.class);
 
     }
 
-    @Test(expected = TestException.class)
-    public void test_clear_failed() throws Throwable {
+    @Test
+    public void test_clear_failed() {
 
         when(retainedMessagePersistence.clear()).thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
 
-        try {
-            retainedMessageStore.clear().get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> retainedMessageStore.clear().get())
+                .hasCauseInstanceOf(TestException.class);
 
     }
 
-    @Test(expected = TestException.class)
-    public void test_add_or_replace_retained_message_failed() throws Throwable {
+    @Test
+    public void test_add_or_replace_retained_message_failed() {
 
         when(retainedMessagePersistence.persist(anyString(), any(RetainedMessage.class))).thenReturn(
                 Futures.immediateFailedFuture(TestException.INSTANCE));
 
-        try {
-            retainedMessageStore.addOrReplace(getRetainedPublish()).get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> retainedMessageStore.addOrReplace(getRetainedPublish()).get())
+                .hasCauseInstanceOf(TestException.class);
 
     }
 

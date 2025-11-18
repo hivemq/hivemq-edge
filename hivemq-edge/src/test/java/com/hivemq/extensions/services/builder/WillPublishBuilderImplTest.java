@@ -31,8 +31,11 @@ import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.util.Bytes;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
 import util.TestMessageUtil;
 
@@ -40,8 +43,9 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Florian Limpöck
@@ -51,8 +55,7 @@ import static org.junit.Assert.assertEquals;
 public class WillPublishBuilderImplTest {
 
     private WillPublishBuilderImpl willPublishBuilder;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         final ConfigurationService service = new TestConfigurationBootstrap().getConfigurationService();
         willPublishBuilder = new WillPublishBuilderImpl(service);
@@ -82,11 +85,12 @@ public class WillPublishBuilderImplTest {
 
     }
 
-    @Test(expected = DoNotImplementException.class)
+    @Test
     public void test_from_publish_packet_implemented() {
 
         final TestPublishPacket testPublishPacket = new TestPublishPacket();
-        willPublishBuilder.fromPublish(testPublishPacket);
+        assertThatThrownBy(() -> willPublishBuilder.fromPublish(testPublishPacket))
+                .isInstanceOf(DoNotImplementException.class);
 
     }
 
@@ -110,7 +114,7 @@ public class WillPublishBuilderImplTest {
         assertEquals("topic", publish.getTopic());
         assertArrayEquals(new byte[]{1, 2, 3}, publish.getPayload().get().array());
         assertEquals(2, publish.getQos().getQosNumber());
-        assertEquals(true, publish.getRetain());
+        assertTrue(publish.getRetain());
         assertEquals("TYPE", publish.getContentType().get());
         assertArrayEquals(new byte[]{1, 2, 3, 4}, publish.getCorrelationData().get().array());
         assertEquals("responseTopic", publish.getResponseTopic().get());
@@ -187,7 +191,7 @@ public class WillPublishBuilderImplTest {
         assertEquals("topic", willPublishPacket.getTopic());
         assertArrayEquals(new byte[]{1, 2, 3}, Bytes.getBytesFromReadOnlyBuffer(willPublishPacket.getPayload()));
         assertEquals(2, willPublishPacket.getQos().getQosNumber());
-        assertEquals(true, willPublishPacket.getRetain());
+        assertTrue(willPublishPacket.getRetain());
         assertEquals("TYPE", willPublishPacket.getContentType().get());
         assertArrayEquals(
                 new byte[]{1, 2, 3, 4}, Bytes.getBytesFromReadOnlyBuffer(willPublishPacket.getCorrelationData()));
@@ -198,138 +202,163 @@ public class WillPublishBuilderImplTest {
         assertEquals(123, willPublishPacket.getWillDelay());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_qos_not_allowed() {
         final ConfigurationService service = new TestConfigurationBootstrap().getConfigurationService();
         service.mqttConfiguration().setMaximumQos(QoS.AT_MOST_ONCE);
         willPublishBuilder = new WillPublishBuilderImpl(service);
-        willPublishBuilder.qos(Qos.AT_LEAST_ONCE);
+        assertThatThrownBy(() -> willPublishBuilder.qos(Qos.AT_LEAST_ONCE))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_retain_not_allowed() {
         final ConfigurationService service = new TestConfigurationBootstrap().getConfigurationService();
         service.mqttConfiguration().setRetainedMessagesEnabled(false);
         willPublishBuilder = new WillPublishBuilderImpl(service);
-        willPublishBuilder.retain(true);
+        assertThatThrownBy(() -> willPublishBuilder.retain(true))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_topic_length_invalid() {
         final ConfigurationService service = new TestConfigurationBootstrap().getConfigurationService();
         service.restrictionsConfiguration().setMaxTopicLength(5);
         willPublishBuilder = new WillPublishBuilderImpl(service);
-        willPublishBuilder.topic("123456");
+        assertThatThrownBy(() -> willPublishBuilder.topic("123456"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_response_topic_validation_utf_8_should_not() {
-        willPublishBuilder.responseTopic("topic" + '\u0001');
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.responseTopic("topic" + '\u0001'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_response_topic_validation_utf_8_must_not() {
-        willPublishBuilder.responseTopic("topic" + '\uD800');
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.responseTopic("topic" + '\uD800'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_content_type_validation_utf_8_should_not() {
-        willPublishBuilder.contentType("topic" + '\u0001');
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.contentType("topic" + '\u0001'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_content_type_validation_utf_8_must_not() {
-        willPublishBuilder.contentType("topic" + '\uD800');
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.contentType("topic" + '\uD800'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_user_property_name_validation_utf_8_should_not() {
-        willPublishBuilder.userProperty("topic" + '\u0001', "val");
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.userProperty("topic" + '\u0001', "val"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_user_property_name_validation_utf_8_must_not() {
-        willPublishBuilder.userProperty("topic" + '\uD800', "val");
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.userProperty("topic" + '\uD800', "val"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_user_property_value_validation_utf_8_should_not() {
-        willPublishBuilder.userProperty("key", "val" + '\u0001');
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.userProperty("key", "val" + '\u0001'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_user_property_value_validation_utf_8_must_not() {
-        willPublishBuilder.userProperty("key", "val" + '\uD800');
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.userProperty("key", "val" + '\uD800'));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_qos_null() {
-        willPublishBuilder.qos(null);
+    
+        assertThrows(NullPointerException.class, () -> willPublishBuilder.qos(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_topic_null() {
-        willPublishBuilder.topic(null);
+    
+        assertThrows(NullPointerException.class, () -> willPublishBuilder.topic(null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_topic_empty() {
-        willPublishBuilder.topic("");
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.topic(""));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_topic_invalid() {
-        willPublishBuilder.topic("asd" + '\u0000');
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.topic("asd" + '\u0000'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_topic_malformed_should_not() {
-        willPublishBuilder.topic("asd" + '\u0001');
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.topic("asd" + '\u0001'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_topic_malformed_must_not() {
-        willPublishBuilder.topic("asd" + '\uD800');
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.topic("asd" + '\uD800'));
     }
 
-    @Test(expected = DoNotImplementException.class)
+    @Test
     public void test_from_invalid_publish_impl() {
-        willPublishBuilder.fromPublish(new TestPublish());
+    
+        assertThrows(DoNotImplementException.class, () -> willPublishBuilder.fromPublish(new TestPublish()));
     }
 
-    @Test(expected = DoNotImplementException.class)
+    @Test
     public void test_from_invalid_will_publish_impl() {
-        willPublishBuilder.fromWillPublish(new TestWillPublishPacket());
+    
+        assertThrows(DoNotImplementException.class, () -> willPublishBuilder.fromWillPublish(new TestWillPublishPacket()));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_user_property_name_null() {
-        willPublishBuilder.userProperty(null, "val");
+    
+        assertThrows(NullPointerException.class, () -> willPublishBuilder.userProperty(null, "val"));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_user_property_value_null() {
-        willPublishBuilder.userProperty("name", null);
+    
+        assertThrows(NullPointerException.class, () -> willPublishBuilder.userProperty("name", null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_user_property_name_too_long() {
-        willPublishBuilder.userProperty(RandomStringUtils.randomAlphanumeric(65536), "val");
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.userProperty(RandomStringUtils.randomAlphanumeric(65536), "val"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_user_property_value_too_long() {
-        willPublishBuilder.userProperty("name", RandomStringUtils.randomAlphanumeric(65536));
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.userProperty("name", RandomStringUtils.randomAlphanumeric(65536)));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_response_topic_too_long() {
-        willPublishBuilder.responseTopic(RandomStringUtils.randomAlphanumeric(65536));
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.responseTopic(RandomStringUtils.randomAlphanumeric(65536)));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_content_type_too_long() {
-        willPublishBuilder.contentType(RandomStringUtils.randomAlphanumeric(65536));
+    
+        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.contentType(RandomStringUtils.randomAlphanumeric(65536)));
     }
 
     class TestPublishPacket implements PublishPacket {

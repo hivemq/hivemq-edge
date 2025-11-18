@@ -35,10 +35,11 @@ import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.MemoryEstimator;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 
 import java.util.Set;
@@ -48,10 +49,10 @@ import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENC
 import static com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy.DISCARD;
 import static com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
 import static com.hivemq.persistence.clientqueue.ClientQueuePersistenceImpl.SHARED_IN_FLIGHT_MARKER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyLong;
@@ -82,8 +83,7 @@ public class ClientQueueMemoryLocalPersistenceTest {
     private MetricRegistry metricRegistry;
     private final @NotNull InternalConfigurationServiceImpl internalConfigurationService =
             new InternalConfigurationServiceImpl();
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         internalConfigurationService.set(PERSISTENCE_BUCKET_COUNT, "" + bucketCount);
         InternalConfigurations.QOS_0_MEMORY_HARD_LIMIT_DIVISOR.set(10000);
@@ -96,8 +96,7 @@ public class ClientQueueMemoryLocalPersistenceTest {
                 metricRegistry,
                 internalConfigurationService);
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         InternalConfigurations.EXPIRE_INFLIGHT_PUBRELS_ENABLED = false;
     }
@@ -1234,7 +1233,8 @@ public class ClientQueueMemoryLocalPersistenceTest {
         assertTrue(gauge.getValue() > 0);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_add_qos_0_per_client_exceeded() {
 
         persistence.add("client",
@@ -1260,7 +1260,8 @@ public class ClientQueueMemoryLocalPersistenceTest {
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_add_qos_0_per_client_exactly_exceeded() {
 
 

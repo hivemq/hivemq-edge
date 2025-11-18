@@ -44,10 +44,11 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
@@ -56,8 +57,9 @@ import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -78,8 +80,7 @@ public class PingInterceptorHandlerTest {
 
     private @NotNull PluginTaskExecutor executor;
     private @NotNull EmbeddedChannel channel;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         isTriggered.set(false);
         executor = new PluginTaskExecutor(new AtomicLong());
@@ -114,26 +115,30 @@ public class PingInterceptorHandlerTest {
             }
         });
     }
-
-    @After
+    @AfterEach
     public void tearDown() {
         executor.stop();
         channel.close();
     }
 
-    @Test(timeout = 5000, expected = ClosedChannelException.class)
+    @Test
+    @Timeout(5)
     public void test_pingreq_channel_closed() {
         channel.close();
-        channel.writeInbound(new PINGREQ());
+        assertThatThrownBy(() -> channel.writeInbound(new PINGREQ()))
+                .isInstanceOf(ClosedChannelException.class);
     }
 
-    @Test(timeout = 5000, expected = ClosedChannelException.class)
+    @Test
+    @Timeout(5)
     public void test_pingresp_channel_closed() {
         channel.close();
-        channel.writeOutbound(new PINGRESP());
+        assertThatThrownBy(() -> channel.writeOutbound(new PINGRESP()))
+                .isInstanceOf(ClosedChannelException.class);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_simple_pingreq() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -158,7 +163,8 @@ public class PingInterceptorHandlerTest {
         isTriggered.set(false);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_advanced_pingreq() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -183,7 +189,8 @@ public class PingInterceptorHandlerTest {
         isTriggered.set(false);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_simple_pingresp() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -208,7 +215,8 @@ public class PingInterceptorHandlerTest {
         isTriggered.set(false);
     }
 
-    @Test(timeout = 40000)
+    @Test
+    @Timeout(40)
     public void test_read_advanced_pingresp() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());

@@ -29,13 +29,13 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import util.TestConfigurationBootstrap;
 import util.TestMqttDecoder;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Florian Limpöck

@@ -40,16 +40,17 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 import util.CollectUserEventsHandler;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 import util.TestMessageUtil;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -67,8 +68,7 @@ public class PublishOutboundInterceptorHandlerTest {
     private @NotNull EmbeddedChannel channel;
     private @NotNull ClientConnection clientConnection;
     private @NotNull PublishOutboundInterceptorHandler handler;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         channel = new EmbeddedChannel();
         clientConnection = new ClientConnection(channel, mock(PublishFlushHandler.class));
@@ -97,14 +97,16 @@ public class PublishOutboundInterceptorHandlerTest {
         });
     }
 
-    @Test(timeout = 5_000)
+    @Test
+    @Timeout(5)
     public void test_other_message() {
         channel.writeOutbound(new PUBACK(1));
         final PUBACK puback = channel.readOutbound();
         assertEquals(1, puback.getPacketIdentifier());
     }
 
-    @Test(timeout = 5_000)
+    @Test
+    @Timeout(5)
     public void test_client_id_null() {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId(null);
         channel.writeOutbound(TestMessageUtil.createFullMqtt5Publish());
@@ -112,14 +114,16 @@ public class PublishOutboundInterceptorHandlerTest {
         assertNull(publish);
     }
 
-    @Test(timeout = 5_000)
+    @Test
+    @Timeout(5)
     public void test_client_context_null() {
         channel.writeOutbound(TestMessageUtil.createFullMqtt5Publish());
         final PUBLISH publish = channel.readOutbound();
         assertNotNull(publish);
     }
 
-    @Test(timeout = 5_000)
+    @Test
+    @Timeout(5)
     public void test_extension_null() throws Exception {
         final PublishOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),
@@ -133,7 +137,8 @@ public class PublishOutboundInterceptorHandlerTest {
         assertNotNull(publish);
     }
 
-    @Test(timeout = 5_000)
+    @Test
+    @Timeout(5)
     public void test_extension_prevented() throws Exception {
         final PublishOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),

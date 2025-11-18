@@ -23,21 +23,20 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 import java.util.function.Predicate;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.hasItems;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestGetSubscribersFromTopicWithFilterTopicTreeImpl {
 
     private LocalTopicTree topicTree;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         topicTree = new LocalTopicTree(new MetricsHolder(new MetricRegistry()));
     }

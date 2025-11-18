@@ -21,11 +21,14 @@ import com.hivemq.mqtt.message.connect.CONNECT;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestMessageUtil;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Christoph Schäbel
@@ -34,8 +37,7 @@ public class PublishAuthorizerInputImplTest {
 
     private Channel channel;
     private ClientConnection clientConnection;
-
-    @Before
+    @BeforeEach
     public void before() {
         channel = new EmbeddedChannel();
         clientConnection = new ClientConnection(channel, null);
@@ -44,22 +46,25 @@ public class PublishAuthorizerInputImplTest {
     }
 
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_publish_null() {
-        new PublishAuthorizerInputImpl((PUBLISH) null, channel, "client");
+    
+        assertThrows(NullPointerException.class, () -> new PublishAuthorizerInputImpl((PUBLISH) null, channel, "client"));
     }
 
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_channel_null() {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic");
-        new PublishAuthorizerInputImpl(publish, null, "client");
+        assertThatThrownBy(() -> new PublishAuthorizerInputImpl(publish, null, "client"))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_clientid_null() {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic");
-        new PublishAuthorizerInputImpl(publish, channel, null);
+        assertThatThrownBy(() -> new PublishAuthorizerInputImpl(publish, channel, null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test

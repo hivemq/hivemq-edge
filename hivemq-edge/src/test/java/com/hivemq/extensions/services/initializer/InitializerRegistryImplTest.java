@@ -19,7 +19,10 @@ package com.hivemq.extensions.services.initializer;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.intializer.ClientInitializer;
 import com.hivemq.extension.sdk.api.services.intializer.InitializerRegistry;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -43,9 +46,10 @@ public class InitializerRegistryImplTest {
         verify(initializers).addClientInitializer(clientInitializer);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_set_null() {
-        registry.setClientInitializer(null);
+        assertThatThrownBy(() -> registry.setClientInitializer(null))
+                .isInstanceOf(NullPointerException.class);
     }
 }

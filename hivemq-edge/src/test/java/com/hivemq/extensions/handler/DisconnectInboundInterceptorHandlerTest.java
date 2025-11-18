@@ -42,10 +42,11 @@ import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
@@ -55,7 +56,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -75,8 +76,7 @@ public class DisconnectInboundInterceptorHandlerTest {
     private @NotNull PluginTaskExecutor executor;
     private @NotNull EmbeddedChannel channel;
     private @NotNull DisconnectInterceptorHandler handler;
-
-    @Before
+    @BeforeEach
     public void setup() {
         executor = new PluginTaskExecutor(new AtomicLong());
         executor.postConstruct();
@@ -108,14 +108,14 @@ public class DisconnectInboundInterceptorHandlerTest {
             }
         });
     }
-
-    @After
+    @AfterEach
     public void tearDown() {
         executor.stop();
         channel.close();
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_client_id_not_set() {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId(null);
         channel.writeOutbound(testDisconnect());
@@ -123,7 +123,8 @@ public class DisconnectInboundInterceptorHandlerTest {
         assertNull(channel.readInbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_channel_inactive() {
         channel.close();
 
@@ -132,7 +133,8 @@ public class DisconnectInboundInterceptorHandlerTest {
         assertNull(channel.readInbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_no_interceptors() {
         when(clientContext.getDisconnectOutboundInterceptors()).thenReturn(ImmutableList.of());
         when(hiveMQExtensions.getExtensionForClassloader(any())).thenReturn(extension);
@@ -152,7 +154,8 @@ public class DisconnectInboundInterceptorHandlerTest {
         assertEquals(disconnect.getReasonCode(), readDisconnect.getReasonCode());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_plugin_null() throws Exception {
         final DisconnectInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),
@@ -176,7 +179,8 @@ public class DisconnectInboundInterceptorHandlerTest {
         assertEquals("reason", disconnect.getReasonString());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_modified() throws Exception {
         final DisconnectInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),
@@ -200,7 +204,8 @@ public class DisconnectInboundInterceptorHandlerTest {
         assertEquals("modified", disconnect.getReasonString());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_outbound_noPartialModificationWhenException() throws Exception {
         final DisconnectInboundInterceptor interceptor =
                 IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.getRoot().toPath(),
@@ -224,7 +229,8 @@ public class DisconnectInboundInterceptorHandlerTest {
         assertNotEquals(Mqtt5DisconnectReasonCode.ADMINISTRATIVE_ACTION, disconnect.getReasonCode());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_exception() throws Exception {
         final DisconnectInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.getRoot().toPath(),
@@ -243,7 +249,8 @@ public class DisconnectInboundInterceptorHandlerTest {
         assertTrue(channel.isActive());
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_inbound_timeout_failed() throws Exception {
         final DisconnectInboundInterceptor interceptor =
                 IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.getRoot().toPath(),

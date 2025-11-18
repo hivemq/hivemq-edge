@@ -35,9 +35,9 @@ import com.hivemq.extensions.loader.ExtensionLifecycleHandler;
 import com.hivemq.extensions.loader.ExtensionLifecycleHandlerImpl;
 import com.hivemq.extensions.loader.ExtensionLoader;
 import com.hivemq.extensions.services.auth.Authenticators;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
@@ -61,8 +61,7 @@ public class ExtensionBootstrapImplTest {
     private final @NotNull EmbeddedExtension embeddedExtension = mock(EmbeddedExtension.class);
 
     private @NotNull ExtensionBootstrapImpl pluginBootstrap;
-
-    @Before
+    @BeforeEach
     public void before() {
         final SystemInformationImpl systemInformation = new SystemInformationImpl();
         systemInformation.init();

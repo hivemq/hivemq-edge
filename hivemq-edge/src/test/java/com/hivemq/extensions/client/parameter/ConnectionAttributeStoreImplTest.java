@@ -24,8 +24,11 @@ import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import io.netty.channel.Channel;
 import io.netty.util.Attribute;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -35,7 +38,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -48,8 +51,7 @@ public class ConnectionAttributeStoreImplTest {
     private @NotNull ConnectionAttributes connectionAttributes;
     private @NotNull ConnectionAttributeStore connectionAttributeStore;
     private @NotNull ClientConnection clientConnection;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         channel = mock(Channel.class);
 
@@ -109,22 +111,24 @@ public class ConnectionAttributeStoreImplTest {
         assertEquals(value, setValue.get());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_put_null_key() {
         final String key = null;
         final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
 
-        connectionAttributeStore.put(key, value);
+        assertThatThrownBy(() -> connectionAttributeStore.put(key, value))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_put_null_value() {
         final String key = "test.key";
         final ByteBuffer value = null;
 
-        connectionAttributeStore.put(key, value);
+        assertThatThrownBy(() -> connectionAttributeStore.put(key, value))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -172,22 +176,24 @@ public class ConnectionAttributeStoreImplTest {
         assertEquals(ByteBuffer.wrap(value.getBytes()), setValue.get());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_putAsString_null_key() {
         final String key = null;
         final String value = "test.value";
 
-        connectionAttributeStore.putAsString(key, value);
+        assertThatThrownBy(() -> connectionAttributeStore.putAsString(key, value))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_putAsString_null_value() {
         final String key = "test.key";
         final String value = null;
 
-        connectionAttributeStore.putAsString(key, value);
+        assertThatThrownBy(() -> connectionAttributeStore.putAsString(key, value))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -238,34 +244,37 @@ public class ConnectionAttributeStoreImplTest {
         assertEquals(ByteBuffer.wrap(value.getBytes(charset)), setValue.get());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_putAsString_charset_null_key() {
         final String key = null;
         final String value = "test.value";
         final Charset charset = StandardCharsets.ISO_8859_1;
 
-        connectionAttributeStore.putAsString(key, value, charset);
+        assertThatThrownBy(() -> connectionAttributeStore.putAsString(key, value, charset))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_putAsString_charset_null_value() {
         final String key = "test.key";
         final String value = null;
         final Charset charset = StandardCharsets.ISO_8859_1;
 
-        connectionAttributeStore.putAsString(key, value, charset);
+        assertThatThrownBy(() -> connectionAttributeStore.putAsString(key, value, charset))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_putAsString_charset_null_charset() {
         final String key = "test.key";
         final String value = "test.value";
         final Charset charset = null;
 
-        connectionAttributeStore.putAsString(key, value, charset);
+        assertThatThrownBy(() -> connectionAttributeStore.putAsString(key, value, charset))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -290,12 +299,13 @@ public class ConnectionAttributeStoreImplTest {
         assertFalse(returnValue.isPresent());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_get_null_key() {
         final String key = null;
 
-        connectionAttributeStore.get(key);
+        assertThatThrownBy(() -> connectionAttributeStore.get(key))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -335,12 +345,13 @@ public class ConnectionAttributeStoreImplTest {
         assertFalse(returnValue.isPresent());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_getAsString_null_key() {
         final String key = null;
 
-        connectionAttributeStore.getAsString(key);
+        assertThatThrownBy(() -> connectionAttributeStore.getAsString(key))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -383,22 +394,24 @@ public class ConnectionAttributeStoreImplTest {
         assertFalse(returnValue.isPresent());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_getAsString_charset_null_key() {
         final String key = null;
         final Charset charset = StandardCharsets.ISO_8859_1;
 
-        connectionAttributeStore.getAsString(key, charset);
+        assertThatThrownBy(() -> connectionAttributeStore.getAsString(key, charset))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_getAsString_charset_null_charset() {
         final String key = "test.key";
         final Charset charset = null;
 
-        connectionAttributeStore.getAsString(key, charset);
+        assertThatThrownBy(() -> connectionAttributeStore.getAsString(key, charset))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -482,12 +495,13 @@ public class ConnectionAttributeStoreImplTest {
         assertFalse(returnValue.isPresent());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_remove_null_key() {
         final String key = null;
 
-        connectionAttributeStore.remove(key);
+        assertThatThrownBy(() -> connectionAttributeStore.remove(key))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test

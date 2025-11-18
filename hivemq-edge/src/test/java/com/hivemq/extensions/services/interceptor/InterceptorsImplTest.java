@@ -29,17 +29,17 @@ import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.ArgumentCaptor;
 import util.IsolatedExtensionClassloaderUtil;
 
 import java.util.function.Consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -52,8 +52,7 @@ public class InterceptorsImplTest {
     private final @NotNull HiveMQExtension extension = mock(HiveMQExtension.class);
 
     private @NotNull InterceptorsImpl interceptors;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         interceptors = new InterceptorsImpl(hiveMQExtensions);
 

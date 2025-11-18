@@ -23,8 +23,11 @@ import com.hivemq.extension.sdk.api.services.exception.LimitExceededException;
 import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import io.netty.channel.Channel;
 import org.apache.commons.lang3.RandomUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestChannelAttribute;
 
 import java.nio.ByteBuffer;
@@ -33,7 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -42,8 +45,7 @@ public class ConnectionAttributesTest {
     private @NotNull ConnectionAttributes connectionAttributes;
     private @NotNull ClientConnection clientConnection;
     private @NotNull Channel channel;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         connectionAttributes = new ConnectionAttributes(1000);
         channel = mock(Channel.class);
@@ -126,22 +128,24 @@ public class ConnectionAttributesTest {
         assertEquals(value, getValue.get());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_put_null_key() {
         final String key = null;
         final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
 
-        connectionAttributes.put(key, value);
+        assertThatThrownBy(() -> connectionAttributes.put(key, value))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_put_null_value() {
         final String key = "test.key";
         final ByteBuffer value = null;
 
-        connectionAttributes.put(key, value);
+        assertThatThrownBy(() -> connectionAttributes.put(key, value))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -166,7 +170,7 @@ public class ConnectionAttributesTest {
         assertFalse(returnValue.isPresent());
     }
 
-    @Test(expected = ReadOnlyBufferException.class)
+    @Test
     public void test_get_immutable() {
         final String key = "test.key";
         final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
@@ -177,16 +181,18 @@ public class ConnectionAttributesTest {
         assertTrue(returnValue1.isPresent());
         assertEquals(value, returnValue1.get());
 
-        returnValue1.get().put(0, (byte) 10);
+        assertThatThrownBy(() -> returnValue1.get().put(0, (byte) 10))
+                .isInstanceOf(ReadOnlyBufferException.class);
 
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_get_null_key() {
         final String key = null;
 
-        connectionAttributes.get(key);
+        assertThatThrownBy(() -> connectionAttributes.get(key))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -268,12 +274,13 @@ public class ConnectionAttributesTest {
         assertFalse(returnValue.isPresent());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_remove_null_key() {
         final String key = null;
 
-        connectionAttributes.remove(key);
+        assertThatThrownBy(() -> connectionAttributes.remove(key))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -298,9 +305,10 @@ public class ConnectionAttributesTest {
         // checks if test passes without exceptions
     }
 
-    @Test(expected = LimitExceededException.class)
+    @Test
     public void test_limit_exceeded() {
-        connectionAttributes.put("key", ByteBuffer.wrap(RandomUtils.nextBytes(1001)));
+    
+        assertThrows(LimitExceededException.class, () -> connectionAttributes.put("key", ByteBuffer.wrap(RandomUtils.nextBytes(1001))));
     }
 
     @Test

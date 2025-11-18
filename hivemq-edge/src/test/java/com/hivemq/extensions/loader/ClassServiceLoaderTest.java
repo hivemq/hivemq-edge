@@ -22,8 +22,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Rule;
-import org.junit.Test;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.rules.TemporaryFolder;
 import util.OnTheFlyCompilationUtil;
 
@@ -32,7 +35,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ClassServiceLoaderTest {
 
@@ -178,17 +181,19 @@ public class ClassServiceLoaderTest {
         assertEquals(impl2Class.getCanonicalName(), loadedClasses.iterator().next().getCanonicalName());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_class_to_load_null() throws Exception {
         final ClassServiceLoader loader = new ClassServiceLoader();
-        loader.load(null, ClassLoader.getSystemClassLoader());
+        assertThatThrownBy(() -> loader.load(null, ClassLoader.getSystemClassLoader()))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_classloader_null() throws Exception {
         final ClassServiceLoader loader = new ClassServiceLoader();
-        loader.load(Object.class, null);
+        assertThatThrownBy(() -> loader.load(Object.class, null))
+                .isInstanceOf(NullPointerException.class);
     }
 }

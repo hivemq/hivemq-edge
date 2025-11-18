@@ -46,8 +46,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.util.concurrent.ImmediateEventExecutor;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -56,7 +56,7 @@ import util.TestConfigurationBootstrap;
 import java.util.HashSet;
 import java.util.Queue;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -97,8 +97,7 @@ public class IncomingSubscribeServiceTest {
     private IncomingSubscribeService incomingSubscribeService;
 
     private @NotNull ClientConnection clientConnection;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         MockitoAnnotations.initMocks(this);
@@ -254,7 +253,7 @@ public class IncomingSubscribeServiceTest {
         incomingSubscribeService.processSubscribe(ctx, subscribe, false);
 
         //We need to make sure we got disconnected
-        assertEquals(false, channel.isActive());
+        assertFalse(channel.isActive());
         verify(eventLog).clientWasDisconnected(any(Channel.class), anyString());
     }
 

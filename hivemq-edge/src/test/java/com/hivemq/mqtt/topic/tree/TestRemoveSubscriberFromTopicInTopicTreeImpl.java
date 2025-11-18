@@ -20,20 +20,19 @@ import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 
 import static com.hivemq.configuration.service.InternalConfigurations.TOPIC_TREE_MAP_CREATION_THRESHOLD;
 import static org.hamcrest.CoreMatchers.hasItem;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("Duplicates")
 public class TestRemoveSubscriberFromTopicInTopicTreeImpl {
 
     private LocalTopicTree topicTree;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         TOPIC_TREE_MAP_CREATION_THRESHOLD.set(1);

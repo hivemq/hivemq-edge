@@ -59,10 +59,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
@@ -77,8 +78,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -100,8 +102,7 @@ public class IncomingPublishHandlerTest {
     private @NotNull EmbeddedChannel channel;
     private @NotNull AtomicReference<Message> messageAtomicReference;
     private @NotNull ClientConnection clientConnection;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         dropLatch = new CountDownLatch(1);
 
@@ -141,21 +142,22 @@ public class IncomingPublishHandlerTest {
         channel.pipeline().addFirst(publishFlowHandler);
         channel.pipeline().context(PublishFlowHandler.class);
     }
-
-    @After
+    @AfterEach
     public void tearDown() {
         executor.stop();
         channel.close();
     }
 
-    @Test(timeout = 5000, expected = ClosedChannelException.class)
+    @Test
+    @Timeout(5)
     public void test_read_publish_channel_closed() {
         channel.close();
-
-        channel.writeInbound(TestMessageUtil.createFullMqtt5Publish());
+        assertThatThrownBy(() -> channel.writeInbound(TestMessageUtil.createFullMqtt5Publish()))
+                .hasCauseInstanceOf(ClosedChannelException.class);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_client_id_not_set() {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId(null);
 
@@ -164,7 +166,8 @@ public class IncomingPublishHandlerTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_skip_incoming_publishes() {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setIncomingPublishesSkipRest(true);
 
@@ -173,14 +176,16 @@ public class IncomingPublishHandlerTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_null() {
         channel.writeInbound(TestMessageUtil.createFullMqtt5Publish());
 
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_empty() {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -192,7 +197,8 @@ public class IncomingPublishHandlerTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_has_interceptors_preventing_mqtt3_qos2() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -221,7 +227,8 @@ public class IncomingPublishHandlerTest {
         assertTrue(dropLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_has_interceptors_preventing_mqtt3_qos1() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -250,7 +257,8 @@ public class IncomingPublishHandlerTest {
         assertTrue(dropLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_has_interceptors_preventing_mqtt3_qos0() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -281,7 +289,8 @@ public class IncomingPublishHandlerTest {
         assertTrue(dropLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_has_interceptors_preventing_mqtt5_qos2() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -310,7 +319,8 @@ public class IncomingPublishHandlerTest {
         assertTrue(dropLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_has_interceptors_preventing_mqtt5_qos1() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -339,7 +349,8 @@ public class IncomingPublishHandlerTest {
         assertTrue(dropLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_has_interceptors_preventing_mqtt5_qos0() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -366,7 +377,8 @@ public class IncomingPublishHandlerTest {
         assertTrue(dropLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_multiple_interceptors_preventing_mqtt5_qos0() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -394,7 +406,8 @@ public class IncomingPublishHandlerTest {
         assertTrue(dropLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_has_interceptors_change_topic_mqtt5() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -420,7 +433,8 @@ public class IncomingPublishHandlerTest {
         assertEquals("topicmodified", message.getTopic());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_has_interceptors_change_topic_mqtt3() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -446,7 +460,8 @@ public class IncomingPublishHandlerTest {
         assertEquals("topicmodified", message.getTopic());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_has_interceptors_preventing_mqtt3_disconnect() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -476,7 +491,8 @@ public class IncomingPublishHandlerTest {
         verify(mqttServerDisconnector).disconnect(eq(channel), anyString(), anyString(), any(), any());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_has_interceptors_preventing_mqtt5_witch_ack_and_reason() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -507,7 +523,8 @@ public class IncomingPublishHandlerTest {
         assertTrue(dropLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_has_interceptors_throws_exception() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -538,7 +555,8 @@ public class IncomingPublishHandlerTest {
         assertTrue(dropLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_has_interceptors_timeouts_failure_mqtt3_success_ack() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -580,7 +598,8 @@ public class IncomingPublishHandlerTest {
         assertTrue(pubackLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_publish_context_has_interceptors_timeouts_failure_mqtt5_success_ack() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());

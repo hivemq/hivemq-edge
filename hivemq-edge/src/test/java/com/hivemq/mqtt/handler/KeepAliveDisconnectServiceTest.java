@@ -21,9 +21,9 @@ import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoop;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Random;
@@ -44,15 +44,12 @@ public class KeepAliveDisconnectServiceTest {
     private final @NotNull MqttServerDisconnector mqttServerDisconnector = mock(MqttServerDisconnector.class);
 
     private @NotNull KeepAliveDisconnectService keepAliveDisconnectService;
-
-
-    @Before
+    @BeforeEach
     public void setUp() {
         keepAliveDisconnectService = new KeepAliveDisconnectService(mqttServerDisconnector, shutdownHooks);
         doAnswer(invocation -> null).when(mqttServerDisconnector).disconnect(channelArgumentCaptor.capture(), any(), any(), any(), any());
     }
-
-    @After
+    @AfterEach
     public void tearDown() {
         shutdownHooks.runShutdownHooks();
     }

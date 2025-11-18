@@ -18,9 +18,9 @@ package com.hivemq.extensions.interceptor.unsubscribe.parameter;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.packets.unsubscribe.ModifiableUnsubscribePacketImpl;
 import com.hivemq.extensions.packets.unsubscribe.UnsubscribePacketImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

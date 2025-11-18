@@ -24,8 +24,8 @@ import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import util.TestMessageUtil;
 
@@ -33,14 +33,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_SUBSCRIBE_MESSAGE_BARRIER;
 import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.fromCode;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SubscribeMessageBarrierTest {
 
     private EmbeddedChannel channel;
     private SubscribeMessageBarrier subscribeMessageBarrier;
-
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
         subscribeMessageBarrier = new SubscribeMessageBarrier();
@@ -50,14 +49,14 @@ public class SubscribeMessageBarrierTest {
 
     @Test
     public void test_default() {
-        assertEquals(false, channel.config().isAutoRead());
+        assertFalse(channel.config().isAutoRead());
     }
 
     @Test
     public void test_subscribe_sent() {
 
         channel.writeInbound(new SUBSCRIBE(ImmutableList.of(), 1));
-        assertEquals(false, channel.config().isAutoRead());
+        assertFalse(channel.config().isAutoRead());
         assertEquals(1, subscribeMessageBarrier.getQueue().size());
     }
 
@@ -69,7 +68,7 @@ public class SubscribeMessageBarrierTest {
         channel.writeInbound(new PUBACK(0));
         channel.writeInbound(new DISCONNECT());
 
-        assertEquals(false, channel.config().isAutoRead());
+        assertFalse(channel.config().isAutoRead());
         assertEquals(4, subscribeMessageBarrier.getQueue().size());
     }
 

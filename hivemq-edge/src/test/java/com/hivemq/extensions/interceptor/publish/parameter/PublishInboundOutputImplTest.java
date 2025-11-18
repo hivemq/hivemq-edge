@@ -20,11 +20,14 @@ import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.packets.publish.ModifiablePublishPacketImpl;
 import com.hivemq.extensions.packets.publish.PublishPacketImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Duration;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -101,34 +104,37 @@ public class PublishInboundOutputImplTest {
         assertEquals(AckReasonCode.SUCCESS, output.getReasonCode());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_async_duration_fallback_success_reason_string_failed() {
         final PluginOutPutAsyncer asyncer = mock(PluginOutPutAsyncer.class);
         final ModifiablePublishPacketImpl modifiablePacket = mock(ModifiablePublishPacketImpl.class);
 
         final PublishInboundOutputImpl output = new PublishInboundOutputImpl(asyncer, modifiablePacket);
 
-        output.async(Duration.ofSeconds(10), TimeoutFallback.SUCCESS, AckReasonCode.SUCCESS, "reason");
+        assertThatThrownBy(() -> output.async(Duration.ofSeconds(10), TimeoutFallback.SUCCESS, AckReasonCode.SUCCESS, "reason"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_async_duration_fallback_failure_reason_string_failed() {
         final PluginOutPutAsyncer asyncer = mock(PluginOutPutAsyncer.class);
         final ModifiablePublishPacketImpl modifiablePacket = mock(ModifiablePublishPacketImpl.class);
 
         final PublishInboundOutputImpl output = new PublishInboundOutputImpl(asyncer, modifiablePacket);
 
-        output.async(Duration.ofSeconds(10), TimeoutFallback.FAILURE, AckReasonCode.SUCCESS, "reason");
+        assertThatThrownBy(() -> output.async(Duration.ofSeconds(10), TimeoutFallback.FAILURE, AckReasonCode.SUCCESS, "reason"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_async_duration_fallback_success_ack_failed() {
         final PluginOutPutAsyncer asyncer = mock(PluginOutPutAsyncer.class);
         final ModifiablePublishPacketImpl modifiablePacket = mock(ModifiablePublishPacketImpl.class);
 
         final PublishInboundOutputImpl output = new PublishInboundOutputImpl(asyncer, modifiablePacket);
 
-        output.async(Duration.ofSeconds(10), TimeoutFallback.SUCCESS, AckReasonCode.NOT_AUTHORIZED, "reason");
+        assertThatThrownBy(() -> output.async(Duration.ofSeconds(10), TimeoutFallback.SUCCESS, AckReasonCode.NOT_AUTHORIZED, "reason"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -173,7 +179,7 @@ public class PublishInboundOutputImplTest {
         assertTrue(output.isPreventDelivery());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void test_prevent_delivery_twice() {
         final PluginOutPutAsyncer asyncer = mock(PluginOutPutAsyncer.class);
         final ModifiablePublishPacketImpl modifiablePacket = mock(ModifiablePublishPacketImpl.class);
@@ -181,7 +187,8 @@ public class PublishInboundOutputImplTest {
         final PublishInboundOutputImpl output = new PublishInboundOutputImpl(asyncer, modifiablePacket);
 
         output.preventPublishDelivery();
-        output.preventPublishDelivery();
+        assertThatThrownBy(() -> output.preventPublishDelivery())
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
@@ -198,7 +205,7 @@ public class PublishInboundOutputImplTest {
         assertEquals("reason", output.getReasonString());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void test_async_twice() {
         final PluginOutPutAsyncer asyncer = mock(PluginOutPutAsyncer.class);
         final ModifiablePublishPacketImpl modifiablePacket = mock(ModifiablePublishPacketImpl.class);
@@ -206,17 +213,19 @@ public class PublishInboundOutputImplTest {
         final PublishInboundOutputImpl output = new PublishInboundOutputImpl(asyncer, modifiablePacket);
 
         output.async(Duration.ZERO);
-        output.async(Duration.ofMinutes(1), TimeoutFallback.SUCCESS);
+        assertThatThrownBy(() -> output.async(Duration.ofMinutes(1), TimeoutFallback.SUCCESS))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_prevent_delivery_success_with_reason_string() {
         final PluginOutPutAsyncer asyncer = mock(PluginOutPutAsyncer.class);
         final ModifiablePublishPacketImpl modifiablePacket = mock(ModifiablePublishPacketImpl.class);
 
         final PublishInboundOutputImpl output = new PublishInboundOutputImpl(asyncer, modifiablePacket);
 
-        output.preventPublishDelivery(AckReasonCode.SUCCESS, "reason");
+        assertThatThrownBy(() -> output.preventPublishDelivery(AckReasonCode.SUCCESS, "reason"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -247,23 +256,25 @@ public class PublishInboundOutputImplTest {
         assertTrue(output.isPreventDelivery());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_prevent_delivery_with_reason_code_null() {
         final PluginOutPutAsyncer asyncer = mock(PluginOutPutAsyncer.class);
         final ModifiablePublishPacketImpl modifiablePacket = mock(ModifiablePublishPacketImpl.class);
 
         final PublishInboundOutputImpl output = new PublishInboundOutputImpl(asyncer, modifiablePacket);
 
-        output.preventPublishDelivery(null);
+        assertThatThrownBy(() -> output.preventPublishDelivery(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_prevent_delivery_with_reason_code_null_and_reason_string() {
         final PluginOutPutAsyncer asyncer = mock(PluginOutPutAsyncer.class);
         final ModifiablePublishPacketImpl modifiablePacket = mock(ModifiablePublishPacketImpl.class);
 
         final PublishInboundOutputImpl output = new PublishInboundOutputImpl(asyncer, modifiablePacket);
 
-        output.preventPublishDelivery(null, "reason");
+        assertThatThrownBy(() -> output.preventPublishDelivery(null, "reason"))
+                .isInstanceOf(NullPointerException.class);
     }
 }

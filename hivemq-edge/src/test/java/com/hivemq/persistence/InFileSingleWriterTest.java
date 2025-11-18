@@ -20,9 +20,9 @@ import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.List;
@@ -34,8 +34,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Lukas Brandl
@@ -44,8 +44,7 @@ public class InFileSingleWriterTest {
 
     private final @NotNull InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
     private @NotNull InFileSingleWriter singleWriterServiceImpl;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         internalConfigurationService.set(InternalConfigurations.MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE, "4");
         InternalConfigurations.SINGLE_WRITER_CREDITS_PER_EXECUTION.set(200);
@@ -53,8 +52,7 @@ public class InFileSingleWriterTest {
         internalConfigurationService.set(PERSISTENCE_BUCKET_COUNT, "64");
         singleWriterServiceImpl = new InFileSingleWriter(internalConfigurationService);
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         singleWriterServiceImpl.stop();
     }

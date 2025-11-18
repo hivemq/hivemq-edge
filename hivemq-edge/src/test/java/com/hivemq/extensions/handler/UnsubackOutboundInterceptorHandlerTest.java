@@ -45,7 +45,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
@@ -55,8 +57,9 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -75,7 +78,7 @@ public class UnsubackOutboundInterceptorHandlerTest {
     private @NotNull PluginTaskExecutor executor;
     private @NotNull EmbeddedChannel channel;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         isTriggered.set(false);
         executor = new PluginTaskExecutor(new AtomicLong());
@@ -111,8 +114,7 @@ public class UnsubackOutboundInterceptorHandlerTest {
             }
         });
     }
-
-    @After
+    @AfterEach
     public void tearDown() {
         executor.stop();
         channel.close();
@@ -138,7 +140,7 @@ public class UnsubackOutboundInterceptorHandlerTest {
             channel.runScheduledPendingTasks();
             unsuback = channel.readOutbound();
         }
-        Assert.assertNotNull(unsuback);
+        assertNotNull(unsuback);
         assertTrue(isTriggered.get());
     }
 

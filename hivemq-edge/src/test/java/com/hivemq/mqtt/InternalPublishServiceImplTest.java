@@ -29,8 +29,9 @@ import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.mqtt.topic.tree.TopicSubscribers;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 import util.TestException;
 import util.TestMessageUtil;
@@ -43,11 +44,11 @@ import java.util.concurrent.ExecutorService;
 import static com.hivemq.api.mqtt.PublishReturnCode.DELIVERED;
 import static com.hivemq.api.mqtt.PublishReturnCode.FAILED;
 import static com.hivemq.api.mqtt.PublishReturnCode.NO_MATCHING_SUBSCRIBERS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.anyMap;
@@ -68,8 +69,7 @@ public class InternalPublishServiceImplTest {
     private final @NotNull ExecutorService executorService = MoreExecutors.newDirectExecutorService();
 
     private @NotNull InternalPublishServiceImpl publishService;
-
-    @Before
+    @BeforeEach
     public void before() {
 
         when(publishDistributor.distributeToNonSharedSubscribers(anyMap(),
@@ -82,7 +82,8 @@ public class InternalPublishServiceImplTest {
         publishService = new InternalPublishServiceImpl(retainedMessagePersistence, topicTree, publishDistributor);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_retained_message_remove() throws Exception {
 
         when(topicTree.findTopicSubscribers(anyString())).thenReturn(new TopicSubscribers(ImmutableSet.of(),
@@ -100,7 +101,8 @@ public class InternalPublishServiceImplTest {
 
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_retained_message_remove_failed() throws Exception {
 
         when(topicTree.findTopicSubscribers(anyString())).thenReturn(new TopicSubscribers(ImmutableSet.of(),
@@ -117,7 +119,8 @@ public class InternalPublishServiceImplTest {
         verify(retainedMessagePersistence).remove("subonly");
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_no_subs() throws ExecutionException, InterruptedException {
 
         when(topicTree.findTopicSubscribers(anyString())).thenReturn(new TopicSubscribers(ImmutableSet.of(),
@@ -133,7 +136,8 @@ public class InternalPublishServiceImplTest {
         assertEquals(NO_MATCHING_SUBSCRIBERS, returnCode);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_no_local() {
 
         final byte noLocalFlag = SubscriptionFlag.getDefaultFlags(false, false, true);
@@ -159,7 +163,8 @@ public class InternalPublishServiceImplTest {
         assertNotNull(map.get("sub2"));
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_multiple_subs() {
 
         final SubscriberWithIdentifiers sub1 = new SubscriberWithIdentifiers("sub1", 1, (byte) 0, null);
@@ -184,7 +189,8 @@ public class InternalPublishServiceImplTest {
         assertNotNull(map.get("sub2"));
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_reset_dup_flag() {
 
         final SubscriberWithIdentifiers sub1 = new SubscriberWithIdentifiers("sub1", 1, (byte) 0, null);
@@ -206,7 +212,8 @@ public class InternalPublishServiceImplTest {
         assertFalse(value.isDuplicateDelivery());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_multiple_subs_failed() throws ExecutionException, InterruptedException {
 
         final SubscriberWithIdentifiers sub1 = new SubscriberWithIdentifiers("sub1", 1, (byte) 0, null);
@@ -227,7 +234,8 @@ public class InternalPublishServiceImplTest {
         assertEquals(DELIVERED, returnCode);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_shared_subs_different_groups() {
 
         when(topicTree.findTopicSubscribers("topic")).thenReturn(new TopicSubscribers(ImmutableSet.of(),
@@ -250,7 +258,8 @@ public class InternalPublishServiceImplTest {
         assertTrue(set.contains("group2/topic"));
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_shared_subs_same_group() {
 
         when(topicTree.findTopicSubscribers("topic")).thenReturn(new TopicSubscribers(ImmutableSet.of(),
@@ -273,7 +282,8 @@ public class InternalPublishServiceImplTest {
         assertTrue(set.contains("group1/#"));
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_mixed_subs() {
 
         final SubscriberWithIdentifiers sub = new SubscriberWithIdentifiers("sub2", 1, (byte) 0, null);
