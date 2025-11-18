@@ -25,37 +25,23 @@ import com.hivemq.util.ReasonStrings;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import util.TestChannelAttribute;
 import util.TestConfigurationBootstrap;
 
-import java.util.Arrays;
-import java.util.Collection;
-
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@RunWith(Parameterized.class)
 public class Mqtt311ConnectDecoderInvalidFixedHeadersTest {
 
     private MqttConnacker connacker;
     private ClientConnection clientConnection;
     private Mqtt311ConnectDecoder decoder;
 
-    @Parameterized.Parameters
-    public static Collection<Byte> parameters() {
-        return Arrays.asList(
-                (byte) 0b0001_0001, (byte) 0b0001_0011, (byte) 0b0001_0111, (byte) 0b0001_1111,
-                (byte) 0b0001_0010, (byte) 0b0001_0110, (byte) 0b0001_1110,
-                (byte) 0b0001_0100, (byte) 0b0001_1100,
-                (byte) 0b0001_1000);
-    }
-
-    @Parameterized.Parameter
-    public byte invalidBitHeader;
     @BeforeEach
     public void setUp() throws Exception {
         final Channel channel = mock(Channel.class);
@@ -69,8 +55,14 @@ public class Mqtt311ConnectDecoderInvalidFixedHeadersTest {
                 new HivemqId());
     }
 
-    @Test
-    public void test_fixed_header_reserved_bit_set() {
+    @ParameterizedTest
+    @ValueSource(bytes = {
+            (byte) 0b0001_0001, (byte) 0b0001_0011, (byte) 0b0001_0111, (byte) 0b0001_1111,
+            (byte) 0b0001_0010, (byte) 0b0001_0110, (byte) 0b0001_1110,
+            (byte) 0b0001_0100, (byte) 0b0001_1100,
+            (byte) 0b0001_1000
+    })
+    public void test_fixed_header_reserved_bit_set(byte invalidBitHeader) {
         assertNull(decoder.decode(clientConnection, null, invalidBitHeader));
         verify(connacker).connackError(clientConnection.getChannel(),
                 "A client (IP: {}) connected with an invalid fixed header.",

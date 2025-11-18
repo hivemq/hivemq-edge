@@ -68,6 +68,7 @@ public class MqttAuthSenderTest {
     @Test
     public void test_send_auth_method_null() {
         final EmbeddedChannel channel = new EmbeddedChannel();
+        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().proposeClientState(ClientState.RE_AUTHENTICATING);
         assertThatThrownBy(() -> mqttAuthSender.sendAuth(channel, null, Mqtt5AuthReasonCode.SUCCESS, Mqtt5UserProperties.NO_USER_PROPERTIES, "reason"))
                 .isInstanceOf(NullPointerException.class);
