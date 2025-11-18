@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
 
+import { MOCK_INTERPOLATION_VARIABLES } from '@datahub/api/hooks/DataHubInterpolationService/__handlers__'
 import type { Edge, Node } from '@xyflow/react'
 import { Button } from '@chakra-ui/react'
 
@@ -42,6 +43,11 @@ describe('OperationPanel', () => {
         return specs
       }),
     }).as('getFunctionSpecs')
+
+    cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/bridges', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/data-hub/interpolation-variables', MOCK_INTERPOLATION_VARIABLES).as('getVariables')
   })
 
   it('should render loading and error states', () => {

@@ -35,6 +35,7 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
 describe('TopicFilterPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { statusCode: 203, log: false })
   })
 
   it('should render loading and error states', () => {

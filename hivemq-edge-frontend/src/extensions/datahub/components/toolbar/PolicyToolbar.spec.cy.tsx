@@ -1,9 +1,17 @@
+import { MOCK_DATAHUB_FUNCTIONS } from '@datahub/api/hooks/DataHubFunctionsService/__handlers__'
 import PolicyToolbar from '@datahub/components/toolbar/PolicyToolbar.tsx'
 import { getPolicyPublishWrapper, MOCK_NODE_DATA_POLICY } from '@datahub/__test-utils__/react-flow.mocks.tsx'
 
 describe('PolicyToolbar', () => {
   beforeEach(() => {
     cy.viewport(800, 250)
+
+    cy.intercept('/api/v1/data-hub/function-specs', {
+      items: MOCK_DATAHUB_FUNCTIONS.items.map((specs) => {
+        specs.metadata.inLicenseAllowed = true
+        return specs
+      }),
+    })
   })
 
   it('should render properly', () => {

@@ -182,6 +182,7 @@ describe('SchemaPanel', () => {
   })
 
   it('should be accessible', () => {
+    cy.intercept('/api/v1/data-hub/schemas', { items: [{ ...mockSchemaTempHumidity, type: SchemaType.PROTOBUF }] })
     cy.injectAxe()
     cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
 
