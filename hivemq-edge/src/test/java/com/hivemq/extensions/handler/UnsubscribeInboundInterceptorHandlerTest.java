@@ -47,12 +47,14 @@ import org.junit.jupiter.api.BeforeEach;
 // MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -65,8 +67,8 @@ public class UnsubscribeInboundInterceptorHandlerTest {
 
     public static final @NotNull AtomicBoolean isTriggered = new AtomicBoolean();
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HiveMQExtensions extensions = mock(HiveMQExtensions.class);
     private final @NotNull HiveMQExtension extension = mock(HiveMQExtension.class);
@@ -128,7 +130,7 @@ public class UnsubscribeInboundInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(extensions, new ModifiableDefaultPermissionsImpl());
         final UnsubscribeInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 SimpleUnsubscribeTestInterceptor.class);
         clientContext.addUnsubscribeInboundInterceptor(interceptor);
 
@@ -154,7 +156,7 @@ public class UnsubscribeInboundInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(extensions, new ModifiableDefaultPermissionsImpl());
         final UnsubscribeInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 ModifyUnsubscribeTestInterceptor.class);
         clientContext.addUnsubscribeInboundInterceptor(interceptor);
 

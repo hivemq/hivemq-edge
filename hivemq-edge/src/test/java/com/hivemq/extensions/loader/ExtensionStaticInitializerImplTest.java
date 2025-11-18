@@ -20,8 +20,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.ExtensionMain;
-import org.assertj.core.api.Assertions;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.events.EventRegistry;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
@@ -31,7 +29,12 @@ import com.hivemq.extension.sdk.api.services.ManagedExtensionExecutorService;
 import com.hivemq.extension.sdk.api.services.Services;
 import com.hivemq.extension.sdk.api.services.admin.AdminService;
 import com.hivemq.extension.sdk.api.services.auth.SecurityRegistry;
-import com.hivemq.extension.sdk.api.services.builder.*;
+import com.hivemq.extension.sdk.api.services.builder.Builders;
+import com.hivemq.extension.sdk.api.services.builder.PublishBuilder;
+import com.hivemq.extension.sdk.api.services.builder.RetainedPublishBuilder;
+import com.hivemq.extension.sdk.api.services.builder.TopicPermissionBuilder;
+import com.hivemq.extension.sdk.api.services.builder.TopicSubscriptionBuilder;
+import com.hivemq.extension.sdk.api.services.builder.WillPublishBuilder;
 import com.hivemq.extension.sdk.api.services.cluster.ClusterService;
 import com.hivemq.extension.sdk.api.services.interceptor.EdgeInterceptorRegistry;
 import com.hivemq.extension.sdk.api.services.interceptor.GlobalInterceptorRegistry;
@@ -46,7 +49,11 @@ import com.hivemq.extensions.exception.ExtensionLoadingException;
 import com.hivemq.extensions.services.auth.AuthenticatorsImpl;
 import com.hivemq.extensions.services.auth.AuthorizersImpl;
 import com.hivemq.extensions.services.auth.SecurityRegistryImpl;
-import com.hivemq.extensions.services.builder.*;
+import com.hivemq.extensions.services.builder.PublishBuilderImpl;
+import com.hivemq.extensions.services.builder.RetainedPublishBuilderImpl;
+import com.hivemq.extensions.services.builder.TopicPermissionBuilderImpl;
+import com.hivemq.extensions.services.builder.TopicSubscriptionBuilderImpl;
+import com.hivemq.extensions.services.builder.WillPublishBuilderImpl;
 import com.hivemq.extensions.services.executor.GlobalManagedExtensionExecutorService;
 import com.hivemq.extensions.services.executor.ManagedExecutorServicePerExtension;
 import com.hivemq.extensions.services.initializer.InitializerRegistryImpl;
@@ -54,13 +61,10 @@ import com.hivemq.extensions.services.initializer.InitializersImpl;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Java6Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import util.TestConfigurationBootstrap;
 
@@ -69,15 +73,20 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Java6Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ExtensionStaticInitializerImplTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull RetainedMessageStore retainedMessageStore = mock(RetainedMessageStore.class);
     private final @NotNull SubscriptionStore subscriptionStore = mock(SubscriptionStore.class);
@@ -400,7 +409,8 @@ public class ExtensionStaticInitializerImplTest {
         final JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class)
                 .addAsServiceProviderAndClasses(ExtensionMain.class, TestExtensionMain.class);
 
-        final File jarFile = temporaryFolder.newFile();
+        final File jarFile = new File(temporaryFolder, "newFile.jar");
+        jarFile.createNewFile();
         javaArchive.as(ZipExporter.class).exportTo(jarFile, true);
 
         // this classloader contains the classes from the JAR file

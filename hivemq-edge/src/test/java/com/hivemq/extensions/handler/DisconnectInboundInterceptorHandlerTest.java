@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.disconnect.DisconnectInboundInterceptor;
 import com.hivemq.extension.sdk.api.interceptor.disconnect.parameter.DisconnectInboundInput;
 import com.hivemq.extension.sdk.api.interceptor.disconnect.parameter.DisconnectInboundOutput;
@@ -42,21 +41,25 @@ import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -66,8 +69,8 @@ import static org.mockito.Mockito.when;
  */
 public class DisconnectInboundInterceptorHandlerTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HiveMQExtension extension = mock(HiveMQExtension.class);
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
@@ -158,7 +161,7 @@ public class DisconnectInboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_plugin_null() throws Exception {
         final DisconnectInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyInboundInterceptor.class);
         final List<DisconnectInboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -183,7 +186,7 @@ public class DisconnectInboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_modified() throws Exception {
         final DisconnectInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyInboundInterceptor.class);
         final List<DisconnectInboundInterceptor> interceptors = ImmutableList.of(interceptor);
 
@@ -208,7 +211,7 @@ public class DisconnectInboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_outbound_noPartialModificationWhenException() throws Exception {
         final DisconnectInboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.getRoot().toPath(),
+                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
                         TestPartialModifiedInboundInterceptor.class);
         final List<DisconnectInboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -233,7 +236,7 @@ public class DisconnectInboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_exception() throws Exception {
         final DisconnectInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestExceptionInboundInterceptor.class);
         final List<DisconnectInboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -253,7 +256,7 @@ public class DisconnectInboundInterceptorHandlerTest {
     @Timeout(10)
     public void test_inbound_timeout_failed() throws Exception {
         final DisconnectInboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.getRoot().toPath(),
+                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
                         TestTimeoutFailedInboundInterceptor.class);
         final List<DisconnectInboundInterceptor> list = ImmutableList.of(interceptor);
 

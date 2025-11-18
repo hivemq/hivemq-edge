@@ -15,7 +15,6 @@
  */
 package com.hivemq.extensions.auth;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.EnhancedAuthenticator;
 import com.hivemq.extension.sdk.api.auth.parameter.AuthenticatorProviderInput;
 import com.hivemq.extension.sdk.api.auth.parameter.EnhancedAuthConnectInput;
@@ -30,20 +29,26 @@ import com.hivemq.extensions.services.auth.WrappedAuthenticatorProvider;
 import com.hivemq.mqtt.message.auth.AUTH;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5AuthReasonCode;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import util.IsolatedExtensionClassloaderUtil;
 
+import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class ReAuthTaskTest {
@@ -56,8 +61,8 @@ public class ReAuthTaskTest {
 
     private EnhancedAuthenticator enhancedAuthenticator;
     public static AtomicBoolean reAuth;
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private ReAuthTask authTask;
     @Mock
@@ -74,7 +79,7 @@ public class ReAuthTaskTest {
         auth = new AtomicBoolean();
         reAuth = new AtomicBoolean();
 
-        classloader = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), new Class[]{TestAuthenticator.class});
+        classloader = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), new Class[]{TestAuthenticator.class});
         enhancedAuthenticator = IsolatedExtensionClassloaderUtil.loadInstance(classloader, TestAuthenticator.class);
 
         when(wrappedAuthenticatorProvider.getEnhancedAuthenticator(authenticatorProviderInput)).thenReturn(enhancedAuthenticator);

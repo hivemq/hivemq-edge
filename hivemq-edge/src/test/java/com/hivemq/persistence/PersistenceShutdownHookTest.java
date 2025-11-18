@@ -28,6 +28,7 @@ import com.hivemq.persistence.qos.IncomingMessageFlowPersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -84,7 +85,8 @@ public class PersistenceShutdownHookTest {
         verify(singleWriterService).stop();
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(15)
     public void test_timeout_future_not_returning() throws Exception {
 
         final SettableFuture<Void> voidSettableFuture = SettableFuture.create();

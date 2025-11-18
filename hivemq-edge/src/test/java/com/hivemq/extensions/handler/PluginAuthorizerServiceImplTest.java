@@ -19,7 +19,6 @@ package com.hivemq.extensions.handler;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthorizerProvider;
 import com.hivemq.extensions.HiveMQExtension;
@@ -31,7 +30,11 @@ import com.hivemq.extensions.executor.PluginTaskExecutorService;
 import com.hivemq.extensions.executor.PluginTaskExecutorServiceImpl;
 import com.hivemq.extensions.executor.task.PluginTaskExecutor;
 import com.hivemq.extensions.handler.PluginAuthorizerServiceImpl.AuthorizeWillResultEvent;
-import com.hivemq.extensions.handler.testextensions.*;
+import com.hivemq.extensions.handler.testextensions.TestAuthorizerDisconnectProvider;
+import com.hivemq.extensions.handler.testextensions.TestAuthorizerForgetProvider;
+import com.hivemq.extensions.handler.testextensions.TestAuthorizerNextProvider;
+import com.hivemq.extensions.handler.testextensions.TestPubAuthorizerNextProvider;
+import com.hivemq.extensions.handler.testextensions.TestTimeoutAuthorizerProvider;
 import com.hivemq.extensions.services.auth.Authorizers;
 import com.hivemq.logging.EventLog;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
@@ -47,15 +50,16 @@ import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import util.CollectUserEventsHandler;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestMessageUtil;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -65,18 +69,25 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @since 4.0.0
  */
 public class PluginAuthorizerServiceImplTest {
 
-    @Rule
-    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull Authorizers authorizers = mock(Authorizers.class);
     private final @NotNull IncomingSubscribeService incomingSubscribeService = mock(IncomingSubscribeService.class);
@@ -539,7 +550,7 @@ public class PluginAuthorizerServiceImplTest {
             final @NotNull Class<?> clazz,
             final @NotNull CountDownLatch countDownLatch) throws Exception {
         final Class<?> providerClass =
-                IsolatedExtensionClassloaderUtil.loadClass(temporaryFolder.getRoot().toPath(), clazz);
+                IsolatedExtensionClassloaderUtil.loadClass(temporaryFolder.toPath(), clazz);
         return (AuthorizerProvider) providerClass.getDeclaredConstructor(CountDownLatch.class)
                 .newInstance(countDownLatch);
     }

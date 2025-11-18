@@ -16,28 +16,28 @@
 
 package com.hivemq.extensions.config;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtensionEntity;
 import org.apache.commons.io.FileUtils;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class HiveMQExtensionXMLReaderTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     @Test
     public void test_unmarschal_plugin_meta() throws Exception {
-        final File extensionXML = temporaryFolder.newFile("hivemq-extension.xml");
+        final File extensionXML = new File(temporaryFolder, "hivemq-extension.xml");
         FileUtils.writeStringToFile(extensionXML, "<hivemq-extension>" + //
                 "<id>some-id</id>" + //
                 "<name>Some Name</name>" + //
@@ -59,7 +59,7 @@ public class HiveMQExtensionXMLReaderTest {
     @Test
     @Timeout(5)
     public void test_missing_id_in_plugin_meta() throws Exception {
-        final File extensionXML = temporaryFolder.newFile("hivemq-extension.xml");
+        final File extensionXML = new File(temporaryFolder, "hivemq-extension.xml");
         FileUtils.writeStringToFile(extensionXML, "<hivemq-extension>" + //
                 "<name>Some Name</name>" + //
                 "<version>1.0.0</version>" + //

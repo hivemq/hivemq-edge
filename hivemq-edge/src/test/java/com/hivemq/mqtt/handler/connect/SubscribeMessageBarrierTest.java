@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_SUBSCRIBE_MESSAGE_BARRIER;
 import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.fromCode;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class SubscribeMessageBarrierTest {
 

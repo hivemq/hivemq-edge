@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.mqtt.message.QoS;
@@ -35,12 +34,11 @@ import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.MemoryEstimator;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -67,9 +65,6 @@ import static org.mockito.Mockito.verify;
  */
 @SuppressWarnings("NullabilityAnnotations")
 public class ClientQueueMemoryLocalPersistenceTest {
-
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     private final @NotNull PublishPayloadPersistence payloadPersistence = mock();
     private final @NotNull MessageDroppedService messageDroppedService = mock();

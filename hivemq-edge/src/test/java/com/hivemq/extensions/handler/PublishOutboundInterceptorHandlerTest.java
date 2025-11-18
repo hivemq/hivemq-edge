@@ -19,7 +19,6 @@ package com.hivemq.extensions.handler;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.publish.PublishOutboundInterceptor;
 import com.hivemq.extension.sdk.api.interceptor.publish.parameter.PublishOutboundInput;
 import com.hivemq.extension.sdk.api.interceptor.publish.parameter.PublishOutboundOutput;
@@ -40,24 +39,29 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import util.CollectUserEventsHandler;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 import util.TestMessageUtil;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.io.File;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class PublishOutboundInterceptorHandlerTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull PluginOutPutAsyncer asyncer = mock(PluginOutPutAsyncer.class);
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
@@ -126,7 +130,7 @@ public class PublishOutboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_extension_null() throws Exception {
         final PublishOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestInterceptor.class);
         when(clientContext.getPublishOutboundInterceptors()).thenReturn(ImmutableList.of(interceptor));
 
@@ -141,7 +145,7 @@ public class PublishOutboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_extension_prevented() throws Exception {
         final PublishOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestInterceptor.class);
         when(clientContext.getPublishOutboundInterceptors()).thenReturn(ImmutableList.of(interceptor));
 

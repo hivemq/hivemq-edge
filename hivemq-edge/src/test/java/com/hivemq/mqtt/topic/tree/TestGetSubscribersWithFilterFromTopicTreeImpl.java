@@ -32,6 +32,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.junit.jupiter.api.Assertions.*;
@@ -82,7 +83,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItem("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -91,7 +92,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic/1/2/3/4/5/6/7/8/9/0", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItem("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -100,7 +101,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic/1/2/3/4/5/6/7/8/9/0/#", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItem("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -109,7 +110,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic/1/2/3/4/+/6/7/8/9/0/#", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItem("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -118,7 +119,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItem("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -128,7 +129,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic", getMatchAllFilter());
         assertEquals(2, subscribers.size());
-        assertThat(subscribers, hasItems("subscriber", "subscriber2"));
+        assertThat(subscribers).contains("subscriber", "subscriber2");
     }
 
     @Test
@@ -138,7 +139,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItems("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -148,7 +149,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItems("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -159,7 +160,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItem("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -168,7 +169,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("#", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItems("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -177,7 +178,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("+", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItems("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -186,7 +187,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("+/+", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItems("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -195,7 +196,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("+/#", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItems("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -237,7 +238,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic", getMatchAllFilter());
         assertEquals(2, subscribers.size());
-        assertThat(subscribers, hasItems("subscriber", "subscriber2"));
+        assertThat(subscribers).contains("subscriber", "subscriber2");
     }
 
     @Test
@@ -247,7 +248,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("$SYS/topic", getMatchAllFilter());
         assertEquals(2, subscribers.size());
-        assertThat(subscribers, hasItems("subscriber", "subscriber2"));
+        assertThat(subscribers).contains("subscriber", "subscriber2");
     }
 
     @Test
@@ -256,7 +257,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("$SYS/+", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItem("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -269,7 +270,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic", getMatchAllFilter());
         assertEquals(1, subscribers.size());
-        assertThat(subscribers, hasItem("subscriber"));
+        assertThat(subscribers).contains("subscriber");
     }
 
     @Test
@@ -328,7 +329,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         final ImmutableSet<String> subscribers1 = topicTree.getSubscribersWithFilter("topic", getMatchAllFilter());
         assertEquals(3, subscribers1.size());
-        assertThat(subscribers1, hasItems("sub1", "sub2", "sub3"));
+        assertThat(subscribers1).contains("sub1", "sub2", "sub3");
 
         final ImmutableSet<String> subscribers2 = topicTree.getSubscribersWithFilter("#", getMatchAllFilter());
         assertEquals(1, subscribers2.size());

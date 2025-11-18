@@ -17,8 +17,6 @@
 package com.hivemq.extensions.events;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListener;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListenerProvider;
 import com.hivemq.extension.sdk.api.events.client.parameters.ClientLifecycleEventListenerProviderInput;
@@ -30,12 +28,14 @@ import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
 
+import java.io.File;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -48,8 +48,8 @@ import static org.mockito.Mockito.when;
  */
 public class LifecycleEventListenersImplTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
     private final @NotNull HiveMQExtension extension1 = mock(HiveMQExtension.class);
@@ -69,7 +69,7 @@ public class LifecycleEventListenersImplTest {
 
     @Test
     public void test_add_success() throws Exception {
-        try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot()
+        try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
                 .toPath(), new Class[]{TestClientLifecycleEventListenerProviderOne.class})) {
             final ClientLifecycleEventListenerProvider clientInitializer =
                     IsolatedExtensionClassloaderUtil.loadInstance(cl,
@@ -99,9 +99,9 @@ public class LifecycleEventListenersImplTest {
                 TestClientLifecycleEventListenerProviderOne.class, TestClientLifecycleEventListenerProviderTwo.class
         };
 
-        try (final IsolatedExtensionClassloader cl1 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot()
+        try (final IsolatedExtensionClassloader cl1 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
                 .toPath(), classes);
-             final IsolatedExtensionClassloader cl2 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot()
+             final IsolatedExtensionClassloader cl2 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
                      .toPath(), classes)) {
             final ClientLifecycleEventListenerProvider clientInitializerOne =
                     IsolatedExtensionClassloaderUtil.loadInstance(cl1,
@@ -139,9 +139,9 @@ public class LifecycleEventListenersImplTest {
                 TestClientLifecycleEventListenerProviderOne.class, TestClientLifecycleEventListenerProviderTwo.class
         };
 
-        try (final IsolatedExtensionClassloader cl1 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot()
+        try (final IsolatedExtensionClassloader cl1 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
                 .toPath(), classes);
-             final IsolatedExtensionClassloader cl2 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot()
+             final IsolatedExtensionClassloader cl2 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
                      .toPath(), classes)) {
             final ClientLifecycleEventListenerProvider clientInitializerOne =
                     IsolatedExtensionClassloaderUtil.loadInstance(cl1,

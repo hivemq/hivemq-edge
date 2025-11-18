@@ -17,7 +17,6 @@
 package com.hivemq.extensions;
 
 import com.hivemq.extension.sdk.api.ExtensionMain;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
@@ -27,11 +26,11 @@ import com.hivemq.extensions.config.HiveMQExtensionXMLReader;
 import com.hivemq.extensions.parameter.ExtensionStartOutputImpl;
 import com.hivemq.extensions.parameter.ExtensionStartStopInputImpl;
 import com.hivemq.extensions.parameter.ExtensionStopOutputImpl;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import util.TestExtensionUtil;
 
 import java.io.File;
@@ -48,8 +47,8 @@ import static org.mockito.Mockito.mock;
 @SuppressWarnings("NullabilityAnnotations")
 public class HiveMQExtensionExtensionTest extends AbstractExtensionTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder tmpFolder = new TemporaryFolder();
+    @TempDir
+    public File tmpFolder;
 
     private final @NotNull ServerInformation serverInformation = mock(ServerInformation.class);
 
@@ -62,8 +61,10 @@ public class HiveMQExtensionExtensionTest extends AbstractExtensionTest {
     private ExtensionStartStopInputImpl extensionStartStopInput;
     @BeforeEach
     public void setUp() throws Exception {
+        var extensionFolder = new File(tmpFolder,"extension");
+        extensionFolder.mkdir();
         final File validExtensionFolder =
-                TestExtensionUtil.createValidExtension(tmpFolder.newFolder("extension"), "id");
+                TestExtensionUtil.createValidExtension(extensionFolder, "id");
         final Optional<HiveMQExtensionEntity> extensionEntityFromXML =
                 HiveMQExtensionXMLReader.getExtensionEntityFromXML(validExtensionFolder.toPath(), true);
         assertTrue(extensionEntityFromXML.isPresent());

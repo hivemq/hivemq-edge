@@ -17,28 +17,31 @@
 package com.hivemq.extensions.loader;
 
 import com.google.common.collect.ImmutableList;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtensionEvent;
 import com.hivemq.extensions.HiveMQExtensions;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ExtensionLifecycleHandlerImplTest {
 
-    @Rule
-    public @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
     private final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -56,7 +59,7 @@ public class ExtensionLifecycleHandlerImplTest {
                 HiveMQExtensionEvent.Change.ENABLE,
                 "test-extension",
                 1,
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 false));
 
         extensionLifecycleHandler.handleExtensionEvents(events).get();
@@ -70,19 +73,19 @@ public class ExtensionLifecycleHandlerImplTest {
                 HiveMQExtensionEvent.Change.ENABLE,
                 "test-extension-100",
                 100,
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 false), new HiveMQExtensionEvent(HiveMQExtensionEvent.Change.ENABLE,
                 "test-extension-1",
                 1,
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 false), new HiveMQExtensionEvent(HiveMQExtensionEvent.Change.ENABLE,
                 "test-extension-10",
                 10,
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 false), new HiveMQExtensionEvent(HiveMQExtensionEvent.Change.ENABLE,
                 "test-extension-1000",
                 1000,
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 false));
 
         extensionLifecycleHandler.handleExtensionEvents(events).get();
@@ -106,19 +109,19 @@ public class ExtensionLifecycleHandlerImplTest {
                 HiveMQExtensionEvent.Change.ENABLE,
                 "test-extension-100",
                 100,
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 false), new HiveMQExtensionEvent(HiveMQExtensionEvent.Change.ENABLE,
                 "test-extension-1",
                 1,
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 false), new HiveMQExtensionEvent(HiveMQExtensionEvent.Change.ENABLE,
                 "test-extension-10",
                 10,
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 false), new HiveMQExtensionEvent(HiveMQExtensionEvent.Change.ENABLE,
                 "test-extension-1000",
                 1000,
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 false));
 
         extensionLifecycleHandler.handleExtensionEvents(events).get();
@@ -140,7 +143,7 @@ public class ExtensionLifecycleHandlerImplTest {
                 HiveMQExtensionEvent.Change.DISABLE,
                 "test-extension",
                 1,
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 false));
 
         extensionLifecycleHandler.handleExtensionEvents(events).get();

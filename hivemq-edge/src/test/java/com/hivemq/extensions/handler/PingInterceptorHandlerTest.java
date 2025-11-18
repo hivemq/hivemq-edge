@@ -18,7 +18,6 @@ package com.hivemq.extensions.handler;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.pingreq.PingReqInboundInterceptor;
 import com.hivemq.extension.sdk.api.interceptor.pingreq.parameter.PingReqInboundInput;
 import com.hivemq.extension.sdk.api.interceptor.pingreq.parameter.PingReqInboundOutput;
@@ -44,15 +43,16 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
 
+import java.io.File;
 import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -72,8 +72,8 @@ public class PingInterceptorHandlerTest {
     // this needs to be public, so it's accessible from the interceptors
     public static final @NotNull AtomicBoolean isTriggered = new AtomicBoolean();
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HiveMQExtension extension = mock(HiveMQExtension.class);
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
@@ -143,7 +143,7 @@ public class PingInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
         final PingReqInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 SimplePingReqTestInterceptor.class);
         clientContext.addPingReqInboundInterceptor(interceptor);
 
@@ -169,7 +169,7 @@ public class PingInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
         final PingReqInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 AdvancedPingReqTestInterceptor.class);
         clientContext.addPingReqInboundInterceptor(interceptor);
 
@@ -195,7 +195,7 @@ public class PingInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
         final PingRespOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 SimplePingRespTestInterceptor.class);
         clientContext.addPingRespOutboundInterceptor(interceptor);
 
@@ -221,7 +221,7 @@ public class PingInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
         final PingRespOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 AdvancedPingRespTestInterceptor.class);
         clientContext.addPingRespOutboundInterceptor(interceptor);
 

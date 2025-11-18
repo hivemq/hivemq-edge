@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.unsuback.UnsubackOutboundInterceptor;
 import com.hivemq.extension.sdk.api.interceptor.unsuback.parameter.UnsubackOutboundInput;
 import com.hivemq.extension.sdk.api.interceptor.unsuback.parameter.UnsubackOutboundOutput;
@@ -45,14 +44,16 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -68,8 +69,8 @@ public class UnsubackOutboundInterceptorHandlerTest {
 
     public static @NotNull AtomicBoolean isTriggered = new AtomicBoolean();
 
-    @Rule
-    public @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HiveMQExtensions extensions = mock(HiveMQExtensions.class);
     private final @NotNull HiveMQExtension extension = mock(HiveMQExtension.class);
@@ -125,7 +126,7 @@ public class UnsubackOutboundInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(extensions, new ModifiableDefaultPermissionsImpl());
         final UnsubackOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestSimpleUnsubackInterceptor.class);
         clientContext.addUnsubackOutboundInterceptor(interceptor);
 
@@ -149,7 +150,7 @@ public class UnsubackOutboundInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(extensions, new ModifiableDefaultPermissionsImpl());
         final UnsubackOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyUnsubackInterceptor.class);
         clientContext.addUnsubackOutboundInterceptor(interceptor);
 
@@ -173,7 +174,7 @@ public class UnsubackOutboundInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(extensions, new ModifiableDefaultPermissionsImpl());
         final UnsubackOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestExceptionUnsubackInterceptor.class);
         clientContext.addUnsubackOutboundInterceptor(interceptor);
 

@@ -17,7 +17,6 @@ package com.hivemq.codec.encoder.mqtt5;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
@@ -25,6 +24,7 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import util.encoder.TestMessageEncoder;
 
 import java.util.Arrays;
@@ -63,7 +63,7 @@ public class AbstractMqtt5EncoderTest {
         try {
             assertEquals(expected.length, buf.readableBytes());
             for (int i = 0; i < expected.length; i++) {
-                assertEquals("ByteBuf differed at index " + i, expected[i], buf.readByte());
+                assertEquals(expected[i], buf.readByte());
             }
         } finally {
             assertFalse(buf.isReadable());

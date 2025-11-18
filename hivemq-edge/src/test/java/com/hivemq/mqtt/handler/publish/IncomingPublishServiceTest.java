@@ -44,10 +44,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.ErrorCollector;
 import org.mockito.Mockito;
 import util.CheckUserEventTriggeredOnSuper;
 import util.TestConfigurationBootstrap;
@@ -67,9 +65,6 @@ import static org.mockito.Mockito.when;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class IncomingPublishServiceTest {
-
-    @Rule
-    public ErrorCollector errorCollector = new ErrorCollector();
 
     private final @NotNull MqttServerDisconnectorImpl mqttServerDisconnector = mock();
 

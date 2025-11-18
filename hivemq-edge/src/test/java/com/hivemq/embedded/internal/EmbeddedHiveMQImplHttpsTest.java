@@ -21,10 +21,9 @@ import com.hivemq.configuration.service.entity.Listener;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import util.RandomPortGenerator;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -76,8 +75,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * The keystore file is stored in the test/resources/keystores/.
  */
 public class EmbeddedHiveMQImplHttpsTest {
-    @Rule
-    public @NotNull TemporaryFolder tmp = new TemporaryFolder();
+    @TempDir
+    public File tmp;
 
     private @NotNull File data;
     private @NotNull File license;
@@ -87,10 +86,14 @@ public class EmbeddedHiveMQImplHttpsTest {
     private int randomApiPort;
     @BeforeEach
     public void setUp() throws Exception {
-        data = tmp.newFolder("data");
-        license = tmp.newFolder("license");
-        extensions = tmp.newFolder("extensions");
-        conf = tmp.newFolder("conf");
+        data = new File(tmp, "data");
+        data.mkdir();
+        license = new File(tmp, "license");
+        license.mkdir();
+        extensions = new File(tmp, "extensions");
+        extensions.mkdir();
+        conf = new File(tmp, "conf");
+        conf.mkdir();
         randomPort = RandomPortGenerator.get();
         randomApiPort = RandomPortGenerator.get();
 

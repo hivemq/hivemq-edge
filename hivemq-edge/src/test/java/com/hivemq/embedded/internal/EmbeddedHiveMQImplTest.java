@@ -18,7 +18,6 @@ package com.hivemq.embedded.internal;
 import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import com.hivemq.extension.sdk.api.ExtensionMain;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStopInput;
@@ -26,11 +25,11 @@ import com.hivemq.extension.sdk.api.parameter.ExtensionStopOutput;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import util.RandomPortGenerator;
 import util.TestExtensionUtil;
 
@@ -48,8 +47,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EmbeddedHiveMQImplTest {
 
-    @Rule
-    public TemporaryFolder tmp = new TemporaryFolder();
+    @TempDir
+    public File tmp;
 
     private final String extensionName = "extension-1";
     private File data;
@@ -60,10 +59,14 @@ public class EmbeddedHiveMQImplTest {
     private int randomApiPort;
     @BeforeEach
     public void setUp() throws Exception {
-        data = tmp.newFolder("data");
-        license = tmp.newFolder("license");
-        extensions = tmp.newFolder("extensions");
-        conf = tmp.newFolder("conf");
+        data = new File(tmp, "data");
+        data.mkdir();
+        license = new File(tmp, "license");
+        license.mkdir();
+        extensions = new File(tmp, "extensions");
+        extensions.mkdir();
+        conf = new File(tmp, "conf");
+        conf.mkdir();
         randomPort = RandomPortGenerator.get();
         randomApiPort = RandomPortGenerator.get();
 

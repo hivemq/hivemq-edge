@@ -46,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -104,8 +105,8 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
             "<priority>1000</priority>" +
             "</hivemq-extension>";
 
-    @Rule
-    public @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull ClassServiceLoader classServiceLoader = mock(ClassServiceLoader.class);
     private final @NotNull ServerInformation serverInformation = mock(ServerInformation.class);
@@ -142,7 +143,7 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_loaded_with_isolated_extension_classloader() throws Exception {
-        final File folder = temporaryFolder.newFolder();
+        final File folder = temporaryFolder;
 
         when(classServiceLoader.load(eq(ExtensionMain.class), any(ClassLoader.class))).thenReturn(new ArrayList<>());
 
@@ -160,7 +161,7 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
      */
     @Test
     public void test_classloader_loads_urls_loadable() throws Exception {
-        final File folder = temporaryFolder.newFolder();
+        final File folder = temporaryFolder;
         try (final DynamicType.Unloaded<ExtensionMain> extensionMainImpl = new ByteBuddy().subclass(ExtensionMain.class)
                 .name("extensionMainImpl")
                 .make()) {
@@ -190,7 +191,7 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_classloader_loads_urls() throws Exception {
-        final File folder = temporaryFolder.newFolder();
+        final File folder = temporaryFolder;
 
         final List<Class<? extends ExtensionMain>> classes = new ArrayList<>();
         classes.add(TestExtensionMainImpl.class);
@@ -226,7 +227,7 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_load_extensions_folder_does_not_exist() throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder();
+        final File extensionFolder = temporaryFolder;
         assertTrue(extensionFolder.delete());
         assertThatThrownBy(() -> extensionLoader.loadExtensions(extensionFolder.toPath(), false))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -234,7 +235,7 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_load_extensions_folder_not_readable() throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder();
+        final File extensionFolder = temporaryFolder;
         assertTrue(extensionFolder.setReadable(false));
         assertThatThrownBy(() -> extensionLoader.loadExtensions(extensionFolder.toPath(), false))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -242,14 +243,15 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_load_extensions_folder_is_not_a_folder() throws Exception {
-        final File extensionFolder = temporaryFolder.newFile();
+        final File extensionFolder = new File(temporaryFolder, "extension");
+        extensionFolder.createNewFile();
         assertThatThrownBy(() -> extensionLoader.loadExtensions(extensionFolder.toPath(), false))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void loadExtensions_folderDoesNotExist_permissive() throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder();
+        final File extensionFolder = temporaryFolder;
         assertTrue(extensionFolder.delete());
         final @NotNull ImmutableSet<HiveMQExtensionEvent> hiveMQExtensionEvents =
                 extensionLoader.loadExtensions(extensionFolder.toPath(), true);
@@ -259,7 +261,7 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void loadExtensions_folderNotReadable_permissive() throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder();
+        final File extensionFolder = temporaryFolder;
         assertTrue(extensionFolder.setReadable(false));
         final @NotNull ImmutableSet<HiveMQExtensionEvent> hiveMQExtensionEvents =
                 extensionLoader.loadExtensions(extensionFolder.toPath(), true);
@@ -269,7 +271,8 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void loadExtensions_folderIsNotAFolder_permissive() throws Exception {
-        final File extensionFolder = temporaryFolder.newFile();
+        final File extensionFolder = new File(temporaryFolder, "extension");
+        extensionFolder.createNewFile();
         final @NotNull ImmutableSet<HiveMQExtensionEvent> hiveMQExtensionEvents =
                 extensionLoader.loadExtensions(extensionFolder.toPath(), true);
 
@@ -278,7 +281,7 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_load_extensions_from_empty_folder() throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder();
+        final File extensionFolder = temporaryFolder;
         final Collection<HiveMQExtensionEvent> extensions =
                 extensionLoader.loadExtensions(extensionFolder.toPath(), false);
 
@@ -287,7 +290,8 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_load_extensions_folder_has_no_jar_but_class_file() throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension-1");
+        final File extensionFolder = new File(new File(temporaryFolder, "extension"), "extension-1");
+        extensionFolder.mkdirs();
         try (final DynamicType.Unloaded<ExtensionMain> extensionMainImpl = new ByteBuddy().subclass(ExtensionMain.class)
                 .name("extensionMainImpl")
                 .make()) {
@@ -308,8 +312,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_load_extensions_folder_contains_jar_file() throws Exception {
-        final File extensionsFolder = temporaryFolder.newFolder("extension");
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension1");
+        extensionFolder.mkdirs();
         final File file = new File(extensionFolder, "extension.jar");
         FileUtils.writeStringToFile(extensionFolder.toPath().resolve("hivemq-extension.xml").toFile(),
                 validExtensionXML1,
@@ -329,8 +334,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_load_extensions_folder_contain_wrong_id_in_xml_disabling_failed() throws Exception {
-        final File extensionsFolder = temporaryFolder.newFolder("extension");
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension-1");
+        extensionFolder.mkdirs();
         final File file = new File(extensionFolder, "extension.jar");
         FileUtils.writeStringToFile(extensionFolder.toPath().resolve("hivemq-extension.xml").toFile(),
                 invalidExtensionXML,
@@ -364,8 +370,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_load_extensions_folder_contain_wrong_id_in_xml() throws Exception {
-        final File extensionsFolder = temporaryFolder.newFolder("extension");
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension-1");
+        extensionFolder.mkdirs();
         final File file = new File(extensionFolder, "extension.jar");
         FileUtils.writeStringToFile(extensionFolder.toPath().resolve("hivemq-extension.xml").toFile(),
                 invalidExtensionXML,
@@ -397,9 +404,11 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_load_extensions_folder_contains_two_extension_folders() throws Exception {
-        final File extensionsFolder = temporaryFolder.newFolder("extension");
-        final File extensionFolder1 = temporaryFolder.newFolder("extension", "extension1");
-        final File extensionFolder2 = temporaryFolder.newFolder("extension", "extension2");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder1 = new File(extensionsFolder, "extension1");
+        final File extensionFolder2 = new File(extensionsFolder, "extension2");
+        extensionFolder1.mkdirs();
+        extensionFolder2.mkdirs();
 
         final File file = new File(extensionFolder1, "extension.jar");
         final File file2 = new File(extensionFolder2, "extension.jar");
@@ -430,7 +439,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_process_single_extension_folder_xml_invalid() throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension1");
+        extensionFolder.mkdirs();
 
         final File file = new File(extensionFolder, "extension.jar");
 
@@ -451,7 +462,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_process_single_extension_folder_state_already_known() throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension1");
+        extensionFolder.mkdirs();
 
         final File file = new File(extensionFolder, "extension.jar");
 
@@ -479,7 +492,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_process_single_extension_folder_and_extension_same_folder_other_id_disabled() throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension1");
+        extensionFolder.mkdirs();
 
         final File file = new File(extensionFolder, "extension.jar");
 
@@ -508,8 +523,11 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_process_single_extension_folder_and_extension_other_folder_same_id_enabling() throws Exception {
-        final File extensionFolder1 = temporaryFolder.newFolder("extension", "extension1");
-        final File extensionFolder2 = temporaryFolder.newFolder("extension", "extension2");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder1 = new File(extensionsFolder, "extension1");
+        final File extensionFolder2 = new File(extensionsFolder, "extension2");
+        extensionFolder1.mkdirs();
+        extensionFolder2.mkdirs();
 
         hiveMQExtensions.addHiveMQExtension(new HiveMQExtensionImpl(new HiveMQExtensionEntity("extension1",
                 "my_extension",
@@ -537,8 +555,11 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_process_single_extension_folder_and_extension_other_folder_same_id_disabling() throws Exception {
-        final File extensionFolder1 = temporaryFolder.newFolder("extension", "extension1");
-        final File extensionFolder2 = temporaryFolder.newFolder("extension", "extension2");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder1 = new File(extensionsFolder, "extension1");
+        final File extensionFolder2 = new File(extensionsFolder, "extension2");
+        extensionFolder1.mkdirs();
+        extensionFolder2.mkdirs();
 
         hiveMQExtensions.addHiveMQExtension(new HiveMQExtensionImpl(new HiveMQExtensionEntity("extension1",
                 "my_extension",
@@ -568,7 +589,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_process_single_extension_folder_disabled() throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension1");
+        extensionFolder.mkdirs();
 
         final File file = new File(extensionFolder, "extension.jar");
 
@@ -608,7 +631,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
         when(hiveMQExtensions.isHiveMQExtensionEnabled(anyString())).thenReturn(true);
         when(hiveMQExtensions.isHiveMQExtensionIDKnown(anyString())).thenReturn(true);
 
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension1");
+        extensionFolder.mkdirs();
 
         final File file = new File(extensionFolder, "extension.jar");
 
@@ -629,7 +654,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
 
     @Test
     public void test_process_single_extension_folder_different_id_enabled() throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension1");
+        extensionFolder.mkdirs();
 
         final File file = new File(extensionFolder, "extension.jar");
 
@@ -667,7 +694,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
     @Test
     @Timeout(5)
     public void test_load_single_extension_load_and_instantiate_enabled() throws Throwable {
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension1");
+        extensionFolder.mkdirs();
         FileUtils.writeStringToFile(extensionFolder.toPath().resolve("hivemq-extension.xml").toFile(),
                 validExtensionXML1,
                 Charset.defaultCharset());
@@ -690,7 +719,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
     @Test
     @Timeout(5)
     public void test_load_single_extension_load_and_instantiate_no_noarg_constructor() throws Throwable {
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension1");
+        extensionFolder.mkdirs();
         FileUtils.writeStringToFile(extensionFolder.toPath().resolve("hivemq-extension.xml").toFile(),
                 validExtensionXML1,
                 Charset.defaultCharset());
@@ -712,7 +743,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
     @Timeout(5)
     public void test_load_single_extension_when_load_constructor_throws_exception_then_extension_is_not_loaded()
             throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension1");
+        extensionFolder.mkdirs();
         FileUtils.writeStringToFile(extensionFolder.toPath().resolve("hivemq-extension.xml").toFile(),
                 validExtensionXML1,
                 Charset.defaultCharset());
@@ -734,7 +767,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
     @Timeout(5)
     public void test_load_single_extension_when_load_constructor_throws_error_then_extension_is_not_loaded()
             throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension1");
+        extensionFolder.mkdirs();
         FileUtils.writeStringToFile(extensionFolder.toPath().resolve("hivemq-extension.xml").toFile(),
                 validExtensionXML1,
                 Charset.defaultCharset());
@@ -757,7 +792,9 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
     @Timeout(5)
     public void test_load_single_extension_when_init_class_throws_error_then_extension_is_not_loaded()
             throws Exception {
-        final File extensionFolder = temporaryFolder.newFolder("extension", "extension1");
+        final File extensionsFolder = new File(temporaryFolder, "extension");
+        final File extensionFolder = new File(extensionsFolder, "extension1");
+        extensionFolder.mkdirs();
         FileUtils.writeStringToFile(extensionFolder.toPath().resolve("hivemq-extension.xml").toFile(),
                 validExtensionXML1,
                 Charset.defaultCharset());

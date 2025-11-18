@@ -16,28 +16,35 @@
 
 package com.hivemq.extensions.services.auth;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.auth.Authenticator;
 import com.hivemq.extension.sdk.api.auth.EnhancedAuthenticator;
 import com.hivemq.extension.sdk.api.auth.SimpleAuthenticator;
-import com.hivemq.extension.sdk.api.auth.parameter.*;
+import com.hivemq.extension.sdk.api.auth.parameter.AuthenticatorProviderInput;
+import com.hivemq.extension.sdk.api.auth.parameter.EnhancedAuthConnectInput;
+import com.hivemq.extension.sdk.api.auth.parameter.EnhancedAuthInput;
+import com.hivemq.extension.sdk.api.auth.parameter.EnhancedAuthOutput;
+import com.hivemq.extension.sdk.api.auth.parameter.SimpleAuthInput;
+import com.hivemq.extension.sdk.api.auth.parameter.SimpleAuthOutput;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthenticatorProvider;
 import com.hivemq.extension.sdk.api.services.auth.provider.EnhancedAuthenticatorProvider;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
 
+import java.io.File;
 import java.util.Map;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -45,8 +52,8 @@ import static org.mockito.Mockito.when;
 
 public class SecurityRegistryImplTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull AuthenticatorProviderInput input = mock(AuthenticatorProviderInput.class);
 
@@ -64,7 +71,7 @@ public class SecurityRegistryImplTest {
     private @NotNull EnhancedAuthenticator enhancedAuthenticator2;
     @BeforeEach
     public void setUp() throws Exception {
-        try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot()
+        try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
                 .toPath(), new Class[]{
                 TestProvider1.class, TestProvider2.class, TestSimpleAuthenticator.class, EnhancedTestProvider1.class,
                 EnhancedTestProvider2.class, TestEnhancedAuthenticator.class

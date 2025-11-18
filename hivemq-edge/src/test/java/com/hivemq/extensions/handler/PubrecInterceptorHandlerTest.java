@@ -21,7 +21,6 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.pubrec.PubrecInboundInterceptor;
 import com.hivemq.extension.sdk.api.interceptor.pubrec.PubrecOutboundInterceptor;
 import com.hivemq.extension.sdk.api.interceptor.pubrec.parameter.PubrecInboundInput;
@@ -48,27 +47,32 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class PubrecInterceptorHandlerTest {
 
-    @Rule
-    public @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
     private final @NotNull HiveMQExtension extension = mock(HiveMQExtension.class);
@@ -163,7 +167,7 @@ public class PubrecInterceptorHandlerTest {
     @Test()
     public void test_inbound_modify() throws Exception {
         final PubrecInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyInboundInterceptor.class);
         final List<PubrecInboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -188,7 +192,7 @@ public class PubrecInterceptorHandlerTest {
     @Timeout(5)
     public void test_inbound_plugin_null() throws Exception {
         final PubrecInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyInboundInterceptor.class);
         final List<PubrecInboundInterceptor> list = ImmutableList.of(interceptor);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
@@ -211,7 +215,7 @@ public class PubrecInterceptorHandlerTest {
     @Timeout(10)
     public void test_inbound_timeout_failed() throws Exception {
         final PubrecInboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.getRoot().toPath(),
+                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
                         TestTimeoutFailedInboundInterceptor.class);
         final List<PubrecInboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -232,7 +236,7 @@ public class PubrecInterceptorHandlerTest {
     @Timeout(5)
     public void test_inbound_exception() throws Exception {
         final PubrecInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestExceptionInboundInterceptor.class);
         final List<PubrecInboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -253,7 +257,7 @@ public class PubrecInterceptorHandlerTest {
     @Timeout(5)
     public void test_inbound_noPartialModificationWhenException() throws Exception {
         final PubrecInboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.getRoot().toPath(),
+                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
                         TestPartialModifiedInboundInterceptor.class);
         final List<PubrecInboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -321,7 +325,7 @@ public class PubrecInterceptorHandlerTest {
     @Timeout(5)
     public void test_outbound_modify() throws Exception {
         final PubrecOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyOutboundInterceptor.class);
         final List<PubrecOutboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -346,7 +350,7 @@ public class PubrecInterceptorHandlerTest {
     @Timeout(5)
     public void test_outbound_plugin_null() throws Exception {
         final PubrecOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyOutboundInterceptor.class);
         final List<PubrecOutboundInterceptor> list = ImmutableList.of(interceptor);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
@@ -369,7 +373,7 @@ public class PubrecInterceptorHandlerTest {
     @Timeout(10)
     public void test_outbound_timeout_failed() throws Exception {
         final PubrecOutboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.getRoot().toPath(),
+                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
                         TestTimeoutFailedOutboundInterceptor.class);
         final List<PubrecOutboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -391,7 +395,7 @@ public class PubrecInterceptorHandlerTest {
     @Timeout(5)
     public void test_outbound_exception() throws Exception {
         final PubrecOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestExceptionOutboundInterceptor.class);
         final List<PubrecOutboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -411,7 +415,7 @@ public class PubrecInterceptorHandlerTest {
     @Timeout(5)
     public void test_outbound_noPartialModificationWhenException() throws Exception {
         final PubrecOutboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.getRoot().toPath(),
+                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
                         TestPartialModifiedOutboundInterceptor.class);
         final List<PubrecOutboundInterceptor> list = ImmutableList.of(interceptor);
 

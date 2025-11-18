@@ -22,6 +22,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 // MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -37,8 +38,8 @@ import static org.mockito.Mockito.when;
  */
 public class MetaFileServiceTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     @Mock
     private SystemInformation systemInformation;
@@ -48,7 +49,7 @@ public class MetaFileServiceTest {
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        dataFolder = temporaryFolder.newFolder();
+        dataFolder = temporaryFolder;
         when(systemInformation.getDataFolder()).thenReturn(dataFolder);
     }
 

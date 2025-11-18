@@ -64,12 +64,14 @@ import org.junit.jupiter.api.BeforeEach;
 // MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 import util.TestMessageUtil;
 
+import java.io.File;
 import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
 import java.util.List;
@@ -89,8 +91,8 @@ import static org.mockito.Mockito.*;
  */
 public class IncomingPublishHandlerTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
     private final @NotNull HiveMQExtension extension = mock(HiveMQExtension.class);
@@ -102,6 +104,7 @@ public class IncomingPublishHandlerTest {
     private @NotNull EmbeddedChannel channel;
     private @NotNull AtomicReference<Message> messageAtomicReference;
     private @NotNull ClientConnection clientConnection;
+    
     @BeforeEach
     public void setUp() throws Exception {
         dropLatch = new CountDownLatch(1);
@@ -153,7 +156,7 @@ public class IncomingPublishHandlerTest {
     public void test_read_publish_channel_closed() {
         channel.close();
         assertThatThrownBy(() -> channel.writeInbound(TestMessageUtil.createFullMqtt5Publish()))
-                .hasCauseInstanceOf(ClosedChannelException.class);
+                .isInstanceOf(ClosedChannelException.class);
     }
 
     @Test
@@ -649,15 +652,15 @@ public class IncomingPublishHandlerTest {
         };
 
         final IsolatedExtensionClassloader cl1 =
-                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), classes);
+                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), classes);
         final IsolatedExtensionClassloader cl2 =
-                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), classes);
+                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), classes);
         final IsolatedExtensionClassloader cl3 =
-                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), classes);
+                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), classes);
         final IsolatedExtensionClassloader cl4 =
-                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), classes);
+                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), classes);
         final IsolatedExtensionClassloader cl5 =
-                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), classes);
+                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), classes);
 
         final PublishInboundInterceptor interceptorOne =
                 IsolatedExtensionClassloaderUtil.loadInstance(cl1, TestInterceptorChangeTopic.class);

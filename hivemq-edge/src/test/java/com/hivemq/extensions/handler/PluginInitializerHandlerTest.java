@@ -21,7 +21,6 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.info.SystemInformationImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extension.sdk.api.services.intializer.ClientInitializer;
 import com.hivemq.extensions.HiveMQExtension;
@@ -40,40 +39,51 @@ import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.connack.CONNACK;
-import com.hivemq.mqtt.message.connect.CONNECT;
 import com.hivemq.mqtt.message.connect.MqttWillPublish;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
-
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.util.concurrent.ImmediateEventExecutor;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 import util.TestMessageUtil;
 
+import java.io.File;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @since 4.0.0
  */
 public class PluginInitializerHandlerTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull ChannelHandlerContext channelHandlerContext = mock(ChannelHandlerContext.class);
     private final @NotNull ChannelPromise channelPromise = mock(ChannelPromise.class);
@@ -265,12 +275,12 @@ public class PluginInitializerHandlerTest {
 
     private Map<String, ClientInitializer> createClientInitializerMap() throws Exception {
         final IsolatedExtensionClassloader cl1 =
-                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), new Class[]{
+                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), new Class[]{
                         InitializersImplTest.TestClientInitializerOne.class,
                         InitializersImplTest.TestClientInitializerTwo.class
                 });
         final IsolatedExtensionClassloader cl2 =
-                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), new Class[]{
+                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), new Class[]{
                         InitializersImplTest.TestClientInitializerOne.class,
                         InitializersImplTest.TestClientInitializerTwo.class
                 });

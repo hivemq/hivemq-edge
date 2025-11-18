@@ -287,7 +287,7 @@ public class ModifiableInboundDisconnectPacketImplTest {
                 new ModifiableInboundDisconnectPacketImpl(packet, configurationService, 0);
 
         assertThatThrownBy(() -> modifiablePacket.setSessionExpiryInterval(1L))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test

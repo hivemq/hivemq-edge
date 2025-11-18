@@ -107,7 +107,7 @@ public class ModifiablePublishPacketImplTest {
         assertEquals("topic", modifiablePacket.getTopic());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setTopic_null() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -127,7 +127,7 @@ public class ModifiablePublishPacketImplTest {
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
-        modifiablePacket.setTopic(null);
+        assertThatThrownBy(() -> modifiablePacket.setTopic(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -519,7 +519,7 @@ public class ModifiablePublishPacketImplTest {
 
         configurationService.mqttConfiguration().setRetainedMessagesEnabled(false);
         assertThatThrownBy(() -> modifiablePacket.setRetain(true))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

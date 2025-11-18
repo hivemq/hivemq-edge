@@ -16,7 +16,6 @@
 
 package com.hivemq.extensions.client;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.Interceptor;
 import com.hivemq.extension.sdk.api.interceptor.pingreq.PingReqInboundInterceptor;
 import com.hivemq.extension.sdk.api.interceptor.pingresp.PingRespOutboundInterceptor;
@@ -38,11 +37,12 @@ import com.hivemq.extension.sdk.api.interceptor.subscribe.SubscribeInboundInterc
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import util.TestInterceptorUtil;
 
+import java.io.File;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -55,8 +55,8 @@ import static org.mockito.Mockito.when;
  */
 public class ClientContextImplTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
 

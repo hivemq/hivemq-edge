@@ -22,7 +22,6 @@ import com.google.common.collect.Lists;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.iteration.BucketChunkResult;
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.HiveMQMetrics;
@@ -41,34 +40,46 @@ import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.LocalPersistenceFileUtil;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import org.junit.jupiter.api.Timeout;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestBucketUtil;
 
-import java.util.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRE_ON_DISCONNECT;
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ClientSessionMemoryLocalPersistenceTest {
 
     private static final int BUCKET_COUNT = 4;
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private ClientSessionLocalPersistence persistence;
 
@@ -92,8 +103,12 @@ public class ClientSessionMemoryLocalPersistenceTest {
         InternalConfigurations.PERSISTENCE_CLOSE_RETRIES.set(3);
         InternalConfigurations.PERSISTENCE_CLOSE_RETRY_INTERVAL_MSEC.set(5);
         internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, ""+BUCKET_COUNT);
+
+        var persistenceFolder = new File(temporaryFolder, "persistence");
+        persistenceFolder.mkdir();
+
         when(localPersistenceFileUtil.getVersionedLocalPersistenceFolder(anyString(), anyString())).thenReturn(
-                temporaryFolder.newFolder());
+                persistenceFolder);
 
         final MetricsHolder metricsHolder = mock(MetricsHolder.class);
         when(metricsHolder.getStoredWillMessagesCount()).thenReturn(mock(Counter.class));

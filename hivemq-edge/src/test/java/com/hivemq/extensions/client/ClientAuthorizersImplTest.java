@@ -16,18 +16,18 @@
 
 package com.hivemq.extensions.client;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.SubscriptionAuthorizer;
 import com.hivemq.extension.sdk.api.auth.parameter.SubscriptionAuthorizerInput;
 import com.hivemq.extension.sdk.api.auth.parameter.SubscriptionAuthorizerOutput;
 import com.hivemq.extensions.ExtensionPriorityComparator;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
 
+import java.io.File;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,8 +38,8 @@ import static org.mockito.Mockito.when;
 
 public class ClientAuthorizersImplTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull ExtensionPriorityComparator extensionPriorityComparator =
             mock(ExtensionPriorityComparator.class);
@@ -56,10 +56,10 @@ public class ClientAuthorizersImplTest {
     @Test
     public void test_put_get_authorizers() throws Exception {
         final SubscriptionAuthorizer authorizer1 = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestSubscriptionAuthorizer.class);
         final SubscriptionAuthorizer authorizer2 = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestSubscriptionAuthorizer.class);
 
         authorizers.put("extension-1", authorizer1);
@@ -74,10 +74,10 @@ public class ClientAuthorizersImplTest {
     @Test
     public void test_remove_authorizers() throws Exception {
         final SubscriptionAuthorizer authorizer1 = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestSubscriptionAuthorizer.class);
         final SubscriptionAuthorizer authorizer2 = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestSubscriptionAuthorizer.class);
 
         authorizers.put("extension-1", authorizer1);

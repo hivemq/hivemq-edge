@@ -47,12 +47,14 @@ import org.junit.jupiter.api.BeforeEach;
 // MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 import util.TestMessageUtil;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -69,8 +71,8 @@ import static org.mockito.Mockito.when;
  */
 public class ConnackOutboundInterceptorHandlerTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
     private final @NotNull HiveMQExtension extension = mock(HiveMQExtension.class);
@@ -161,7 +163,7 @@ public class ConnackOutboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_null_interceptors() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestNullOutboundInterceptor.class);
         when(interceptors.connackOutboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
                 interceptorProvider));
@@ -182,7 +184,7 @@ public class ConnackOutboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_modify() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyOutboundInterceptor.class);
         when(interceptors.connackOutboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
                 interceptorProvider));
@@ -204,7 +206,7 @@ public class ConnackOutboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_plugin_null() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyOutboundInterceptor.class);
         when(interceptors.connackOutboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
                 interceptorProvider));
@@ -226,7 +228,7 @@ public class ConnackOutboundInterceptorHandlerTest {
     @Timeout(10)
     public void test_timeout_failed() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestTimeoutFailedOutboundInterceptor.class);
         when(interceptors.connackOutboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
                 interceptorProvider));
@@ -250,7 +252,7 @@ public class ConnackOutboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_exception() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestExceptionOutboundInterceptor.class);
         when(interceptors.connackOutboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
                 interceptorProvider));

@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.disconnect.DISCONNECT;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
@@ -28,6 +27,7 @@ import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -36,7 +36,10 @@ import util.TestConfigurationBootstrap;
 import util.TestMqttDecoder;
 import util.encoder.TestMessageEncoder;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
@@ -164,7 +167,7 @@ public class Mqtt5DisconnectDecoderTest extends AbstractMqtt5DecoderTest {
         try {
             assertEquals(encoded.length, buf.readableBytes());
             for (int i = 0; i < encoded.length; i++) {
-                assertEquals("ByteBuf differed at index " + i, encoded[i], buf.readByte());
+                assertEquals(encoded[i], buf.readByte());
             }
         } finally {
             buf.release();

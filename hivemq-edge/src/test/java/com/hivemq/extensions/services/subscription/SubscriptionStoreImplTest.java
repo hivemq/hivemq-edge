@@ -175,7 +175,7 @@ public class SubscriptionStoreImplTest {
     @Timeout(10)
     public void test_get_null() {
         assertThatThrownBy(() -> subscriptionStore.getSubscriptions(null).get())
-                .hasCauseInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).getSubscriptions("client");
 
@@ -187,7 +187,7 @@ public class SubscriptionStoreImplTest {
 
         assertThatThrownBy(() -> subscriptionStore.addSubscription(
                 null, new TopicSubscriptionImpl("topic", Qos.AT_MOST_ONCE, false, false, 0)).get())
-                .hasCauseInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).addSubscription(eq("client"), any(Topic.class));
 
@@ -199,7 +199,7 @@ public class SubscriptionStoreImplTest {
 
         assertThatThrownBy(() ->
                 subscriptionStore.addSubscription("client", null).get())
-                .hasCauseInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).addSubscription(eq("client"), any(Topic.class));
 
@@ -211,7 +211,7 @@ public class SubscriptionStoreImplTest {
 
         assertThatThrownBy(() -> subscriptionStore.addSubscriptions(
                 null, ImmutableSet.of(new TopicSubscriptionImpl("topic", Qos.AT_MOST_ONCE, false, false, 0))).get())
-                .hasCauseInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).addSubscriptions(anyString(), any(ImmutableSet.class));
 
@@ -243,7 +243,7 @@ public class SubscriptionStoreImplTest {
     @Timeout(10)
     public void test_remove_null_client_id() {
         assertThatThrownBy(() -> subscriptionStore.removeSubscription(null, "topic").get())
-                .hasCauseInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).remove("client", "topic");
 
@@ -253,7 +253,7 @@ public class SubscriptionStoreImplTest {
     @Timeout(10)
     public void test_remove_null_topic() {
         assertThatThrownBy(() -> subscriptionStore.removeSubscription("client", null).get())
-                .hasCauseInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).remove("client", "topic");
 
@@ -555,7 +555,7 @@ public class SubscriptionStoreImplTest {
     public void test_iterate_topic_invalid_topic_null() {
         assertThatThrownBy(() -> subscriptionStore.iterateAllSubscribersForTopic(null, (context, value) -> {
         }, MoreExecutors.directExecutor()).get())
-                .hasCauseInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -647,7 +647,7 @@ public class SubscriptionStoreImplTest {
     public void test_iterate_topic_filter_invalid_topic_null() {
         assertThatThrownBy(() -> subscriptionStore.iterateAllSubscribersWithTopicFilter(null, (context, value) -> {
         }, MoreExecutors.directExecutor()).get())
-                .hasCauseInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
