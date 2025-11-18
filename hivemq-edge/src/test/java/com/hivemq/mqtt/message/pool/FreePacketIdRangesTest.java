@@ -19,14 +19,16 @@ import com.google.common.collect.Lists;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.pool.exception.MessageIdUnavailableException;
 import com.hivemq.mqtt.message.pool.exception.NoMessageIdAvailableException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FreePacketIdRangesTest {
 
@@ -68,15 +70,15 @@ public class FreePacketIdRangesTest {
         assertEquals(3, messageIDPool.takeNextId());
     }
 
-    @Test(expected = NoMessageIdAvailableException.class)
-    public void takeNextId_whenNoMoreIdsAvailable_thenExceptionIsThrown() throws
-            NoMessageIdAvailableException {
-
-        final FreePacketIdRanges messageIDPool = new FreePacketIdRanges();
-        for (int i = 0; i < FreePacketIdRanges.MAX_ALLOWED_MQTT_PACKET_ID; i++) {
+    @Test
+    public void takeNextId_whenNoMoreIdsAvailable_thenExceptionIsThrown() {
+        assertThrows(NoMessageIdAvailableException.class, () -> {
+            final FreePacketIdRanges messageIDPool = new FreePacketIdRanges();
+            for (int i = 0; i < FreePacketIdRanges.MAX_ALLOWED_MQTT_PACKET_ID; i++) {
+                messageIDPool.takeNextId();
+            }
             messageIDPool.takeNextId();
-        }
-        messageIDPool.takeNextId();
+        });
     }
 
     @Test
@@ -91,11 +93,12 @@ public class FreePacketIdRangesTest {
         assertEquals(33333, messageIDPool.takeNextId());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void returnId_whenInvalidIdReturned_thenExceptionIsThrown() {
-
-        final FreePacketIdRanges messageIDPool = new FreePacketIdRanges();
-        messageIDPool.returnId(FreePacketIdRanges.MAX_ALLOWED_MQTT_PACKET_ID + 1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            final FreePacketIdRanges messageIDPool = new FreePacketIdRanges();
+            messageIDPool.returnId(FreePacketIdRanges.MAX_ALLOWED_MQTT_PACKET_ID + 1);
+        });
     }
 
     @Test
@@ -128,21 +131,21 @@ public class FreePacketIdRangesTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void takeSpecificId_whenTryingToTakeInvalidId_thenExceptionIsThrown()
-            throws IllegalArgumentException, MessageIdUnavailableException {
-
-        final FreePacketIdRanges messageIDPool = new FreePacketIdRanges();
-        messageIDPool.takeSpecificId(FreePacketIdRanges.MAX_ALLOWED_MQTT_PACKET_ID + 1);
+    @Test
+    public void takeSpecificId_whenTryingToTakeInvalidId_thenExceptionIsThrown() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            final FreePacketIdRanges messageIDPool = new FreePacketIdRanges();
+            messageIDPool.takeSpecificId(FreePacketIdRanges.MAX_ALLOWED_MQTT_PACKET_ID + 1);
+        });
     }
 
-    @Test(expected = MessageIdUnavailableException.class)
-    public void takeSpecificId_whenTryingToTakeTakenId_thenExceptionIsThrown()
-            throws IllegalArgumentException, MessageIdUnavailableException {
-
-        final FreePacketIdRanges messageIDPool = new FreePacketIdRanges();
-        messageIDPool.takeSpecificId(42);
-        messageIDPool.takeSpecificId(42);
+    @Test
+    public void takeSpecificId_whenTryingToTakeTakenId_thenExceptionIsThrown() {
+        assertThrows(MessageIdUnavailableException.class, () -> {
+            final FreePacketIdRanges messageIDPool = new FreePacketIdRanges();
+            messageIDPool.takeSpecificId(42);
+            messageIDPool.takeSpecificId(42);
+        });
     }
 
     private static boolean areConsecutiveMessageIds(final @NotNull List<Integer> integerList) {

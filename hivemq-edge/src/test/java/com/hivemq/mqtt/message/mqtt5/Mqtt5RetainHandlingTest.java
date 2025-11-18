@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqtt.message.mqtt5;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import util.EnumTestUtil;
 
 public class Mqtt5RetainHandlingTest {
