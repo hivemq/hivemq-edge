@@ -101,24 +101,26 @@ const WizardSelectionRestrictions: FC = () => {
     // If wizard not active, restore all nodes without ghosts (GhostNodeRenderer will handle ghost cleanup)
     if (!isActive) {
       const realNodes = nodes.filter((node) => !node.data?.isGhost)
-      const restoredNodes = realNodes.map((node) => ({
-        ...node,
-        hidden: false,
-        selectable: true,
-        style: {
-          ...node.style,
-          cursor: 'grab',
-          border: undefined,
-          pointerEvents: undefined,
-        },
-      }))
+      const restoredNodes = realNodes.map(
+        (node): Node => ({
+          ...node,
+          hidden: false,
+          selectable: true,
+          style: {
+            ...node.style,
+            cursor: 'grab',
+            border: undefined,
+            pointerEvents: undefined,
+          },
+        })
+      )
       setNodes(restoredNodes)
       return
     }
 
     // If wizard active but no selection constraints, restore real nodes but keep ghosts visible
     if (!enhancedConstraints) {
-      const restoredNodes = nodes.map((node) => {
+      const restoredNodes = nodes.map((node): Node => {
         // Keep ghost nodes as-is
         if (node.data?.isGhost) {
           return node
@@ -140,8 +142,8 @@ const WizardSelectionRestrictions: FC = () => {
       return
     }
 
-    // Apply selection constraints - hide non-targets
-    const constrainedNodes = nodes.map((node) => {
+    // Apply selection constraints - dim non-eligible nodes to maintain topology
+    const constrainedNodes = nodes.map((node): Node => {
       const isAllowed = checkConstraints(node, enhancedConstraints, enhancedConstraints._protocolAdapters)
       const isGhost = node.data?.isGhost
       const isEdge = node.id === 'EDGE_NODE'
@@ -180,33 +182,85 @@ const WizardSelectionRestrictions: FC = () => {
           selectable: false, // We handle clicks manually
           style: {
             ...node.style,
+            opacity: 1,
+            filter: 'none',
             cursor: 'pointer',
             border: '2px solid #4299E1', // Highlight available targets
-            transition: 'border 0.2s ease',
-            pointerEvents: 'all' as const, // Ensure nodes are clickable
+            boxShadow: '0 0 0 4px rgba(66, 153, 225, 0.2)', // Subtle glow
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           },
         }
       }
 
-      // Non-targets: HIDE completely
+      // Non-targets: DIM instead of hide to maintain topology
       return {
         ...node,
-        hidden: true,
+        hidden: false, // Keep visible for context
+        selectable: false,
+        style: {
+          ...node.style,
+          opacity: 0.3,
+          filter: 'grayscale(100%)',
+          cursor: 'not-allowed',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        },
       }
     })
 
-    setNodes(constrainedNodes)
+    setNodes(constrainedNodes as Node[])
   }, [isActive, enhancedConstraints, currentStep, getNodes, setNodes])
+
+  // Dim edges during selection mode to maintain topology context
+  useEffect(() => {
+    const edges = getEdges()
+
+    // Restore edges when wizard is inactive
+    if (!isActive) {
+      const realEdges = edges.filter((e) => !e.data?.isGhost)
+      const restoredEdges = realEdges.map((edge) => ({
+        ...edge,
+        style: {
+          ...edge.style,
+          opacity: undefined, // Remove opacity override
+        },
+        animated: edge.data?.originalAnimated ?? edge.animated,
+      }))
+      if (JSON.stringify(restoredEdges) !== JSON.stringify(realEdges)) {
+        setEdges(restoredEdges as Edge[])
+      }
+      return
+    }
+
+    // Dim all edges during selection mode to maintain context
+    if (enhancedConstraints) {
+      const dimmedEdges = edges.map((edge) => {
+        // Keep ghost edges at normal opacity
+        if (edge.data?.isGhost) {
+          return edge
+        }
+
+        // Dim real edges to maintain topology context
+        return {
+          ...edge,
+          style: {
+            ...edge.style,
+            opacity: 0.3,
+          },
+          animated: false, // Disable animation on dimmed edges
+          data: {
+            ...edge.data,
+            originalAnimated: edge.animated, // Store original state
+          },
+        }
+      })
+      setEdges(dimmedEdges)
+    }
+  }, [isActive, enhancedConstraints, getEdges, setEdges])
 
   // Manage ghost edges based on selection
   useEffect(() => {
-    // Only remove ghost edges when wizard is completely inactive
+    // Only run this effect for ghost edge management
     if (!isActive) {
-      const edges = getEdges()
-      const realEdges = edges.filter((e) => !e.data?.isGhost)
-      if (realEdges.length !== edges.length) {
-        setEdges(realEdges)
-      }
       return
     }
 
