@@ -47,8 +47,10 @@ import com.hivemq.api.model.mappings.northbound.NorthboundMappingListModel;
 import com.hivemq.api.model.mappings.northbound.NorthboundMappingModel;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
+import com.hivemq.configuration.entity.adapter.NorthboundMappingEntityConverter;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.SouthboundMappingEntity;
+import com.hivemq.configuration.entity.adapter.SouthboundMappingEntityConverter;
 import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
@@ -62,8 +64,13 @@ import com.hivemq.edge.api.model.AdapterConfig;
 import com.hivemq.edge.api.model.AdaptersList;
 import com.hivemq.edge.api.model.DomainTag;
 import com.hivemq.edge.api.model.DomainTagList;
+import com.hivemq.edge.api.model.DomainTagOwnerList;
 import com.hivemq.edge.api.model.NorthboundMappingList;
+import com.hivemq.edge.api.model.NorthboundMappingOwnerList;
+import com.hivemq.edge.api.model.NorthboundMappingOwnerListItemsInner;
 import com.hivemq.edge.api.model.SouthboundMappingList;
+import com.hivemq.edge.api.model.SouthboundMappingOwnerList;
+import com.hivemq.edge.api.model.SouthboundMappingOwnerListItemsInner;
 import com.hivemq.edge.api.model.Status;
 import com.hivemq.edge.api.model.StatusList;
 import com.hivemq.edge.api.model.StatusTransitionCommand;
@@ -389,9 +396,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     log.trace("Adapter '{}' was stopped successfully.", adapterId);
                 }
             });
-            case RESTART -> protocolAdapterManager
-                    .stopAsync(adapterId, false)
-                        .thenCompose(ignore -> protocolAdapterManager.startAsync(adapterId))
+            case RESTART -> protocolAdapterManager.stopAsync(adapterId, false)
+                    .thenCompose(ignore -> protocolAdapterManager.startAsync(adapterId))
                     .whenComplete((result, throwable) -> {
                         if (throwable != null) {
                             log.error("Failed to restart adapter '{}'.", adapterId, throwable);
@@ -615,10 +621,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response getDomainTags() {
         final List<com.hivemq.persistence.domain.DomainTag> domainTags = protocolAdapterManager.getDomainTags();
+        final DomainTagOwnerList domainTagOwnerList = new DomainTagOwnerList();
+        domainTags.stream()
+                .map(com.hivemq.persistence.domain.DomainTag::toDomainTagOwner)
+                .forEach(domainTagOwnerList::addItemsItem);
         // empty list is also 200 as discussed.
-        return Response.ok(new DomainTagList().items(domainTags.stream()
-                .map(com.hivemq.persistence.domain.DomainTag::toModel)
-                .toList())).build();
+        return Response.ok(domainTagOwnerList).build();
     }
 
     @Override
@@ -746,26 +754,26 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getNorthboundMappings() {
-        return Response.status(200)
-                .entity(new NorthboundMappingListModel(configExtractor.getAllConfigs()
+        final NorthboundMappingOwnerList northboundMappingOwnerList = new NorthboundMappingOwnerList();
+        configExtractor.getAllConfigs()
+                .forEach(adapter -> adapter.getNorthboundMappings()
                         .stream()
-                        .flatMap(adapter -> adapter.getNorthboundMappings()
-                                .stream()
-                                .map(NorthboundMappingModel::fromEntity))
-                        .toList()))
-                .build();
+                        .map(entity -> new NorthboundMappingOwnerListItemsInner().adapterId(adapter.getAdapterId())
+                                .mapping(NorthboundMappingEntityConverter.INSTANCE.toRestEntity(entity)))
+                        .forEach(northboundMappingOwnerList::addItemsItem));
+        return Response.status(200).entity(northboundMappingOwnerList).build();
     }
 
     @Override
     public @NotNull Response getSouthboundMappings() {
-        return Response.status(200)
-                .entity(new SouthboundMappingList().items(configExtractor.getAllConfigs()
+        final SouthboundMappingOwnerList southboundMappingOwnerList = new SouthboundMappingOwnerList();
+        configExtractor.getAllConfigs()
+                .forEach(adapter -> adapter.getSouthboundMappings()
                         .stream()
-                        .flatMap(adapter -> adapter.getSouthboundMappings()
-                                .stream()
-                                .map(SouthboundMappingEntity::toAPi))
-                        .toList()))
-                .build();
+                        .map(entity -> new SouthboundMappingOwnerListItemsInner().adapterId(adapter.getAdapterId())
+                                .mapping(SouthboundMappingEntityConverter.INSTANCE.toRestEntity(entity)))
+                        .forEach(southboundMappingOwnerList::addItemsItem));
+        return Response.status(200).entity(southboundMappingOwnerList).build();
     }
 
     @Override
@@ -938,14 +946,16 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
             final String errorMessage = String.format(
                     "Cannot delete or rename tag '%s' for adapter '%s' because it is referenced in %d mapping(s): [%s]. " +
-                    "Please remove or update these mappings before deleting or renaming the tag.",
+                            "Please remove or update these mappings before deleting or renaming the tag.",
                     tagName,
                     adapter.getAdapterId(),
                     allUsages.size(),
                     String.join(", ", allUsages));
 
             log.warn("Tag deletion/rename blocked for adapter '{}': tag '{}' is used in {} mapping(s)",
-                    adapter.getAdapterId(), tagName, allUsages.size());
+                    adapter.getAdapterId(),
+                    tagName,
+                    allUsages.size());
 
             return Optional.of(errorResponse(new com.hivemq.api.errors.adapters.DomainTagInUseError(errorMessage)));
         }

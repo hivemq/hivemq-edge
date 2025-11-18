@@ -1,0 +1,43 @@
+/*
+ *  Copyright 2019-present HiveMQ GmbH
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package com.hivemq.configuration.entity.combining;
+
+import com.hivemq.configuration.entity.EntityConverter;
+import com.hivemq.edge.api.model.DataIdentifierReference;
+import org.jetbrains.annotations.NotNull;
+
+public final class DataIdentifierReferenceEntityConverter
+        implements EntityConverter<DataIdentifierReference, DataIdentifierReferenceEntity> {
+    public static final DataIdentifierReferenceEntityConverter INSTANCE = new DataIdentifierReferenceEntityConverter();
+
+    private DataIdentifierReferenceEntityConverter() {
+    }
+
+    @Override
+    public @NotNull DataIdentifierReferenceEntity toInternalEntity(final @NotNull DataIdentifierReference entity) {
+        return new DataIdentifierReferenceEntity(entity.getId(),
+                DataIdentifierReferenceTypeConverter.INSTANCE.toInternalEntity(entity.getType()));
+    }
+
+    @Override
+    public @NotNull DataIdentifierReference toRestEntity(final @NotNull DataIdentifierReferenceEntity entity) {
+        return DataIdentifierReference.builder()
+                .id(entity.getId())
+                .type(DataIdentifierReferenceTypeConverter.INSTANCE.toRestEntity(entity.getType()))
+                .build();
+    }
+}
