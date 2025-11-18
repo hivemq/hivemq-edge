@@ -24,9 +24,8 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -38,12 +37,14 @@ import java.io.File;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ConfigurationFileProviderTest {
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @TempDir
+    public File folder;
 
     @Mock
     private Appender mockAppender;
@@ -54,8 +55,8 @@ public class ConfigurationFileProviderTest {
     @Captor
     private ArgumentCaptor<LoggingEvent> captorLoggingEvent;
 
-
     private File confFolder;
+
     @BeforeEach
     public void setUp() throws Exception {
         final var props = new uk.org.webcompere.systemstubs.properties.SystemProperties();
@@ -66,13 +67,13 @@ public class ConfigurationFileProviderTest {
         final Logger logger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         logger.addAppender(mockAppender);
 
-        final File hivemqHomefolder = folder.newFolder();
-        confFolder = new File(hivemqHomefolder, "conf");
+        confFolder = new File(folder, "conf");
         assertTrue(confFolder.mkdir());
 
-        when(systemInformation.getHiveMQHomeFolder()).thenReturn(hivemqHomefolder);
+        when(systemInformation.getHiveMQHomeFolder()).thenReturn(folder);
         when(systemInformation.getConfigFolder()).thenReturn(confFolder);
     }
+
     @AfterEach
     public void tearDown() throws Exception {
 

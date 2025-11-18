@@ -17,6 +17,7 @@ package com.hivemq.configuration.reader;
 
 import org.junit.Rule;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
@@ -27,8 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConfigurationFileTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     @Test
     public void test_null_configuration_file() throws Exception {
@@ -39,7 +40,7 @@ public class ConfigurationFileTest {
 
     @Test
     public void test_configuration_file_exists() throws Exception {
-        final File file = temporaryFolder.newFile();
+        final File file = new File(temporaryFolder, "config.xml");
         final ConfigurationFile configurationFile = new ConfigurationFile(file);
 
         assertTrue(configurationFile.file().isPresent());

@@ -29,17 +29,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MqttConfiguratorTest extends AbstractConfigurationTest {
 
-
     @Test
     public void test_server_receive_max_negative_xml() throws Exception {
 
-        final String contents = "<hivemq>" +
-                " <mqtt>\n" +
-                "<receive-maximum> " +
-                "<server-receive-maximum>-1</server-receive-maximum> " +
-                "</receive-maximum> " +
-                "    </mqtt\n>" +
-                "</hivemq>";
+        final String contents = """
+                <hivemq>
+                  <mqtt>
+                    <receive-maximum>
+                      <server-receive-maximum>-1</server-receive-maximum>
+                    </receive-maximum>
+                  </mqtt>
+                </hivemq>""";
         Files.write(contents.getBytes(UTF_8), xmlFile);
 
         assertThrows(UnrecoverableException.class, () -> reader.applyConfig());
