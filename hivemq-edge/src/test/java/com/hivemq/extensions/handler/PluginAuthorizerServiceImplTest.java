@@ -19,7 +19,6 @@ package com.hivemq.extensions.handler;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthorizerProvider;
 import com.hivemq.extensions.HiveMQExtension;
@@ -31,7 +30,11 @@ import com.hivemq.extensions.executor.PluginTaskExecutorService;
 import com.hivemq.extensions.executor.PluginTaskExecutorServiceImpl;
 import com.hivemq.extensions.executor.task.PluginTaskExecutor;
 import com.hivemq.extensions.handler.PluginAuthorizerServiceImpl.AuthorizeWillResultEvent;
-import com.hivemq.extensions.handler.testextensions.*;
+import com.hivemq.extensions.handler.testextensions.TestAuthorizerDisconnectProvider;
+import com.hivemq.extensions.handler.testextensions.TestAuthorizerForgetProvider;
+import com.hivemq.extensions.handler.testextensions.TestAuthorizerNextProvider;
+import com.hivemq.extensions.handler.testextensions.TestPubAuthorizerNextProvider;
+import com.hivemq.extensions.handler.testextensions.TestTimeoutAuthorizerProvider;
 import com.hivemq.extensions.services.auth.Authorizers;
 import com.hivemq.logging.EventLog;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
@@ -47,14 +50,16 @@ import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import util.CollectUserEventsHandler;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestMessageUtil;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,18 +69,25 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @since 4.0.0
  */
 public class PluginAuthorizerServiceImplTest {
 
-    @Rule
-    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull Authorizers authorizers = mock(Authorizers.class);
     private final @NotNull IncomingSubscribeService incomingSubscribeService = mock(IncomingSubscribeService.class);
@@ -91,8 +103,7 @@ public class PluginAuthorizerServiceImplTest {
     private @NotNull PluginAuthorizerServiceImpl pluginAuthorizerService;
     private @NotNull CollectUserEventsHandler<AuthorizeWillResultEvent> eventsHandler;
     private @NotNull ChannelHandlerContext channelHandlerContext;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         executor = new PluginTaskExecutor(new AtomicLong());
         executor.postConstruct();
@@ -133,7 +144,8 @@ public class PluginAuthorizerServiceImplTest {
         channelHandlerContext = channel.pipeline().context(CollectUserEventsHandler.class);
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_subscribe_client_id_null() {
         final SUBSCRIBE fullMqtt5Subscribe = TestMessageUtil.createFullMqtt5Subscribe();
 
@@ -143,7 +155,8 @@ public class PluginAuthorizerServiceImplTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_publish_client_id_null() {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic", QoS.AT_LEAST_ONCE);
 
@@ -153,7 +166,8 @@ public class PluginAuthorizerServiceImplTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_will_client_id_null() {
         final CONNECT connect = TestMessageUtil.createMqtt5ConnectWithWill();
 
@@ -165,7 +179,8 @@ public class PluginAuthorizerServiceImplTest {
         assertNull(resultEvent);
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_publish_skip_all() {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic", QoS.AT_LEAST_ONCE);
 
@@ -175,7 +190,8 @@ public class PluginAuthorizerServiceImplTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_published_to_invalid_topic() {
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("#", "1234".getBytes(), QoS.AT_LEAST_ONCE);
 
@@ -185,7 +201,8 @@ public class PluginAuthorizerServiceImplTest {
         verify(eventLog).clientWasDisconnected(any(Channel.class), anyString());
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_dollar_topic_disconnect() {
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("$", "payload".getBytes(), QoS.AT_LEAST_ONCE);
 
@@ -195,7 +212,8 @@ public class PluginAuthorizerServiceImplTest {
         verify(eventLog).clientWasDisconnected(any(Channel.class), anyString());
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_subscribe_no_auth_available() {
         when(authorizers.areAuthorizersAvailable()).thenReturn(false);
 
@@ -209,7 +227,8 @@ public class PluginAuthorizerServiceImplTest {
         verify(incomingSubscribeService).processSubscribe(eq(channelHandlerContext), eq(fullMqtt5Subscribe), eq(false));
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_publish_no_auth_available() {
         when(authorizers.areAuthorizersAvailable()).thenReturn(false);
 
@@ -217,7 +236,8 @@ public class PluginAuthorizerServiceImplTest {
         pluginAuthorizerService.authorizePublish(channelHandlerContext, publish);
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_will_no_auth_available() {
         when(authorizers.areAuthorizersAvailable()).thenReturn(false);
 
@@ -232,7 +252,8 @@ public class PluginAuthorizerServiceImplTest {
         assertFalse(resultEvent.getResult().isAuthorizerPresent());
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_subscribe_auth_provider_empty() {
         when(authorizers.areAuthorizersAvailable()).thenReturn(true);
         when(authorizers.getAuthorizerProviderMap()).thenReturn(new HashMap<>());
@@ -247,7 +268,8 @@ public class PluginAuthorizerServiceImplTest {
         verify(incomingSubscribeService).processSubscribe(eq(channelHandlerContext), eq(fullMqtt5Subscribe), eq(false));
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_publish_auth_provider_empty_default_processing() {
         when(authorizers.areAuthorizersAvailable()).thenReturn(true);
         when(authorizers.getAuthorizerProviderMap()).thenReturn(new HashMap<>());
@@ -258,7 +280,8 @@ public class PluginAuthorizerServiceImplTest {
         verify(incomingPublishService).processPublish(channelHandlerContext, publish, null);
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_will_auth_provider_empty() {
         when(authorizers.areAuthorizersAvailable()).thenReturn(true);
         when(authorizers.getAuthorizerProviderMap()).thenReturn(new HashMap<>());
@@ -274,7 +297,8 @@ public class PluginAuthorizerServiceImplTest {
         assertFalse(resultEvent.getResult().isAuthorizerPresent());
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_subscribe_with_3_topics_2_authorizer_continue() throws Exception {
         // three topics
         final CountDownLatch authorizeLatch1 = new CountDownLatch(3);
@@ -296,7 +320,8 @@ public class PluginAuthorizerServiceImplTest {
         assertEquals(2, extensionClientAuthorizers.getSubscriptionAuthorizersMap().size());
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_publish_2_authorizer() throws Exception {
         // three topics
         final CountDownLatch authorizeLatch1 = new CountDownLatch(1);
@@ -322,7 +347,8 @@ public class PluginAuthorizerServiceImplTest {
         assertEquals(2, extensionClientAuthorizers.getPublishAuthorizersMap().size());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_publish_authorizer_skipped() throws Exception {
         // three topics
         final CountDownLatch authorizeLatch1 = new CountDownLatch(1);
@@ -359,7 +385,8 @@ public class PluginAuthorizerServiceImplTest {
         assertEquals(1, extensionClientAuthorizers.getPublishAuthorizersMap().size());
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_will_publish_2_authorizer() throws Exception {
         // three topics
         final CountDownLatch authorizeLatch1 = new CountDownLatch(1);
@@ -391,7 +418,8 @@ public class PluginAuthorizerServiceImplTest {
         assertEquals(2, extensionClientAuthorizers.getPublishAuthorizersMap().size());
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_subscribe_with_3_topics_2_authorizer_undecided() throws Exception {
         // three topics
         final CountDownLatch authorizeLatch1 = new CountDownLatch(3);
@@ -415,7 +443,8 @@ public class PluginAuthorizerServiceImplTest {
         assertEquals(2, extensionClientAuthorizers.getSubscriptionAuthorizersMap().size());
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_subscribe_with_3_topics_1_authorizer_timeout() throws Exception {
         // three topics
         final CountDownLatch authorizeLatch1 = new CountDownLatch(3);
@@ -436,7 +465,8 @@ public class PluginAuthorizerServiceImplTest {
         assertEquals(1, extensionClientAuthorizers.getSubscriptionAuthorizersMap().size());
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_subscribe_with_3_topics_1_authorizer_disconnect_mqtt5() throws Exception {
         // three topics
         final CountDownLatch authorizeLatch1 = new CountDownLatch(3);
@@ -466,7 +496,8 @@ public class PluginAuthorizerServiceImplTest {
         });
     }
 
-    @Test(timeout = 2000)
+    @Test
+    @Timeout(2)
     public void test_subscribe_with_3_topics_1_authorizer_disconnect_mqtt3() throws Exception {
         // three topics
         final CountDownLatch authorizeLatch1 = new CountDownLatch(3);
@@ -519,7 +550,7 @@ public class PluginAuthorizerServiceImplTest {
             final @NotNull Class<?> clazz,
             final @NotNull CountDownLatch countDownLatch) throws Exception {
         final Class<?> providerClass =
-                IsolatedExtensionClassloaderUtil.loadClass(temporaryFolder.getRoot().toPath(), clazz);
+                IsolatedExtensionClassloaderUtil.loadClass(temporaryFolder.toPath(), clazz);
         return (AuthorizerProvider) providerClass.getDeclaredConstructor(CountDownLatch.class)
                 .newInstance(countDownLatch);
     }

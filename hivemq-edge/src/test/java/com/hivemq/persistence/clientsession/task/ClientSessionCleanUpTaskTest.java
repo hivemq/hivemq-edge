@@ -19,8 +19,8 @@ import com.google.common.collect.ImmutableSet;
 import com.hivemq.persistence.clientsession.ClientSessionPersistenceImpl;
 import com.hivemq.persistence.clientsession.PendingWillMessages;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -42,8 +42,7 @@ public class ClientSessionCleanUpTaskTest {
     private PendingWillMessages pendingWillMessages;
 
     private ClientSessionCleanUpTask task;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         task = new ClientSessionCleanUpTask(localPersistence, clientSessionPersistence, pendingWillMessages);

@@ -55,9 +55,9 @@ import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.util.ReasonStrings;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import util.TestMessageUtil;
 
@@ -96,8 +96,7 @@ public class PluginAuthenticatorServiceImplTest {
     private @NotNull PluginAuthenticatorService pluginAuthenticatorService;
     private @NotNull EmbeddedChannel channel;
     private @NotNull ClientConnection clientConnection;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         clientConnection = new ClientConnection(channel, mock(PublishFlushHandler.class));
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
@@ -129,8 +128,7 @@ public class PluginAuthenticatorServiceImplTest {
                 extensions,
                 new ServerInformationImpl(new SystemInformationImpl(), new ListenerConfigurationServiceImpl()));
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         InternalConfigurations.AUTH_DENY_UNAUTHENTICATED_CONNECTIONS.set(false);
     }

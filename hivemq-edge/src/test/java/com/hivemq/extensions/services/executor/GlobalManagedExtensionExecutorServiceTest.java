@@ -18,10 +18,10 @@ package com.hivemq.extensions.services.executor;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -32,8 +32,7 @@ public class GlobalManagedExtensionExecutorServiceTest {
     private @NotNull GlobalManagedExtensionExecutorService managedPluginExecutorService;
 
     private final @NotNull ShutdownHooks shutdownHooks = mock(ShutdownHooks.class);
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         InternalConfigurations.MANAGED_EXTENSION_THREAD_POOL_KEEP_ALIVE_SEC.set(60);
         InternalConfigurations.MANAGED_EXTENSION_THREAD_POOL_THREADS_COUNT.set(4);

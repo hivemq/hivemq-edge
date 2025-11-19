@@ -26,8 +26,8 @@ import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 import com.hivemq.extensions.executor.task.*;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -53,8 +53,7 @@ public class PluginTaskExecutorServiceImplTest {
 
     @Mock
     IsolatedExtensionClassloader classloader;
-
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
 

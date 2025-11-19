@@ -18,18 +18,21 @@ package com.hivemq.extensions.iteration;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AllItemsItemCallbackTest {
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void iterateAllItems() throws ExecutionException, InterruptedException {
         final List<String> input = Arrays.asList("1", "2", "3");
         final List<String> output = new ArrayList<>();
@@ -45,7 +48,8 @@ public class AllItemsItemCallbackTest {
         assertEquals(input, output);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void contextCancelled() throws ExecutionException, InterruptedException {
         final List<String> input = Arrays.asList("1", "2", "3");
         final List<String> output = new ArrayList<>();
@@ -62,7 +66,8 @@ public class AllItemsItemCallbackTest {
         assertEquals(1, output.size());
     }
 
-    @Test(timeout = 10000, expected = RuntimeException.class)
+    @Test
+    @Timeout(10)
     public void iterateExceptionally() throws Throwable {
         final List<String> input = Arrays.asList("1", "2", "3");
 
@@ -72,14 +77,12 @@ public class AllItemsItemCallbackTest {
                 });
 
         final ListenableFuture<Boolean> future = stringCallback.onItems(input);
-        try {
-            future.get();
-        } catch (final ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> future.get())
+                .hasCauseInstanceOf(RuntimeException.class);
     }
 
-    @Test(timeout = 10000, expected = Error.class)
+    @Test
+    @Timeout(150)
     public void iterateError() throws Throwable {
         final List<String> input = Arrays.asList("1", "2", "3");
 
@@ -89,10 +92,7 @@ public class AllItemsItemCallbackTest {
                 });
 
         final ListenableFuture<Boolean> future = stringCallback.onItems(input);
-        try {
-            future.get();
-        } catch (final ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> future.get())
+                .hasCauseInstanceOf(Error.class);
     }
 }

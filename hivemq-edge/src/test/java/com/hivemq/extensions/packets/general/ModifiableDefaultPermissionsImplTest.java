@@ -21,12 +21,15 @@ import com.hivemq.extension.sdk.api.packets.auth.DefaultAuthorizationBehaviour;
 import com.hivemq.extension.sdk.api.packets.auth.ModifiableDefaultPermissions;
 import com.hivemq.extension.sdk.api.services.exception.DoNotImplementException;
 import com.hivemq.extensions.services.builder.TopicPermissionBuilderImpl;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
 import util.TestTopicPermissionsUtil;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Christoph Schäbel
@@ -36,51 +39,58 @@ public class ModifiableDefaultPermissionsImplTest {
 
 
     private ModifiableDefaultPermissions modifiableDefaultPermissions;
-
-    @Before
+    @BeforeEach
     public void before() {
         modifiableDefaultPermissions = new ModifiableDefaultPermissionsImpl();
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_add_null() {
-        modifiableDefaultPermissions.add(null);
+    
+        assertThrows(NullPointerException.class, () -> modifiableDefaultPermissions.add(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_addAll_null() {
-        modifiableDefaultPermissions.addAll(null);
+    
+        assertThrows(NullPointerException.class, () -> modifiableDefaultPermissions.addAll(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_addAll_element_in_list_null() {
-        modifiableDefaultPermissions.addAll(Lists.newArrayList(TestTopicPermissionsUtil.getTopicPermission(), null));
+    
+        assertThrows(NullPointerException.class, () -> modifiableDefaultPermissions.addAll(Lists.newArrayList(TestTopicPermissionsUtil.getTopicPermission(), null)));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_remove_null() {
-        modifiableDefaultPermissions.remove(null);
+    
+        assertThrows(NullPointerException.class, () -> modifiableDefaultPermissions.remove(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_setDefaultBehaviour_null() {
-        modifiableDefaultPermissions.setDefaultBehaviour(null);
+    
+        assertThrows(NullPointerException.class, () -> modifiableDefaultPermissions.setDefaultBehaviour(null));
     }
 
-    @Test(expected = DoNotImplementException.class)
+    @Test
     public void test_remove_illegal_class() {
-        modifiableDefaultPermissions.remove(new TestTopicPermissionsUtil.TestTopicPermission());
+    
+        assertThrows(DoNotImplementException.class, () -> modifiableDefaultPermissions.remove(new TestTopicPermissionsUtil.TestTopicPermission()));
     }
 
-    @Test(expected = DoNotImplementException.class)
+    @Test
     public void test_add_illegal_class() {
-        modifiableDefaultPermissions.add(new TestTopicPermissionsUtil.TestTopicPermission());
+    
+        assertThrows(DoNotImplementException.class, () -> modifiableDefaultPermissions.add(new TestTopicPermissionsUtil.TestTopicPermission()));
     }
 
-    @Test(expected = DoNotImplementException.class)
+    @Test
     public void test_addAll_illegal_class() {
-        modifiableDefaultPermissions.addAll(Lists.newArrayList(new TestTopicPermissionsUtil.TestTopicPermission(),
-                new TestTopicPermissionsUtil.TestTopicPermission()));
+        assertThatThrownBy(() -> modifiableDefaultPermissions.addAll(Lists.newArrayList(new TestTopicPermissionsUtil.TestTopicPermission(),
+                new TestTopicPermissionsUtil.TestTopicPermission())))
+                .isInstanceOf(DoNotImplementException.class);
     }
 
 

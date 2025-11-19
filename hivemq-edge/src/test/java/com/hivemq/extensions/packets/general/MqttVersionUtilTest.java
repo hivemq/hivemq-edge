@@ -15,30 +15,34 @@
  */
 package com.hivemq.extensions.packets.general;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import static com.hivemq.extension.sdk.api.packets.general.MqttVersion.*;
 import static com.hivemq.mqtt.message.ProtocolVersion.*;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  * @author Georg Held
  */
 public class MqttVersionUtilTest {
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_version_5() {
         assertSame(V_5, MqttVersionUtil.toMqttVersion(MQTTv5));
         assertSame(MQTTv5, MqttVersionUtil.toProtocolVersion(V_5));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_version_3_1() {
         assertSame(V_3_1, MqttVersionUtil.toMqttVersion(MQTTv3_1));
         assertSame(MQTTv3_1, MqttVersionUtil.toProtocolVersion(V_3_1));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_version_3_1_1() {
         assertSame(V_3_1_1, MqttVersionUtil.toMqttVersion(MQTTv3_1_1));
         assertSame(MQTTv3_1_1, MqttVersionUtil.toProtocolVersion(V_3_1_1));

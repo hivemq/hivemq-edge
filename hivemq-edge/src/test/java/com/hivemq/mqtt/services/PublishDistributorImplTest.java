@@ -35,9 +35,10 @@ import com.hivemq.persistence.clientsession.ClientSession;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import util.TestMessageUtil;
 import util.TestSingleWriterFactory;
 
@@ -46,7 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -73,8 +74,7 @@ public class PublishDistributorImplTest {
 
     private final @NotNull InternalConfigurationService
             internalConfigurationService = new InternalConfigurationServiceImpl();
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         when(configurationService.mqttConfiguration()).thenReturn(mqttConfigurationService);
         when(configurationService.bridgeExtractor()).thenReturn(bridgeConfiguration);
@@ -83,13 +83,13 @@ public class PublishDistributorImplTest {
                 singleWriterService, configurationService);
         when(bridgeConfiguration.getBridges()).thenReturn(List.of(bridge));
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         singleWriterService.stop();
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_not_connected() throws ExecutionException, InterruptedException {
         when(clientSessionPersistence.getSession("client", false)).thenReturn(new ClientSession(false, 1000L));
 
@@ -100,7 +100,8 @@ public class PublishDistributorImplTest {
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_session_expired() throws ExecutionException, InterruptedException {
         when(clientSessionPersistence.getSession("client", false)).thenReturn(null);
 
@@ -110,7 +111,8 @@ public class PublishDistributorImplTest {
         assertEquals(PublishStatus.NOT_CONNECTED, status);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_success() throws ExecutionException, InterruptedException {
         when(clientSessionPersistence.getSession("client", false)).thenReturn(new ClientSession(true, 1000L));
         when(clientQueuePersistence.add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong())).thenReturn(Futures.immediateFuture(null));
@@ -123,7 +125,8 @@ public class PublishDistributorImplTest {
         assertEquals(PublishStatus.DELIVERED, status);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_failed() throws ExecutionException, InterruptedException {
         when(clientSessionPersistence.getSession("client", false)).thenReturn(new ClientSession(true, 1000L));
         when(clientQueuePersistence.add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong())).thenReturn(Futures.immediateFailedFuture(new RuntimeException("test")));
@@ -136,7 +139,8 @@ public class PublishDistributorImplTest {
         assertEquals(PublishStatus.FAILED, status);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_success_shared() throws ExecutionException, InterruptedException {
         when(clientQueuePersistence.add(eq("group/topic"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong())).thenReturn(Futures.immediateFuture(null));
 

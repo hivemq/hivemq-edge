@@ -17,12 +17,14 @@ package com.hivemq.bootstrap;
 
 import com.hivemq.configuration.service.entity.MqttTcpListener;
 import io.netty.channel.ChannelFuture;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class BindInformationTest {
 
@@ -31,8 +33,7 @@ public class BindInformationTest {
     ChannelFuture future;
 
     private MqttTcpListener listener;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         listener = new MqttTcpListener(1883, "0.0.0.0");
@@ -46,13 +47,15 @@ public class BindInformationTest {
         assertSame(future, bindInformation.getBindFuture());
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_listener_null() throws Exception {
-        new BindInformation(null, future);
+    @Test
+    public void test_listener_null() {
+    
+        assertThrows(NullPointerException.class, () -> new BindInformation(null, future));
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_future_null() throws Exception {
-        new BindInformation(listener, null);
+    @Test
+    public void test_future_null() {
+    
+        assertThrows(NullPointerException.class, () -> new BindInformation(listener, null));
     }
 }

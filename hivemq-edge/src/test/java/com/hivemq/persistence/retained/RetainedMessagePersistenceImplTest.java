@@ -25,9 +25,12 @@ import com.hivemq.persistence.RetainedMessage;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestMessageUtil;
@@ -36,7 +39,7 @@ import util.TestSingleWriterFactory;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -58,8 +61,7 @@ public class RetainedMessagePersistenceImplTest {
     private @NotNull SingleWriterService singleWriterService;
     private final @NotNull InternalConfigurationService
             internalConfigurationService = new InternalConfigurationServiceImpl();
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         closeableMock = MockitoAnnotations.openMocks(this);
         internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "4");
@@ -69,58 +71,41 @@ public class RetainedMessagePersistenceImplTest {
                 new RetainedMessagePersistenceImpl(localPersistence, payloadPersistence,
                         singleWriterService, new Chunker(internalConfigurationService));
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         retainedMessagePersistence.closeDB();
         singleWriterService.stop();
         closeableMock.close();
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_get_topic_null() throws Throwable {
-        try {
-            retainedMessagePersistence.get(null).get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+    @Test
+    public void test_get_topic_null() {
+        assertThatThrownBy(() -> retainedMessagePersistence.get(null).get())
+                .hasCauseInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void test_get_topic_with_wildcard() throws Throwable {
-        try {
-            retainedMessagePersistence.get("topic/#").get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+    @Test
+    public void test_get_topic_with_wildcard() {
+        assertThatThrownBy(() -> retainedMessagePersistence.get("topic/#").get())
+                .hasCauseInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void test_get_topic_with_wildcard_plus() throws Throwable {
-        try {
-            retainedMessagePersistence.get("topic/+").get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+    @Test
+    public void test_get_topic_with_wildcard_plus() {
+        assertThatThrownBy(() -> retainedMessagePersistence.get("topic/+").get())
+                .hasCauseInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_get_with_wildcards_topic_null() throws Throwable {
-        try {
-            retainedMessagePersistence.getWithWildcards(null).get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+    @Test
+    public void test_get_with_wildcards_topic_null() {
+        assertThatThrownBy(() -> retainedMessagePersistence.getWithWildcards(null).get())
+                .hasCauseInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void test_get_with_wildcards_topic_without_wildcard() throws Throwable {
-        try {
-            retainedMessagePersistence.getWithWildcards("topic").get();
-        } catch (final InterruptedException |
-                ExecutionException e) {
-            throw e.getCause();
-        }
+    @Test
+    public void test_get_with_wildcards_topic_without_wildcard() {
+        assertThatThrownBy(() -> retainedMessagePersistence.getWithWildcards("topic").get())
+                .hasCauseInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -152,13 +137,10 @@ public class RetainedMessagePersistenceImplTest {
         verify(localPersistence).size();
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_remove_null() throws Throwable {
-        try {
-            retainedMessagePersistence.remove(null).get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> retainedMessagePersistence.remove(null).get())
+                .hasCauseInstanceOf(NullPointerException.class);
         verify(localPersistence, never()).remove(anyString(), anyInt());
     }
 
@@ -172,23 +154,17 @@ public class RetainedMessagePersistenceImplTest {
         verify(localPersistence).remove(eq("topic"), anyInt());
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_persist_topic_null() throws Throwable {
-        try {
-            retainedMessagePersistence.persist(null, message).get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+    @Test
+    public void test_persist_topic_null() {
+        assertThatThrownBy(() -> retainedMessagePersistence.persist(null, message).get())
+                .hasCauseInstanceOf(NullPointerException.class);
         verify(localPersistence, never()).put(any(RetainedMessage.class), anyString(), anyInt());
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_persist_message_null() throws Throwable {
-        try {
-            retainedMessagePersistence.persist("topic", null).get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+    @Test
+    public void test_persist_message_null() {
+        assertThatThrownBy(() -> retainedMessagePersistence.persist("topic", null).get())
+                .hasCauseInstanceOf(NullPointerException.class);
         verify(localPersistence, never()).put(any(RetainedMessage.class), anyString(), anyInt());
     }
 

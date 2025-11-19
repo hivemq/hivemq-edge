@@ -21,8 +21,10 @@ import com.hivemq.extension.sdk.api.events.EventRegistry;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListener;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListenerProvider;
 import com.hivemq.extension.sdk.api.events.client.parameters.ClientLifecycleEventListenerProviderInput;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -39,8 +41,7 @@ public class EventRegistryImplTest {
     private LifecycleEventListeners eventListeners;
 
     private EventRegistry registry;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         MockitoAnnotations.initMocks(this);
@@ -64,11 +65,10 @@ public class EventRegistryImplTest {
 
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_set_null() {
-
-        registry.setClientLifecycleEventListener(null);
-
+    
+        assertThrows(NullPointerException.class, () -> registry.setClientLifecycleEventListener(null));
     }
 
 }

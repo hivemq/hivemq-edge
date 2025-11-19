@@ -40,15 +40,20 @@ import com.hivemq.mqtt.services.PublishDistributor;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Timeout;
 import util.TestConfigurationBootstrap;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -72,8 +77,7 @@ public class PublishServiceImplTest {
             new TestConfigurationBootstrap().getConfigurationService();
     private @NotNull PublishServiceImpl publishService;
     private @NotNull DataGovernanceService dataGovernanceService;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         when(rateLimitService.rateLimitExceeded()).thenReturn(false);
         @NotNull final GlobalManagedExtensionExecutorService managedPluginExecutorService =
@@ -88,51 +92,46 @@ public class PublishServiceImplTest {
                 dataGovernanceService);
     }
 
-    @Test(expected = DoNotImplementException.class)
+    @Test
     public void test_publish_implemented_publish() throws Throwable {
-        try {
-            publishService.publish(new TestPublish()).get();
-        } catch (final ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> publishService.publish(new TestPublish()).get())
+                .isInstanceOf(ExecutionException.class)
+                .hasCauseInstanceOf(DoNotImplementException.class);
     }
 
-    @Test(expected = RateLimitExceededException.class)
+    @Test
     public void test_publish_rate_limit_exceeded() throws Throwable {
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
         final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
                 .payload(ByteBuffer.wrap("message".getBytes()))
                 .build();
-        try {
-            publishService.publish(publish).get();
-        } catch (final ExecutionException e) {
-            throw e.getCause();
-        }
+
+        assertThatThrownBy(() -> publishService.publish(publish).get())
+                .isInstanceOf(ExecutionException.class)
+                .hasCauseInstanceOf(RateLimitExceededException.class);
     }
 
-    @Test(expected = DoNotImplementException.class)
+    @Test
     public void test_publish_to_client_implemented_publish() throws Throwable {
-        try {
-            publishService.publishToClient(new TestPublish(), "client").get();
-        } catch (final ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> publishService.publishToClient(new TestPublish(), "client").get())
+                .isInstanceOf(ExecutionException.class)
+                .hasCauseInstanceOf(DoNotImplementException.class);
     }
 
-    @Test(expected = RateLimitExceededException.class)
+    @Test
     public void test_publish_to_client_rate_limit_exceeded() throws Throwable {
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
         final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
                 .payload(ByteBuffer.wrap("message".getBytes()))
                 .build();
-        try {
-            publishService.publishToClient(publish, "client").get();
-        } catch (final ExecutionException e) {
-            throw e.getCause();
-        }
+
+        assertThatThrownBy(() -> publishService.publishToClient(publish, "client").get())
+                .isInstanceOf(ExecutionException.class)
+                .hasCauseInstanceOf(RateLimitExceededException.class);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_publish() throws Throwable {
         final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
                 .payload(ByteBuffer.wrap("message".getBytes()))
@@ -143,7 +142,8 @@ public class PublishServiceImplTest {
         verify(dataGovernanceService).applyAndPublish(any());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_publish_to_client() throws Exception {
         final byte subscriptionFlags = SubscriptionFlag.getDefaultFlags(false, false, false);
         final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
@@ -163,7 +163,8 @@ public class PublishServiceImplTest {
         assertEquals(PublishToClientResult.SUCCESSFUL, result);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_publish_to_client_not_subscribed() throws Exception {
         final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
                 .payload(ByteBuffer.wrap("message".getBytes()))

@@ -21,11 +21,11 @@ import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Florian Limpöck
@@ -64,8 +64,7 @@ public class NonSslHandlerTest {
             11, 4, 1, 5, 1, 6, 1, 4, 2, 3, 3, 3, 1, 3, 2, 2, 3, 2, 1, 2, 2, 0, 17, 0, 9, 0, 7, 2, 0, 4, 0, 0, 0, 0,
             0, 23, 0, 0, 0, 43, 0, 7, 6, 3, 3, 3, 2, 3, 1
     };
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         channel = new EmbeddedChannel();

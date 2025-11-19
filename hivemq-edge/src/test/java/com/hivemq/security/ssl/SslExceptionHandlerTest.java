@@ -22,8 +22,8 @@ import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.ssl.NotSslRecordException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestChannelAttribute;
@@ -52,8 +52,7 @@ public class SslExceptionHandlerTest {
     EventLog eventLog;
 
     SslExceptionHandler sslExceptionHandler;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         when(ctx.channel()).thenReturn(channel);

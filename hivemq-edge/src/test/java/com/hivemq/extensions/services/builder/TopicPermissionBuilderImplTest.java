@@ -17,11 +17,14 @@ package com.hivemq.extensions.services.builder;
 
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Christoph Schäbel
@@ -31,36 +34,40 @@ public class TopicPermissionBuilderImplTest {
     private TopicPermissionBuilderImpl topicPermissionBuilder;
 
     private ConfigurationService configurationService;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
         topicPermissionBuilder = new TopicPermissionBuilderImpl(configurationService);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_topic_null() {
-        topicPermissionBuilder.topicFilter(null);
+    
+        assertThrows(NullPointerException.class, () -> topicPermissionBuilder.topicFilter(null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_topic_empty() {
-        topicPermissionBuilder.topicFilter("");
+    
+        assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.topicFilter(""));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_topic_invalid() {
-        topicPermissionBuilder.topicFilter("#/+");
+    
+        assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.topicFilter("#/+"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_topic_invalid_utf8_must_not() {
-        topicPermissionBuilder.topicFilter("topic" + '\u0000');
+    
+        assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.topicFilter("topic" + '\u0000'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_topic_invalid_utf8_should_not() {
-        topicPermissionBuilder.topicFilter("topic" + '\u0001');
+    
+        assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.topicFilter("topic" + '\u0001'));
     }
 
     @Test()
@@ -70,25 +77,29 @@ public class TopicPermissionBuilderImplTest {
         assertEquals("topic" + '\u0001', topicPermission.getTopicFilter());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_topic_invalid_to_long() {
         configurationService.restrictionsConfiguration().setMaxTopicLength(10);
-        topicPermissionBuilder.topicFilter("topic123456");
+        assertThatThrownBy(() -> topicPermissionBuilder.topicFilter("topic123456"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_shared_topic_invalid() {
-        topicPermissionBuilder.topicFilter("$share/g1/#");
+    
+        assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.topicFilter("$share/g1/#"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_shared_topic_invalid_utf8_must_not() {
-        topicPermissionBuilder.sharedGroup("group" + '\u0000');
+    
+        assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.sharedGroup("group" + '\u0000'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_shared_topic_invalid_utf8_should_not() {
-        topicPermissionBuilder.sharedGroup("group" + '\u0001');
+    
+        assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.sharedGroup("group" + '\u0001'));
     }
 
     @Test()
@@ -99,39 +110,46 @@ public class TopicPermissionBuilderImplTest {
     }
 
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_qos_null() {
-        topicPermissionBuilder.qos(null);
+    
+        assertThrows(NullPointerException.class, () -> topicPermissionBuilder.qos(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_activity_null() {
-        topicPermissionBuilder.activity(null);
+    
+        assertThrows(NullPointerException.class, () -> topicPermissionBuilder.activity(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_retain_null() {
-        topicPermissionBuilder.retain(null);
+    
+        assertThrows(NullPointerException.class, () -> topicPermissionBuilder.retain(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_type_null() {
-        topicPermissionBuilder.type(null);
+    
+        assertThrows(NullPointerException.class, () -> topicPermissionBuilder.type(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_shared_sub_null() {
-        topicPermissionBuilder.sharedSubscription(null);
+    
+        assertThrows(NullPointerException.class, () -> topicPermissionBuilder.sharedSubscription(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_shared_group_null() {
-        topicPermissionBuilder.sharedGroup(null);
+    
+        assertThrows(NullPointerException.class, () -> topicPermissionBuilder.sharedGroup(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_topic_not_set() {
-        topicPermissionBuilder.build();
+    
+        assertThrows(NullPointerException.class, () -> topicPermissionBuilder.build());
     }
 
     @Test
@@ -167,29 +185,34 @@ public class TopicPermissionBuilderImplTest {
     }
 
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_shared_group_invalid_string_wildcard() {
-        topicPermissionBuilder.sharedGroup("as#");
+    
+        assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.sharedGroup("as#"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_shared_group_invalid_string_plus() {
-        topicPermissionBuilder.sharedGroup("+");
+    
+        assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.sharedGroup("+"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_shared_group_empty_string() {
-        topicPermissionBuilder.sharedGroup("");
+    
+        assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.sharedGroup(""));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_shared_group_illegal_character() {
-        topicPermissionBuilder.sharedGroup("U+0000");
+    
+        assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.sharedGroup("U+0000"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_shared_group_illegal_character_slash() {
-        topicPermissionBuilder.sharedGroup("abc/test");
+    
+        assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.sharedGroup("abc/test"));
     }
 
 

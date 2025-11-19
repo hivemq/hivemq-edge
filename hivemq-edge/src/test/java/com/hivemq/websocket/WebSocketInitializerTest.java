@@ -18,8 +18,8 @@ package com.hivemq.websocket;
 import com.google.common.collect.Lists;
 import com.hivemq.configuration.service.entity.MqttWebsocketListener;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import util.DummyHandler;
 
@@ -27,16 +27,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WebSocketInitializerTest {
 
     private EmbeddedChannel channel;
 
     private MqttWebsocketListener mqttWebsocketListener;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         channel = new EmbeddedChannel();
@@ -58,12 +57,12 @@ public class WebSocketInitializerTest {
 
         final List<String> handlerNames = channel.pipeline().names();
 
-        assertEquals(true, handlerNames.contains(HTTP_SERVER_CODEC));
-        assertEquals(true, handlerNames.contains(HTTP_OBJECT_AGGREGATOR));
-        assertEquals(true, handlerNames.contains(WEBSOCKET_SERVER_PROTOCOL_HANDLER));
-        assertEquals(true, handlerNames.contains(WEBSOCKET_BINARY_FRAME_HANDLER));
-        assertEquals(true, handlerNames.contains(WEBSOCKET_TEXT_FRAME_HANDLER));
-        assertEquals(true, handlerNames.contains(MQTT_WEBSOCKET_ENCODER));
+        assertTrue(handlerNames.contains(HTTP_SERVER_CODEC));
+        assertTrue(handlerNames.contains(HTTP_OBJECT_AGGREGATOR));
+        assertTrue(handlerNames.contains(WEBSOCKET_SERVER_PROTOCOL_HANDLER));
+        assertTrue(handlerNames.contains(WEBSOCKET_BINARY_FRAME_HANDLER));
+        assertTrue(handlerNames.contains(WEBSOCKET_TEXT_FRAME_HANDLER));
+        assertTrue(handlerNames.contains(MQTT_WEBSOCKET_ENCODER));
 
     }
 

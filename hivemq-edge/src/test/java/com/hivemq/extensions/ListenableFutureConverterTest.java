@@ -19,8 +19,11 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -30,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -42,8 +45,7 @@ public class ListenableFutureConverterTest {
 
     @Mock
     private RetainedMessagePersistence retainedMessagePersistence;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
     }
@@ -147,7 +149,7 @@ public class ListenableFutureConverterTest {
         assertTrue(voidCompletableFuture.isDone());
         assertFalse(voidCompletableFuture.isCompletedExceptionally());
 
-        assertEquals(null, voidCompletableFuture.get());
+        assertNull(voidCompletableFuture.get());
 
     }
 
@@ -165,11 +167,11 @@ public class ListenableFutureConverterTest {
         assertTrue(voidCompletableFuture.isDone());
         assertFalse(voidCompletableFuture.isCompletedExceptionally());
 
-        assertEquals(null, voidCompletableFuture.get());
+        assertNull(voidCompletableFuture.get());
 
     }
 
-    @Test(expected = ExecutionException.class)
+    @Test
     public void test_execution_failed() throws ExecutionException, InterruptedException {
 
         final SettableFuture<Void> voidListenableFuture = SettableFuture.create();
@@ -180,7 +182,8 @@ public class ListenableFutureConverterTest {
 
         voidListenableFuture.setException(TestException.INSTANCE);
 
-        voidCompletableFuture.get();
+        assertThatThrownBy(() -> voidCompletableFuture.get())
+                .isInstanceOf(ExecutionException.class);
 
     }
 

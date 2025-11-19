@@ -24,13 +24,14 @@ import com.hivemq.extension.sdk.api.packets.subscribe.SubackReasonCode;
 import com.hivemq.extensions.auth.parameter.SubscriptionAuthorizerOutputImpl;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.executor.PluginOutputAsyncerImpl;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.time.Duration;
 
 import static com.hivemq.extensions.auth.parameter.SubscriptionAuthorizerOutputImpl.AuthorizationState.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 public class SubscriptionAuthorizerContextTest {
@@ -38,8 +39,7 @@ public class SubscriptionAuthorizerContextTest {
     private @NotNull SubscriptionAuthorizerContext context;
     private @NotNull SettableFuture<SubscriptionAuthorizerOutputImpl> resultFuture;
     private @NotNull SubscriptionAuthorizerOutputImpl output;
-
-    @Before
+    @BeforeEach
     public void before() {
         final PluginOutPutAsyncer asyncer = new PluginOutputAsyncerImpl(mock(ShutdownHooks.class));
         resultFuture = SettableFuture.create();
@@ -47,7 +47,8 @@ public class SubscriptionAuthorizerContextTest {
         context = new SubscriptionAuthorizerContext("clientId", output, resultFuture, 1);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_async_timeout_fail() throws Exception {
         output.markAsAsync();
         output.markAsTimedOut();
@@ -60,7 +61,8 @@ public class SubscriptionAuthorizerContextTest {
         assertTrue(result.isCompleted());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_async_timeout_success() throws Exception {
         output.async(Duration.ofSeconds(10), TimeoutFallback.SUCCESS);
         output.markAsAsync();
@@ -73,7 +75,8 @@ public class SubscriptionAuthorizerContextTest {
         assertFalse(result.isCompleted());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_success() throws Exception {
         output.authorizeSuccessfully();
 
@@ -84,7 +87,8 @@ public class SubscriptionAuthorizerContextTest {
         assertTrue(result.isCompleted());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_fail() throws Exception {
         output.failAuthorization();
 
@@ -95,7 +99,8 @@ public class SubscriptionAuthorizerContextTest {
         assertTrue(result.isCompleted());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_disconnect() throws Exception {
         output.disconnectClient();
 
@@ -106,7 +111,8 @@ public class SubscriptionAuthorizerContextTest {
         assertTrue(result.isCompleted());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_undecided() throws Exception {
         context.pluginPost(output);
 
@@ -115,7 +121,8 @@ public class SubscriptionAuthorizerContextTest {
         assertFalse(result.isCompleted());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_increment_future_returns() throws Exception {
         context.increment();
 

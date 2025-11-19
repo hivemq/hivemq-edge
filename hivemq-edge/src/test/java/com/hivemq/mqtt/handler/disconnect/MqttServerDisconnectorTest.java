@@ -29,14 +29,17 @@ import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -48,14 +51,12 @@ public class MqttServerDisconnectorTest {
 
     private MqttServerDisconnector mqttServerDisconnector;
     private EventLog eventLog;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         eventLog = mock(EventLog.class);
         mqttServerDisconnector = new MqttServerDisconnectorImpl(eventLog);
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         InternalConfigurations.DISCONNECT_WITH_REASON_CODE_ENABLED.set(true);
         InternalConfigurations.DISCONNECT_WITH_REASON_STRING_ENABLED.set(true);
@@ -298,13 +299,14 @@ public class MqttServerDisconnectorTest {
         assertTrue(authLatch.await(10, TimeUnit.SECONDS));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_disconnect_channel_with_reason_code_null() throws InterruptedException {
         final EmbeddedChannel channel = new EmbeddedChannel();
         final ClientConnection clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
-        mqttServerDisconnector.disconnect(channel, "log", "eventlog", null, null, Mqtt5UserProperties.NO_USER_PROPERTIES, false, false);
+        assertThatThrownBy(() -> mqttServerDisconnector.disconnect(channel, "log", "eventlog", null, null, Mqtt5UserProperties.NO_USER_PROPERTIES, false, false))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test

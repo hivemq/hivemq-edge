@@ -26,15 +26,15 @@ import com.hivemq.logging.EventLog;
 import com.hivemq.security.ssl.NonSslHandler;
 import com.hivemq.security.ssl.SslFactory;
 import io.netty.channel.Channel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import jakarta.inject.Provider;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import static util.TlsTestUtil.createDefaultTLS;
 
@@ -65,8 +65,7 @@ public class ChannelInitializerFactoryImplTest {
     private RestrictionsConfigurationService restrictionsConfigurationService;
 
     private ChannelInitializerFactoryImpl channelInitializerFactory;
-
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
         when(channelDependencies.getConfigurationService()).thenReturn(fullConfigurationService);

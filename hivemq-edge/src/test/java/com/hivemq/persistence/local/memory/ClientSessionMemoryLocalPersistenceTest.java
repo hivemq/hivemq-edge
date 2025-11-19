@@ -22,7 +22,6 @@ import com.google.common.collect.Lists;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.iteration.BucketChunkResult;
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.HiveMQMetrics;
@@ -41,29 +40,46 @@ import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.LocalPersistenceFileUtil;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestBucketUtil;
 
-import java.util.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRE_ON_DISCONNECT;
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ClientSessionMemoryLocalPersistenceTest {
 
     private static final int BUCKET_COUNT = 4;
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private ClientSessionLocalPersistence persistence;
 
@@ -80,16 +96,19 @@ public class ClientSessionMemoryLocalPersistenceTest {
 
     private final @NotNull InternalConfigurationService
             internalConfigurationService = new InternalConfigurationServiceImpl();
-
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
 
         InternalConfigurations.PERSISTENCE_CLOSE_RETRIES.set(3);
         InternalConfigurations.PERSISTENCE_CLOSE_RETRY_INTERVAL_MSEC.set(5);
         internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, ""+BUCKET_COUNT);
+
+        var persistenceFolder = new File(temporaryFolder, "persistence");
+        persistenceFolder.mkdir();
+
         when(localPersistenceFileUtil.getVersionedLocalPersistenceFolder(anyString(), anyString())).thenReturn(
-                temporaryFolder.newFolder());
+                persistenceFolder);
 
         final MetricsHolder metricsHolder = mock(MetricsHolder.class);
         when(metricsHolder.getStoredWillMessagesCount()).thenReturn(mock(Counter.class));
@@ -110,7 +129,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
         final ClientSession clientSession =
                 persistence.getSession("clientid", BucketUtils.getBucket("clientid", BUCKET_COUNT));
 
-        assertEquals(true, clientSession.isConnected());
+        assertTrue(clientSession.isConnected());
 
         final ClientSession session = persistence.getSession("clientid");
         assertNotNull(session);
@@ -137,7 +156,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
         final ClientSession clientSession =
                 persistence.getSession("clientid", bucket);
 
-        assertEquals(true, clientSession.isConnected());
+        assertTrue(clientSession.isConnected());
 
         final ClientSession session = persistence.getSession("clientid");
         assertNotNull(session);
@@ -166,7 +185,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
         final ClientSession clientSession =
                 persistence.getSession("clientid", bucket);
 
-        assertEquals(true, clientSession.isConnected());
+        assertTrue(clientSession.isConnected());
 
         final ClientSession session = persistence.getSession("clientid");
         assertNotNull(session);
@@ -411,12 +430,13 @@ public class ClientSessionMemoryLocalPersistenceTest {
         Assert.assertEquals(12345, updatedClientSession.getSessionExpiryIntervalSec());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_set_sessionExpiry_client_null() {
-        persistence.setSessionExpiryInterval(null, 12345, BucketUtils.getBucket("clientid", BUCKET_COUNT));
+    
+        assertThrows(NullPointerException.class, () -> persistence.setSessionExpiryInterval(null, 12345, BucketUtils.getBucket("clientid", BUCKET_COUNT)));
     }
 
-    @Test(expected = InvalidSessionExpiryIntervalException.class)
+    @Test
     public void test_invalid_sessionExpiry() {
         final String clientid = "myClient";
 
@@ -428,26 +448,30 @@ public class ClientSessionMemoryLocalPersistenceTest {
                 persistence.getSession(clientid, BucketUtils.getBucket(clientid, BUCKET_COUNT));
         Assert.assertEquals(clientSession.getSessionExpiryIntervalSec(), SESSION_EXPIRY_MAX);
 
-        persistence.setSessionExpiryInterval(clientid, -1, BucketUtils.getBucket(clientid, BUCKET_COUNT));
+        assertThatThrownBy(() -> persistence.setSessionExpiryInterval(clientid, -1, BucketUtils.getBucket(clientid, BUCKET_COUNT)))
+                .isInstanceOf(InvalidSessionExpiryIntervalException.class);
     }
 
-    @Test(expected = InvalidSessionExpiryIntervalException.class)
+    @Test
     public void test_invalid_sessionExpiry_and_no_session() {
         final String clientid = "myClient";
-        persistence.setSessionExpiryInterval(clientid, -1, BucketUtils.getBucket(clientid, BUCKET_COUNT));
+        assertThatThrownBy(() -> persistence.setSessionExpiryInterval(clientid, -1, BucketUtils.getBucket(clientid, BUCKET_COUNT)))
+                .isInstanceOf(InvalidSessionExpiryIntervalException.class);
     }
 
-    @Test(expected = NoSessionException.class)
+    @Test
     public void test_set_sessionExpiry_no_session() {
         final String clientid = "myClient";
-        persistence.setSessionExpiryInterval(clientid, 123, BucketUtils.getBucket(clientid, BUCKET_COUNT));
+        assertThatThrownBy(() -> persistence.setSessionExpiryInterval(clientid, 123, BucketUtils.getBucket(clientid, BUCKET_COUNT)))
+                .isInstanceOf(NoSessionException.class);
     }
 
-    @Test(expected = NoSessionException.class)
+    @Test
     public void test_set_sessionExpiry_no_session_persisted_and_connected() {
         final String clientid = "myClient";
         persistence.put(clientid, new ClientSession(false, 0), 123L, BucketUtils.getBucket(clientid, BUCKET_COUNT));
-        persistence.setSessionExpiryInterval(clientid, 123, BucketUtils.getBucket(clientid, BUCKET_COUNT));
+        assertThatThrownBy(() -> persistence.setSessionExpiryInterval(clientid, 123, BucketUtils.getBucket(clientid, BUCKET_COUNT)))
+                .isInstanceOf(NoSessionException.class);
     }
 
     @Test
@@ -574,7 +598,8 @@ public class ClientSessionMemoryLocalPersistenceTest {
         assertTrue(allClients.contains("client3"));
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_get_chunk_many_clients() {
 
         for (int i = 0; i < 100; i++) {
@@ -603,7 +628,8 @@ public class ClientSessionMemoryLocalPersistenceTest {
         assertEquals(100, clientIds.size());
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_get_chunk_remove_last_key_between_iterations() {
 
         for (int i = 0; i < 100; i++) {
@@ -635,7 +661,8 @@ public class ClientSessionMemoryLocalPersistenceTest {
         assertEquals(100, clientIds.size());
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_get_chunk_skip_expired_clients() {
 
         persistence.put("client1", new ClientSession(true, 1000), System.currentTimeMillis(), 1);
@@ -659,7 +686,8 @@ public class ClientSessionMemoryLocalPersistenceTest {
         assertFalse(clientIds.contains("client3"));
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_get_chunk_only_expired_clients() {
 
         persistence.put("client1", new ClientSession(false, 1000), 123L, 1);
@@ -679,7 +707,8 @@ public class ClientSessionMemoryLocalPersistenceTest {
         assertEquals(0, clientIds.size());
     }
 
-    @Test(timeout = 30_000)
+    @Test
+    @Timeout(30)
     public void test_get_chunk_many_clients_random_ids() {
 
         final ArrayList<String> clientIdList = getRandomUniqueIds();
@@ -763,7 +792,8 @@ public class ClientSessionMemoryLocalPersistenceTest {
         assertEquals(0L, memoryGauge.getValue().longValue());
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_queue_limit() {
         persistence.put("clientId", new ClientSession(true, 1000L, null, 10L),
                 System.currentTimeMillis(), 0);

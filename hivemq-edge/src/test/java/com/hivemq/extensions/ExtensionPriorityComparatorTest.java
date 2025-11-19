@@ -16,14 +16,14 @@
 package com.hivemq.extensions;
 
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,9 +38,7 @@ public class ExtensionPriorityComparatorTest {
     private HiveMQExtensions hiveMQExtensions;
 
     private ExtensionPriorityComparator comparator;
-
-
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
         comparator = new ExtensionPriorityComparator(hiveMQExtensions);

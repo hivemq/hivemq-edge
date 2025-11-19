@@ -25,8 +25,8 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import util.TestMessageUtil;
 
 import java.nio.ByteBuffer;
@@ -37,7 +37,7 @@ import static com.hivemq.codec.encoder.mqtt5.MqttVariableByteInteger.MAXIMUM_PAC
 import static com.hivemq.mqtt.message.mqtt5.MessageProperties.CORRELATION_DATA;
 import static com.hivemq.mqtt.message.mqtt5.MessageProperties.PAYLOAD_FORMAT_INDICATOR;
 import static com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties.NO_USER_PROPERTIES;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Florian Limpöck
@@ -45,8 +45,7 @@ import static org.junit.Assert.assertEquals;
 public class Mqtt5PublishEncoderTest extends AbstractMqtt5EncoderTest {
 
     private HivemqId hiveMQId;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         hiveMQId = new HivemqId();
         super.setUp();

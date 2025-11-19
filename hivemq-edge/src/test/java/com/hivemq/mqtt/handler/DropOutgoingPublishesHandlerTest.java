@@ -30,14 +30,14 @@ import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestChannelAttribute;
 
 import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -65,8 +65,7 @@ public class DropOutgoingPublishesHandlerTest {
     PublishPayloadPersistence publishPayloadPersistence;
 
     private DropOutgoingPublishesHandler handler;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         when(ctx.channel()).thenReturn(channel);
@@ -115,7 +114,7 @@ public class DropOutgoingPublishesHandlerTest {
         final PublishWithFuture publishWithFuture = new PublishWithFuture(publish, future, false, publishPayloadPersistence);
         final boolean messageDropped = handler.checkChannelNotWritable(ctx, publishWithFuture, promise);
         assertFalse(messageDropped);
-        assertEquals(false, future.isDone()); // will be set in the Ordered topic handler
+        assertFalse(future.isDone()); // will be set in the Ordered topic handler
         verify(promise, never()).setSuccess();
         verify(counter, never()).inc();
         verify(publishPayloadPersistence, never()).decrementReferenceCounter(1);
@@ -138,7 +137,7 @@ public class DropOutgoingPublishesHandlerTest {
         final PublishWithFuture publishWithFuture = new PublishWithFuture(publish, future, false, publishPayloadPersistence);
         final boolean messageDropped = handler.checkChannelNotWritable(ctx, publishWithFuture, promise);
         assertFalse(messageDropped);
-        assertEquals(false, future.isDone()); // will be set in the Ordered topic handler
+        assertFalse(future.isDone()); // will be set in the Ordered topic handler
         verify(promise, never()).setSuccess();
         verify(counter, never()).inc();
         verify(publishPayloadPersistence, never()).decrementReferenceCounter(1);

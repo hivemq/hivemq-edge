@@ -28,13 +28,13 @@ import com.hivemq.mqtt.message.connect.MqttWillPublish;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.Executors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.eq;
@@ -56,8 +56,7 @@ public class PendingWillMessagesTest {
             mock(ClientSessionLocalPersistence.class);
     private @NotNull PendingWillMessages pendingWillMessages;
     private final @NotNull DataGovernanceService dataGovernanceService = mock(DataGovernanceService.class);
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
@@ -71,8 +70,7 @@ public class PendingWillMessagesTest {
                 metricsHolder,
                 dataGovernanceService);
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         executorService.shutdown();
     }

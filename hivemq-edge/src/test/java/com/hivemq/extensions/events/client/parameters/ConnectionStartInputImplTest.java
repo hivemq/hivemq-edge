@@ -18,11 +18,13 @@ package com.hivemq.extensions.events.client.parameters;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestMessageUtil;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Florian Limpöck
@@ -30,9 +32,10 @@ import static org.junit.Assert.assertNotNull;
  */
 public class ConnectionStartInputImplTest {
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_construction_client_null() {
-        new ConnectionStartInputImpl(null, new EmbeddedChannel());
+    
+        assertThrows(NullPointerException.class, () -> new ConnectionStartInputImpl(null, new EmbeddedChannel()));
     }
 
     @Test
