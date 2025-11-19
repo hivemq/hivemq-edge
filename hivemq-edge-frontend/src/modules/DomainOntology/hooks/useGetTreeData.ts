@@ -36,7 +36,7 @@ export const useGetTreeData = () => {
     const treeTags =
       tags.data?.items?.map<Tree>((filter) => ({
         type: 'leaf',
-        name: filter.name,
+        name: filter.mapping.name,
         value: 10,
         links: [],
       })) || []
@@ -44,19 +44,19 @@ export const useGetTreeData = () => {
     const topicTree =
       northMappings.data?.items?.map<Tree>((filter) => ({
         type: 'leaf',
-        name: filter.topic,
+        name: filter.mapping.topic,
         value: 10,
         links: [],
       })) || []
 
     for (const north of northMappings.data?.items || []) {
-      const gg = treeTags.find((e) => e.name === north.tagName)
-      if (gg) (gg as TreeLeaf).links.push(north.topic)
+      const gg = treeTags.find((e) => e.name === north.mapping.tagName)
+      if (gg) (gg as TreeLeaf).links.push(north.mapping.topic)
     }
 
     for (const south of southMappings.data?.items || []) {
-      const gg = treeFilters.find((e) => e.name === south.topicFilter)
-      if (gg && south.tagName) (gg as TreeLeaf).links.push(south.tagName)
+      const gg = treeFilters.find((e) => e.name === south.mapping.topicFilter)
+      if (gg && south.mapping.tagName) (gg as TreeLeaf).links.push(south.mapping.tagName)
     }
 
     for (const topic of topicTree) {

@@ -19,8 +19,8 @@ export const useGetSunburstData = () => {
     if (isLoading) return emptyStateData
 
     const allTopicFilters = topicFilters.data?.items?.map<string>((filter) => filter.topicFilter) || []
-    const allTags = tags.data?.items?.map<string>((filter) => filter.name) || []
-    const allTopics = northMappings.data?.items?.map<string>((filter) => filter.topic) || []
+    const allTags = tags.data?.items?.map<string>((filter) => filter.mapping.name) || []
+    const allTopics = northMappings.data?.items?.map<string>((filter) => filter.mapping.topic) || []
 
     const edgeTopics = toTreeMetadata([
       ...allTags,
