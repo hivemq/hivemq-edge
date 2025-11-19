@@ -10,6 +10,10 @@ properties:
     type: string
     format: mqtt-tag
     description: The name of the tag that identifies it within this edge instance.
+  adapterId:
+    type: string
+    description: The id of the adapter owning the tag
 required:
   - definition
   - name
+  - adapterId

@@ -6,7 +6,7 @@ properties:
   tagName:
     type: string
     format: mqtt-tag
-    description: The tag for which values hould be collected and sent out.
+    description: The tag for which values should be collected and sent out.
   topicFilter:
     type: string
     description: The filter defining what topics we will receive messages from.

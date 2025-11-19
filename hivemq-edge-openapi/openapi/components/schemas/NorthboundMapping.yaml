@@ -19,7 +19,7 @@ properties:
   tagName:
     type: string
     format: mqtt-tag
-    description: The tag for which values hould be collected and sent out.
+    description: The tag for which values should be collected and sent out.
   topic:
     type: string
     description: The target mqtt topic where received tags should be sent to.
