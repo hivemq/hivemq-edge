@@ -16,4 +16,3 @@ properties:
 required:
   - definition
   - name
-  - adapterId
