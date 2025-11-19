@@ -3,7 +3,7 @@ import type { RJSFSchema } from '@rjsf/utils'
 
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 import type { ProblemDetails } from '@/api/types/http-problem-details.ts'
-import type { DomainTag, DomainTagList, JsonNode, PayloadSampleList, TagSchema } from '@/api/__generated__'
+import type { DomainTag, DomainTagOwnerList, JsonNode, PayloadSampleList, TagSchema } from '@/api/__generated__'
 import {
   MOCK_DEVICE_TAG_ADDRESS_MODBUS,
   MOCK_DEVICE_TAG_FAKE,
@@ -141,9 +141,11 @@ export const handlers = [
   }),
 
   http.get('**/management/protocol-adapters/tags', () => {
-    return HttpResponse.json<DomainTagList>(
+    return HttpResponse.json<DomainTagOwnerList>(
       {
-        items: [{ name: 'test/tag1', definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS }],
+        items: [
+          { adapterId: 'test-adapter', mapping: { name: 'test/tag1', definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS } },
+        ],
       },
       { status: 200 }
     )
