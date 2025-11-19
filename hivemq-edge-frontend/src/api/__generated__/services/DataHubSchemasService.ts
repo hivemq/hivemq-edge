@@ -45,6 +45,7 @@ export class DataHubSchemasService {
                 'cursor': cursor,
             },
             errors: {
+                400: `URL parameter missing`,
                 503: `Request resource temporary unavailable`,
             },
         });
@@ -73,10 +74,11 @@ export class DataHubSchemasService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Schema could not be validatetd`,
-                409: `Schema already exists`,
-                412: `Mismatch between schema and etag`,
+                400: `Schema creation failed`,
+                409: `Schema is already present`,
+                412: `Schema doesn't match etag`,
                 500: `Internal server error`,
+                503: `Request resource temporary unavailable`,
                 507: `Insufficient storage`,
             },
         });
@@ -106,10 +108,10 @@ export class DataHubSchemasService {
                 'If-Match': ifMatch,
             },
             errors: {
-                400: `Schema referenced`,
+                400: `URL parameter missing`,
                 404: `Schema not found`,
-                412: `Mismatch between schema and etag`,
-                500: `Internal server error`,
+                412: `Schema doesn't match etag`,
+                500: `Internal Server error`,
                 503: `Request resource temporary unavailable`,
             },
         });
@@ -141,9 +143,10 @@ export class DataHubSchemasService {
                 'fields': fields,
             },
             errors: {
-                400: `A url parameter is missing`,
+                400: `URL parameter missing`,
                 404: `Schema not found`,
                 500: `Internal server error`,
+                503: `Request resource temporary unavailable`,
             },
         });
     }
