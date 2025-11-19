@@ -20,11 +20,9 @@ import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.batch.BatchPollingInputImpl;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
-import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
 import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
 import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTagDefinition;
 import org.jetbrains.annotations.NotNull;
-import com.hivemq.edge.modules.adapters.impl.polling.PollingInputImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +32,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -74,7 +72,7 @@ class SimulationProtocolAdapterTest {
 
         simulationProtocolAdapter.poll(pollingInput, pollingOutput);
 
-        assertThrows(ExecutionException.class, () -> pollingOutput.getOutputFuture().get());
+        assertThatThrownBy(() -> pollingOutput.getOutputFuture().get()).isInstanceOf(ExecutionException.class);
         verify(timeWaiter, never()).sleep(anyInt());
     }
 

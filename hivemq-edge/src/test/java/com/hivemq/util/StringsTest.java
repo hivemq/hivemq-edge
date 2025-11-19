@@ -20,18 +20,20 @@ import io.netty.buffer.Unpooled;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class StringsTest {
 
     private ByteBuf buffer;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         buffer = Unpooled.buffer();
@@ -84,10 +86,9 @@ public class StringsTest {
         assertNull(Strings.getPrefixedString(buffer));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_get_prefixed_bytes_null_passed() throws Exception {
-
-        Strings.getPrefixedString(null);
+        assertThrows(NullPointerException.class, () -> Strings.getPrefixedString(null));
     }
 
     @Test
@@ -95,7 +96,7 @@ public class StringsTest {
         final ByteBuf buf = Strings.createPrefixedBytesFromString("", Unpooled.buffer());
 
         assertEquals(0, buf.readShort());
-        assertEquals(false, buf.isReadable());
+        assertFalse(buf.isReadable());
     }
 
     @Test
@@ -106,7 +107,7 @@ public class StringsTest {
         System.out.println(buf);
         assertEquals(12, buf.readShort());
         buf.readBytes(12);
-        assertEquals(false, buf.isReadable());
+        assertFalse(buf.isReadable());
     }
 
     @Test
@@ -116,17 +117,17 @@ public class StringsTest {
 
         assertEquals(Short.MAX_VALUE, buf.readShort());
         buf.readBytes(Short.MAX_VALUE);
-        assertEquals(false, buf.isReadable());
+        assertFalse(buf.isReadable());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_create_prefixed_bytes_null_bytes() throws Exception {
-        Strings.createPrefixedBytesFromString(null, buffer);
+        assertThrows(NullPointerException.class, () -> Strings.createPrefixedBytesFromString(null, buffer));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_create_prefixed_bytes_null_buffer() throws Exception {
-        Strings.createPrefixedBytesFromString("string", null);
+        assertThrows(NullPointerException.class, () -> Strings.createPrefixedBytesFromString("string", null));
     }
 
     @Test

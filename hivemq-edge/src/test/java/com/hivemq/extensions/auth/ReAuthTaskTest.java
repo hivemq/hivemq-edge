@@ -15,7 +15,6 @@
  */
 package com.hivemq.extensions.auth;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.EnhancedAuthenticator;
 import com.hivemq.extension.sdk.api.auth.parameter.AuthenticatorProviderInput;
 import com.hivemq.extension.sdk.api.auth.parameter.EnhancedAuthConnectInput;
@@ -30,19 +29,26 @@ import com.hivemq.extensions.services.auth.WrappedAuthenticatorProvider;
 import com.hivemq.mqtt.message.auth.AUTH;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5AuthReasonCode;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import util.IsolatedExtensionClassloaderUtil;
 
+import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class ReAuthTaskTest {
@@ -55,8 +61,8 @@ public class ReAuthTaskTest {
 
     private EnhancedAuthenticator enhancedAuthenticator;
     public static AtomicBoolean reAuth;
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private ReAuthTask authTask;
     @Mock
@@ -64,8 +70,7 @@ public class ReAuthTaskTest {
     private IsolatedExtensionClassloader classloader;
     @Mock
     private HiveMQExtensions extensions;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         MockitoAnnotations.initMocks(this);
@@ -74,14 +79,15 @@ public class ReAuthTaskTest {
         auth = new AtomicBoolean();
         reAuth = new AtomicBoolean();
 
-        classloader = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), new Class[]{TestAuthenticator.class});
+        classloader = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), new Class[]{TestAuthenticator.class});
         enhancedAuthenticator = IsolatedExtensionClassloaderUtil.loadInstance(classloader, TestAuthenticator.class);
 
         when(wrappedAuthenticatorProvider.getEnhancedAuthenticator(authenticatorProviderInput)).thenReturn(enhancedAuthenticator);
         authTask = new ReAuthTask(wrappedAuthenticatorProvider, authenticatorProviderInput, "extension1", new ClientAuthenticatorsImpl(new ExtensionPriorityComparator(extensions)));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_authenticator_is_same() {
 
         when(wrappedAuthenticatorProvider.getClassLoader()).thenReturn(classloader);
@@ -92,7 +98,8 @@ public class ReAuthTaskTest {
         verify(wrappedAuthenticatorProvider, times(1)).getEnhancedAuthenticator(authenticatorProviderInput);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_next_or_default_reauth() {
         final ReAuthOutput output = Mockito.mock(ReAuthOutput.class);
         final AuthInput input = Mockito.mock(AuthInput.class);
@@ -103,7 +110,8 @@ public class ReAuthTaskTest {
         assertTrue(reAuth.get());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_next_or_default_continue() {
         final ReAuthOutput output = Mockito.mock(ReAuthOutput.class);
         final AuthInput input = Mockito.mock(AuthInput.class);
@@ -114,7 +122,8 @@ public class ReAuthTaskTest {
         assertTrue(auth.get());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_next_or_default_no_auth_found() {
         final ReAuthOutput output = Mockito.mock(ReAuthOutput.class);
         final AuthInput input = Mockito.mock(AuthInput.class);
@@ -127,7 +136,8 @@ public class ReAuthTaskTest {
         assertFalse(auth.get());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_undecided_reauth() {
         final ReAuthOutput output = Mockito.mock(ReAuthOutput.class);
         final AuthInput input = Mockito.mock(AuthInput.class);
@@ -138,7 +148,8 @@ public class ReAuthTaskTest {
         assertTrue(reAuth.get());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_undecided_continue() {
         final ReAuthOutput output = Mockito.mock(ReAuthOutput.class);
         final AuthInput input = Mockito.mock(AuthInput.class);
@@ -149,7 +160,8 @@ public class ReAuthTaskTest {
         assertTrue(auth.get());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_undecided_no_auth_found() {
         final ReAuthOutput output = Mockito.mock(ReAuthOutput.class);
         final AuthInput input = Mockito.mock(AuthInput.class);
@@ -162,7 +174,8 @@ public class ReAuthTaskTest {
     }
 
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_decided() {
         final ReAuthOutput output = Mockito.mock(ReAuthOutput.class);
         final AuthInput input = Mockito.mock(AuthInput.class);

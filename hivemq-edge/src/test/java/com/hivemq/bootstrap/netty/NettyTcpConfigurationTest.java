@@ -17,38 +17,41 @@ package com.hivemq.bootstrap.netty;
 
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class NettyTcpConfigurationTest {
 
     private NioEventLoopGroup eventloop;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         eventloop = new NioEventLoopGroup(1);
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (eventloop != null) {
             eventloop.shutdownGracefully();
         }
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_server_socket_class_npe() throws Exception {
-        new NettyTcpConfiguration(null, eventloop, eventloop);
+    @Test
+    public void test_server_socket_class_npe() {
+    
+        assertThrows(NullPointerException.class, () -> new NettyTcpConfiguration(null, eventloop, eventloop));
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_parent_eventloop_npe() throws Exception {
-        new NettyTcpConfiguration(NioServerSocketChannel.class, null, eventloop);
+    @Test
+    public void test_parent_eventloop_npe() {
+    
+        assertThrows(NullPointerException.class, () -> new NettyTcpConfiguration(NioServerSocketChannel.class, null, eventloop));
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_child_eventloop_npe() throws Exception {
-        new NettyTcpConfiguration(NioServerSocketChannel.class, eventloop, null);
+    @Test
+    public void test_child_eventloop_npe() {
+    
+        assertThrows(NullPointerException.class, () -> new NettyTcpConfiguration(NioServerSocketChannel.class, eventloop, null));
     }
 }

@@ -24,8 +24,8 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
@@ -38,8 +38,7 @@ import static com.hivemq.mqtt.message.connack.CONNACK.SESSION_EXPIRY_NOT_SET;
  * @since 4.0.0
  */
 public class Mqtt5ConnackEncoderTest extends AbstractMqtt5EncoderTest {
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         testMessageEncoder.getSecurityConfigurationService().setAllowRequestProblemInformation(true);

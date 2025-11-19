@@ -24,18 +24,20 @@ import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.read.ListAppender;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
 import util.LogbackCapturingAppender;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Dominik Obermaier
@@ -43,12 +45,12 @@ import static org.junit.Assert.*;
 public class LoggingBootstrapTest {
 
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
+
     private Level level;
 
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         final Logger logger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 
@@ -57,8 +59,7 @@ public class LoggingBootstrapTest {
         logger.setLevel(Level.INFO);
 
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         LogbackCapturingAppender.Factory.cleanUp();
         final Logger logger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
@@ -91,17 +92,17 @@ public class LoggingBootstrapTest {
         final Logger logger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 
 
-        assertEquals(false, logger.isTraceEnabled());
+        assertFalse(logger.isTraceEnabled());
 
         try {
 
-            final File configFolder = temporaryFolder.newFolder();
+            final File configFolder = temporaryFolder;
 
             Files.write(overridenContents, new File(configFolder, "logback.xml"), StandardCharsets.UTF_8);
 
             LoggingBootstrap.initLogging(configFolder);
 
-            assertEquals(true, logger.isTraceEnabled());
+            assertTrue(logger.isTraceEnabled());
         } finally {
             //Set back to the original level, otherwise we interfere with other tests
             resetLogToOriginal();
@@ -115,16 +116,16 @@ public class LoggingBootstrapTest {
         final Logger logger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 
 
-        assertEquals(false, logger.isTraceEnabled());
+        assertFalse(logger.isTraceEnabled());
 
         try {
-            final File configFolder = temporaryFolder.newFolder();
+            final File configFolder = temporaryFolder;
 
             LoggingBootstrap.prepareLogging();
             //No file was written
             LoggingBootstrap.initLogging(configFolder);
 
-            assertEquals(false, logger.isTraceEnabled());
+            assertFalse(logger.isTraceEnabled());
         } finally {
             //Set back to the original level, otherwise we interfere with other tests
             resetLogToOriginal();
@@ -147,7 +148,7 @@ public class LoggingBootstrapTest {
             assertFalse(testAppender.isLogCaptured());
 
             //This "resets" to the original logger
-            LoggingBootstrap.initLogging(temporaryFolder.newFolder());
+            LoggingBootstrap.initLogging(temporaryFolder);
 
 
             assertTrue(testAppender.isLogCaptured());
@@ -192,7 +193,7 @@ public class LoggingBootstrapTest {
         try {
 
             LoggingBootstrap.prepareLogging();
-            final File configFolder = temporaryFolder.newFolder();
+            final File configFolder = temporaryFolder;
 
             Files.write(overridenContents, new File(configFolder, "logback.xml"), StandardCharsets.UTF_8);
 
@@ -203,7 +204,8 @@ public class LoggingBootstrapTest {
             //We expect only 2 Appenders: The Instrumented Appender and a Console Appender we created above
 
             for (final Appender<ILoggingEvent> appender : appenders) {
-                assertTrue(appender + " was not expected", appender.getName().equals("com.hivemq.logging") || appender.getName().equals("APP"));
+                assertThat(appender.getName())
+                        .isIn("com.hivemq.logging", "APP");
             }
 
         } finally {

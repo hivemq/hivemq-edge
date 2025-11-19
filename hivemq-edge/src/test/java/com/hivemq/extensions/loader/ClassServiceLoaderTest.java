@@ -18,13 +18,12 @@ package com.hivemq.extensions.loader;
 
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
-import org.jetbrains.annotations.NotNull;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import util.OnTheFlyCompilationUtil;
 
 import java.io.File;
@@ -32,7 +31,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ClassServiceLoaderTest {
 
@@ -53,8 +53,8 @@ public class ClassServiceLoaderTest {
             "            return 2;}" +
             " }";
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     /**
      * Tests the actual service loader mechanism with a real JAR file.
@@ -79,7 +79,8 @@ public class ClassServiceLoaderTest {
 
         final JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class).addAsServiceProviderAndClasses(interfaceClass, implClass);
 
-        final File jarFile = temporaryFolder.newFile();
+        final File jarFile = new File(temporaryFolder, "newFile.jar");
+        jarFile.createNewFile();
         javaArchive.as(ZipExporter.class).exportTo(jarFile, true);
 
         // this classloader contains the classes from the JAR file
@@ -103,7 +104,8 @@ public class ClassServiceLoaderTest {
 
         final JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class).addAsServiceProviderAndClasses(interfaceClass);
 
-        final File jarFile = temporaryFolder.newFile();
+        final File jarFile = new File(temporaryFolder, "newFile.jar");
+        jarFile.createNewFile();
         javaArchive.as(ZipExporter.class).exportTo(jarFile, true);
 
         // this classloader contains the classes from the JAR file
@@ -131,7 +133,8 @@ public class ClassServiceLoaderTest {
         final JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class).
                 addAsServiceProviderAndClasses(interfaceClass, implClass, impl2Class);
 
-        final File jarFile = temporaryFolder.newFile();
+        final File jarFile = new File(temporaryFolder, "newFile.jar");
+        jarFile.createNewFile();
         javaArchive.as(ZipExporter.class).exportTo(jarFile, true);
 
         // this classloader contains the classes from the JAR file
@@ -158,14 +161,16 @@ public class ClassServiceLoaderTest {
 
         final String fileContents = "#" + implClass.getCanonicalName() + "\n" +
                 impl2Class.getCanonicalName() + " # Comment";
-        final File servicesDescriptionFile = temporaryFolder.newFile();
+        final File servicesDescriptionFile = new File(temporaryFolder, "servicesDescriptionFile");
+        servicesDescriptionFile.createNewFile();
         Files.asCharSink(servicesDescriptionFile, StandardCharsets.UTF_8).write(fileContents);
 
         final JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class).
                 addAsResource(servicesDescriptionFile, "META-INF/services/" + interfaceClass.getCanonicalName()).
                 addClasses(interfaceClass, implClass, impl2Class);
 
-        final File jarFile = temporaryFolder.newFile();
+        final File jarFile = new File(temporaryFolder, "newFile.jar");
+        jarFile.createNewFile();
         javaArchive.as(ZipExporter.class).exportTo(jarFile, true);
 
         // this classloader contains the classes from the JAR file
@@ -178,17 +183,19 @@ public class ClassServiceLoaderTest {
         assertEquals(impl2Class.getCanonicalName(), loadedClasses.iterator().next().getCanonicalName());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_class_to_load_null() throws Exception {
         final ClassServiceLoader loader = new ClassServiceLoader();
-        loader.load(null, ClassLoader.getSystemClassLoader());
+        assertThatThrownBy(() -> loader.load(null, ClassLoader.getSystemClassLoader()))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_classloader_null() throws Exception {
         final ClassServiceLoader loader = new ClassServiceLoader();
-        loader.load(Object.class, null);
+        assertThatThrownBy(() -> loader.load(Object.class, null))
+                .isInstanceOf(NullPointerException.class);
     }
 }

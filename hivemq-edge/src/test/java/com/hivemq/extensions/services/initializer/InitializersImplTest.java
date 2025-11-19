@@ -17,7 +17,6 @@
 package com.hivemq.extensions.services.initializer;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.ClientContext;
 import com.hivemq.extension.sdk.api.client.parameter.InitializerInput;
 import com.hivemq.extension.sdk.api.services.intializer.ClientInitializer;
@@ -29,16 +28,17 @@ import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
 
+import java.io.File;
 import java.util.Iterator;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,8 +47,8 @@ import static org.mockito.Mockito.when;
  */
 public class InitializersImplTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
     private final @NotNull HiveMQExtension extension1 = mock(HiveMQExtension.class);
@@ -57,8 +57,7 @@ public class InitializersImplTest {
 
     private @NotNull InitializersImpl initializers;
     private @NotNull ConnectionPersistence connectionPersistence;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         connectionPersistence = new ConnectionPersistenceImpl();
         initializers = new InitializersImpl(hiveMQExtensions);
@@ -69,7 +68,7 @@ public class InitializersImplTest {
 
     @Test
     public void test_add_success() throws Exception {
-        try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot()
+        try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
                 .toPath(), new Class[]{TestClientInitializerOne.class})) {
             final ClientInitializer clientInitializer =
                     IsolatedExtensionClassloaderUtil.loadInstance(cl, TestClientInitializerOne.class);
@@ -97,9 +96,9 @@ public class InitializersImplTest {
                 TestClientInitializerOne.class, TestClientInitializerTwo.class
         };
 
-        try (final IsolatedExtensionClassloader cl1 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot()
+        try (final IsolatedExtensionClassloader cl1 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
                 .toPath(), classes);
-             final IsolatedExtensionClassloader cl2 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot()
+             final IsolatedExtensionClassloader cl2 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
                      .toPath(), classes)) {
             final ClientInitializer clientInitializerOne =
                     IsolatedExtensionClassloaderUtil.loadInstance(cl1, TestClientInitializerOne.class);
@@ -138,9 +137,9 @@ public class InitializersImplTest {
                 TestClientInitializerOne.class, TestClientInitializerTwo.class
         };
 
-        try (final IsolatedExtensionClassloader cl1 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot()
+        try (final IsolatedExtensionClassloader cl1 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
                 .toPath(), classes);
-             final IsolatedExtensionClassloader cl2 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot()
+             final IsolatedExtensionClassloader cl2 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
                      .toPath(), classes)) {
             final ClientInitializer clientInitializerOne =
                     IsolatedExtensionClassloaderUtil.loadInstance(cl1, TestClientInitializerOne.class);

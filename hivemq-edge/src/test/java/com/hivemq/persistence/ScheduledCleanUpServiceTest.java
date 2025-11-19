@@ -28,8 +28,8 @@ import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import org.awaitility.Awaitility;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hivemq.persistence.ScheduledCleanUpService.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -67,7 +67,7 @@ public class ScheduledCleanUpServiceTest {
     private ScheduledCleanUpService scheduledCleanUpService;
     private final @NotNull InternalConfigurationService
             internalConfigurationService = new InternalConfigurationServiceImpl();
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "64");

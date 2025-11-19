@@ -16,57 +16,62 @@
 
 package com.hivemq.extensions;
 
-import org.jetbrains.annotations.NotNull;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import util.TestExtensionUtil;
 
 import java.io.File;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Georg Held
  */
 public class ExtensionUtilExtensionTest extends AbstractExtensionTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder folder = new TemporaryFolder();
+    @TempDir
+    public File folder;
 
-    @Test(timeout = 5000)
-    public void test_empty_extension_folder() throws Exception {
-        final File emptyFolder = folder.newFolder("emptyFolder");
+    @Test
+    @Timeout(5)
+    public void test_empty_extension_folder() {
+        final File emptyFolder = new File(folder, "emptyFolder");
+        emptyFolder.mkdir();
         assertFalse(ExtensionUtil.isValidExtensionFolder(emptyFolder.toPath(), true));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_null_folder() {
         assertFalse(ExtensionUtil.isValidExtensionFolder(new File("some-path").toPath(), true));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_valid_extension_folder() throws Exception {
         final File validExtensionFolder =
-                TestExtensionUtil.createValidExtension(folder.newFolder("extensions"), "validExtension");
+                TestExtensionUtil.createValidExtension(newFolder("extensions"), "validExtension");
 
         assertTrue(ExtensionUtil.isValidExtensionFolder(validExtensionFolder.toPath(), true));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_folder_jar_only() throws Exception {
         final File validExtensionFolder =
-                TestExtensionUtil.createValidExtension(folder.newFolder("extensions"), "validExtension");
+                TestExtensionUtil.createValidExtension(newFolder("extensions"), "validExtension");
         assertTrue(new File(validExtensionFolder, "hivemq-extension.xml").delete());
 
         assertFalse(ExtensionUtil.isValidExtensionFolder(validExtensionFolder.toPath(), true));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_folder_xml_only() throws Exception {
         final File validExtensionFolder =
-                TestExtensionUtil.createValidExtension(folder.newFolder("extension"), "validExtension");
+                TestExtensionUtil.createValidExtension(newFolder("extension"), "validExtension");
         assertTrue(new File(validExtensionFolder, "extension.jar").delete());
 
         assertFalse(ExtensionUtil.isValidExtensionFolder(validExtensionFolder.toPath(), true));
@@ -75,12 +80,18 @@ public class ExtensionUtilExtensionTest extends AbstractExtensionTest {
     @Test
     public void test_extension_disable() throws Exception {
         final File validExtensionFolder =
-                TestExtensionUtil.createValidExtension(folder.newFolder("extensions"), "validExtension");
+                TestExtensionUtil.createValidExtension(newFolder("extensions"), "validExtension");
 
         final boolean result = ExtensionUtil.disableExtensionFolder(validExtensionFolder.toPath());
 
         assertTrue(result);
 
         assertTrue(new File(validExtensionFolder, "DISABLED").exists());
+    }
+    
+    File newFolder(String name) {
+        File folder = new File(this.folder, name);
+        folder.mkdir();
+        return folder;
     }
 }

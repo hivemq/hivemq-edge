@@ -21,14 +21,17 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.subscribe.SubackReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
 
 import java.util.Arrays;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Robin Atherton
@@ -37,8 +40,7 @@ import static org.junit.Assert.*;
 public class ModifiableSubackPacketImplTest {
 
     private @NotNull ConfigurationService configurationService;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
     }
@@ -85,7 +87,7 @@ public class ModifiableSubackPacketImplTest {
                 modifiablePacket.getReasonCodes());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setReasonCodes_tooMany() {
         final SubackPacketImpl packet = new SubackPacketImpl(
                 ImmutableList.of(SubackReasonCode.GRANTED_QOS_2, SubackReasonCode.IMPLEMENTATION_SPECIFIC_ERROR),
@@ -95,11 +97,12 @@ public class ModifiableSubackPacketImplTest {
         final ModifiableSubackPacketImpl modifiablePacket =
                 new ModifiableSubackPacketImpl(packet, configurationService);
 
-        modifiablePacket.setReasonCodes(ImmutableList.of(
-                SubackReasonCode.GRANTED_QOS_1, SubackReasonCode.NOT_AUTHORIZED, SubackReasonCode.QUOTA_EXCEEDED));
+        assertThatThrownBy(() -> modifiablePacket.setReasonCodes(ImmutableList.of(
+                SubackReasonCode.GRANTED_QOS_1, SubackReasonCode.NOT_AUTHORIZED, SubackReasonCode.QUOTA_EXCEEDED)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setReasonCodes_tooFew() {
         final SubackPacketImpl packet = new SubackPacketImpl(
                 ImmutableList.of(SubackReasonCode.GRANTED_QOS_2, SubackReasonCode.IMPLEMENTATION_SPECIFIC_ERROR),
@@ -109,10 +112,11 @@ public class ModifiableSubackPacketImplTest {
         final ModifiableSubackPacketImpl modifiablePacket =
                 new ModifiableSubackPacketImpl(packet, configurationService);
 
-        modifiablePacket.setReasonCodes(ImmutableList.of(SubackReasonCode.GRANTED_QOS_1));
+        assertThatThrownBy(() -> modifiablePacket.setReasonCodes(ImmutableList.of(SubackReasonCode.GRANTED_QOS_1)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setReasonCodes_null() {
         final SubackPacketImpl packet = new SubackPacketImpl(
                 ImmutableList.of(SubackReasonCode.GRANTED_QOS_2, SubackReasonCode.IMPLEMENTATION_SPECIFIC_ERROR),
@@ -122,10 +126,11 @@ public class ModifiableSubackPacketImplTest {
         final ModifiableSubackPacketImpl modifiablePacket =
                 new ModifiableSubackPacketImpl(packet, configurationService);
 
-        modifiablePacket.setReasonCodes(null);
+        assertThatThrownBy(() -> modifiablePacket.setReasonCodes(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setReasonCodes_nullElement() {
         final SubackPacketImpl packet = new SubackPacketImpl(
                 ImmutableList.of(SubackReasonCode.GRANTED_QOS_2, SubackReasonCode.IMPLEMENTATION_SPECIFIC_ERROR),
@@ -135,7 +140,8 @@ public class ModifiableSubackPacketImplTest {
         final ModifiableSubackPacketImpl modifiablePacket =
                 new ModifiableSubackPacketImpl(packet, configurationService);
 
-        modifiablePacket.setReasonCodes(Arrays.asList(SubackReasonCode.GRANTED_QOS_2, null));
+        assertThatThrownBy(() -> modifiablePacket.setReasonCodes(Arrays.asList(SubackReasonCode.GRANTED_QOS_2, null)))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -184,17 +190,18 @@ public class ModifiableSubackPacketImplTest {
         assertFalse(modifiablePacket.isModified());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setReasonString_invalid() {
         final SubackPacketImpl packet = new SubackPacketImpl(
                 ImmutableList.of(SubackReasonCode.GRANTED_QOS_2), "same", 1, UserPropertiesImpl.of(ImmutableList.of()));
         final ModifiableSubackPacketImpl modifiablePacket =
                 new ModifiableSubackPacketImpl(packet, configurationService);
 
-        modifiablePacket.setReasonString("topic" + '\u0001');
+        assertThatThrownBy(() -> modifiablePacket.setReasonString("topic" + '\u0001'))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setReasonString_exceedsMaxLength() {
         final SubackPacketImpl packet = new SubackPacketImpl(
                 ImmutableList.of(SubackReasonCode.GRANTED_QOS_2), "same", 1, UserPropertiesImpl.of(ImmutableList.of()));
@@ -205,7 +212,8 @@ public class ModifiableSubackPacketImplTest {
         for (int i = 0; i < 65535; i++) {
             s.append("s");
         }
-        modifiablePacket.setReasonString(s.toString());
+        assertThatThrownBy(() -> modifiablePacket.setReasonString(s.toString()))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

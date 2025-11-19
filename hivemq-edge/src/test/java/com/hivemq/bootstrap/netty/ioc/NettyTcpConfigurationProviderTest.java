@@ -18,25 +18,24 @@ package com.hivemq.bootstrap.netty.ioc;
 import com.hivemq.bootstrap.netty.NettyTcpConfiguration;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NettyTcpConfigurationProviderTest {
 
     private NettyTcpConfiguration nettyConfiguration;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         final NettyTcpConfigurationProvider provider = new NettyTcpConfigurationProvider();
         nettyConfiguration = provider.get();
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         nettyConfiguration.getChildEventLoopGroup().shutdownGracefully();
         nettyConfiguration.getParentEventLoopGroup().shutdownGracefully();
@@ -45,8 +44,10 @@ public class NettyTcpConfigurationProviderTest {
     @Test
     public void test_nio_is_used() {
 
-        assertThat(nettyConfiguration.getChildEventLoopGroup(), instanceOf(NioEventLoopGroup.class));
-        assertThat(nettyConfiguration.getParentEventLoopGroup(), instanceOf(NioEventLoopGroup.class));
+        assertThat(nettyConfiguration.getChildEventLoopGroup())
+                .isInstanceOf(NioEventLoopGroup.class);
+        assertThat(nettyConfiguration.getParentEventLoopGroup())
+                .isInstanceOf(NioEventLoopGroup.class);
 
         assertEquals(NioServerSocketChannel.class, nettyConfiguration.getServerSocketChannelClass());
     }

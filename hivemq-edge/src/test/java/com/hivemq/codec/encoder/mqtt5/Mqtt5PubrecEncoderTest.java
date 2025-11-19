@@ -21,8 +21,8 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.pubrec.PUBREC;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Waldemar Ruck
@@ -31,8 +31,7 @@ import org.junit.Test;
 public class Mqtt5PubrecEncoderTest extends AbstractMqtt5EncoderTest {
 
     private static final Mqtt5PubRecReasonCode SUCCESS = Mqtt5PubRecReasonCode.SUCCESS;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         testMessageEncoder.getSecurityConfigurationService().setAllowRequestProblemInformation(true);

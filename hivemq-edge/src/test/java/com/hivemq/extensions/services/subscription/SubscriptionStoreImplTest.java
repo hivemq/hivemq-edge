@@ -23,7 +23,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.services.exception.DoNotImplementException;
 import com.hivemq.extension.sdk.api.services.exception.InvalidTopicException;
@@ -32,7 +31,13 @@ import com.hivemq.extension.sdk.api.services.exception.RateLimitExceededExceptio
 import com.hivemq.extension.sdk.api.services.subscription.SubscriptionStore;
 import com.hivemq.extension.sdk.api.services.subscription.SubscriptionsForClientResult;
 import com.hivemq.extension.sdk.api.services.subscription.TopicSubscription;
-import com.hivemq.extensions.iteration.*;
+import com.hivemq.extensions.iteration.AllItemsItemCallback;
+import com.hivemq.extensions.iteration.AsyncIterator;
+import com.hivemq.extensions.iteration.AsyncIteratorFactory;
+import com.hivemq.extensions.iteration.BucketChunkResult;
+import com.hivemq.extensions.iteration.ChunkResult;
+import com.hivemq.extensions.iteration.FetchCallback;
+import com.hivemq.extensions.iteration.MultipleChunkResult;
 import com.hivemq.extensions.services.PluginServiceRateLimitService;
 import com.hivemq.extensions.services.executor.GlobalManagedExtensionExecutorService;
 import com.hivemq.mqtt.message.QoS;
@@ -41,21 +46,40 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import com.hivemq.persistence.clientsession.callback.SubscriptionResult;
-import org.junit.Before;
-import org.junit.Test;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestException;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @since 4.0.0
@@ -76,8 +100,7 @@ public class SubscriptionStoreImplTest {
 
     @Mock
     private AsyncIteratorFactory asyncIteratorFactory;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         MockitoAnnotations.initMocks(this);
@@ -86,7 +109,8 @@ public class SubscriptionStoreImplTest {
         when(rateLimitService.rateLimitExceeded()).thenReturn(false);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_get_rate_limit_exceeded() {
 
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
@@ -97,7 +121,8 @@ public class SubscriptionStoreImplTest {
 
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_add_rate_limit_exceeded() {
 
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
@@ -109,7 +134,8 @@ public class SubscriptionStoreImplTest {
 
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_add_multi_rate_limit_exceeded() {
 
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
@@ -121,7 +147,8 @@ public class SubscriptionStoreImplTest {
 
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_remove_rate_limit_exceeded() {
 
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
@@ -132,7 +159,8 @@ public class SubscriptionStoreImplTest {
 
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_remove_multi_rate_limit_exceeded() {
 
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
@@ -143,132 +171,129 @@ public class SubscriptionStoreImplTest {
 
     }
 
-    @Test(expected = NullPointerException.class, timeout = 10000)
-    public void test_get_null() throws Throwable {
-
-        try {
-            subscriptionStore.getSubscriptions(null).get();
-        } catch (final Exception e) {
-            throw e.getCause();
-        }
+    @Test
+    @Timeout(10)
+    public void test_get_null() {
+        assertThatThrownBy(() -> subscriptionStore.getSubscriptions(null).get())
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).getSubscriptions("client");
 
     }
 
-    @Test(expected = NullPointerException.class, timeout = 10000)
-    public void test_add_null_client_id() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_add_null_client_id() {
 
-        try {
-            subscriptionStore.addSubscription(
-                    null, new TopicSubscriptionImpl("topic", Qos.AT_MOST_ONCE, false, false, 0)).get();
-        } catch (final Exception e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> subscriptionStore.addSubscription(
+                null, new TopicSubscriptionImpl("topic", Qos.AT_MOST_ONCE, false, false, 0)).get())
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).addSubscription(eq("client"), any(Topic.class));
 
     }
 
-    @Test(expected = NullPointerException.class, timeout = 10000)
-    public void test_add_null_topic() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_add_null_topic() {
 
-        try {
-            subscriptionStore.addSubscription("client", null).get();
-        } catch (final Exception e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() ->
+                subscriptionStore.addSubscription("client", null).get())
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).addSubscription(eq("client"), any(Topic.class));
 
     }
 
-    @Test(expected = NullPointerException.class, timeout = 10000)
-    public void test_add_multi_null_client_id() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_add_multi_null_client_id() {
 
-        try {
-            subscriptionStore.addSubscriptions(
-                    null, ImmutableSet.of(new TopicSubscriptionImpl("topic", Qos.AT_MOST_ONCE, false, false, 0))).get();
-        } catch (final Exception e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> subscriptionStore.addSubscriptions(
+                null, ImmutableSet.of(new TopicSubscriptionImpl("topic", Qos.AT_MOST_ONCE, false, false, 0))).get())
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).addSubscriptions(anyString(), any(ImmutableSet.class));
 
     }
 
-    @Test(expected = NullPointerException.class, timeout = 10000)
-    public void test_add_multi_null_topics() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_add_multi_null_topics() {
 
-        subscriptionStore.addSubscriptions("client", null);
-
-        verify(clientSessionSubscriptionPersistence, never()).addSubscriptions(eq("client"), any(ImmutableSet.class));
-
-    }
-
-    @Test(expected = IllegalArgumentException.class, timeout = 10000)
-    public void test_add_multi_empty_topics() throws Throwable {
-
-        subscriptionStore.addSubscriptions("client", ImmutableSet.of());
+        assertThatThrownBy(() -> subscriptionStore.addSubscriptions("client", null))
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).addSubscriptions(eq("client"), any(ImmutableSet.class));
 
     }
 
-    @Test(expected = NullPointerException.class, timeout = 10000)
-    public void test_remove_null_client_id() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_add_multi_empty_topics() {
 
-        try {
-            subscriptionStore.removeSubscription(null, "topic").get();
-        } catch (final Exception e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> subscriptionStore.addSubscriptions("client", ImmutableSet.of()))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(clientSessionSubscriptionPersistence, never()).addSubscriptions(eq("client"), any(ImmutableSet.class));
+
+    }
+
+    @Test
+    @Timeout(10)
+    public void test_remove_null_client_id() {
+        assertThatThrownBy(() -> subscriptionStore.removeSubscription(null, "topic").get())
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).remove("client", "topic");
 
     }
 
-    @Test(expected = NullPointerException.class, timeout = 10000)
-    public void test_remove_null_topic() throws Throwable {
-
-        try {
-            subscriptionStore.removeSubscription("client", null).get();
-        } catch (final Exception e) {
-            throw e.getCause();
-        }
+    @Test
+    @Timeout(10)
+    public void test_remove_null_topic() {
+        assertThatThrownBy(() -> subscriptionStore.removeSubscription("client", null).get())
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).remove("client", "topic");
 
     }
 
-    @Test(expected = NullPointerException.class, timeout = 10000)
-    public void test_remove_multi_null_client_id() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_remove_multi_null_client_id() {
 
-        subscriptionStore.removeSubscriptions(null, ImmutableSet.of("topic"));
-
-        verify(clientSessionSubscriptionPersistence, never()).removeSubscriptions(anyString(), any(ImmutableSet.class));
-
-    }
-
-    @Test(expected = NullPointerException.class, timeout = 10000)
-    public void test_remove_multi_null_topic() throws Throwable {
-
-        subscriptionStore.removeSubscriptions("client", null);
+        assertThatThrownBy(() -> subscriptionStore.removeSubscriptions(null, ImmutableSet.of("topic")))
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).removeSubscriptions(anyString(), any(ImmutableSet.class));
 
     }
 
-    @Test(expected = IllegalArgumentException.class, timeout = 10000)
-    public void test_remove_multi_empty_topics() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_remove_multi_null_topic() {
 
-        subscriptionStore.removeSubscriptions("client", ImmutableSet.of());
+        assertThatThrownBy(() -> subscriptionStore.removeSubscriptions("client", null))
+                .isInstanceOf(NullPointerException.class);
 
         verify(clientSessionSubscriptionPersistence, never()).removeSubscriptions(anyString(), any(ImmutableSet.class));
 
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
+    public void test_remove_multi_empty_topics() {
+
+        assertThatThrownBy(() -> subscriptionStore.removeSubscriptions("client", ImmutableSet.of()))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(clientSessionSubscriptionPersistence, never()).removeSubscriptions(anyString(), any(ImmutableSet.class));
+
+    }
+    
+    @Test
+    @Timeout(10)
     public void test_get_success() throws ExecutionException, InterruptedException {
 
         final Topic topic = new Topic("topic", QoS.AT_LEAST_ONCE, true,
@@ -283,8 +308,9 @@ public class SubscriptionStoreImplTest {
         verify(clientSessionSubscriptionPersistence).getSubscriptions("client");
 
     }
-
-    @Test(timeout = 10_000, expected = UnsupportedOperationException.class)
+    
+    @Test
+    @Timeout(10)
     public void test_get_success_unmodifiable() throws ExecutionException, InterruptedException {
 
         final Topic topic = new Topic("topic", QoS.AT_LEAST_ONCE, true, true,
@@ -298,11 +324,13 @@ public class SubscriptionStoreImplTest {
 
         verify(clientSessionSubscriptionPersistence).getSubscriptions("client");
 
-        subscriptions.add(new TopicSubscriptionImpl(topic));
+        assertThatThrownBy(() -> subscriptions.add(new TopicSubscriptionImpl(topic)))
+                .isInstanceOf(UnsupportedOperationException.class);
 
     }
-
-    @Test(timeout = 10_000)
+    
+    @Test
+    @Timeout(10)
     public void test_add_success() throws ExecutionException, InterruptedException {
 
         final Topic topic = new Topic("topic", QoS.AT_LEAST_ONCE, true,
@@ -317,7 +345,8 @@ public class SubscriptionStoreImplTest {
 
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_add_multi_success() throws ExecutionException, InterruptedException {
 
         final Topic topic1 = new Topic("topic1", QoS.AT_LEAST_ONCE, true,
@@ -336,8 +365,9 @@ public class SubscriptionStoreImplTest {
 
     }
 
-    @Test(timeout = 10_000, expected = NullPointerException.class)
-    public void test_add_multi_one_null() throws ExecutionException, InterruptedException {
+    @Test
+    @Timeout(10)
+    public void test_add_multi_one_null() {
 
         final Topic topic1 = new Topic("topic1", QoS.AT_LEAST_ONCE, true,
                 true, Mqtt5RetainHandling.SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST, 1);
@@ -347,24 +377,28 @@ public class SubscriptionStoreImplTest {
         set.add(new TopicSubscriptionImpl(topic1));
         set.add(null);
 
-        subscriptionStore.addSubscriptions("client", set).get();
+        assertThatThrownBy(() -> subscriptionStore.addSubscriptions("client", set).get())
+                .isInstanceOf(NullPointerException.class);
 
     }
 
-    @Test(timeout = 10_000, expected = NullPointerException.class)
-    public void test_remove_multi_one_null() throws ExecutionException, InterruptedException {
+    @Test
+    @Timeout(10)
+    public void test_remove_multi_one_null() {
 
         final Set<String> set = new HashSet<>();
 
         set.add("topic1");
         set.add(null);
 
-        subscriptionStore.removeSubscriptions("client", set).get();
+        assertThatThrownBy(() -> subscriptionStore.removeSubscriptions("client", set).get())
+                .isInstanceOf(NullPointerException.class);
 
     }
 
-    @Test(timeout = 10_000, expected = NoSuchClientIdException.class)
-    public void test_add_failed_client_session_not_existent() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_add_failed_client_session_not_existent() {
 
         final Topic topic = new Topic("topic", QoS.AT_LEAST_ONCE, true, true,
                 Mqtt5RetainHandling.SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST, 1);
@@ -372,15 +406,13 @@ public class SubscriptionStoreImplTest {
         when(clientSessionSubscriptionPersistence.addSubscription("client", topic)).thenReturn(
                 Futures.immediateFuture(null));
 
-        try {
-            subscriptionStore.addSubscription("client", new TopicSubscriptionImpl(topic)).get();
-        } catch (final Throwable t) {
-            throw t.getCause();
-        }
+        assertThatThrownBy(() -> subscriptionStore.addSubscription("client", new TopicSubscriptionImpl(topic)).get())
+                .hasCauseInstanceOf(NoSuchClientIdException.class);
     }
 
-    @Test(timeout = 10_000, expected = NoSuchClientIdException.class)
-    public void test_add_multi_failed_client_session_not_existent() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_add_multi_failed_client_session_not_existent() {
 
         final Topic topic = new Topic("topic", QoS.AT_LEAST_ONCE, true, true,
                 Mqtt5RetainHandling.SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST, 1);
@@ -388,15 +420,13 @@ public class SubscriptionStoreImplTest {
         when(clientSessionSubscriptionPersistence.addSubscriptions("client", ImmutableSet.of(topic))).thenReturn(
                 Futures.immediateFuture(null));
 
-        try {
-            subscriptionStore.addSubscriptions("client", ImmutableSet.of(new TopicSubscriptionImpl(topic))).get();
-        } catch (final Throwable t) {
-            throw t.getCause();
-        }
+        assertThatThrownBy(() -> subscriptionStore.addSubscriptions("client", ImmutableSet.of(new TopicSubscriptionImpl(topic))).get())
+                .hasCauseInstanceOf(NoSuchClientIdException.class);
     }
 
-    @Test(timeout = 10_000, expected = ExecutionException.class)
-    public void test_add_failed() throws ExecutionException, InterruptedException {
+    @Test
+    @Timeout(10)
+    public void test_add_failed() {
 
         final Topic topic = new Topic("topic", QoS.AT_LEAST_ONCE, true, true,
                 Mqtt5RetainHandling.SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST, 1);
@@ -404,14 +434,16 @@ public class SubscriptionStoreImplTest {
         when(clientSessionSubscriptionPersistence.addSubscription("client", topic)).thenReturn(
                 Futures.immediateFailedFuture(TestException.INSTANCE));
 
-        subscriptionStore.addSubscription("client", new TopicSubscriptionImpl(topic)).get();
+        assertThatThrownBy(() -> subscriptionStore.addSubscription("client", new TopicSubscriptionImpl(topic)).get())
+                .isInstanceOf(ExecutionException.class);
 
         verify(clientSessionSubscriptionPersistence).addSubscription(eq("client"), any(Topic.class));
 
     }
 
-    @Test(timeout = 10_000, expected = ExecutionException.class)
-    public void test_add_multi_failed() throws ExecutionException, InterruptedException {
+    @Test
+    @Timeout(10)
+    public void test_add_multi_failed() {
 
         final Topic topic = new Topic("topic", QoS.AT_LEAST_ONCE, true, true,
                 Mqtt5RetainHandling.SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST, 1);
@@ -419,39 +451,35 @@ public class SubscriptionStoreImplTest {
         when(clientSessionSubscriptionPersistence.addSubscriptions("client", ImmutableSet.of(topic))).thenReturn(
                 Futures.immediateFailedFuture(TestException.INSTANCE));
 
-        subscriptionStore.addSubscriptions("client", ImmutableSet.of(new TopicSubscriptionImpl(topic))).get();
+        assertThatThrownBy(() -> subscriptionStore.addSubscriptions("client", ImmutableSet.of(new TopicSubscriptionImpl(topic))).get())
+                .isInstanceOf(ExecutionException.class);
 
         verify(clientSessionSubscriptionPersistence).addSubscriptions(eq("client"), any(ImmutableSet.class));
 
     }
 
-    @Test(expected = DoNotImplementException.class, timeout = 20000)
-    public void test_add_subscription_falsely_implemented_class() throws Throwable {
-
-        try {
-            subscriptionStore.addSubscription("client", new TestSubscriptionImpl()).get();
-        } catch (final Throwable throwable) {
-            throw throwable.getCause();
-        }
-
+    @Test
+    @Timeout(20)
+    public void test_add_subscription_falsely_implemented_class() {
+        assertThatThrownBy(() -> subscriptionStore.addSubscription("client", new TestSubscriptionImpl()).get())
+                .hasCauseInstanceOf(DoNotImplementException.class);
     }
 
-    @Test(expected = DoNotImplementException.class, timeout = 20000)
-    public void test_add_multi_subscription_falsely_implemented_class() throws Throwable {
+    @Test
+    @Timeout(20)
+    public void test_add_multi_subscription_falsely_implemented_class() {
 
         final Topic topic = new Topic("topic", QoS.AT_LEAST_ONCE, true, true,
                 Mqtt5RetainHandling.SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST, 1);
 
-        try {
-            subscriptionStore.addSubscriptions(
-                    "client", ImmutableSet.of(new TopicSubscriptionImpl(topic), new TestSubscriptionImpl())).get();
-        } catch (final Throwable throwable) {
-            throw throwable.getCause();
-        }
+        assertThatThrownBy(() -> subscriptionStore.addSubscriptions(
+                "client", ImmutableSet.of(new TopicSubscriptionImpl(topic), new TestSubscriptionImpl())).get())
+                .hasCauseInstanceOf(DoNotImplementException.class);
 
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_remove_success() throws ExecutionException, InterruptedException {
 
         when(clientSessionSubscriptionPersistence.remove("client", "topic")).thenReturn(Futures.immediateFuture(null));
@@ -462,7 +490,8 @@ public class SubscriptionStoreImplTest {
 
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_remove_multi_success() throws ExecutionException, InterruptedException {
 
         when(clientSessionSubscriptionPersistence.removeSubscriptions(
@@ -474,71 +503,71 @@ public class SubscriptionStoreImplTest {
 
     }
 
-    @Test(timeout = 10_000, expected = InvalidTopicException.class)
-    public void test_remove_failed_topic_empty() throws Throwable {
-        try {
-            subscriptionStore.removeSubscription("client", "").get();
-        } catch (final Throwable throwable) {
-            throw throwable.getCause();
-        }
+    @Test
+    @Timeout(10)
+    public void test_remove_failed_topic_empty() {
+        assertThatThrownBy(() -> subscriptionStore.removeSubscription("client", "").get())
+                .hasCauseInstanceOf(InvalidTopicException.class);
+    }
+
+    @Test
+    @Timeout(10)
+    public void test_remove_multi_failed_topic_empty() {
+        assertThatThrownBy(() -> subscriptionStore.removeSubscriptions("client", ImmutableSet.of("topic", "", "huhu")).get())
+                .hasCauseInstanceOf(InvalidTopicException.class);
 
     }
 
-    @Test(timeout = 10_000, expected = InvalidTopicException.class)
-    public void test_remove_multi_failed_topic_empty() throws Throwable {
-        try {
-            subscriptionStore.removeSubscriptions("client", ImmutableSet.of("topic", "", "huhu")).get();
-        } catch (final Throwable throwable) {
-            throw throwable.getCause();
-        }
+    @Test
+    @Timeout(10)
+    public void test_remove_failed_topic_bad_char() {
+        assertThatThrownBy(() -> subscriptionStore.removeSubscription("client", "123" + "\u0000").get())
+                .hasCauseInstanceOf(InvalidTopicException.class);
 
     }
 
-    @Test(timeout = 10_000, expected = InvalidTopicException.class)
-    public void test_remove_failed_topic_bad_char() throws Throwable {
-        try {
-            subscriptionStore.removeSubscription("client", "123" + "\u0000").get();
-        } catch (final Throwable throwable) {
-            throw throwable.getCause();
-        }
+    @Test
+    @Timeout(10)
+    public void test_remove_multi_failed_topic_bad_char() {
+        assertThatThrownBy(() -> subscriptionStore.removeSubscriptions("client", ImmutableSet.of("topic", "123" + "\u0000")).get())
+                .hasCauseInstanceOf(InvalidTopicException.class);
 
     }
 
-    @Test(timeout = 10_000, expected = InvalidTopicException.class)
-    public void test_remove_multi_failed_topic_bad_char() throws Throwable {
-        try {
-            subscriptionStore.removeSubscriptions("client", ImmutableSet.of("topic", "123" + "\u0000")).get();
-        } catch (final Throwable throwable) {
-            throw throwable.getCause();
-        }
-
+    @Test
+    @Timeout(10)
+    public void test_iterate_topic_invalid_topic_wildcard() {
+        assertThatThrownBy(() -> subscriptionStore.iterateAllSubscribersForTopic("topic/#", (context, value) -> {
+        }, MoreExecutors.directExecutor()).get())
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(timeout = 10_000, expected = IllegalArgumentException.class)
-    public void test_iterate_topic_invalid_topic_wildcard() throws Throwable {
-        subscriptionStore.iterateAllSubscribersForTopic("topic/#", (context, value) -> {
-        }, MoreExecutors.directExecutor()).get();
+    @Test
+    @Timeout(10)
+    public void test_iterate_topic_invalid_topic_plus_wildcard() {
+        assertThatThrownBy(() -> subscriptionStore.iterateAllSubscribersForTopic("+/topic", (context, value) -> {
+        }, MoreExecutors.directExecutor()).get())
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(timeout = 10_000, expected = IllegalArgumentException.class)
-    public void test_iterate_topic_invalid_topic_plus_wildcard() throws Throwable {
-        subscriptionStore.iterateAllSubscribersForTopic("+/topic", (context, value) -> {
-        }, MoreExecutors.directExecutor()).get();
+    @Test
+    @Timeout(10)
+    public void test_iterate_topic_invalid_topic_null() {
+        assertThatThrownBy(() -> subscriptionStore.iterateAllSubscribersForTopic(null, (context, value) -> {
+        }, MoreExecutors.directExecutor()).get())
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(timeout = 10_000, expected = NullPointerException.class)
-    public void test_iterate_topic_invalid_topic_null() throws Throwable {
-        subscriptionStore.iterateAllSubscribersForTopic(null, (context, value) -> {
-        }, MoreExecutors.directExecutor()).get();
+    @Test
+    @Timeout(10)
+    public void test_iterate_topic_invalid_topic_bad_char() {
+        assertThatThrownBy(() -> subscriptionStore.iterateAllSubscribersForTopic("123" + "\u0000", (context, value) -> {
+        }, MoreExecutors.directExecutor()).get())
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(timeout = 10_000, expected = IllegalArgumentException.class)
-    public void test_iterate_topic_invalid_topic_bad_char() throws Throwable {
-        subscriptionStore.iterateAllSubscribersForTopic("123" + "\u0000", (context, value) -> {
-        }, MoreExecutors.directExecutor()).get();
-    }
-
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_iterate_topic_all_subscribers_iterated() throws Exception {
 
         final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
@@ -558,7 +587,8 @@ public class SubscriptionStoreImplTest {
         assertEquals(1000, resultBuilder.build().size());
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_iterate_topic_empty_result() throws Exception {
 
         when(topicTree.getSubscribersForTopic(anyString(), any(Predicate.class), anyBoolean()))
@@ -570,7 +600,8 @@ public class SubscriptionStoreImplTest {
         //test checks if the future does return even if no item is returned
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_iterate_topic_abort() throws Exception {
 
         final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
@@ -594,8 +625,9 @@ public class SubscriptionStoreImplTest {
         assertEquals(100, resultBuilder.build().size());
     }
 
-    @Test(timeout = 10_000, expected = ExecutionException.class)
-    public void test_iterate_topic_throw_exception() throws Exception {
+    @Test
+    @Timeout(10)
+    public void test_iterate_topic_throw_exception() {
 
         when(topicTree.getSubscribersForTopic(anyString(), any(Predicate.class), anyBoolean()))
                 .thenReturn(ImmutableSet.of("client"));
@@ -606,22 +638,28 @@ public class SubscriptionStoreImplTest {
                 }, MoreExecutors.directExecutor());
 
         //test checks if the future does return with an exception if an exception is thrown in the iterate callback
-        future.get();
+        assertThatThrownBy(() -> future.get())
+                .isInstanceOf(ExecutionException.class);
     }
 
-    @Test(timeout = 10_000, expected = NullPointerException.class)
-    public void test_iterate_topic_filter_invalid_topic_null() throws Throwable {
-        subscriptionStore.iterateAllSubscribersWithTopicFilter(null, (context, value) -> {
-        }, MoreExecutors.directExecutor()).get();
+    @Test
+    @Timeout(10)
+    public void test_iterate_topic_filter_invalid_topic_null() {
+        assertThatThrownBy(() -> subscriptionStore.iterateAllSubscribersWithTopicFilter(null, (context, value) -> {
+        }, MoreExecutors.directExecutor()).get())
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(timeout = 10_000, expected = IllegalArgumentException.class)
-    public void test_iterate_topic_filter_invalid_topic_bad_char() throws Throwable {
-        subscriptionStore.iterateAllSubscribersWithTopicFilter("123" + "\u0000", (context, value) -> {
-        }, MoreExecutors.directExecutor()).get();
+    @Test
+    @Timeout(10)
+    public void test_iterate_topic_filter_invalid_topic_bad_char() {
+        assertThatThrownBy(() -> subscriptionStore.iterateAllSubscribersWithTopicFilter("123" + "\u0000", (context, value) -> {
+        }, MoreExecutors.directExecutor()).get())
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_iterate_topic_filter_all_subscribers_iterated() throws Exception {
 
         final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
@@ -641,7 +679,8 @@ public class SubscriptionStoreImplTest {
         assertEquals(1000, resultBuilder.build().size());
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_iterate_topic_filter_empty_result() throws Exception {
 
         when(topicTree.getSubscribersForTopic(anyString(), any(Predicate.class), anyBoolean()))
@@ -653,7 +692,8 @@ public class SubscriptionStoreImplTest {
         //test checks if the future does return even if no item is returned
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_iterate_topic_filter_abort() throws Exception {
 
         final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
@@ -677,8 +717,9 @@ public class SubscriptionStoreImplTest {
         assertEquals(100, resultBuilder.build().size());
     }
 
-    @Test(timeout = 10_000, expected = ExecutionException.class)
-    public void test_iterate_topic_filter_throw_exception() throws Exception {
+    @Test
+    @Timeout(10)
+    public void test_iterate_topic_filter_throw_exception() {
 
         when(topicTree.getSubscribersWithFilter(anyString(), any(Predicate.class)))
                 .thenReturn(ImmutableSet.of("client"));
@@ -689,57 +730,57 @@ public class SubscriptionStoreImplTest {
                 }, MoreExecutors.directExecutor());
 
         //test checks if the future does return with an exception if an exception is thrown in the iterate callback
-        future.get();
+        assertThatThrownBy(() -> future.get())
+                .isInstanceOf(ExecutionException.class);
     }
 
-    @Test(timeout = 10000, expected = RateLimitExceededException.class)
-    public void test_iterate_topic_filter_rate_limit_exceeded() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_iterate_topic_filter_rate_limit_exceeded() {
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
 
-        try {
-            subscriptionStore.iterateAllSubscribersWithTopicFilter("topic/#", (context, value) -> {
-            }).get();
-        } catch (final ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> subscriptionStore.iterateAllSubscribersWithTopicFilter("topic/#", (context, value) -> {
+        }).get())
+                .hasCauseInstanceOf(RateLimitExceededException.class);
     }
 
-    @Test(timeout = 10000, expected = RateLimitExceededException.class)
-    public void test_iterate_topic_rate_limit_exceeded() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_iterate_topic_rate_limit_exceeded() {
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
 
-        try {
-            subscriptionStore.iterateAllSubscribersForTopic("topic", (context, value) -> {
-            }).get();
-        } catch (final ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> subscriptionStore.iterateAllSubscribersForTopic("topic", (context, value) -> {
+        }).get())
+                .hasCauseInstanceOf(RateLimitExceededException.class);
     }
 
-    @Test(timeout = 10000, expected = RateLimitExceededException.class)
-    public void test_iterate_all_rate_limit_exceeded() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_iterate_all_rate_limit_exceeded() {
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
 
-        try {
-            subscriptionStore.iterateAllSubscriptions((context, value) -> {
-            }).get();
-        } catch (final ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> subscriptionStore.iterateAllSubscriptions((context, value) -> {
+        }).get())
+                .hasCauseInstanceOf(RateLimitExceededException.class);
     }
 
-    @Test(timeout = 10000, expected = NullPointerException.class)
-    public void test_iterate_all_callback_null() throws Throwable {
-        subscriptionStore.iterateAllSubscriptions(null).get();
+    @Test
+    @Timeout(10)
+    public void test_iterate_all_callback_null() {
+        assertThatThrownBy(() -> subscriptionStore.iterateAllSubscriptions(null).get())
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(timeout = 10000, expected = NullPointerException.class)
-    public void test_iterate_all_callback_executor_null() throws Throwable {
-        subscriptionStore.iterateAllSubscriptions((context, value) -> {
-        }, null).get();
+    @Test
+    @Timeout(10)
+    public void test_iterate_all_callback_executor_null() {
+        assertThatThrownBy(() -> subscriptionStore.iterateAllSubscriptions((context, value) -> {
+        }, null).get())
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_item_callback() throws Exception {
         final ArrayList<SubscriptionsForClientResult> items = Lists.newArrayList();
 
@@ -756,14 +797,15 @@ public class SubscriptionStoreImplTest {
                 new SubscriptionsForClientResultImpl("client3", Set.of(new TopicSubscriptionImpl("topic3", Qos.AT_LEAST_ONCE, false, false, 1)))
         ));
 
-        assertEquals(true, onItems.get());
+        assertTrue(onItems.get());
 
         assertEquals(3, items.size());
 
         executor.shutdownNow();
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_item_callback_abort() throws Exception {
 
         final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -777,13 +819,14 @@ public class SubscriptionStoreImplTest {
                 new SubscriptionsForClientResultImpl("client3", Set.of(new TopicSubscriptionImpl("topic3", Qos.AT_LEAST_ONCE, false, false, 1)))
         ));
 
-        assertEquals(false, onItems.get());
+        assertFalse(onItems.get());
 
         executor.shutdownNow();
     }
 
-    @Test(timeout = 10000, expected = RuntimeException.class)
-    public void test_item_callback_exception() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_item_callback_exception() {
 
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         final AllItemsItemCallback<SubscriptionsForClientResult> itemCallback = new AllItemsItemCallback<>(executor, (context, value) -> {
@@ -796,17 +839,15 @@ public class SubscriptionStoreImplTest {
                 new SubscriptionsForClientResultImpl("client3", Set.of(new TopicSubscriptionImpl("topic3", Qos.AT_LEAST_ONCE, false, false, 1)))
         ));
 
-        try {
-            onItems.get();
-        } catch (final ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> onItems.get())
+                .hasCauseInstanceOf(RuntimeException.class);
 
         executor.shutdownNow();
     }
 
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_iteration_started() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(1);

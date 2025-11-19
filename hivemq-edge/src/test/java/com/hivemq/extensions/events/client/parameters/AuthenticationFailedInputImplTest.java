@@ -23,11 +23,14 @@ import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Florian Limpöck
@@ -70,12 +73,13 @@ public class AuthenticationFailedInputImplTest {
         assertNotNull(input.getConnectionInformation());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_construction_client_id_null() {
         final EmbeddedChannel channel = new EmbeddedChannel();
         final ClientConnection clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
-        new AuthenticationFailedInputImpl(channel, null, null, null, null);
+        assertThatThrownBy(() -> new AuthenticationFailedInputImpl(channel, null, null, null, null))
+                .isInstanceOf(NullPointerException.class);
     }
 }

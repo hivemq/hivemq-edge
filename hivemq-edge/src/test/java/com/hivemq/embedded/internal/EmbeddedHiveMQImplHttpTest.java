@@ -20,10 +20,10 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.entity.Listener;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import util.RandomPortGenerator;
 
 import java.io.File;
@@ -41,8 +41,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * This test suite is for testing the embedded HiveMQ server when the Admin API is enabled.
  */
 public class EmbeddedHiveMQImplHttpTest {
-    @Rule
-    public @NotNull TemporaryFolder tmp = new TemporaryFolder();
+    @TempDir
+    public File tmp;
 
     private @NotNull File data;
     private @NotNull File license;
@@ -50,13 +50,16 @@ public class EmbeddedHiveMQImplHttpTest {
     private @NotNull File conf;
     private int randomPort;
     private int randomApiPort;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        data = tmp.newFolder("data");
-        license = tmp.newFolder("license");
-        extensions = tmp.newFolder("extensions");
-        conf = tmp.newFolder("conf");
+        data = new File(tmp, "data");
+        data.mkdir();
+        license = new File(tmp, "license");
+        license.mkdir();
+        extensions = new File(tmp, "extensions");
+        extensions.mkdir();
+        conf = new File(tmp, "conf");
+        conf.mkdir();
         randomPort = RandomPortGenerator.get();
         randomApiPort = RandomPortGenerator.get();
 
@@ -85,7 +88,8 @@ public class EmbeddedHiveMQImplHttpTest {
         FileUtils.write(new File(conf, "config.xml"), configXmlString, StandardCharsets.UTF_8);
     }
 
-    @Test(timeout = 20000L)
+    @Test
+    @Timeout(20)
     public void embeddedHiveMQ_whenAdminApiEnabled_readsConfig() throws Exception {
         try (final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license)) {
             embeddedHiveMQ.start().join();

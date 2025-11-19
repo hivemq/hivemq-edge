@@ -15,7 +15,7 @@
  */
 package com.hivemq.mqtt.message.connack;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import util.EnumTestUtil;
 
 public class Mqtt3ConnAckReturnCodeTest {

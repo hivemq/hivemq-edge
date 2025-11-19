@@ -18,11 +18,13 @@ package com.hivemq.limitation;
 
 import com.hivemq.configuration.service.InternalConfigurations;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Florian Limpöck
@@ -31,8 +33,7 @@ import static org.junit.Assert.assertEquals;
 public class TopicAliasLimiterImplTest {
 
     private TopicAliasLimiter topicAliasLimiter;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
@@ -47,18 +48,18 @@ public class TopicAliasLimiterImplTest {
 
         topicAliasLimiter.initUsage(5);
 
-        assertEquals(false, topicAliasLimiter.limitExceeded());
-        assertEquals(true, topicAliasLimiter.aliasesAvailable());
+        assertFalse(topicAliasLimiter.limitExceeded());
+        assertTrue(topicAliasLimiter.aliasesAvailable());
 
         topicAliasLimiter.initUsage(5);
 
-        assertEquals(false, topicAliasLimiter.limitExceeded());
-        assertEquals(true, topicAliasLimiter.aliasesAvailable());
+        assertFalse(topicAliasLimiter.limitExceeded());
+        assertTrue(topicAliasLimiter.aliasesAvailable());
 
         topicAliasLimiter.initUsage(5);
 
-        assertEquals(false, topicAliasLimiter.limitExceeded());
-        assertEquals(false, topicAliasLimiter.aliasesAvailable());
+        assertFalse(topicAliasLimiter.limitExceeded());
+        assertFalse(topicAliasLimiter.aliasesAvailable());
 
     }
 
@@ -66,18 +67,18 @@ public class TopicAliasLimiterImplTest {
     public void test_add_usage() {
 
         topicAliasLimiter.addUsage(RandomStringUtils.randomAlphanumeric(6));
-        assertEquals(false, topicAliasLimiter.limitExceeded());
-        assertEquals(false, topicAliasLimiter.aliasesAvailable());
+        assertFalse(topicAliasLimiter.limitExceeded());
+        assertFalse(topicAliasLimiter.aliasesAvailable());
 
         topicAliasLimiter.addUsage(RandomStringUtils.randomAlphanumeric(56));
 
-        assertEquals(false, topicAliasLimiter.limitExceeded());
-        assertEquals(false, topicAliasLimiter.aliasesAvailable());
+        assertFalse(topicAliasLimiter.limitExceeded());
+        assertFalse(topicAliasLimiter.aliasesAvailable());
 
         topicAliasLimiter.addUsage(RandomStringUtils.randomAlphanumeric(1));
 
-        assertEquals(true, topicAliasLimiter.limitExceeded());
-        assertEquals(false, topicAliasLimiter.aliasesAvailable());
+        assertTrue(topicAliasLimiter.limitExceeded());
+        assertFalse(topicAliasLimiter.aliasesAvailable());
 
     }
 
@@ -87,18 +88,18 @@ public class TopicAliasLimiterImplTest {
         topicAliasLimiter.addUsage(RandomStringUtils.randomAlphanumeric(107));
 
         topicAliasLimiter.removeUsage(RandomStringUtils.randomAlphanumeric(6));
-        assertEquals(true, topicAliasLimiter.limitExceeded());
-        assertEquals(false, topicAliasLimiter.aliasesAvailable());
+        assertTrue(topicAliasLimiter.limitExceeded());
+        assertFalse(topicAliasLimiter.aliasesAvailable());
 
         topicAliasLimiter.removeUsage(RandomStringUtils.randomAlphanumeric(1));
 
-        assertEquals(false, topicAliasLimiter.limitExceeded());
-        assertEquals(false, topicAliasLimiter.aliasesAvailable());
+        assertFalse(topicAliasLimiter.limitExceeded());
+        assertFalse(topicAliasLimiter.aliasesAvailable());
 
         topicAliasLimiter.removeUsage(RandomStringUtils.randomAlphanumeric(151));
 
-        assertEquals(false, topicAliasLimiter.limitExceeded());
-        assertEquals(true, topicAliasLimiter.aliasesAvailable());
+        assertFalse(topicAliasLimiter.limitExceeded());
+        assertTrue(topicAliasLimiter.aliasesAvailable());
     }
 
     @Test
@@ -116,8 +117,8 @@ public class TopicAliasLimiterImplTest {
 
         topicAliasLimiter.finishUsage(topic, topic, topic, topic, topic);
 
-        assertEquals(false, topicAliasLimiter.limitExceeded());
-        assertEquals(true, topicAliasLimiter.aliasesAvailable());
+        assertFalse(topicAliasLimiter.limitExceeded());
+        assertTrue(topicAliasLimiter.aliasesAvailable());
 
     }
 }

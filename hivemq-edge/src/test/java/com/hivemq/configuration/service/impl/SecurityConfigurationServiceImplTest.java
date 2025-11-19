@@ -17,13 +17,13 @@ package com.hivemq.configuration.service.impl;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import util.LogbackCapturingAppender;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 /**
@@ -35,15 +35,13 @@ public class SecurityConfigurationServiceImplTest {
     private final SecurityConfigurationServiceImpl securityConfigurationService = new SecurityConfigurationServiceImpl();
 
     private LogbackCapturingAppender logCapture;
-
-    @Before
+    @BeforeEach
     public void setup() {
         initMocks(this);
         final Logger logger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         logCapture = LogbackCapturingAppender.Factory.weaveInto(logger);
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         LogbackCapturingAppender.Factory.cleanUp();
     }

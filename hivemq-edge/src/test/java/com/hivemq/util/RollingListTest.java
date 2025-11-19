@@ -16,7 +16,7 @@
 package com.hivemq.util;
 
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Simon L Johnson

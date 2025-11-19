@@ -21,7 +21,6 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bootstrap.netty.ChannelHandlerNames;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.Async;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.interceptor.subscribe.SubscribeInboundInterceptor;
@@ -52,22 +51,23 @@ import com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode;
 import com.hivemq.mqtt.message.suback.SUBACK;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import com.hivemq.mqtt.message.subscribe.Topic;
-
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import util.DummyHandler;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 import util.TestMessageUtil;
 
+import java.io.File;
 import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
 import java.util.List;
@@ -76,7 +76,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -86,8 +89,8 @@ import static org.mockito.Mockito.when;
  */
 public class IncomingSubscribeHandlerTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
     private final @NotNull HiveMQExtension extension = mock(HiveMQExtension.class);
@@ -98,8 +101,8 @@ public class IncomingSubscribeHandlerTest {
     private @NotNull PluginTaskExecutor executor;
     private @NotNull AtomicReference<Message> messageAtomicReference;
     private @NotNull EmbeddedChannel channel;
-
-    @Before
+    
+    @BeforeEach
     public void setUp() throws Exception {
         clientConnection = new ClientConnection(channel, publishFlushHandler);
         executor = new PluginTaskExecutor(new AtomicLong());
@@ -133,21 +136,23 @@ public class IncomingSubscribeHandlerTest {
         channel.pipeline().addFirst(subscribeHandler);
         channel.pipeline().addFirst(ChannelHandlerNames.MQTT_MESSAGE_ENCODER, new DummyHandler());
     }
-
-    @After
+    @AfterEach
     public void tearDown() {
         executor.stop();
         channel.close();
     }
 
-    @Test(timeout = 5000, expected = ClosedChannelException.class)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_channel_closed() {
         channel.close();
 
-        channel.writeInbound(TestMessageUtil.createFullMqtt5Subscribe());
+        assertThatThrownBy(() -> channel.writeInbound(TestMessageUtil.createFullMqtt5Subscribe()))
+                .isInstanceOf(ClosedChannelException.class);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_client_id_not_set() {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId(null);
 
@@ -156,14 +161,16 @@ public class IncomingSubscribeHandlerTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_null() {
         channel.writeInbound(TestMessageUtil.createFullMqtt5Subscribe());
 
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_empty() {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -175,7 +182,8 @@ public class IncomingSubscribeHandlerTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_has_interceptors_change_topic_mqtt5() throws Exception {
         final ClientContextImpl clientContext = new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
 
@@ -202,7 +210,8 @@ public class IncomingSubscribeHandlerTest {
         assertEquals("topicmodified", message.getTopics().get(0).getTopic());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_has_interceptors_change_topic_mqtt3() throws Exception {
         final ClientContextImpl clientContext = new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
 
@@ -229,7 +238,8 @@ public class IncomingSubscribeHandlerTest {
         assertEquals("topicmodified", message.getTopics().get(0).getTopic());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_has_interceptors_throws_exception_mqtt5() throws Exception {
         final ClientContextImpl clientContext = new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
 
@@ -268,7 +278,8 @@ public class IncomingSubscribeHandlerTest {
         assertTrue(subackLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_has_interceptors_throws_exception_mqtt3_1() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
@@ -312,7 +323,8 @@ public class IncomingSubscribeHandlerTest {
         assertEquals(1, subackLatch.getCount());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_has_interceptors_timeouts_failure_mqtt3() throws Exception {
         final ClientContextImpl clientContext = new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
 
@@ -351,7 +363,8 @@ public class IncomingSubscribeHandlerTest {
         assertTrue(subackLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_context_has_interceptors_timeouts_failure() throws Exception {
         final ClientContextImpl clientContext = new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
 
@@ -389,7 +402,8 @@ public class IncomingSubscribeHandlerTest {
         assertTrue(subackLatch.await(5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_subscribe_extension_null() throws Exception {
         final ClientContextImpl clientContext = new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
 
@@ -435,11 +449,11 @@ public class IncomingSubscribeHandlerTest {
         };
 
         final IsolatedExtensionClassloader cl1 =
-                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), classes);
+                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), classes);
         final IsolatedExtensionClassloader cl2 =
-                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), classes);
+                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), classes);
         final IsolatedExtensionClassloader cl3 =
-                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), classes);
+                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), classes);
 
         final SubscribeInboundInterceptor interceptorOne =
                 IsolatedExtensionClassloaderUtil.loadInstance(cl1, TestInterceptorChangeTopic.class);

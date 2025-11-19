@@ -16,31 +16,34 @@
 package com.hivemq.configuration.reader;
 
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConfigurationFileTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     @Test
     public void test_null_configuration_file() throws Exception {
         final ConfigurationFile configurationFile = new ConfigurationFile(null);
 
-        assertEquals(false, configurationFile.file().isPresent());
+        assertFalse(configurationFile.file().isPresent());
     }
 
     @Test
     public void test_configuration_file_exists() throws Exception {
-        final File file = temporaryFolder.newFile();
+        final File file = new File(temporaryFolder, "config.xml");
         final ConfigurationFile configurationFile = new ConfigurationFile(file);
 
-        assertEquals(true, configurationFile.file().isPresent());
+        assertTrue(configurationFile.file().isPresent());
         assertEquals(file, configurationFile.file().get());
     }
 }

@@ -19,14 +19,13 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import io.netty.buffer.ByteBuf;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 abstract class AbstractMqtt5DecoderTest extends AbstractMqttDecoderTest {
-
-    @Before
+    @BeforeEach
     public void customSetUp() {
         protocolVersion = ProtocolVersion.MQTTv5;
         super.setUp();

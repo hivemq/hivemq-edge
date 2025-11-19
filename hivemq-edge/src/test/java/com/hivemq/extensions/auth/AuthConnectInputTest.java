@@ -20,13 +20,14 @@ import com.hivemq.extension.sdk.api.packets.connect.ConnectPacket;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.connect.CONNECT;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Georg Held
@@ -36,8 +37,7 @@ public class AuthConnectInputTest {
 
     private CONNECT connect;
     private AuthConnectInput taskInput;
-
-    @Before
+    @BeforeEach
     public void setUp() {
 
         final EmbeddedChannel channel = new EmbeddedChannel();
@@ -56,7 +56,8 @@ public class AuthConnectInputTest {
         taskInput = new AuthConnectInput(connect, channel);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_connect_packet_contains_auth_information() {
 
         final ConnectPacket connectPacket = taskInput.getConnectPacket();

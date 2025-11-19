@@ -16,17 +16,16 @@
 package com.hivemq.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.TestKeyStoreGenerator;
@@ -46,6 +45,8 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -63,8 +64,7 @@ public class JaxrsSSLTests {
     protected @NotNull JaxrsHttpServer server;
     protected @NotNull TestKeyStoreGenerator testKeyStoreGenerator;
     protected @NotNull SSLContext context;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         testKeyStoreGenerator = new TestKeyStoreGenerator();
         JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
@@ -87,8 +87,7 @@ public class JaxrsSSLTests {
         server = new JaxrsHttpServer(mock(), List.of(config), null);
         server.startServer();
     }
-
-    @After
+    @AfterEach
     public void tearDown() {
         server.stopServer();
         testKeyStoreGenerator.release();
@@ -144,14 +143,16 @@ public class JaxrsSSLTests {
                 getTestServerAddress(HTTPS, TEST_HTTP_PORT, "test/get"),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-        Assert.assertEquals("Resource should exist", 200, response.getStatusCode());
+        assertEquals(200,response.getStatusCode(),"Resource should exist");
     }
 
-    @Test(expected = SocketException.class)
-    public void testGetResourceOnWrongProtocol() throws IOException {
-        HttpUrlConnectionClient.get(null,
-                getTestServerAddress("http", TEST_HTTP_PORT, "test/get"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
+    @Test
+    public void testGetResourceOnWrongProtocol() {
+        assertThrows(SocketException.class, () -> {
+            HttpUrlConnectionClient.get(null,
+                    getTestServerAddress("http", TEST_HTTP_PORT, "test/get"),
+                    CONNECT_TIMEOUT,
+                    READ_TIMEOUT);
+        });
     }
 }

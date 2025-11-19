@@ -23,15 +23,16 @@ import com.hivemq.extension.sdk.api.services.auth.provider.AuthenticatorProvider
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import util.IsolatedExtensionClassloaderUtil;
 
 import java.util.Iterator;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -44,8 +45,7 @@ public class AuthenticatorsImplTest {
     private final @NotNull HiveMQExtension extension2 = mock(HiveMQExtension.class);
 
     private @NotNull AuthenticatorsImpl authenticators;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         final IsolatedExtensionClassloader isolatedExtensionClassloader1 =
                 IsolatedExtensionClassloaderUtil.buildClassLoader();
@@ -76,7 +76,8 @@ public class AuthenticatorsImplTest {
         authenticators.registerAuthenticatorProvider(simpleProvider2);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_registered_authenticators_are_ordered() {
         final Map<String, WrappedAuthenticatorProvider> registeredAuthenticators =
                 authenticators.getAuthenticatorProviderMap();

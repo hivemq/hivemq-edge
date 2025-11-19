@@ -17,16 +17,16 @@ package com.hivemq.websocket;
 
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class WebSocketTextFrameHandlerTest {
 
     private EmbeddedChannel channel;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         final WebSocketTextFrameHandler webSocketTextFrameHandler = new WebSocketTextFrameHandler();
         channel = new EmbeddedChannel(webSocketTextFrameHandler);
@@ -37,6 +37,6 @@ public class WebSocketTextFrameHandlerTest {
 
         final TextWebSocketFrame frame = new TextWebSocketFrame();
         channel.writeInbound(frame);
-        assertEquals(false, channel.isOpen());
+        assertFalse(channel.isOpen());
     }
 }

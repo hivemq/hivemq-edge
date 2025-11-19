@@ -18,12 +18,12 @@ package com.hivemq.configuration.reader;
 import com.google.common.io.Files;
 import com.hivemq.configuration.service.entity.*;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ListenerConfiguratorTest extends AbstractConfigurationTest {
 
@@ -77,7 +77,7 @@ public class ListenerConfiguratorTest extends AbstractConfigurationTest {
         assertEquals(Tls.ClientAuthMode.NONE, mqttTlsTcpListener.getTls().getClientAuthMode());
 
         //Check if the relative path was made absolute
-        assertEquals(true, new File(mqttTlsTcpListener.getTls().getTruststorePath()).isAbsolute());
+        assertTrue(new File(mqttTlsTcpListener.getTls().getTruststorePath()).isAbsolute());
         assertEquals("password-truststore", mqttTlsTcpListener.getTls().getTruststorePassword());
         assertEquals("my-tls-tcp-listener", mqttTlsTcpListener.getName());
 
@@ -233,7 +233,7 @@ public class ListenerConfiguratorTest extends AbstractConfigurationTest {
         assertEquals("0.0.0.0", mqttWebsocketListener.getBindAddress());
         assertEquals("/mqtt", mqttWebsocketListener.getPath());
         assertEquals("mqttv3.1", mqttWebsocketListener.getSubprotocols().get(0));
-        assertEquals(false, mqttWebsocketListener.getAllowExtensions());
+        assertFalse(mqttWebsocketListener.getAllowExtensions());
     }
 
     @Test
@@ -276,7 +276,7 @@ public class ListenerConfiguratorTest extends AbstractConfigurationTest {
         assertEquals("0.0.0.0", websocketListener.getBindAddress());
         assertEquals("/mqtt", websocketListener.getPath());
         assertEquals("mqttv3.1", websocketListener.getSubprotocols().get(0));
-        assertEquals(false, websocketListener.getAllowExtensions());
+        assertFalse(websocketListener.getAllowExtensions());
 
         assertEquals("/path/to/the/key/store.jks", websocketListener.getTls().getKeystorePath());
         assertEquals("password-keystore", websocketListener.getTls().getKeystorePassword());

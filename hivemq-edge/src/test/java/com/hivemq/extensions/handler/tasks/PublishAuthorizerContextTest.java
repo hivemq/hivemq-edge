@@ -29,13 +29,14 @@ import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.time.Duration;
 
 import static com.hivemq.extensions.auth.parameter.PublishAuthorizerOutputImpl.AuthorizationState.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,8 +48,7 @@ public class PublishAuthorizerContextTest {
     private @NotNull SettableFuture<PublishAuthorizerOutputImpl> resultFuture;
     private @NotNull PublishAuthorizerOutputImpl output;
     private @NotNull PublishAuthorizerContext context;
-
-    @Before
+    @BeforeEach
     public void before() {
         channel = new EmbeddedChannel();
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
@@ -60,7 +60,8 @@ public class PublishAuthorizerContextTest {
         context = new PublishAuthorizerContext("clientId", output, resultFuture, 1, ctx);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_async_timeout_fail() throws Exception {
         output.markAsAsync();
         output.markAsTimedOut();
@@ -73,7 +74,8 @@ public class PublishAuthorizerContextTest {
         assertTrue(result.isCompleted());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_async_timeout_success() throws Exception {
         output.async(Duration.ofSeconds(10), TimeoutFallback.SUCCESS);
         output.markAsAsync();
@@ -86,7 +88,8 @@ public class PublishAuthorizerContextTest {
         assertFalse(result.isCompleted());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_success() throws Exception {
         output.authorizeSuccessfully();
 
@@ -97,7 +100,8 @@ public class PublishAuthorizerContextTest {
         assertTrue(result.isCompleted());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_fail() throws Exception {
         output.failAuthorization();
 
@@ -109,7 +113,8 @@ public class PublishAuthorizerContextTest {
         assertTrue(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().isIncomingPublishesSkipRest());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_disconnect() throws Exception {
         output.disconnectClient();
 
@@ -121,7 +126,8 @@ public class PublishAuthorizerContextTest {
         assertTrue(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().isIncomingPublishesSkipRest());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_undecided() throws Exception {
         context.pluginPost(output);
 
@@ -130,7 +136,8 @@ public class PublishAuthorizerContextTest {
         assertFalse(result.isCompleted());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_increment_future_returns() throws Exception {
         context.increment();
 

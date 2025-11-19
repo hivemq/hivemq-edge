@@ -34,8 +34,8 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TlsTestUtil;
@@ -52,7 +52,7 @@ import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_BINARY_FR
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_CONTINUATION_FRAME_HANDLER;
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_SERVER_PROTOCOL_HANDLER;
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_TEXT_FRAME_HANDLER;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -95,8 +95,7 @@ public class TlsWebsocketChannelInitializerTest {
     private Tls tls;
 
     private ChannelPipeline pipeline;
-
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
 

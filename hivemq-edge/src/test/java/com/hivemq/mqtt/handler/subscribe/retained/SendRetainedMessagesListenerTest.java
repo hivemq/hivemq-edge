@@ -34,7 +34,10 @@ import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
@@ -46,9 +49,9 @@ import java.util.Set;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
@@ -404,12 +407,13 @@ public class SendRetainedMessagesListenerTest {
         // tests if the test finish successfully. No need for assertion.
     }
 
-    @Test(expected = Error.class)
+    @Test
     public void test_on_failure_error_handling() {
 
         final EmbeddedChannel channel = new EmbeddedChannel();
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
-        createSendRetainedMessageSingleListener(channel).onFailure(new Error());
+        assertThatThrownBy(() -> createSendRetainedMessageSingleListener(channel).onFailure(new Error()))
+                .isInstanceOf(Error.class);
     }
 
     @Test

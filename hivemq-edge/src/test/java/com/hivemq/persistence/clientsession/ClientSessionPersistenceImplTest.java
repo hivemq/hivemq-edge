@@ -37,16 +37,16 @@ import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import util.TestSingleWriterFactory;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -61,8 +61,7 @@ public class ClientSessionPersistenceImplTest {
     private ClientSessionPersistenceImpl clientSessionPersistence;
     private SingleWriterService singleWriterService;
     private final @NotNull InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         localPersistence = mock(ClientSessionLocalPersistence.class);
         subscriptionPersistence = mock(ClientSessionSubscriptionPersistence.class);
@@ -77,8 +76,7 @@ public class ClientSessionPersistenceImplTest {
                 clientQueuePersistence, singleWriterService, connectionPersistence, mock(EventLog.class), pendingWillMessages,
                 mqttServerDisconnector, new Chunker(internalConfigurationService));
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         singleWriterService.stop();
         clientSessionPersistence.closeDB();

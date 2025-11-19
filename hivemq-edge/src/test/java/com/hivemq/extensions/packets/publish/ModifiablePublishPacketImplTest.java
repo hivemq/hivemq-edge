@@ -27,14 +27,17 @@ import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Florian Limpöck
@@ -43,8 +46,7 @@ import static org.junit.Assert.*;
 public class ModifiablePublishPacketImplTest {
 
     private @NotNull ConfigurationService configurationService;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
     }
@@ -105,7 +107,7 @@ public class ModifiablePublishPacketImplTest {
         assertEquals("topic", modifiablePacket.getTopic());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setTopic_null() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -125,10 +127,10 @@ public class ModifiablePublishPacketImplTest {
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
-        modifiablePacket.setTopic(null);
+        assertThatThrownBy(() -> modifiablePacket.setTopic(null)).isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setTopic_invalid() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -148,10 +150,11 @@ public class ModifiablePublishPacketImplTest {
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
-        modifiablePacket.setTopic("");
+        assertThatThrownBy(() -> modifiablePacket.setTopic(""))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setTopic_tooLong() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -172,10 +175,11 @@ public class ModifiablePublishPacketImplTest {
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
         configurationService.restrictionsConfiguration().setMaxTopicLength(10);
-        modifiablePacket.setTopic("topic123456");
+        assertThatThrownBy(() -> modifiablePacket.setTopic("topic123456"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setTopic_utf8MustNot() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -195,10 +199,11 @@ public class ModifiablePublishPacketImplTest {
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
-        modifiablePacket.setTopic("topic" + '\u0000');
+        assertThatThrownBy(() -> modifiablePacket.setTopic("topic" + '\u0000'))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setTopic_utf8ShouldNot() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -218,7 +223,8 @@ public class ModifiablePublishPacketImplTest {
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
-        modifiablePacket.setTopic("topic" + '\u0001');
+        assertThatThrownBy(() -> modifiablePacket.setTopic("topic" + '\u0001'))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -306,7 +312,7 @@ public class ModifiablePublishPacketImplTest {
         assertEquals(Qos.AT_LEAST_ONCE, modifiablePacket.getOnwardQos());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setQos_null() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -326,10 +332,11 @@ public class ModifiablePublishPacketImplTest {
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
-        modifiablePacket.setQos(null);
+        assertThatThrownBy(() -> modifiablePacket.setQos(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setQos_exceedsMax() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -350,7 +357,8 @@ public class ModifiablePublishPacketImplTest {
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
         configurationService.mqttConfiguration().setMaximumQos(QoS.AT_LEAST_ONCE);
-        modifiablePacket.setQos(Qos.EXACTLY_ONCE);
+        assertThatThrownBy(() -> modifiablePacket.setQos(Qos.EXACTLY_ONCE))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -409,7 +417,7 @@ public class ModifiablePublishPacketImplTest {
         assertEquals(Optional.of(ByteBuffer.wrap("payload".getBytes())), modifiablePacket.getPayload());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setPayload_null() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -429,7 +437,8 @@ public class ModifiablePublishPacketImplTest {
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
-        modifiablePacket.setPayload(null);
+        assertThatThrownBy(() -> modifiablePacket.setPayload(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -457,7 +466,7 @@ public class ModifiablePublishPacketImplTest {
         modifiablePacket.setRetain(true);
 
         assertTrue(modifiablePacket.isModified());
-        assertEquals(true, modifiablePacket.getRetain());
+        assertTrue(modifiablePacket.getRetain());
     }
 
     @Test
@@ -485,10 +494,10 @@ public class ModifiablePublishPacketImplTest {
         modifiablePacket.setRetain(false);
 
         assertFalse(modifiablePacket.isModified());
-        assertEquals(false, modifiablePacket.getRetain());
+        assertFalse(modifiablePacket.getRetain());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setRetain_notAvailable() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -509,7 +518,8 @@ public class ModifiablePublishPacketImplTest {
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
         configurationService.mqttConfiguration().setRetainedMessagesEnabled(false);
-        modifiablePacket.setRetain(true);
+        assertThatThrownBy(() -> modifiablePacket.setRetain(true))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -568,7 +578,7 @@ public class ModifiablePublishPacketImplTest {
         assertEquals(Optional.of(60L), modifiablePacket.getMessageExpiryInterval());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setMessageExpiryInterval_exceedsMax() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -589,7 +599,8 @@ public class ModifiablePublishPacketImplTest {
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
         configurationService.mqttConfiguration().setMaxMessageExpiryInterval(240L);
-        modifiablePacket.setMessageExpiryInterval(241);
+        assertThatThrownBy(() -> modifiablePacket.setMessageExpiryInterval(241))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -760,7 +771,7 @@ public class ModifiablePublishPacketImplTest {
         assertEquals(Optional.empty(), modifiablePacket.getContentType());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setContentType_utf8MustNot() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -780,10 +791,11 @@ public class ModifiablePublishPacketImplTest {
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
-        modifiablePacket.setContentType("contentType" + '\u0000');
+        assertThatThrownBy(() -> modifiablePacket.setContentType("contentType" + '\u0000'))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setContentType_utf8ShouldNot() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -803,7 +815,8 @@ public class ModifiablePublishPacketImplTest {
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
-        modifiablePacket.setContentType("contentType" + '\u0001');
+        assertThatThrownBy(() -> modifiablePacket.setContentType("contentType" + '\u0001'))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -919,7 +932,7 @@ public class ModifiablePublishPacketImplTest {
         assertEquals(Optional.empty(), modifiablePacket.getResponseTopic());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setResponseTopic_utf8MustNot() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -939,10 +952,11 @@ public class ModifiablePublishPacketImplTest {
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
-        modifiablePacket.setResponseTopic("responseTopic" + '\u0000');
+        assertThatThrownBy(() -> modifiablePacket.setResponseTopic("responseTopic" + '\u0000'))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setResponseTopic_utf8ShouldNot() {
         final PublishPacketImpl packet = new PublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
@@ -962,7 +976,8 @@ public class ModifiablePublishPacketImplTest {
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
 
-        modifiablePacket.setResponseTopic("responseTopic" + '\u0001');
+        assertThatThrownBy(() -> modifiablePacket.setResponseTopic("responseTopic" + '\u0001'))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

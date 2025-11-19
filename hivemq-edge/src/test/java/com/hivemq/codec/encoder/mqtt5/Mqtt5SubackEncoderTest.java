@@ -24,8 +24,8 @@ import com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode;
 import com.hivemq.mqtt.message.suback.SUBACK;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
@@ -34,8 +34,7 @@ import java.util.Arrays;
  * @since 4.0.0
  */
 public class Mqtt5SubackEncoderTest extends AbstractMqtt5EncoderTest {
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         testMessageEncoder.getSecurityConfigurationService().setAllowRequestProblemInformation(true);

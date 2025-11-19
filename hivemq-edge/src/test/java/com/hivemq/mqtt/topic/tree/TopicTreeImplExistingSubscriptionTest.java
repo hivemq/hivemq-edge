@@ -20,11 +20,11 @@ import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.subscribe.Topic;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Christoph Schäbel
@@ -32,8 +32,7 @@ import static org.junit.Assert.*;
 public class TopicTreeImplExistingSubscriptionTest {
 
     private LocalTopicTree topicTree;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         InternalConfigurations.TOPIC_TREE_MAP_CREATION_THRESHOLD.set(1);

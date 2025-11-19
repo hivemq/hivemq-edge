@@ -18,7 +18,7 @@ package com.hivemq.extensions.packets.suback;
 import org.jetbrains.annotations.NotNull;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Robin Atherton

@@ -21,7 +21,6 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.info.SystemInformationImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extension.sdk.api.services.intializer.ClientInitializer;
 import com.hivemq.extensions.HiveMQExtension;
@@ -40,39 +39,51 @@ import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.connack.CONNACK;
-import com.hivemq.mqtt.message.connect.CONNECT;
 import com.hivemq.mqtt.message.connect.MqttWillPublish;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
-
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.util.concurrent.ImmediateEventExecutor;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 import util.TestMessageUtil;
 
+import java.io.File;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @since 4.0.0
  */
 public class PluginInitializerHandlerTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull ChannelHandlerContext channelHandlerContext = mock(ChannelHandlerContext.class);
     private final @NotNull ChannelPromise channelPromise = mock(ChannelPromise.class);
@@ -91,8 +102,7 @@ public class PluginInitializerHandlerTest {
     private @NotNull PluginTaskExecutor executor;
     private @NotNull EmbeddedChannel channel;
     private @NotNull PluginInitializerHandler pluginInitializerHandler;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         executor = new PluginTaskExecutor(new AtomicLong());
         executor.postConstruct();
@@ -122,7 +132,8 @@ public class PluginInitializerHandlerTest {
                 mqttConnacker);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_write_no_connack() throws Exception {
         pluginInitializerHandler.write(channelHandlerContext, TestMessageUtil.createFullMqtt5Publish(), channelPromise);
 
@@ -130,7 +141,8 @@ public class PluginInitializerHandlerTest {
         verify(channelHandlerContext).write(any(Object.class), eq(channelPromise));
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_write_connack_not_success() throws Exception {
         pluginInitializerHandler.write(channelHandlerContext,
                 new CONNACK.Mqtt5Builder().withReasonCode(Mqtt5ConnAckReasonCode.MALFORMED_PACKET).build(),
@@ -140,7 +152,8 @@ public class PluginInitializerHandlerTest {
         verify(channelHandlerContext).write(any(Object.class), eq(channelPromise));
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_write_connack_no_initializer() throws Exception {
         when(initializers.getClientInitializerMap()).thenReturn(new TreeMap<>());
 
@@ -153,7 +166,8 @@ public class PluginInitializerHandlerTest {
         assertNull(clientConnection.getWillPublish());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_write_connack_with_initializer_channel_inactive() throws Exception {
         channel.close();
 
@@ -166,7 +180,8 @@ public class PluginInitializerHandlerTest {
         verify(channelHandlerContext, times(0)).writeAndFlush(any(Object.class), eq(channelPromise));
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_write_connack_fire_initialize() throws Exception {
         when(initializers.getClientInitializerMap()).thenReturn(createClientInitializerMap());
 
@@ -183,7 +198,8 @@ public class PluginInitializerHandlerTest {
         assertNull(clientConnection.getWillPublish());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_user_event_other_event() {
         channel.pipeline().addLast(pluginInitializerHandler);
 
@@ -192,7 +208,8 @@ public class PluginInitializerHandlerTest {
         verify(initializers, never()).getClientInitializerMap();
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_write_will_publish_not_authorized() throws Exception {
         when(clientSessionPersistence.deleteWill(anyString())).thenReturn(Futures.immediateFuture(null));
         when(initializers.getClientInitializerMap()).thenReturn(createClientInitializerMap());
@@ -225,7 +242,8 @@ public class PluginInitializerHandlerTest {
         assertNull(clientConnection.getWillPublish());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_write_will_publish_authorized() throws Exception {
         when(clientSessionPersistence.deleteWill(anyString())).thenReturn(Futures.immediateFuture(null));
         when(initializers.getClientInitializerMap()).thenReturn(createClientInitializerMap());
@@ -257,12 +275,12 @@ public class PluginInitializerHandlerTest {
 
     private Map<String, ClientInitializer> createClientInitializerMap() throws Exception {
         final IsolatedExtensionClassloader cl1 =
-                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), new Class[]{
+                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), new Class[]{
                         InitializersImplTest.TestClientInitializerOne.class,
                         InitializersImplTest.TestClientInitializerTwo.class
                 });
         final IsolatedExtensionClassloader cl2 =
-                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(), new Class[]{
+                IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), new Class[]{
                         InitializersImplTest.TestClientInitializerOne.class,
                         InitializersImplTest.TestClientInitializerTwo.class
                 });

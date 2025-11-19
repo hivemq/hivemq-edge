@@ -21,8 +21,8 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.pubrel.PUBREL;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRelReasonCode;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Waldemar Ruck
@@ -33,8 +33,7 @@ public class Mqtt5PubrelEncoderTest extends AbstractMqtt5EncoderTest {
     private static final int MAX_PACKET_SIZE = 130;
 
     private static final Mqtt5PubRelReasonCode SUCCESS = Mqtt5PubRelReasonCode.SUCCESS;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         testMessageEncoder.getSecurityConfigurationService().setAllowRequestProblemInformation(true);

@@ -19,11 +19,11 @@ import com.google.common.hash.HashCode;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
 import io.netty.handler.ssl.SslContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import util.TestKeyStoreGenerator;
 import util.TlsTestUtil;
@@ -38,9 +38,10 @@ import java.util.ArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -59,7 +60,7 @@ public class SslContextStoreTest {
     private ScheduledExecutorService executorService;
     private ArgumentCaptor<Runnable> captor;
 
-    @Before
+    @BeforeEach
     public void before() {
         sslContext = mock(SslContext.class);
         executorService = mock(ListeningScheduledExecutorService.class);
@@ -77,8 +78,7 @@ public class SslContextStoreTest {
         keyStoreGenerator = new TestKeyStoreGenerator();
 
     }
-
-    @After
+    @AfterEach
     public void after() {
         keyStoreGenerator.release();
     }
@@ -92,14 +92,13 @@ public class SslContextStoreTest {
         assertEquals(sslContext, sslContextStore.getAndInitAsync(tls));
 
         verify(executorService).execute(captor.capture());
-        assertTrue(captor.getValue() instanceof SslContextStore.SslContextFirstTimeRunnable);
+        assertInstanceOf(SslContextStore.SslContextFirstTimeRunnable.class, captor.getValue());
 
         verify(executorService).scheduleAtFixedRate(captor.capture(), anyLong(), anyLong(), any());
-        assertTrue(captor.getValue() instanceof SslContextStore.SslContextScheduledRunnable);
+        assertInstanceOf(SslContextStore.SslContextScheduledRunnable.class, captor.getValue());
     }
 
-
-    @Test(expected = UnrecoverableException.class)
+    @Test
     public void test_create_at_start_throws_exception() throws Exception {
 
         final File keystore = keyStoreGenerator.generateKeyStore("test", "JKS", "pw", "pkpw");
@@ -117,7 +116,7 @@ public class SslContextStoreTest {
                 .withHandshakeTimeout(10)
                 .build();
 
-        sslContextStore.createAndInitIfAbsent(tls, SslContextStoreTest::emptyOnCreate);
+        assertThatThrownBy(() -> sslContextStore.createAndInitIfAbsent(tls, SslContextStoreTest::emptyOnCreate)).isInstanceOf(UnrecoverableException.class);
     }
 
     @Test
@@ -141,14 +140,14 @@ public class SslContextStoreTest {
 
         sslContextStore.createAndInitIfAbsent(tls, SslContextStoreTest::emptyOnCreate);
         verify(executorService).scheduleAtFixedRate(captor.capture(), eq(10L), eq(10L), eq(TimeUnit.SECONDS));
-        assertTrue(captor.getValue() instanceof SslContextStore.SslContextScheduledRunnable);
+        assertInstanceOf(SslContextStore.SslContextScheduledRunnable.class, captor.getValue());
     }
 
-    @Test(expected = FileNotFoundException.class)
-    public void test_hash_store_throws_exception() throws Exception {
-        SslContextStore.hashKeystoreAndTruststore(TlsTestUtil.createDefaultTLSBuilder()
+    @Test
+    public void test_hash_store_throws_exception() {
+        assertThatThrownBy(() -> SslContextStore.hashKeystoreAndTruststore(TlsTestUtil.createDefaultTLSBuilder()
                 .withKeystorePath("thisisbpolloks")
-                .build());
+                .build())).isInstanceOf(FileNotFoundException.class);
     }
 
     @Test
@@ -190,7 +189,7 @@ public class SslContextStoreTest {
         assertNotEquals(firstHash, differentHash);
     }
 
-    @Test(expected = FileNotFoundException.class)
+    @Test
     public void test_hash_key_and_trust_store_throws_exception() throws Exception {
         final File keystore = keyStoreGenerator.generateKeyStore("test", "JKS", "pw", "pkpw");
         final File trust = keyStoreGenerator.generateKeyStore("test", "JKS", "pw", "pkpw");
@@ -209,7 +208,7 @@ public class SslContextStoreTest {
                 .withHandshakeTimeout(10)
                 .build();
 
-        SslContextStore.hashKeystoreAndTruststore(tls);
+        assertThatThrownBy(() -> SslContextStore.hashKeystoreAndTruststore(tls)).isInstanceOf(FileNotFoundException.class);
     }
 
     @Test
@@ -250,7 +249,7 @@ public class SslContextStoreTest {
 
         //was called with the normal interval
         verify(executorService).scheduleAtFixedRate(captor.capture(), eq(10L), eq(10L), eq(TimeUnit.SECONDS));
-        assertTrue(captor.getValue() instanceof SslContextStore.SslContextScheduledRunnable);
+        assertInstanceOf(SslContextStore.SslContextScheduledRunnable.class, captor.getValue());
     }
 
     @Test
@@ -295,7 +294,7 @@ public class SslContextStoreTest {
                 eq(10L),
                 eq(10L),
                 eq(TimeUnit.SECONDS));
-        assertTrue(captor.getValue() instanceof SslContextStore.SslContextScheduledRunnable);
+        assertInstanceOf(SslContextStore.SslContextScheduledRunnable.class, captor.getValue());
 
     }
 

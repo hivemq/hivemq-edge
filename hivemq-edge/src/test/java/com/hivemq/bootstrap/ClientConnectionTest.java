@@ -19,13 +19,13 @@ import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.local.LocalAddress;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,8 +36,7 @@ public class ClientConnectionTest {
     final Channel channel = mock(Channel.class);
     final ChannelPipeline pipeline = mock(ChannelPipeline.class);
     final PublishFlushHandler publishFlushHandler = mock(PublishFlushHandler.class);
-
-    @Before
+    @BeforeEach
     public void setUp() {
         when(channel.pipeline()).thenReturn(pipeline);
         clientConnection = new ClientConnection(channel, publishFlushHandler);

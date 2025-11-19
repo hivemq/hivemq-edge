@@ -35,9 +35,10 @@ import com.hivemq.extensions.loader.ExtensionLifecycleHandler;
 import com.hivemq.extensions.loader.ExtensionLifecycleHandlerImpl;
 import com.hivemq.extensions.loader.ExtensionLoader;
 import com.hivemq.extensions.services.auth.Authenticators;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
@@ -51,8 +52,8 @@ import static org.mockito.Mockito.*;
  */
 public class ExtensionBootstrapImplTest {
 
-    @Rule
-    public @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull ExtensionLoader extensionLoader = mock(ExtensionLoader.class);
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
@@ -61,8 +62,7 @@ public class ExtensionBootstrapImplTest {
     private final @NotNull EmbeddedExtension embeddedExtension = mock(EmbeddedExtension.class);
 
     private @NotNull ExtensionBootstrapImpl pluginBootstrap;
-
-    @Before
+    @BeforeEach
     public void before() {
         final SystemInformationImpl systemInformation = new SystemInformationImpl();
         systemInformation.init();
@@ -136,9 +136,9 @@ public class ExtensionBootstrapImplTest {
     private static class TestHiveMQExtension implements HiveMQExtension {
 
         private final @NotNull String pluginId;
-        private final @NotNull TemporaryFolder temporaryFolder;
+        private final @NotNull File temporaryFolder;
 
-        TestHiveMQExtension(final @NotNull String pluginId, final @NotNull TemporaryFolder temporaryFolder) {
+        TestHiveMQExtension(final @NotNull String pluginId, final @NotNull File temporaryFolder) {
             this.pluginId = pluginId;
             this.temporaryFolder = temporaryFolder;
         }
@@ -195,7 +195,7 @@ public class ExtensionBootstrapImplTest {
 
         @Override
         public @NotNull Path getExtensionFolderPath() {
-            return temporaryFolder.getRoot().toPath();
+            return temporaryFolder.toPath();
         }
 
         @Override
