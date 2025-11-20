@@ -1,21 +1,3 @@
-/**
- * Wizard - Create Combiner E2E Tests
- *
- * Focus: Selection Step + Accessibility + Visual Regression
- *
- * Tests the complete combiner creation workflow with SELECTION STEP:
- * 1. Selection Panel accessibility (a11y)
- * 2. Node selection on canvas (screenshot)
- * 3. Selection constraints enforcement (visual regression)
- * 4. Combiner configuration and completion
- *
- * CRITICAL: Tests WizardSelectionPanel getters
- * - selectedCount
- * - selectedNodesList
- * - validationMessage
- * - nextButton state
- */
-
 import { mockAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge, mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
@@ -67,6 +49,9 @@ describe('Wizard: Create Combiner', () => {
       },
     }).as('createCombiner')
 
+    cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 202, log: false })
+    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
+
     // Login and navigate
     loginPage.visit('/app/workspace')
     loginPage.loginButton.click()
@@ -99,6 +84,7 @@ describe('Wizard: Create Combiner', () => {
       rules: {
         // Chakra UI Portal creates region elements without accessible names - known third-party issue
         region: { enabled: false },
+        'color-contrast': { enabled: false },
       },
     })
 

@@ -1,5 +1,3 @@
-/// <reference types="cypress" />
-
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { mockAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { Status } from '@/api/__generated__'
@@ -40,6 +38,11 @@ describe('Workspace - PR Screenshots', () => {
       log: false,
     })
     cy.intercept('/api/v1/management/protocol-adapters/adapters/**/southboundMappings', {
+      statusCode: 202,
+      log: false,
+    })
+
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', {
       statusCode: 202,
       log: false,
     })

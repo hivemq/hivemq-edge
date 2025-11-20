@@ -228,14 +228,15 @@ describe('GhostNodeRenderer', () => {
 
     cy.getByTestId('data-wizard-currentStep').should('have.text', '0')
 
+    // Wait for React Flow to render ghost nodes first
+    cy.get('[data-testid="react-flow-nodes"]').should('have.length.greaterThan', 3)
+
     // Step 0 should have ghost nodes
     cy.wrap(null).then(() => {
       const { ghostNodes, currentStep } = useWizardStore.getState()
       expect(currentStep).to.equal(0)
       expect(ghostNodes.length).to.be.greaterThan(0)
     })
-
-    cy.get('[data-testid="react-flow-nodes"]').should('have.length.greaterThan', 3)
 
     // Move to step 1
     cy.wrap(null).then(() => {
@@ -353,12 +354,13 @@ describe('GhostNodeRenderer', () => {
       actions.startWizard(EntityType.ADAPTER)
     })
 
+    // Wait for React Flow to render ghost nodes first
+    cy.get('[data-testid="react-flow-nodes"]').should('have.length.greaterThan', 3)
+
     cy.wrap(null).then(() => {
       const { ghostNodes } = useWizardStore.getState()
       expect(ghostNodes.length).to.be.greaterThan(0)
     })
-
-    cy.get('[data-testid="react-flow-nodes"]').should('have.length.greaterThan', 3)
 
     cy.wrap(null).then(() => {
       actions.cancelWizard()
@@ -509,6 +511,9 @@ describe('GhostNodeRenderer', () => {
       actions.startWizard(EntityType.ADAPTER)
     })
 
+    // Wait for React Flow to render ghost nodes first
+    cy.get('[data-testid="react-flow-nodes"]').should('have.length.greaterThan', 3)
+
     cy.wrap(null).then(() => {
       const { ghostNodes } = useWizardStore.getState()
       expect(ghostNodes.length).to.be.greaterThan(0)
@@ -535,6 +540,10 @@ describe('GhostNodeRenderer', () => {
       actions.startWizard(EntityType.ADAPTER)
     })
 
+    // Wait for React Flow to render ghost nodes first
+    cy.get('[data-testid="react-flow-nodes"]').should('have.length.greaterThan', 3)
+    cy.get('[data-testid="react-flow-edges"]').should('exist')
+
     cy.wrap(null).then(() => {
       const { ghostNodes, ghostEdges } = useWizardStore.getState()
       expect(ghostNodes.length).to.be.greaterThan(0)
@@ -543,9 +552,6 @@ describe('GhostNodeRenderer', () => {
         expect(edge.data?.isGhost).to.be.true
       })
     })
-
-    cy.get('[data-testid="react-flow-nodes"]').should('have.length.greaterThan', 3)
-    cy.get('[data-testid="react-flow-edges"]').should('exist')
   })
 
   it('should clear both ghost nodes and edges when wizard is cancelled', () => {
@@ -564,6 +570,9 @@ describe('GhostNodeRenderer', () => {
     cy.wrap(null).then(() => {
       actions.startWizard(EntityType.BRIDGE)
     })
+
+    // Wait for React Flow to render ghost nodes first
+    cy.get('[data-testid="react-flow-nodes"]').should('have.length.greaterThan', 3)
 
     cy.wrap(null).then(() => {
       const { ghostNodes, ghostEdges } = useWizardStore.getState()
@@ -600,6 +609,9 @@ describe('GhostNodeRenderer', () => {
     cy.wrap(null).then(() => {
       actions.startWizard(EntityType.ADAPTER)
     })
+
+    // Wait for React Flow to render ghost nodes first
+    cy.get('[data-testid="react-flow-nodes"]').should('have.length.greaterThan', 3)
 
     let initialGhostCount: number
     cy.wrap(null).then(() => {

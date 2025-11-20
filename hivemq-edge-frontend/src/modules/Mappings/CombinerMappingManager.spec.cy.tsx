@@ -1,3 +1,4 @@
+import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import type { Node } from '@xyflow/react'
 import { Button } from '@chakra-ui/react'
@@ -55,6 +56,9 @@ describe('CombinerMappingManager', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 203, log: false })
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { statusCode: 203, log: false })
     cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', { statusCode: 203, log: false })
+
+    cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_PULSE_ASSETS] })
+    cy.intercept('/api/v1/management/pulse/managed-assets', { statusCode: 203 })
   })
 
   it('should render error properly', () => {

@@ -1,18 +1,3 @@
-/**
- * Wizard - Create Adapter E2E Tests
- *
- * Focus: Accessibility + Visual Regression + User Documentation
- *
- * Tests the complete adapter creation workflow:
- * 1. Create button accessible (a11y)
- * 2. Protocol selection screen (screenshot for PR)
- * 3. Adapter configuration (visual regression)
- * 4. Success completion (documentation)
- *
- * Uses Page Objects with critical selection getters
- * MSW mocking for realistic API responses
- */
-
 import { MOCK_PROTOCOL_HTTP, MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_SIMULATION } from '@/__test-utils__/adapters'
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 import { mockAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
@@ -57,6 +42,11 @@ describe('Wizard: Create Adapter', () => {
         protocol_type: MockAdapterType.HTTP,
       },
     }).as('createAdapter')
+
+    cy.intercept('GET', '/api/v1/management/bridges', { statusCode: 202, log: false })
+    cy.intercept('GET', '/api/v1/management/topic-filters', { statusCode: 202, log: false })
+    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
+    cy.intercept('/api/v1/management/events?*', { statusCode: 202, log: false })
 
     loginPage.visit('/app/workspace')
     loginPage.loginButton.click()

@@ -74,6 +74,11 @@ describe('Pulse Assets', () => {
   })
 
   describe('Asset Mapping', () => {
+    beforeEach(() => {
+      cy.intercept('GET', '/api/v1/management/topic-filters', { statusCode: 202, log: false })
+      cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
+    })
+
     it('should create a new asset mapper', () => {
       homePage.taskSectionTitle(ONBOARDING.TASK_PULSE, 0).should('contain.text', 'Pulse is currently active.')
       homePage.pulseOnboarding.todos.eq(0).find('a').click()

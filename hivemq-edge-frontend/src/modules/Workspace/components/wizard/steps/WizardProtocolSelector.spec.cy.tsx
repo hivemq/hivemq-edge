@@ -50,7 +50,7 @@ describe('WizardProtocolSelector', () => {
   })
 
   describe('Error State', () => {
-    it('should show error message when API fails', { tags: ['@flaky'] }, () => {
+    it('should show error message when API fails', () => {
       cy.intercept('GET', '/api/v1/management/protocol-adapters/types', {
         statusCode: 500,
         body: {
@@ -63,11 +63,15 @@ describe('WizardProtocolSelector', () => {
 
       cy.wait('@getAdaptersError')
 
-      // Should show error message
-      cy.contains('Failed to load protocol adapters').should('be.visible')
+      // Wait for loading spinner to disappear (component only shows error after loading is done)
+      cy.getByTestId('loading-spinner').should('not.exist')
+
+      // Should show error message with explicit timeout for CI stability
+      cy.get('[role="alert"]').should('be.visible')
+      cy.contains('Failed to load protocol adapters', { timeout: 10000 }).should('be.visible')
     })
 
-    it('should show generic error when no error details provided', { tags: ['@flaky'] }, () => {
+    it('should show generic error when no error details provided', () => {
       cy.intercept('GET', '/api/v1/management/protocol-adapters/types', {
         statusCode: 500,
         body: {},
@@ -77,8 +81,14 @@ describe('WizardProtocolSelector', () => {
 
       cy.wait('@getAdaptersError')
 
-      // Should show generic error (from translation)
-      cy.contains(/error|failed/i).should('be.visible')
+      // Wait for loading spinner to disappear
+      cy.getByTestId('loading-spinner').should('not.exist')
+
+      // Should show error alert (ErrorMessage renders as Alert with status="error")
+      cy.get('[role="alert"]', { timeout: 10000 }).should('be.visible')
+
+      // Check for translated error message (protocolAdapter.error.loading)
+      cy.get('[role="alert"]').should('contain.text', 'load')
     })
   })
 

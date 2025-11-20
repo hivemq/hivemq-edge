@@ -1,24 +1,6 @@
-/**
- * Wizard - Create Bridge E2E Tests
- *
- * Focus: Accessibility + Visual Regression + User Documentation
- *
- * Tests the complete bridge creation workflow:
- * 1. Create button accessible (a11y)
- * 2. Ghost preview screen (screenshot for PR)
- * 3. Bridge configuration (visual regression)
- * 4. Success completion (documentation)
- *
- * Bridge Flow (2 steps):
- * - Step 0: Ghost Preview (HOST → BRIDGE → EDGE BROKER)
- * - Step 1: Configuration (host, port, subscriptions)
- *
- * Uses Page Objects with critical selection getters
- * MSW mocking for realistic API responses
- */
-
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { mockAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 
 import { loginPage, workspacePage, wizardPage } from '../../../pages'
 import { cy_interceptCoreE2E } from '../../../utils/intercept.utils.ts'
@@ -61,6 +43,12 @@ describe('Wizard: Create Bridge', () => {
         clientId: 'edge-bridge-client',
       },
     }).as('createBridge')
+
+    cy.intercept('GET', '/api/v1/management/topic-filters', {
+      items: [MOCK_TOPIC_FILTER],
+    })
+    cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 202, log: false })
+    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
 
     loginPage.visit('/app/workspace')
     loginPage.loginButton.click()

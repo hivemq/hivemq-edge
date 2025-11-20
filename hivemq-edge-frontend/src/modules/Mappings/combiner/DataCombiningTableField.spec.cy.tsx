@@ -3,6 +3,7 @@ import type { DataCombining } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import { MOCK_ASSET_MAPPER } from '@/api/hooks/useAssetMapper/__handlers__'
 import { mockCombinerMapping } from '@/api/hooks/useCombiners/__handlers__'
+import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
 import { mockAdapter_OPCUA, mockProtocolAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { combinerMappingJsonSchema } from '@/api/schemas/combiner-mapping.json-schema'
 import { formatTopicString } from '@/components/MQTT/topic-utils'
@@ -188,6 +189,7 @@ describe('DataCombiningTableField', () => {
 
   describe('Asset Mapper', () => {
     it('should render properly', () => {
+      cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_PULSE_ASSETS] })
       cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter_OPCUA] })
       cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter_OPCUA] })
 
