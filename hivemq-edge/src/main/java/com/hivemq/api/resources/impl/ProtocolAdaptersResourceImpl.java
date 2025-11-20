@@ -46,11 +46,12 @@ import com.hivemq.api.model.adapters.ValuesTree;
 import com.hivemq.api.model.mappings.northbound.NorthboundMappingListModel;
 import com.hivemq.api.model.mappings.northbound.NorthboundMappingModel;
 import com.hivemq.api.utils.ApiErrorUtils;
+import com.hivemq.configuration.entity.adapter.DomainTagOwnerConverter;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
-import com.hivemq.configuration.entity.adapter.NorthboundMappingEntityConverter;
+import com.hivemq.configuration.entity.adapter.NorthboundMappingOwnerConverter;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.SouthboundMappingEntity;
-import com.hivemq.configuration.entity.adapter.SouthboundMappingEntityConverter;
+import com.hivemq.configuration.entity.adapter.SouthboundMappingOwnerConverter;
 import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
@@ -67,10 +68,8 @@ import com.hivemq.edge.api.model.DomainTagList;
 import com.hivemq.edge.api.model.DomainTagOwnerList;
 import com.hivemq.edge.api.model.NorthboundMappingList;
 import com.hivemq.edge.api.model.NorthboundMappingOwnerList;
-import com.hivemq.edge.api.model.NorthboundMappingOwnerListItemsInner;
 import com.hivemq.edge.api.model.SouthboundMappingList;
 import com.hivemq.edge.api.model.SouthboundMappingOwnerList;
-import com.hivemq.edge.api.model.SouthboundMappingOwnerListItemsInner;
 import com.hivemq.edge.api.model.Status;
 import com.hivemq.edge.api.model.StatusList;
 import com.hivemq.edge.api.model.StatusTransitionCommand;
@@ -623,7 +622,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final List<com.hivemq.persistence.domain.DomainTag> domainTags = protocolAdapterManager.getDomainTags();
         final DomainTagOwnerList domainTagOwnerList = new DomainTagOwnerList();
         domainTags.stream()
-                .map(com.hivemq.persistence.domain.DomainTag::toDomainTagOwner)
+                .map(DomainTagOwnerConverter.INSTANCE::toRestEntity)
                 .forEach(domainTagOwnerList::addItemsItem);
         // empty list is also 200 as discussed.
         return Response.ok(domainTagOwnerList).build();
@@ -758,8 +757,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         configExtractor.getAllConfigs()
                 .forEach(adapter -> adapter.getNorthboundMappings()
                         .stream()
-                        .map(entity -> new NorthboundMappingOwnerListItemsInner().adapterId(adapter.getAdapterId())
-                                .mapping(NorthboundMappingEntityConverter.INSTANCE.toRestEntity(entity)))
+                        .map(entity -> NorthboundMappingOwnerConverter.INSTANCE.toRestEntity(entity,
+                                adapter.getAdapterId()))
                         .forEach(northboundMappingOwnerList::addItemsItem));
         return Response.status(200).entity(northboundMappingOwnerList).build();
     }
@@ -770,8 +769,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         configExtractor.getAllConfigs()
                 .forEach(adapter -> adapter.getSouthboundMappings()
                         .stream()
-                        .map(entity -> new SouthboundMappingOwnerListItemsInner().adapterId(adapter.getAdapterId())
-                                .mapping(SouthboundMappingEntityConverter.INSTANCE.toRestEntity(entity)))
+                        .map(entity -> SouthboundMappingOwnerConverter.INSTANCE.toRestEntity(entity,
+                                adapter.getAdapterId()))
                         .forEach(southboundMappingOwnerList::addItemsItem));
         return Response.status(200).entity(southboundMappingOwnerList).build();
     }
