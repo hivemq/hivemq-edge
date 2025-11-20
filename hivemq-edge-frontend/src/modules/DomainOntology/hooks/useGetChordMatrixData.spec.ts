@@ -59,9 +59,7 @@ describe('useGetChordMatrixData', () => {
       http.get('*/management/protocol-adapters/mappings/northboundMappings', () => {
         return HttpResponse.json<NorthboundMappingOwnerList>(
           {
-            items: [
-              { adapterId: 'test-adapter', mapping: { tagName: 'test/tag1', topic: 'sensor/temperature/room1' } },
-            ],
+            items: [{ adapterId: 'test-adapter', tagName: 'test/tag1', topic: 'sensor/temperature/room1' }],
           },
           { status: 200 }
         )

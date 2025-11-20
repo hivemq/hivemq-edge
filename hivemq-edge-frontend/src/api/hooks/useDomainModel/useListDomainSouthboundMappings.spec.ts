@@ -27,18 +27,16 @@ describe('useListDomainNorthboundMappings', () => {
       items: [
         {
           adapterId: 'test-adapter',
-          mapping: {
-            fieldMapping: {
-              instructions: [
-                {
-                  destination: '$.lastName',
-                  source: '$.dropped-property',
-                },
-              ],
-            },
-            tagName: 'my/tag',
-            topicFilter: 'my/filter',
+          fieldMapping: {
+            instructions: [
+              {
+                destination: '$.lastName',
+                source: '$.dropped-property',
+              },
+            ],
           },
+          tagName: 'my/tag',
+          topicFilter: 'my/filter',
         },
       ],
     })

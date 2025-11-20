@@ -19,7 +19,7 @@ const DeviceTagForm: FC<DeviceTagFormProps> = ({ context, onSubmit }) => {
   const { t } = useTranslation()
   const { data } = useListDomainTags()
 
-  const allNames = (data?.items || []).map((e) => e.mapping.name)
+  const allNames = (data?.items || []).map((e) => e.name)
   const initialNames = [...(context.formData?.items || [])].map((e) => e.name)
   // initial names have already been checked
   const cleanNames = allNames.filter((e) => !initialNames.includes(e))

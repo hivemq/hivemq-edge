@@ -29,13 +29,13 @@ export const useGetChordMatrixData = () => {
 
     datum =
       tags.data?.items.reduce<Datum>((acc, curr) => {
-        acc[curr.mapping.name] = curr.mapping
+        acc[curr.name] = curr
         return acc
       }, datum) || datum
 
     datum =
       northMappings.data?.items.reduce<Datum>((acc, curr) => {
-        acc[curr.mapping.topic] = curr.mapping
+        acc[curr.topic] = curr
         return acc
       }, datum) || datum
 
@@ -64,14 +64,14 @@ export const useGetChordMatrixData = () => {
       }
     }
     for (const north of northMappings.data?.items || []) {
-      const x = keys.findIndex((key) => key === north.mapping.tagName)
-      const y = keys.findIndex((key) => key === north.mapping.topic)
+      const x = keys.findIndex((key) => key === north.tagName)
+      const y = keys.findIndex((key) => key === north.topic)
       setAdjacencyMatrix(x, y)
     }
 
     for (const south of southMappings.data?.items || []) {
-      const x = keys.findIndex((key) => key === south.mapping.topicFilter)
-      const y = keys.findIndex((key) => key === south.mapping.tagName)
+      const x = keys.findIndex((key) => key === south.topicFilter)
+      const y = keys.findIndex((key) => key === south.tagName)
       setAdjacencyMatrix(x, y)
     }
 

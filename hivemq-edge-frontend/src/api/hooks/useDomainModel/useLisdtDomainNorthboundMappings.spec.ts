@@ -27,14 +27,12 @@ describe('useListDomainNorthboundMappings', () => {
       items: [
         {
           adapterId: 'test-adapter',
-          mapping: {
-            includeTagNames: true,
-            includeTimestamp: true,
-            maxQoS: QoS.AT_MOST_ONCE,
-            messageExpiryInterval: -1000,
-            tagName: 'my/tag',
-            topic: 'my/topic',
-          },
+          includeTagNames: true,
+          includeTimestamp: true,
+          maxQoS: QoS.AT_MOST_ONCE,
+          messageExpiryInterval: -1000,
+          tagName: 'my/tag',
+          topic: 'my/topic',
         },
       ],
     })

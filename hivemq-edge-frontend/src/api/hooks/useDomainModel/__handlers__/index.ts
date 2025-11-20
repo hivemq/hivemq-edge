@@ -143,9 +143,7 @@ export const handlers = [
   http.get('**/management/protocol-adapters/tags', () => {
     return HttpResponse.json<DomainTagOwnerList>(
       {
-        items: [
-          { adapterId: 'test-adapter', mapping: { name: 'test/tag1', definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS } },
-        ],
+        items: [{ adapterId: 'test-adapter', name: 'test/tag1', definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS }],
       },
       { status: 200 }
     )

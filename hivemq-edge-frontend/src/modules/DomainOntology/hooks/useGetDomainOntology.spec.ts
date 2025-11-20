@@ -4,7 +4,7 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
-import type { DomainTag, NorthboundMapping, SouthboundMapping, TopicFilter } from '@/api/__generated__'
+import type { DomainTagOwner, NorthboundMappingOwner, SouthboundMappingOwner, TopicFilter } from '@/api/__generated__'
 import { QoS } from '@/api/__generated__'
 
 import { useGetDomainOntology } from '@/modules/DomainOntology/hooks/useGetDomainOntology.ts'
@@ -58,15 +58,14 @@ describe('useGetDomainOntology', () => {
     })
 
     expect(result.current.tags).toStrictEqual(
-      successListOf<{ adapterId: string; mapping: DomainTag }>({
+      successListOf<DomainTagOwner>({
         adapterId: 'test-adapter',
-        mapping: {
-          definition: {
-            endIdx: 1,
-            startIdx: 0,
-          },
-          name: 'test/tag1',
+
+        definition: {
+          endIdx: 1,
+          startIdx: 0,
         },
+        name: 'test/tag1',
       })
     )
   })
@@ -79,16 +78,14 @@ describe('useGetDomainOntology', () => {
     })
 
     expect(result.current.northMappings).toStrictEqual(
-      successListOf<{ adapterId: string; mapping: NorthboundMapping }>({
+      successListOf<NorthboundMappingOwner>({
         adapterId: 'test-adapter',
-        mapping: {
-          includeTagNames: true,
-          includeTimestamp: true,
-          maxQoS: QoS.AT_MOST_ONCE,
-          messageExpiryInterval: -1000,
-          tagName: 'my/tag',
-          topic: 'my/topic',
-        },
+        includeTagNames: true,
+        includeTimestamp: true,
+        maxQoS: QoS.AT_MOST_ONCE,
+        messageExpiryInterval: -1000,
+        tagName: 'my/tag',
+        topic: 'my/topic',
       })
     )
   })
@@ -101,20 +98,18 @@ describe('useGetDomainOntology', () => {
     })
 
     expect(result.current.southMappings).toStrictEqual(
-      successListOf<{ adapterId: string; mapping: SouthboundMapping }>({
+      successListOf<SouthboundMappingOwner>({
         adapterId: 'test-adapter',
-        mapping: {
-          fieldMapping: {
-            instructions: [
-              {
-                destination: '$.lastName',
-                source: '$.dropped-property',
-              },
-            ],
-          },
-          tagName: 'my/tag',
-          topicFilter: 'my/filter',
+        fieldMapping: {
+          instructions: [
+            {
+              destination: '$.lastName',
+              source: '$.dropped-property',
+            },
+          ],
         },
+        tagName: 'my/tag',
+        topicFilter: 'my/filter',
       })
     )
   })

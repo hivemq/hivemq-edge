@@ -11,29 +11,29 @@ export const useGetSankeyData = () => {
 
   const sankeyData = useMemo(() => {
     const allTopicFilters = topicFilters.data?.items?.map<string>((filter) => filter.topicFilter) || []
-    const allTags = tags.data?.items?.map<string>((filter) => filter.mapping.name) || []
-    const allTopics = northMappings.data?.items?.map<string>((filter) => filter.mapping.topic) || []
+    const allTags = tags.data?.items?.map<string>((filter) => filter.name) || []
+    const allTopics = northMappings.data?.items?.map<string>((filter) => filter.topic) || []
 
     const links: DefaultLink[] = []
     for (const north of northMappings.data?.items || []) {
-      const x = allTags.findIndex((key) => key === north.mapping.tagName)
-      const y = allTopics.findIndex((key) => key === north.mapping.topic)
+      const x = allTags.findIndex((key) => key === north.tagName)
+      const y = allTopics.findIndex((key) => key === north.topic)
       if (x !== -1 && y !== -1) {
         links.push({
-          source: north.mapping.tagName,
-          target: north.mapping.topic,
+          source: north.tagName,
+          target: north.topic,
           value: 1,
         })
       }
     }
 
     for (const south of southMappings.data?.items || []) {
-      const x = allTopicFilters.findIndex((key) => key === south.mapping.topicFilter)
-      const y = allTags.findIndex((key) => key === south.mapping.tagName)
-      if (x !== -1 && y !== -1 && south.mapping.topicFilter && south.mapping.tagName) {
+      const x = allTopicFilters.findIndex((key) => key === south.topicFilter)
+      const y = allTags.findIndex((key) => key === south.tagName)
+      if (x !== -1 && y !== -1 && south.topicFilter && south.tagName) {
         links.push({
-          source: south.mapping.topicFilter,
-          target: south.mapping.tagName,
+          source: south.topicFilter,
+          target: south.tagName,
           value: 1,
         })
       }

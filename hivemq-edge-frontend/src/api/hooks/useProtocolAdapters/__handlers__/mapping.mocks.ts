@@ -48,14 +48,14 @@ export const mappingHandlers = [
 
   http.get<{ adapterId: string }>('*/management/protocol-adapters/mappings/northboundMappings', () => {
     return HttpResponse.json<NorthboundMappingOwnerList>(
-      { items: [{ adapterId: 'test-adapter', mapping: MOCK_NORTHBOUND_MAPPING }] },
+      { items: [{ adapterId: 'test-adapter', ...MOCK_NORTHBOUND_MAPPING }] },
       { status: 200 }
     )
   }),
 
   http.get<{ adapterId: string }>('*/management/protocol-adapters/mappings/southboundMappings', () => {
     return HttpResponse.json<SouthboundMappingOwnerList>(
-      { items: [{ adapterId: 'test-adapter', mapping: MOCK_SOUTHBOUND_MAPPING }] },
+      { items: [{ adapterId: 'test-adapter', ...MOCK_SOUTHBOUND_MAPPING }] },
       { status: 200 }
     )
   }),

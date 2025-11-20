@@ -95,7 +95,7 @@ describe('useGetTreeData', () => {
       http.get('*/management/protocol-adapters/mappings/northboundMappings', () => {
         return HttpResponse.json<NorthboundMappingOwnerList>(
           {
-            items: [{ adapterId: 'test-adapter', mapping: { tagName: 'test/tag1', topic: 'my/topic' } }],
+            items: [{ adapterId: 'test-adapter', tagName: 'test/tag1', topic: 'my/topic' }],
           },
           { status: 200 }
         )
@@ -152,8 +152,8 @@ describe('useGetTreeData', () => {
         return HttpResponse.json<SouthboundMappingOwnerList>(
           {
             items: [
-              { adapterId: 'test-adapter', mapping: { topicFilter: 'input/filter1', tagName: 'device/tag1' } },
-              { adapterId: 'test-adapter', mapping: { topicFilter: 'input/filter2', tagName: 'device/tag2' } },
+              { adapterId: 'test-adapter', topicFilter: 'input/filter1', tagName: 'device/tag1' },
+              { adapterId: 'test-adapter', topicFilter: 'input/filter2', tagName: 'device/tag2' },
             ],
           },
           { status: 200 }
@@ -203,8 +203,8 @@ describe('useGetTreeData', () => {
         return HttpResponse.json<NorthboundMappingOwnerList>(
           {
             items: [
-              { adapterId: 'test-adapter', mapping: { tagName: 'test/tag', topic: 'sensor/temperature/room1' } },
-              { adapterId: 'test-adapter', mapping: { tagName: 'test/tag', topic: 'sensor/humidity/room2' } },
+              { adapterId: 'test-adapter', tagName: 'test/tag', topic: 'sensor/temperature/room1' },
+              { adapterId: 'test-adapter', tagName: 'test/tag', topic: 'sensor/humidity/room2' },
             ],
           },
           { status: 200 }

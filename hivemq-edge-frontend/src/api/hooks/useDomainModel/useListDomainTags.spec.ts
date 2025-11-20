@@ -27,13 +27,11 @@ describe('useListDomainTags', () => {
       items: [
         {
           adapterId: 'test-adapter',
-          mapping: {
-            definition: {
-              endIdx: 1,
-              startIdx: 0,
-            },
-            name: 'test/tag1',
+          definition: {
+            endIdx: 1,
+            startIdx: 0,
           },
+          name: 'test/tag1',
         },
       ],
     })

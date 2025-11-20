@@ -32,14 +32,14 @@ const FilterTopics: FC<FilterTopicsProps> = ({ onChange, value, isDisabled }) =>
   const options = useMemo<FilterTopicsOption[]>(() => {
     const allTags =
       tags.data?.items?.map<FilterTopicsOption>((filter) => ({
-        label: filter.mapping.name,
-        value: filter.mapping.name,
+        label: filter.name,
+        value: filter.name,
         type: SelectEntityType.TAG,
       })) || []
     const allTopics =
       northMappings.data?.items?.map<FilterTopicsOption>((filter) => ({
-        label: filter.mapping.topic,
-        value: filter.mapping.topic,
+        label: filter.topic,
+        value: filter.topic,
         type: SelectEntityType.TOPIC,
       })) || []
 
