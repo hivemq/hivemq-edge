@@ -59,10 +59,6 @@ public class DomainTag {
                 .definition(this.definition);
     }
 
-    public @NotNull com.hivemq.edge.api.model.DomainTagOwnerListItemsInner toDomainTagOwner() {
-        return new com.hivemq.edge.api.model.DomainTagOwnerListItemsInner().adapterId(adapterId).mapping(toModel());
-    }
-
     public @NotNull String getTagName() {
         return tagName;
     }

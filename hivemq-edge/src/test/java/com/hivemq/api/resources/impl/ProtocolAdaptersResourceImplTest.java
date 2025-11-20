@@ -17,6 +17,7 @@ package com.hivemq.api.resources.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.configuration.entity.adapter.DomainTagOwnerConverter;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.QoSConverter;
@@ -33,10 +34,10 @@ import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.api.model.DomainTagList;
 import com.hivemq.edge.api.model.DomainTagOwnerList;
 import com.hivemq.edge.api.model.FieldMapping;
+import com.hivemq.edge.api.model.NorthboundMappingOwner;
 import com.hivemq.edge.api.model.NorthboundMappingOwnerList;
-import com.hivemq.edge.api.model.NorthboundMappingOwnerListItemsInner;
+import com.hivemq.edge.api.model.SouthboundMappingOwner;
 import com.hivemq.edge.api.model.SouthboundMappingOwnerList;
-import com.hivemq.edge.api.model.SouthboundMappingOwnerListItemsInner;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
@@ -248,9 +249,9 @@ class ProtocolAdaptersResourceImplTest {
         final Response response = protocolAdaptersResource.getDomainTags();
         assertThat(response.getEntity()).isInstanceOfSatisfying(DomainTagOwnerList.class, domainTagOwnerList -> {
             assertThat(domainTagOwnerList.getItems().size()).isEqualTo(domainTags.size());
-            IntStream.range(0, domainTagOwnerList.getItems().size()).forEach(i -> {
-                assertThat(domainTagOwnerList.getItems().get(i)).isEqualTo(domainTags.get(i).toDomainTagOwner());
-            });
+            IntStream.range(0, domainTagOwnerList.getItems().size())
+                    .forEach(i -> assertThat(domainTagOwnerList.getItems()
+                            .get(i)).isEqualTo(DomainTagOwnerConverter.INSTANCE.toRestEntity(domainTags.get(i))));
         });
     }
 
@@ -286,20 +287,14 @@ class ProtocolAdaptersResourceImplTest {
                 northboundMappingOwnerList -> {
                     assertThat(northboundMappingOwnerList.getItems().size()).isEqualTo(count * 2);
                     IntStream.range(0, count * 2).forEach(i -> {
-                        final NorthboundMappingOwnerListItemsInner item = northboundMappingOwnerList.getItems().get(i);
+                        final NorthboundMappingOwner item = northboundMappingOwnerList.getItems().get(i);
                         assertThat(item.getAdapterId()).isEqualTo("adapter" + (i / 2));
-                        assertThat(item.getMapping().getTagName()).isEqualTo("tagName" +
-                                (i / 2) +
-                                "." +
-                                ((i % 2 == 0 ? "a" : "b")));
-                        assertThat(item.getMapping().getTopic()).isEqualTo("topic" +
-                                (i / 2) +
-                                "." +
-                                ((i % 2 == 0 ? "a" : "b")));
-                        assertThat(item.getMapping().getMaxQoS()).isEqualTo(QoSConverter.INSTANCE.toRestEntity(i % 2));
-                        assertThat(item.getMapping().getIncludeTagNames()).isFalse();
-                        assertThat(item.getMapping().getIncludeTimestamp()).isTrue();
-                        assertThat(item.getMapping().getMessageExpiryInterval()).isEqualTo(1234L + i / 2);
+                        assertThat(item.getTagName()).isEqualTo("tagName" + (i / 2) + "." + ((i % 2 == 0 ? "a" : "b")));
+                        assertThat(item.getTopic()).isEqualTo("topic" + (i / 2) + "." + ((i % 2 == 0 ? "a" : "b")));
+                        assertThat(item.getMaxQoS()).isEqualTo(QoSConverter.INSTANCE.toRestEntity(i % 2));
+                        assertThat(item.getIncludeTagNames()).isFalse();
+                        assertThat(item.getIncludeTimestamp()).isTrue();
+                        assertThat(item.getMessageExpiryInterval()).isEqualTo(1234L + i / 2);
                     });
                 });
     }
@@ -336,17 +331,14 @@ class ProtocolAdaptersResourceImplTest {
                 southboundMappingOwnerList -> {
                     assertThat(southboundMappingOwnerList.getItems().size()).isEqualTo(count * 2);
                     IntStream.range(0, count * 2).forEach(i -> {
-                        final SouthboundMappingOwnerListItemsInner item = southboundMappingOwnerList.getItems().get(i);
+                        final SouthboundMappingOwner item = southboundMappingOwnerList.getItems().get(i);
                         assertThat(item.getAdapterId()).isEqualTo("adapter" + (i / 2));
-                        assertThat(item.getMapping().getTagName()).isEqualTo("tagName" +
+                        assertThat(item.getTagName()).isEqualTo("tagName" + (i / 2) + "." + ((i % 2 == 0 ? "a" : "b")));
+                        assertThat(item.getTopicFilter()).isEqualTo("topicFilter" +
                                 (i / 2) +
                                 "." +
                                 ((i % 2 == 0 ? "a" : "b")));
-                        assertThat(item.getMapping().getTopicFilter()).isEqualTo("topicFilter" +
-                                (i / 2) +
-                                "." +
-                                ((i % 2 == 0 ? "a" : "b")));
-                        final FieldMapping fieldMapping = item.getMapping().getFieldMapping();
+                        final FieldMapping fieldMapping = item.getFieldMapping();
                         assertThat(fieldMapping.getInstructions()).hasSize(1);
                         assertThat(fieldMapping.getInstructions().getFirst().getSource()).isEqualTo("sourceFieldName" +
                                 (i / 2) +

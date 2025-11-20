@@ -18,25 +18,32 @@ package com.hivemq.configuration.entity.adapter;
 
 import com.hivemq.configuration.entity.EntityConverter;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntityConverter;
-import com.hivemq.edge.api.model.SouthboundMapping;
+import com.hivemq.edge.api.model.SouthboundMappingOwner;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 
-public final class SouthboundMappingEntityConverter
-        implements EntityConverter<SouthboundMapping, SouthboundMappingEntity> {
-    public static final SouthboundMappingEntityConverter INSTANCE = new SouthboundMappingEntityConverter();
+public final class SouthboundMappingOwnerConverter
+        implements EntityConverter<SouthboundMappingOwner, SouthboundMappingEntity> {
+    public static final SouthboundMappingOwnerConverter INSTANCE = new SouthboundMappingOwnerConverter();
 
-    private SouthboundMappingEntityConverter() {
+    private SouthboundMappingOwnerConverter() {
     }
 
     @Override
-    public @NotNull SouthboundMappingEntity toInternalEntity(final @NotNull SouthboundMapping entity) {
-        throw new NotImplementedException("SouthboundMapping to SouthboundMappingEntity conversion is not implemented");
+    public @NotNull SouthboundMappingEntity toInternalEntity(final @NotNull SouthboundMappingOwner entity) {
+        throw new NotImplementedException(
+                "SouthboundMappingOwner to SouthboundMappingEntity conversion is not implemented");
+    }
+
+    public @NotNull SouthboundMappingOwner toRestEntity(
+            final @NotNull SouthboundMappingEntity entity,
+            final @NotNull String adapterId) {
+        return toRestEntity(entity).adapterId(adapterId);
     }
 
     @Override
-    public @NotNull SouthboundMapping toRestEntity(final @NotNull SouthboundMappingEntity entity) {
-        return SouthboundMapping.builder()
+    public @NotNull SouthboundMappingOwner toRestEntity(final @NotNull SouthboundMappingEntity entity) {
+        return SouthboundMappingOwner.builder()
                 .tagName(entity.getTagName())
                 .topicFilter(entity.getTopicFilter())
                 .fieldMapping(entity.getFieldMapping() == null ?
