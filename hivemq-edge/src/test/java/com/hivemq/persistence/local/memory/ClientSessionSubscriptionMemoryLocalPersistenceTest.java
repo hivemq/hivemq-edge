@@ -22,7 +22,6 @@ import com.google.common.collect.UnmodifiableIterator;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.iteration.BucketChunkResult;
 import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.mqtt.message.QoS;
@@ -33,19 +32,33 @@ import com.hivemq.util.LocalPersistenceFileUtil;
 import com.hivemq.util.MemoryEstimator;
 import net.jodah.concurrentunit.Waiter;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hivemq.mqtt.message.subscribe.Mqtt5Topic.*;
-import static org.junit.Assert.*;
+import static com.hivemq.mqtt.message.subscribe.Mqtt5Topic.DEFAULT_NO_LOCAL;
+import static com.hivemq.mqtt.message.subscribe.Mqtt5Topic.DEFAULT_RETAIN_AS_PUBLISHED;
+import static com.hivemq.mqtt.message.subscribe.Mqtt5Topic.DEFAULT_RETAIN_HANDLING;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -55,8 +68,8 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings("NullabilityAnnotations")
 public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     @Mock
     private LocalPersistenceFileUtil localPersistenceFileUtil;
@@ -67,12 +80,13 @@ public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
     private MetricRegistry metricRegistry;
     private final @NotNull InternalConfigurationService
             internalConfigurationService = new InternalConfigurationServiceImpl();
-
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
         internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, ""+bucketCount);
-        when(localPersistenceFileUtil.getVersionedLocalPersistenceFolder(anyString(), anyString())).thenReturn(temporaryFolder.newFolder());
+        var persistenceFolder = new File(temporaryFolder, "persistence");
+        persistenceFolder.mkdir();
+        when(localPersistenceFileUtil.getVersionedLocalPersistenceFolder(anyString(), anyString())).thenReturn(persistenceFolder);
         metricRegistry = new MetricRegistry();
 
         persistence = new ClientSessionSubscriptionMemoryLocalPersistence(metricRegistry, internalConfigurationService);
@@ -146,30 +160,33 @@ public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
         assertEquals(size, value.intValue());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_add_get_subscriptions_client_id_null_check() {
 
-        persistence.addSubscriptions(null, ImmutableSet.of(new Topic("topic1", QoS.AT_MOST_ONCE), new Topic("topic2", QoS.AT_MOST_ONCE), new Topic("topic3", QoS.AT_MOST_ONCE)), 123L, BucketUtils.getBucket("clientid", bucketCount));
+        assertThatThrownBy(() -> persistence.addSubscriptions(null, ImmutableSet.of(new Topic("topic1", QoS.AT_MOST_ONCE), new Topic("topic2", QoS.AT_MOST_ONCE), new Topic("topic3", QoS.AT_MOST_ONCE)), 123L, BucketUtils.getBucket("clientid", bucketCount)))
+                .isInstanceOf(NullPointerException.class);
         final Long value = (Long) metricRegistry.getGauges()
                 .get(HiveMQMetrics.CLIENT_SESSION_SUBSCRIPTIONS_MEMORY_PERSISTENCE_TOTAL_SIZE.name())
                 .getValue();
         assertEquals(0, value.intValue());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_add_get_subscriptions_client_topics_null_check() {
 
-        persistence.addSubscriptions("clientid", null, 123L, BucketUtils.getBucket("clientid", bucketCount));
+        assertThatThrownBy(() -> persistence.addSubscriptions("clientid", null, 123L, BucketUtils.getBucket("clientid", bucketCount)))
+                .isInstanceOf(NullPointerException.class);
         final Long value = (Long) metricRegistry.getGauges()
                 .get(HiveMQMetrics.CLIENT_SESSION_SUBSCRIPTIONS_MEMORY_PERSISTENCE_TOTAL_SIZE.name())
                 .getValue();
         assertEquals(0, value.intValue());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test_add_get_subscriptions_client_timestamp_state_check() {
 
-        persistence.addSubscriptions("clientid", ImmutableSet.of(new Topic("topic1", QoS.AT_MOST_ONCE), new Topic("topic2", QoS.AT_MOST_ONCE), new Topic("topic3", QoS.AT_MOST_ONCE)), -123L, BucketUtils.getBucket("clientid", bucketCount));
+        assertThatThrownBy(() -> persistence.addSubscriptions("clientid", ImmutableSet.of(new Topic("topic1", QoS.AT_MOST_ONCE), new Topic("topic2", QoS.AT_MOST_ONCE), new Topic("topic3", QoS.AT_MOST_ONCE)), -123L, BucketUtils.getBucket("clientid", bucketCount)))
+                .isInstanceOf(IllegalStateException.class);
         final Long value = (Long) metricRegistry.getGauges()
                 .get(HiveMQMetrics.CLIENT_SESSION_SUBSCRIPTIONS_MEMORY_PERSISTENCE_TOTAL_SIZE.name())
                 .getValue();
@@ -627,7 +644,8 @@ public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
         }
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_get_chunk_many_clients_no_duplicates() {
 
         for (int i = 0; i < 100; i++) {
@@ -657,7 +675,8 @@ public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
 
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_get_chunk_remove_last_key_between_iterations() {
 
         for (int i = 0; i < 100; i++) {
@@ -690,7 +709,8 @@ public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
     }
 
 
-    @Test(timeout = 30_000)
+    @Test
+    @Timeout(30)
     public void test_get_chunk_many_clients_no_duplicates_random_ids() {
 
         final ArrayList<String> clientIdList = getRandomUniqueIds();

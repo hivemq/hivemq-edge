@@ -26,12 +26,13 @@ import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.persistence.qos.IncomingMessageFlowPersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -57,8 +58,7 @@ public class PersistenceShutdownHookTest {
     private ClientQueuePersistence clientQueuePersistence;
 
     private PersistenceShutdownHook persistenceShutdownHook;
-
-    @Before
+    @BeforeEach
     public void init() {
         MockitoAnnotations.initMocks(this);
         persistenceShutdownHook = new PersistenceShutdownHook(clientSessionPersistence, clientSessionSubscriptionPersistence,
@@ -85,7 +85,8 @@ public class PersistenceShutdownHookTest {
         verify(singleWriterService).stop();
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(15)
     public void test_timeout_future_not_returning() throws Exception {
 
         final SettableFuture<Void> voidSettableFuture = SettableFuture.create();

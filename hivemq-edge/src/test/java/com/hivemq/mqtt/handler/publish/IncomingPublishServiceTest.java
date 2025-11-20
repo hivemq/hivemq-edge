@@ -43,10 +43,9 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ErrorCollector;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mockito;
 import util.CheckUserEventTriggeredOnSuper;
 import util.TestConfigurationBootstrap;
@@ -54,8 +53,8 @@ import util.TestException;
 import util.TestMessageUtil;
 
 import static com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties.NO_USER_PROPERTIES;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
@@ -66,9 +65,6 @@ import static org.mockito.Mockito.when;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class IncomingPublishServiceTest {
-
-    @Rule
-    public ErrorCollector errorCollector = new ErrorCollector();
 
     private final @NotNull MqttServerDisconnectorImpl mqttServerDisconnector = mock();
 
@@ -81,8 +77,7 @@ public class IncomingPublishServiceTest {
     private IncomingPublishService incomingPublishService;
     private final ClientConnection clientConnection = new ClientConnection(channel, null);
     private final @NotNull DataGovernanceService dataGovernanceService = mock(DataGovernanceService.class);
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
@@ -769,7 +764,8 @@ public class IncomingPublishServiceTest {
 
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_topic_length_exceeded_mqtt3() {
         when(restrictionsConfigurationService.maxTopicLength()).thenReturn(3);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1);
@@ -786,7 +782,8 @@ public class IncomingPublishServiceTest {
                 any());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_topic_length_exceeded_mqtt5() {
         when(restrictionsConfigurationService.maxTopicLength()).thenReturn(3);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);

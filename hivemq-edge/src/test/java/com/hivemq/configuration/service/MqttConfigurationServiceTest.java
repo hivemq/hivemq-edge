@@ -15,7 +15,7 @@
  */
 package com.hivemq.configuration.service;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import util.EnumTestUtil;
 
 public class MqttConfigurationServiceTest {

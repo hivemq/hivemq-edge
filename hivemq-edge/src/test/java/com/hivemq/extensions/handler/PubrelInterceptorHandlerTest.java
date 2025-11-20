@@ -21,7 +21,6 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.pubrel.PubrelInboundInterceptor;
 import com.hivemq.extension.sdk.api.interceptor.pubrel.PubrelOutboundInterceptor;
 import com.hivemq.extension.sdk.api.interceptor.pubrel.parameter.PubrelInboundInput;
@@ -47,19 +46,25 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -69,8 +74,8 @@ import static org.mockito.Mockito.when;
  */
 public class PubrelInterceptorHandlerTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
     private final @NotNull HiveMQExtension extension = mock(HiveMQExtension.class);
@@ -79,8 +84,8 @@ public class PubrelInterceptorHandlerTest {
     private @NotNull PluginTaskExecutor executor;
     private @NotNull EmbeddedChannel channel;
     private @NotNull PubrelInterceptorHandler handler;
-
-    @Before
+    
+    @BeforeEach
     public void setUp() throws Exception {
         executor = new PluginTaskExecutor(new AtomicLong());
         executor.postConstruct();
@@ -121,13 +126,13 @@ public class PubrelInterceptorHandlerTest {
             }
         });
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         executor.stop();
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_inbound_client_id_not_set() {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId(null);
 
@@ -137,7 +142,8 @@ public class PubrelInterceptorHandlerTest {
         assertNull(channel.readInbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_inbound_channel_inactive() {
         channel.close();
 
@@ -148,7 +154,8 @@ public class PubrelInterceptorHandlerTest {
         assertNotNull(channel.readInbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_inbound_no_interceptors() {
         when(clientContext.getPubrelInboundInterceptors()).thenReturn(ImmutableList.of());
         when(hiveMQExtensions.getExtensionForClassloader(any())).thenReturn(extension);
@@ -165,10 +172,11 @@ public class PubrelInterceptorHandlerTest {
         assertEquals(testPubrel.getReasonCode(), pubrel.getReasonCode());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_inbound_modify() throws Exception {
         final PubrelInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyInboundInterceptor.class);
         final List<PubrelInboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -187,10 +195,11 @@ public class PubrelInterceptorHandlerTest {
         assertEquals("modified", pubrel.getReasonString());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_inbound_plugin_null() throws Exception {
         final PubrelInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyInboundInterceptor.class);
         final List<PubrelInboundInterceptor> list = ImmutableList.of(interceptor);
         when(clientContext.getPubrelInboundInterceptors()).thenReturn(list);
@@ -208,10 +217,11 @@ public class PubrelInterceptorHandlerTest {
         assertEquals("reason", pubrel.getReasonString());
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_inbound_timeout_failed() throws Exception {
         final PubrelInboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.getRoot().toPath(),
+                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
                         TestTimeoutFailedInboundInterceptor.class);
         final List<PubrelInboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -226,10 +236,11 @@ public class PubrelInterceptorHandlerTest {
         assertTrue(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_inbound_exception() throws Exception {
         final PubrelInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestExceptionInboundInterceptor.class);
         final List<PubrelInboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -244,10 +255,11 @@ public class PubrelInterceptorHandlerTest {
         assertTrue(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_inbound_noPartialModificationWhenException() throws Exception {
         final PubrelInboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.getRoot().toPath(),
+                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
                         TestPartialModifiedInboundInterceptor.class);
         final List<PubrelInboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -267,7 +279,8 @@ public class PubrelInterceptorHandlerTest {
         assertNotEquals(Mqtt5PubRelReasonCode.SUCCESS, pubrel.getReasonCode());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_outbound_client_id_not_set() {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId(null);
 
@@ -277,7 +290,8 @@ public class PubrelInterceptorHandlerTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_outbound_channel_inactive() {
         channel.close();
 
@@ -288,7 +302,8 @@ public class PubrelInterceptorHandlerTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_outbound_no_interceptors() {
         when(clientContext.getPubrelOutboundInterceptors()).thenReturn(ImmutableList.of());
         when(hiveMQExtensions.getExtensionForClassloader(any())).thenReturn(extension);
@@ -305,10 +320,11 @@ public class PubrelInterceptorHandlerTest {
         assertEquals(testPubrel.getReasonCode(), pubrel.getReasonCode());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_outbound_modify() throws Exception {
         final PubrelOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyOutboundInterceptor.class);
         final List<PubrelOutboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -327,10 +343,11 @@ public class PubrelInterceptorHandlerTest {
         assertEquals("modified", pubrel.getReasonString());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_outbound_plugin_null() throws Exception {
         final PubrelOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyOutboundInterceptor.class);
         final List<PubrelOutboundInterceptor> list = ImmutableList.of(interceptor);
         when(clientContext.getPubrelOutboundInterceptors()).thenReturn(list);
@@ -348,10 +365,11 @@ public class PubrelInterceptorHandlerTest {
         assertEquals("reason", pubrel.getReasonString());
     }
 
-    @Test(timeout = 10_000)
+    @Test
+    @Timeout(10)
     public void test_outbound_timeout_failed() throws Exception {
         final PubrelOutboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.getRoot().toPath(),
+                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
                         TestTimeoutFailedOutboundInterceptor.class);
         final List<PubrelOutboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -367,10 +385,11 @@ public class PubrelInterceptorHandlerTest {
         assertTrue(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_outbound_exception() throws Exception {
         final PubrelOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestExceptionOutboundInterceptor.class);
         final List<PubrelOutboundInterceptor> list = ImmutableList.of(interceptor);
 
@@ -384,10 +403,11 @@ public class PubrelInterceptorHandlerTest {
         assertTrue(channel.isActive());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_outbound_noPartialModificationWhenException() throws Exception {
         final PubrelOutboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.getRoot().toPath(),
+                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
                         TestPartialModifiedOutboundInterceptor.class);
         final List<PubrelOutboundInterceptor> list = ImmutableList.of(interceptor);
 

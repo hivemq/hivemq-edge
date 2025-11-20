@@ -241,6 +241,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final @NotNull OpcUaSubscription subscription,
             final @NotNull List<OpcUaMonitoredItem> items,
             final @NotNull List<DataValue> values) {
+        lastKeepAliveTimestamp = System.currentTimeMillis();
         for (int i = 0; i < items.size(); i++) {
             final var tag = nodeIdToTag.get(items.get(i).getReadValueId().getNodeId());
             final String tn = tag.getName();

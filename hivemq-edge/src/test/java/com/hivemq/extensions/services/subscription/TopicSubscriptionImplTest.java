@@ -19,10 +19,10 @@ import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling;
 import com.hivemq.mqtt.message.subscribe.Topic;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Florian Limpöck
@@ -40,8 +40,8 @@ public class TopicSubscriptionImplTest {
 
         assertEquals("topic", subscription.getTopicFilter());
         assertEquals(Qos.AT_LEAST_ONCE, subscription.getQos());
-        assertEquals(true, subscription.getNoLocal());
-        assertEquals(true, subscription.getRetainAsPublished());
+        assertTrue(subscription.getNoLocal());
+        assertTrue(subscription.getRetainAsPublished());
         assertTrue(subscription.getSubscriptionIdentifier().isPresent());
         assertEquals(1, subscription.getSubscriptionIdentifier().get().intValue());
 
@@ -60,8 +60,8 @@ public class TopicSubscriptionImplTest {
         assertEquals("topic", converted.getTopic());
         assertEquals(QoS.AT_LEAST_ONCE, converted.getQoS());
         assertEquals(Mqtt5RetainHandling.DO_NOT_SEND, converted.getRetainHandling());
-        assertEquals(true, converted.isNoLocal());
-        assertEquals(true, converted.isRetainAsPublished());
+        assertTrue(converted.isNoLocal());
+        assertTrue(converted.isRetainAsPublished());
         assertEquals(1, converted.getSubscriptionIdentifier().intValue());
 
     }

@@ -17,34 +17,36 @@ package com.hivemq.bootstrap.netty;
 
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class NettyUdpConfigurationTest {
 
     private NioEventLoopGroup eventloop;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         eventloop = new NioEventLoopGroup(1);
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (eventloop != null) {
             eventloop.shutdownGracefully();
         }
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_server_socket_class_npe() throws Exception {
-        new NettyUdpConfiguration(null, eventloop, eventloop);
+    @Test
+    public void test_server_socket_class_npe() {
+    
+        assertThrows(NullPointerException.class, () -> new NettyUdpConfiguration(null, eventloop, eventloop));
     }
 
 
-    @Test(expected = NullPointerException.class)
-    public void test_child_eventloop_npe() throws Exception {
-        new NettyUdpConfiguration(NioDatagramChannel.class, null, null);
+    @Test
+    public void test_child_eventloop_npe() {
+    
+        assertThrows(NullPointerException.class, () -> new NettyUdpConfiguration(NioDatagramChannel.class, null, null));
     }
 }

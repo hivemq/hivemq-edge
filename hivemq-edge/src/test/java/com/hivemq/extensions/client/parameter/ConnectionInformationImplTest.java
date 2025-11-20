@@ -29,8 +29,11 @@ import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.security.auth.SslClientCertificate;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -41,7 +44,7 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -52,18 +55,18 @@ public class ConnectionInformationImplTest {
 
     private @NotNull ClientConnection clientConnection;
     private @NotNull EmbeddedChannel channel;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         channel = new EmbeddedChannel();
         clientConnection = new ClientConnection(channel, mock(PublishFlushHandler.class));
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @SuppressWarnings("ConstantConditions")
     public void test_null_channel() {
-        new ConnectionInformationImpl(null);
+        assertThatThrownBy(() -> new ConnectionInformationImpl(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -87,9 +90,10 @@ public class ConnectionInformationImplTest {
         assertEquals(MqttVersion.V_5, connectionInformation.getMqttVersion());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_mqtt_version_not_set() {
-        new ConnectionInformationImpl(clientConnection);
+    
+        assertThrows(NullPointerException.class, () -> new ConnectionInformationImpl(clientConnection));
     }
 
     @Test

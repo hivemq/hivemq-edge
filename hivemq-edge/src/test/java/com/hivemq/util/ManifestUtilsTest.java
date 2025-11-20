@@ -16,11 +16,11 @@
 package com.hivemq.util;
 
 import com.hivemq.HiveMQEdgeMain;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URL;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ManifestUtilsTest {
 

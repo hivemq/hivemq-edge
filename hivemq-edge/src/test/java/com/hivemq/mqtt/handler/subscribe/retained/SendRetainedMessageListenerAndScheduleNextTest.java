@@ -22,8 +22,8 @@ import com.hivemq.mqtt.message.pool.exception.NoMessageIdAvailableException;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import io.netty.channel.Channel;
 import io.netty.channel.DefaultEventLoop;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import util.TestChannelAttribute;
 
 import java.util.ArrayDeque;
@@ -47,8 +47,7 @@ public class SendRetainedMessageListenerAndScheduleNextTest {
     private Channel channel = mock();
 
     private ClientConnection clientConnection;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         clientConnection = new ClientConnection(channel, null);
         when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)).thenReturn(new TestChannelAttribute<>(clientConnection));

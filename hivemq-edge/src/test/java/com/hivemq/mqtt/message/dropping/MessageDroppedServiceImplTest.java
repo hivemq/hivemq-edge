@@ -18,8 +18,8 @@ package com.hivemq.mqtt.message.dropping;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.MetricsHolder;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -39,9 +39,7 @@ public class MessageDroppedServiceImplTest {
     private EventLog eventLog;
 
     private MessageDroppedService messageDroppedService;
-
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         MockitoAnnotations.initMocks(this);

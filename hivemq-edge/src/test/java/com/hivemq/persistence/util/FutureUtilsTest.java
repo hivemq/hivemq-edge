@@ -18,13 +18,14 @@ package com.hivemq.persistence.util;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.concurrent.CountDownLatch;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Lukas Brandl
@@ -41,14 +42,15 @@ public class FutureUtilsTest {
 
         builder.add(future1).add(future2);
         final ListenableFuture<Void> resultFuture = FutureUtils.voidFutureFromList(builder.build());
-        assertEquals(false, resultFuture.isDone());
+        assertFalse(resultFuture.isDone());
         future1.set(null);
-        assertEquals(false, resultFuture.isDone());
+        assertFalse(resultFuture.isDone());
         future2.set(null);
-        assertEquals(true, resultFuture.isDone());
+        assertTrue(resultFuture.isDone());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_void_future_from_list_concurrent() throws Exception {
         final ImmutableList.Builder<ListenableFuture<Void>> builder = ImmutableList.builder();
 
@@ -86,11 +88,11 @@ public class FutureUtilsTest {
 
         final ListenableFuture<Void> resultFuture = FutureUtils.voidFutureFromList(builder.build());
 
-        assertEquals(false, resultFuture.isDone());
+        assertFalse(resultFuture.isDone());
         future1.set(null);
-        assertEquals(false, resultFuture.isDone());
+        assertFalse(resultFuture.isDone());
         future2.setException(new NullPointerException());
-        assertEquals(true, resultFuture.isDone());
+        assertTrue(resultFuture.isDone());
 
         Exception expected = null;
         try {
@@ -99,7 +101,8 @@ public class FutureUtilsTest {
             expected = ex;
         }
 
-        assertThat(expected.getCause(), instanceOf(NullPointerException.class));
+        assertThat(expected.getCause())
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -112,11 +115,11 @@ public class FutureUtilsTest {
 
         final ListenableFuture<Void> resultFuture = FutureUtils.voidFutureFromList(builder.build());
 
-        assertEquals(false, resultFuture.isDone());
+        assertFalse(resultFuture.isDone());
         future1.setException(new IllegalAccessException());
-        assertEquals(false, resultFuture.isDone());
+        assertFalse(resultFuture.isDone());
         future2.setException(new NullPointerException());
-        assertEquals(true, resultFuture.isDone());
+        assertTrue(resultFuture.isDone());
 
         Exception expected = null;
         try {
@@ -125,6 +128,7 @@ public class FutureUtilsTest {
             expected = ex;
         }
 
-        assertThat(expected.getCause(), instanceOf(BatchedException.class));
+        assertThat(expected.getCause())
+                .isInstanceOf(BatchedException.class);
     }
 }

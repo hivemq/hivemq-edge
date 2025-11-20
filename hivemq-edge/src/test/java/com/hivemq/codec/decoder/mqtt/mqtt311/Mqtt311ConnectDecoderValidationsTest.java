@@ -27,15 +27,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestChannelAttribute;
 import util.TestConfigurationBootstrap;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
@@ -51,8 +51,7 @@ public class Mqtt311ConnectDecoderValidationsTest {
     private Mqtt311ConnectDecoder decoder;
 
     private static final byte fixedHeader = 0b0001_0000;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         MockitoAnnotations.initMocks(this);

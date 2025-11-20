@@ -30,13 +30,14 @@ import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import static com.hivemq.mqtt.message.disconnect.DISCONNECT.SESSION_EXPIRY_NOT_SET;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Georg Held
@@ -49,8 +50,7 @@ public class AuthInProgressMessageHandlerTest {
 
     private MqttConnacker connacker;
     private EmbeddedChannel channel;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         MockitoAnnotations.initMocks(this);
 
@@ -63,7 +63,8 @@ public class AuthInProgressMessageHandlerTest {
         channel.pipeline().addFirst(new AuthInProgressMessageHandler(connacker));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_handler_allows_AUTH_messages() {
         final AUTH successAUTH = AUTH.getSuccessAUTH();
         channel.writeInbound(successAUTH);
@@ -72,7 +73,8 @@ public class AuthInProgressMessageHandlerTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_handler_allows_DISCONNECT_messages() {
         final DISCONNECT disconnect = new DISCONNECT(Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION,
                 null,
@@ -86,7 +88,8 @@ public class AuthInProgressMessageHandlerTest {
         assertNull(channel.readOutbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_handler_disallows_publish() {
         final PUBLISH publish = new PUBLISHFactory.Mqtt5Builder().withTopic("topic").withQoS(QoS.AT_LEAST_ONCE).withOnwardQos(QoS.AT_LEAST_ONCE).withPayload("payload".getBytes()).withHivemqId("hivemqId").build();
 

@@ -27,9 +27,9 @@ import com.hivemq.mqtt.message.pubrel.PUBREL;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.LogbackCapturingAppender;
@@ -38,7 +38,7 @@ import util.TestMessageUtil;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 /**
@@ -53,8 +53,7 @@ public class MessageExpiryHandlerTest {
     private EmbeddedChannel channel;
 
     LogbackCapturingAppender logCapture;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         final MessageExpiryHandler messageExpiryHandler = new MessageExpiryHandler();
@@ -67,8 +66,7 @@ public class MessageExpiryHandlerTest {
         when(ctx.channel()).thenReturn(channel);
         logCapture = LogbackCapturingAppender.Factory.weaveInto(MessageExpiryHandler.log);
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         LogbackCapturingAppender.Factory.cleanUp();
     }

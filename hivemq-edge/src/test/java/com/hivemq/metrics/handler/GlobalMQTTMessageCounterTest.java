@@ -41,21 +41,20 @@ import com.hivemq.mqtt.message.suback.SUBACK;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import util.TestMessageUtil;
 
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class GlobalMQTTMessageCounterTest {
 
     private @NotNull MetricRegistry metricRegistry;
     private @NotNull GlobalMQTTMessageCounter globalMQTTMessageCounter;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         metricRegistry = new MetricRegistry();
         final MetricsHolder metricsHolder = new MetricsHolder(metricRegistry);

@@ -21,8 +21,6 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.interceptor.connect.ConnectInboundInterceptor;
@@ -45,29 +43,38 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ConnectInboundInterceptorHandlerTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull HivemqId hivemqId = new HivemqId();
 
@@ -81,8 +88,7 @@ public class ConnectInboundInterceptorHandlerTest {
     private @NotNull PluginTaskExecutor executor;
     private @NotNull EmbeddedChannel channel;
     private @NotNull ConnectInboundInterceptorHandler handler;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         executor = new PluginTaskExecutor(new AtomicLong());
         executor.postConstruct();
@@ -116,7 +122,8 @@ public class ConnectInboundInterceptorHandlerTest {
         });
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_client_id_not_set() {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId(null);
 
@@ -125,10 +132,11 @@ public class ConnectInboundInterceptorHandlerTest {
         assertNull(channel.readInbound());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_modify() throws Exception {
         final ConnectInboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestModifyInboundInterceptor.class);
         when(interceptors.connectInboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
                 interceptorProvider));
@@ -146,10 +154,11 @@ public class ConnectInboundInterceptorHandlerTest {
         assertEquals("modified", connect.getClientIdentifier());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_null_interceptor() throws Exception {
         final ConnectInboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestNullInterceptor.class);
         when(interceptors.connectInboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
                 interceptorProvider));
@@ -167,10 +176,11 @@ public class ConnectInboundInterceptorHandlerTest {
         assertEquals("client", connect.getClientIdentifier());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_timeout_failed() throws Exception {
         final ConnectInboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestTimeoutFailedInboundInterceptor.class);
         when(interceptors.connectInboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
                 interceptorProvider));
@@ -200,10 +210,11 @@ public class ConnectInboundInterceptorHandlerTest {
                 anyString());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_exception() throws Exception {
         final ConnectInboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
+                temporaryFolder.toPath(),
                 TestExceptionInboundInterceptor.class);
         when(interceptors.connectInboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
                 interceptorProvider));

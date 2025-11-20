@@ -27,13 +27,13 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.Listener;
 import com.hivemq.extension.sdk.api.client.parameter.ListenerType;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,8 +47,7 @@ public class ServerInformationImplTest {
 
     private @NotNull ServerInformation serverInformation;
     private @NotNull SystemInformation systemInformation;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         systemInformation = new SystemInformationImpl();
         serverInformation = new ServerInformationImpl(systemInformation, listenerConfigurationService);

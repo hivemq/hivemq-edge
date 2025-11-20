@@ -22,13 +22,16 @@ import com.hivemq.extension.sdk.api.packets.connect.ConnackReasonCode;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
 
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Florian Limpöck
@@ -37,8 +40,7 @@ import static org.junit.Assert.*;
 public class ModifiableConnackPacketImplTest {
 
     private @NotNull ConfigurationService configurationService;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
     }
@@ -109,7 +111,7 @@ public class ModifiableConnackPacketImplTest {
         assertEquals(Optional.empty(), modifiablePacket.getReasonString());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void setReasonString_successCode() {
         final ConnackPacketImpl packet = new ConnackPacketImpl(
                 ConnackReasonCode.SUCCESS,
@@ -134,7 +136,8 @@ public class ModifiableConnackPacketImplTest {
         final ModifiableConnackPacketImpl modifiablePacket =
                 new ModifiableConnackPacketImpl(packet, configurationService, true);
 
-        modifiablePacket.setReasonString("reasonString");
+        assertThatThrownBy(() -> modifiablePacket.setReasonString("reasonString"))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -236,7 +239,7 @@ public class ModifiableConnackPacketImplTest {
         assertEquals(ConnackReasonCode.UNSPECIFIED_ERROR, modifiablePacket.getReasonCode());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setReasonCode_null() {
         final ConnackPacketImpl packet = new ConnackPacketImpl(
                 ConnackReasonCode.UNSPECIFIED_ERROR,
@@ -261,10 +264,11 @@ public class ModifiableConnackPacketImplTest {
         final ModifiableConnackPacketImpl modifiablePacket =
                 new ModifiableConnackPacketImpl(packet, configurationService, true);
 
-        modifiablePacket.setReasonCode(null);
+        assertThatThrownBy(() -> modifiablePacket.setReasonCode(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void setReasonString_switchToError() {
         final ConnackPacketImpl packet = new ConnackPacketImpl(
                 ConnackReasonCode.SUCCESS,
@@ -289,10 +293,11 @@ public class ModifiableConnackPacketImplTest {
         final ModifiableConnackPacketImpl modifiablePacket =
                 new ModifiableConnackPacketImpl(packet, configurationService, true);
 
-        modifiablePacket.setReasonCode(ConnackReasonCode.UNSPECIFIED_ERROR);
+        assertThatThrownBy(() -> modifiablePacket.setReasonCode(ConnackReasonCode.UNSPECIFIED_ERROR))
+                .isInstanceOf(IllegalStateException.class);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void setReasonString_switchFromError() {
         final ConnackPacketImpl packet = new ConnackPacketImpl(
                 ConnackReasonCode.UNSPECIFIED_ERROR,
@@ -317,7 +322,8 @@ public class ModifiableConnackPacketImplTest {
         final ModifiableConnackPacketImpl modifiablePacket =
                 new ModifiableConnackPacketImpl(packet, configurationService, true);
 
-        modifiablePacket.setReasonCode(ConnackReasonCode.SUCCESS);
+        assertThatThrownBy(() -> modifiablePacket.setReasonCode(ConnackReasonCode.SUCCESS))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -419,7 +425,7 @@ public class ModifiableConnackPacketImplTest {
         assertEquals(Optional.of("responseInformation"), modifiablePacket.getResponseInformation());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void setResponseInformation_notAllowed() {
         final ConnackPacketImpl packet = new ConnackPacketImpl(
                 ConnackReasonCode.UNSPECIFIED_ERROR,
@@ -444,7 +450,8 @@ public class ModifiableConnackPacketImplTest {
         final ModifiableConnackPacketImpl modifiablePacket =
                 new ModifiableConnackPacketImpl(packet, configurationService, false);
 
-        modifiablePacket.setResponseInformation("responseInformation");
+        assertThatThrownBy(() -> modifiablePacket.setResponseInformation("responseInformation"))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -612,7 +619,7 @@ public class ModifiableConnackPacketImplTest {
         assertEquals(Optional.of("other"), modifiablePacket.getAssignedClientIdentifier());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setAssignedClientIdentifier_invalid() {
         final ConnackPacketImpl packet = new ConnackPacketImpl(
                 ConnackReasonCode.UNSPECIFIED_ERROR,
@@ -637,10 +644,11 @@ public class ModifiableConnackPacketImplTest {
         final ModifiableConnackPacketImpl modifiablePacket =
                 new ModifiableConnackPacketImpl(packet, configurationService, true);
 
-        modifiablePacket.setAssignedClientIdentifier("\0");
+        assertThatThrownBy(() -> modifiablePacket.setAssignedClientIdentifier("\0"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setAssignedClientIdentifier_empty() {
         final ConnackPacketImpl packet = new ConnackPacketImpl(
                 ConnackReasonCode.UNSPECIFIED_ERROR,
@@ -665,7 +673,8 @@ public class ModifiableConnackPacketImplTest {
         final ModifiableConnackPacketImpl modifiablePacket =
                 new ModifiableConnackPacketImpl(packet, configurationService, true);
 
-        modifiablePacket.setAssignedClientIdentifier("");
+        assertThatThrownBy(() -> modifiablePacket.setAssignedClientIdentifier(""))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

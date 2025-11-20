@@ -240,22 +240,16 @@ public class ProtocolAdapterWrapper {
                             try {
                                 if (startWritingAsync(protocolAdapterWritingService).get()) {
                                     log.info("Successfully started adapter with id {}", adapter.getId());
-                                    if (futureCompleted.compareAndSet(false, true)) {
-                                        future.complete(true);
-                                    }
                                 } else {
                                     log.error(
                                             "Protocol adapter with id {} start writing failed as data hub is not available.",
                                             adapter.getId());
-                                    if (futureCompleted.compareAndSet(false, true)) {
-                                        future.complete(false);
-                                    }
                                 }
                             } catch (final Exception e) {
                                 log.error("Failed to start writing for adapter with id {}.", adapter.getId(), e);
-                                if (futureCompleted.compareAndSet(false, true)) {
-                                    future.complete(true);
-                                }
+                            }
+                            if (futureCompleted.compareAndSet(false, true)) {
+                                future.complete(true);
                             }
                         }
                         case ERROR, DISCONNECTED, UNKNOWN -> {

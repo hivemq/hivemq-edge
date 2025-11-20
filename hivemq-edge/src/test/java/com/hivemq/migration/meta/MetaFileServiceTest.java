@@ -19,16 +19,17 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.PersistenceMode;
 import com.hivemq.util.LocalPersistenceFileUtil;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.io.File;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 /**
@@ -37,19 +38,18 @@ import static org.mockito.Mockito.when;
  */
 public class MetaFileServiceTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     @Mock
     private SystemInformation systemInformation;
 
     private File dataFolder;
-
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        dataFolder = temporaryFolder.newFolder();
+        dataFolder = temporaryFolder;
         when(systemInformation.getDataFolder()).thenReturn(dataFolder);
     }
 
@@ -60,7 +60,7 @@ public class MetaFileServiceTest {
 
         final MetaInformation metaFile = MetaFileService.readMetaFile(systemInformation);
 
-        assertEquals(false, metaFile.isDataFolderPresent());
+        assertFalse(metaFile.isDataFolderPresent());
     }
 
     @Test
@@ -68,8 +68,8 @@ public class MetaFileServiceTest {
 
         final MetaInformation metaFile = MetaFileService.readMetaFile(systemInformation);
 
-        assertEquals(true, metaFile.isDataFolderPresent());
-        assertEquals(false, metaFile.isPersistenceFolderPresent());
+        assertTrue(metaFile.isDataFolderPresent());
+        assertFalse(metaFile.isPersistenceFolderPresent());
     }
 
     @Test
@@ -79,9 +79,9 @@ public class MetaFileServiceTest {
 
         final MetaInformation metaFile = MetaFileService.readMetaFile(systemInformation);
 
-        assertEquals(true, metaFile.isDataFolderPresent());
-        assertEquals(true, metaFile.isPersistenceFolderPresent());
-        assertEquals(false, metaFile.isMetaFilePresent());
+        assertTrue(metaFile.isDataFolderPresent());
+        assertTrue(metaFile.isPersistenceFolderPresent());
+        assertFalse(metaFile.isMetaFilePresent());
     }
 
     @Test

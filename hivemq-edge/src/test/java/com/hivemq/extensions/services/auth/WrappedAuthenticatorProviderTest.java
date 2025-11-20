@@ -24,11 +24,12 @@ import com.hivemq.extension.sdk.api.auth.parameter.AuthenticatorProviderInput;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthenticatorProvider;
 import com.hivemq.extension.sdk.api.services.auth.provider.EnhancedAuthenticatorProvider;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import util.IsolatedExtensionClassloaderUtil;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 
 public class WrappedAuthenticatorProviderTest {
@@ -41,14 +42,16 @@ public class WrappedAuthenticatorProviderTest {
     private final @NotNull IsolatedExtensionClassloader isolatedExtensionClassloader =
             IsolatedExtensionClassloaderUtil.buildClassLoader();
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_null_provider_returns_null() {
         final WrappedAuthenticatorProvider wrapped =
                 new WrappedAuthenticatorProvider((AuthenticatorProvider) i -> null, isolatedExtensionClassloader);
         assertNull(wrapped.getAuthenticator(input));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_simple_provider_returns_simple() {
         final WrappedAuthenticatorProvider wrappedAuthenticatorProvider =
                 new WrappedAuthenticatorProvider((AuthenticatorProvider) i -> simpleAuthenticator,
@@ -57,7 +60,8 @@ public class WrappedAuthenticatorProviderTest {
         assertNull(wrappedAuthenticatorProvider.getEnhancedAuthenticator(input));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_other_provider_returns_null() {
         final WrappedAuthenticatorProvider wrappedAuthenticatorProvider =
                 new WrappedAuthenticatorProvider((AuthenticatorProvider) i -> authenticator,
@@ -65,7 +69,8 @@ public class WrappedAuthenticatorProviderTest {
         assertNull(wrappedAuthenticatorProvider.getAuthenticator(input));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_enhanced_null_provider_returns_null() {
         final WrappedAuthenticatorProvider wrapped =
                 new WrappedAuthenticatorProvider((EnhancedAuthenticatorProvider) i -> null,
@@ -73,7 +78,8 @@ public class WrappedAuthenticatorProviderTest {
         assertNull(wrapped.getEnhancedAuthenticator(input));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_enhanced_provider_returns_simple() {
         final WrappedAuthenticatorProvider wrappedAuthenticatorProvider =
                 new WrappedAuthenticatorProvider((EnhancedAuthenticatorProvider) i -> enhancedAuthenticator,

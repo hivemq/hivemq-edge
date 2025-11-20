@@ -22,8 +22,8 @@ import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.async.Async;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extensions.executor.task.PluginTaskOutput;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -31,8 +31,9 @@ import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -47,9 +48,7 @@ public class PluginOutputAsyncerImplTest {
 
     @Mock
     private ShutdownHooks shutdownHooks;
-
-
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
 
@@ -70,7 +69,7 @@ public class PluginOutputAsyncerImplTest {
 
 
         assertEquals(Async.Status.DONE, asyncOutput.getStatus());
-        assertEquals(true, asyncOutput.getOutput().getAsyncFuture().isDone());
+        assertTrue(asyncOutput.getOutput().getAsyncFuture().isDone());
     }
 
 
@@ -88,7 +87,7 @@ public class PluginOutputAsyncerImplTest {
         Thread.sleep(200);
 
         assertEquals(Async.Status.CANCELED, asyncOutput.getStatus());
-        assertEquals(true, asyncOutput.getOutput().getAsyncFuture().isDone());
+        assertTrue(asyncOutput.getOutput().getAsyncFuture().isDone());
     }
 
 

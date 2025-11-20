@@ -27,6 +27,7 @@ import com.hivemq.extension.sdk.api.interceptor.subscribe.parameter.SubscribeInb
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -37,20 +38,20 @@ public class TestInterceptorUtil {
 
     // legacy
     public static @NotNull List<Interceptor> getIsolatedInterceptors(
-            final @NotNull TemporaryFolder temporaryFolder) throws Exception {
+            final @NotNull File temporaryFolder) throws Exception {
         return getIsolatedInterceptors(List.of(TestPublishInboundInterceptor.class,
                 TestSubscriberInboundInterceptor.class), temporaryFolder);
     }
 
     public static <T extends Interceptor> @NotNull T getIsolatedInterceptor(
-            final @NotNull Class<T> type, final @NotNull TemporaryFolder temporaryFolder) throws Exception {
+            final @NotNull Class<T> type, final @NotNull File temporaryFolder) throws Exception {
         return getIsolatedInterceptors(List.of(type), temporaryFolder).get(0);
     }
 
     public static <T extends Interceptor> @NotNull List<T> getIsolatedInterceptors(
-            final @NotNull List<Class<? extends T>> types, final @NotNull TemporaryFolder temporaryFolder)
+            final @NotNull List<Class<? extends T>> types, final @NotNull File temporaryFolder)
             throws Exception {
-        try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot().toPath(),
+        try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(),
                 types.toArray(new Class[0]))) {
             final LinkedList<T> list = new LinkedList<>();
             for (final Class<? extends T> type : types) {

@@ -21,10 +21,10 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Christoph Schäbel
@@ -32,8 +32,7 @@ import static org.junit.Assert.assertEquals;
 public class AbstractVariableHeaderLengthEncoderTest {
 
     private TestAbstractVariableHeaderLengthEncoder encoder;
-
-    @Before
+    @BeforeEach
     public void before() {
         encoder = new TestAbstractVariableHeaderLengthEncoder();
     }

@@ -15,30 +15,29 @@
  */
 package com.hivemq.security.ssl;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.security.exception.SslException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import util.TestKeyStoreGenerator;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class SslUtilTest {
 
     private @NotNull TestKeyStoreGenerator testKeyStoreGenerator;
-
-    @Before
+    @BeforeEach
     public void before() {
         testKeyStoreGenerator = new TestKeyStoreGenerator();
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         testKeyStoreGenerator.release();
     }
@@ -51,22 +50,25 @@ public class SslUtilTest {
         assertEquals(1, kmf.getKeyManagers().length);
     }
 
-    @Test(expected = SslException.class)
+    @Test
     public void test_wrong_kmf_ks_path() throws Exception {
         final File store = testKeyStoreGenerator.generateKeyStore("fun", "JKS", "pw", "pk");
-        SslUtil.createKeyManagerFactory("JKS", store.getAbsolutePath() + "wrong", "pw", "pk");
+        assertThatThrownBy(() -> SslUtil.createKeyManagerFactory("JKS", store.getAbsolutePath() + "wrong", "pw", "pk"))
+                .isInstanceOf(SslException.class);
     }
 
-    @Test(expected = SslException.class)
+    @Test
     public void test_wrong_kmf_ks_pw() throws Exception {
         final File store = testKeyStoreGenerator.generateKeyStore("fun", "JKS", "pw", "pk");
-        SslUtil.createKeyManagerFactory("JKS", store.getAbsolutePath(), "wrong", "pk");
+        assertThatThrownBy(() -> SslUtil.createKeyManagerFactory("JKS", store.getAbsolutePath(), "wrong", "pk"))
+                .isInstanceOf(SslException.class);
     }
 
-    @Test(expected = SslException.class)
+    @Test
     public void test_wrong_kmf_key_pw() throws Exception {
         final File store = testKeyStoreGenerator.generateKeyStore("fun", "JKS", "pw", "pk");
-        SslUtil.createKeyManagerFactory("JKS", store.getAbsolutePath(), "pw", "wrong");
+        assertThatThrownBy(() -> SslUtil.createKeyManagerFactory("JKS", store.getAbsolutePath(), "pw", "wrong"))
+                .isInstanceOf(SslException.class);
     }
 
     @Test
@@ -77,15 +79,17 @@ public class SslUtilTest {
         assertEquals(1, tmf.getTrustManagers().length);
     }
 
-    @Test(expected = SslException.class)
+    @Test
     public void test_wrong_tmf_ks_path() throws Exception {
         final File store = testKeyStoreGenerator.generateKeyStore("fun", "JKS", "pw", "pk");
-        SslUtil.createTrustManagerFactory("JKS", store.getAbsolutePath() + "wrong", "pw");
+        assertThatThrownBy(() -> SslUtil.createTrustManagerFactory("JKS", store.getAbsolutePath() + "wrong", "pw"))
+                .isInstanceOf(SslException.class);
     }
 
-    @Test(expected = SslException.class)
+    @Test
     public void test_wrong_tmf_ks_pw() throws Exception {
         final File store = testKeyStoreGenerator.generateKeyStore("fun", "JKS", "pw", "pk");
-        SslUtil.createTrustManagerFactory("JKS", store.getAbsolutePath(), "wrong");
+        assertThatThrownBy(() -> SslUtil.createTrustManagerFactory("JKS", store.getAbsolutePath(), "wrong"))
+                .isInstanceOf(SslException.class);
     }
 }

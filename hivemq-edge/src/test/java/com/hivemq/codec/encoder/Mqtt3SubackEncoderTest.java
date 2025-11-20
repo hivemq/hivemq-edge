@@ -24,8 +24,8 @@ import com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode;
 import com.hivemq.mqtt.message.suback.SUBACK;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import util.encoder.TestMessageEncoder;
 
 import java.nio.channels.ClosedChannelException;
@@ -34,13 +34,12 @@ import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class Mqtt3SubackEncoderTest {
 
     private @NotNull EmbeddedChannel channel;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         channel = new EmbeddedChannel(new TestMessageEncoder());
     }

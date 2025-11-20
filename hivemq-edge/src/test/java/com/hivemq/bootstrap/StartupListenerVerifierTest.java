@@ -18,9 +18,12 @@ package com.hivemq.bootstrap;
 import com.google.common.collect.Lists;
 import com.hivemq.configuration.service.entity.MqttTcpListener;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author Dominik Obermaier
@@ -28,18 +31,20 @@ import java.util.ArrayList;
 public class StartupListenerVerifierTest {
 
 
-    @Test(expected = UnrecoverableException.class)
-    public void test_verifier_verify_only_listener_failed() throws Exception {
+    @Test
+    public void test_verifier_verify_only_listener_failed(){
         final ListenerStartupInformation failed = ListenerStartupInformation.failedListenerStartup(2000, new MqttTcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
-        new StartupListenerVerifier(Lists.newArrayList(failed)).verifyAndPrint();
+        assertThatThrownBy(() -> new StartupListenerVerifier(Lists.newArrayList(failed)).verifyAndPrint())
+                .isInstanceOf(UnrecoverableException.class);
     }
 
-    @Test(expected = UnrecoverableException.class)
+    @Test
     public void test_verifier_verify_all_listeners_failed() throws Exception {
         final ListenerStartupInformation failed = ListenerStartupInformation.failedListenerStartup(2000, new MqttTcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
         final ListenerStartupInformation failed2 = ListenerStartupInformation.failedListenerStartup(1234, new MqttTcpListener(1234, "0.0.0.0"), new RuntimeException("anotherreason"));
 
-        new StartupListenerVerifier(Lists.newArrayList(failed, failed2)).verifyAndPrint();
+        assertThatThrownBy(() -> new StartupListenerVerifier(Lists.newArrayList(failed, failed2)).verifyAndPrint())
+                .isInstanceOf(UnrecoverableException.class);
     }
 
     @Test
@@ -52,14 +57,16 @@ public class StartupListenerVerifierTest {
         //We don't receive an exception so everything is good
     }
 
-    @Test(expected = UnrecoverableException.class)
-    public void test_verifier_verify_empty_listeners() throws Exception {
-        new StartupListenerVerifier(new ArrayList<ListenerStartupInformation>()).verifyAndPrint();
+    @Test
+    public void test_verifier_verify_empty_listeners() {
+    
+        assertThrows(UnrecoverableException.class, () -> new StartupListenerVerifier(new ArrayList<ListenerStartupInformation>()).verifyAndPrint());
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_verifier_doesnt_accept_null() throws Exception {
-        new StartupListenerVerifier(null);
+    @Test
+    public void test_verifier_doesnt_accept_null() {
+    
+        assertThrows(NullPointerException.class, () -> new StartupListenerVerifier(null));
     }
 
 }

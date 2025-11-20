@@ -27,13 +27,14 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.persistence.RetainedMessage;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Lukas Brandl
@@ -45,8 +46,7 @@ public class RetainedMessageMemoryLocalPersistenceTest {
     private @NotNull RetainedMessageMemoryLocalPersistence persistence;
 
     private int bucketCount;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "4");
 
@@ -244,7 +244,8 @@ public class RetainedMessageMemoryLocalPersistenceTest {
         assertEquals("value", property.getValue());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_clear() {
 
         for (int i = 0; i < 10; i++) {

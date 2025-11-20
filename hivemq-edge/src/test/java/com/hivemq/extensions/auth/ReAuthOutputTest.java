@@ -23,8 +23,9 @@ import com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.util.Bytes;
 import com.hivemq.util.ReasonStrings;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -33,8 +34,9 @@ import java.time.Duration;
 import java.util.List;
 
 import static com.hivemq.extensions.auth.AuthenticationState.*;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Florian Limpöck
@@ -45,15 +47,15 @@ public class ReAuthOutputTest {
     private PluginOutPutAsyncer asyncer;
 
     private ReAuthOutput authTaskOutput;
-
-    @Before
+    @BeforeEach
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         authTaskOutput = new ReAuthOutput(asyncer, true, new ModifiableDefaultPermissionsImpl(),
                 new ModifiableClientSettingsImpl(10, null), 30);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_user_properties_of_connect_are_not_present() {
         final List<String> one = authTaskOutput.getOutboundUserProperties().getAllForName("one");
         final List<String> two = authTaskOutput.getOutboundUserProperties().getAllForName("two");
@@ -62,7 +64,8 @@ public class ReAuthOutputTest {
         assertEquals(0, two.size());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_copy_constructor_receives_user_properties() {
 
         authTaskOutput.getOutboundUserProperties().addUserProperty("testA", "valueA");
@@ -79,7 +82,8 @@ public class ReAuthOutputTest {
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_fail_sets_decided() {
         authTaskOutput.failAuthentication();
         assertEquals(FAILED, authTaskOutput.getAuthenticationState());
@@ -87,7 +91,8 @@ public class ReAuthOutputTest {
         assertEquals(ReasonStrings.RE_AUTH_FAILED, authTaskOutput.getReasonString());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_fail_with_reason() {
         authTaskOutput.failAuthentication(DisconnectedReasonCode.BAD_AUTHENTICATION_METHOD, "REASON");
         assertEquals(FAILED, authTaskOutput.getAuthenticationState());
@@ -95,58 +100,68 @@ public class ReAuthOutputTest {
         assertEquals("REASON", authTaskOutput.getReasonString());
     }
 
-    @Test(timeout = 5000, expected = IllegalArgumentException.class)
+    @Test
+    @Timeout(5)
     public void test_fail_with_reason_success() {
-        authTaskOutput.failAuthentication(DisconnectedReasonCode.SUCCESS, "REASON");
+        assertThatThrownBy(() -> authTaskOutput.failAuthentication(DisconnectedReasonCode.SUCCESS, "REASON"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_success_sets_decided() {
         authTaskOutput.authenticateSuccessfully();
         assertEquals(SUCCESS, authTaskOutput.getAuthenticationState());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_success_bytes_data() {
         authTaskOutput.authenticateSuccessfully("data".getBytes());
         assertEquals(SUCCESS, authTaskOutput.getAuthenticationState());
         assertArrayEquals("data".getBytes(), Bytes.fromReadOnlyBuffer(authTaskOutput.getAuthenticationData()));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_success_buffer_data() {
         authTaskOutput.authenticateSuccessfully(ByteBuffer.wrap("data".getBytes()));
         assertEquals(SUCCESS, authTaskOutput.getAuthenticationState());
         assertArrayEquals("data".getBytes(), Bytes.fromReadOnlyBuffer(authTaskOutput.getAuthenticationData()));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_continue() {
         authTaskOutput.continueAuthentication();
         assertEquals(CONTINUE, authTaskOutput.getAuthenticationState());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_continue_bytes_data() {
         authTaskOutput.continueAuthentication("data".getBytes());
         assertEquals(CONTINUE, authTaskOutput.getAuthenticationState());
         assertArrayEquals("data".getBytes(), Bytes.fromReadOnlyBuffer(authTaskOutput.getAuthenticationData()));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_continue_buffer_data() {
         authTaskOutput.continueAuthentication(ByteBuffer.wrap("data".getBytes()));
         assertEquals(CONTINUE, authTaskOutput.getAuthenticationState());
         assertArrayEquals("data".getBytes(), Bytes.fromReadOnlyBuffer(authTaskOutput.getAuthenticationData()));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_continue_does_not_decide() {
         authTaskOutput.nextExtensionOrDefault();
         assertEquals(NEXT_EXTENSION_OR_DEFAULT, authTaskOutput.getAuthenticationState());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_throwable_fails_authentication() {
         authTaskOutput.failByThrowable(new RuntimeException());
         assertEquals(FAILED, authTaskOutput.getAuthenticationState());
@@ -154,7 +169,8 @@ public class ReAuthOutputTest {
         assertEquals(ReasonStrings.RE_AUTH_FAILED_EXCEPTION, authTaskOutput.getReasonString());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_async_duration() {
 
         authTaskOutput.async(Duration.ofSeconds(10));
@@ -165,14 +181,17 @@ public class ReAuthOutputTest {
 
     }
 
-    @Test(timeout = 5000, expected = NullPointerException.class)
+    @Test
+    @Timeout(5)
     public void test_async_null() {
 
-        authTaskOutput.async(null);
+        assertThatThrownBy(() -> authTaskOutput.async(null))
+                .isInstanceOf(NullPointerException.class);
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_async_duration_fallback() {
 
         authTaskOutput.async(Duration.ofSeconds(10), TimeoutFallback.SUCCESS);
@@ -183,7 +202,8 @@ public class ReAuthOutputTest {
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_async_duration_fallback_code() {
 
         authTaskOutput.async(
@@ -195,7 +215,8 @@ public class ReAuthOutputTest {
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_async_duration_fallback_string() {
 
         authTaskOutput.async(Duration.ofSeconds(10), TimeoutFallback.FAILURE, "Failed by me");
@@ -206,15 +227,18 @@ public class ReAuthOutputTest {
 
     }
 
-    @Test(timeout = 5000, expected = IllegalArgumentException.class)
+    @Test
+    @Timeout(5)
     public void test_async_success_reason_code() {
 
-        authTaskOutput.async(
-                Duration.ofSeconds(10), TimeoutFallback.SUCCESS, DisconnectedReasonCode.SUCCESS, "Failed by me");
+        assertThatThrownBy(() -> authTaskOutput.async(
+                Duration.ofSeconds(10), TimeoutFallback.SUCCESS, DisconnectedReasonCode.SUCCESS, "Failed by me"))
+                .isInstanceOf(IllegalArgumentException.class);
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_async_duration_fallback_code_string() {
 
         authTaskOutput.async(

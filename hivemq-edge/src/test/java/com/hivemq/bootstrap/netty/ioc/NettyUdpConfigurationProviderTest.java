@@ -18,25 +18,24 @@ package com.hivemq.bootstrap.netty.ioc;
 import com.hivemq.bootstrap.netty.NettyUdpConfiguration;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class NettyUdpConfigurationProviderTest {
 
     private NettyUdpConfiguration nettyConfiguration;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         final NettyUdpConfigurationProvider provider = new NettyUdpConfigurationProvider();
         nettyConfiguration = provider.get();
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         nettyConfiguration.getChildEventLoopGroup().shutdownGracefully();
     }
@@ -44,7 +43,8 @@ public class NettyUdpConfigurationProviderTest {
     @Test
     public void test_nio_is_used() {
 
-        assertThat(nettyConfiguration.getChildEventLoopGroup(), instanceOf(NioEventLoopGroup.class));
+        assertThat(nettyConfiguration.getChildEventLoopGroup())
+                .isInstanceOf(NioEventLoopGroup.class);
 
         assertEquals(NioDatagramChannel.class, nettyConfiguration.getServerSocketChannelClass());
     }

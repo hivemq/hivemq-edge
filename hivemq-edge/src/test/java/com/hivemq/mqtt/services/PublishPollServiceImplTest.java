@@ -49,9 +49,9 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.Attribute;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -61,7 +61,7 @@ import util.TestSingleWriterFactory;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -115,8 +115,7 @@ public class PublishPollServiceImplTest {
     private ClientConnection clientConnection;
     private final @NotNull InternalConfigurationService
             internalConfigurationService = new InternalConfigurationServiceImpl();
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         closeableMock = MockitoAnnotations.openMocks(this);
         when(channel.pipeline()).thenReturn(pipeline);
@@ -145,8 +144,7 @@ public class PublishPollServiceImplTest {
                 () -> sharedSubscriptionService,
                 singleWriterService);
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         singleWriterService.stop();
         closeableMock.close();
