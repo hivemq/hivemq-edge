@@ -144,7 +144,7 @@ const CreateEntityButton: FC = () => {
                     <Text>{t('workspace.wizard.entityType.name', { context: type })}</Text>
                     {!isImplemented && (
                       <Text fontSize="xs" color="gray.500">
-                        (Coming soon)
+                        {t('workspace.wizard.assetMapper.comingSoon')}
                       </Text>
                     )}
                   </HStack>
