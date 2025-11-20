@@ -1,3 +1,4 @@
+import type { DomainTagOwnerList, NorthboundMappingOwnerList, SouthboundMappingOwnerList } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { MOCK_DEVICE_TAG_ADDRESS_MODBUS } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import {
@@ -12,12 +13,16 @@ describe('FilterTopics', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
 
-    cy.intercept('/api/v1/management/protocol-adapters/northboundMappings', {
-      items: [MOCK_NORTHBOUND_MAPPING],
+    cy.intercept<NorthboundMappingOwnerList>('/api/v1/management/protocol-adapters/mappings/northboundMappings', {
+      items: [{ adapterId: 'test-adapter', mapping: MOCK_NORTHBOUND_MAPPING }],
     })
-    cy.intercept('/api/v1/management/protocol-adapters/southboundMappings', { items: [MOCK_SOUTHBOUND_MAPPING] })
-    cy.intercept('/api/v1/management/protocol-adapters/tags', {
-      items: [{ name: 'test/tag1', definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS }],
+    cy.intercept<SouthboundMappingOwnerList>('/api/v1/management/protocol-adapters/mappings/southboundMappings', {
+      items: [{ adapterId: 'test-adapter', mapping: MOCK_SOUTHBOUND_MAPPING }],
+    })
+    cy.intercept<DomainTagOwnerList>('/api/v1/management/protocol-adapters/tags', {
+      items: [
+        { adapterId: 'test-adapter', mapping: { name: 'test/tag1', definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS } },
+      ],
     })
     cy.intercept('/api/v1/management/topic-filters', {
       items: [MOCK_TOPIC_FILTER],
