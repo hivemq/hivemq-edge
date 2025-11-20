@@ -7,10 +7,13 @@ import type { AdapterConfig } from '../models/AdapterConfig';
 import type { AdaptersList } from '../models/AdaptersList';
 import type { DomainTag } from '../models/DomainTag';
 import type { DomainTagList } from '../models/DomainTagList';
+import type { DomainTagOwnerList } from '../models/DomainTagOwnerList';
 import type { JsonNode } from '../models/JsonNode';
 import type { NorthboundMappingList } from '../models/NorthboundMappingList';
+import type { NorthboundMappingOwnerList } from '../models/NorthboundMappingOwnerList';
 import type { ProtocolAdaptersList } from '../models/ProtocolAdaptersList';
 import type { SouthboundMappingList } from '../models/SouthboundMappingList';
+import type { SouthboundMappingOwnerList } from '../models/SouthboundMappingOwnerList';
 import type { Status } from '../models/Status';
 import type { StatusList } from '../models/StatusList';
 import type { StatusTransitionCommand } from '../models/StatusTransitionCommand';
@@ -485,28 +488,28 @@ export class ProtocolAdaptersService {
     }
 
     /**
-     * Get the mappings for northbound messages.
+     * Get all the northbound mappings.
      * Get all northbound mappings
-     * @returns NorthboundMappingList Success
+     * @returns NorthboundMappingOwnerList Success
      * @throws ApiError
      */
-    public getNorthboundMappings(): CancelablePromise<NorthboundMappingList> {
+    public getNorthboundMappings(): CancelablePromise<NorthboundMappingOwnerList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/protocol-adapters/northboundMappings',
+            url: '/api/v1/management/protocol-adapters/mappings/northboundMappings',
         });
     }
 
     /**
-     * Get all  southbound mappings.
+     * Get all the southbound mappings.
      * Get all southbound mappings.
-     * @returns SouthboundMappingList Success
+     * @returns SouthboundMappingOwnerList Success
      * @throws ApiError
      */
-    public getSouthboundMappings(): CancelablePromise<SouthboundMappingList> {
+    public getSouthboundMappings(): CancelablePromise<SouthboundMappingOwnerList> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/protocol-adapters/southboundMappings',
+            url: '/api/v1/management/protocol-adapters/mappings/southboundMappings',
         });
     }
 
@@ -546,12 +549,12 @@ export class ProtocolAdaptersService {
     }
 
     /**
+     * Get the list of all tags created in this Edge instance
      * Get the list of all domain tags created in this Edge instance
-     * Get the list of all domain tags created in this Edge instance
-     * @returns DomainTagList Success
+     * @returns DomainTagOwnerList Success
      * @throws ApiError
      */
-    public getDomainTags(): CancelablePromise<DomainTagList> {
+    public getDomainTags(): CancelablePromise<DomainTagOwnerList> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/management/protocol-adapters/tags',

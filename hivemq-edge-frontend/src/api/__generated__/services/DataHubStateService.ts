@@ -31,8 +31,8 @@ export class DataHubStateService {
             },
             errors: {
                 400: `URL parameter missing`,
-                404: `Client is disconnected`,
-                500: `Internal Server error`,
+                404: `Client error`,
+                500: `Internal server error`,
             },
         });
     }
