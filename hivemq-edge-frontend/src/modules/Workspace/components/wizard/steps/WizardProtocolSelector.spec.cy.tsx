@@ -63,12 +63,15 @@ describe('WizardProtocolSelector', () => {
 
       cy.wait('@getAdaptersError')
 
-      // Wait for loading spinner to disappear (component only shows error after loading is done)
+      // Wait for error alert to appear (with longer timeout for CI)
+      // This implicitly ensures loading is complete
+      cy.get('[role="alert"]', { timeout: 10000 }).should('be.visible')
+
+      // Verify loading spinner is no longer visible
       cy.getByTestId('loading-spinner').should('not.exist')
 
-      // Should show error message with explicit timeout for CI stability
-      cy.get('[role="alert"]').should('be.visible')
-      cy.contains('Failed to load protocol adapters', { timeout: 10000 }).should('be.visible')
+      // Should show error message
+      cy.contains('Failed to load protocol adapters').should('be.visible')
     })
 
     it('should show generic error when no error details provided', () => {
@@ -81,11 +84,12 @@ describe('WizardProtocolSelector', () => {
 
       cy.wait('@getAdaptersError')
 
-      // Wait for loading spinner to disappear
-      cy.getByTestId('loading-spinner').should('not.exist')
-
-      // Should show error alert (ErrorMessage renders as Alert with status="error")
+      // Wait for error alert to appear (with longer timeout for CI)
+      // This implicitly ensures loading is complete
       cy.get('[role="alert"]', { timeout: 10000 }).should('be.visible')
+
+      // Verify loading spinner is no longer visible
+      cy.getByTestId('loading-spinner').should('not.exist')
 
       // Check for translated error message (protocolAdapter.error.loading)
       cy.get('[role="alert"]').should('contain.text', 'load')
