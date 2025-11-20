@@ -1,10 +1,4 @@
-/**
- * Wizard Metadata Registry
- *
- * Centralized metadata for all wizard types including icons, categories,
- * and step configurations. This registry drives the wizard UI and behavior.
- */
-
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 import type { IconType } from 'react-icons'
 import {
   LuDatabase,
@@ -112,16 +106,16 @@ export const WIZARD_REGISTRY: Record<WizardType, WizardMetadata> = {
         requiresSelection: true,
         selectionConstraints: {
           minNodes: 2,
-          allowedNodeTypes: ['ADAPTER_NODE', 'BRIDGE_NODE'],
+          allowedNodeTypes: [NodeTypes.ADAPTER_NODE, NodeTypes.BRIDGE_NODE],
           // Only allow adapters with COMBINE capability
           // Note: customFilter will be enhanced by WizardSelectionRestrictions with protocol adapter data
           customFilter: (node) => {
             // Bridges are always allowed
-            if (node.type === 'BRIDGE_NODE') return true
+            if (node.type === NodeTypes.BRIDGE_NODE) return true
 
             // For adapters, we need to check the protocol definition
             // This will be handled by WizardSelectionRestrictions which has access to protocol adapters
-            return node.type === 'ADAPTER_NODE'
+            return node.type === NodeTypes.ADAPTER_NODE
           },
           // Flag to indicate we need protocol adapter capabilities check
           requiresProtocolCapabilities: ['COMBINE'],
@@ -148,16 +142,16 @@ export const WIZARD_REGISTRY: Record<WizardType, WizardMetadata> = {
         requiresSelection: true,
         selectionConstraints: {
           minNodes: 3, // Minimum: 1 Pulse Agent (auto-selected) + 2 data sources
-          allowedNodeTypes: ['ADAPTER_NODE', 'BRIDGE_NODE'],
+          allowedNodeTypes: [NodeTypes.ADAPTER_NODE, NodeTypes.BRIDGE_NODE],
           // Same as Combiner: only allow adapters with COMBINE capability
           // Note: customFilter will be enhanced by WizardSelectionRestrictions with protocol adapter data
           customFilter: (node) => {
             // Bridges are always allowed
-            if (node.type === 'BRIDGE_NODE') return true
+            if (node.type === NodeTypes.BRIDGE_NODE) return true
 
             // For adapters, we need to check the protocol definition
             // This will be handled by WizardSelectionRestrictions which has access to protocol adapters
-            return node.type === 'ADAPTER_NODE'
+            return node.type === NodeTypes.ADAPTER_NODE
           },
           // Flag to indicate we need protocol adapter capabilities check
           requiresProtocolCapabilities: ['COMBINE'],

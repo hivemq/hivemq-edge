@@ -6,7 +6,7 @@ import debug from 'debug'
 
 import type { ProtocolAdapter } from '@/api/__generated__'
 import { useWizardState } from '@/modules/Workspace/hooks/useWizardStore'
-import { EdgeTypes, NodeTypes } from '@/modules/Workspace/types'
+import { EdgeTypes, IdStubs, NodeTypes } from '@/modules/Workspace/types'
 import type { SelectionConstraints } from './types'
 import { GHOST_EDGE_STYLE } from './utils/ghostNodeFactory'
 import { useProtocolAdaptersContext } from './hooks/useProtocolAdaptersContext'
@@ -27,7 +27,7 @@ const checkConstraints = (
   }
 
   // EDGE node is never selectable
-  if (node.id === 'EDGE_NODE') {
+  if (node.id === IdStubs.EDGE_NODE) {
     return false
   }
 

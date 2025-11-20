@@ -32,12 +32,6 @@ vi.mock('@/api/hooks/useProtocolAdapters/useCreateProtocolAdapter', () => ({
   useCreateProtocolAdapter: vi.fn(),
 }))
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-}))
-
 vi.mock('@/modules/Workspace/hooks/useWizardStore', () => ({
   useWizardStore: {
     getState: vi.fn(),

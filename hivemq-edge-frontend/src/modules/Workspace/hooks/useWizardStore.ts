@@ -1,17 +1,11 @@
-/**
- * Wizard State Management Store
- *
- * Zustand store managing the workspace wizard lifecycle and state.
- * Provides centralized state management for wizard operations including
- * step navigation, node selection, ghost previews, and configuration.
- */
-
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 
 import type { WizardStore, WizardState, WizardType, GhostNode, GhostEdge } from '../components/wizard/types'
+import { EntityType } from '../components/wizard/types'
 import { getWizardStepCount, getWizardStep } from '../components/wizard/utils/wizardMetadata'
-import useWorkspaceStore from './useWorkspaceStore'
+import { NodeTypes, STORE_WIZARD_KEY } from '@/modules/Workspace/types.ts'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 
 /**
  * Initial wizard state
@@ -194,10 +188,10 @@ export const useWizardStore = create<WizardStore>()(
           const { selectedNodeIds, entityType } = get()
 
           // For Asset Mapper, prevent deselection of Pulse Agent
-          if (entityType === 'ASSET_MAPPER') {
+          if (entityType === EntityType.ASSET_MAPPER) {
             const nodes = useWorkspaceStore.getState().nodes
             const node = nodes.find((n) => n.id === nodeId)
-            if (node?.type === 'PULSE_NODE') {
+            if (node?.type === NodeTypes.PULSE_NODE) {
               // Don't allow deselecting Pulse Agent in Asset Mapper
               return
             }
@@ -321,7 +315,7 @@ export const useWizardStore = create<WizardStore>()(
       },
     }),
     {
-      name: 'WizardStore',
+      name: STORE_WIZARD_KEY,
       enabled: import.meta.env.DEV,
     }
   )

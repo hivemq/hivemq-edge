@@ -43,7 +43,7 @@ const CreateEntityButton: FC = () => {
 
   // Track which wizards are implemented
   // Note: Combiner, Asset Mapper, and Group enabled after Subtask 9 (Selection System)
-  const implementedWizards = new Set(['ADAPTER', 'BRIDGE', 'COMBINER', 'ASSET_MAPPER', 'GROUP'])
+  const implementedWizards = new Set(['ADAPTER', 'BRIDGE', 'COMBINER', 'ASSET_MAPPER'])
 
   const handleSelectWizard = (type: WizardType) => {
     startWizard(type)
@@ -99,7 +99,7 @@ const CreateEntityButton: FC = () => {
                     isPulseRequired
                       ? t('workspace.wizard.assetMapper.requiresPulse')
                       : !isImplemented
-                        ? 'Coming soon'
+                        ? t('workspace.wizard.assetMapper.comingSoon')
                         : undefined
                   }
                 >
@@ -107,12 +107,12 @@ const CreateEntityButton: FC = () => {
                     <Text>{t('workspace.wizard.entityType.name', { context: type })}</Text>
                     {isPulseRequired && (
                       <Text fontSize="xs" color="gray.500">
-                        (Requires Pulse)
+                        {t('workspace.wizard.assetMapper.requiresPulse')}
                       </Text>
                     )}
                     {!isImplemented && !isPulseRequired && (
                       <Text fontSize="xs" color="gray.500">
-                        (Coming soon)
+                        {t('workspace.wizard.assetMapper.comingSoon')}
                       </Text>
                     )}
                   </HStack>

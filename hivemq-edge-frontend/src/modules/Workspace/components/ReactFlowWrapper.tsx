@@ -11,7 +11,7 @@ import './reactflow-chakra.fix.css'
 
 import MiniMap from '@/components/react-flow/MiniMap.tsx'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
-import { EdgeTypes, NodeTypes } from '@/modules/Workspace/types.ts'
+import { EdgeTypes, IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
 import useGetFlowElements from '@/modules/Workspace/hooks/useGetFlowElements.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import StatusListener from '@/modules/Workspace/components/controls/StatusListener.tsx'
@@ -136,7 +136,7 @@ const ReactFlowWrapper = () => {
 
       // Check if node is selectable based on constraints
       const isGhost = node.data?.isGhost
-      const isEdgeNode = node.id === 'EDGE_NODE'
+      const isEdgeNode = node.id === IdStubs.EDGE_NODE
 
       if (isGhost || isEdgeNode) {
         debugLog('🚫 Ghost or edge node - not selectable')
@@ -151,7 +151,11 @@ const ReactFlowWrapper = () => {
       }
 
       // Check protocol adapter capabilities for ADAPTER_NODE types
-      if (node.type === 'ADAPTER_NODE' && requiresProtocolCapabilities && requiresProtocolCapabilities.length > 0) {
+      if (
+        node.type === NodeTypes.ADAPTER_NODE &&
+        requiresProtocolCapabilities &&
+        requiresProtocolCapabilities.length > 0
+      ) {
         const adapterType = node.data?.type
 
         if (!adapterType) {

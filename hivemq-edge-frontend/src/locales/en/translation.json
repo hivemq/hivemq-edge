@@ -1102,6 +1102,15 @@
       "aria-label": "Open the Data Hub policy",
       "list": "Show all the policies"
     },
+    "ghost": {
+      "adapter": "New Adapter",
+      "bridge": "New Bridge",
+      "combiner": "New Combiner",
+      "mapper": "New Asset Mapper",
+      "group": "New Group",
+      "host": "New Bridge Host",
+      "device": "New Adapter Device"
+    },
     "wizard": {
       "trigger": {
         "buttonLabel": "Create New",
@@ -1213,8 +1222,9 @@
       "assetMapper": {
         "back": "Back to Selection",
         "create": "Create Asset Mapper",
-        "requiresPulse": "Pulse Asset Management capability required",
+        "requiresPulse": "Pulse Agent required",
         "pulseAgentRequired": "Pulse Agent automatically included",
+        "comingSoon": "Coming soon",
         "success": {
           "title": "Asset Mapper Created",
           "message": "{{name}} has been created successfully"

@@ -1,17 +1,12 @@
-/**
- * Ghost Node Factory
- *
- * Factory functions to create ghost nodes and edges for preview during wizard.
- * Ghost nodes show users what will be created before they complete the wizard.
- * Supports multi-node previews with proper positioning and connections.
- */
-
 import type { Node, XYPosition } from '@xyflow/react'
 import { MarkerType, Position } from '@xyflow/react'
 
+import { Status } from '@/api/__generated__'
 import type { GhostNode, GhostEdge } from '../types'
 import { EntityType } from '../types'
 import { EdgeTypes, IdStubs, NodeTypes } from '@/modules/Workspace/types'
+
+import i18n from '@/config/i18n.config.ts'
 
 /**
  * Positioning constants (from nodes-utils.ts)
@@ -85,19 +80,19 @@ export interface GhostNodeGroup {
 /**
  * Create a ghost adapter node
  */
-export const createGhostAdapter = (id: string, label: string = 'New Adapter'): GhostNode => {
+export const createGhostAdapter = (id: string, label: string = i18n.t('workspace.ghost.adapter')): GhostNode => {
   return {
     ...GHOST_BASE,
     id: `ghost-${id}`,
-    type: 'ADAPTER_NODE',
+    type: NodeTypes.ADAPTER_NODE,
     position: { x: 200, y: 200 },
     data: {
       isGhost: true,
       label,
       id: `ghost-${id}`,
       status: {
-        connection: 'STATELESS',
-        runtime: 'STOPPED',
+        connection: Status.connection.STATELESS,
+        runtime: Status.runtime.STOPPED,
       },
     },
     style: GHOST_STYLE,
@@ -107,19 +102,19 @@ export const createGhostAdapter = (id: string, label: string = 'New Adapter'): G
 /**
  * Create a ghost bridge node
  */
-export const createGhostBridge = (id: string, label: string = 'New Bridge'): GhostNode => {
+export const createGhostBridge = (id: string, label: string = i18n.t('workspace.ghost.bridge')): GhostNode => {
   return {
     ...GHOST_BASE,
     id: `ghost-${id}`,
-    type: 'BRIDGE_NODE',
+    type: NodeTypes.BRIDGE_NODE,
     position: { x: 200, y: 200 },
     data: {
       isGhost: true,
       label,
       id: `ghost-${id}`,
       status: {
-        connection: 'STATELESS',
-        runtime: 'STOPPED',
+        connection: Status.connection.STATELESS,
+        runtime: Status.runtime.STOPPED,
       },
     },
     style: GHOST_STYLE,
@@ -130,7 +125,11 @@ export const createGhostBridge = (id: string, label: string = 'New Bridge'): Gho
  * Create a ghost combiner node positioned near EDGE node
  * Uses a UUID for the ID to satisfy validation requirements
  */
-export const createGhostCombiner = (id: string, edgeNode: Node, label: string = 'New Combiner'): GhostNode => {
+export const createGhostCombiner = (
+  id: string,
+  edgeNode: Node,
+  label: string = i18n.t('workspace.ghost.combiner')
+): GhostNode => {
   // Position to the right of EDGE node
   const pos = {
     x: edgeNode.position.x + 400,
@@ -154,7 +153,6 @@ export const createGhostCombiner = (id: string, edgeNode: Node, label: string = 
       // Required Combiner fields
       id: combinerId, // Use UUID for combiner data ID
       name: label,
-      description: 'Preview of new combiner',
       // sources: EntityReferenceList with empty items
       sources: {
         items: [],
@@ -165,8 +163,8 @@ export const createGhostCombiner = (id: string, edgeNode: Node, label: string = 
       },
       // Status for node display
       status: {
-        connection: 'STATELESS',
-        runtime: 'STOPPED',
+        connection: Status.connection.STATELESS,
+        runtime: Status.runtime.STOPPED,
       },
     },
     style: GHOST_STYLE_SELECTABLE, // Use selectable style
@@ -178,7 +176,11 @@ export const createGhostCombiner = (id: string, edgeNode: Node, label: string = 
  * Asset Mapper IS a Combiner, just with Pulse Agent auto-included in sources
  * Reuse createGhostCombiner to avoid duplication
  */
-export const createGhostAssetMapper = (id: string, edgeNode: Node, label: string = 'New Asset Mapper'): GhostNode => {
+export const createGhostAssetMapper = (
+  id: string,
+  edgeNode: Node,
+  label: string = i18n.t('workspace.ghost.mapper')
+): GhostNode => {
   // Asset Mapper uses exact same structure as Combiner
   return createGhostCombiner(id, edgeNode, label)
 }
@@ -187,7 +189,7 @@ export const createGhostCombinerGroup = (id: string, edgeNode: Node, entityType:
   const ghostNode = createGhostCombiner(
     id,
     edgeNode,
-    entityType === EntityType.COMBINER ? 'New Combiner' : 'New Asset Mapper'
+    entityType === EntityType.COMBINER ? i18n.t('workspace.ghost.combiner') : i18n.t('workspace.ghost.mapper')
   )
 
   const edgeId = entityType === EntityType.COMBINER ? 'ghost-edge-combiner-to-edge' : 'ghost-edge-assetmapper-to-edge'
@@ -210,24 +212,6 @@ export const createGhostCombinerGroup = (id: string, edgeNode: Node, entityType:
     data: { isGhost: true },
   }
 
-  // // Create ghost edge from combiner to EDGE node
-  // const ghostEdge: GhostEdge = {
-  //   id: 'ghost-edge-combiner-to-edge',
-  //   source: ghostNode.id,
-  //   target: edgeNode.id,
-  //   type: EdgeTypes.DYNAMIC_EDGE,
-  //   animated: true,
-  //   focusable: false,
-  //   style: GHOST_EDGE_STYLE,
-  //   markerEnd: {
-  //     type: MarkerType.ArrowClosed,
-  //     width: 20,
-  //     height: 20,
-  //     color: '#4299E1',
-  //   },
-  //   data: { isGhost: true },
-  // }
-
   return {
     nodes: [ghostNode],
     edges: [ghostEdge],
@@ -237,11 +221,11 @@ export const createGhostCombinerGroup = (id: string, edgeNode: Node, entityType:
 /**
  * Create a ghost group node
  */
-export const createGhostGroup = (id: string, label: string = 'New Group'): GhostNode => {
+export const createGhostGroup = (id: string, label: string = i18n.t('workspace.ghost.group')): GhostNode => {
   return {
     ...GHOST_BASE,
     id: `ghost-${id}`,
-    type: 'CLUSTER_NODE',
+    type: NodeTypes.CLUSTER_NODE,
     position: { x: 200, y: 200 },
     data: {
       isGhost: true,
@@ -338,11 +322,10 @@ export const createGhostAdapterGroup = (
   id: string,
   nbAdapters: number,
   edgeNode: Node,
-  label: string = 'New Adapter'
+  label: string = i18n.t('workspace.ghost.adapter')
 ): GhostNodeGroup => {
   const { adapterPos, devicePos } = calculateGhostAdapterPosition(nbAdapters, edgeNode.position)
 
-  console.log('XXXXX id', id)
   // Create ADAPTER ghost node
   const adapterNode: GhostNode = {
     ...GHOST_BASE,
@@ -356,8 +339,8 @@ export const createGhostAdapterGroup = (
       label,
       id: `ghost-adapter-${id}`,
       status: {
-        connection: 'STATELESS',
-        runtime: 'STOPPED',
+        connection: Status.connection.STATELESS,
+        runtime: Status.runtime.STOPPED,
       },
     },
     style: GHOST_STYLE_ENHANCED,
@@ -373,7 +356,8 @@ export const createGhostAdapterGroup = (
     targetPosition: Position.Top, // Just in case, though DEVICE doesn't receive connections
     data: {
       isGhost: true,
-      label: `${label} Device`,
+      protocol: i18n.t('workspace.ghost.device'),
+      label: i18n.t('workspace.ghost.device'),
     },
     style: GHOST_STYLE_ENHANCED,
   }
@@ -459,7 +443,7 @@ export const createGhostBridgeGroup = (
   id: string,
   nbBridges: number,
   edgeNode: Node,
-  label: string = 'New Bridge'
+  label: string = i18n.t('workspace.ghost.bridge')
 ): GhostNodeGroup => {
   const { bridgePos, hostPos } = calculateGhostBridgePosition(nbBridges, edgeNode.position)
 
@@ -475,8 +459,8 @@ export const createGhostBridgeGroup = (
       label,
       id: `ghost-bridge-${id}`,
       status: {
-        connection: 'STATELESS',
-        runtime: 'STOPPED',
+        connection: Status.connection.STATELESS,
+        runtime: Status.runtime.STOPPED,
       },
     },
     style: GHOST_STYLE_ENHANCED,
@@ -491,7 +475,7 @@ export const createGhostBridgeGroup = (
     targetPosition: Position.Top,
     data: {
       isGhost: true,
-      label: `${label} Host`,
+      label: i18n.t('workspace.ghost.host'),
     },
     style: GHOST_STYLE_ENHANCED,
   }
