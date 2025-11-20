@@ -52,15 +52,13 @@ describe('DrawerFilterToolbox', () => {
     })
 
     cy.intercept<NorthboundMappingOwnerList>('/api/v1/management/protocol-adapters/mappings/northboundMappings', {
-      items: [{ adapterId: 'test-adapter', mapping: MOCK_NORTHBOUND_MAPPING }],
+      items: [{ adapterId: 'test-adapter', ...MOCK_NORTHBOUND_MAPPING }],
     })
     cy.intercept<SouthboundMappingOwnerList>('/api/v1/management/protocol-adapters/mappings/southboundMappings', {
-      items: [{ adapterId: 'test-adapter', mapping: MOCK_SOUTHBOUND_MAPPING }],
+      items: [{ adapterId: 'test-adapter', ...MOCK_SOUTHBOUND_MAPPING }],
     })
     cy.intercept<DomainTagOwnerList>('/api/v1/management/protocol-adapters/tags', {
-      items: [
-        { adapterId: 'test-adapter', mapping: { name: 'test/tag1', definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS } },
-      ],
+      items: [{ adapterId: 'test-adapter', name: 'test/tag1', definition: MOCK_DEVICE_TAG_ADDRESS_MODBUS }],
     })
     cy.intercept('/api/v1/management/topic-filters', {
       items: [MOCK_TOPIC_FILTER],
