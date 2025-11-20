@@ -3,18 +3,12 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import type { DomainTag } from './DomainTag';
+import type { DomainTagOwner } from './DomainTagOwner';
 
 export type DomainTagOwnerList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items: Array<{
-        /**
-         * The id of the adapter owning the tag
-         */
-        adapterId: string;
-        mapping: DomainTag;
-    }>;
+    items: Array<DomainTagOwner>;
 };
 

@@ -7,17 +7,7 @@ export const $NorthboundMappingOwnerList = {
         items: {
             type: 'array',
             contains: {
-                properties: {
-                    adapterId: {
-                        type: 'string',
-                        description: `The id of the adapter owning the mapping`,
-                        isRequired: true,
-                    },
-                    mapping: {
-                        type: 'NorthboundMapping',
-                        isRequired: true,
-                    },
-                },
+                type: 'NorthboundMappingOwner',
             },
             isRequired: true,
         },

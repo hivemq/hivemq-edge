@@ -66,6 +66,7 @@ export type { DataPolicyValidationError } from './models/DataPolicyValidationErr
 export { DataPolicyValidator } from './models/DataPolicyValidator';
 export type { DomainTag } from './models/DomainTag';
 export type { DomainTagList } from './models/DomainTagList';
+export type { DomainTagOwner } from './models/DomainTagOwner';
 export type { DomainTagOwnerList } from './models/DomainTagOwnerList';
 export type { EmptyFieldValidationError } from './models/EmptyFieldValidationError';
 export type { EntityReference } from './models/EntityReference';
@@ -118,6 +119,7 @@ export type { ModuleList } from './models/ModuleList';
 export type { MqttUserProperty } from './models/MqttUserProperty';
 export type { NorthboundMapping } from './models/NorthboundMapping';
 export type { NorthboundMappingList } from './models/NorthboundMappingList';
+export type { NorthboundMappingOwner } from './models/NorthboundMappingOwner';
 export type { NorthboundMappingOwnerList } from './models/NorthboundMappingOwnerList';
 export { Notification } from './models/Notification';
 export type { NotificationList } from './models/NotificationList';
@@ -167,6 +169,7 @@ export type { ScriptSanitationFailureError } from './models/ScriptSanitationFail
 export type { ScriptValidationError } from './models/ScriptValidationError';
 export type { SouthboundMapping } from './models/SouthboundMapping';
 export type { SouthboundMappingList } from './models/SouthboundMappingList';
+export type { SouthboundMappingOwner } from './models/SouthboundMappingOwner';
 export type { SouthboundMappingOwnerList } from './models/SouthboundMappingOwnerList';
 export { Status } from './models/Status';
 export type { StatusList } from './models/StatusList';
@@ -244,6 +247,7 @@ export { $DataPolicyValidationError } from './schemas/$DataPolicyValidationError
 export { $DataPolicyValidator } from './schemas/$DataPolicyValidator';
 export { $DomainTag } from './schemas/$DomainTag';
 export { $DomainTagList } from './schemas/$DomainTagList';
+export { $DomainTagOwner } from './schemas/$DomainTagOwner';
 export { $DomainTagOwnerList } from './schemas/$DomainTagOwnerList';
 export { $EmptyFieldValidationError } from './schemas/$EmptyFieldValidationError';
 export { $EntityReference } from './schemas/$EntityReference';
@@ -296,6 +300,7 @@ export { $ModuleList } from './schemas/$ModuleList';
 export { $MqttUserProperty } from './schemas/$MqttUserProperty';
 export { $NorthboundMapping } from './schemas/$NorthboundMapping';
 export { $NorthboundMappingList } from './schemas/$NorthboundMappingList';
+export { $NorthboundMappingOwner } from './schemas/$NorthboundMappingOwner';
 export { $NorthboundMappingOwnerList } from './schemas/$NorthboundMappingOwnerList';
 export { $Notification } from './schemas/$Notification';
 export { $NotificationList } from './schemas/$NotificationList';
@@ -345,6 +350,7 @@ export { $ScriptSanitationFailureError } from './schemas/$ScriptSanitationFailur
 export { $ScriptValidationError } from './schemas/$ScriptValidationError';
 export { $SouthboundMapping } from './schemas/$SouthboundMapping';
 export { $SouthboundMappingList } from './schemas/$SouthboundMappingList';
+export { $SouthboundMappingOwner } from './schemas/$SouthboundMappingOwner';
 export { $SouthboundMappingOwnerList } from './schemas/$SouthboundMappingOwnerList';
 export { $Status } from './schemas/$Status';
 export { $StatusList } from './schemas/$StatusList';

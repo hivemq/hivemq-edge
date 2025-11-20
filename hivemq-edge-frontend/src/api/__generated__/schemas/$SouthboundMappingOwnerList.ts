@@ -7,17 +7,7 @@ export const $SouthboundMappingOwnerList = {
         items: {
             type: 'array',
             contains: {
-                properties: {
-                    adapterId: {
-                        type: 'string',
-                        description: `The id of the adapter owning the mapping`,
-                        isRequired: true,
-                    },
-                    mapping: {
-                        type: 'SouthboundMapping',
-                        isRequired: true,
-                    },
-                },
+                type: 'SouthboundMappingOwner',
             },
             isRequired: true,
         },
