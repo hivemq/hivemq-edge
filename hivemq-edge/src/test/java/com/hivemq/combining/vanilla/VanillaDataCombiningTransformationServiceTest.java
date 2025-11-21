@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataCombiningDestination;
 import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.common.i18n.StringTemplate;
 import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
@@ -37,6 +38,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -113,7 +115,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                 new DataIdentifierReference("topic/a", DataIdentifierReference.Type.TOPIC_FILTER))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"a\":1}}");
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"a":1}}""");
     }
 
     @Test
@@ -135,7 +138,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                         new DataIdentifierReference("topic/b", DataIdentifierReference.Type.TOPIC_FILTER))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"a\":1,\"b\":2}}");
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"a":1,"b":2}}""");
     }
 
     @Test
@@ -146,7 +150,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                 new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"tag1\":\"TAG1\"}}");
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"tag1":"TAG1"}}""");
     }
 
     @Test
@@ -160,8 +165,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                         new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo(
-                "{\"dest\":{\"tag1\":\"TAG1\",\"tag2\":\"TAG2\"}}");
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"tag1":"TAG1","tag2":"TAG2"}}""");
     }
 
     @Test
@@ -173,9 +178,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                 new DataIdentifierReference(assetId, DataIdentifierReference.Type.PULSE_ASSET))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"asset\":\"" +
-                assetId +
-                "\"}}");
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo(StringTemplate.format("""
+                {"dest":{"asset":"${assetId}"}}""", Map.of("assetId", assetId)));
     }
 
     @Test
@@ -209,8 +213,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                         new DataIdentifierReference("ASSET2", DataIdentifierReference.Type.PULSE_ASSET))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo(
-                "{\"dest\":{\"a\":1,\"b\":2,\"tag1\":\"TAG1\",\"tag2\":\"TAG2\",\"asset1\":\"ASSET1\",\"asset2\":\"ASSET2\"}}");
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"a":1,"b":2,"tag1":"TAG1","tag2":"TAG2","asset1":"ASSET1","asset2":"ASSET2"}}""");
     }
 
     @Test
@@ -232,7 +236,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                         new DataIdentifierReference("topic/b", DataIdentifierReference.Type.TOPIC_FILTER))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"x\":2}}");
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"x":2}}""");
     }
 
     @Test
@@ -246,7 +251,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                         new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"tag\":\"TAG2\"}}");
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"tag":"TAG2"}}""");
     }
 
     @Test
@@ -269,6 +275,30 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 DataIdentifierReference.Type.TOPIC_FILTER))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("{\"dest\":{\"a\":1,\"b\":2}}");
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"a":1,"b":2}}""");
+    }
+
+    @Test
+    public void whenDestinationIsFullJsonPath_thenNoDollarIsInTheResult() {
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "TOPIC_FILTER:topic/a": {
+                    "a": 1
+                  },
+                  "TOPIC_FILTER:topic/b": {
+                    "b": 2
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.a",
+                        "$.dest.a",
+                        new DataIdentifierReference("topic/a", DataIdentifierReference.Type.TOPIC_FILTER)),
+                new Instruction("$.b",
+                        "$.dest.b",
+                        new DataIdentifierReference("topic/b", DataIdentifierReference.Type.TOPIC_FILTER))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"a":1,"b":2}}""");
     }
 }

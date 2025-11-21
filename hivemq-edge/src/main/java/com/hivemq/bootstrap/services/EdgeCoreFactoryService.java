@@ -21,9 +21,22 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class EdgeCoreFactoryService {
+    private boolean pulseActivated;
 
     private @Nullable WritingServiceFactory writingServiceFactory;
     private @Nullable DataCombiningTransformationServiceFactory dataCombiningTransformationServiceFactory;
+
+    public EdgeCoreFactoryService() {
+        pulseActivated = false;
+    }
+
+    public boolean isPulseActivated() {
+        return pulseActivated;
+    }
+
+    public void setPulseActivated(final boolean pulseActivated) {
+        this.pulseActivated = pulseActivated;
+    }
 
     public void provideWritingServiceFactory(final @NotNull WritingServiceFactory writingServiceFactory) {
         this.writingServiceFactory = writingServiceFactory;
@@ -39,6 +52,7 @@ public class EdgeCoreFactoryService {
     }
 
     public @Nullable DataCombiningTransformationServiceFactory getDataCombiningTransformationServiceFactory() {
-        return dataCombiningTransformationServiceFactory;
+        // If Pulse is activated, external data combining service is disable.
+        return pulseActivated ? null : dataCombiningTransformationServiceFactory;
     }
 }
