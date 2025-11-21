@@ -68,6 +68,20 @@ import java.util.stream.Collectors;
 public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
 
+    // Exponential backoff delays: 1s, 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s, 300s (capped at 5 minutes)
+    private static final long[] BACKOFF_DELAYS_MS = {
+            1_000L,    // 1 second
+            2_000L,    // 2 seconds
+            4_000L,    // 4 seconds
+            8_000L,    // 8 seconds
+            16_000L,   // 16 seconds
+            32_000L,   // 32 seconds
+            64_000L,   // 64 seconds
+            128_000L,  // 128 seconds
+            256_000L,  // 256 seconds
+            300_000L   // 300 seconds (5 minutes max)
+    };
+
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
@@ -78,17 +92,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull OpcUaSpecificAdapterConfig config;
-    private volatile @Nullable ScheduledExecutorService retryScheduler = null;
     private final @NotNull AtomicReference<ScheduledFuture<?>> retryFuture = new AtomicReference<>();
-    private volatile @Nullable ScheduledExecutorService healthCheckScheduler = null;
     private final @NotNull AtomicReference<ScheduledFuture<?>> healthCheckFuture = new AtomicReference<>();
-
+    // Retry attempt tracking for exponential backoff
+    private final @NotNull AtomicReference<Integer> consecutiveRetryAttempts = new AtomicReference<>(0);
     // Lock to prevent concurrent reconnections
     private final @NotNull ReentrantLock reconnectLock = new ReentrantLock();
-
+    private volatile @Nullable ScheduledExecutorService retryScheduler = null;
+    private volatile @Nullable ScheduledExecutorService healthCheckScheduler = null;
     // Stored for reconnection - set during start()
-    private volatile ParsedConfig parsedConfig;
-    private volatile ModuleServices moduleServices;
+    private volatile @Nullable ParsedConfig parsedConfig;
+    private volatile @Nullable ModuleServices moduleServices;
 
     // Flag to prevent scheduling after stop
     private volatile boolean stopped = false;
@@ -105,6 +119,25 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.config = input.getConfig();
         this.opcUaClientConnection = new AtomicReference<>();
+    }
+
+    /**
+     * Calculates exponential backoff delay based on the number of consecutive retry attempts.
+     * Uses base-2 exponential growth: 1s, 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s, 300s (capped at 5 minutes)
+     *
+     * @param attemptCount the number of consecutive retry attempts (1-indexed)
+     * @return the backoff delay in milliseconds
+     */
+    public static long calculateBackoffDelayMs(final int attemptCount) {
+        // Array is 0-indexed, attemptCount is 1-indexed, so we need attemptCount - 1
+        final int index = attemptCount - 1;
+
+        // If attemptCount exceeds array size, use the last value (max delay)
+        if (index >= BACKOFF_DELAYS_MS.length) {
+            return BACKOFF_DELAYS_MS[BACKOFF_DELAYS_MS.length - 1];
+        }
+
+        return BACKOFF_DELAYS_MS[index];
     }
 
     @Override
@@ -127,8 +160,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         final var result = ParsedConfig.fromConfig(config);
         if (result instanceof Failure<ParsedConfig, String>(final String failure)) {
             log.error("Failed to parse configuration for OPC UA client: {}", failure);
-            output.failStart(new IllegalStateException(failure),
-                    "Failed to parse configuration for OPC UA client");
+            output.failStart(new IllegalStateException(failure), "Failed to parse configuration for OPC UA client");
             return;
         } else if (result instanceof Success<ParsedConfig, String>(final ParsedConfig successfullyParsedConfig)) {
             newlyParsedConfig = successfullyParsedConfig;
@@ -142,15 +174,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
 
         final OpcUaClientConnection conn;
-        if (opcUaClientConnection.compareAndSet(null, conn = new OpcUaClientConnection(adapterId,
-                tagList,
-                protocolAdapterState,
-                input.moduleServices().protocolAdapterTagStreamingService(),
-                dataPointFactory,
-                input.moduleServices().eventService(),
-                protocolAdapterMetricsService,
-                config,
-                this::reconnect))) {
+        if (opcUaClientConnection.compareAndSet(null,
+                conn = new OpcUaClientConnection(adapterId,
+                        tagList,
+                        protocolAdapterState,
+                        input.moduleServices().protocolAdapterTagStreamingService(),
+                        dataPointFactory,
+                        input.moduleServices().eventService(),
+                        protocolAdapterMetricsService,
+                        config,
+                        this::reconnect))) {
 
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             // Attempt initial connection asynchronously
@@ -162,10 +195,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             output.startedSuccessfully();
         } else {
             log.error("Cannot start OPC UA protocol adapter '{}' - adapter is already started", adapterId);
-            output.failStart(
-                new IllegalStateException("Adapter already started"),
-                "Cannot start already started adapter. Please stop the adapter first."
-            );
+            output.failStart(new IllegalStateException("Adapter already started"),
+                    "Cannot start already started adapter. Please stop the adapter first.");
         }
     }
 
@@ -232,6 +263,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 return;
             }
 
+            // Reset retry counter for fresh reconnection attempt with exponential backoff
+            consecutiveRetryAttempts.set(0);
+
             // Cancel any pending retries and health checks
             cancelRetry();
             cancelHealthCheck();
@@ -266,7 +300,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 };
                 attemptConnection(newConn, parsedConfig, input);
             } else {
-                log.warn("OPC UA adapter '{}' reconnect failed - another connection was created concurrently", adapterId);
+                log.warn("OPC UA adapter '{}' reconnect failed - another connection was created concurrently",
+                        adapterId);
             }
         } finally {
             reconnectLock.unlock();
@@ -317,7 +352,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
 
         log.debug("Scheduled connection health check every {} milliseconds for adapter '{}'",
-                healthCheckIntervalMs, adapterId);
+                healthCheckIntervalMs,
+                adapterId);
     }
 
     /**
@@ -550,32 +586,34 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
         CompletableFuture.supplyAsync(() -> conn.start(parsedConfig)).whenComplete((success, throwable) -> {
             if (success && throwable == null) {
-                // Connection succeeded - cancel any pending retries and start health check
+                // Connection succeeded - reset retry counter, cancel any pending retries and start health check
+                consecutiveRetryAttempts.set(0);
                 cancelRetry();
                 scheduleHealthCheck();
                 log.info("OPC UA adapter '{}' connected successfully", adapterId);
             } else {
-                // Connection failed - clean up and schedule retry
+                // Connection failed - clean up and schedule retry with exponential backoff
                 this.opcUaClientConnection.set(null);
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
 
-                final long retryIntervalMs = config.getConnectionOptions().retryIntervalMs();
                 if (throwable != null) {
-                    log.warn("OPC UA adapter '{}' connection failed, will retry in {} milliseconds",
-                            adapterId, retryIntervalMs, throwable);
+                    log.warn("OPC UA adapter '{}' connection failed, scheduling retry with exponential backoff",
+                            adapterId,
+                            throwable);
                 } else {
-                    log.warn("OPC UA adapter '{}' connection returned false, will retry in {} milliseconds",
-                            adapterId, retryIntervalMs);
+                    log.warn("OPC UA adapter '{}' connection returned false, scheduling retry with exponential backoff",
+                            adapterId);
                 }
 
-                // Schedule retry attempt
+                // Schedule retry attempt with exponential backoff
                 scheduleRetry(input);
             }
         });
     }
 
     /**
-     * Schedules a retry attempt after configured retry interval.
+     * Schedules a retry attempt using exponential backoff strategy.
+     * First retry is after 1 second, subsequent retries use exponential backoff (base 2) up to 5 minutes max.
      */
     private void scheduleRetry(final @NotNull ProtocolAdapterStartInput input) {
 
@@ -585,7 +623,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
 
-        final long retryIntervalMs = config.getConnectionOptions().retryIntervalMs();
+        // Increment retry attempt counter and calculate backoff delay
+        final int attemptCount = consecutiveRetryAttempts.updateAndGet(count -> count + 1);
+        final long backoffDelayMs = calculateBackoffDelayMs(attemptCount);
+
+        log.info("Scheduling retry attempt #{} for OPC UA adapter '{}' with backoff delay of {} ms",
+                attemptCount,
+                adapterId,
+                backoffDelayMs);
+
         final ScheduledFuture<?> future = retryScheduler.schedule(() -> {
             // Check if adapter was stopped before retry executes
             if (stopped || this.parsedConfig == null || this.moduleServices == null) {
@@ -593,7 +639,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 return;
             }
 
-            log.info("Retrying connection for OPC UA adapter '{}'", adapterId);
+            log.info("Executing retry attempt #{} for OPC UA adapter '{}'", attemptCount, adapterId);
 
             // Create new connection object for retry
             final OpcUaClientConnection newConn = new OpcUaClientConnection(adapterId,
@@ -613,7 +659,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             } else {
                 log.debug("OPC UA adapter '{}' retry skipped - connection already exists", adapterId);
             }
-        }, retryIntervalMs, TimeUnit.MILLISECONDS);
+        }, backoffDelayMs, TimeUnit.MILLISECONDS);
 
         // Store future so it can be cancelled if needed
         final ScheduledFuture<?> oldFuture = retryFuture.getAndSet(future);
