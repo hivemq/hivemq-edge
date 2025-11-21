@@ -165,6 +165,12 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                                 tempConnection.startConnection(input.moduleServices().eventService(), adapterId, getProtocolAdapterInformation().getProtocolId());
                                 protocolAdapterState.setConnectionStatus(CONNECTED);
                             } catch (final Plc4xException e) {
+                                try {
+                                    tempConnection.disconnect();
+                                } catch (final Exception ex) {
+                                    log.debug("Tried disconnecting after connection error and caught exception", ex);
+                                }
+                                this.connection = null;
                                 log.error("Plc4x connection failed to start", e);
                                 protocolAdapterState.setConnectionStatus(ERROR);
                             }
@@ -276,6 +282,12 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                     protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
                 }
                 return processPlcFieldData(Plc4xDataUtils.readDataFromReadResponse(event));
+            } else {
+                tags.stream()
+                        .filter(tag -> event.getResponseCode(tag.getName()) != PlcResponseCode.OK)
+                        .forEach(tag -> log.error("Unable to read tag {}. Error Code: {}",
+                                tag.getName(),
+                                event.getResponseCode(tag.getName())));;
             }
         }
         return new Plc4xDataSample(adapterFactories.dataPointFactory());

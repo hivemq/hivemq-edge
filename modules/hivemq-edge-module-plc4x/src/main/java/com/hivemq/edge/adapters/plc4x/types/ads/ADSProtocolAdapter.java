@@ -31,10 +31,10 @@ import java.util.Map;
  */
 public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSSpecificAdapterConfig, Plc4xToMqttMapping> {
 
-    private static final @NotNull String SOURCE_AMS_NET_ID = "sourceAmsNetId";
-    private static final @NotNull String SOURCE_AMS_PORT = "sourceAmsPort";
-    private static final @NotNull String TARGET_AMS_PORT = "targetAmsPort";
-    private static final @NotNull String TARGET_AMS_NET_ID = "targetAmsNetId";
+    private static final @NotNull String SOURCE_AMS_NET_ID = "source-ams-net-id";
+    private static final @NotNull String SOURCE_AMS_PORT = "source-ams-port";
+    private static final @NotNull String TARGET_AMS_PORT = "target-ams-port";
+    private static final @NotNull String TARGET_AMS_NET_ID = "target-ams-net-id";
 
     public ADSProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
