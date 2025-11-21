@@ -1,10 +1,12 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import type { EdgeChange, NodeChange, NodeAddChange, EdgeAddChange, Node } from '@xyflow/react'
 import { addEdge, applyNodeChanges, applyEdgeChanges } from '@xyflow/react'
-import type { Group, WorkspaceState, WorkspaceAction, DeviceMetadata } from '@/modules/Workspace/types.ts'
-import { NodeTypes } from '@/modules/Workspace/types.ts'
-import { persist, createJSONStorage } from 'zustand/middleware'
+
 import type { Adapter } from '@/api/__generated__'
+import type { Group, WorkspaceState, WorkspaceAction, DeviceMetadata } from '@/modules/Workspace/types.ts'
+import { STORE_WORKSPACE_KEY } from '@/modules/Workspace/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { LayoutType, LayoutMode, type LayoutPreset, type LayoutHistoryEntry, type LayoutOptions } from '../types/layout'
 
 // define the initial state
@@ -212,7 +214,7 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
       },
     }),
     {
-      name: 'edge.workspace',
+      name: STORE_WORKSPACE_KEY,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => {
         // Always persist nodes and edges (core workspace state)

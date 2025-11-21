@@ -823,3 +823,31 @@ export const deviceHandlers = [
     return HttpResponse.json({}, { status: 200 })
   }),
 ]
+
+export const MOCK_DEVICE_TAG_JSON_SCHEMA_SIMULATION: TagSchema = {
+  configSchema: {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    type: 'object',
+    properties: {
+      definition: {
+        type: 'object',
+        title: 'definition',
+        description: "The simulation adapter doesn't currently support any custom definition",
+        readOnly: true,
+      },
+      description: {
+        type: 'string',
+        title: 'description',
+        description: 'A human readable description of the tag',
+      },
+      name: {
+        type: 'string',
+        title: 'name',
+        description: 'name of the tag to be used in mappings',
+        format: 'mqtt-tag',
+      },
+    },
+    required: ['definition', 'name'],
+  },
+  protocolId: 'simulation',
+}

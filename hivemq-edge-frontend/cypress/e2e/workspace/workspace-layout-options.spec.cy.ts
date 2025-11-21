@@ -32,6 +32,7 @@ describe('Workspace Layout - Options', () => {
       statusCode: 202,
       log: false,
     })
+    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
 
     cy.intercept('GET', '/api/v1/management/protocol-adapters/adapters/**/tags', (req) => {
       const pathname = new URL(req.url).pathname

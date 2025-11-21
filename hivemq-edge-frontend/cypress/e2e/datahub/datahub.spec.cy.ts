@@ -12,7 +12,12 @@ import { cy_interceptCoreE2E, cy_interceptDataHubWithMockDB } from 'cypress/util
 import { datahubPage, loginPage, datahubDesignerPage } from 'cypress/pages'
 import { cy_checkDataPolicyGraph } from 'cypress/utils/datahub.utils.ts'
 
-import { MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
+import {
+  MOCK_CAPABILITIES,
+  MOCK_CAPABILITY_DATAHUB,
+  MOCK_CAPABILITY_PERSISTENCE,
+  MOCK_CAPABILITY_PULSE_ASSETS,
+} from '@/api/hooks/useFrontendServices/__handlers__'
 import { MOCK_DATAHUB_FUNCTIONS } from '@datahub/api/hooks/DataHubFunctionsService/__handlers__'
 
 describe('Data Hub', () => {
@@ -40,7 +45,7 @@ describe('Data Hub', () => {
     drop(mswDB)
 
     cy_interceptCoreE2E()
-    cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
+    cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_DATAHUB] })
     cy.intercept('/api/v1/data-hub/function-specs', {
       items: MOCK_DATAHUB_FUNCTIONS.items.map((specs) => {
         specs.metadata.inLicenseAllowed = true

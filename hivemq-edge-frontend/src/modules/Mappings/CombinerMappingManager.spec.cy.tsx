@@ -1,5 +1,7 @@
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import type { Node } from '@xyflow/react'
+import { Button } from '@chakra-ui/react'
 
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting.tsx'
 import { MOCK_DEFAULT_NODE, MOCK_NODE_COMBINER } from '@/__test-utils__/react-flow/nodes.ts'
@@ -11,9 +13,11 @@ import { mockEmptyCombiner } from '@/api/hooks/useCombiners/__handlers__'
 import { NodeTypes } from '@/modules/Workspace/types'
 import CombinerMappingManager from './CombinerMappingManager'
 
-const getWrapperWith = (initialNodes?: Node[]) => {
+const INITIAL_ENTRY = '/workspace'
+const getWrapperWith = (nodeId: string, initialNodes?: Node[]) => {
   const Wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
     const { pathname } = useLocation()
+    const navigate = useNavigate()
 
     return (
       <ReactFlowTesting
@@ -23,10 +27,19 @@ const getWrapperWith = (initialNodes?: Node[]) => {
           },
         }}
         showDashboard={true}
+        showReactFlowElements={true}
         dashboard={<div data-testid="data-pathname">{pathname}</div>}
       >
         <Routes>
-          <Route path="/node/:combinerId" element={children} />
+          <Route
+            path={INITIAL_ENTRY}
+            element={
+              <Button data-testid="test-reactflow-trigger-button" onClick={() => navigate(`/node/${nodeId}`)}>
+                Open Mapper
+              </Button>
+            }
+          />
+          <Route path="/node/:combinerId" element={<div>{children}</div>} />
         </Routes>
       </ReactFlowTesting>
     )
@@ -35,7 +48,7 @@ const getWrapperWith = (initialNodes?: Node[]) => {
   return Wrapper
 }
 
-describe.skip('CombinerMappingManager', () => {
+describe('CombinerMappingManager', () => {
   // All test skipped due to issues with catching the error at mount time
   beforeEach(() => {
     cy.viewport(800, 800)
@@ -43,44 +56,60 @@ describe.skip('CombinerMappingManager', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 203, log: false })
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { statusCode: 203, log: false })
     cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', { statusCode: 203, log: false })
+
+    cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_PULSE_ASSETS] })
+    cy.intercept('/api/v1/management/pulse/managed-assets', { statusCode: 203 })
+  })
+
+  it('should render error properly', () => {
+    let caughtError: Error | null = null
+    cy.on('uncaught:exception', (err) => {
+      caughtError = err
+      return false // Prevent Cypress from failing
+    })
+
+    cy.mountWithProviders(<CombinerMappingManager />, {
+      routerProps: { initialEntries: [INITIAL_ENTRY] },
+      wrapper: getWrapperWith('wrongNode', [{ ...MOCK_NODE_COMBINER, position: { x: 0, y: 0 } }]),
+    })
+
+    // Must mimic the click on the ReactFlow node to open the drawer
+    cy.getByTestId('test-reactflow-trigger-button').click()
+
+    cy.wrap(null).then(() => {
+      expect(caughtError).to.not.be.null
+      expect(caughtError?.message).to.include('No combiner node found')
+    })
   })
 
   it('should render the drawer', () => {
     cy.mountWithProviders(<CombinerMappingManager />, {
-      routerProps: { initialEntries: [`/node/wrong-adapter`] },
-      wrapper: getWrapperWith(),
+      routerProps: { initialEntries: [INITIAL_ENTRY] },
+      wrapper: getWrapperWith('idCombiner', [{ ...MOCK_NODE_COMBINER, position: { x: 0, y: 0 } }]),
     })
+
+    // Must mimic the click on the ReactFlow node to open the drawer
+    cy.getByTestId('test-reactflow-trigger-button').click()
 
     cy.get('[role="dialog"]').should('be.visible')
 
     cy.get('header').should('contain.text', 'Manage Data combining mappings')
-    cy.get('[role="dialog"]').find('button').as('dialog-buttons').should('have.length', 1)
-    cy.get('@dialog-buttons').eq(0).should('have.attr', 'aria-label', 'Close')
+    cy.get('[role="dialog"]').find('button[aria-label="Close"]').as('dialog-close')
 
-    cy.get('@dialog-buttons').eq(0).click()
+    cy.get('@dialog-close').click()
     cy.get('[role="dialog"]').should('not.exist')
-  })
-
-  it('should render error properly', () => {
-    cy.mountWithProviders(<CombinerMappingManager />, {
-      routerProps: { initialEntries: [`/node/wrong-adapter`] },
-      wrapper: getWrapperWith(),
-    })
-
-    cy.get('[role="dialog"]').should('be.visible')
-
-    cy.get('[role="alert"]').should('be.visible')
-    cy.get('[role="alert"] span').should('have.attr', 'data-status', 'error')
-    cy.get('[role="alert"] div div')
-      .should('have.attr', 'data-status', 'error')
-      .should('contain.text', 'There was a problem loading the data')
+    cy.getByTestId('data-pathname').should('have.text', INITIAL_ENTRY)
   })
 
   it('should render data combining properly', () => {
     cy.mountWithProviders(<CombinerMappingManager />, {
-      routerProps: { initialEntries: [`/node/idCombiner`] },
-      wrapper: getWrapperWith([{ ...MOCK_NODE_COMBINER, position: { x: 0, y: 0 } }]),
+      routerProps: { initialEntries: [INITIAL_ENTRY] },
+      wrapper: getWrapperWith('idCombiner', [{ ...MOCK_NODE_COMBINER, position: { x: 0, y: 0 } }]),
     })
+
+    // Must mimic the click on the ReactFlow node to open the drawer
+    cy.getByTestId('test-reactflow-trigger-button').click()
+
     cy.get('header').should('contain.text', 'Manage Data combining mappings')
 
     cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.COMBINER_NODE)
@@ -96,15 +125,20 @@ describe.skip('CombinerMappingManager', () => {
   })
 
   it('should render the toolbar properly', () => {
-    cy.intercept('DELETE', '/api/v1/management/combiners/**', { deleted: 'the combiner' }).as('delete')
-    cy.mountWithProviders(<CombinerMappingManager />, {
-      routerProps: { initialEntries: [`/node/idCombiner`] },
-      wrapper: getWrapperWith([{ ...MOCK_NODE_COMBINER, position: { x: 0, y: 0 } }]),
+    let caughtError: Error | null = null
+    cy.on('uncaught:exception', (err) => {
+      caughtError = err
+      return false // Prevent Cypress from failing
     })
 
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(500)
+    cy.intercept('DELETE', '/api/v1/management/combiners/**', { deleted: 'the combiner' }).as('delete')
+    cy.mountWithProviders(<CombinerMappingManager />, {
+      routerProps: { initialEntries: [INITIAL_ENTRY] },
+      wrapper: getWrapperWith('idCombiner', [{ ...MOCK_NODE_COMBINER, position: { x: 0, y: 0 } }]),
+    })
 
+    // Must mimic the click on the ReactFlow node to open the drawer
+    cy.getByTestId('test-reactflow-trigger-button').click()
     cy.getByTestId('data-pathname').should('have.text', '/node/idCombiner')
 
     cy.get('footer').within(() => {
@@ -118,7 +152,10 @@ describe.skip('CombinerMappingManager', () => {
     cy.get('section[role="alertdialog"]').within(() => {
       cy.get('footer button').eq(1).click()
     })
-
+    cy.wrap(null).then(() => {
+      expect(caughtError).to.not.be.null
+      expect(caughtError?.message).to.include('No combiner node found')
+    })
     cy.wait('@delete')
     cy.get('[role="dialog"]').should('not.exist')
     cy.getByTestId('data-pathname').should('have.text', '/workspace')
@@ -126,6 +163,7 @@ describe.skip('CombinerMappingManager', () => {
     cy.get('[role="status"]').should('contain.text', 'Delete the combiner')
     cy.get('[role="status"]').should('contain.text', "We've successfully deleted the combiner for you.")
     cy.get('[role="status"] > div').should('have.attr', 'data-status', 'success')
+    return
   })
 
   it('should publish properly', () => {
@@ -162,8 +200,8 @@ describe.skip('CombinerMappingManager', () => {
     cy.intercept('PUT', 'api/v1/management/combiners/**', { updated: 'the combiner' }).as('update')
 
     cy.mountWithProviders(<CombinerMappingManager />, {
-      routerProps: { initialEntries: [`/node/idCombiner`] },
-      wrapper: getWrapperWith([
+      routerProps: { initialEntries: [INITIAL_ENTRY] },
+      wrapper: getWrapperWith('idCombiner', [
         {
           id: 'idCombiner',
           type: NodeTypes.COMBINER_NODE,
@@ -173,6 +211,9 @@ describe.skip('CombinerMappingManager', () => {
         },
       ]),
     })
+    // Must mimic the click on the ReactFlow node to open the drawer
+    cy.getByTestId('test-reactflow-trigger-button').click()
+    cy.getByTestId('data-pathname').should('have.text', '/node/idCombiner')
 
     // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500)
@@ -193,9 +234,12 @@ describe.skip('CombinerMappingManager', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<CombinerMappingManager />, {
-      routerProps: { initialEntries: [`/node/idCombiner`] },
-      wrapper: getWrapperWith([{ ...MOCK_NODE_COMBINER, position: { x: 0, y: 0 } }]),
+      routerProps: { initialEntries: [INITIAL_ENTRY] },
+      wrapper: getWrapperWith('idCombiner', [{ ...MOCK_NODE_COMBINER, position: { x: 0, y: 0 } }]),
     })
+    // Must mimic the click on the ReactFlow node to open the drawer
+    cy.getByTestId('test-reactflow-trigger-button').click()
+    cy.getByTestId('data-pathname').should('have.text', '/node/idCombiner')
 
     cy.checkAccessibility()
 

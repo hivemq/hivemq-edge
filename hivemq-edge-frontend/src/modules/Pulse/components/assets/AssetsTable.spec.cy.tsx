@@ -295,6 +295,7 @@ describe('AssetsTable', () => {
       })
 
       it('should handle mapping in a new mapper', () => {
+        cy.intercept('/api/v1/management/bridges', { statusCode: 203, log: false })
         cy.intercept<ManagedAsset>('PUT', 'api/v1/management/pulse/managed-assets/*', (req) => {
           const asset = req.body
           req.reply({ body: { updated: asset.id }, statusCode: 200 })

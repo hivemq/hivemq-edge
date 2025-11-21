@@ -1,7 +1,15 @@
 import type { Edge, Node } from '@xyflow/react'
+
+import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 import { MOCK_NODE_ADAPTER, MOCK_NODE_DEVICE } from '@/__test-utils__/react-flow/nodes.ts'
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting.tsx'
-import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import type { DomainTagList } from '@/api/__generated__'
+import {
+  MOCK_DEVICE_TAG_JSON_SCHEMA_SIMULATION,
+  MOCK_DEVICE_TAGS,
+  mockAdapter,
+  mockProtocolAdapter,
+} from '@/api/hooks/useProtocolAdapters/__handlers__'
 import DevicePropertyDrawer from '@/modules/Workspace/components/drawers/DevicePropertyDrawer.tsx'
 
 const getWrapperWith = (initialNodes?: Node[], initialEdges?: Edge[]) => {
@@ -28,7 +36,6 @@ describe('DevicePropertyDrawer', () => {
     cy.viewport(800, 800)
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getProtocols')
     cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getAdapters')
-    cy.intercept('/api/v1/management/protocol-adapters/adapters/my-adapter/tags?type=simulation', { statusCode: 404 })
   })
 
   it('should render an error message', () => {
@@ -48,9 +55,15 @@ describe('DevicePropertyDrawer', () => {
       .should('contain.text', 'The protocol adapter for this device cannot be found')
   })
 
-  it('should render properly', () => {
+  it('should be accessible', () => {
+    const mockResponse: DomainTagList = { items: MOCK_DEVICE_TAGS('s7-1', MockAdapterType.SIMULATION) }
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', mockResponse)
+    cy.intercept('/api/v1/management/protocol-adapters/tag-schemas/simulation', MOCK_DEVICE_TAG_JSON_SCHEMA_SIMULATION)
+
     const onClose = cy.stub().as('onClose')
     const onEditEntity = cy.stub().as('onEditEntity')
+
+    cy.injectAxe()
     cy.mountWithProviders(
       <DevicePropertyDrawer
         nodeId="adapter@fgffgf"
@@ -75,6 +88,8 @@ describe('DevicePropertyDrawer', () => {
     cy.get('@onClose').should('have.been.calledOnce')
 
     cy.get('header').should('contain.text', 'Device Overview')
-    cy.get('[role="alert"]').should('contain.text', 'Cannot load the tags').should('have.attr', 'data-status', 'error')
+    cy.get('h2').should('have.text', 'List of tags')
+
+    cy.checkAccessibility()
   })
 })

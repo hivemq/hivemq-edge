@@ -1,9 +1,12 @@
+import { MOCK_COMBINER_ASSET } from '@/api/hooks/useCombiners/__handlers__'
 import { MOCK_PULSE_ASSET, MOCK_PULSE_ASSET_MAPPED } from '@/api/hooks/usePulse/__handlers__'
 import { AssetActionMenu } from '@/modules/Pulse/components/assets/AssetActionMenu.tsx'
 
 describe('AssetActionMenu', () => {
   beforeEach(() => {
     cy.viewport(350, 600)
+
+    cy.intercept('/api/v1/management/pulse/asset-mappers', { items: [MOCK_COMBINER_ASSET] })
   })
 
   it('should render unmapped properly', () => {

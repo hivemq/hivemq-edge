@@ -1,6 +1,7 @@
 import { MOCK_PROTOCOL_HTTP, MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_SIMULATION } from '@/__test-utils__/adapters'
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+import { MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
 import { MOCK_DEVICE_TAGS, mockAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 
@@ -48,6 +49,10 @@ describe('Workspace', () => {
 
       req.reply(200, { items: MOCK_DEVICE_TAGS(id, MockAdapterType.OPC_UA) })
     })
+    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
+    cy.intercept('/api/v1/metrics', { items: MOCK_METRICS })
+    cy.intercept('/api/v1/metrics/**/*', { statusCode: 202, log: false })
+    cy.intercept('/api/v1/management/events?*', { statusCode: 202, log: false })
 
     loginPage.visit('/app/workspace')
     loginPage.loginButton.click()

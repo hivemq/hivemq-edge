@@ -11,6 +11,7 @@ describe('SchemaTable (Copilot)', () => {
 
   context('Rendering and Loading States', () => {
     it('should render the table component correctly', () => {
+      cy.intercept('/api/v1/data-hub/schemas', { items: [mockSchemaTempHumidity] }).as('getSchemas')
       cy.mountWithProviders(<SchemaTable />)
 
       cy.get('table').should('have.attr', 'aria-label', 'List of schemas')
@@ -83,6 +84,7 @@ describe('SchemaTable (Copilot)', () => {
   })
 
   it('should be accessible', () => {
+    cy.intercept('/api/v1/data-hub/schemas', { items: [mockSchemaTempHumidity] }).as('getSchemas')
     cy.injectAxe()
     cy.mountWithProviders(<SchemaTable />)
     cy.checkAccessibility()

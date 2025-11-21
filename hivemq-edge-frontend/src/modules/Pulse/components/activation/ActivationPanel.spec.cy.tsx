@@ -1,4 +1,5 @@
 import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
+import type { ProtocolAdapter } from '@/api/__generated__'
 import { MOCK_CAPABILITY_PERSISTENCE, MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
 import { ActivationPanel } from '@/modules/Pulse/components/activation/ActivationPanel.tsx'
 
@@ -58,6 +59,7 @@ describe('ActivationPanel', () => {
   }
 
   it('should handle activation', () => {
+    cy.intercept<ProtocolAdapter>('POST', '/api/v1/management/pulse/activation-token', { statusCode: 202 })
     cy.intercept('/api/v1/frontend/capabilities', {
       items: [MOCK_CAPABILITY_PERSISTENCE],
     }).as('capabilities')

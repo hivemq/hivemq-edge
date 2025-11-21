@@ -22,6 +22,7 @@ import LayoutSelector from '@/modules/Workspace/components/layout/LayoutSelector
 import ApplyLayoutButton from '@/modules/Workspace/components/layout/ApplyLayoutButton.tsx'
 import LayoutPresetsManager from '@/modules/Workspace/components/layout/LayoutPresetsManager.tsx'
 import LayoutOptionsDrawer from '@/modules/Workspace/components/layout/LayoutOptionsDrawer.tsx'
+import CreateEntityButton from '@/modules/Workspace/components/wizard/CreateEntityButton.tsx'
 import { useLayoutEngine } from '@/modules/Workspace/hooks/useLayoutEngine'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore'
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut'
@@ -85,6 +86,12 @@ const CanvasToolbar: FC = () => {
           _dark={{ bg: 'gray.800' }}
           _focusWithin={{ boxShadow: 'outline' }}
         >
+          {/* Wizard Trigger Button - Always visible */}
+          <Box m={2}>
+            <CreateEntityButton />
+          </Box>
+          <Divider orientation={dividerOrientation} borderColor="gray.300" _dark={{ borderColor: 'gray.600' }} />
+
           <IconButton
             data-testid="toolbox-search-expand"
             aria-label={t('workspace.controls.expand')}

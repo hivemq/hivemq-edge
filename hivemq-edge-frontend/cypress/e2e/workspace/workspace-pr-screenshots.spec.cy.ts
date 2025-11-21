@@ -1,6 +1,3 @@
-/// <reference types="cypress" />
-
-import { MOCK_PROTOCOL_OPC_UA } from '@/__test-utils__/adapters'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { mockAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { Status } from '@/api/__generated__'
@@ -36,6 +33,19 @@ describe('Workspace - PR Screenshots', () => {
 
     cy.intercept('/api/v1/management/topic-filters', { statusCode: 202, log: false })
     cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/**/northboundMappings', {
+      statusCode: 202,
+      log: false,
+    })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/**/southboundMappings', {
+      statusCode: 202,
+      log: false,
+    })
+
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', {
+      statusCode: 202,
+      log: false,
+    })
 
     loginPage.visit('/app/workspace')
     loginPage.loginButton.click()

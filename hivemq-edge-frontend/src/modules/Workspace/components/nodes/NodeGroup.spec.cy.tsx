@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
 
+import { MOCK_PROTOCOL_SIMULATION } from '@/__test-utils__/adapters'
 import NodeGroup from './NodeGroup.tsx'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { MOCK_NODE_GROUP } from '@/__test-utils__/react-flow/nodes.ts'
@@ -8,6 +9,7 @@ import { CustomNodeTesting } from '@/__test-utils__/react-flow/CustomNodeTesting
 describe('NodeGroup', () => {
   beforeEach(() => {
     cy.viewport(500, 400)
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_SIMULATION] })
   })
 
   it('should render unselected group properly', () => {

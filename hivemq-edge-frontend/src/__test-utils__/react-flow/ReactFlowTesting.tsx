@@ -1,6 +1,6 @@
 import { type FC, type ReactNode, useEffect } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
-import { Card, CardBody, CardHeader } from '@chakra-ui/react'
+import { Box, Card, CardBody, CardHeader, Tag } from '@chakra-ui/react'
 
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { type WorkspaceState } from '@/modules/Workspace/types.ts'
@@ -15,11 +15,18 @@ interface ReactFlowTestingProps {
   children: ReactNode
   dashboard?: ReactNode
   showDashboard?: boolean
+  showReactFlowElements?: boolean
   config: ReactFlowTestingConfig
 }
 
-export const ReactFlowTesting: FC<ReactFlowTestingProps> = ({ children, dashboard, showDashboard = false, config }) => {
-  const { reset, onAddNodes, onAddEdges } = useWorkspaceStore()
+export const ReactFlowTesting: FC<ReactFlowTestingProps> = ({
+  children,
+  dashboard,
+  showDashboard = false,
+  showReactFlowElements = false,
+  config,
+}) => {
+  const { reset, onAddNodes, onAddEdges, nodes, edges } = useWorkspaceStore()
 
   useEffect(() => {
     reset()
@@ -48,11 +55,32 @@ export const ReactFlowTesting: FC<ReactFlowTestingProps> = ({ children, dashboar
   return (
     <EdgeFlowProvider>
       <ReactFlowProvider>
+        {/*<SuspenseOutlet />*/}
         {children}
         {dashboard && showDashboard && (
           <Card mt={50} size="sm" variant="filled" colorScheme="red">
             <CardHeader>Testing Dashboard</CardHeader>
             <CardBody>{dashboard}</CardBody>
+            {showReactFlowElements && (
+              <CardBody>
+                <Box>
+                  Nodes:
+                  {nodes.map((e) => (
+                    <Tag colorScheme="green" data-testid="react-flow-nodes" key={e.id}>
+                      {e.id}
+                    </Tag>
+                  ))}
+                </Box>
+                <Box>
+                  Edges:
+                  {edges.map((e) => (
+                    <Tag colorScheme="blue" data-testid="react-flow-edges" key={e.id}>
+                      {e.id}
+                    </Tag>
+                  ))}
+                </Box>
+              </CardBody>
+            )}
           </Card>
         )}
       </ReactFlowProvider>

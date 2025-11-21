@@ -131,7 +131,7 @@ const LayoutPresetsManager: FC = () => {
         </Tooltip>
         <Portal>
           <MenuList>
-            <MenuItem icon={<Icon as={LuSave} />} onClick={onOpen}>
+            <MenuItem data-testid="workspace-layout-preset-save" icon={<Icon as={LuSave} />} onClick={onOpen}>
               {t('workspace.autoLayout.presets.actions.save')}
             </MenuItem>
 
@@ -143,8 +143,18 @@ const LayoutPresetsManager: FC = () => {
                 </Text>
 
                 {layoutConfig.presets.map((preset) => (
-                  <HStack key={preset.id} spacing={0} _hover={{ bg: 'gray.50', _dark: { bg: 'gray.700' } }}>
-                    <MenuItem flex={1} onClick={() => handleLoadPreset(preset.id)}>
+                  <HStack
+                    data-testid="workspace-layout-preset-item"
+                    data-preset={preset.name}
+                    key={preset.id}
+                    spacing={0}
+                    _hover={{ bg: 'gray.50', _dark: { bg: 'gray.700' } }}
+                  >
+                    <MenuItem
+                      data-testid="workspace-layout-preset-item-open"
+                      flex={1}
+                      onClick={() => handleLoadPreset(preset.id)}
+                    >
                       <VStack align="start" spacing={0}>
                         <Text fontSize="sm">{preset.name}</Text>
                         <Text fontSize="xs" color="gray.500">
@@ -153,6 +163,7 @@ const LayoutPresetsManager: FC = () => {
                       </VStack>
                     </MenuItem>
                     <IconButton
+                      data-testid="workspace-layout-preset-item-delete"
                       icon={<Icon as={LuTrash2} />}
                       size="xs"
                       variant="ghost"
@@ -171,7 +182,7 @@ const LayoutPresetsManager: FC = () => {
             {layoutConfig.presets.length === 0 && (
               <>
                 <MenuDivider />
-                <Text fontSize="xs" px={3} py={2} color="gray.500">
+                <Text data-testid="workspace-layout-preset-empty" fontSize="xs" px={3} py={2} color="gray.500">
                   {t('workspace.autoLayout.presets.list.empty')}
                 </Text>
               </>

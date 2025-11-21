@@ -235,7 +235,7 @@ describe('getDefaultMetricsFor', () => {
 
 describe('createCombinerNode', () => {
   it('should create a default combiner node', async () => {
-    const actual = createCombinerNode(mockCombiner, 0, [], MOCK_THEME)
+    const actual = createCombinerNode(mockCombiner, [], MOCK_THEME)
 
     const mockId = '6991ff43-9105-445f-bce3-976720df40a3'
     expect(actual).toStrictEqual({
@@ -269,7 +269,7 @@ describe('createCombinerNode', () => {
   })
 
   it('should create links to sources', async () => {
-    const actual = createCombinerNode(mockCombiner, 0, [{ ...MOCK_NODE_EDGE, position: { x: 0, y: 0 } }], MOCK_THEME)
+    const actual = createCombinerNode(mockCombiner, [{ ...MOCK_NODE_EDGE, position: { x: 0, y: 0 } }], MOCK_THEME)
 
     const mockId = '6991ff43-9105-445f-bce3-976720df40a3'
     expect(actual).toStrictEqual({

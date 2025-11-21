@@ -5,6 +5,7 @@ import PulsePage from '@/modules/Pulse/PulsePage.tsx'
 describe('PulsePage', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+    cy.intercept('/api/v1/management/pulse/asset-mappers', { statusCode: 202, log: false })
   })
 
   it('should render activation warning', () => {

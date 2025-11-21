@@ -9,7 +9,7 @@ import type { MonacoInstance } from '../types'
 import type { editor } from 'monaco-editor'
 
 // Mock the template import
-vi.mock('../templates/transform-template.js?raw', () => ({
+vi.mock('../__test-utils__/transform-template.js?raw', () => ({
   default: '// Template code\nfunction transform() {}',
 }))
 
