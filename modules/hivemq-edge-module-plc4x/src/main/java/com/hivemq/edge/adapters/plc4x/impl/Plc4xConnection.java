@@ -141,7 +141,8 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     public void disconnect() throws Exception {
         synchronized (lock) {
             try {
-                if (plcConnection != null && plcConnection.isConnected()) {
+                final var plcConnection = this.plcConnection;
+                if (plcConnection != null) {
                     plcConnection.close();
                 }
             } finally {

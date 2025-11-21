@@ -165,6 +165,12 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                                 tempConnection.startConnection(input.moduleServices().eventService(), adapterId, getProtocolAdapterInformation().getProtocolId());
                                 protocolAdapterState.setConnectionStatus(CONNECTED);
                             } catch (final Plc4xException e) {
+                                try {
+                                    tempConnection.disconnect();
+                                } catch (final Exception ex) {
+                                    log.debug("Tried disconnecting after connection error and caught exception", ex);
+                                }
+                                this.connection = null;
                                 log.error("Plc4x connection failed to start", e);
                                 protocolAdapterState.setConnectionStatus(ERROR);
                             }
