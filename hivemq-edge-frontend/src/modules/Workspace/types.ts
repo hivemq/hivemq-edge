@@ -3,6 +3,9 @@ import type { Adapter, Bridge, Combiner, Listener, ProtocolAdapter, PulseStatus 
 import type { NodeStatusModel } from './types/status.types'
 import type { LayoutType, LayoutPreset, LayoutOptions, LayoutHistoryEntry, LayoutMode } from './types/layout'
 
+export const STORE_WORKSPACE_KEY = 'edge.workspace'
+export const STORE_WIZARD_KEY = 'edge.wizard'
+
 // Node data types with optional statusModel for unified status handling
 export type NodeAdapterType = Node<Adapter & { statusModel?: NodeStatusModel }, NodeTypes.ADAPTER_NODE>
 export type NodeDeviceType = Node<DeviceMetadata & { statusModel?: NodeStatusModel }, NodeTypes.DEVICE_NODE>

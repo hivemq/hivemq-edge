@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
 
+import { MOCK_INTERPOLATION_VARIABLES } from '@datahub/api/hooks/DataHubInterpolationService/__handlers__'
 import type { Edge, Node } from '@xyflow/react'
 import { Button } from '@chakra-ui/react'
 
@@ -7,7 +8,7 @@ import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
 import { MOCK_DATAHUB_FUNCTIONS } from '@datahub/api/hooks/DataHubFunctionsService/__handlers__'
 import { SUGGESTION_TRIGGER_CHAR } from '@datahub/components/interpolation/Suggestion.ts'
 import type { FunctionData } from '@datahub/types.ts'
-import { DataHubNodeType, OperationData } from '@datahub/types.ts'
+import { DataHubNodeType, DesignerStatus, OperationData } from '@datahub/types.ts'
 
 import { OperationPanel } from './OperationPanel.tsx'
 
@@ -42,6 +43,11 @@ describe('OperationPanel', () => {
         return specs
       }),
     }).as('getFunctionSpecs')
+
+    cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/bridges', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/data-hub/interpolation-variables', MOCK_INTERPOLATION_VARIABLES).as('getVariables')
   })
 
   it('should render loading and error states', () => {
@@ -141,9 +147,33 @@ describe('OperationPanel', () => {
       },
     }
 
+    const getWrapperWithPolicy = (nodes: Node[]) => {
+      const Wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
+        return (
+          <MockStoreWrapper
+            config={{
+              initialState: {
+                nodes,
+                edges: [],
+                type: DataHubNodeType.DATA_POLICY,
+                status: DesignerStatus.DRAFT,
+                name: 'test-policy',
+              },
+            }}
+          >
+            {children}
+            <Button variant="primary" type="submit" form="datahub-node-form">
+              SUBMIT
+            </Button>
+          </MockStoreWrapper>
+        )
+      }
+      return Wrapper
+    }
+
     it('should render the form', () => {
       cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
-        wrapper: getWrapperWith([node]),
+        wrapper: getWrapperWithPolicy([node]),
       })
 
       cy.get('h2').should('contain.text', 'System.log')
@@ -164,14 +194,26 @@ describe('OperationPanel', () => {
 
       // Need a better (and shorter) way of testing it display the right widget
       cy.get('#root_formData_message').type(`A new topic ${SUGGESTION_TRIGGER_CHAR}`)
+      cy.wait('@getVariables')
+
+      // Wait for the suggestion list to finish loading (avoid flaky "Error while loading" in CI)
+      cy.getByTestId('suggestion-loading-spinner').should('not.exist')
+
+      // Verify suggestion container is visible with variables loaded
       cy.getByTestId('interpolation-container').should('be.visible')
-      cy.get('#root_formData_message').type('{esc}')
+      cy.getByTestId('interpolation-container').within(() => {
+        cy.get('[role="alert"][data-status="error"]').should('not.exist')
+      })
+
+      // Focus back on the editor and press escape to close the suggestion list
+      cy.get('.ProseMirror').focus()
+      cy.get('.ProseMirror').type('{esc}')
     })
 
     it('should be accessible', () => {
       cy.injectAxe()
       cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
-        wrapper: getWrapperWith([node]),
+        wrapper: getWrapperWithPolicy([node]),
       })
       cy.checkAccessibility(undefined, {
         rules: {

@@ -22,6 +22,32 @@
 
 ---
 
+## Getting the BusinessMap Ticket URL
+
+**For AI Agents with BusinessMap MCP access:**
+
+The full ticket URL follows the pattern: `https://hivemq.kanbanize.com/ctrl_board/{board_id}/cards/{card_id}/details/`
+
+To construct the URL:
+
+1. Use `mcp_businessmap_get_card` with the task number (card_id)
+2. Extract `board_id` from the response
+3. Construct URL: `https://hivemq.kanbanize.com/ctrl_board/{board_id}/cards/{card_id}/details/`
+
+**Example:**
+
+- Task number: 38111
+- Response contains: `"board_id": 57, "card_id": 38111`
+- Full URL: `https://hivemq.kanbanize.com/ctrl_board/57/cards/38111/details/`
+
+**For Manual Users:**
+
+- Open the card in BusinessMap
+- Copy the URL from your browser's address bar
+- The URL format is: `https://hivemq.kanbanize.com/ctrl_board/{board_id}/cards/{card_id}/details/`
+
+---
+
 ## Writing Guidelines
 
 ### Audience & Tone

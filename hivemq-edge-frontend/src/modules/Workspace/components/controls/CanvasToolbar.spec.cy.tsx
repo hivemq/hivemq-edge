@@ -5,6 +5,7 @@ import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider'
 describe('CanvasToolbar', () => {
   beforeEach(() => {
     cy.viewport(800, 600)
+    cy.intercept('/api/v1/frontend/capabilities', { statusCode: 202, log: false })
   })
 
   const wrapper = ({ children }: { children: JSX.Element }) => (

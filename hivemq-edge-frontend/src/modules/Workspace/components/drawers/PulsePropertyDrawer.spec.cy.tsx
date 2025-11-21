@@ -21,7 +21,7 @@ describe('PulsePropertyDrawer', () => {
   it('should render errors', () => {
     cy.intercept('/api/v1/frontend/capabilities', { items: [] })
 
-    const onClose = cy.stub().as('onClose')
+    const onClose = cy.stub()
     cy.mountWithProviders(
       <PulsePropertyDrawer nodeId="pulseId" selectedNode={mockNode} isOpen={true} onClose={onClose} />
     )
@@ -33,6 +33,7 @@ describe('PulsePropertyDrawer', () => {
   it('should render properly', () => {
     cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
     cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('assets')
+    cy.intercept('/api/v1/management/pulse/asset-mappers', { statusCode: 202, log: false })
 
     const onClose = cy.stub().as('onClose')
     cy.mountWithProviders(
@@ -53,6 +54,10 @@ describe('PulsePropertyDrawer', () => {
   })
 
   it('should be accessible', () => {
+    cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
+    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST)
+    cy.intercept('/api/v1/management/pulse/asset-mappers', { statusCode: 202, log: false })
+
     cy.injectAxe()
     cy.mountWithProviders(
       <PulsePropertyDrawer nodeId="pulseId" selectedNode={mockNode} isOpen={true} onClose={cy.stub} />
