@@ -91,8 +91,8 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                     try {
                         plcConnection = CompletableFuture.supplyAsync(() -> {
                                     try {
-                                        //This is not working in all cases. An exception is thrown if PLC4X actually catches
-                                        //the connection probllem. In many cases this call will simply get stuck. Afterwards
+                                        // This is not working in all cases. An exception is thrown if PLC4X actually catches
+                                        // the connection problem. In many cases this call will simply get stuck. Afterwards
                                         // a new connection CANNOT be opened.
                                         return Optional.of(plcDriverManager.getConnectionManager()
                                                 .getConnection(connectionString));

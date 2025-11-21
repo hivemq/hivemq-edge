@@ -276,6 +276,12 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                     protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
                 }
                 return processPlcFieldData(Plc4xDataUtils.readDataFromReadResponse(event));
+            } else {
+                tags.stream()
+                        .filter(tag -> event.getResponseCode(tag.getName()) != PlcResponseCode.OK)
+                        .forEach(tag -> log.error("Unable to read tag {}. Error Code: {}",
+                                tag.getName(),
+                                event.getResponseCode(tag.getName())));;
             }
         }
         return new Plc4xDataSample(adapterFactories.dataPointFactory());
