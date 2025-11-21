@@ -248,7 +248,6 @@ describe('ghostNodeFactory', () => {
       expect(edgeToEdge?.source).toBe('ghost-adapter-test-id')
 
       const edgeToDevice = group.edges.find((e) => e.source === 'ghost-adapter-test-id')
-      console.log('XXXXXX edge, grou', group.edges)
       expect(edgeToDevice).toBeDefined()
       expect(edgeToDevice?.target).toBe(IdStubs.EDGE_NODE)
     })
