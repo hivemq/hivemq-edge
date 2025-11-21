@@ -35,7 +35,7 @@ const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selec
 
   return (
     <Drawer isOpen={isOpen} placement="right" size="md" onClose={onClose} variant="hivemq">
-      <DrawerContent>
+      <DrawerContent aria-label={t('workspace.observability.header', { context: selectedNode.type })}>
         <DrawerCloseButton />
 
         <DrawerHeader>
