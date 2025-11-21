@@ -45,7 +45,8 @@ export class DataHubBehaviorPoliciesService {
                 'cursor': cursor,
             },
             errors: {
-                503: `Temporarily not available`,
+                400: `URL parameter missing`,
+                503: `Request resource temporary unavailable`,
             },
         });
     }
@@ -69,10 +70,10 @@ export class DataHubBehaviorPoliciesService {
             mediaType: 'application/json',
             errors: {
                 400: `Policy creation failed`,
-                409: `Already exists`,
-                500: `Internal error`,
-                503: `Temporarily unavailable`,
-                507: `Insufficient storage error`,
+                409: `Behavior policy already present`,
+                500: `Internal server error`,
+                503: `Request resource temporary unavailable`,
+                507: `Insufficient storage`,
             },
         });
     }
@@ -102,10 +103,10 @@ export class DataHubBehaviorPoliciesService {
             },
             errors: {
                 400: `URL parameter missing`,
-                404: `Policy not found`,
+                404: `Behavior policy not found`,
                 412: `Precondition failed`,
-                500: `Internal error`,
-                503: `Temporarily not available`,
+                500: `Internal server error`,
+                503: `Request resource temporary unavailable`,
             },
         });
     }
@@ -136,14 +137,16 @@ export class DataHubBehaviorPoliciesService {
                 'fields': fields,
             },
             errors: {
-                400: `Invalid query parameter`,
+                400: `Bad request`,
                 404: `Policy not found`,
+                500: `Internal server error`,
+                503: `Request resource temporary unavailable`,
             },
         });
     }
 
     /**
-     * Update an existing policy
+     * Update an existing behavior policy
      * Update a behavior policy
      *
      * The path parameter 'policyId' must match the 'id' of the policy in the request body.
@@ -171,12 +174,12 @@ export class DataHubBehaviorPoliciesService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Policy creation failed`,
-                404: `Policy not found`,
+                400: `Behavior policy creation failed`,
+                404: `Data policy not found`,
                 412: `Precondition failed`,
-                500: `Internal error`,
-                503: `Temporarily unavailable`,
-                507: `Insufficient storage error`,
+                500: `Internal server error`,
+                503: `Request resource temporary unavailable`,
+                507: `Insufficient storage`,
             },
         });
     }

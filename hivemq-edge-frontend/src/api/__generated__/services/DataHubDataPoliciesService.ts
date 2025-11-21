@@ -49,8 +49,6 @@ export class DataHubDataPoliciesService {
             },
             errors: {
                 400: `URL parameter missing`,
-                404: `DataPolicy not found`,
-                500: `Internal server error`,
                 503: `Request resource temporary unavailable`,
             },
         });
@@ -74,8 +72,8 @@ export class DataHubDataPoliciesService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `DataPolicy creation failed`,
-                409: `DataPolicy already present`,
+                400: `Data policy creation failed`,
+                409: `Data policy already present`,
                 500: `Internal server error`,
                 503: `Request resource temporary unavailable`,
                 507: `Insufficient storage`,
@@ -108,7 +106,8 @@ export class DataHubDataPoliciesService {
             },
             errors: {
                 400: `URL parameter missing`,
-                404: `DataPolicy not found`,
+                404: `Data policy not found`,
+                412: `Precondition failed`,
                 500: `Internal server error`,
                 503: `Request resource temporary unavailable`,
             },
@@ -143,6 +142,8 @@ export class DataHubDataPoliciesService {
             errors: {
                 400: `Bad request`,
                 404: `Resource not found`,
+                500: `Internal server error`,
+                503: `Request resource temporary unavailable`,
             },
         });
     }
@@ -177,8 +178,9 @@ export class DataHubDataPoliciesService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `DataPolicy creation failed`,
-                404: `DataPolicy not found`,
+                400: `Data policy creation failed`,
+                404: `Data policy not found`,
+                412: `Precondition failed`,
                 500: `Internal server error`,
                 503: `Request resource temporary unavailable`,
                 507: `Insufficient storage`,

@@ -7,16 +7,16 @@ describe('ConceptWheel', () => {
 
   const injectAllIntercept = () => {
     cy.intercept('/api/v1/management/bridges', { items: [] })
-    cy.intercept('/api/v1/management/protocol-adapters/northboundMappings', { items: [] })
-    cy.intercept('/api/v1/management/protocol-adapters/southboundMappings', { items: [] })
+    cy.intercept('/api/v1/management/protocol-adapters/mappings/northboundMappings', { items: [] })
+    cy.intercept('/api/v1/management/protocol-adapters/mappings/southboundMappings', { items: [] })
     cy.intercept('api/v1/management/protocol-adapters/tags', { items: [] })
     cy.intercept('api/v1/management/topic-filters', { items: [] })
   }
 
   it('should render errors', () => {
     cy.intercept('/api/v1/management/bridges', { statusCode: 404 })
-    cy.intercept('/api/v1/management/protocol-adapters/northboundMappings', { statusCode: 404 })
-    cy.intercept('/api/v1/management/protocol-adapters/southboundMappings', { statusCode: 404 })
+    cy.intercept('/api/v1/management/protocol-adapters/mappings/northboundMappings', { statusCode: 404 })
+    cy.intercept('/api/v1/management/protocol-adapters/mappings/southboundMappings', { statusCode: 404 })
     cy.intercept('api/v1/management/protocol-adapters/tags', { statusCode: 404 })
     cy.intercept('api/v1/management/topic-filters', { statusCode: 404 })
     cy.mountWithProviders(<ConceptWheel />)

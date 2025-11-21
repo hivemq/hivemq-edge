@@ -4,15 +4,6 @@ properties:
     type: array
     description: List of result items that are returned by this endpoint
     items:
-      type: object
-      required:
-        - adapterId
-        - mapping
-      properties:
-        adapterId:
-          type: string
-          description: The id of the adapter owning the mapping
-        mapping:
-          $ref: ./NorthboundMapping.yaml
+      $ref: ./NorthboundMappingOwner.yaml
 required:
   - items
