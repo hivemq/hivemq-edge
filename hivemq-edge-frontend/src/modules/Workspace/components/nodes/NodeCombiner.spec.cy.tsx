@@ -1,3 +1,4 @@
+import { MOCK_PROTOCOL_ADS } from '@/__test-utils__/adapters'
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers'
 import { MOCK_NODE_COMBINER } from '@/__test-utils__/react-flow/nodes'
 import { CustomNodeTesting } from '@/__test-utils__/react-flow/CustomNodeTesting'
@@ -8,6 +9,7 @@ import { NodeTypes } from '../../types'
 describe('NodeCombiner', () => {
   beforeEach(() => {
     cy.viewport(400, 400)
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_ADS] })
   })
 
   it('should render properly', () => {

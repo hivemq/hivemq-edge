@@ -1,7 +1,7 @@
 import debug from 'debug'
 import type { MonacoInstance } from '../types'
 import type { editor, languages } from 'monaco-editor'
-import transformTemplate from '../templates/transform-template.js?raw'
+import transformTemplate from '../__test-utils__/transform-template.js?raw'
 
 const debugLogger = debug('DataHub:monaco:js')
 

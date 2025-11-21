@@ -12,11 +12,16 @@ describe('MappingContainer', () => {
   beforeEach(() => {
     cy.viewport(1200, 900)
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getProtocols')
-    cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getAdapters')
+    cy.intercept('GET', 'api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getAdapters')
     cy.intercept('/api/v1/management/bridges', { items: [mockBridge] }).as('getConfig3')
     cy.intercept('/api/v1/management/client/filters', { statusCode: 404 })
     cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(false, 'my-topic'))
     cy.intercept('/api/v1/management/domain/topics/schema?*', GENERATE_DATA_MODELS(true, 'test'))
+    cy.intercept('/api/v1/management/topic-filters', { statusCode: 202, log: false })
+    cy.intercept('/api/v1/management/sampling/schema/**', { statusCode: 202, log: false })
+    cy.intercept('/api/v1/management/sampling/topic/**', { statusCode: 202, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/*/*', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', { statusCode: 202, log: false })
   })
 
   it('should be accessible ', () => {
