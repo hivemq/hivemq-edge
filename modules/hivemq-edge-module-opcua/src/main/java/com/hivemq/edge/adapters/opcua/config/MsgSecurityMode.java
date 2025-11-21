@@ -27,13 +27,13 @@ import org.jetbrains.annotations.Nullable;
  */
 public enum MsgSecurityMode {
 
-    @JsonProperty("None")
+    @JsonProperty("NONE")
     NONE(MessageSecurityMode.None),
 
-    @JsonProperty("Sign")
+    @JsonProperty("SIGN")
     SIGN(MessageSecurityMode.Sign),
 
-    @JsonProperty("SignAndEncrypt")
+    @JsonProperty("SIGN_AND_ENCRYPT")
     SIGN_AND_ENCRYPT(MessageSecurityMode.SignAndEncrypt);
 
     private final @NotNull MessageSecurityMode miloMode;
