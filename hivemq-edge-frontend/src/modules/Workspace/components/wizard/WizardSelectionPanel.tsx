@@ -104,13 +104,13 @@ const WizardSelectionPanel: FC = () => {
               <Text fontSize="sm" fontWeight="medium">
                 {t('workspace.wizard.selection.selected')}
               </Text>
-              <Badge data-testid="wizard-selection-count" colorScheme={canProceed ? 'green' : 'orange'} fontSize="sm">
-                {isGroup && autoIncludedNodes.length > 0
-                  ? t('workspace.wizard.group.selectionCountWithAuto', {
-                      count: selectedNodeIds.length,
-                      autoCount: autoIncludedNodes.length,
-                    })
-                  : getProgressText()}
+              <Badge
+                data-testid="wizard-selection-count"
+                data-status={canProceed ? 'valid' : 'incomplete'}
+                colorScheme={canProceed ? 'green' : 'orange'}
+                fontSize="sm"
+              >
+                {getProgressText()}
               </Badge>
             </HStack>
 
