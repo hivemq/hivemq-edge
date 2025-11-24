@@ -17,7 +17,7 @@ export class WizardPage extends Page {
    * ========== WIZARD MENU OPTIONS ==========
    */
   wizardMenu = {
-    selectOption(type: 'ADAPTER' | 'BRIDGE' | 'COMBINER' | 'ASSET_MAPPER') {
+    selectOption(type: 'ADAPTER' | 'BRIDGE' | 'COMBINER' | 'ASSET_MAPPER' | 'GROUP') {
       return cy.getByTestId(`wizard-option-${type}`).click()
     },
   }
@@ -302,6 +302,44 @@ export class WizardPage extends Page {
 
     setMappingInput(index: number, value: string) {
       return this.getMappingInput(index).clear().type(value)
+    },
+  }
+
+  // ========== GROUP CONFIGURATION ==========
+  groupConfig = {
+    get panel() {
+      return cy.get('[role="dialog"]')
+    },
+
+    get configForm() {
+      return this.panel.find('form')
+    },
+
+    get titleInput() {
+      return this.configForm.find('input[name="title"]')
+    },
+
+    get colorSchemeSelector() {
+      return this.configForm.find('[data-testid="color-scheme-selector"]')
+    },
+
+    selectColorScheme(color: string) {
+      // Assuming it's a button group or similar
+      return this.configForm.within(() => {
+        cy.contains(color).click()
+      })
+    },
+
+    get submitButton() {
+      return this.panel.find('button[type="submit"]').first()
+    },
+
+    get backButton() {
+      return cy.getByTestId('wizard-group-form-back')
+    },
+
+    setTitle(title: string) {
+      return this.titleInput.clear().type(title)
     },
   }
 
