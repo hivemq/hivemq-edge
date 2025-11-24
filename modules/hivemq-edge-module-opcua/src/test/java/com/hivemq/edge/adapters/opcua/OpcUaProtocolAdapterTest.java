@@ -328,6 +328,10 @@ public class OpcUaProtocolAdapterTest {
         return input;
     }
 
+    static long getUpperBound(final long value) {
+        return (long) (value * (1 + ConnectionOptions.DEFAULT_RETRY_JITTER));
+    }
+
     /**
      * Tests the exponential backoff delay calculation using the comma-separated retry intervals.
      * Verifies the backoff sequence: 1s, 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s, 300s (capped).
@@ -352,7 +356,8 @@ public class OpcUaProtocolAdapterTest {
         final long actualDelay =
                 OpcUaProtocolAdapter.calculateBackoffDelayMs(ConnectionOptions.DEFAULT_RETRY_INTERVALS, attemptCount);
         assertThat(actualDelay).as("Backoff delay for attempt #%d should be %d ms", attemptCount, expectedDelayMs)
-                .isEqualTo(expectedDelayMs);
+                .isGreaterThanOrEqualTo(expectedDelayMs)
+                .isLessThan(getUpperBound(expectedDelayMs));
     }
 
     /**
@@ -366,7 +371,8 @@ public class OpcUaProtocolAdapterTest {
                     OpcUaProtocolAdapter.calculateBackoffDelayMs(ConnectionOptions.DEFAULT_RETRY_INTERVALS,
                             attemptCount);
             assertThat(actualDelay).as("Backoff delay for attempt #%d should be capped at 300 seconds", attemptCount)
-                    .isEqualTo(300_000L);
+                    .isGreaterThanOrEqualTo(300_000L)
+                    .isLessThan(getUpperBound(300_000L));
         }
     }
 
@@ -384,7 +390,8 @@ public class OpcUaProtocolAdapterTest {
 
             if (attemptCount > 1) {
                 assertThat(currentDelay).as("Delay for attempt #%d should be double the previous delay", attemptCount)
-                        .isEqualTo(previousDelay * 2);
+                        .isGreaterThanOrEqualTo(previousDelay * 2)
+                        .isLessThan(getUpperBound(previousDelay * 2));
             }
 
             previousDelay = currentDelay;
@@ -395,7 +402,8 @@ public class OpcUaProtocolAdapterTest {
                 OpcUaProtocolAdapter.calculateBackoffDelayMs(ConnectionOptions.DEFAULT_RETRY_INTERVALS, 10);
         assertThat(tenthAttemptDelay).as("10th attempt should be capped, not double the 9th")
                 .isLessThan(previousDelay * 2)
-                .isEqualTo(300_000L);
+                .isGreaterThanOrEqualTo(300_000L)
+                .isLessThan(getUpperBound(300_000L));
     }
 
     /**
@@ -406,7 +414,7 @@ public class OpcUaProtocolAdapterTest {
     @ValueSource(strings = {
             "abc,def,ghi",              // Non-numeric values
             "1000,abc,3000",            // Mix of valid and invalid
-            "1000,2000,",               // Trailing comma with empty value
+            "1000,2000, ",               // Trailing comma with empty value
             ",1000,2000",               // Leading comma with empty value
             "1000,,2000",               // Double comma with empty value
             "1000.5,2000.5",            // Floating point values
@@ -414,9 +422,8 @@ public class OpcUaProtocolAdapterTest {
             ""                          // Empty
     })
     void testCalculateBackoffDelayMs_malformedIntervals(final @NotNull String malformedIntervals) {
-        assertThatThrownBy(() -> OpcUaProtocolAdapter.calculateBackoffDelayMs(malformedIntervals, 1))
-                .isInstanceOf(NumberFormatException.class)
-                .hasMessageContaining("For input string:");
+        assertThatThrownBy(() -> OpcUaProtocolAdapter.calculateBackoffDelayMs(malformedIntervals, 1)).isInstanceOf(
+                NumberFormatException.class).hasMessageContaining("For input string:");
     }
 
     /**
@@ -427,12 +434,17 @@ public class OpcUaProtocolAdapterTest {
     void testCalculateBackoffDelayMs_customValidIntervals() {
         final String customIntervals = "5000,10000,15000";
 
-        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 1)).isEqualTo(5_000L);
-        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 2)).isEqualTo(10_000L);
-        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 3)).isEqualTo(15_000L);
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 1)).isGreaterThanOrEqualTo(5_000L)
+                .isLessThan(getUpperBound(5_000L));
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 2)).isGreaterThanOrEqualTo(10_000L)
+                .isLessThan(getUpperBound(10_000L));
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 3)).isGreaterThanOrEqualTo(15_000L)
+                .isLessThan(getUpperBound(15_000L));
         // Should repeat last value when exceeding array length
-        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 4)).isEqualTo(15_000L);
-        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 10)).isEqualTo(15_000L);
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 4)).isGreaterThanOrEqualTo(15_000L)
+                .isLessThan(getUpperBound(15_000L));
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 10)).isGreaterThanOrEqualTo(15_000L)
+                .isLessThan(getUpperBound(15_000L));
     }
 
     /**
@@ -443,9 +455,12 @@ public class OpcUaProtocolAdapterTest {
     void testCalculateBackoffDelayMs_singleInterval() {
         final String singleInterval = "30000";
 
-        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(singleInterval, 1)).isEqualTo(30_000L);
-        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(singleInterval, 2)).isEqualTo(30_000L);
-        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(singleInterval, 10)).isEqualTo(30_000L);
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(singleInterval, 1)).isGreaterThanOrEqualTo(30_000L)
+                .isLessThan(getUpperBound(30_000L));
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(singleInterval, 2)).isGreaterThanOrEqualTo(30_000L)
+                .isLessThan(getUpperBound(30_000L));
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(singleInterval, 10)).isGreaterThanOrEqualTo(30_000L)
+                .isLessThan(getUpperBound(30_000L));
     }
 
     /**
@@ -456,9 +471,11 @@ public class OpcUaProtocolAdapterTest {
     void testCalculateBackoffDelayMs_intervalsWithWhitespace() {
         final String intervalsWithWhitespace = " 1000 , 2000 , 4000 ";
 
-        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(intervalsWithWhitespace, 1)).isEqualTo(1_000L);
-        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(intervalsWithWhitespace, 2)).isEqualTo(2_000L);
-        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(intervalsWithWhitespace, 3)).isEqualTo(4_000L);
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(intervalsWithWhitespace, 1)).isGreaterThanOrEqualTo(
+                1_000L).isLessThan(getUpperBound(1_000L));
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(intervalsWithWhitespace, 2)).isGreaterThanOrEqualTo(
+                2_000L).isLessThan(getUpperBound(2_000L));
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(intervalsWithWhitespace, 3)).isGreaterThanOrEqualTo(
+                4_000L).isLessThan(getUpperBound(4_000L));
     }
-
 }

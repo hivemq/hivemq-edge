@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -147,7 +148,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return backoffDelays[backoffDelays.length - 1];
         }
 
-        return backoffDelays[index];
+        final double backoffDelay =
+                backoffDelays[index] * (1 + new Random().nextDouble(ConnectionOptions.DEFAULT_RETRY_JITTER));
+        return Double.valueOf(backoffDelay).longValue();
     }
 
     @Override

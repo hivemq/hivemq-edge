@@ -97,6 +97,8 @@ public record ConnectionOptions(
     public static final long DEFAULT_HEALTHCHECK_INTERVAL = 30 * 1000;
     // Exponential backoff delays: 1s, 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s, 300s (capped at 5 minutes)
     public static final String DEFAULT_RETRY_INTERVALS = "1000,2000,4000,8000,16000,32000,64000,128000,256000,300000";
+    // It adds a little jitter to avoid traffic jam.
+    public static final double DEFAULT_RETRY_JITTER = 0.1;
 
     public ConnectionOptions {
         // Timeout configurations with sensible defaults
