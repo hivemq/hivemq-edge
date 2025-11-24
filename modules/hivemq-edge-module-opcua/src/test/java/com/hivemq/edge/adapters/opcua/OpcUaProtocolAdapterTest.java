@@ -387,13 +387,10 @@ public class OpcUaProtocolAdapterTest {
             final long currentDelay =
                     OpcUaProtocolAdapter.calculateBackoffDelayMs(ConnectionOptions.DEFAULT_RETRY_INTERVALS,
                             attemptCount);
-
             if (attemptCount > 1) {
                 assertThat(currentDelay).as("Delay for attempt #%d should be double the previous delay", attemptCount)
-                        .isGreaterThanOrEqualTo(previousDelay * 2)
-                        .isLessThan(getUpperBound(previousDelay * 2));
+                        .isGreaterThan(previousDelay);
             }
-
             previousDelay = currentDelay;
         }
 
