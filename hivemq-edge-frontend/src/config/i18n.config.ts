@@ -1,3 +1,4 @@
+/* istanbul ignore file -- @preserve */
 import { initReactI18next } from 'react-i18next'
 import i18n from 'i18next'
 import Pseudo from 'i18next-pseudo'
@@ -36,6 +37,18 @@ i18n
       escapeValue: false, // react already safes from xss
     },
     postProcess: ['pseudo'],
+    // Only detect missing keys in development mode
+    // saveMissing controls when missingKeyHandler is called
+    saveMissing: import.meta.env.MODE === 'development',
+    missingKeyHandler: (lngs: readonly string[], ns: string, key: string) => {
+      if (typeof window !== 'undefined') {
+        // Store missing keys for Cypress tests to check
+        // @ts-expect-error - Adding custom property for test detection
+        window.__i18nextMissingKeys = window.__i18nextMissingKeys || []
+        // @ts-expect-error - Adding custom property for test detection
+        window.__i18nextMissingKeys.push({ key, ns, lngs })
+      }
+    },
   })
 
 export default i18n
