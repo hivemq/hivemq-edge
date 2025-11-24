@@ -1,8 +1,3 @@
-/**
- * Cypress Component Tests for WizardConfigurationPanel
- * Tests the panel that routes to different entity-specific configuration components
- */
-
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
@@ -90,6 +85,8 @@ describe('WizardConfigurationPanel', () => {
   })
 
   it('should not render drawer for COMBINER (has its own drawer)', () => {
+    cy.intercept('/api/v1/management/topic-filters', { statusCode: 202, log: false })
+
     const { actions } = useWizardStore.getState()
     actions.startWizard(EntityType.COMBINER)
     // Select a node for combiner

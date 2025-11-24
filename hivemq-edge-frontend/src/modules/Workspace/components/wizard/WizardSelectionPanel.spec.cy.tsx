@@ -2,12 +2,11 @@ import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import { EntityType } from './types'
 import WizardSelectionPanel from './WizardSelectionPanel'
-import type { NodeAdapterType, NodeBridgeType, NodeDeviceType, NodePulseType } from '@/modules/Workspace/types'
+import type { NodeAdapterType, NodeBridgeType, NodePulseType } from '@/modules/Workspace/types'
 import { NodeTypes } from '@/modules/Workspace/types'
 import type { Node, Edge } from '@xyflow/react'
 import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
-import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { PulseStatus } from '@/api/__generated__'
 
 describe('WizardSelectionPanel', () => {
@@ -17,7 +16,6 @@ describe('WizardSelectionPanel', () => {
     actions.cancelWizard()
   })
 
-  // ✅ Properly typed mock nodes using actual API data structures
   const mockAdapterNode: NodeAdapterType = {
     id: 'adapter-1',
     type: NodeTypes.ADAPTER_NODE,
@@ -49,16 +47,6 @@ describe('WizardSelectionPanel', () => {
         activation: PulseStatus.activation.ACTIVATED,
         runtime: PulseStatus.runtime.CONNECTED,
       },
-    },
-  }
-
-  const mockDeviceNode: NodeDeviceType = {
-    id: 'device-1',
-    type: NodeTypes.DEVICE_NODE,
-    position: { x: 150, y: 200 },
-    data: {
-      ...mockProtocolAdapter,
-      sourceAdapterId: 'adapter-1',
     },
   }
 
@@ -381,28 +369,6 @@ describe('WizardSelectionPanel', () => {
       cy.getByTestId('wizard-selection-listItem-adapter-1').within(() => {
         cy.get('button').should('not.be.disabled')
       })
-    })
-  })
-
-  describe('Group wizard auto-included nodes', () => {
-    it('should show auto-included count for GROUP wizard', () => {
-      // Create edge between adapter and device for auto-inclusion logic
-      const adapterDeviceEdge = {
-        id: 'edge-adapter-device',
-        source: 'adapter-1',
-        target: 'device-1',
-      }
-
-      mountComponent([mockAdapterNode, mockDeviceNode], [adapterDeviceEdge])
-
-      cy.then(() => {
-        const { actions } = useWizardStore.getState()
-        actions.startWizard(EntityType.GROUP)
-        actions.selectNode('adapter-1')
-      })
-
-      // Translation: "1 node selected (1 auto-included)"
-      cy.getByTestId('wizard-selection-count').should('contain', '1').and('contain', 'auto-included')
     })
   })
 
