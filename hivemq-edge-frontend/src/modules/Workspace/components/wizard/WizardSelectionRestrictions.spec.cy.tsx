@@ -638,7 +638,6 @@ describe('WizardSelectionRestrictions', () => {
       })
 
       // Both nodes remain visible (custom filter applies styling)
-      cy.wait(200) // Wait for constraints to apply
       cy.get('[data-testid="react-flow-nodes"]').should('have.length', 2)
     })
   })
