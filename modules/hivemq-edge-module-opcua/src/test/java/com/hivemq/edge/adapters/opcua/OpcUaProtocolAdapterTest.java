@@ -52,6 +52,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Integration test for OpcUaProtocolAdapter with embedded OPC UA server.
@@ -320,7 +329,7 @@ public class OpcUaProtocolAdapterTest {
     }
 
     /**
-     * Tests the exponential backoff delay calculation using reflection to access the private method.
+     * Tests the exponential backoff delay calculation using the comma-separated retry intervals.
      * Verifies the backoff sequence: 1s, 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s, 300s (capped).
      */
     @ParameterizedTest
@@ -340,7 +349,8 @@ public class OpcUaProtocolAdapterTest {
             "100, 300000",  // Very large attempt count: still 300 seconds (capped)
     })
     void testCalculateBackoffDelayMs_exponentialGrowthAndCapping(final int attemptCount, final long expectedDelayMs) {
-        final long actualDelay = OpcUaProtocolAdapter.calculateBackoffDelayMs(attemptCount);
+        final long actualDelay =
+                OpcUaProtocolAdapter.calculateBackoffDelayMs(ConnectionOptions.DEFAULT_RETRY_INTERVALS, attemptCount);
         assertThat(actualDelay).as("Backoff delay for attempt #%d should be %d ms", attemptCount, expectedDelayMs)
                 .isEqualTo(expectedDelayMs);
     }
@@ -352,7 +362,9 @@ public class OpcUaProtocolAdapterTest {
     @Test
     void testCalculateBackoffDelayMs_capsAtMaximumDelay() {
         for (int attemptCount = 10; attemptCount <= 1000; attemptCount += 10) {
-            final long actualDelay = OpcUaProtocolAdapter.calculateBackoffDelayMs(attemptCount);
+            final long actualDelay =
+                    OpcUaProtocolAdapter.calculateBackoffDelayMs(ConnectionOptions.DEFAULT_RETRY_INTERVALS,
+                            attemptCount);
             assertThat(actualDelay).as("Backoff delay for attempt #%d should be capped at 300 seconds", attemptCount)
                     .isEqualTo(300_000L);
         }
@@ -366,7 +378,9 @@ public class OpcUaProtocolAdapterTest {
     void testCalculateBackoffDelayMs_followsExponentialPattern() {
         long previousDelay = 0;
         for (int attemptCount = 1; attemptCount <= 9; attemptCount++) {
-            final long currentDelay = OpcUaProtocolAdapter.calculateBackoffDelayMs(attemptCount);
+            final long currentDelay =
+                    OpcUaProtocolAdapter.calculateBackoffDelayMs(ConnectionOptions.DEFAULT_RETRY_INTERVALS,
+                            attemptCount);
 
             if (attemptCount > 1) {
                 assertThat(currentDelay).as("Delay for attempt #%d should be double the previous delay", attemptCount)
@@ -377,9 +391,74 @@ public class OpcUaProtocolAdapterTest {
         }
 
         // Verify that the 10th attempt doesn't follow the exponential pattern (it's capped)
-        final long tenthAttemptDelay = OpcUaProtocolAdapter.calculateBackoffDelayMs(10);
+        final long tenthAttemptDelay =
+                OpcUaProtocolAdapter.calculateBackoffDelayMs(ConnectionOptions.DEFAULT_RETRY_INTERVALS, 10);
         assertThat(tenthAttemptDelay).as("10th attempt should be capped, not double the 9th")
                 .isLessThan(previousDelay * 2)
                 .isEqualTo(300_000L);
     }
+
+    /**
+     * Tests that malformed retry intervals throw NumberFormatException.
+     * Various invalid formats should be rejected with appropriate exceptions.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "abc,def,ghi",              // Non-numeric values
+            "1000,abc,3000",            // Mix of valid and invalid
+            "1000,2000,",               // Trailing comma with empty value
+            ",1000,2000",               // Leading comma with empty value
+            "1000,,2000",               // Double comma with empty value
+            "1000.5,2000.5",            // Floating point values
+            "not-a-number",             // Single invalid value
+            ""                          // Empty
+    })
+    void testCalculateBackoffDelayMs_malformedIntervals(final @NotNull String malformedIntervals) {
+        assertThatThrownBy(() -> OpcUaProtocolAdapter.calculateBackoffDelayMs(malformedIntervals, 1))
+                .isInstanceOf(NumberFormatException.class)
+                .hasMessageContaining("For input string:");
+    }
+
+    /**
+     * Tests that valid custom retry intervals work correctly.
+     * Verifies that custom configurations are parsed and applied properly.
+     */
+    @Test
+    void testCalculateBackoffDelayMs_customValidIntervals() {
+        final String customIntervals = "5000,10000,15000";
+
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 1)).isEqualTo(5_000L);
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 2)).isEqualTo(10_000L);
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 3)).isEqualTo(15_000L);
+        // Should repeat last value when exceeding array length
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 4)).isEqualTo(15_000L);
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(customIntervals, 10)).isEqualTo(15_000L);
+    }
+
+    /**
+     * Tests that single interval value works correctly.
+     * A configuration with only one value should use that value for all attempts.
+     */
+    @Test
+    void testCalculateBackoffDelayMs_singleInterval() {
+        final String singleInterval = "30000";
+
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(singleInterval, 1)).isEqualTo(30_000L);
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(singleInterval, 2)).isEqualTo(30_000L);
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(singleInterval, 10)).isEqualTo(30_000L);
+    }
+
+    /**
+     * Tests that intervals with whitespace are handled correctly.
+     * Leading and trailing whitespace should be trimmed from each value.
+     */
+    @Test
+    void testCalculateBackoffDelayMs_intervalsWithWhitespace() {
+        final String intervalsWithWhitespace = " 1000 , 2000 , 4000 ";
+
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(intervalsWithWhitespace, 1)).isEqualTo(1_000L);
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(intervalsWithWhitespace, 2)).isEqualTo(2_000L);
+        assertThat(OpcUaProtocolAdapter.calculateBackoffDelayMs(intervalsWithWhitespace, 3)).isEqualTo(4_000L);
+    }
+
 }

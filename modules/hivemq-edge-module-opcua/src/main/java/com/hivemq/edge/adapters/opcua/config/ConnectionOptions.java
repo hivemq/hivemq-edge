@@ -70,12 +70,10 @@ public record ConnectionOptions(
         Long healthCheckIntervalMs,
 
         @JsonProperty("retryIntervalMs")
-        @ModuleConfigField(title = "Connection Retry Interval (milliseconds)",
-                   description = "Interval between connection retry attempts in milliseconds",
-                   numberMin = 5 * 1000,
-                   numberMax = 300 * 1000,
-                   defaultValue = ""+DEFAULT_RETRY_INTERVAL)
-        Long retryIntervalMs,
+        @ModuleConfigField(title = "Connection Retry Intervals (milliseconds)",
+                   description = "Comma-separated list of backoff delays in milliseconds for connection retry attempts. The adapter will use these delays sequentially for each retry attempt, repeating the last value if attempts exceed the list length.",
+                   defaultValue = DEFAULT_RETRY_INTERVALS)
+        String retryIntervalMs,
 
         @JsonProperty("autoReconnect")
         @ModuleConfigField(title = "Automatic Reconnection",
@@ -97,7 +95,8 @@ public record ConnectionOptions(
     public static final long DEFAULT_REQUEST_TIMEOUT = 30 * 1000;
     public static final long DEFAULT_CONNECTION_TIMEOUT = 30 * 1000;
     public static final long DEFAULT_HEALTHCHECK_INTERVAL = 30 * 1000;
-    public static final long DEFAULT_RETRY_INTERVAL = 30 * 1000;
+    // Exponential backoff delays: 1s, 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s, 300s (capped at 5 minutes)
+    public static final String DEFAULT_RETRY_INTERVALS = "1000,2000,4000,8000,16000,32000,64000,128000,256000,300000";
 
     public ConnectionOptions {
         // Timeout configurations with sensible defaults
@@ -107,7 +106,7 @@ public record ConnectionOptions(
         keepAliveFailuresAllowed = requireNonNullElse(keepAliveFailuresAllowed, DEFAULT_KEEP_ALIVE_FAILURES_ALLOWED);
         connectionTimeoutMs = requireNonNullElse(connectionTimeoutMs, DEFAULT_CONNECTION_TIMEOUT);
         healthCheckIntervalMs = requireNonNullElse(healthCheckIntervalMs, DEFAULT_HEALTHCHECK_INTERVAL);
-        retryIntervalMs = requireNonNullElse(retryIntervalMs, DEFAULT_RETRY_INTERVAL);
+        retryIntervalMs = requireNonNullElse(retryIntervalMs, DEFAULT_RETRY_INTERVALS);
         autoReconnect = requireNonNullElse(autoReconnect, DEFAULT_AUTO_RECONNECT);
         reconnectOnServiceFault = requireNonNullElse(reconnectOnServiceFault, DEFAULT_RECONNECT_ON_SERVICE_FAULT);
     }
@@ -115,6 +114,6 @@ public record ConnectionOptions(
     public static ConnectionOptions defaultConnectionOptions() {
         return new ConnectionOptions(DEFAULT_SESSION_TIMEOUT, DEFAULT_REQUEST_TIMEOUT, DEFAULT_KEEP_ALIVE_INTERVAL,
                 DEFAULT_KEEP_ALIVE_FAILURES_ALLOWED, DEFAULT_CONNECTION_TIMEOUT, DEFAULT_HEALTHCHECK_INTERVAL,
-                DEFAULT_RETRY_INTERVAL, DEFAULT_AUTO_RECONNECT, DEFAULT_RECONNECT_ON_SERVICE_FAULT);
+                DEFAULT_RETRY_INTERVALS, DEFAULT_AUTO_RECONNECT, DEFAULT_RECONNECT_ON_SERVICE_FAULT);
     }
 }

@@ -38,6 +38,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.client.Failure;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.client.Success;
+import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
@@ -69,20 +70,6 @@ import java.util.stream.Collectors;
 
 public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
-
-    // Exponential backoff delays: 1s, 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s, 300s (capped at 5 minutes)
-    private static final long[] BACKOFF_DELAYS_MS = {
-            1_000L,    // 1 second
-            2_000L,    // 2 seconds
-            4_000L,    // 4 seconds
-            8_000L,    // 8 seconds
-            16_000L,   // 16 seconds
-            32_000L,   // 32 seconds
-            64_000L,   // 64 seconds
-            128_000L,  // 128 seconds
-            256_000L,  // 256 seconds
-            300_000L   // 300 seconds (5 minutes max)
-    };
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -134,22 +121,33 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     }
 
     /**
-     * Calculates exponential backoff delay based on the number of consecutive retry attempts.
-     * Uses base-2 exponential growth: 1s, 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s, 300s (capped at 5 minutes)
+     * Calculates backoff delay based on the number of consecutive retry attempts.
+     * Parses the comma-separated retryIntervalMs string and returns the appropriate delay.
+     * If attemptCount exceeds the number of configured delays, returns the last configured delay.
      *
+     * @param retryIntervalMs comma-separated string of backoff delays in milliseconds
      * @param attemptCount the number of consecutive retry attempts (1-indexed)
      * @return the backoff delay in milliseconds
+     * @throws NumberFormatException when the format is incorrect
      */
-    public static long calculateBackoffDelayMs(final int attemptCount) {
+    public static long calculateBackoffDelayMs(final @NotNull String retryIntervalMs, final int attemptCount) {
+        final String[] delayStrings = retryIntervalMs.split(",");
+        final long[] backoffDelays = new long[delayStrings.length];
+
+        for (int i = 0; i < delayStrings.length; i++) {
+            // NumberFormatException is thrown.
+            backoffDelays[i] = Long.parseLong(delayStrings[i].trim());
+        }
+
         // Array is 0-indexed, attemptCount is 1-indexed, so we need attemptCount - 1
         final int index = attemptCount - 1;
 
         // If attemptCount exceeds array size, use the last value (max delay)
-        if (index >= BACKOFF_DELAYS_MS.length) {
-            return BACKOFF_DELAYS_MS[BACKOFF_DELAYS_MS.length - 1];
+        if (index >= backoffDelays.length) {
+            return backoffDelays[backoffDelays.length - 1];
         }
 
-        return BACKOFF_DELAYS_MS[index];
+        return backoffDelays[index];
     }
 
     @Override
@@ -651,7 +649,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
         // Increment retry attempt counter and calculate backoff delay
         final int attemptCount = consecutiveRetryAttempts.updateAndGet(count -> count + 1);
-        final long backoffDelayMs = calculateBackoffDelayMs(attemptCount);
+        long backoffDelayMs ;
+        try {
+            backoffDelayMs = calculateBackoffDelayMs(config.getConnectionOptions().retryIntervalMs(), attemptCount);
+        } catch (final Exception e) {
+            log.warn("Failed to calculate backoff delay for adapter '{}' from retryIntervalMs {}",
+                    adapterId,
+                    config.getConnectionOptions().retryIntervalMs(),
+                    e);
+            backoffDelayMs = calculateBackoffDelayMs(ConnectionOptions.DEFAULT_RETRY_INTERVALS, attemptCount);
+        }
 
         log.info("Scheduling retry attempt #{} for OPC UA adapter '{}' with backoff delay of {} ms",
                 attemptCount,
