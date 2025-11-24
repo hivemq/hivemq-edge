@@ -42,8 +42,9 @@ const CreateEntityButton: FC = () => {
   const integrationTypes = getIntegrationWizardTypes()
 
   // Track which wizards are implemented
-  // Note: Combiner, Asset Mapper, and Group enabled after Subtask 9 (Selection System)
-  const implementedWizards = new Set(['ADAPTER', 'BRIDGE', 'COMBINER', 'ASSET_MAPPER'])
+  // Note: Combiner, Asset Mapper enabled after Subtask 9 (Selection System)
+  // GROUP enabled after Subtask 3 (Ghost Group Factory) - partially functional
+  const implementedWizards = new Set(['ADAPTER', 'BRIDGE', 'COMBINER', 'ASSET_MAPPER', 'GROUP'])
 
   const handleSelectWizard = (type: WizardType) => {
     startWizard(type)

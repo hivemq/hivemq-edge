@@ -10,6 +10,7 @@ import { EdgeTypes, IdStubs, NodeTypes } from '@/modules/Workspace/types'
 import type { SelectionConstraints } from './types'
 import { GHOST_EDGE_STYLE } from './utils/ghostNodeFactory'
 import { useProtocolAdaptersContext } from './hooks/useProtocolAdaptersContext'
+import { canNodeBeGrouped } from './utils/groupConstraints'
 
 const debugLog = debug('workspace:wizard:constraints')
 
@@ -34,6 +35,16 @@ const checkConstraints = (
   // Check allowed node types
   if (constraints.allowedNodeTypes && constraints.allowedNodeTypes.length > 0) {
     if (!constraints.allowedNodeTypes.includes(node.type || '')) {
+      return false
+    }
+  }
+
+  // GROUP wizard specific: Check if node can be grouped
+  // This excludes nodes already in groups and enforces type restrictions
+  if (constraints.excludeNodesInGroups) {
+    // Note: We pass an empty array for allNodes since canNodeBeGrouped
+    // only uses it in future scenarios. Current logic doesn't need it.
+    if (!canNodeBeGrouped(node, [])) {
       return false
     }
   }
