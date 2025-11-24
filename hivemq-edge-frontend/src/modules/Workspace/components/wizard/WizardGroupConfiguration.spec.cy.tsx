@@ -64,11 +64,9 @@ describe('WizardGroupConfiguration', () => {
     mountComponent()
 
     // Fill form and submit
-    cy.get('input[name="title"]').clear().type('Test Group')
+    cy.get('input[name="title"]').clear()
+    cy.get('input[name="title"]').type('Test Group')
     cy.getByTestId('wizard-group-form-submit').click()
-
-    // Wait for wizard completion (async operation)
-    cy.wait(100)
 
     // Wizard should eventually complete
     cy.wrap(null).should(() => {
@@ -105,7 +103,8 @@ describe('WizardGroupConfiguration', () => {
 
     mountComponent()
 
-    cy.get('input[name="title"]').clear().type('My Group')
+    cy.get('input[name="title"]').clear()
+    cy.get('input[name="title"]').type('My Group')
     cy.getByTestId('wizard-group-form-submit').click()
 
     // Configuration should be updated
