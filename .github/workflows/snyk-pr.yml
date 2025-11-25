@@ -25,14 +25,14 @@ jobs:
           java-version: |
             21
 
-      - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
+      - uses: hivemq/hivemq-checkout-composite-action@cf6c0909aca19cee6d0502a1e8e368a25208faf2 # v1
         with:
           path: hivemq-edge
           ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
           token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
 
       - name: Check for new issues
-        uses: hivemq/hivemq-snyk-composite-action@1d331dc2fa50d64a3ffd4dc48e5ac316db6d4d6b # v2.3.0
+        uses: hivemq/hivemq-snyk-composite-action@cf6c0909aca19cee6d0502a1e8e368a25208faf2 # v2.3.0
         with:
           snyk-args: --org=hivemq-edge --configuration-matching=^runtimeClasspath$ -d hivemq-edge/hivemq-edge
           artifact-name: snyk-report-hivemq-edge
@@ -46,7 +46,7 @@ jobs:
           node-version: '20.13.1'
 
       - name: Check for new issues (hivemq-edge-frontend)
-        uses: hivemq/hivemq-snyk-composite-action@1d331dc2fa50d64a3ffd4dc48e5ac316db6d4d6b # v2.3.0
+        uses: hivemq/hivemq-snyk-composite-action@cf6c0909aca19cee6d0502a1e8e368a25208faf2 # v2.3.0
         with:
           snyk-args: --org=hivemq-edge --configuration-matching=^runtimeClasspath$ -d hivemq-edge/hivemq-edge-frontend
           artifact-name: snyk-report-hivemq-edge-frontend
