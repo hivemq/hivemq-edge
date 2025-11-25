@@ -2,6 +2,8 @@ name: Frontend - React Testing Pyramid
 
 on:
   workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_call:
     secrets:
       SONAR_TOKEN:
@@ -233,6 +235,7 @@ jobs:
             -Dsonar.verbose=false
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   percy_finalise:
