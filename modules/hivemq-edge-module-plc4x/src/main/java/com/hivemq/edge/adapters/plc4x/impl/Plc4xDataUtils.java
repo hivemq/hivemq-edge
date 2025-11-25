@@ -20,6 +20,8 @@ import org.apache.plc4x.java.api.messages.PlcReadResponse;
 import org.apache.plc4x.java.api.types.PlcValueType;
 import org.apache.plc4x.java.api.value.PlcValue;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -45,6 +47,7 @@ import static java.time.temporal.ChronoField.YEAR;
  * Some data utilies to manage the interaction with the PLC API
  */
 public class Plc4xDataUtils {
+    private static final Logger log = LoggerFactory.getLogger(Plc4xDataUtils.class);
     private static final char[] hexArray = "0123456789ABCDEF".toCharArray();
     private static final String AMP = "&";
     private static final String EQUALS = "=";
@@ -258,6 +261,7 @@ public class Plc4xDataUtils {
 
             case DATE_AND_TIME: //64bit signed, milliseconds since 1990-1-1 (1990-01-01-0:0:0 - 2089-12-31-23:59:59.999)
             case LDATE_AND_TIME: //64bit signed, nanoseconds since 1970-1-1 (1970-01-01-0:0:0.000000000 - 2262-04-11-23:47:16.854775807)
+            case DATE_AND_LTIME: //64bit signed, nanoseconds since 1970-1-1 (1970-01-01-0:0:0.000000000 - 2262-04-11-23:47:16.854775807)
                 return DATE_TIME_FORMATTER.format(value.getDateTime());
 
             case RAW_BYTE_ARRAY:
@@ -267,6 +271,7 @@ public class Plc4xDataUtils {
             case List: //ArrayList
             case NULL:
             default:
+                log.error("Unable to convert PLC4X value of type {} and value {}", type, value.getDateTime());
                 return null;
         }
     }
