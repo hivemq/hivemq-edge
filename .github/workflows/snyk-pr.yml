@@ -25,7 +25,7 @@ jobs:
           java-version: |
             21
 
-      - uses: hivemq/hivemq-checkout-composite-action@cf6c0909aca19cee6d0502a1e8e368a25208faf2 # v1
+      - uses: hivemq/hivemq-checkout-composite-action@db2d49f686c47a1eca28b7722bc3425c0d0e5101 # v1
         with:
           path: hivemq-edge
           ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
