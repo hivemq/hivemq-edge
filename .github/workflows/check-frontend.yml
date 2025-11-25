@@ -55,8 +55,32 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
+  build_instrumented:
+    name: Build Instrumented (for E2E coverage)
+    runs-on: ubuntu-latest
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge-frontend/
+
+      - name: 🏗️ Build Application with Coverage
+        run: pnpm run build --base=/
+        env:
+          VITE_COVERAGE: true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: application-instrumented
+          path: ./hivemq-edge-frontend/dist
+          retention-days: 1
+
   build_production:
-    name: Build Production
+    name: Build Production (clean)
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
@@ -69,13 +93,11 @@ jobs:
 
       - name: 🏗️ Build Application
         run: pnpm run build --base=/
-        env:
-          VITE_COVERAGE: true
 
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: application
+          name: application-clean
           path: ./hivemq-edge-frontend/dist
           retention-days: 1
 
@@ -90,7 +112,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: application
+          name: application-clean
           path: ./hivemq-edge-frontend/dist
 
       - name: 🚥 Run Lighthouse audits
@@ -117,7 +139,7 @@ jobs:
   cypress_matrix:
     runs-on: ubuntu-latest
     continue-on-error: true
-    needs: [ build_production, percy_prepare ]
+    needs: [ build_instrumented, percy_prepare ]
     env:
       LOCAL_NONCE: ${{ needs.percy_prepare.outputs.LOCAL_NONCE }}
       PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
@@ -146,7 +168,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: application
+          name: application-instrumented
           path: ./hivemq-edge-frontend/dist
 
       - name: 🧪 Run Cypress suite
