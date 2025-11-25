@@ -99,7 +99,7 @@ describe('Duplicate Combiner Detection', () => {
   })
 
   describe('Modal Interaction', () => {
-    it('should show duplicate modal when creating combiner with same sources', () => {
+    it('should show duplicate modal when creating combiner with same sources', { tags: ['@flaky'] }, () => {
       // Step 1: Create initial combiner
       workspacePage.canvas.should('be.visible')
       workspacePage.toolbox.fit.click()

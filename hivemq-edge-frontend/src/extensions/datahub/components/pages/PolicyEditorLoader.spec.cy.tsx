@@ -6,6 +6,11 @@ import PolicyEditorLoader, {
 describe('PolicyEditorLoader', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+    cy.intercept('/api/v1/data-hub/data-validation/policies/**', { statusCode: 404 })
+    cy.intercept('/api/v1/data-hub/behavior-validation/policies/**', { statusCode: 404 })
+
+    cy.intercept('/api/v1/data-hub/schemas', { statusCode: 404 })
+    cy.intercept('/api/v1/data-hub/scripts', { statusCode: 404 })
   })
 
   it('should render the right loader', () => {
@@ -14,10 +19,6 @@ describe('PolicyEditorLoader', () => {
 
   describe('DataPolicyLoader', () => {
     it('should render loading error', () => {
-      cy.intercept('/api/v1/data-hub/data-validation/policies/*', { statusCode: 404 })
-      cy.intercept('/api/v1/data-hub/schemas', { statusCode: 404 })
-      cy.intercept('/api/v1/data-hub/scripts', { statusCode: 404 })
-
       cy.mountWithProviders(<DataPolicyLoader policyId="my-policy" />)
 
       cy.get('[role="alert"]').should('have.attr', 'data-status', 'error')

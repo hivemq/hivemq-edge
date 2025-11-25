@@ -13,7 +13,7 @@ const mockNode: Node<Bridge | Adapter> = {
   data: MOCK_NODE_ADAPTER,
 }
 
-describe('NodePropertyDrawer', () => {
+describe('LinkPropertyDrawer', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
     cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 404 })

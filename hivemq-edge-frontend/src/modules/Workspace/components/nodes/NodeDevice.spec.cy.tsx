@@ -1,6 +1,9 @@
+import { MOCK_PROTOCOL_SIMULATION } from '@/__test-utils__/adapters'
+import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 import { MOCK_NODE_DEVICE } from '@/__test-utils__/react-flow/nodes.ts'
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { CustomNodeTesting } from '@/__test-utils__/react-flow/CustomNodeTesting.tsx'
+import { MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 import { NodeDevice } from '@/modules/Workspace/components/nodes/index.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
@@ -8,6 +11,13 @@ import { NodeTypes } from '@/modules/Workspace/types.ts'
 describe('NodeDevice', () => {
   beforeEach(() => {
     cy.viewport(400, 400)
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_SIMULATION] })
+    cy.intercept('GET', '/api/v1/management/protocol-adapters/adapters/**/tags', (req) => {
+      const pathname = new URL(req.url).pathname
+      const id = pathname.split('/')[6]
+
+      req.reply(200, { items: MOCK_DEVICE_TAGS(id, MockAdapterType.SIMULATION) })
+    })
   })
 
   it('should render properly', () => {

@@ -17,9 +17,16 @@ interface ProtocolsBrowserProps {
   facet: ProtocolFacetType | undefined
   onCreate?: (adapterId: string | undefined) => void
   isLoading?: boolean
+  forceSingleColumn?: boolean
 }
 
-const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, isLoading }) => {
+const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({
+  items,
+  facet,
+  onCreate,
+  isLoading,
+  forceSingleColumn = false,
+}) => {
   const { t } = useTranslation()
   const filteredAdapters = useMemo(() => {
     const sorted = items.toSorted((a, b) => {
@@ -45,7 +52,7 @@ const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, i
 
   return (
     <SimpleGrid
-      templateColumns={{ base: 'repeat(1, 1fr)', xl: 'repeat(2, 1fr)' }}
+      templateColumns={forceSingleColumn ? 'repeat(1, 1fr)' : { base: 'repeat(1, 1fr)', xl: 'repeat(2, 1fr)' }}
       spacing={4}
       gap={6}
       role="list"

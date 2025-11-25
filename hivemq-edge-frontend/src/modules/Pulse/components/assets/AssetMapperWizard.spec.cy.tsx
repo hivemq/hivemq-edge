@@ -17,7 +17,9 @@ describe('AssetMapperWizard', () => {
   })
 
   it('should handle errors', () => {
+    cy.intercept('/api/v1/management/pulse/asset-mappers', { items: [MOCK_COMBINER_ASSET] })
     cy.mountWithProviders(<AssetMapperWizard assetId="fake-id" isOpen onClose={cy.stub} onSubmit={cy.stub} />)
+    cy.intercept('/api/v1/management/pulse/managed-assets', { statusCode: 404 })
 
     cy.get('[role="alert"]')
       .should('have.attr', 'data-status', 'error')
