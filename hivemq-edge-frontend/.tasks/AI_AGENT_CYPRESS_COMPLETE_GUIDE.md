@@ -22,12 +22,43 @@
 
 ## 🚀 PART 1: Running Cypress Tests
 
+### ⚠️ CRITICAL: Avoid Commands That Trigger Approval
+
+**NEVER use `rm` in your test commands!**
+
+```bash
+# ❌ WRONG - Triggers approval every time
+rm -rf cypress/videos && pnpm cypress:run:e2e --spec "..."
+
+# ✅ CORRECT - No approval needed
+pnpm cypress:run:e2e --spec "cypress/e2e/path/to/test.spec.cy.ts"
+```
+
+**Why:**
+
+- `rm` is NOT in the approved commands list
+- Cypress automatically overwrites videos - deletion is unnecessary
+- Every `rm` command breaks automated workflow
+
+**Recommended Output Filtering:**
+
+```bash
+# Show first 100 lines (test structure, early errors)
+pnpm cypress:run:e2e --spec "..." 2>&1 | head -100
+
+# Show only pass/fail summary
+pnpm cypress:run:e2e --spec "..." 2>&1 | grep -E "(passing|failing)"
+
+# No filtering (for debugging)
+pnpm cypress:run:e2e --spec "..."
+```
+
 ### Tool: `run_in_terminal`
 
 You can run Cypress tests directly and capture the output:
 
 ```bash
-cd /path/to/project && npx cypress run --e2e --spec "cypress/e2e/path/to/test.spec.cy.ts" 2>&1 | tee /tmp/cypress-output.log
+cd /path/to/project && pnpm cypress:run:e2e --spec "cypress/e2e/path/to/test.spec.cy.ts" 2>&1 | head -100
 ```
 
 **What You Get:**

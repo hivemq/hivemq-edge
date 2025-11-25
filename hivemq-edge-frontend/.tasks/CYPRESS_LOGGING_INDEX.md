@@ -159,7 +159,7 @@ grep "retries: { runMode: 0" cypress.config.ts
 **Step 2:** Run a test to verify logging works
 
 ```bash
-pnpm cypress:run:component --spec "src/modules/Workspace/components/wizard/WizardSelectionPanel.spec.cy.tsx"
+pnpm cypress:run:component --spec "src/modules/Workspace/components/wizard/Test.spec.cy.tsx"
 ```
 
 **Step 3:** If needed, open Cypress UI for detailed debugging
