@@ -40,6 +40,7 @@ import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.client.Success;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
@@ -60,6 +61,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
@@ -83,6 +86,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private volatile @Nullable ScheduledExecutorService healthCheckScheduler = null;
     private final @NotNull AtomicReference<ScheduledFuture<?>> healthCheckFuture = new AtomicReference<>();
 
+    private final @NotNull OpcUaServiceFaultListener opcUaServiceFaultListener;
+    private final @NotNull AtomicLong reconnectAttempts = new AtomicLong(0);
+    private final @NotNull AtomicLong lastReconnectTimestamp = new AtomicLong(0);
+
     // Lock to prevent concurrent reconnections
     private final @NotNull ReentrantLock reconnectLock = new ReentrantLock();
 
@@ -105,11 +112,21 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.config = input.getConfig();
         this.opcUaClientConnection = new AtomicReference<>();
+        this.opcUaServiceFaultListener = new OpcUaServiceFaultListener(
+                protocolAdapterMetricsService,
+                input.moduleServices().eventService(),
+                adapterId,
+                this::reconnect,
+                config.getConnectionOptions().autoReconnect());
     }
 
     @Override
     public @NotNull String getId() {
         return adapterId;
+    }
+
+    public long getReconnectAttempts() {
+        return reconnectAttempts.get();
     }
 
     @Override
@@ -150,7 +167,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 input.moduleServices().eventService(),
                 protocolAdapterMetricsService,
                 config,
-                this::reconnect))) {
+                opcUaServiceFaultListener))) {
 
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             // Attempt initial connection asynchronously
@@ -224,6 +241,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 return;
             }
 
+            final long currentTime = System.currentTimeMillis();
+            final long lastReconnectTime = lastReconnectTimestamp.get();
+            if (reconnectAttempts.get() > 0 &&
+                    currentTime - lastReconnectTime < config.getConnectionOptions().retryIntervalMs()) {
+                log.debug("Reconnection for adapter '{}' attempted too soon after last reconnect - skipping", adapterId);
+                return;
+            }
+            reconnectAttempts.incrementAndGet();
+            lastReconnectTimestamp.set(currentTime);
+
             log.info("Reconnecting OPC UA adapter '{}'", adapterId);
 
             // Verify we have the necessary configuration
@@ -252,7 +279,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                     moduleServices.eventService(),
                     protocolAdapterMetricsService,
                     config,
-                    this::reconnect);
+                    opcUaServiceFaultListener);
 
             // Set as current connection and attempt connection with retry logic
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
@@ -549,7 +576,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             final @NotNull ProtocolAdapterStartInput input) {
 
         CompletableFuture.supplyAsync(() -> conn.start(parsedConfig)).whenComplete((success, throwable) -> {
+            lastReconnectTimestamp.set(System.currentTimeMillis());
             if (success && throwable == null) {
+                reconnectAttempts.set(0);
                 // Connection succeeded - cancel any pending retries and start health check
                 cancelRetry();
                 scheduleHealthCheck();
@@ -604,7 +633,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                     this.moduleServices.eventService(),
                     protocolAdapterMetricsService,
                     config,
-                    this::reconnect);
+                    opcUaServiceFaultListener);
 
             // Set as current connection and attempt
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
