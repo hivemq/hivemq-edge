@@ -24,6 +24,7 @@ export default defineConfig({
     istanbul({
       requireEnv: false,
       cypress: true,
+      forceBuildInstrument: process.env.VITE_COVERAGE === 'true',
     }),
   ],
 
