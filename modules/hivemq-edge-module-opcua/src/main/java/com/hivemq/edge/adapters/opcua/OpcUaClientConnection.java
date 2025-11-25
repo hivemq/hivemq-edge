@@ -102,7 +102,7 @@ public class OpcUaClientConnection {
         // Determine preferred MessageSecurityMode with intelligent defaults
         final MessageSecurityMode preferredMode;
         final MsgSecurityMode configuredMode = config.getSecurity().messageSecurityMode();
-        if (configuredMode != null) {
+        if (configuredMode != null && configuredMode != MsgSecurityMode.IGNORED) {
             // Explicitly configured mode
             preferredMode = configuredMode.getMiloMode();
             if (log.isDebugEnabled()) {
@@ -121,7 +121,6 @@ public class OpcUaClientConnection {
                 }
             }
         }
-
         final var endpointFilter = new OpcUaEndpointFilter(adapterId, config.getSecurity().policy().getSecurityPolicy().getUri(), preferredMode, config);
         try {
             client = OpcUaClient
