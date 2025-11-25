@@ -79,10 +79,6 @@ describe('Wizard: Create Group', () => {
       wizardPage.selectionPanel.panel.should('be.visible')
       workspacePage.toolbox.fit.click()
 
-      // DEBUG: Capture state before selection
-      cy.saveHTMLSnapshot('wizard-group-before-selection')
-      cy.logDOMState('Before selecting nodes')
-
       // Select first adapter
       workspacePage.adapterNode(MOCK_ADAPTER_ID1).click()
       wizardPage.selectionPanel.selectedCount.should('contain', '1')
@@ -95,20 +91,12 @@ describe('Wizard: Create Group', () => {
       wizardPage.selectionPanel.selectedCount.should('contain', 'min: 2')
       wizardPage.selectionPanel.nextButton.should('not.be.disabled')
 
-      // DEBUG: Capture state after selection
-      cy.saveHTMLSnapshot('wizard-group-after-selection')
-      cy.logDOMState('After selecting 2 nodes')
-
       // Proceed to configuration
       wizardPage.selectionPanel.nextButton.click()
 
       // Verify configuration form appears
       wizardPage.groupConfig.panel.should('be.visible')
       wizardPage.groupConfig.titleInput.should('be.visible')
-
-      // DEBUG: Capture configuration form
-      cy.saveHTMLSnapshot('wizard-group-configuration')
-      cy.logDOMState('Configuration form')
 
       // Configure group
       wizardPage.groupConfig.setTitle('My Test Group')
@@ -118,10 +106,6 @@ describe('Wizard: Create Group', () => {
 
       // Verify success
       wizardPage.toast.success.should('be.visible')
-
-      // DEBUG: Capture success state
-      cy.saveHTMLSnapshot('wizard-group-success')
-      cy.logDOMState('After successful group creation')
     })
 
     /**
