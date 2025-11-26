@@ -37,17 +37,18 @@ public record Security(@JsonProperty("policy") @ModuleConfigField(title = "OPC U
                        @JsonProperty("messageSecurityMode")
                        @JsonInclude(JsonInclude.Include.NON_NULL)
                        @ModuleConfigField(title = "Message Security Mode",
-                                         description = "Message security mode (None, Sign, SignAndEncrypt). If not specified, defaults based on the select OPC UA Security Policy: None→None, others→SignAndEncrypt.") @Nullable MsgSecurityMode messageSecurityMode) {
+                                         description = "Message security mode (None, Sign, SignAndEncrypt). If not specified, defaults based on the select OPC UA Security Policy: None→None, others→SignAndEncrypt.",
+                                         defaultValue = "NONE") @Nullable MsgSecurityMode messageSecurityMode) {
 
     public Security(@JsonProperty("policy") final @Nullable SecPolicy policy,
                     @JsonProperty("messageSecurityMode") final @Nullable MsgSecurityMode messageSecurityMode) {
         this.policy = Objects.requireNonNullElse(policy, Constants.DEFAULT_SECURITY_POLICY);
-        this.messageSecurityMode = Objects.requireNonNullElse(messageSecurityMode, MsgSecurityMode.NONE);
+        this.messageSecurityMode = Objects.requireNonNullElse(messageSecurityMode, MsgSecurityMode.IGNORED);
     }
 
     // Backwards compatibility constructor
     public Security(final @Nullable SecPolicy policy) {
-        this(policy, null);
+        this(policy, MsgSecurityMode.IGNORED);
     }
 
     @Override
@@ -62,13 +63,13 @@ public record Security(@JsonProperty("policy") @ModuleConfigField(title = "OPC U
                 final @NotNull DeserializationContext context) throws IOException {
             final String text = parser.getText();
             if (text != null && text.isEmpty()) {
-                return new Security(Constants.DEFAULT_SECURITY_POLICY, MsgSecurityMode.NONE);
+                return new Security(Constants.DEFAULT_SECURITY_POLICY, MsgSecurityMode.IGNORED);
             }
 
             try {
                 final Map<String, Object> map = parser.readValueAs(Map.class);
                 if (map == null || map.isEmpty()) {
-                    return new Security(Constants.DEFAULT_SECURITY_POLICY, MsgSecurityMode.NONE);
+                    return new Security(Constants.DEFAULT_SECURITY_POLICY, MsgSecurityMode.IGNORED);
                 }
 
                 final Object policyValue = map.get("policy");
@@ -84,12 +85,12 @@ public record Security(@JsonProperty("policy") @ModuleConfigField(title = "OPC U
                 if (modeValue instanceof String) {
                     messageSecurityMode = MsgSecurityMode.fromString((String) modeValue);
                 } else {
-                    messageSecurityMode = MsgSecurityMode.NONE;
+                    messageSecurityMode = MsgSecurityMode.IGNORED;
                 }
 
                 return new Security(policy, messageSecurityMode);
             } catch (final IOException e) {
-                return new Security(Constants.DEFAULT_SECURITY_POLICY, MsgSecurityMode.NONE);
+                return new Security(Constants.DEFAULT_SECURITY_POLICY, MsgSecurityMode.IGNORED);
             }
         }
     }
