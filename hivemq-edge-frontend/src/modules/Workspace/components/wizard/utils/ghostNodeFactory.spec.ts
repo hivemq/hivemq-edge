@@ -1,11 +1,13 @@
 import { expect } from 'vitest'
 import type { Node, Edge } from '@xyflow/react'
+import { MarkerType } from '@xyflow/react'
 
 import {
   createGhostAdapter,
   createGhostBridge,
   createGhostCombiner,
   createGhostAssetMapper,
+  createGhostCombinerGroup,
   createGhostGroup,
   createGhostGroupWithChildren,
   removeGhostGroup,
@@ -120,6 +122,58 @@ describe('ghostNodeFactory', () => {
       expect(assetMapperGhost.type).toBe(combinerGhost.type)
       expect(assetMapperGhost.data.sources).toBeDefined()
       expect(assetMapperGhost.data.mappings).toBeDefined()
+    })
+  })
+
+  describe('createGhostCombinerGroup', () => {
+    it('should create group with combiner node and edge for COMBINER type', () => {
+      const group = createGhostCombinerGroup('test-id', mockEdgeNode, EntityType.COMBINER)
+
+      expect(group.nodes).toHaveLength(1)
+      expect(group.edges).toHaveLength(1)
+      expect(group.nodes[0].type).toBe(NodeTypes.COMBINER_NODE)
+    })
+
+    it('should create ghost edge from combiner to EDGE node', () => {
+      const group = createGhostCombinerGroup('test-id', mockEdgeNode, EntityType.COMBINER)
+
+      const edge = group.edges[0]
+      expect(edge.source).toContain('ghost-combiner')
+      expect(edge.target).toBe(mockEdgeNode.id)
+      expect(edge.type).toBe('DYNAMIC_EDGE')
+      expect(edge.animated).toBe(true)
+      expect(edge.data?.isGhost).toBe(true)
+    })
+
+    it('should use different edge ID for asset mapper vs combiner', () => {
+      const combinerGroup = createGhostCombinerGroup('test-id', mockEdgeNode, EntityType.COMBINER)
+      const mapperGroup = createGhostCombinerGroup('test-id', mockEdgeNode, EntityType.ASSET_MAPPER)
+
+      expect(combinerGroup.edges[0].id).toBe('ghost-edge-combiner-to-edge')
+      expect(mapperGroup.edges[0].id).toBe('ghost-edge-assetmapper-to-edge')
+    })
+
+    it('should create group with asset mapper node for ASSET_MAPPER type', () => {
+      const group = createGhostCombinerGroup('test-id', mockEdgeNode, EntityType.ASSET_MAPPER)
+
+      expect(group.nodes).toHaveLength(1)
+      expect(group.edges).toHaveLength(1)
+      expect(group.nodes[0].type).toBe(NodeTypes.COMBINER_NODE)
+    })
+
+    it('should have correct marker configuration on edge', () => {
+      const group = createGhostCombinerGroup('test-id', mockEdgeNode, EntityType.COMBINER)
+
+      const edge = group.edges[0]
+      expect(edge.markerEnd).toBeDefined()
+      expect(edge.markerEnd).toEqual(
+        expect.objectContaining({
+          type: MarkerType.ArrowClosed,
+          width: 20,
+          height: 20,
+          color: '#4299E1',
+        })
+      )
     })
   })
 
@@ -738,6 +792,155 @@ describe('ghostNodeFactory', () => {
       )
 
       expect(result?.edges).toEqual([])
+    })
+
+    it('should handle nested group selection by cloning descendants', () => {
+      // Create a nested group structure
+      const nestedGroup: Node = {
+        id: 'group-1',
+        type: NodeTypes.CLUSTER_NODE,
+        position: { x: 100, y: 100 },
+        data: {
+          id: 'group-1',
+          label: 'Group 1',
+          childrenNodeIds: ['adapter-1', 'adapter-2'],
+          title: 'Group 1',
+          isOpen: true,
+          colorScheme: 'blue',
+        },
+      }
+
+      const childAdapter1: Node = {
+        id: 'adapter-1',
+        type: NodeTypes.ADAPTER_NODE,
+        position: { x: 20, y: 20 },
+        data: { id: 'adapter-1', label: 'Adapter 1' },
+        parentId: 'group-1',
+      }
+
+      const childAdapter2: Node = {
+        id: 'adapter-2',
+        type: NodeTypes.ADAPTER_NODE,
+        position: { x: 20, y: 80 },
+        data: { id: 'adapter-2', label: 'Adapter 2' },
+        parentId: 'group-1',
+      }
+
+      const allNodes = [nestedGroup, childAdapter1, childAdapter2]
+      const result = createGhostGroupWithChildren([nestedGroup], allNodes, [], mockGetNodesBounds, mockGetGroupBounds)
+
+      expect(result).not.toBeNull()
+      // Should include: ghost-group-selection + ghost-child-group-1 + ghost-child-adapter-1 + ghost-child-adapter-2
+      expect(result?.nodes.length).toBeGreaterThanOrEqual(4)
+
+      // Check that nested group was cloned
+      const ghostNestedGroup = result?.nodes.find((n) => n.id === 'ghost-child-group-1')
+      expect(ghostNestedGroup).toBeDefined()
+      expect(ghostNestedGroup?.type).toBe(NodeTypes.CLUSTER_NODE)
+
+      // Check that descendants were cloned
+      const ghostChild1 = result?.nodes.find((n) => n.id === 'ghost-child-adapter-1')
+      const ghostChild2 = result?.nodes.find((n) => n.id === 'ghost-child-adapter-2')
+      expect(ghostChild1).toBeDefined()
+      expect(ghostChild2).toBeDefined()
+
+      // Check that descendants have correct parentId pointing to ghost nested group
+      expect(ghostChild1?.parentId).toBe('ghost-child-group-1')
+      expect(ghostChild2?.parentId).toBe('ghost-child-group-1')
+    })
+
+    it('should handle deeply nested group structures', () => {
+      // Create a deeply nested structure: group-1 > group-2 > adapter-1
+      const outerGroup: Node = {
+        id: 'group-1',
+        type: NodeTypes.CLUSTER_NODE,
+        position: { x: 100, y: 100 },
+        data: {
+          id: 'group-1',
+          label: 'Outer Group',
+          childrenNodeIds: ['group-2'],
+          title: 'Outer Group',
+          isOpen: true,
+          colorScheme: 'blue',
+        },
+      }
+
+      const innerGroup: Node = {
+        id: 'group-2',
+        type: NodeTypes.CLUSTER_NODE,
+        position: { x: 20, y: 20 },
+        data: {
+          id: 'group-2',
+          label: 'Inner Group',
+          childrenNodeIds: ['adapter-1'],
+          title: 'Inner Group',
+          isOpen: true,
+          colorScheme: 'green',
+        },
+        parentId: 'group-1',
+      }
+
+      const deepAdapter: Node = {
+        id: 'adapter-1',
+        type: NodeTypes.ADAPTER_NODE,
+        position: { x: 10, y: 10 },
+        data: { id: 'adapter-1', label: 'Deep Adapter' },
+        parentId: 'group-2',
+      }
+
+      const allNodes = [outerGroup, innerGroup, deepAdapter]
+      const result = createGhostGroupWithChildren([outerGroup], allNodes, [], mockGetNodesBounds, mockGetGroupBounds)
+
+      expect(result).not.toBeNull()
+      // Should include all nested levels
+      expect(result?.nodes.length).toBeGreaterThanOrEqual(4)
+
+      // Verify all levels are present
+      const ghostOuter = result?.nodes.find((n) => n.id === 'ghost-child-group-1')
+      const ghostInner = result?.nodes.find((n) => n.id === 'ghost-child-group-2')
+      const ghostDeepAdapter = result?.nodes.find((n) => n.id === 'ghost-child-adapter-1')
+
+      expect(ghostOuter).toBeDefined()
+      expect(ghostInner).toBeDefined()
+      expect(ghostDeepAdapter).toBeDefined()
+
+      // Verify parent chain
+      expect(ghostInner?.parentId).toBe('ghost-child-group-1')
+      expect(ghostDeepAdapter?.parentId).toBe('ghost-child-group-2')
+    })
+
+    it('should not duplicate nodes when processing nested groups', () => {
+      const nestedGroup: Node = {
+        id: 'group-1',
+        type: NodeTypes.CLUSTER_NODE,
+        position: { x: 100, y: 100 },
+        data: {
+          id: 'group-1',
+          label: 'Group 1',
+          childrenNodeIds: ['adapter-1'],
+          title: 'Group 1',
+          isOpen: true,
+          colorScheme: 'blue',
+        },
+      }
+
+      const childAdapter: Node = {
+        id: 'adapter-1',
+        type: NodeTypes.ADAPTER_NODE,
+        position: { x: 20, y: 20 },
+        data: { id: 'adapter-1', label: 'Adapter 1' },
+        parentId: 'group-1',
+      }
+
+      const allNodes = [nestedGroup, childAdapter]
+      const result = createGhostGroupWithChildren([nestedGroup], allNodes, [], mockGetNodesBounds, mockGetGroupBounds)
+
+      // Count how many times each node appears
+      const nodeIds = result?.nodes.map((n) => n.id) || []
+      const uniqueIds = new Set(nodeIds)
+
+      // Should have no duplicate IDs
+      expect(nodeIds.length).toBe(uniqueIds.size)
     })
   })
 

@@ -7,12 +7,22 @@ import {
   canAddToGroup,
   canGroupCollapse,
   validateGroupHierarchy,
+  canNodeBeGrouped,
+  getGroupChildren,
 } from './groupConstraints'
-import { NodeTypes, type Group } from '@/modules/Workspace/types'
+import {
+  NodeTypes,
+  type NodeGroupType,
+  type NodeAdapterType,
+  type NodeBridgeType,
+  type NodeDeviceType,
+  type NodeHostType,
+} from '@/modules/Workspace/types'
+import type { Adapter, Bridge } from '@/api/__generated__'
 
 describe('groupConstraints - Nesting Validation', () => {
-  // Test data factory functions - using minimal data structures that match actual usage
-  const createGroupNode = (id: string, childrenIds: string[], parentId?: string): Node<Group> => ({
+  // Test data factory functions - using proper typed nodes that match actual usage
+  const createGroupNode = (id: string, childrenIds: string[], parentId?: string): NodeGroupType => ({
     id,
     type: NodeTypes.CLUSTER_NODE,
     position: { x: 0, y: 0 },
@@ -25,12 +35,233 @@ describe('groupConstraints - Nesting Validation', () => {
     parentId,
   })
 
-  const createAdapterNode = (id: string, parentId?: string): Node => ({
+  const createAdapterNode = (id: string, parentId?: string): NodeAdapterType => ({
     id,
     type: NodeTypes.ADAPTER_NODE,
     position: { x: 0, y: 0 },
-    data: { id, label: `Adapter ${id}` },
+    data: {
+      id,
+      type: 'simulation',
+      config: {},
+    } as Adapter,
     parentId,
+  })
+
+  const createBridgeNode = (id: string, parentId?: string): NodeBridgeType => ({
+    id,
+    type: NodeTypes.BRIDGE_NODE,
+    position: { x: 0, y: 0 },
+    data: {
+      id,
+      host: 'localhost',
+      port: 1883,
+    } as Bridge,
+    parentId,
+  })
+
+  const createDeviceNode = (id: string): NodeDeviceType => ({
+    id,
+    type: NodeTypes.DEVICE_NODE,
+    position: { x: 0, y: 0 },
+    data: {
+      id,
+      sourceAdapterId: id.replace('device-', ''),
+    } as NodeDeviceType['data'],
+  })
+
+  const createHostNode = (id: string): NodeHostType => ({
+    id,
+    type: NodeTypes.HOST_NODE,
+    position: { x: 0, y: 0 },
+    data: {
+      label: `Host ${id}`,
+    },
+  })
+
+  describe('canNodeBeGrouped', () => {
+    it('should allow grouping ADAPTER nodes', () => {
+      const nodes: Node[] = [createAdapterNode('adapter-1')]
+
+      const result = canNodeBeGrouped(nodes[0], nodes)
+
+      expect(result).toBe(true)
+    })
+
+    it('should allow grouping BRIDGE nodes', () => {
+      const nodes: Node[] = [createBridgeNode('bridge-1')]
+
+      const result = canNodeBeGrouped(nodes[0], nodes)
+
+      expect(result).toBe(true)
+    })
+
+    it('should allow grouping CLUSTER (group) nodes', () => {
+      const nodes: Node[] = [createGroupNode('group-1', [])]
+
+      const result = canNodeBeGrouped(nodes[0], nodes)
+
+      expect(result).toBe(true)
+    })
+
+    it('should reject ghost nodes', () => {
+      const ghostNode: Node = {
+        id: 'ghost-1',
+        type: NodeTypes.ADAPTER_NODE,
+        position: { x: 0, y: 0 },
+        data: { id: 'ghost-1', isGhost: true },
+      }
+
+      const result = canNodeBeGrouped(ghostNode, [ghostNode])
+
+      expect(result).toBe(false)
+    })
+
+    it('should reject EDGE node', () => {
+      const edgeNode: Node = {
+        id: 'EDGE_NODE',
+        type: NodeTypes.EDGE_NODE,
+        position: { x: 0, y: 0 },
+        data: { id: 'EDGE_NODE' },
+      }
+
+      const result = canNodeBeGrouped(edgeNode, [edgeNode])
+
+      expect(result).toBe(false)
+    })
+
+    it('should reject DEVICE nodes', () => {
+      const nodes: Node[] = [createDeviceNode('device-1')]
+
+      const result = canNodeBeGrouped(nodes[0], nodes)
+
+      expect(result).toBe(false)
+    })
+
+    it('should reject HOST nodes', () => {
+      const nodes: Node[] = [createHostNode('host-1')]
+
+      const result = canNodeBeGrouped(nodes[0], nodes)
+
+      expect(result).toBe(false)
+    })
+
+    it('should reject nodes already in a group', () => {
+      const nodes: Node[] = [createGroupNode('group-1', ['adapter-1']), createAdapterNode('adapter-1', 'group-1')]
+
+      const result = canNodeBeGrouped(nodes[1], nodes)
+
+      expect(result).toBe(false)
+    })
+
+    it('should reject nodes with unknown type', () => {
+      const unknownNode: Node = {
+        id: 'unknown-1',
+        type: 'UNKNOWN_TYPE',
+        position: { x: 0, y: 0 },
+        data: { id: 'unknown-1' },
+      }
+
+      const result = canNodeBeGrouped(unknownNode, [unknownNode])
+
+      expect(result).toBe(false)
+    })
+
+    it('should reject nodes with undefined type', () => {
+      const noTypeNode: Node = {
+        id: 'no-type-1',
+        type: undefined,
+        position: { x: 0, y: 0 },
+        data: { id: 'no-type-1' },
+      }
+
+      const result = canNodeBeGrouped(noTypeNode, [noTypeNode])
+
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('getGroupChildren', () => {
+    it('should return empty array for non-group node', () => {
+      const nodes: Node[] = [createAdapterNode('adapter-1')]
+
+      const children = getGroupChildren(nodes[0], nodes)
+
+      expect(children).toEqual([])
+    })
+
+    it('should return direct children of a group', () => {
+      const nodes: Node[] = [
+        createGroupNode('group-1', ['adapter-1', 'adapter-2']),
+        createAdapterNode('adapter-1', 'group-1'),
+        createAdapterNode('adapter-2', 'group-1'),
+      ]
+
+      const children = getGroupChildren(nodes[0], nodes)
+
+      expect(children).toHaveLength(2)
+      expect(children.map((n) => n.id)).toContain('adapter-1')
+      expect(children.map((n) => n.id)).toContain('adapter-2')
+    })
+
+    it('should recursively return children of nested groups', () => {
+      const nodes: Node[] = [
+        createGroupNode('group-outer', ['group-inner']),
+        createGroupNode('group-inner', ['adapter-1'], 'group-outer'),
+        createAdapterNode('adapter-1', 'group-inner'),
+      ]
+
+      const children = getGroupChildren(nodes[0], nodes)
+
+      expect(children).toHaveLength(2)
+      expect(children.map((n) => n.id)).toContain('group-inner')
+      expect(children.map((n) => n.id)).toContain('adapter-1')
+    })
+
+    it('should handle deeply nested groups', () => {
+      const nodes: Node[] = [
+        createGroupNode('group-1', ['group-2']),
+        createGroupNode('group-2', ['group-3'], 'group-1'),
+        createGroupNode('group-3', ['adapter-1'], 'group-2'),
+        createAdapterNode('adapter-1', 'group-3'),
+      ]
+
+      const children = getGroupChildren(nodes[0], nodes)
+
+      expect(children).toHaveLength(3)
+      expect(children.map((n) => n.id)).toContain('group-2')
+      expect(children.map((n) => n.id)).toContain('group-3')
+      expect(children.map((n) => n.id)).toContain('adapter-1')
+    })
+
+    it('should return empty array when group has no children', () => {
+      const nodes: Node[] = [createGroupNode('group-1', [])]
+
+      const children = getGroupChildren(nodes[0], nodes)
+
+      expect(children).toEqual([])
+    })
+
+    it('should handle missing child nodes gracefully', () => {
+      const nodes: Node[] = [createGroupNode('group-1', ['non-existent'])]
+
+      const children = getGroupChildren(nodes[0], nodes)
+
+      expect(children).toEqual([])
+    })
+
+    it('should return children in order even with mixed types', () => {
+      const nodes: Node[] = [
+        createGroupNode('group-1', ['adapter-1', 'bridge-1', 'group-2']),
+        createAdapterNode('adapter-1', 'group-1'),
+        createBridgeNode('bridge-1', 'group-1'),
+        createGroupNode('group-2', [], 'group-1'),
+      ]
+
+      const children = getGroupChildren(nodes[0], nodes)
+
+      expect(children).toHaveLength(3)
+      expect(children.map((n) => n.id)).toEqual(['adapter-1', 'bridge-1', 'group-2'])
+    })
   })
 
   describe('getNodeNestingDepth', () => {
