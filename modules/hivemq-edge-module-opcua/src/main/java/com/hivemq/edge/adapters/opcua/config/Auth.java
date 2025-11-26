@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -30,9 +31,9 @@ import java.io.IOException;
 import java.util.Map;
 
 @JsonDeserialize(using = Auth.AuthDeserializer.class)
-public record Auth(@JsonProperty("basic") @ModuleConfigField(title = "Basic Authentication",
-                                                             description = "Username / password based authentication") @Nullable BasicAuth basicAuth,
-                   @JsonProperty("x509") @ModuleConfigField(title = "X509 Authentication",
+public record Auth(@JsonProperty("basic") @JsonInclude(JsonInclude.Include.NON_NULL) @ModuleConfigField(title = "Basic Authentication",
+                                                                                                        description = "Username / password based authentication") @Nullable BasicAuth basicAuth,
+                   @JsonProperty("x509") @JsonInclude(JsonInclude.Include.NON_NULL) @ModuleConfigField(title = "X509 Authentication",
                                                             description = "Authentication based on certificate / private key") @Nullable X509Auth x509Auth) {
 
     @JsonCreator
