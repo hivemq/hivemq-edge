@@ -10,7 +10,7 @@ import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges'
 import { calculateBarycenter } from '@/modules/Workspace/utils/nodes-utils'
 import { requiresGhost } from './utils/wizardMetadata'
 import type { GhostNodeGroup } from './utils/ghostNodeFactory'
-import { GHOST_COLOR_EDGE } from './utils/ghostNodeFactory'
+import { GHOST_COLOR_EDGE, GHOST_EDGE_STYLE } from './utils/styles'
 import { createGhostCombinerGroup } from './utils/ghostNodeFactory'
 import {
   createGhostAdapterGroup,
@@ -19,7 +19,6 @@ import {
   removeGhostGroup,
   removeGhostNodes,
   removeGhostEdges,
-  GHOST_EDGE_STYLE,
 } from './utils/ghostNodeFactory'
 import { getGroupBounds } from '@/modules/Workspace/utils/group.utils'
 import { EntityType, type GhostEdge } from './types'

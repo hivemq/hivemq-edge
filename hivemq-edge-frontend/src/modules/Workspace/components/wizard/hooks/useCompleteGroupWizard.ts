@@ -5,7 +5,7 @@ import { useReactFlow } from '@xyflow/react'
 
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import { getGroupBounds } from '@/modules/Workspace/utils/group.utils'
-import { GHOST_COLOR_EDGE, removeGhostGroup } from '../utils/ghostNodeFactory'
+import { removeGhostGroup } from '../utils/ghostNodeFactory'
 import {
   getAutoIncludedNodes,
   validateGroupHierarchy,
@@ -15,6 +15,7 @@ import {
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
+import { GHOST_COLOR_EDGE } from '../utils/styles'
 
 export const useCompleteGroupWizard = () => {
   const { t } = useTranslation()

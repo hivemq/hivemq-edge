@@ -22,6 +22,7 @@
  * Full integration testing should be done via E2E tests.
  */
 
+import { GHOST_SUCCESS_OPACITY_TRANSITION } from '@/modules/Workspace/components/wizard/utils/styles.ts'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useReactFlow } from '@xyflow/react'
@@ -154,7 +155,7 @@ describe('useCompleteUtilities', () => {
       expect(fadedGhostNode).toBeDefined()
       expect(fadedGhostNode.style).toEqual({
         opacity: 0.3,
-        transition: 'opacity 0.5s ease-out',
+        transition: GHOST_SUCCESS_OPACITY_TRANSITION,
       })
     })
 

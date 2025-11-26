@@ -7,13 +7,9 @@ import type { Combiner } from '@/api/__generated__'
 import { useCreateCombiner } from '@/api/hooks/useCombiners/useCreateCombiner'
 import { useCreateAssetMapper } from '@/api/hooks/useAssetMapper/useCreateAssetMapper'
 import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
-import {
-  GHOST_SUCCESS_DIMMED_TRANSITION,
-  GHOST_SUCCESS_SHADOW,
-  GHOST_SUCCESS_TRANSITION,
-} from '@/modules/Workspace/components/wizard/utils/ghostNodeFactory.ts'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import { useCompleteUtilities } from '@/modules/Workspace/components/wizard/hooks/useCompleteUtilities.ts'
+import { GHOST_SUCCESS_BOX_SHADOW_TRANSITION, GHOST_SUCCESS_TRANSITION, GHOST_SUCCESS_SHADOW } from '../utils/styles'
 
 interface UseCompleteCombinerWizardOptions {
   isAssetMapper: boolean
@@ -74,7 +70,7 @@ export const useCompleteCombinerWizard = ({ isAssetMapper }: UseCompleteCombiner
                 style: {
                   ...node.style,
                   boxShadow: undefined,
-                  transition: GHOST_SUCCESS_DIMMED_TRANSITION,
+                  transition: GHOST_SUCCESS_BOX_SHADOW_TRANSITION,
                 },
               }
             }

@@ -7,11 +7,8 @@ import type { Adapter } from '@/api/__generated__'
 import { useCreateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useCreateProtocolAdapter'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import { useCompleteUtilities } from '@/modules/Workspace/components/wizard/hooks/useCompleteUtilities.ts'
-import {
-  GHOST_SUCCESS_DIMMED_TRANSITION,
-  GHOST_SUCCESS_SHADOW,
-  GHOST_SUCCESS_TRANSITION,
-} from '@/modules/Workspace/components/wizard/utils/ghostNodeFactory.ts'
+import { GHOST_SUCCESS_BOX_SHADOW_TRANSITION, GHOST_SUCCESS_TRANSITION, GHOST_SUCCESS_SHADOW } from '../utils/styles'
+
 import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 
 interface AdapterConfig extends Record<string, unknown> {
@@ -91,7 +88,7 @@ export const useCompleteAdapterWizard = () => {
                 style: {
                   ...node.style,
                   boxShadow: undefined,
-                  transition: GHOST_SUCCESS_DIMMED_TRANSITION,
+                  transition: GHOST_SUCCESS_BOX_SHADOW_TRANSITION,
                 },
               }
             }

@@ -8,11 +8,7 @@ import { useCreateBridge } from '@/api/hooks/useGetBridges/useCreateBridge'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import { useCompleteUtilities } from '@/modules/Workspace/components/wizard/hooks/useCompleteUtilities.ts'
 import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
-import {
-  GHOST_SUCCESS_DIMMED_TRANSITION,
-  GHOST_SUCCESS_SHADOW,
-  GHOST_SUCCESS_TRANSITION,
-} from '@/modules/Workspace/components/wizard/utils/ghostNodeFactory.ts'
+import { GHOST_SUCCESS_BOX_SHADOW_TRANSITION, GHOST_SUCCESS_TRANSITION, GHOST_SUCCESS_SHADOW } from '../utils/styles'
 
 interface BridgeConfig extends Record<string, unknown> {
   id: string
@@ -80,7 +76,7 @@ export const useCompleteBridgeWizard = () => {
                 style: {
                   ...node.style,
                   boxShadow: undefined,
-                  transition: GHOST_SUCCESS_DIMMED_TRANSITION,
+                  transition: GHOST_SUCCESS_BOX_SHADOW_TRANSITION,
                 },
               }
             }

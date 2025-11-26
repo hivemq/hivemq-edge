@@ -21,10 +21,10 @@ import {
   calculateGhostBridgePosition,
   createGhostBridgeGroup,
   isGhostEdge,
-  GHOST_COLOR_EDGE,
 } from './ghostNodeFactory'
 import { EntityType } from '../types'
 import { IdStubs, NodeTypes } from '@/modules/Workspace/types'
+import { GHOST_COLOR_EDGE } from './styles'
 
 describe('ghostNodeFactory', () => {
   const mockEdgeNode: Node = {
