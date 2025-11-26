@@ -65,7 +65,7 @@ public class OpcUaClientConnection {
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
 
     private final @NotNull AtomicReference<ConnectionContext> context = new AtomicReference<>();
-    private final @NotNull Runnable reconnectionCallback;
+    private final @NotNull OpcUaServiceFaultListener serviceFaultListener;
 
     OpcUaClientConnection(
             final @NotNull String adapterId,
@@ -76,7 +76,7 @@ public class OpcUaClientConnection {
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull OpcUaSpecificAdapterConfig config,
-            final @NotNull Runnable reconnectionCallback) {
+            final @NotNull OpcUaServiceFaultListener serviceFaultListener) {
         this.config = config;
         this.tagStreamingService = tagStreamingService;
         this.dataPointFactory = dataPointFactory;
@@ -85,24 +85,18 @@ public class OpcUaClientConnection {
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
         this.tags = tags;
-        this.reconnectionCallback = reconnectionCallback;
+        this.serviceFaultListener = serviceFaultListener;
     }
 
     synchronized boolean start(final ParsedConfig parsedConfig) {
         log.debug("Subscribing to OPC UA client");
         final OpcUaClient client;
-        final boolean reconnectOnServiceFault = config.getConnectionOptions().reconnectOnServiceFault();
-        final var faultListener = new OpcUaServiceFaultListener(protocolAdapterMetricsService,
-                eventService,
-                adapterId,
-                reconnectionCallback,
-                reconnectOnServiceFault);
         final var activityListener = new OpcUaSessionActivityListener(protocolAdapterMetricsService, eventService, adapterId, protocolAdapterState);
 
         // Determine preferred MessageSecurityMode with intelligent defaults
         final MessageSecurityMode preferredMode;
         final MsgSecurityMode configuredMode = config.getSecurity().messageSecurityMode();
-        if (configuredMode != null) {
+        if (configuredMode != null && configuredMode != MsgSecurityMode.IGNORED) {
             // Explicitly configured mode
             preferredMode = configuredMode.getMiloMode();
             if (log.isDebugEnabled()) {
@@ -121,7 +115,6 @@ public class OpcUaClientConnection {
                 }
             }
         }
-
         final var endpointFilter = new OpcUaEndpointFilter(adapterId, config.getSecurity().policy().getSecurityPolicy().getUri(), preferredMode, config);
         try {
             client = OpcUaClient
@@ -130,7 +123,7 @@ public class OpcUaClientConnection {
                         endpointFilter,
                         ignore -> {},
                         new OpcUaClientConfigurator(adapterId, parsedConfig, config));
-            client.addFaultListener(faultListener);
+            client.addFaultListener(serviceFaultListener);
             client.addSessionActivityListener(activityListener);
 
             // Add timeout to connection attempt to prevent hanging forever
@@ -153,7 +146,7 @@ public class OpcUaClientConnection {
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                quietlyCloseClient(client, false, faultListener, null);
+                quietlyCloseClient(client, false, serviceFaultListener, null);
                 return false;
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -164,7 +157,7 @@ public class OpcUaClientConnection {
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                quietlyCloseClient(client, false, faultListener, null);
+                quietlyCloseClient(client, false, serviceFaultListener, null);
                 return false;
             } catch (final ExecutionException e) {
                 final Throwable cause = e.getCause();
@@ -175,7 +168,7 @@ public class OpcUaClientConnection {
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                quietlyCloseClient(client, false, faultListener, null);
+                quietlyCloseClient(client, false, serviceFaultListener, null);
                 return false;
             }
         } catch (final UaException e) {
@@ -201,14 +194,14 @@ public class OpcUaClientConnection {
                     .withMessage("Failed to create or transfer OPC UA subscription. Closing client connection.")
                     .withSeverity(Event.SEVERITY.ERROR)
                     .fire();
-            quietlyCloseClient(client, false, faultListener, activityListener);
+            quietlyCloseClient(client, false, serviceFaultListener, activityListener);
             return false;
         }
 
         final var subscription = subscriptionOptional.get();
         log.trace("Creating Subscription for OPC UA client");
 
-        context.set(new ConnectionContext(subscription.getClient(), faultListener, activityListener, subscriptionLifecycleHandler));
+        context.set(new ConnectionContext(subscription.getClient(), serviceFaultListener, activityListener, subscriptionLifecycleHandler));
         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
 
         log.info("Client created and connected successfully");
