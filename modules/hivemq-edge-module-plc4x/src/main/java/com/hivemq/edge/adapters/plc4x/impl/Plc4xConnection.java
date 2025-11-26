@@ -91,8 +91,8 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                     try {
                         plcConnection = CompletableFuture.supplyAsync(() -> {
                                     try {
-                                        //This is not working in all cases. An exception is thrown if PLC4X actually catches
-                                        //the connection probllem. In many cases this call will simply get stuck. Afterwards
+                                        // This is not working in all cases. An exception is thrown if PLC4X actually catches
+                                        // the connection problem. In many cases this call will simply get stuck. Afterwards
                                         // a new connection CANNOT be opened.
                                         return Optional.of(plcDriverManager.getConnectionManager()
                                                 .getConnection(connectionString));
@@ -141,7 +141,8 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     public void disconnect() throws Exception {
         synchronized (lock) {
             try {
-                if (plcConnection != null && plcConnection.isConnected()) {
+                final var plcConnection = this.plcConnection;
+                if (plcConnection != null) {
                     plcConnection.close();
                 }
             } finally {
@@ -156,7 +157,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
 
     public @NotNull CompletableFuture<? extends PlcReadResponse> read(final @NotNull List<Plc4xTag> tags) {
         lazyConnectionCheck();
-        if (!plcConnection.getMetadata().canRead()) {
+        if (!plcConnection.getMetadata().isReadSupported()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type read-blocking"));
         }
         if (log.isTraceEnabled()) {
@@ -176,7 +177,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
             final @NotNull Plc4xTag tag,
             final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
         lazyConnectionCheck();
-        if (!plcConnection.getMetadata().canSubscribe()) {
+        if (!plcConnection.getMetadata().isSubscribeSupported()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type cannot subscribe"));
         }
         if (log.isTraceEnabled()) {
