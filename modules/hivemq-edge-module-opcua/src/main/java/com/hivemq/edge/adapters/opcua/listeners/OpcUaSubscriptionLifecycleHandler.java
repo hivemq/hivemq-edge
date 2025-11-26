@@ -25,20 +25,25 @@ import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemServiceOperationResult;
+import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemSynchronizationException;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -51,6 +56,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
     private static final Logger log = LoggerFactory.getLogger(OpcUaSubscriptionLifecycleHandler.class);
     private static final long KEEP_ALIVE_TIMEOUT_MS = 30_000; // 30 seconds
+    private static final int MAX_MONITORED_ITEM_COUNT = 5;
 
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ProtocolAdapterTagStreamingService tagStreamingService;
@@ -149,7 +155,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * @param config       the configuration for the OPC UA adapter
      * @return true if synchronization was successful, false otherwise
      */
-    public static boolean syncTagsAndMonitoredItems(final @NotNull OpcUaSubscription subscription, final @NotNull List<OpcuaTag> tags, final @NotNull OpcUaSpecificAdapterConfig config) {
+    private boolean syncTagsAndMonitoredItems(final @NotNull OpcUaSubscription subscription, final @NotNull List<OpcuaTag> tags, final @NotNull OpcUaSpecificAdapterConfig config) {
 
         final var nodeIdToTag = tags.stream().collect(Collectors.toMap(tag -> NodeId.parse(tag.getDefinition().getNode()), Function.identity()));
         final var nodeIdToMonitoredItem = subscription.getMonitoredItems().stream().collect(Collectors.toMap(monitoredItem -> monitoredItem.getReadValueId().getNodeId(), Function.identity()));
@@ -186,8 +192,31 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             subscription.synchronizeMonitoredItems();
             log.info("All monitored items synchronized successfully");
             return true;
-        } catch (final UaException e) {
-            log.error("Failed to synchronize monitored items: {} {}", e.getStatusCode(), e.getMessage(), e);
+        } catch (final MonitoredItemSynchronizationException e) {
+            final List<MonitoredItemServiceOperationResult> results = new ArrayList<>();
+            results.addAll(e.getCreateResults());
+            results.addAll(e.getModifyResults());
+            results.addAll(e.getDeleteResults());
+            final String message = "Failed to synchronize monitored items: " +
+                    e.getStatusCode() +
+                    " " +
+                    e.getMessage() +
+                    ". Samples: " +
+                    results.stream()
+                            .map(MonitoredItemServiceOperationResult::monitoredItem)
+                            .filter(Objects::nonNull)
+                            .map(OpcUaMonitoredItem::getReadValueId)
+                            .filter(Objects::nonNull)
+                            .map(ReadValueId::getNodeId)
+                            .filter(Objects::nonNull)
+                            .map(NodeId::toString)
+                            .limit(MAX_MONITORED_ITEM_COUNT)
+                            .collect(Collectors.joining(", "));
+            log.error(message, e);
+            eventService.createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                    .withMessage(message)
+                    .withSeverity(Event.SEVERITY.ERROR)
+                    .fire();
             return false;
         }
     }
