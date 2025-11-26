@@ -7,6 +7,8 @@ import type { Bridge } from '@/api/__generated__'
 import { useCreateBridge } from '@/api/hooks/useGetBridges/useCreateBridge'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import { useCompleteUtilities } from '@/modules/Workspace/components/wizard/hooks/useCompleteUtilities.ts'
+import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
+import { GHOST_SUCCESS_BOX_SHADOW_TRANSITION, GHOST_SUCCESS_TRANSITION, GHOST_SUCCESS_SHADOW } from '../utils/styles'
 
 interface BridgeConfig extends Record<string, unknown> {
   id: string
@@ -55,8 +57,8 @@ export const useCompleteBridgeWizard = () => {
               ...node,
               style: {
                 ...node.style,
-                boxShadow: '0 0 0 4px rgba(72, 187, 120, 0.6), 0 0 20px rgba(72, 187, 120, 0.4)',
-                transition: 'box-shadow 0.3s ease-in',
+                boxShadow: GHOST_SUCCESS_SHADOW,
+                transition: GHOST_SUCCESS_TRANSITION,
               },
             }
           }
@@ -74,7 +76,7 @@ export const useCompleteBridgeWizard = () => {
                 style: {
                   ...node.style,
                   boxShadow: undefined,
-                  transition: 'box-shadow 0.5s ease-out',
+                  transition: GHOST_SUCCESS_BOX_SHADOW_TRANSITION,
                 },
               }
             }
@@ -87,11 +89,9 @@ export const useCompleteBridgeWizard = () => {
       // 7. Show success feedback
       const bridgeName = config.id || 'Bridge'
       toast({
+        ...DEFAULT_TOAST_OPTION,
         title: t('protocolAdapter.action.create'),
         description: t('workspace.wizard.success.bridgeCreated', { name: bridgeName }),
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
       })
 
       setIsCompleting(false)
@@ -105,11 +105,10 @@ export const useCompleteBridgeWizard = () => {
 
       // Show error toast
       toast({
+        ...DEFAULT_TOAST_OPTION,
         title: t('protocolAdapter.error.title'),
         description: (error as Error).message || t('protocolAdapter.error.loading'),
         status: 'error',
-        duration: 7000,
-        isClosable: true,
       })
 
       return false

@@ -1,12 +1,14 @@
-import type { Node, XYPosition } from '@xyflow/react'
+import type { Node, XYPosition, Edge } from '@xyflow/react'
 import { MarkerType, Position } from '@xyflow/react'
 
 import { Status } from '@/api/__generated__'
 import type { GhostNode, GhostEdge } from '../types'
 import { EntityType } from '../types'
 import { EdgeTypes, IdStubs, NodeTypes } from '@/modules/Workspace/types'
+import { getAutoIncludedNodes } from './groupConstraints'
 
 import i18n from '@/config/i18n.config.ts'
+import { GHOST_COLOR_EDGE, GHOST_EDGE_STYLE, GHOST_STYLE, GHOST_STYLE_ENHANCED, GHOST_STYLE_SELECTABLE } from './styles'
 
 /**
  * Positioning constants (from nodes-utils.ts)
@@ -22,51 +24,6 @@ const GHOST_BASE = {
   draggable: false,
   selectable: false,
   connectable: false,
-}
-
-/**
- * Enhanced ghost node styling with glowing effect
- */
-export const GHOST_STYLE_ENHANCED = {
-  opacity: 0.75,
-  border: '3px dashed #4299E1',
-  backgroundColor: '#EBF8FF',
-  boxShadow: '0 0 0 4px rgba(66, 153, 225, 0.4), 0 0 20px rgba(66, 153, 225, 0.6)',
-  pointerEvents: 'none' as const,
-  transition: 'all 0.3s ease',
-}
-
-/**
- * Selectable ghost node styling - allows clicking to see edge highlighting
- */
-export const GHOST_STYLE_SELECTABLE = {
-  opacity: 0.75,
-  border: '3px dashed #4299E1',
-  backgroundColor: '#EBF8FF',
-  boxShadow: '0 0 0 4px rgba(66, 153, 225, 0.4), 0 0 20px rgba(66, 153, 225, 0.6)',
-  pointerEvents: 'all' as const, // Allow interaction
-  cursor: 'pointer' as const,
-  transition: 'all 0.3s ease',
-}
-
-/**
- * Ghost edge styling
- */
-export const GHOST_EDGE_STYLE = {
-  stroke: '#4299E1',
-  strokeWidth: 2,
-  strokeDasharray: '5,5',
-  opacity: 0.6,
-}
-
-/**
- * Legacy ghost node styling (for backward compatibility)
- */
-export const GHOST_STYLE = {
-  opacity: 0.6,
-  border: '2px dashed #4299E1',
-  backgroundColor: '#EBF8FF',
-  pointerEvents: 'none' as const,
 }
 
 /**
@@ -207,7 +164,7 @@ export const createGhostCombinerGroup = (id: string, edgeNode: Node, entityType:
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: '#4299E1',
+      color: GHOST_COLOR_EDGE,
     },
     data: { isGhost: true },
   }
@@ -219,7 +176,199 @@ export const createGhostCombinerGroup = (id: string, edgeNode: Node, entityType:
 }
 
 /**
- * Create a ghost group node
+ * Get all descendants of a group node recursively
+ * Used for cloning nested groups in ghost preview
+ */
+const getAllDescendants = (groupNode: Node, allNodes: Node[]): Node[] => {
+  if (groupNode.type !== NodeTypes.CLUSTER_NODE) {
+    return []
+  }
+
+  const descendants: Node[] = []
+  const childIds = (groupNode.data?.childrenNodeIds || []) as string[]
+
+  childIds.forEach((childId) => {
+    const child = allNodes.find((n) => n.id === childId)
+    if (!child) return
+
+    descendants.push(child)
+
+    // Recursively get descendants of nested groups
+    if (child.type === NodeTypes.CLUSTER_NODE) {
+      const nestedDescendants = getAllDescendants(child, allNodes)
+      descendants.push(...nestedDescendants)
+    }
+  })
+
+  return descendants
+}
+
+/**
+ * Create a ghost group node with children for dynamic preview
+ *
+ * This function creates a ghost group that updates in real-time during selection (Step 0).
+ * Key differences from other ghost nodes:
+ * - Appears when FIRST node is selected
+ * - Updates boundary when nodes added/removed
+ * - Returns null for empty selection
+ * - Children nodes are clones with parentId set
+ * - Group node MUST be first in array (React Flow requirement)
+ *
+ * @param selectedNodes - Currently selected nodes (manually selected)
+ * @param allNodes - All workspace nodes
+ * @param allEdges - All workspace edges
+ * @param getNodesBounds - React Flow function to calculate bounding box
+ * @param getGroupBounds - Utility to add padding to group bounds
+ * @returns GhostNodeGroup with group + children, or null if no selection
+ */
+export const createGhostGroupWithChildren = (
+  selectedNodes: Node[],
+  allNodes: Node[],
+  allEdges: Edge[],
+  getNodesBounds: (nodes: Node[]) => { x: number; y: number; width: number; height: number },
+  getGroupBounds: (rect: { x: number; y: number; width: number; height: number }) => {
+    x: number
+    y: number
+    width: number
+    height: number
+  }
+): GhostNodeGroup | null => {
+  // Handle empty selection - return null (no ghost group)
+  if (selectedNodes.length === 0) {
+    return null
+  }
+
+  // Calculate auto-included DEVICE/HOST nodes
+  const autoIncludedNodes = getAutoIncludedNodes(selectedNodes, allNodes, allEdges)
+
+  // All nodes that will be in the group
+  const allGroupNodes = [...selectedNodes, ...autoIncludedNodes]
+
+  // Calculate group bounds
+  const rect = getNodesBounds(allGroupNodes)
+  const groupRect = getGroupBounds(rect)
+
+  // Create stable ghost group ID for selection phase
+  const ghostGroupId = 'ghost-group-selection'
+
+  // Create ghost group node (semi-transparent container)
+  const ghostGroupNode: GhostNode = {
+    ...GHOST_BASE,
+    id: ghostGroupId,
+    type: NodeTypes.CLUSTER_NODE,
+    position: { x: groupRect.x, y: groupRect.y },
+    style: {
+      ...GHOST_STYLE_ENHANCED,
+      width: groupRect.width,
+      height: groupRect.height,
+    },
+    data: {
+      isGhost: true,
+      label: i18n.t('workspace.ghost.group'),
+      childrenNodeIds: allGroupNodes.map((n) => n.id),
+      title: i18n.t('workspace.grouping.untitled'),
+      isOpen: true,
+      colorScheme: 'blue',
+    },
+    selectable: false,
+    draggable: false,
+  }
+
+  // Create ghost children (selected nodes shown within ghost boundary)
+  // These are clones with parentId set and ghost styling
+  // For nested groups, we also clone their descendants recursively
+  const ghostChildren: GhostNode[] = []
+  const processedNodes = new Set<string>()
+
+  allGroupNodes.forEach((node) => {
+    if (processedNodes.has(node.id)) return
+
+    const label = String(node.data?.label || node.id)
+
+    // Create ghost for the top-level node
+    const ghostNode: GhostNode = {
+      ...node,
+      id: `ghost-child-${node.id}`,
+      data: {
+        ...node.data,
+        isGhost: true as const,
+        label,
+        _originalNodeId: node.id,
+      },
+      parentId: ghostGroupId,
+      position: {
+        x: node.position.x - groupRect.x,
+        y: node.position.y - groupRect.y,
+      },
+      style: {
+        ...node.style,
+        ...GHOST_STYLE,
+      },
+      draggable: false,
+      selectable: false,
+    } as GhostNode
+
+    ghostChildren.push(ghostNode)
+    processedNodes.add(node.id)
+
+    // If this is a group, also clone its descendants recursively
+    if (node.type === NodeTypes.CLUSTER_NODE) {
+      const descendants = getAllDescendants(node, allNodes)
+
+      descendants.forEach((descendant) => {
+        if (processedNodes.has(descendant.id)) return
+
+        const descendantLabel = String(descendant.data?.label || descendant.id)
+
+        // Find the parent of this descendant (could be nested group)
+        const descendantParent = descendants.find((d) => d.id === descendant.parentId) || node
+
+        const ghostDescendant: GhostNode = {
+          ...descendant,
+          id: `ghost-child-${descendant.id}`,
+          data: {
+            ...descendant.data,
+            isGhost: true as const,
+            label: descendantLabel,
+            _originalNodeId: descendant.id,
+          },
+          // Parent is the ghost version of the original parent
+          parentId: `ghost-child-${descendantParent.id}`,
+          // Position stays relative to its parent (already relative in original)
+          position: descendant.position,
+          style: {
+            ...descendant.style,
+            ...GHOST_STYLE,
+          },
+          draggable: false,
+          selectable: false,
+        } as GhostNode
+
+        ghostChildren.push(ghostDescendant)
+        processedNodes.add(descendant.id)
+      })
+    }
+  })
+
+  // Group node MUST come first (React Flow requirement)
+  return {
+    nodes: [ghostGroupNode, ...ghostChildren],
+    edges: [], // No edges needed during selection
+  }
+}
+
+/**
+ * Remove all ghost group nodes and children
+ *
+ * @param allNodes - All workspace nodes
+ * @returns Nodes with ghost group and children removed
+ */
+export const removeGhostGroup = (allNodes: Node[]): Node[] => {
+  return allNodes.filter((node) => !node.id.startsWith('ghost-group') && !node.id.startsWith('ghost-child-'))
+}
+
+/**
+ * Create a simple ghost group node (legacy - for non-dynamic use)
  */
 export const createGhostGroup = (id: string, label: string = i18n.t('workspace.ghost.group')): GhostNode => {
   return {
@@ -376,7 +525,7 @@ export const createGhostAdapterGroup = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: '#4299E1',
+      color: GHOST_COLOR_EDGE,
     },
     data: {
       isGhost: true,
@@ -397,7 +546,7 @@ export const createGhostAdapterGroup = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: '#4299E1',
+      color: GHOST_COLOR_EDGE,
     },
     data: {
       isGhost: true,
@@ -494,7 +643,7 @@ export const createGhostBridgeGroup = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: '#4299E1',
+      color: GHOST_COLOR_EDGE,
     },
     data: {
       isGhost: true,
@@ -515,7 +664,7 @@ export const createGhostBridgeGroup = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: '#4299E1',
+      color: GHOST_COLOR_EDGE,
     },
     data: {
       isGhost: true,

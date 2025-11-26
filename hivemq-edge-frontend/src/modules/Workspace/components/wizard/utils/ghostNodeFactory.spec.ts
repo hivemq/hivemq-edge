@@ -1,12 +1,16 @@
 import { expect } from 'vitest'
 import type { Node, Edge } from '@xyflow/react'
+import { MarkerType } from '@xyflow/react'
 
 import {
   createGhostAdapter,
   createGhostBridge,
   createGhostCombiner,
   createGhostAssetMapper,
+  createGhostCombinerGroup,
   createGhostGroup,
+  createGhostGroupWithChildren,
+  removeGhostGroup,
   isGhostNode,
   getGhostNodeIds,
   removeGhostNodes,
@@ -20,6 +24,7 @@ import {
 } from './ghostNodeFactory'
 import { EntityType } from '../types'
 import { IdStubs, NodeTypes } from '@/modules/Workspace/types'
+import { GHOST_COLOR_EDGE } from './styles'
 
 describe('ghostNodeFactory', () => {
   const mockEdgeNode: Node = {
@@ -118,6 +123,58 @@ describe('ghostNodeFactory', () => {
       expect(assetMapperGhost.type).toBe(combinerGhost.type)
       expect(assetMapperGhost.data.sources).toBeDefined()
       expect(assetMapperGhost.data.mappings).toBeDefined()
+    })
+  })
+
+  describe('createGhostCombinerGroup', () => {
+    it('should create group with combiner node and edge for COMBINER type', () => {
+      const group = createGhostCombinerGroup('test-id', mockEdgeNode, EntityType.COMBINER)
+
+      expect(group.nodes).toHaveLength(1)
+      expect(group.edges).toHaveLength(1)
+      expect(group.nodes[0].type).toBe(NodeTypes.COMBINER_NODE)
+    })
+
+    it('should create ghost edge from combiner to EDGE node', () => {
+      const group = createGhostCombinerGroup('test-id', mockEdgeNode, EntityType.COMBINER)
+
+      const edge = group.edges[0]
+      expect(edge.source).toContain('ghost-combiner')
+      expect(edge.target).toBe(mockEdgeNode.id)
+      expect(edge.type).toBe('DYNAMIC_EDGE')
+      expect(edge.animated).toBe(true)
+      expect(edge.data?.isGhost).toBe(true)
+    })
+
+    it('should use different edge ID for asset mapper vs combiner', () => {
+      const combinerGroup = createGhostCombinerGroup('test-id', mockEdgeNode, EntityType.COMBINER)
+      const mapperGroup = createGhostCombinerGroup('test-id', mockEdgeNode, EntityType.ASSET_MAPPER)
+
+      expect(combinerGroup.edges[0].id).toBe('ghost-edge-combiner-to-edge')
+      expect(mapperGroup.edges[0].id).toBe('ghost-edge-assetmapper-to-edge')
+    })
+
+    it('should create group with asset mapper node for ASSET_MAPPER type', () => {
+      const group = createGhostCombinerGroup('test-id', mockEdgeNode, EntityType.ASSET_MAPPER)
+
+      expect(group.nodes).toHaveLength(1)
+      expect(group.edges).toHaveLength(1)
+      expect(group.nodes[0].type).toBe(NodeTypes.COMBINER_NODE)
+    })
+
+    it('should have correct marker configuration on edge', () => {
+      const group = createGhostCombinerGroup('test-id', mockEdgeNode, EntityType.COMBINER)
+
+      const edge = group.edges[0]
+      expect(edge.markerEnd).toBeDefined()
+      expect(edge.markerEnd).toEqual(
+        expect.objectContaining({
+          type: MarkerType.ArrowClosed,
+          width: 20,
+          height: 20,
+          color: GHOST_COLOR_EDGE,
+        })
+      )
     })
   })
 
@@ -526,6 +583,424 @@ describe('ghostNodeFactory', () => {
       }
 
       expect(isGhostEdge(edge)).toBe(false)
+    })
+  })
+
+  describe('createGhostGroupWithChildren', () => {
+    const mockAdapter1: Node = {
+      id: 'adapter-1',
+      type: NodeTypes.ADAPTER_NODE,
+      position: { x: 100, y: 100 },
+      data: { id: 'adapter-1', label: 'Adapter 1' },
+    }
+
+    const mockAdapter2: Node = {
+      id: 'adapter-2',
+      type: NodeTypes.ADAPTER_NODE,
+      position: { x: 300, y: 100 },
+      data: { id: 'adapter-2', label: 'Adapter 2' },
+    }
+
+    const mockDevice1: Node = {
+      id: 'device-adapter-1',
+      type: NodeTypes.DEVICE_NODE,
+      position: { x: 100, y: 200 },
+      data: { id: 'device-adapter-1', label: 'Device 1' },
+    }
+
+    const mockDevice2: Node = {
+      id: 'device-adapter-2',
+      type: NodeTypes.DEVICE_NODE,
+      position: { x: 300, y: 200 },
+      data: { id: 'device-adapter-2', label: 'Device 2' },
+    }
+
+    const mockEdges: Edge[] = [
+      { id: 'edge-1', source: 'adapter-1', target: 'device-adapter-1', type: 'default' },
+      { id: 'edge-2', source: 'adapter-2', target: 'device-adapter-2', type: 'default' },
+    ]
+
+    const mockGetNodesBounds = (nodes: Node[]) => {
+      // Simple mock: calculate bounding box
+      const minX = Math.min(...nodes.map((n) => n.position.x))
+      const minY = Math.min(...nodes.map((n) => n.position.y))
+      const maxX = Math.max(...nodes.map((n) => n.position.x + 100)) // Assume 100px width
+      const maxY = Math.max(...nodes.map((n) => n.position.y + 50)) // Assume 50px height
+      return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
+    }
+
+    const mockGetGroupBounds = (rect: { x: number; y: number; width: number; height: number }) => {
+      return {
+        x: rect.x - 20,
+        y: rect.y - 20,
+        width: rect.width + 40,
+        height: rect.height + 40,
+      }
+    }
+
+    it('should return null for empty selection', () => {
+      const result = createGhostGroupWithChildren([], [mockAdapter1], mockEdges, mockGetNodesBounds, mockGetGroupBounds)
+
+      expect(result).toBeNull()
+    })
+
+    it('should create ghost group with single selected node', () => {
+      const allNodes = [mockAdapter1, mockDevice1]
+      const result = createGhostGroupWithChildren(
+        [mockAdapter1],
+        allNodes,
+        mockEdges,
+        mockGetNodesBounds,
+        mockGetGroupBounds
+      )
+
+      expect(result).not.toBeNull()
+      expect(result?.nodes).toHaveLength(3) // group + adapter + device (auto-included)
+      expect(result?.nodes[0].id).toBe('ghost-group-selection')
+      expect(result?.nodes[0].type).toBe(NodeTypes.CLUSTER_NODE)
+    })
+
+    it('should create ghost group with multiple selected nodes', () => {
+      const allNodes = [mockAdapter1, mockAdapter2, mockDevice1, mockDevice2]
+      const result = createGhostGroupWithChildren(
+        [mockAdapter1, mockAdapter2],
+        allNodes,
+        mockEdges,
+        mockGetNodesBounds,
+        mockGetGroupBounds
+      )
+
+      expect(result).not.toBeNull()
+      expect(result?.nodes).toHaveLength(5) // group + 2 adapters + 2 devices (auto-included)
+    })
+
+    it('should set ghost group node as first in array', () => {
+      const allNodes = [mockAdapter1, mockDevice1]
+      const result = createGhostGroupWithChildren(
+        [mockAdapter1],
+        allNodes,
+        mockEdges,
+        mockGetNodesBounds,
+        mockGetGroupBounds
+      )
+
+      expect(result?.nodes[0].id).toBe('ghost-group-selection')
+      expect(result?.nodes[0].type).toBe(NodeTypes.CLUSTER_NODE)
+    })
+
+    it('should set parentId on all ghost children', () => {
+      const allNodes = [mockAdapter1, mockDevice1]
+      const result = createGhostGroupWithChildren(
+        [mockAdapter1],
+        allNodes,
+        mockEdges,
+        mockGetNodesBounds,
+        mockGetGroupBounds
+      )
+
+      const children = result?.nodes.slice(1) || []
+      expect(children.every((child) => child.parentId === 'ghost-group-selection')).toBe(true)
+    })
+
+    it('should mark all nodes as ghost', () => {
+      const allNodes = [mockAdapter1, mockDevice1]
+      const result = createGhostGroupWithChildren(
+        [mockAdapter1],
+        allNodes,
+        mockEdges,
+        mockGetNodesBounds,
+        mockGetGroupBounds
+      )
+
+      expect(result?.nodes.every((node) => node.data.isGhost === true)).toBe(true)
+    })
+
+    it('should create unique IDs for ghost children', () => {
+      const allNodes = [mockAdapter1, mockDevice1]
+      const result = createGhostGroupWithChildren(
+        [mockAdapter1],
+        allNodes,
+        mockEdges,
+        mockGetNodesBounds,
+        mockGetGroupBounds
+      )
+
+      const childIds = result?.nodes.slice(1).map((n) => n.id) || []
+      expect(childIds).toContain('ghost-child-adapter-1')
+      expect(childIds).toContain('ghost-child-device-adapter-1')
+    })
+
+    it('should store original node IDs in ghost children', () => {
+      const allNodes = [mockAdapter1, mockDevice1]
+      const result = createGhostGroupWithChildren(
+        [mockAdapter1],
+        allNodes,
+        mockEdges,
+        mockGetNodesBounds,
+        mockGetGroupBounds
+      )
+
+      const child = result?.nodes.find((n) => n.id === 'ghost-child-adapter-1')
+      expect(child?.data._originalNodeId).toBe('adapter-1')
+    })
+
+    it('should calculate relative positions for children', () => {
+      const allNodes = [mockAdapter1, mockDevice1]
+      const result = createGhostGroupWithChildren(
+        [mockAdapter1],
+        allNodes,
+        mockEdges,
+        mockGetNodesBounds,
+        mockGetGroupBounds
+      )
+
+      const children = result?.nodes.slice(1) || []
+
+      // Children positions should be relative to group origin
+      // With group bounds padding, group origin is offset, so relative positions should be positive
+      children.forEach((child) => {
+        expect(child.position.x).toBeGreaterThanOrEqual(0)
+        expect(child.position.y).toBeGreaterThanOrEqual(0)
+        // The position should be less than the absolute position + some reasonable offset
+        expect(child.position.x).toBeLessThan(mockAdapter1.position.x + 100)
+        expect(child.position.y).toBeLessThan(mockAdapter1.position.y + 100)
+      })
+    })
+
+    it('should include auto-included DEVICE nodes', () => {
+      const allNodes = [mockAdapter1, mockDevice1]
+      const result = createGhostGroupWithChildren(
+        [mockAdapter1],
+        allNodes,
+        mockEdges,
+        mockGetNodesBounds,
+        mockGetGroupBounds
+      )
+
+      const deviceChild = result?.nodes.find((n) => n.id === 'ghost-child-device-adapter-1')
+      expect(deviceChild).toBeDefined()
+      expect(deviceChild?.type).toBe(NodeTypes.DEVICE_NODE)
+    })
+
+    it('should not create edges during selection', () => {
+      const allNodes = [mockAdapter1, mockDevice1]
+      const result = createGhostGroupWithChildren(
+        [mockAdapter1],
+        allNodes,
+        mockEdges,
+        mockGetNodesBounds,
+        mockGetGroupBounds
+      )
+
+      expect(result?.edges).toEqual([])
+    })
+
+    it('should handle nested group selection by cloning descendants', () => {
+      // Create a nested group structure
+      const nestedGroup: Node = {
+        id: 'group-1',
+        type: NodeTypes.CLUSTER_NODE,
+        position: { x: 100, y: 100 },
+        data: {
+          id: 'group-1',
+          label: 'Group 1',
+          childrenNodeIds: ['adapter-1', 'adapter-2'],
+          title: 'Group 1',
+          isOpen: true,
+          colorScheme: 'blue',
+        },
+      }
+
+      const childAdapter1: Node = {
+        id: 'adapter-1',
+        type: NodeTypes.ADAPTER_NODE,
+        position: { x: 20, y: 20 },
+        data: { id: 'adapter-1', label: 'Adapter 1' },
+        parentId: 'group-1',
+      }
+
+      const childAdapter2: Node = {
+        id: 'adapter-2',
+        type: NodeTypes.ADAPTER_NODE,
+        position: { x: 20, y: 80 },
+        data: { id: 'adapter-2', label: 'Adapter 2' },
+        parentId: 'group-1',
+      }
+
+      const allNodes = [nestedGroup, childAdapter1, childAdapter2]
+      const result = createGhostGroupWithChildren([nestedGroup], allNodes, [], mockGetNodesBounds, mockGetGroupBounds)
+
+      expect(result).not.toBeNull()
+      // Should include: ghost-group-selection + ghost-child-group-1 + ghost-child-adapter-1 + ghost-child-adapter-2
+      expect(result?.nodes.length).toBeGreaterThanOrEqual(4)
+
+      // Check that nested group was cloned
+      const ghostNestedGroup = result?.nodes.find((n) => n.id === 'ghost-child-group-1')
+      expect(ghostNestedGroup).toBeDefined()
+      expect(ghostNestedGroup?.type).toBe(NodeTypes.CLUSTER_NODE)
+
+      // Check that descendants were cloned
+      const ghostChild1 = result?.nodes.find((n) => n.id === 'ghost-child-adapter-1')
+      const ghostChild2 = result?.nodes.find((n) => n.id === 'ghost-child-adapter-2')
+      expect(ghostChild1).toBeDefined()
+      expect(ghostChild2).toBeDefined()
+
+      // Check that descendants have correct parentId pointing to ghost nested group
+      expect(ghostChild1?.parentId).toBe('ghost-child-group-1')
+      expect(ghostChild2?.parentId).toBe('ghost-child-group-1')
+    })
+
+    it('should handle deeply nested group structures', () => {
+      // Create a deeply nested structure: group-1 > group-2 > adapter-1
+      const outerGroup: Node = {
+        id: 'group-1',
+        type: NodeTypes.CLUSTER_NODE,
+        position: { x: 100, y: 100 },
+        data: {
+          id: 'group-1',
+          label: 'Outer Group',
+          childrenNodeIds: ['group-2'],
+          title: 'Outer Group',
+          isOpen: true,
+          colorScheme: 'blue',
+        },
+      }
+
+      const innerGroup: Node = {
+        id: 'group-2',
+        type: NodeTypes.CLUSTER_NODE,
+        position: { x: 20, y: 20 },
+        data: {
+          id: 'group-2',
+          label: 'Inner Group',
+          childrenNodeIds: ['adapter-1'],
+          title: 'Inner Group',
+          isOpen: true,
+          colorScheme: 'green',
+        },
+        parentId: 'group-1',
+      }
+
+      const deepAdapter: Node = {
+        id: 'adapter-1',
+        type: NodeTypes.ADAPTER_NODE,
+        position: { x: 10, y: 10 },
+        data: { id: 'adapter-1', label: 'Deep Adapter' },
+        parentId: 'group-2',
+      }
+
+      const allNodes = [outerGroup, innerGroup, deepAdapter]
+      const result = createGhostGroupWithChildren([outerGroup], allNodes, [], mockGetNodesBounds, mockGetGroupBounds)
+
+      expect(result).not.toBeNull()
+      // Should include all nested levels
+      expect(result?.nodes.length).toBeGreaterThanOrEqual(4)
+
+      // Verify all levels are present
+      const ghostOuter = result?.nodes.find((n) => n.id === 'ghost-child-group-1')
+      const ghostInner = result?.nodes.find((n) => n.id === 'ghost-child-group-2')
+      const ghostDeepAdapter = result?.nodes.find((n) => n.id === 'ghost-child-adapter-1')
+
+      expect(ghostOuter).toBeDefined()
+      expect(ghostInner).toBeDefined()
+      expect(ghostDeepAdapter).toBeDefined()
+
+      // Verify parent chain
+      expect(ghostInner?.parentId).toBe('ghost-child-group-1')
+      expect(ghostDeepAdapter?.parentId).toBe('ghost-child-group-2')
+    })
+
+    it('should not duplicate nodes when processing nested groups', () => {
+      const nestedGroup: Node = {
+        id: 'group-1',
+        type: NodeTypes.CLUSTER_NODE,
+        position: { x: 100, y: 100 },
+        data: {
+          id: 'group-1',
+          label: 'Group 1',
+          childrenNodeIds: ['adapter-1'],
+          title: 'Group 1',
+          isOpen: true,
+          colorScheme: 'blue',
+        },
+      }
+
+      const childAdapter: Node = {
+        id: 'adapter-1',
+        type: NodeTypes.ADAPTER_NODE,
+        position: { x: 20, y: 20 },
+        data: { id: 'adapter-1', label: 'Adapter 1' },
+        parentId: 'group-1',
+      }
+
+      const allNodes = [nestedGroup, childAdapter]
+      const result = createGhostGroupWithChildren([nestedGroup], allNodes, [], mockGetNodesBounds, mockGetGroupBounds)
+
+      // Count how many times each node appears
+      const nodeIds = result?.nodes.map((n) => n.id) || []
+      const uniqueIds = new Set(nodeIds)
+
+      // Should have no duplicate IDs
+      expect(nodeIds.length).toBe(uniqueIds.size)
+    })
+  })
+
+  describe('removeGhostGroup', () => {
+    it('should remove ghost group nodes', () => {
+      const nodes: Node[] = [
+        { id: 'ghost-group-selection', type: NodeTypes.CLUSTER_NODE, position: { x: 0, y: 0 }, data: {} },
+        { id: 'real-node-1', type: NodeTypes.ADAPTER_NODE, position: { x: 100, y: 100 }, data: {} },
+        { id: 'ghost-child-adapter-1', type: NodeTypes.ADAPTER_NODE, position: { x: 50, y: 50 }, data: {} },
+      ]
+
+      const result = removeGhostGroup(nodes)
+
+      expect(result).toHaveLength(1)
+      expect(result[0].id).toBe('real-node-1')
+    })
+
+    it('should remove all ghost-group prefixed nodes', () => {
+      const nodes: Node[] = [
+        { id: 'ghost-group-123', type: NodeTypes.CLUSTER_NODE, position: { x: 0, y: 0 }, data: {} },
+        { id: 'ghost-group-selection', type: NodeTypes.CLUSTER_NODE, position: { x: 0, y: 0 }, data: {} },
+        { id: 'real-node-1', type: NodeTypes.ADAPTER_NODE, position: { x: 100, y: 100 }, data: {} },
+      ]
+
+      const result = removeGhostGroup(nodes)
+
+      expect(result).toHaveLength(1)
+      expect(result[0].id).toBe('real-node-1')
+    })
+
+    it('should remove all ghost-child prefixed nodes', () => {
+      const nodes: Node[] = [
+        { id: 'ghost-child-adapter-1', type: NodeTypes.ADAPTER_NODE, position: { x: 50, y: 50 }, data: {} },
+        { id: 'ghost-child-device-1', type: NodeTypes.DEVICE_NODE, position: { x: 50, y: 100 }, data: {} },
+        { id: 'real-node-1', type: NodeTypes.ADAPTER_NODE, position: { x: 100, y: 100 }, data: {} },
+      ]
+
+      const result = removeGhostGroup(nodes)
+
+      expect(result).toHaveLength(1)
+      expect(result[0].id).toBe('real-node-1')
+    })
+
+    it('should handle empty array', () => {
+      const result = removeGhostGroup([])
+
+      expect(result).toEqual([])
+    })
+
+    it('should return same array if no ghost groups present', () => {
+      const nodes: Node[] = [
+        { id: 'real-node-1', type: NodeTypes.ADAPTER_NODE, position: { x: 100, y: 100 }, data: {} },
+        { id: 'real-node-2', type: NodeTypes.BRIDGE_NODE, position: { x: 200, y: 100 }, data: {} },
+      ]
+
+      const result = removeGhostGroup(nodes)
+
+      expect(result).toHaveLength(2)
+      expect(result).toEqual(nodes)
     })
   })
 })

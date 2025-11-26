@@ -61,9 +61,11 @@ jobs:
               - 'hivemq-edge-openapi/**'
               - '.github/**'
 
-      - name: Debug openapi-changed output
+      - name: Debug changed output
         run: |
-          echo "openapi-changed: ${{ steps.frontend.outputs.changed }}"
+          echo "frontend-changed: ${{ steps.frontend.outputs.changed }}"
+          echo "backend-changed: ${{ steps.backend.outputs.changed }}"
+          echo "openapi-changed: ${{ steps.openapi.outputs.changed }}"
 
 
   check-openapi:

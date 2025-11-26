@@ -93,7 +93,7 @@ const GroupContentEditor: FC<GroupContentEditorProps> = ({ group }) => {
 
   return (
     <Card size="sm">
-      <CardHeader data-testid="group-content-header">{t('Content Management')}</CardHeader>
+      <CardHeader data-testid="group-content-header">{t('workspace.grouping.editor.contentManagement')}</CardHeader>
       <CardBody>
         <PaginatedTable<Node<ContentNodeProps>>
           aria-label={t('eventLog.title')}

@@ -6,9 +6,10 @@ import { useReactFlow } from '@xyflow/react'
 import type { Combiner } from '@/api/__generated__'
 import { useCreateCombiner } from '@/api/hooks/useCombiners/useCreateCombiner'
 import { useCreateAssetMapper } from '@/api/hooks/useAssetMapper/useCreateAssetMapper'
-import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
+import { BASE_TOAST_OPTION, DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import { useCompleteUtilities } from '@/modules/Workspace/components/wizard/hooks/useCompleteUtilities.ts'
+import { GHOST_SUCCESS_BOX_SHADOW_TRANSITION, GHOST_SUCCESS_TRANSITION, GHOST_SUCCESS_SHADOW } from '../utils/styles'
 
 interface UseCompleteCombinerWizardOptions {
   isAssetMapper: boolean
@@ -50,8 +51,8 @@ export const useCompleteCombinerWizard = ({ isAssetMapper }: UseCompleteCombiner
               ...node,
               style: {
                 ...node.style,
-                boxShadow: '0 0 0 4px rgba(72, 187, 120, 0.6), 0 0 20px rgba(72, 187, 120, 0.4)',
-                transition: 'box-shadow 0.3s ease-in',
+                boxShadow: GHOST_SUCCESS_SHADOW,
+                transition: GHOST_SUCCESS_TRANSITION,
               },
             }
           }
@@ -69,7 +70,7 @@ export const useCompleteCombinerWizard = ({ isAssetMapper }: UseCompleteCombiner
                 style: {
                   ...node.style,
                   boxShadow: undefined,
-                  transition: 'box-shadow 0.5s ease-out',
+                  transition: GHOST_SUCCESS_BOX_SHADOW_TRANSITION,
                 },
               }
             }
@@ -81,11 +82,9 @@ export const useCompleteCombinerWizard = ({ isAssetMapper }: UseCompleteCombiner
 
       // 7. Show success feedback
       toast({
+        ...DEFAULT_TOAST_OPTION,
         title: t(`workspace.wizard.${entityKey}.success.title`),
         description: t(`workspace.wizard.${entityKey}.success.message`, { name: combinerData.name }),
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
       })
 
       setIsCompleting(false)
@@ -99,11 +98,10 @@ export const useCompleteCombinerWizard = ({ isAssetMapper }: UseCompleteCombiner
 
       // Show error toast
       toast({
+        ...DEFAULT_TOAST_OPTION,
         title: t(`workspace.wizard.${entityKey}.error.title`),
         description: (error as Error).message || t(`workspace.wizard.${entityKey}.error.message`),
         status: 'error',
-        duration: 7000,
-        isClosable: true,
       })
 
       // Re-throw to prevent wizard from closing

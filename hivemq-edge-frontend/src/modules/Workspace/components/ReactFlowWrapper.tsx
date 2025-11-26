@@ -1,3 +1,4 @@
+import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import { type MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Node, NodePositionChange } from '@xyflow/react'
@@ -25,6 +26,8 @@ import WizardSelectionPanel from '@/modules/Workspace/components/wizard/WizardSe
 import WizardConfigurationPanel from '@/modules/Workspace/components/wizard/WizardConfigurationPanel.tsx'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import { useProtocolAdaptersContext } from '@/modules/Workspace/components/wizard/hooks/useProtocolAdaptersContext'
+import { isNodeInGroup, getNodeParentGroup } from '@/modules/Workspace/components/wizard/utils/groupConstraints'
+import { EntityType } from '@/modules/Workspace/components/wizard/types'
 import MonitoringEdge from '@/modules/Workspace/components/edges/MonitoringEdge.tsx'
 import {
   NodeAdapter,
@@ -126,7 +129,7 @@ const ReactFlowWrapper = () => {
   const onNodeClick = useCallback(
     (_event: ReactMouseEvent, node: Node) => {
       // Only handle clicks when wizard is active with selection constraints
-      const { isActive, selectionConstraints, selectedNodeIds, actions } = useWizardStore.getState()
+      const { isActive, selectionConstraints, selectedNodeIds, actions, entityType } = useWizardStore.getState()
 
       if (!isActive || !selectionConstraints) {
         // Normal mode - let default behavior handle it
@@ -141,6 +144,28 @@ const ReactFlowWrapper = () => {
       if (isGhost || isEdgeNode) {
         debugLog('🚫 Ghost or edge node - not selectable')
         return // Can't select ghost or edge nodes
+      }
+
+      // GROUP wizard specific: Check if node is already in a group
+      if (entityType === EntityType.GROUP && selectionConstraints.excludeNodesInGroups) {
+        if (isNodeInGroup(node)) {
+          // Get parent group for toast message
+          const parentGroup = getNodeParentGroup(node, nodes)
+
+          debugLog('🚫 Node already in group:', node.id, 'parent:', parentGroup?.id)
+
+          toast({
+            title: t('workspace.wizard.group.alreadyGrouped.title'),
+            description: t('workspace.wizard.group.alreadyGrouped.description', {
+              nodeName: node.data?.label || node.id,
+              groupName: parentGroup?.data?.title || parentGroup?.id || t('workspace.wizard.group.unknownGroup'),
+            }),
+            status: 'warning',
+            duration: 4000,
+            isClosable: true,
+          })
+          return
+        }
       }
 
       // Check allowed types
@@ -208,11 +233,10 @@ const ReactFlowWrapper = () => {
         if (selectedNodeIds.length >= maxNodes) {
           // Show toast: max reached
           toast({
+            ...DEFAULT_TOAST_OPTION,
             title: t('workspace.wizard.selection.maxReached'),
             description: t('workspace.wizard.selection.maxReachedDescription', { count: maxNodes }),
             status: 'warning',
-            duration: 3000,
-            isClosable: true,
           })
           return
         }
@@ -221,8 +245,9 @@ const ReactFlowWrapper = () => {
         actions.selectNode(node.id)
       }
     },
-    [t, toast, protocolAdapters]
+    [t, toast, protocolAdapters, nodes]
     // protocolAdapters must be in deps to avoid stale closure when capabilities are checked
+    // nodes must be in deps for GROUP wizard parent group lookup
   )
 
   return (

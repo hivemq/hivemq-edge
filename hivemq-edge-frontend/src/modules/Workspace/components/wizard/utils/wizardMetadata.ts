@@ -178,17 +178,15 @@ export const WIZARD_REGISTRY: Record<WizardType, WizardMetadata> = {
         requiresSelection: true,
         selectionConstraints: {
           minNodes: 2,
-          // No allowedNodeTypes restriction - can select any type
+          allowedNodeTypes: [NodeTypes.ADAPTER_NODE, NodeTypes.BRIDGE_NODE, NodeTypes.CLUSTER_NODE],
+          // Custom filter will be applied in WizardSelectionRestrictions
+          // to check for nodes already in groups
+          excludeNodesInGroups: true, // Flag for WizardSelectionRestrictions
         },
       },
       {
         index: 1,
-        descriptionKey: 'step_GROUP_1', // "Review group preview"
-        showsGhostNodes: true,
-      },
-      {
-        index: 2,
-        descriptionKey: 'step_GROUP_2', // "Configure group settings"
+        descriptionKey: 'step_GROUP_1', // "Configure group settings"
         requiresConfiguration: true,
       },
     ],

@@ -10,14 +10,17 @@ import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges'
 import { calculateBarycenter } from '@/modules/Workspace/utils/nodes-utils'
 import { requiresGhost } from './utils/wizardMetadata'
 import type { GhostNodeGroup } from './utils/ghostNodeFactory'
+import { GHOST_COLOR_EDGE, GHOST_EDGE_STYLE } from './utils/styles'
 import { createGhostCombinerGroup } from './utils/ghostNodeFactory'
 import {
   createGhostAdapterGroup,
   createGhostBridgeGroup,
+  createGhostGroupWithChildren,
+  removeGhostGroup,
   removeGhostNodes,
   removeGhostEdges,
-  GHOST_EDGE_STYLE,
 } from './utils/ghostNodeFactory'
+import { getGroupBounds } from '@/modules/Workspace/utils/group.utils'
 import { EntityType, type GhostEdge } from './types'
 import { IdStubs, EdgeTypes } from '@/modules/Workspace/types'
 
@@ -31,7 +34,7 @@ const GhostNodeRenderer: FC = () => {
   const { isActive, entityType, currentStep, selectedNodeIds } = useWizardState()
   const { ghostNodes, ghostEdges, addGhostNodes, addGhostEdges, clearGhostNodes } = useWizardGhosts()
   const { nodes, edges, onAddNodes, onAddEdges, onNodesChange, onEdgesChange } = useWorkspaceStore()
-  const { fitView } = useReactFlow()
+  const { fitView, getNodesBounds } = useReactFlow()
   const { data: adapters } = useListProtocolAdapters()
   const { data: bridges } = useListBridges()
 
@@ -125,7 +128,8 @@ const GhostNodeRenderer: FC = () => {
 
         addGhostGroup(ghostGroup)
       }
-      // TODO: Add other entity types (GROUP)
+      // GROUP wizard is handled separately in dynamic ghost effect below
+      // It doesn't create ghost on initial load, only when nodes are selected
     } else if (ghostNodes.length > 0 || ghostEdges.length > 0) {
       // Add missing ghost nodes/edges if they were removed from workspace
       const nodeIds = new Set(nodes.map((n) => n.id))
@@ -235,7 +239,7 @@ const GhostNodeRenderer: FC = () => {
         type: MarkerType.ArrowClosed,
         width: 20,
         height: 20,
-        color: '#4299E1',
+        color: GHOST_COLOR_EDGE,
       },
       data: { isGhost: true },
     }))
@@ -258,6 +262,98 @@ const GhostNodeRenderer: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, entityType, selectedNodeIds, nodes, onNodesChange, onEdgesChange, onAddEdges])
   // Note: edges and ghostEdges intentionally omitted from deps to prevent infinite loop
+
+  // Dynamic ghost group rendering for GROUP wizard
+  // Updates in real-time as nodes are selected/deselected
+  useEffect(() => {
+    // Only for GROUP wizard
+    if (!isActive || entityType !== EntityType.GROUP) {
+      return
+    }
+
+    debugLog('[GROUP] Selection changed:', selectedNodeIds.length, 'nodes selected')
+
+    // Get current nodes and edges
+    const currentNodes = nodes
+    const currentEdges = edges
+
+    // Remove any existing ghost group nodes
+    const nodesWithoutGhosts = removeGhostGroup(currentNodes)
+
+    // Get selected nodes (non-ghost)
+    const selectedNodes = currentNodes.filter((n) => selectedNodeIds.includes(n.id) && !n.data?.isGhost)
+
+    // Create new ghost group based on current selection
+    const ghostGroup = createGhostGroupWithChildren(
+      selectedNodes,
+      currentNodes,
+      currentEdges,
+      getNodesBounds,
+      getGroupBounds
+    )
+
+    if (ghostGroup === null) {
+      // No selection - just show nodes without ghosts
+      debugLog('[GROUP] No selection - removing ghost group')
+
+      // Only update if there were ghost nodes to remove
+      if (nodesWithoutGhosts.length !== currentNodes.length) {
+        const ghostNodeIds = currentNodes
+          .filter((n) => !nodesWithoutGhosts.find((rn) => rn.id === n.id))
+          .map((n) => n.id)
+
+        onNodesChange(ghostNodeIds.map((id) => ({ id, type: 'remove' })))
+
+        // Clear ghost store
+        clearGhostNodes()
+      }
+      return
+    }
+
+    debugLog('[GROUP] Creating ghost group with', ghostGroup.nodes.length, 'nodes')
+
+    // Update wizard store with new ghost nodes
+    addGhostNodes(ghostGroup.nodes)
+    if (ghostGroup.edges.length > 0) {
+      addGhostEdges(ghostGroup.edges)
+    }
+
+    // Remove old ghost nodes first
+    if (nodesWithoutGhosts.length !== currentNodes.length) {
+      const ghostNodeIds = currentNodes.filter((n) => !nodesWithoutGhosts.find((rn) => rn.id === n.id)).map((n) => n.id)
+
+      onNodesChange(ghostNodeIds.map((id) => ({ id, type: 'remove' })))
+    }
+
+    // Add new ghost group nodes to workspace
+    onAddNodes(ghostGroup.nodes.map((node) => ({ item: node, type: 'add' })))
+
+    // Optional: Fit view to show ghost group (only on first selection)
+    if (selectedNodes.length === 1) {
+      setTimeout(() => {
+        fitView({
+          nodes: ghostGroup.nodes,
+          duration: 500,
+          padding: 0.2,
+        })
+      }, 100)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isActive,
+    entityType,
+    selectedNodeIds, // KEY: Reacts to selection changes
+    // NOTE: nodes and edges intentionally omitted to prevent infinite loop
+    // They are accessed via closure but changes to them should NOT trigger re-render
+    // Only selectedNodeIds changes should trigger ghost group updates
+    getNodesBounds,
+    addGhostNodes,
+    addGhostEdges,
+    clearGhostNodes,
+    onAddNodes,
+    onNodesChange,
+    fitView,
+  ])
 
   // Cleanup on unmount
   useEffect(() => {

@@ -233,7 +233,6 @@ describe('useCompleteCombinerWizard', () => {
       expect(mockToast).toHaveBeenCalledWith(
         expect.objectContaining({
           status: 'error',
-          duration: 7000,
         })
       )
 
@@ -252,7 +251,6 @@ describe('useCompleteCombinerWizard', () => {
       expect(mockToast).toHaveBeenCalledWith(
         expect.objectContaining({
           status: 'error',
-          duration: 7000,
         })
       )
 

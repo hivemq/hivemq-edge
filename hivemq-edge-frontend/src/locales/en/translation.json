@@ -965,6 +965,7 @@
       "type_BRIDGE_NODE": "bridge",
       "type_EDGE_NODE": "edge",
       "type_DEVICE_NODE": "device",
+      "type_HOST_NODE": "host",
       "type_CLUSTER_NODE": "Group"
     },
     "layout": {
@@ -1059,9 +1060,14 @@
             "restartAll": "Restart all"
           }
         },
+        "contentManagement": "Content Management",
         "eventLog": {
           "header": "The 5 most recent events for devices in the group",
-          "showMore": "Show more in the Event Log"
+          "showMore": "Show more in the Event Log",
+          "preview": "Event logs will be available after the group is created"
+        },
+        "metrics": {
+          "preview": "Metrics will be available after the group is created"
         },
         "title": "Configure the group",
         "input-title": "Title",
@@ -1072,7 +1078,10 @@
       "title": "Grouping",
       "by_type": "By type",
       "by_subscriptionCardinality": "By subscription count",
-      "by_runtimeDuration": "By duration"
+      "by_runtimeDuration": "By duration",
+      "error": {
+        "cannotCollapse": "Cannot collapse group"
+      }
     },
     "property": {
       "header_ADAPTER_NODE": "Adapter Overview",
@@ -1153,8 +1162,7 @@
         "step_step_ASSET_MAPPER_0": "Select data sources",
         "step_step_ASSET_MAPPER_1": "Configure asset mappings",
         "step_step_GROUP_0": "Select nodes to group",
-        "step_step_GROUP_1": "Review group preview",
-        "step_step_GROUP_2": "Configure group settings",
+        "step_step_GROUP_1": "Configure group settings",
         "step_step_TAG_0": "Select device node",
         "step_step_TAG_1": "Configure tags",
         "step_step_TOPIC_FILTER_0": "Select Edge Broker",
@@ -1217,6 +1225,40 @@
         "error": {
           "title": "Creation Failed",
           "message": "Failed to create combiner. Please try again."
+        }
+      },
+      "group": {
+        "alreadyGrouped": {
+          "title": "Node Already in Group",
+          "description": "{{nodeName}} is already in group \"{{groupName}}\" and cannot be selected for another group"
+        },
+        "unknownGroup": "Unknown Group",
+        "autoIncluded": "These nodes will also be included:",
+        "selectionCount_one": "{{count}} node selected",
+        "selectionCount_other": "{{count}} nodes selected",
+        "selectionCountWithAuto_one": "{{count}} node selected ({{autoCount}} auto-included)",
+        "selectionCountWithAuto_other": "{{count}} nodes selected ({{autoCount}} auto-included)",
+        "configTitle": "Configure Group",
+        "titleLabel": "Group Title",
+        "titlePlaceholder": "Enter group name",
+        "titleHelp": "Give your group a descriptive name",
+        "colorLabel": "Group Color",
+        "color": {
+          "blue": "Blue",
+          "green": "Green",
+          "red": "Red",
+          "purple": "Purple",
+          "orange": "Orange"
+        },
+        "back": "Back to Preview",
+        "create": "Create Group",
+        "success": {
+          "title": "Group Created",
+          "description": "Group \"{{title}}\" has been created successfully"
+        },
+        "error": {
+          "title": "Creation Failed",
+          "message": "Failed to create group. Please try again."
         }
       },
       "assetMapper": {
