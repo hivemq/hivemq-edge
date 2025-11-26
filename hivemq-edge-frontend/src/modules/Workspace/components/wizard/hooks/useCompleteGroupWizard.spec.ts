@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useToast } from '@chakra-ui/react'
+import type { Node } from '@xyflow/react'
 import { useReactFlow } from '@xyflow/react'
 
 import { useCompleteGroupWizard } from './useCompleteGroupWizard'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 // Mock dependencies
 vi.mock('@chakra-ui/react', async () => {
@@ -455,7 +457,7 @@ describe('useCompleteGroupWizard', () => {
       await result.current.completeWizard()
 
       const nodes = mockSetNodes.mock.calls[0][0]
-      const groupNode = nodes.find((n: { type: string }) => n.type === 'CLUSTER_NODE')
+      const groupNode = nodes.find((n: Node) => n.type === NodeTypes.CLUSTER_NODE)
       const childNode = nodes.find(
         (n: { id: string; parentId: string }) => n.id === 'adapter-1' && n.parentId === groupNode.id
       )

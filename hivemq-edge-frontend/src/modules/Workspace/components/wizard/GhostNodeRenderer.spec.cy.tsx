@@ -5,7 +5,7 @@ import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_EDGE } from '@/__test-ut
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting.tsx'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
-import { IdStubs } from '@/modules/Workspace/types'
+import { IdStubs, NodeTypes } from '@/modules/Workspace/types'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import GhostNodeRenderer from './GhostNodeRenderer'
 import { EntityType, IntegrationPointType } from './types'
@@ -278,7 +278,7 @@ describe('GhostNodeRenderer', () => {
     cy.wrap(null).then(() => {
       const { ghostNodes } = useWizardStore.getState()
       expect(ghostNodes).to.have.length.greaterThan(0)
-      const hasAdapterNode = ghostNodes.some((node) => node.type === 'ADAPTER_NODE')
+      const hasAdapterNode = ghostNodes.some((node) => node.type === NodeTypes.ADAPTER_NODE)
       expect(hasAdapterNode).to.be.true
     })
   })
@@ -305,7 +305,7 @@ describe('GhostNodeRenderer', () => {
     cy.wrap(null).then(() => {
       const { ghostNodes } = useWizardStore.getState()
       expect(ghostNodes).to.have.length.greaterThan(0)
-      const hasBridgeNode = ghostNodes.some((node) => node.type === 'BRIDGE_NODE')
+      const hasBridgeNode = ghostNodes.some((node) => node.type === NodeTypes.BRIDGE_NODE)
       expect(hasBridgeNode).to.be.true
     })
   })
@@ -332,7 +332,7 @@ describe('GhostNodeRenderer', () => {
     cy.wrap(null).then(() => {
       const { ghostNodes } = useWizardStore.getState()
       expect(ghostNodes).to.have.length.greaterThan(0)
-      const hasCombinerNode = ghostNodes.some((node) => node.type === 'COMBINER_NODE')
+      const hasCombinerNode = ghostNodes.some((node) => node.type === NodeTypes.COMBINER_NODE)
       expect(hasCombinerNode).to.be.true
     })
   })
@@ -454,10 +454,10 @@ describe('GhostNodeRenderer', () => {
     cy.wrap(null).then(() => {
       const { ghostNodes } = useWizardStore.getState()
       expect(ghostNodes.length).to.be.greaterThan(0)
-      const hasCombinerNode = ghostNodes.some((node) => node.type === 'COMBINER_NODE')
+      const hasCombinerNode = ghostNodes.some((node) => node.type === NodeTypes.COMBINER_NODE)
       expect(hasCombinerNode).to.be.true
-      const hasAdapterNode = ghostNodes.some((node) => node.type === 'ADAPTER_NODE')
-      const hasBridgeNode = ghostNodes.some((node) => node.type === 'BRIDGE_NODE')
+      const hasAdapterNode = ghostNodes.some((node) => node.type === NodeTypes.ADAPTER_NODE)
+      const hasBridgeNode = ghostNodes.some((node) => node.type === NodeTypes.BRIDGE_NODE)
       expect(hasAdapterNode).to.be.false
       expect(hasBridgeNode).to.be.false
     })
@@ -488,7 +488,7 @@ describe('GhostNodeRenderer', () => {
       const { ghostNodes } = useWizardStore.getState()
       expect(ghostNodes).to.have.length.greaterThan(0)
       const hasAssetMapperNode = ghostNodes.some(
-        (node) => node.id.includes('ghost-assetmapper-') || node.type === 'COMBINER_NODE'
+        (node) => node.id.includes('ghost-assetmapper-') || node.type === NodeTypes.COMBINER_NODE
       )
       expect(hasAssetMapperNode).to.be.true
     })

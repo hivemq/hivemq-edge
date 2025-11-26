@@ -13,6 +13,7 @@ import {
   MAX_NESTING_DEPTH,
 } from '../utils/groupConstraints'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 export const useCompleteGroupWizard = () => {
   const { t } = useTranslation()
@@ -48,7 +49,10 @@ export const useCompleteGroupWizard = () => {
       // Filter to only include adapters and bridges (not devices/hosts)
       // Groups should only contain top-level entities
       const groupCandidates = selectedNodes.filter(
-        (node) => node.type === 'ADAPTER_NODE' || node.type === 'BRIDGE_NODE' || node.type === 'CLUSTER_NODE'
+        (node) =>
+          node.type === NodeTypes.ADAPTER_NODE ||
+          node.type === NodeTypes.BRIDGE_NODE ||
+          node.type === NodeTypes.CLUSTER_NODE
       )
 
       if (groupCandidates.length === 0) {
@@ -70,7 +74,7 @@ export const useCompleteGroupWizard = () => {
       // Validate nesting depth before creating group
       // Check if any selected group would cause max depth to be exceeded
       for (const node of groupCandidates) {
-        if (node.type === 'CLUSTER_NODE') {
+        if (node.type === NodeTypes.CLUSTER_NODE) {
           const childDepth = getMaxChildDepth(node, allNodes)
           if (childDepth + 1 > MAX_NESTING_DEPTH) {
             throw new Error(

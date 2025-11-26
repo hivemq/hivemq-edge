@@ -1,15 +1,8 @@
-/**
- * Wizard Combiner Configuration
- *
- * Wrapper component for CombinerMappingManager in wizard mode.
- * Handles API integration for creating combiner during wizard flow.
- */
-
 import type { FC } from 'react'
-
 import type { Combiner } from '@/api/__generated__'
 import CombinerMappingManager from '@/modules/Mappings/CombinerMappingManager'
-import { useWizardState, useWizardActions } from '@/modules/Workspace/hooks/useWizardStore'
+import { EntityType } from '@/modules/Workspace/components/wizard/types.ts'
+import { useWizardActions, useWizardState } from '@/modules/Workspace/hooks/useWizardStore'
 import { useCompleteCombinerWizard } from './hooks/useCompleteCombinerWizard'
 
 const WizardCombinerConfiguration: FC = () => {
@@ -17,7 +10,7 @@ const WizardCombinerConfiguration: FC = () => {
   const { previousStep } = useWizardActions()
 
   // Asset Mapper and Combiner use different APIs but same schema
-  const isAssetMapper = entityType === 'ASSET_MAPPER'
+  const isAssetMapper = entityType === EntityType.ASSET_MAPPER
 
   // Use completion hook (like bridge wizard)
   const { completeWizard } = useCompleteCombinerWizard({ isAssetMapper })

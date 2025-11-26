@@ -1,33 +1,27 @@
-/**
- * Create Entity Button
- *
- * Dropdown button in CanvasToolbar that allows users to start the wizard
- * for creating entities or adding integration points.
- */
-
 import type { FC } from 'react'
-import { useTranslation } from 'react-i18next'
+import { ChevronDownIcon } from '@chakra-ui/icons'
 import {
   Button,
+  HStack,
+  Icon,
   Menu,
   MenuButton,
-  MenuList,
-  MenuItem,
-  MenuGroup,
   MenuDivider,
-  Icon,
-  HStack,
-  Text,
+  MenuGroup,
+  MenuItem,
+  MenuList,
   Portal,
+  Text,
 } from '@chakra-ui/react'
-import { ChevronDownIcon } from '@chakra-ui/icons'
+import { useTranslation } from 'react-i18next'
 import { LuPlus } from 'react-icons/lu'
 
 import { Capability } from '@/api/__generated__'
 import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability'
-import { useWizardState, useWizardActions } from '@/modules/Workspace/hooks/useWizardStore'
-import { getEntityWizardTypes, getIntegrationWizardTypes, getWizardIcon } from './utils/wizardMetadata'
+import { useWizardActions, useWizardState } from '@/modules/Workspace/hooks/useWizardStore'
 import type { WizardType } from './types'
+import { EntityType } from './types'
+import { getEntityWizardTypes, getIntegrationWizardTypes, getWizardIcon } from './utils/wizardMetadata'
 
 /**
  * Button that opens a menu to start different wizard types
@@ -56,7 +50,7 @@ const CreateEntityButton: FC = () => {
 
   const isWizardAvailable = (type: WizardType): boolean => {
     // Asset Mapper requires Pulse capability
-    if (type === 'ASSET_MAPPER' && !hasPulse) {
+    if (type === EntityType.ASSET_MAPPER && !hasPulse) {
       return false
     }
     return isWizardImplemented(type)
@@ -85,7 +79,7 @@ const CreateEntityButton: FC = () => {
               const IconComponent = getWizardIcon(type)
               const isAvailable = isWizardAvailable(type)
               const isImplemented = isWizardImplemented(type)
-              const isPulseRequired = type === 'ASSET_MAPPER' && !hasPulse
+              const isPulseRequired = type === EntityType.ASSET_MAPPER && !hasPulse
 
               return (
                 <MenuItem

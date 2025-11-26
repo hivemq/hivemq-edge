@@ -47,10 +47,10 @@ export const useWizardStore = create<WizardStore>()(
 
           // Asset Mapper auto-selects the Pulse Agent
           let initialSelection: string[] = []
-          if (type === 'ASSET_MAPPER') {
+          if (type === EntityType.ASSET_MAPPER) {
             // Find Pulse Agent node(s) and auto-select the first one
             const nodes = useWorkspaceStore.getState().nodes
-            const pulseNode = nodes.find((n) => n.type === 'PULSE_NODE')
+            const pulseNode = nodes.find((n) => n.type === NodeTypes.PULSE_NODE)
             if (pulseNode) {
               initialSelection = [pulseNode.id]
             }

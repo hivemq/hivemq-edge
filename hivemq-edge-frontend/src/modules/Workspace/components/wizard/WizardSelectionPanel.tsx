@@ -1,38 +1,32 @@
-/**
- * Wizard Selection Panel
- *
- * Floating panel that displays selected nodes during selection steps.
- * Uses React Flow Panel to avoid blocking the canvas.
- */
-
-import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import type { FC } from 'react'
-import { useTranslation } from 'react-i18next'
 import { Panel } from '@xyflow/react'
+import { useTranslation } from 'react-i18next'
+import { CloseIcon } from '@chakra-ui/icons'
 import {
-  Box,
-  Heading,
-  Text,
-  Button,
-  VStack,
   Alert,
   AlertIcon,
+  Badge,
+  Box,
+  Button,
   Card,
   CardBody,
   CardHeader,
+  Heading,
   HStack,
   IconButton,
-  Badge,
   List,
   ListItem,
+  Text,
+  VStack,
 } from '@chakra-ui/react'
-import { CloseIcon } from '@chakra-ui/icons'
 
-import { useWizardState, useWizardActions } from '@/modules/Workspace/hooks/useWizardStore'
+import { useWizardActions, useWizardState } from '@/modules/Workspace/hooks/useWizardStore'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { NodeTypes } from '@/modules/Workspace/types'
-import { getAutoIncludedNodes } from './utils/groupConstraints'
+
 import AutoIncludedNodesList from './AutoIncludedNodesList'
 import { EntityType } from './types'
+import { getAutoIncludedNodes } from './utils/groupConstraints'
 
 /**
  * Floating panel showing selected nodes with validation and navigation
@@ -53,7 +47,7 @@ const WizardSelectionPanel: FC = () => {
   const selectedNodes = nodes.filter((n) => selectedNodeIds.includes(n.id))
 
   // Check if this is Asset Mapper with auto-included Pulse Agent
-  const isAssetMapper = entityType === 'ASSET_MAPPER'
+  const isAssetMapper = entityType === EntityType.ASSET_MAPPER
 
   // Check if this is Group wizard with auto-included DEVICE/HOST nodes
   const isGroup = entityType === EntityType.GROUP
