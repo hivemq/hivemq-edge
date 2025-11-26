@@ -1,3 +1,4 @@
+import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import type { FC } from 'react'
 import { useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -9,7 +10,7 @@ import type {
   EdgeRemoveChange,
 } from '@xyflow/react'
 import { Handle, NodeResizer, Position, useReactFlow, useNodesData } from '@xyflow/react'
-import { Box, Icon, Text, useColorMode, useDisclosure, useTheme } from '@chakra-ui/react'
+import { Box, Icon, Text, useColorMode, useDisclosure, useTheme, useToast } from '@chakra-ui/react'
 import { LuExpand, LuShrink } from 'react-icons/lu'
 import { ImUngroup } from 'react-icons/im'
 
@@ -22,10 +23,12 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 import { RuntimeStatus, OperationalStatus, type NodeStatusModel } from '@/modules/Workspace/types/status.types'
+import { canGroupCollapse } from '../wizard/utils/groupConstraints.ts'
 
 const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props }) => {
   const { t } = useTranslation()
   const { colors } = useTheme()
+  const toast = useToast()
   const { onToggleGroup, onNodesChange, onEdgesChange, nodes, edges } = useWorkspaceStore()
   const { isOpen: isConfirmUngroupOpen, onOpen: onConfirmUngroupOpen, onClose: onConfirmUngroupClose } = useDisclosure()
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/group/${id}`)
@@ -87,20 +90,48 @@ const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props 
   }
 
   const handleToggle = () => {
+    // If trying to collapse, check if it's allowed (not nested with collapsed parent)
+    if (data.isOpen) {
+      const collapseCheck = canGroupCollapse(id, nodes)
+      if (!collapseCheck.allowed) {
+        toast({
+          ...DEFAULT_TOAST_OPTION,
+          title: t('workspace.grouping.error.cannotCollapse'),
+          description: collapseCheck.reason,
+          status: 'warning',
+        })
+        return
+      }
+    }
+
     data.isOpen = !data.isOpen
     onToggleGroup({ id, data }, data.isOpen)
   }
 
   const handleUngroup = () => {
     const content = nodes.filter((node) => data.childrenNodeIds.includes(node.id))
+
+    // Find the current group node to check if it's nested
+    const currentGroupNode = nodes.find((n) => n.id === id)
+    const parentGroupId = currentGroupNode?.parentId
+
+    // Smart ungrouping: move children to parent group if nested, otherwise to root
     const changeContent = content.map<NodeReplaceChange>((node) => ({
       id: node.id,
-      item: { ...node, parentId: undefined },
+      item: {
+        ...node,
+        parentId: parentGroupId || undefined, // Move to parent group if nested, else root
+        extent: parentGroupId ? 'parent' : undefined, // Keep constrained if moving to parent
+      },
       type: 'replace',
     }))
+
     const changePosition = content.map<NodePositionChange>((node) => ({
       id: node.id,
-      position: { x: node.position.x + props.positionAbsoluteX, y: node.position.y + props.positionAbsoluteY },
+      position: {
+        x: node.position.x + props.positionAbsoluteX,
+        y: node.position.y + props.positionAbsoluteY,
+      },
       type: 'position',
     }))
 

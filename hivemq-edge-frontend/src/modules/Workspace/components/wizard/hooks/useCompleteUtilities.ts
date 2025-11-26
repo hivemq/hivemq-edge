@@ -1,6 +1,7 @@
 import { useReactFlow } from '@xyflow/react'
 import { removeGhostEdges, removeGhostNodes } from '@/modules/Workspace/components/wizard/utils/ghostNodeFactory.ts'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore.ts'
+import { GHOST_SUCCESS_OPACITY_TRANSITION } from '../utils/styles'
 
 export const useCompleteUtilities = () => {
   const { getNodes, setNodes, getEdges, setEdges } = useReactFlow()
@@ -42,7 +43,7 @@ export const useCompleteUtilities = () => {
           style: {
             ...node.style,
             opacity: 0.3,
-            transition: 'opacity 0.5s ease-out',
+            transition: GHOST_SUCCESS_OPACITY_TRANSITION,
           },
         }
       }

@@ -1,6 +1,6 @@
 # Cypress Testing Guidelines - Comprehensive Reference
 
-**Last Updated:** November 12, 2025  
+**Last Updated:** November 24, 2025  
 **Purpose:** Complete guide for writing, running, and debugging Cypress tests in HiveMQ Edge Frontend  
 **Audience:** AI Agents and Developers
 
@@ -160,6 +160,111 @@ Toolbar
 
 ✅ All tests verified passing.
 ```
+
+---
+
+### Rule 6: ALWAYS Use Properly Typed React Flow Nodes
+
+**Problem:** Using generic `Node` type allows creating incorrect mock data that doesn't match real node structures, leading to tests that pass but don't reflect reality.
+
+**Critical:** Since React Flow nodes have `type` properties that determine their structure, you MUST use the corresponding TypeScript type.
+
+**❌ Bad - Generic Node with made-up data:**
+
+```typescript
+import type { Node } from '@xyflow/react'
+
+// ❌ Wrong: Uses generic Node type with arbitrary data structure
+const mockAdapterNode: Node = {
+  id: 'adapter-1',
+  type: NodeTypes.ADAPTER_NODE,
+  position: { x: 100, y: 100 },
+  data: {
+    id: 'adapter-1',
+    label: 'Temperature Sensor', // ❌ Adapter doesn't have a label field!
+    adapterId: 'adapter-1', // ❌ Wrong field name!
+  },
+}
+```
+
+**✅ Good - Properly typed with real API data:**
+
+```typescript
+import type { NodeAdapterType, NodeBridgeType } from '@/modules/Workspace/types'
+import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+
+// ✅ Correct: Uses typed node with actual API data structure
+const mockAdapterNode: NodeAdapterType = {
+  id: 'adapter-1',
+  type: NodeTypes.ADAPTER_NODE,
+  position: { x: 100, y: 100 },
+  data: {
+    ...mockAdapter, // ✅ Uses real Adapter data structure
+    id: 'adapter-1',
+  },
+}
+
+const mockBridgeNode: NodeBridgeType = {
+  id: 'bridge-1',
+  type: NodeTypes.BRIDGE_NODE,
+  position: { x: 300, y: 100 },
+  data: {
+    ...mockBridge, // ✅ Uses real Bridge data structure
+    id: 'bridge-1',
+  },
+}
+```
+
+**Available Node Types:**
+
+```typescript
+// Import from @/modules/Workspace/types
+NodeAdapterType // For NodeTypes.ADAPTER_NODE
+NodeBridgeType // For NodeTypes.BRIDGE_NODE
+NodeDeviceType // For NodeTypes.DEVICE_NODE
+NodeGroupType // For NodeTypes.CLUSTER_NODE
+NodeCombinerType // For NodeTypes.COMBINER_NODE
+NodeListenerType // For NodeTypes.LISTENER_NODE
+NodePulseType // For NodeTypes.PULSE_NODE
+NodeEdgeType // For NodeTypes.EDGE_NODE
+NodeHostType // For NodeTypes.HOST_NODE
+NodeAssetsType // For NodeTypes.ASSETS_NODE
+```
+
+**Where to find mock data:**
+
+```typescript
+// Adapter mocks
+import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+
+// Bridge mocks
+import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+
+// Protocol/Device mocks
+import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+
+// Combiner mocks
+import { mockCombiner } from '@/api/hooks/useCombiners/__handlers__'
+
+// Pre-built node mocks (preferred when available)
+import {
+  MOCK_NODE_ADAPTER,
+  MOCK_NODE_BRIDGE,
+  MOCK_NODE_DEVICE,
+  MOCK_NODE_GROUP,
+  // ... etc
+} from '@/__test-utils__/react-flow/nodes'
+```
+
+**Why this matters:**
+
+- ✅ Type safety catches incorrect data structures at compile time
+- ✅ Tests reflect real API data shapes
+- ✅ Prevents false positives where tests pass but code would fail in production
+- ✅ Makes tests more maintainable when API changes
+
+**Enforcement:** TypeScript should warn you if data doesn't match the expected type. If you see `any` or ignore type errors, you're doing it wrong!
 
 ---
 

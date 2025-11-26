@@ -16,6 +16,7 @@ import { getWizardStep } from './utils/wizardMetadata'
 import WizardAdapterConfiguration from './WizardAdapterConfiguration'
 import WizardBridgeConfiguration from './WizardBridgeConfiguration'
 import WizardCombinerConfiguration from './WizardCombinerConfiguration'
+import WizardGroupConfiguration from './WizardGroupConfiguration'
 
 /**
  * Main configuration panel for wizard
@@ -65,8 +66,7 @@ const WizardConfigurationPanel: FC = () => {
         return <WizardCombinerConfiguration />
 
       case EntityType.GROUP:
-        // TODO: Implement group configuration
-        return <div>Group configuration coming soon</div>
+        return <WizardGroupConfiguration />
 
       default:
         return null
@@ -75,7 +75,7 @@ const WizardConfigurationPanel: FC = () => {
 
   // Some components (like CombinerMappingManager) have their own Drawer
   // Check if we need to wrap in a Drawer
-  // Both Combiner and Asset Mapper reuse CombinerMappingManager which has its own Drawer
+  // Combiner and Asset Mapper have their own Drawer
   const needsDrawerWrapper = entityType !== EntityType.COMBINER && entityType !== EntityType.ASSET_MAPPER
 
   if (needsDrawerWrapper) {

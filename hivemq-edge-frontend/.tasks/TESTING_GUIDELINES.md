@@ -383,6 +383,182 @@ cy.checkAccessibility() // Always use our custom command
 
 ---
 
+## i18n Translation Key Testing
+
+### ✅ MANDATORY: Check for Missing Translation Keys During Development
+
+**CRITICAL REQUIREMENT:** During active development and testing phase, accessibility tests MUST include `cy.checkI18nKeys()` to detect missing translation keys.
+
+#### The Pragmatic Testing Strategy
+
+**Phase 1: Development & Testing (MANDATORY)**
+
+During development, ALL accessibility tests MUST include i18n key checking:
+
+```typescript
+it('should be accessible', () => {
+  cy.injectAxe()
+  cy.mountWithProviders(<YourComponent {...meaningfulProps} />)
+  cy.checkAccessibility()
+
+  // ✅ MANDATORY during development phase
+  cy.checkI18nKeys()
+})
+```
+
+**Why This Matters:**
+
+- Catches missing translation keys immediately during development
+- Prevents deploying components with untranslated text
+- Ensures all user-facing text is properly internationalized
+- Fails tests early when keys are missing, forcing immediate fixes
+
+**Phase 2: Post-Development (OPTIONAL)**
+
+After ALL tests pass and translation keys are fixed, you MAY remove `cy.checkI18nKeys()`:
+
+```typescript
+it('should be accessible', () => {
+  cy.injectAxe()
+  cy.mountWithProviders(<YourComponent {...meaningfulProps} />)
+  cy.checkAccessibility()
+
+  // Optional: Remove after all keys are verified present
+  // cy.checkI18nKeys()
+})
+```
+
+**Decision: Keep or Remove?**
+
+There are two valid approaches:
+
+**Option A: Remove (Current Recommendation)**
+
+- ✅ Tests run faster without i18n checks
+- ✅ Cleaner test code
+- ✅ i18n config already logs errors to console
+- ⚠️ Missing keys only caught during development phase
+
+**Option B: Keep Permanently (Regression Prevention)**
+
+- ✅ Continuous regression detection for missing keys
+- ✅ Catches accidental removal of translation keys
+- ✅ Same philosophy as permanent accessibility testing
+- ⚠️ Slightly slower test execution
+
+**Current Strategy:** Remove after verification, similar to how we handle other development-time checks. The i18n `missingKeyHandler` in production will still catch issues.
+
+#### Required Test Pattern
+
+```typescript
+it('should be accessible', () => {
+  cy.injectAxe()
+  cy.mountWithProviders(<YourComponent {...meaningfulProps} />)
+  cy.checkAccessibility()
+
+  // Check for missing i18n translation keys
+  cy.checkI18nKeys()
+})
+```
+
+#### What cy.checkI18nKeys() Does
+
+1. Reads `window.__i18nextMissingKeys` array populated by i18n config
+2. Fails the test if any missing keys are detected
+3. Shows exact missing keys in error message:
+
+   ```
+   ❌ Missing i18n translation keys detected:
+     - translation:workspace.wizard.group.configure
+     - translation:workspace.grouping.editor.contentManagement
+
+   Add these keys to src/locales/en/translation.json
+   ```
+
+#### How It Works
+
+**i18n Configuration** (`src/config/i18n.config.ts`):
+
+- Includes `missingKeyHandler` that stores missing keys in `window.__i18nextMissingKeys`
+- Logs errors to console for visibility
+- Works automatically in all environments
+
+**Cypress Command** (`cypress/support/commands/checkI18nKeys.ts`):
+
+- Custom command that reads the stored missing keys
+- Fails test if any keys are missing
+- Clears array after each check to prevent accumulation
+
+#### Fixing Missing Keys
+
+When test fails with missing keys:
+
+1. **Find the component** using the key (e.g., search codebase for `t('workspace.wizard.group.configure')`)
+2. **Check if key exists** in `src/locales/en/translation.json`
+3. **Add missing key** to appropriate section in translation.json:
+   ```json
+   {
+     "workspace": {
+       "wizard": {
+         "group": {
+           "configure": "Configure Group"
+         }
+       }
+     }
+   }
+   ```
+4. **Re-run test** to verify fix
+
+#### Best Practices
+
+1. **Use Proper i18n Keys** - Never use hardcoded strings in components:
+
+   ```tsx
+   // ❌ Wrong
+   <Heading>Configure Group</Heading>
+
+   // ✅ Correct
+   <Heading>{t('workspace.wizard.group.configure')}</Heading>
+   ```
+
+2. **Follow Key Naming Convention** - Use descriptive, hierarchical keys:
+
+   ```
+   workspace.wizard.group.configure  ✅ Clear hierarchy
+   workspace.wizard.group.title      ✅ Consistent pattern
+   workspace.configGroup             ❌ Not hierarchical
+   configureGroup                    ❌ No namespace
+   ```
+
+3. **Check Existing Keys** - Before adding new keys, search for similar ones:
+
+   ```bash
+   grep -r "configure" src/locales/en/translation.json
+   ```
+
+4. **Use i18next Context** - For variations, use context instead of multiple keys:
+
+   ```typescript
+   // ✅ Good - One key with context
+   t('workspace.device.type', { context: nodeType })
+
+   // ❌ Bad - Multiple hardcoded keys
+   if (nodeType === 'DEVICE_NODE') return 'Device'
+   if (nodeType === 'HOST_NODE') return 'Host'
+   ```
+
+#### TypeScript Support
+
+The `cy.checkI18nKeys()` command is properly typed in `src/types/cypress.d.ts`:
+
+```typescript
+interface Chainable {
+  checkI18nKeys(): Chainable<void>
+}
+```
+
+---
+
 ## Accessibility Testing Patterns
 
 ### Template for Accessibility Tests
@@ -500,6 +676,141 @@ const mountComponent = () => {
   return cy.mountWithProviders(<Wrapper />)
 }
 ```
+
+### 🚨 CRITICAL: Understanding Drawer/Modal Overlay Patterns in E2E Tests
+
+**Context:** When a drawer or modal is open, it overlays the main UI, making background elements non-interactive.
+
+#### The Pattern: Drawers Have Their Own Navigation Controls
+
+**NEVER use `{force: true}` to click buttons that are legitimately covered by overlays!**
+
+**Why This Matters:**
+
+When you see an error like:
+
+```
+`cy.click()` failed because this element is being covered by another element:
+  <footer class="chakra-modal__footer">...</footer>
+```
+
+This is **BY DESIGN** - the UI is telling you that users cannot click that button while the drawer/modal is open.
+
+#### How to Recognize This Pattern
+
+1. **Error mentions modal/drawer footer/overlay** - This indicates a drawer/modal is active
+2. **Background buttons are covered** - Progress bars, toolbars, etc. become non-interactive
+3. **Drawer/modal has its own controls** - Look for buttons INSIDE the drawer/modal
+
+#### Example: Group Wizard Configuration
+
+**❌ WRONG APPROACH:**
+
+```typescript
+// Trying to click progress bar back button while drawer is open
+wizardPage.progressBar.backButton.click({ force: true }) // ❌ Forces click on covered element
+```
+
+**✅ CORRECT APPROACH:**
+
+```typescript
+// Use the back button INSIDE the drawer footer
+wizardPage.groupConfig.backButton.click() // ✅ Clicks the drawer's own back button
+```
+
+#### How to Find the Correct Selector
+
+1. **Check the component source code:**
+
+   ```typescript
+   // In WizardGroupForm.tsx
+   <DrawerFooter borderTopWidth="1px">
+     <Button onClick={onBack} data-testid="wizard-group-form-back">
+       {t('workspace.wizard.group.back')}
+     </Button>
+   </DrawerFooter>
+   ```
+
+2. **Look for drawer-specific elements:**
+
+   - `<DrawerHeader>`, `<DrawerBody>`, `<DrawerFooter>`
+   - `<ModalHeader>`, `<ModalBody>`, `<ModalFooter>`
+   - These contain the controls you should use
+
+3. **Update page objects to use correct selectors:**
+
+   ```typescript
+   // ❌ Wrong - points to progress bar (covered by drawer)
+   get backButton() {
+     return cy.getByTestId('wizard-back-button')
+   }
+
+   // ✅ Correct - points to drawer footer button
+   get backButton() {
+     return cy.getByTestId('wizard-group-form-back')
+   }
+   ```
+
+#### Design Pattern Recognition
+
+**Standard Chakra UI Drawer/Modal Structure:**
+
+```tsx
+<Drawer isOpen={true}>
+  <DrawerOverlay /> {/* This covers the background UI */}
+  <DrawerContent>
+    <DrawerCloseButton /> {/* Often triggers onClose/onBack */}
+    <DrawerHeader>Title</DrawerHeader>
+    <DrawerBody>Content</DrawerBody>
+    <DrawerFooter>
+      <Button onClick={onBack}>Back</Button> {/* Use THIS */}
+      <Button onClick={onSubmit}>Submit</Button>
+    </DrawerFooter>
+  </DrawerContent>
+</Drawer>
+```
+
+**Key Indicators:**
+
+- `DrawerOverlay` creates a semi-transparent layer that blocks interaction
+- Controls are self-contained within the drawer
+- Background UI (toolbars, sidebars) is intentionally non-interactive
+
+#### When You Should Investigate
+
+If you see:
+
+- `is being covered by another element` error
+- Reference to `modal__footer`, `drawer__footer`, `modal__overlay`
+- Background buttons not clickable
+
+**Steps to take:**
+
+1. ✅ Check if a drawer/modal is open in the UI
+2. ✅ Find the drawer/modal component in source code
+3. ✅ Look for navigation controls INSIDE the drawer/modal
+4. ✅ Update page object to use correct test IDs
+5. ❌ NEVER use `{force: true}` to bypass this - it masks design issues
+
+#### Real-World Example from Group Wizard
+
+**Scenario:** Testing back navigation from configuration step
+
+**Initial Error:**
+
+```
+CypressError: element is being covered by <footer class="chakra-modal__footer">
+```
+
+**Investigation Process:**
+
+1. Recognized "modal footer" indicates overlay pattern
+2. Checked `WizardGroupForm.tsx` source code
+3. Found `<DrawerFooter>` with back button: `data-testid="wizard-group-form-back"`
+4. Updated page object from `wizard-back-button` to `wizard-group-form-back`
+5. Test passed without `{force: true}`
+
+**Learning:** The error message itself provided the clue - "covered by footer" means look for controls in that footer, not elsewhere!
 
 ### Testing Scrollable Content
 
@@ -761,6 +1072,7 @@ When creating a new Cypress component test:
 - [ ] **Includes `"should be accessible"` test** ✅ MANDATORY
 - [ ] Accessibility test uses `cy.injectAxe()` before mount
 - [ ] Accessibility test uses representative props
+- [ ] **Accessibility test includes `cy.checkI18nKeys()` during development** ✅ MANDATORY (can be removed after verification)
 - [ ] **All mocks are properly typed** ✅ MANDATORY
 - [ ] **Uses correct enum types (not string literals)** ✅ MANDATORY
 - [ ] **No arbitrary waits (`cy.wait()` with numbers)** ✅ MANDATORY

@@ -66,6 +66,8 @@ export interface SelectionConstraints {
   requiredNodeIds?: string[]
   /** Whether to exclude nodes that are already in groups */
   excludeGrouped?: boolean
+  /** Whether to exclude nodes that are already in groups (GROUP wizard specific) */
+  excludeNodesInGroups?: boolean
   /** Custom filter function for advanced filtering (e.g., adapter capabilities) */
   customFilter?: (node: Node) => boolean
   /** Required protocol adapter capabilities (e.g., ['COMBINE']) - only for ADAPTER_NODE types */

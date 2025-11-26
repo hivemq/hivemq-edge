@@ -1,6 +1,5 @@
 import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore.ts'
-import { act, renderHook } from '@testing-library/react'
 import CreateEntityButton from './CreateEntityButton'
 import { EntityType, IntegrationPointType } from './types'
 
@@ -8,10 +7,7 @@ describe('CreateEntityButton', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
 
-    const { result } = renderHook(() => useWizardStore())
-    act(() => {
-      result.current.actions.cancelWizard()
-    })
+    useWizardStore.getState().actions.cancelWizard()
 
     cy.intercept('/api/v1/frontend/capabilities', { items: [MOCK_CAPABILITY_PULSE_ASSETS] })
   })
