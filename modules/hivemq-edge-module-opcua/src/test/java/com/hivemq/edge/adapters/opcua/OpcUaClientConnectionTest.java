@@ -27,6 +27,7 @@ import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
+import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import org.jetbrains.annotations.NotNull;
@@ -123,7 +124,11 @@ public class OpcUaClientConnectionTest {
                 eventService,
                 metricsService,
                 config,
-                () -> reconnectionCallbackInvoked.set(true));
+                new OpcUaServiceFaultListener(metricsService,
+                        eventService,
+                        "test-adapter-id",
+                        () -> reconnectionCallbackInvoked.set(true),
+                        true));
 
         // Parse config
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(config);
@@ -210,7 +215,11 @@ public class OpcUaClientConnectionTest {
                 eventService,
                 metricsService,
                 config,
-                () -> {});
+                new OpcUaServiceFaultListener(metricsService,
+                        eventService,
+                        "test-adapter-id",
+                        () -> {},
+                        true));
 
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(config);
         assertThat(result).isInstanceOf(Success.class);
@@ -223,8 +232,8 @@ public class OpcUaClientConnectionTest {
         assertThat(started).as("Connection should start successfully").isTrue();
 
         await().untilAsserted(() -> {
-            assertThat(protocolAdapterState.getConnectionStatus()).as(
-                    "Connection should be established").isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+            assertThat(protocolAdapterState.getConnectionStatus()).as("Connection should be established")
+                    .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         });
 
         // Wait for keep-alives with multiple subscriptions
@@ -272,7 +281,11 @@ public class OpcUaClientConnectionTest {
                 eventService,
                 metricsService,
                 config,
-                () -> {});
+                new OpcUaServiceFaultListener(metricsService,
+                        eventService,
+                        "test-adapter-id",
+                        () -> {},
+                        true));
 
         // Act
         final boolean healthy = opcUaClientConnection.isHealthy();
@@ -322,7 +335,11 @@ public class OpcUaClientConnectionTest {
                 eventService,
                 metricsService,
                 config,
-                () -> {});
+                new OpcUaServiceFaultListener(metricsService,
+                        eventService,
+                        "test-adapter-id",
+                        () -> {},
+                        true));
 
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(config);
         assertThat(result).isInstanceOf(Success.class);
@@ -331,8 +348,8 @@ public class OpcUaClientConnectionTest {
         opcUaClientConnection.start(parsedConfig);
 
         await().untilAsserted(() -> {
-            assertThat(protocolAdapterState.getConnectionStatus()).as(
-                    "Connection should be established").isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+            assertThat(protocolAdapterState.getConnectionStatus()).as("Connection should be established")
+                    .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         });
 
         // Act - Stop the connection
@@ -340,8 +357,8 @@ public class OpcUaClientConnectionTest {
 
         // Assert
         await().untilAsserted(() -> {
-            assertThat(opcUaClientConnection.isHealthy()).as(
-                    "Connection should not be healthy after being stopped").isFalse();
+            assertThat(opcUaClientConnection.isHealthy()).as("Connection should not be healthy after being stopped")
+                    .isFalse();
         });
     }
 }
