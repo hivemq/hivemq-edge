@@ -24,6 +24,7 @@ import {
 } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { applyLayout } from '@/modules/Workspace/utils/layout-utils.ts'
 import { useEdgeFlowContext } from './useEdgeFlowContext.ts'
+import useWorkspaceStore from './useWorkspaceStore'
 
 const useGetFlowElements = () => {
   const { t } = useTranslation()
@@ -95,9 +96,6 @@ const useGetFlowElements = () => {
       edges.push(deviceConnector)
     })
 
-    const nbCombiners = combinerList?.items?.length || 1
-    const deltaPosition = Math.floor((nbCombiners - 1) / 2)
-
     if (hasPulse) {
       const { nodePulse, pulseConnector } = createPulseNode(theme)
 
@@ -105,21 +103,33 @@ const useGetFlowElements = () => {
       edges.push(pulseConnector)
     }
 
-    const generateDataTransformationNodes = (combiner: Combiner, index: number) => {
+    const generateDataTransformationNodes = (combiner: Combiner) => {
+      // Get current nodes from workspace store to use actual positions (after user drags)
+      const currentNodes = useWorkspaceStore.getState().nodes
+
+      // Find source nodes using current positions from workspace store
       const sources =
         combiner.sources?.items
           ?.map((entity) => {
+            // First check workspace store for current position
+            const currentNode = currentNodes.find((node: Node) => node.data?.id === entity.id)
+            if (currentNode) return currentNode
+
+            // Fallback to newly created nodes if not in store yet
             return nodes.find((node) => node.data.id === entity.id)
           })
           // TODO[xxxxxx] Error message for missing references
           .filter((node) => node) || []
 
-      const { nodeCombiner, edgeConnector, sourceConnectors } = createCombinerNode(
-        combiner,
-        (index - deltaPosition) / nbCombiners,
-        sources as Node[],
-        theme
-      )
+      // Check if combiner already exists in workspace store (preserve manual position)
+      const existingCombiner = currentNodes.find((node: Node) => node.id === combiner.id)
+
+      const { nodeCombiner, edgeConnector, sourceConnectors } = createCombinerNode(combiner, sources as Node[], theme)
+
+      // If combiner exists, preserve its current position (user might have moved it)
+      if (existingCombiner) {
+        nodeCombiner.position = existingCombiner.position
+      }
 
       nodes.push(nodeCombiner)
       edges.push(edgeConnector, ...sourceConnectors)
