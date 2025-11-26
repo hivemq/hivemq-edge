@@ -1,3 +1,4 @@
+import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import { type MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Node, NodePositionChange } from '@xyflow/react'
@@ -232,11 +233,10 @@ const ReactFlowWrapper = () => {
         if (selectedNodeIds.length >= maxNodes) {
           // Show toast: max reached
           toast({
+            ...DEFAULT_TOAST_OPTION,
             title: t('workspace.wizard.selection.maxReached'),
             description: t('workspace.wizard.selection.maxReachedDescription', { count: maxNodes }),
             status: 'warning',
-            duration: 3000,
-            isClosable: true,
           })
           return
         }

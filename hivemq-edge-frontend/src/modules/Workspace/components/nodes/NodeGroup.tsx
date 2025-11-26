@@ -1,3 +1,4 @@
+import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import type { FC } from 'react'
 import { useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -94,11 +95,10 @@ const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props 
       const collapseCheck = canGroupCollapse(id, nodes)
       if (!collapseCheck.allowed) {
         toast({
+          ...DEFAULT_TOAST_OPTION,
           title: t('workspace.grouping.error.cannotCollapse'),
           description: collapseCheck.reason,
           status: 'warning',
-          duration: 4000,
-          isClosable: true,
         })
         return
       }

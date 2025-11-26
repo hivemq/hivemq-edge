@@ -1,3 +1,4 @@
+import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@chakra-ui/react'
@@ -169,13 +170,10 @@ export const useCompleteGroupWizard = () => {
       // Add the group edge
       onAddEdges([{ item: newGroupEdge, type: 'add' }])
 
-      // Show success toast
       toast({
+        ...DEFAULT_TOAST_OPTION,
         title: t('workspace.wizard.group.success.title'),
         description: t('workspace.wizard.group.success.description', { title: groupConfigTyped.title }),
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
       })
 
       // TRANSITION SEQUENCE: Remove ghost, close wizard
@@ -225,11 +223,10 @@ export const useCompleteGroupWizard = () => {
     } catch (error) {
       // Show error toast
       toast({
+        ...DEFAULT_TOAST_OPTION,
         title: t('workspace.wizard.group.error.title'),
         description: error instanceof Error ? error.message : t('workspace.wizard.group.error.message'),
         status: 'error',
-        duration: 5000,
-        isClosable: true,
       })
 
       console.error('Failed to complete group wizard:', error)
