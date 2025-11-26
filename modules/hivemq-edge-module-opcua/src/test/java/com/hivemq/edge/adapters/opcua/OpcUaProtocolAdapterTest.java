@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
@@ -43,11 +44,9 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import util.EmbeddedOpcUaServerExtension;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -182,9 +181,11 @@ public class OpcUaProtocolAdapterTest {
         // Act - Start the adapter (will fail to subscribe due to invalid node IDs)
         adapter.start(startInput, startOutput);
 
+        Thread.sleep(5000);
+
         // Assert - Verify connection status transitions to a failure state after subscription issues
         // Either ERROR or DISCONNECTED indicates that reconnection scheduling would be triggered
-        await().atMost(java.time.Duration.ofSeconds(60)).untilAsserted(() -> {
+        await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
             final ProtocolAdapterState.ConnectionStatus status = protocolAdapterState.getConnectionStatus();
             assertThat(status).as(
                             "Adapter should enter a failure state (ERROR or DISCONNECTED) after subscription failure, " +
@@ -192,6 +193,11 @@ public class OpcUaProtocolAdapterTest {
                     .isIn(ProtocolAdapterState.ConnectionStatus.ERROR,
                             ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         });
+        final List<String> eventMessages = eventService.readEvents(null, null).stream().map(Event::getMessage).toList();
+        assertThat(eventMessages).as("Multiple error events should be recorded for retry attempts")
+                .filteredOn(message -> message.contains(
+                        "Failed to synchronize monitored items: StatusCode[name=Bad_UnexpectedError, value=0x80010000, quality=bad] failed to synchronize one or more MonitoredItems. Samples: NodeId{ns=1, id="))
+                .hasSizeGreaterThanOrEqualTo(2);
     }
 
     @Test
@@ -245,7 +251,7 @@ public class OpcUaProtocolAdapterTest {
         adapter.start(startInput, startOutput);
 
         // Assert - Connection should fail and remain in ERROR state
-        await().atMost(java.time.Duration.ofSeconds(30)).untilAsserted(() -> {
+        await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
             assertThat(protocolAdapterState.getConnectionStatus()).as(
                             "Adapter should be in ERROR state after connection failure")
                     .isEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR);
@@ -255,9 +261,15 @@ public class OpcUaProtocolAdapterTest {
         Thread.sleep(15000); // Wait 15 seconds for retries (1s + 2s + 4s + 8s = 15s minimum)
 
         // Verify multiple error events were fired for the retry attempts
-        assertThat(eventService.readEvents(null,
-                null)).as("Multiple error events should be recorded for retry attempts")
-                .filteredOn(event -> event.getMessage().contains("Failed to create or transfer OPC UA subscription. Closing client connection."))
+        final List<String> eventMessages = eventService.readEvents(null, null).stream().map(Event::getMessage).toList();
+        assertThat(eventMessages).as("Multiple error events should be recorded for retry attempts")
+                .filteredOn(message -> message.contains(
+                        "Failed to create or transfer OPC UA subscription. Closing client connection."))
+                .hasSizeGreaterThanOrEqualTo(5)
+                .hasSizeLessThan(25);
+        assertThat(eventMessages).as("Multiple error events should be recorded for retry attempts")
+                .filteredOn(message -> message.contains(
+                        "Failed to synchronize monitored items: StatusCode[name=Bad_UnexpectedError, value=0x80010000, quality=bad] failed to synchronize one or more MonitoredItems. Samples: NodeId{ns=0, id=1234567890}"))
                 .hasSizeGreaterThanOrEqualTo(5)
                 .hasSizeLessThan(25);
         assertThat(adapter.getReconnectAttempts()).isLessThan(25);
