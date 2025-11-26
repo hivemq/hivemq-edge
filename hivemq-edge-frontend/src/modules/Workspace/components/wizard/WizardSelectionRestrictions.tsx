@@ -8,7 +8,7 @@ import type { ProtocolAdapter } from '@/api/__generated__'
 import { useWizardState } from '@/modules/Workspace/hooks/useWizardStore'
 import { EdgeTypes, IdStubs, NodeTypes } from '@/modules/Workspace/types'
 import type { SelectionConstraints } from './types'
-import { GHOST_EDGE_STYLE } from './utils/ghostNodeFactory'
+import { GHOST_COLOR_EDGE, GHOST_EDGE_STYLE } from './utils/ghostNodeFactory'
 import { useProtocolAdaptersContext } from './hooks/useProtocolAdaptersContext'
 import { canNodeBeGrouped } from './utils/groupConstraints'
 
@@ -327,7 +327,7 @@ const WizardSelectionRestrictions: FC = () => {
         type: MarkerType.ArrowClosed,
         width: 20,
         height: 20,
-        color: '#4299E1',
+        color: GHOST_COLOR_EDGE,
       },
       data: { isGhost: true },
     }))

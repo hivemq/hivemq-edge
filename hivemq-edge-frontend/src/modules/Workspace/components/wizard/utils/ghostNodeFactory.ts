@@ -17,6 +17,16 @@ const MAX_ADAPTERS = 10
 const GLUE_SEPARATOR = 200
 
 /**
+ * GHOST-related colors
+ * TODO[NVL] These must be integrated in the theme
+ */
+export const GHOST_COLOR_BACKGROUND = '#EBF8FF'
+export const GHOST_COLOR_EDGE = '#4299E1'
+export const GHOST_SUCCESS_SHADOW = '0 0 0 4px rgba(72, 187, 120, 0.6), 0 0 20px rgba(72, 187, 120, 0.4)'
+export const GHOST_SUCCESS_TRANSITION = 'box-shadow 0.3s ease-in'
+export const GHOST_SUCCESS_DIMMED_TRANSITION = 'box-shadow 0.5s ease-out'
+
+/**
  * Base ghost node properties
  */
 const GHOST_BASE = {
@@ -30,8 +40,8 @@ const GHOST_BASE = {
  */
 export const GHOST_STYLE_ENHANCED = {
   opacity: 0.75,
-  border: '3px dashed #4299E1',
-  backgroundColor: '#EBF8FF',
+  border: `3px dashed ${GHOST_COLOR_EDGE}`,
+  backgroundColor: GHOST_COLOR_BACKGROUND,
   boxShadow: '0 0 0 4px rgba(66, 153, 225, 0.4), 0 0 20px rgba(66, 153, 225, 0.6)',
   pointerEvents: 'none' as const,
   transition: 'all 0.3s ease',
@@ -41,20 +51,16 @@ export const GHOST_STYLE_ENHANCED = {
  * Selectable ghost node styling - allows clicking to see edge highlighting
  */
 export const GHOST_STYLE_SELECTABLE = {
-  opacity: 0.75,
-  border: '3px dashed #4299E1',
-  backgroundColor: '#EBF8FF',
-  boxShadow: '0 0 0 4px rgba(66, 153, 225, 0.4), 0 0 20px rgba(66, 153, 225, 0.6)',
+  ...GHOST_STYLE_ENHANCED,
   pointerEvents: 'all' as const, // Allow interaction
   cursor: 'pointer' as const,
-  transition: 'all 0.3s ease',
 }
 
 /**
  * Ghost edge styling
  */
 export const GHOST_EDGE_STYLE = {
-  stroke: '#4299E1',
+  stroke: GHOST_COLOR_EDGE,
   strokeWidth: 2,
   strokeDasharray: '5,5',
   opacity: 0.6,
@@ -65,8 +71,8 @@ export const GHOST_EDGE_STYLE = {
  */
 export const GHOST_STYLE = {
   opacity: 0.6,
-  border: '2px dashed #4299E1',
-  backgroundColor: '#EBF8FF',
+  border: `2px dashed ${GHOST_COLOR_EDGE}`,
+  backgroundColor: GHOST_COLOR_BACKGROUND,
   pointerEvents: 'none' as const,
 }
 
@@ -208,7 +214,7 @@ export const createGhostCombinerGroup = (id: string, edgeNode: Node, entityType:
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: '#4299E1',
+      color: GHOST_COLOR_EDGE,
     },
     data: { isGhost: true },
   }
@@ -569,7 +575,7 @@ export const createGhostAdapterGroup = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: '#4299E1',
+      color: GHOST_COLOR_EDGE,
     },
     data: {
       isGhost: true,
@@ -590,7 +596,7 @@ export const createGhostAdapterGroup = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: '#4299E1',
+      color: GHOST_COLOR_EDGE,
     },
     data: {
       isGhost: true,
@@ -687,7 +693,7 @@ export const createGhostBridgeGroup = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: '#4299E1',
+      color: GHOST_COLOR_EDGE,
     },
     data: {
       isGhost: true,
@@ -708,7 +714,7 @@ export const createGhostBridgeGroup = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: '#4299E1',
+      color: GHOST_COLOR_EDGE,
     },
     data: {
       isGhost: true,

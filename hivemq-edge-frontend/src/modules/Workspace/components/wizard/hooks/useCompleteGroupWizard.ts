@@ -1,4 +1,3 @@
-import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@chakra-ui/react'
@@ -6,7 +5,7 @@ import { useReactFlow } from '@xyflow/react'
 
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore'
 import { getGroupBounds } from '@/modules/Workspace/utils/group.utils'
-import { removeGhostGroup } from '../utils/ghostNodeFactory'
+import { GHOST_COLOR_EDGE, removeGhostGroup } from '../utils/ghostNodeFactory'
 import {
   getAutoIncludedNodes,
   validateGroupHierarchy,
@@ -15,6 +14,7 @@ import {
 } from '../utils/groupConstraints'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
+import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 
 export const useCompleteGroupWizard = () => {
   const { t } = useTranslation()
@@ -125,11 +125,11 @@ export const useCompleteGroupWizard = () => {
           type: 'arrowclosed' as const,
           width: 20,
           height: 20,
-          color: '#4299E1',
+          color: GHOST_COLOR_EDGE,
         },
         style: {
           strokeWidth: 1.5,
-          stroke: '#4299E1',
+          stroke: GHOST_COLOR_EDGE,
         },
       }
 

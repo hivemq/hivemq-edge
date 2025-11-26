@@ -10,6 +10,7 @@ import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges'
 import { calculateBarycenter } from '@/modules/Workspace/utils/nodes-utils'
 import { requiresGhost } from './utils/wizardMetadata'
 import type { GhostNodeGroup } from './utils/ghostNodeFactory'
+import { GHOST_COLOR_EDGE } from './utils/ghostNodeFactory'
 import { createGhostCombinerGroup } from './utils/ghostNodeFactory'
 import {
   createGhostAdapterGroup,
@@ -239,7 +240,7 @@ const GhostNodeRenderer: FC = () => {
         type: MarkerType.ArrowClosed,
         width: 20,
         height: 20,
-        color: '#4299E1',
+        color: GHOST_COLOR_EDGE,
       },
       data: { isGhost: true },
     }))

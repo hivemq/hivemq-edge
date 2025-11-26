@@ -1,5 +1,9 @@
 import { useReactFlow } from '@xyflow/react'
-import { removeGhostEdges, removeGhostNodes } from '@/modules/Workspace/components/wizard/utils/ghostNodeFactory.ts'
+import {
+  GHOST_SUCCESS_DIMMED_TRANSITION,
+  removeGhostEdges,
+  removeGhostNodes,
+} from '@/modules/Workspace/components/wizard/utils/ghostNodeFactory.ts'
 import { useWizardStore } from '@/modules/Workspace/hooks/useWizardStore.ts'
 
 export const useCompleteUtilities = () => {
@@ -42,7 +46,7 @@ export const useCompleteUtilities = () => {
           style: {
             ...node.style,
             opacity: 0.3,
-            transition: 'opacity 0.5s ease-out',
+            transition: GHOST_SUCCESS_DIMMED_TRANSITION,
           },
         }
       }

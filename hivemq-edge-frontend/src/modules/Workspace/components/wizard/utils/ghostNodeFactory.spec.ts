@@ -21,6 +21,7 @@ import {
   calculateGhostBridgePosition,
   createGhostBridgeGroup,
   isGhostEdge,
+  GHOST_COLOR_EDGE,
 } from './ghostNodeFactory'
 import { EntityType } from '../types'
 import { IdStubs, NodeTypes } from '@/modules/Workspace/types'
@@ -171,7 +172,7 @@ describe('ghostNodeFactory', () => {
           type: MarkerType.ArrowClosed,
           width: 20,
           height: 20,
-          color: '#4299E1',
+          color: GHOST_COLOR_EDGE,
         })
       )
     })
