@@ -35,6 +35,7 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSSpecificAdapterC
     private static final @NotNull String SOURCE_AMS_PORT = "source-ams-port";
     private static final @NotNull String TARGET_AMS_PORT = "target-ams-port";
     private static final @NotNull String TARGET_AMS_NET_ID = "target-ams-net-id";
+    private static final @NotNull String TCP_KEEP_ALIVE = "tcp.keep-alive";
 
     public ADSProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -65,6 +66,10 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSSpecificAdapterC
 
         map.put(TARGET_AMS_PORT, nullSafe(config.getTargetAmsPort()));
         map.put(TARGET_AMS_NET_ID, nullSafe(config.getTargetAmsNetId()));
+
+        if (config.isKeepAlive()) {
+            map.put(TCP_KEEP_ALIVE, "true");
+        }
         return map;
     }
 }

@@ -71,6 +71,12 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
                        description = "The AMS Net ID of the device to connect to")
     private final @NotNull String targetAmsNetId;
 
+    @JsonProperty("keepAlive")
+    @ModuleConfigField(title = "Keep-Alive",
+                       description = "Enable TCP keep-alive to maintain the connection during periods of inactivity.",
+                       defaultValue = "false")
+    private final boolean keepAlive;
+
     @JsonProperty(value = "adsToMqtt", required = true)
     @ModuleConfigField(title = "ADS To MQTT Config",
                        description = "The configuration for a data stream from ADS to MQTT",
@@ -85,13 +91,15 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
             @JsonProperty(value = "sourceAmsPort", required = true) final int sourceAmsPort,
             @JsonProperty(value = "targetAmsNetId", required = true) final @NotNull String targetAmsNetId,
             @JsonProperty(value = "sourceAmsNetId", required = true) final @NotNull String sourceAmsNetId,
+            @JsonProperty(value = "keepAlive") final @Nullable Boolean keepAlive,
             @JsonProperty(value = "adsToMqtt") final @Nullable ADSToMqttConfig adsToMqttConfig) {
-        super( port, host);
+        super(port, host);
         this.port = port;
         this.targetAmsPort = targetAmsPort;
         this.sourceAmsPort = sourceAmsPort;
         this.sourceAmsNetId = sourceAmsNetId;
         this.targetAmsNetId = targetAmsNetId;
+        this.keepAlive = Objects.requireNonNullElse(keepAlive, false);
         if (adsToMqttConfig == null) {
             this.adsToMqttConfig = new ADSToMqttConfig(null, null, null);
         } else {
@@ -121,6 +129,10 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
         return targetAmsNetId;
     }
 
+    public boolean isKeepAlive() {
+        return keepAlive;
+    }
+
     @Override
     public @Nullable ADSToMqttConfig getPlc4xToMqttConfig() {
         return adsToMqttConfig;
@@ -133,6 +145,7 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
         return getPort() == that.getPort() &&
                 getTargetAmsPort() == that.getTargetAmsPort() &&
                 getSourceAmsPort() == that.getSourceAmsPort() &&
+                isKeepAlive() == that.isKeepAlive() &&
                 Objects.equals(getSourceAmsNetId(), that.getSourceAmsNetId()) &&
                 Objects.equals(getTargetAmsNetId(), that.getTargetAmsNetId()) &&
                 Objects.equals(adsToMqttConfig, that.adsToMqttConfig);
@@ -145,6 +158,7 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
                 getSourceAmsPort(),
                 getSourceAmsNetId(),
                 getTargetAmsNetId(),
+                keepAlive,
                 adsToMqttConfig);
     }
 }

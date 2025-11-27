@@ -157,6 +157,7 @@ class ADSProtocolAdapterConfigTest {
                 16,
                 "1.2.3.4.5.6",
                 "1.2.3.4.5.7",
+                false,
                 new ADSToMqttConfig(
                         12,
                         13,
