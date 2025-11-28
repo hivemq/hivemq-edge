@@ -109,8 +109,6 @@ export const FunctionPanelSimplified: FC<PanelProps> = ({ selectedNode, onFormSu
 
   const customValidate: CustomValidator<FunctionData> = useCallback((formData, errors) => {
     if (!formData) return errors
-    if (!formData.name) errors.name?.addError('Please select a script')
-    if (!formData.version) errors.version?.addError('Please select a version')
     return errors
   }, [])
 
