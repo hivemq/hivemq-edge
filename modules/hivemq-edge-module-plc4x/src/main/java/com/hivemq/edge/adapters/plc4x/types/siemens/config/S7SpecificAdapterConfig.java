@@ -84,6 +84,12 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
                        defaultValue = "0")
     private final int remoteTsap;
 
+    @JsonProperty("keepAlive")
+    @ModuleConfigField(title = "Keep-Alive",
+                       description = "Enable keep-alive ping to prevent TCP connection timeouts during long polling intervals. Recommended when polling interval exceeds 7 seconds.",
+                       defaultValue = "false")
+    private final boolean keepAlive;
+
     @JsonProperty(value = "s7ToMqtt", required = true)
     @ModuleConfigField(title = "S7 To MQTT Config",
                        description = "The configuration for a data stream from S7 to MQTT",
@@ -100,6 +106,7 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
             @JsonProperty(value = "remoteSlot") final @Nullable Integer remoteSlot,
             @JsonProperty(value = "remoteSlot2") final @Nullable Integer remoteSlot2,
             @JsonProperty(value = "remoteTsap") final @Nullable Integer remoteTsap,
+            @JsonProperty(value = "keepAlive") final @Nullable Boolean keepAlive,
             @JsonProperty(value = "s7ToMqtt") final @Nullable S7ToMqttConfig s7ToMqttConfig) {
         super(port, host);
         this.port = port;
@@ -109,6 +116,7 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
         this.remoteSlot = Objects.requireNonNullElse(remoteSlot, 0);
         this.remoteSlot2 = Objects.requireNonNullElse(remoteSlot2, 0);
         this.remoteTsap = Objects.requireNonNullElse(remoteTsap, 0);
+        this.keepAlive = Objects.requireNonNullElse(keepAlive, false);
         if (s7ToMqttConfig == null) {
             this.s7ToMqttConfig = new S7ToMqttConfig(null, null, null);
         } else {
@@ -142,6 +150,10 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
         return remoteTsap;
     }
 
+    public boolean isKeepAlive() {
+        return keepAlive;
+    }
+
     public @NotNull ControllerType getControllerType() {
         return controllerType;
     }
@@ -161,6 +173,7 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
                 getRemoteSlot() == that.getRemoteSlot() &&
                 getRemoteSlot2() == that.getRemoteSlot2() &&
                 getRemoteTsap() == that.getRemoteTsap() &&
+                isKeepAlive() == that.isKeepAlive() &&
                 getControllerType() == that.getControllerType() &&
                 Objects.equals(s7ToMqttConfig, that.s7ToMqttConfig);
     }
@@ -174,6 +187,7 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
                 getRemoteSlot(),
                 getRemoteSlot2(),
                 getRemoteTsap(),
+                keepAlive,
                 s7ToMqttConfig);
     }
 }
