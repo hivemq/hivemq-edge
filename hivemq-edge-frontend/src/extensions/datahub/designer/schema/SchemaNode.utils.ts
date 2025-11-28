@@ -1,8 +1,7 @@
 import type { Connection, Node, NodeAddChange } from '@xyflow/react'
-import { parse, util as protobufUtils } from 'protobufjs'
-import descriptor from 'protobufjs/ext/descriptor'
 
 import i18n from '@/config/i18n.config.ts'
+import { encodeProtobufSchema, decodeProtobufSchema } from '@datahub/utils/protobuf.utils.ts'
 
 import type { PolicySchema, SchemaReference, Script } from '@/api/__generated__'
 import type {
@@ -68,8 +67,6 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
   }
 
   if (schemaNode.data.type === SchemaType.PROTOBUF) {
-    // TODO[DATAHUB] Compilation of descriptor a very experimental and outdated solution.
-    //    See https://github.com/protobufjs/protobuf.js/tree/master/ext/descriptor
     if (!schemaNode.data.messageType)
       return {
         node: schemaNode,
@@ -77,30 +74,12 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
       }
 
     try {
-      const root = parse(schemaNode.data.schemaSource).root
-      // @ts-ignore No typescript definition
-      const MyMessage = root.toDescriptor('proto3')
-      const buffer = descriptor.FileDescriptorSet.encode(MyMessage).finish()
-      const encoded = protobufUtils.base64.encode(buffer, 0, buffer.length)
-
-      // verifying the double encoding
-      const encodedGraphBytes = new Uint8Array(protobufUtils.base64.length(encoded))
-      protobufUtils.base64.decode(encoded, encodedGraphBytes, 0)
-      const decodedMessage = descriptor.FileDescriptorSet.decode(encodedGraphBytes)
-      if (JSON.stringify(MyMessage) !== JSON.stringify(decodedMessage))
-        return {
-          node: schemaNode,
-          error: PolicyCheckErrors.internal(
-            schemaNode,
-            new Error(i18n.t('datahub:error.validation.protobuf.encoding') as string)
-          ),
-        }
+      const encoded = encodeProtobufSchema(schemaNode.data.schemaSource)
 
       const schema: PolicySchema = {
         id: schemaNode.data.name,
         type: schemaNode.data.type,
         schemaDefinition: encoded,
-        // TODO[20139] No definition of arguments in OpenAPI!
         arguments: { messageType: schemaNode.data.messageType },
       }
       return { data: schema, node: schemaNode }
@@ -179,11 +158,13 @@ export function loadSchema(
   }
 
   if (schema.type === SchemaType.PROTOBUF) {
-    const encodedGraphBytes = new Uint8Array(protobufUtils.base64.length(schema.schemaDefinition))
-    protobufUtils.base64.decode(schema.schemaDefinition, encodedGraphBytes, 0)
-    const decodedMessage = descriptor.FileDescriptorSet.decode(encodedGraphBytes)
-    // @ts-ignore
-    const messageTypeDecoded = decodedMessage.file[0].messageType[0].name
+    let schemaSource: string
+    try {
+      schemaSource = decodeProtobufSchema(schema.schemaDefinition)
+    } catch (e) {
+      // Fallback to error message if decoding fails
+      schemaSource = i18n.t('datahub:error.validation.protobuf.template', { source: 'UNKNOWN' }) as string
+    }
 
     const schemaNode: Node<SchemaData> = {
       id: schemaRef.schemaId,
@@ -195,7 +176,7 @@ export function loadSchema(
       data: {
         // @ts-ignore force undefined
         type: enumFromStringValue(SchemaType, schema.type),
-        schemaSource: i18n.t('datahub:error.validation.protobuf.template', { source: messageTypeDecoded }) as string,
+        schemaSource,
         version: 1,
       },
     }

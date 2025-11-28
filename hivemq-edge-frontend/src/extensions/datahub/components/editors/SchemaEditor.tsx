@@ -26,6 +26,7 @@ import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCre
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import { MOCK_SCHEMA_SCHEMA } from '@datahub/designer/schema/SchemaData.ts'
+import { encodeProtobufSchema, decodeProtobufSchema } from '@datahub/utils/protobuf.utils.ts'
 import { ResourceWorkingVersion, SchemaType } from '@datahub/types.ts'
 import type { SchemaData } from '@datahub/types.ts'
 import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
@@ -53,11 +54,28 @@ export const SchemaEditor: FC<SchemaEditorProps> = ({ isOpen, onClose, schema })
 
     if (schema) {
       // Edit mode - load the provided schema to create new version
+      const schemaType = enumFromStringValue(SchemaType, schema.type) || SchemaType.JSON
+
+      // Decode schema source based on type
+      let schemaSource: string
+      if (schemaType === SchemaType.PROTOBUF) {
+        // PROTOBUF schemas are encoded as FileDescriptorSet - decode them
+        try {
+          schemaSource = decodeProtobufSchema(schema.schemaDefinition)
+        } catch (e) {
+          // Fallback to error message if decoding fails
+          schemaSource = `// Error decoding PROTOBUF schema: ${e instanceof Error ? e.message : String(e)}`
+        }
+      } else {
+        // JSON schemas are simple base64 encoded
+        schemaSource = atob(schema.schemaDefinition)
+      }
+
       const initialData: SchemaData = {
         name: schema.id,
-        type: enumFromStringValue(SchemaType, schema.type) || SchemaType.JSON,
+        type: schemaType,
         version: ResourceWorkingVersion.MODIFIED,
-        schemaSource: atob(schema.schemaDefinition),
+        schemaSource,
         messageType: schema.arguments?.messageType, // Load messageType from arguments if present
       }
       setFormData(initialData)
@@ -203,10 +221,24 @@ export const SchemaEditor: FC<SchemaEditorProps> = ({ isOpen, onClose, schema })
     }
 
     try {
+      let schemaDefinition: string
+
+      // PROTOBUF schemas need special encoding (FileDescriptorSet)
+      if (formData.type === SchemaType.PROTOBUF) {
+        try {
+          schemaDefinition = encodeProtobufSchema(formData.schemaSource || '')
+        } catch (e) {
+          throw new Error(t('error.validation.protobuf.encoding'))
+        }
+      } else {
+        // JSON schemas - simple base64 encoding
+        schemaDefinition = btoa(formData.schemaSource || '')
+      }
+
       const payload: PolicySchema = {
         id: formData.name,
         type: formData.type,
-        schemaDefinition: btoa(formData.schemaSource || ''),
+        schemaDefinition,
       }
 
       // Add messageType to arguments for PROTOBUF schemas

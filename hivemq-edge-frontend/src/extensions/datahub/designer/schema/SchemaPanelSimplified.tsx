@@ -15,6 +15,7 @@ import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaFo
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import { MOCK_SCHEMA_SCHEMA } from '@datahub/designer/schema/SchemaData.ts'
 import { getSchemaFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
+import { decodeProtobufSchema } from '@datahub/utils/protobuf.utils.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 import { ResourceStatus, SchemaType } from '@datahub/types.ts'
@@ -42,11 +43,26 @@ export const SchemaPanelSimplified: FC<PanelProps> = ({ selectedNode, onFormSubm
 
     if (schema) {
       const families = getSchemaFamilies(allSchemas.items || [])
+      const schemaType = enumFromStringValue(SchemaType, schema.type) || SchemaType.JSON
+
+      // Decode schema source based on type
+      let schemaSource: string
+      if (schemaType === SchemaType.PROTOBUF) {
+        try {
+          schemaSource = decodeProtobufSchema(schema.schemaDefinition)
+        } catch (e) {
+          schemaSource = `// Error decoding PROTOBUF schema: ${e instanceof Error ? e.message : String(e)}`
+        }
+      } else {
+        schemaSource = atob(schema.schemaDefinition)
+      }
+
       setFormData({
         name: schema.id,
-        type: enumFromStringValue(SchemaType, schema.type) || SchemaType.JSON,
+        type: schemaType,
         version: schema.version || 1,
-        schemaSource: atob(schema.schemaDefinition),
+        schemaSource,
+        messageType: schema.arguments?.messageType, // Load messageType from schema arguments
         internalVersions: families[schema.id].versions,
         internalStatus: ResourceStatus.LOADED,
       })
@@ -76,11 +92,26 @@ export const SchemaPanelSimplified: FC<PanelProps> = ({ selectedNode, onFormSubm
       if (id?.includes('name')) {
         const schema = allSchemas?.items?.findLast((schema) => schema.id === newData.name)
         if (schema) {
+          const schemaType = enumFromStringValue(SchemaType, schema.type) || SchemaType.JSON
+
+          // Decode schema source based on type
+          let schemaSource: string
+          if (schemaType === SchemaType.PROTOBUF) {
+            try {
+              schemaSource = decodeProtobufSchema(schema.schemaDefinition)
+            } catch (e) {
+              schemaSource = `// Error decoding PROTOBUF schema: ${e instanceof Error ? e.message : String(e)}`
+            }
+          } else {
+            schemaSource = atob(schema.schemaDefinition)
+          }
+
           setFormData({
             name: schema.id,
-            type: enumFromStringValue(SchemaType, schema.type) || SchemaType.JSON,
+            type: schemaType,
             version: schema.version || 1,
-            schemaSource: atob(schema.schemaDefinition),
+            schemaSource,
+            messageType: schema.arguments?.messageType, // Load messageType from schema arguments
             internalVersions: getSchemaFamilies(allSchemas?.items || [])[schema.id].versions,
             internalStatus: ResourceStatus.LOADED,
           })
@@ -94,10 +125,25 @@ export const SchemaPanelSimplified: FC<PanelProps> = ({ selectedNode, onFormSubm
           (schema) => schema.id === formData.name && schema.version?.toString() === newData.version.toString()
         )
         if (schema) {
+          const schemaType = enumFromStringValue(SchemaType, schema.type) || SchemaType.JSON
+
+          // Decode schema source based on type
+          let schemaSource: string
+          if (schemaType === SchemaType.PROTOBUF) {
+            try {
+              schemaSource = decodeProtobufSchema(schema.schemaDefinition)
+            } catch (e) {
+              schemaSource = `// Error decoding PROTOBUF schema: ${e instanceof Error ? e.message : String(e)}`
+            }
+          } else {
+            schemaSource = atob(schema.schemaDefinition)
+          }
+
           setFormData({
             ...formData,
             version: newData.version,
-            schemaSource: atob(schema.schemaDefinition),
+            schemaSource,
+            messageType: schema.arguments?.messageType, // Load messageType from schema arguments
             internalStatus: ResourceStatus.LOADED,
           })
         }

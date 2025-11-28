@@ -483,7 +483,7 @@
         "duplicate": "A script with the name \"{{name}}\" already exists"
       },
       "protobuf": {
-        "template": "// CANNOT DECODE THE PROTOBUF SOURCE - {{ source }}",
+        "template": "// NOTICE: once encoded into a Base64 descriptor, the PROTOBUF code cannot be extracted again.\n// Use your own documents to retrieve the source.",
         "encoding": "The encoding of the PROTOBUF code into a Base64 descriptor cannot be validated."
       },
       "topicFilter": {

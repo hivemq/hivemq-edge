@@ -131,7 +131,7 @@ const ResourceNameCreatableSelect = (
         value={value}
         isLoading={isLoading}
         onChange={onSelectChange}
-        isClearable={true}
+        isClearable={false}
         isValidNewOption={allowCreate ? undefined : () => false} // Disable creation if allowCreate is false
         components={{
           Option,
