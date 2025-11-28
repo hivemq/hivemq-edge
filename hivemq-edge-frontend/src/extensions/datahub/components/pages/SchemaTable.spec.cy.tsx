@@ -86,4 +86,73 @@ describe('SchemaTable', () => {
 
     cy.checkAccessibility()
   })
+
+  describe('Schema Editor Integration', () => {
+    it('should render Create New Schema button', () => {
+      cy.intercept('/api/v1/data-hub/schemas', { items: [] })
+
+      cy.mountWithProviders(<SchemaTable />)
+
+      cy.getByTestId('schema-create-new-button').should('be.visible').and('contain.text', 'Create New Schema')
+    })
+
+    it('should open SchemaEditor when Create New is clicked', () => {
+      cy.intercept('/api/v1/data-hub/schemas', { items: [] })
+
+      cy.mountWithProviders(<SchemaTable />)
+
+      // Editor should not be visible initially
+      cy.getByTestId('schema-editor-drawer').should('not.exist')
+
+      // Click Create New button
+      cy.getByTestId('schema-create-new-button').click()
+
+      // Editor drawer should open in create mode
+      cy.getByTestId('schema-editor-drawer').should('be.visible')
+      cy.contains('Create New Schema').should('be.visible')
+    })
+
+    it('should show Edit action for individual schema versions', () => {
+      cy.intercept('/api/v1/data-hub/schemas', {
+        items: [mockSchemaTempHumidity, { ...mockSchemaTempHumidity, version: 2 }],
+      }).as('getSchemas')
+
+      cy.mountWithProviders(<SchemaTable />)
+      cy.wait('@getSchemas')
+
+      // Expand to show versions
+      cy.getByAriaLabel('Show the versions').click()
+      cy.get('tbody tr').should('have.length', 3)
+
+      // Edit button should exist on individual versions (rows 1 and 2)
+      cy.get('tbody tr').eq(1).find('[data-testid="list-action-edit"]').should('exist')
+      cy.get('tbody tr').eq(2).find('[data-testid="list-action-edit"]').should('exist')
+    })
+
+    it.skip('should open SchemaEditor in modify mode when Edit is clicked', () => {
+      // Test: Intercept schemas with multiple versions
+      // Test: Expand versions
+      // Test: Click Edit on a specific version
+      // Test: Verify SchemaEditor opens with "Create New Schema Version" title
+      // Test: Verify name field is readonly
+      // Test: Verify version shows "MODIFIED"
+    })
+
+    it.skip('should close SchemaEditor when close button is clicked', () => {
+      // Test: Open editor via Create New
+      // Test: Click close button on drawer
+      // Test: Verify drawer closes
+      // Test: Verify Create New button still visible
+    })
+
+    it.skip('should refresh table after successful schema creation', () => {
+      // Test: Open editor
+      // Test: Fill form with new schema
+      // Test: Intercept POST /api/v1/data-hub/schemas with success
+      // Test: Intercept GET /api/v1/data-hub/schemas with updated list
+      // Test: Click Save
+      // Test: Verify drawer closes
+      // Test: Verify table refreshes with new schema
+    })
+  })
 })

@@ -51,4 +51,73 @@ describe('ScriptTable', () => {
     cy.mountWithProviders(<ScriptTable />)
     cy.checkAccessibility()
   })
+
+  describe('Script Editor Integration', () => {
+    it('should render Create New Script button', () => {
+      cy.intercept('/api/v1/data-hub/scripts*', { items: [] })
+
+      cy.mountWithProviders(<ScriptTable />)
+
+      cy.getByTestId('script-create-new-button').should('be.visible').and('contain.text', 'Create New Script')
+    })
+
+    it('should open ScriptEditor when Create New is clicked', () => {
+      cy.intercept('/api/v1/data-hub/scripts*', { items: [] })
+
+      cy.mountWithProviders(<ScriptTable />)
+
+      // Editor should not be visible initially
+      cy.getByTestId('script-editor-drawer').should('not.exist')
+
+      // Click Create New button
+      cy.getByTestId('script-create-new-button').click()
+
+      // Editor drawer should open in create mode
+      cy.getByTestId('script-editor-drawer').should('be.visible')
+      cy.contains('Create New Script').should('be.visible')
+    })
+
+    it('should show Edit action for individual script versions', () => {
+      cy.intercept('/api/v1/data-hub/scripts*', {
+        items: [mockScript, { ...mockScript, version: 2 }],
+      }).as('getScripts')
+
+      cy.mountWithProviders(<ScriptTable />)
+      cy.wait('@getScripts')
+
+      // Expand to show versions
+      cy.getByAriaLabel('Show the versions').click()
+      cy.get('tbody tr').should('have.length', 3)
+
+      // Edit button should exist on individual versions (rows 1 and 2)
+      cy.get('tbody tr').eq(1).find('[data-testid="list-action-edit"]').should('exist')
+      cy.get('tbody tr').eq(2).find('[data-testid="list-action-edit"]').should('exist')
+    })
+
+    it.skip('should open ScriptEditor in modify mode when Edit is clicked', () => {
+      // Test: Intercept scripts with multiple versions
+      // Test: Expand versions
+      // Test: Click Edit on a specific version
+      // Test: Verify ScriptEditor opens with "Create New Script Version" title
+      // Test: Verify name field is readonly
+      // Test: Verify version shows "MODIFIED"
+    })
+
+    it.skip('should close ScriptEditor when close button is clicked', () => {
+      // Test: Open editor via Create New
+      // Test: Click close button on drawer
+      // Test: Verify drawer closes
+      // Test: Verify Create New button still visible
+    })
+
+    it.skip('should refresh table after successful script creation', () => {
+      // Test: Open editor
+      // Test: Fill form with new script
+      // Test: Intercept POST /api/v1/data-hub/scripts with success
+      // Test: Intercept GET /api/v1/data-hub/scripts with updated list
+      // Test: Click Save
+      // Test: Verify drawer closes
+      // Test: Verify table refreshes with new script
+    })
+  })
 })
