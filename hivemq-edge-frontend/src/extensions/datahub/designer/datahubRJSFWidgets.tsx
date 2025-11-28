@@ -9,6 +9,8 @@ import { TransitionSelect } from '@datahub/components/forms/TransitionSelect.tsx
 import {
   SchemaNameCreatableSelect,
   ScriptNameCreatableSelect,
+  SchemaNameSelect,
+  ScriptNameSelect,
 } from '@datahub/components/forms/ResourceNameCreatableSelect.tsx'
 
 export const datahubRJSFWidgets: RegistryWidgetsType = {
@@ -20,6 +22,8 @@ export const datahubRJSFWidgets: RegistryWidgetsType = {
   'datahub:metric-counter': MetricCounterInput,
   'datahub:function-name': ScriptNameCreatableSelect,
   'datahub:schema-name': SchemaNameCreatableSelect,
+  'datahub:function-name-select': ScriptNameSelect, // Select-only version (no create)
+  'datahub:schema-name-select': SchemaNameSelect, // Select-only version (no create)
   'datahub:version': VersionManagerSelect,
   'datahub:message-interpolation': MessageInterpolationTextArea,
   'edge:adapter-selector': AdapterSelect,
