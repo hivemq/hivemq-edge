@@ -128,10 +128,52 @@ describe('MessageTypeSelect', () => {
     // Test: Verify select is disabled
   })
 
-  it.skip('should update options when schemaSource changes', () => {
-    // Test: Mount with one message
-    // Test: Update formData with different schemaSource
-    // Test: Verify options update
+  // ✅ ACTIVE - Verify widget reacts to schemaSource changes
+  it('should update options when schemaSource changes', () => {
+    const mockProps = getMockProps()
+    const initialFormData: SchemaData = {
+      name: 'test',
+      type: SchemaType.PROTOBUF,
+      version: 1,
+      schemaSource: `
+        syntax = "proto3";
+        message Person {
+          string name = 1;
+        }
+      `,
+    }
+
+    cy.mountWithProviders(<MessageTypeSelect {...mockProps} formData={initialFormData} />)
+
+    // Verify initial message
+    cy.get('#messageType').click()
+    cy.get('[role="option"]').should('have.length', 1)
+    cy.get('[role="option"]').first().should('contain.text', 'Person')
+    cy.get('body').click() // Close dropdown
+
+    // Update formData with different schemaSource
+    const updatedFormData: SchemaData = {
+      name: 'test',
+      type: SchemaType.PROTOBUF,
+      version: 1,
+      schemaSource: `
+        syntax = "proto3";
+        message Address {
+          string street = 1;
+        }
+        message Company {
+          string name = 1;
+        }
+      `,
+    }
+
+    cy.mountWithProviders(<MessageTypeSelect {...mockProps} formData={updatedFormData} />)
+
+    // Verify options updated to new messages
+    cy.get('#messageType').click()
+    cy.get('[role="option"]').should('have.length', 2)
+    cy.get('[role="option"]').eq(0).should('contain.text', 'Address')
+    cy.get('[role="option"]').eq(1).should('contain.text', 'Company')
   })
 
   it.skip('should preserve selected value when options update', () => {
