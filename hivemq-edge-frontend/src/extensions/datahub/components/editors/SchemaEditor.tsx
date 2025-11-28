@@ -256,6 +256,7 @@ export const SchemaEditor: FC<SchemaEditorProps> = ({ isOpen, onClose, schema })
               formData={formData}
               uiSchema={getUISchema(formData)}
               widgets={datahubRJSFWidgets}
+              formContext={{ currentSchemaSource: formData.schemaSource }}
               customValidate={customValidate}
               onChange={handleChange}
             />
