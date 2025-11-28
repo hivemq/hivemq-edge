@@ -29,8 +29,8 @@ import com.hivemq.mqtt.message.connect.MqttWillPublish;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import util.TestConfigurationBootstrap;
 import util.TestMqttDecoder;
 
@@ -39,7 +39,7 @@ import java.nio.charset.StandardCharsets;
 import static com.hivemq.mqtt.message.connack.Mqtt5CONNACK.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.*;
 import static com.hivemq.mqtt.message.connect.MqttWillPublish.WILL_DELAY_INTERVAL_NOT_SET;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Florian Limpöck
@@ -47,7 +47,7 @@ import static org.junit.Assert.*;
 public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
 
     @Override
-    @Before
+    @BeforeEach
     public void setUp() {
         super.setUp();
         //protocol version must not be set when a CONNECT is sent.

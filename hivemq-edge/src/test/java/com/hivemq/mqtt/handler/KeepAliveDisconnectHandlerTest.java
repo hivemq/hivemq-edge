@@ -21,14 +21,14 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoop;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.awaitility.core.ConditionTimeoutException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class KeepAliveDisconnectHandlerTest {
@@ -38,8 +38,7 @@ public class KeepAliveDisconnectHandlerTest {
     private final @NotNull Channel channel = mock(Channel.class);
     private final @NotNull EventLoop executor = mock(EventLoop.class);
     private final @NotNull KeepAliveDisconnectService keepAliveDisconnectService = mock(KeepAliveDisconnectService.class);
-
-    @Before
+    @BeforeEach
     public void setUp() {
         when(ctx.channel()).thenReturn(channel);
         when(channel.eventLoop()).thenReturn(executor);

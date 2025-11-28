@@ -29,15 +29,15 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoop;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -59,8 +59,7 @@ public class PublishFlushHandlerTest {
     private final @NotNull MetricsHolder metricsHolder = new MetricsHolder(new MetricRegistry());
 
     private @NotNull PublishFlushHandler publishFlushHandler = new PublishFlushHandler(metricsHolder);
-
-    @Before
+    @BeforeEach
     public void setUp() {
         initMocks(this);
 

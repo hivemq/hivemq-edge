@@ -36,8 +36,13 @@ import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.clientsession.ClientSessionWill;
 
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestException;
@@ -49,7 +54,7 @@ import java.util.Optional;
 import java.util.concurrent.*;
 
 import static com.hivemq.persistence.clientsession.ClientSessionPersistenceImpl.DisconnectSource.EXTENSION;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -74,8 +79,7 @@ public class ClientServiceImplTest {
 
     private final String clientId = "clientID";
     private final long sessionExpiry = 123546L;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         clientService = new ClientServiceImpl(pluginServiceRateLimitService, clientSessionPersistence,
@@ -83,109 +87,99 @@ public class ClientServiceImplTest {
         when(pluginServiceRateLimitService.rateLimitExceeded()).thenReturn(false);
     }
 
-    @Test(expected = RateLimitExceededException.class)
+    @Test
     public void test_get_session_limit_exceeded() throws Throwable {
         when(pluginServiceRateLimitService.rateLimitExceeded()).thenReturn(true);
-        try {
-            clientService.getSession(clientId).get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> clientService.getSession(clientId).get())
+                .hasCauseInstanceOf(RateLimitExceededException.class);
     }
 
-    @Test(expected = RateLimitExceededException.class)
-    public void test_client_connected_limit_exceeded() throws Throwable {
+    @Test
+    public void test_client_connected_limit_exceeded() {
         when(pluginServiceRateLimitService.rateLimitExceeded()).thenReturn(true);
-        try {
-            clientService.isClientConnected(clientId).get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> clientService.isClientConnected(clientId).get())
+                .hasCauseInstanceOf(RateLimitExceededException.class);
     }
 
-    @Test(expected = RateLimitExceededException.class)
-    public void test_disconnect_client_do_not_prevent_lwt_limit_exceeded() throws Throwable {
+    @Test
+    public void test_disconnect_client_do_not_prevent_lwt_limit_exceeded() {
         when(pluginServiceRateLimitService.rateLimitExceeded()).thenReturn(true);
-        try {
-            clientService.disconnectClient(clientId).get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> clientService.disconnectClient(clientId).get())
+                .hasCauseInstanceOf(RateLimitExceededException.class);
     }
 
-    @Test(expected = RateLimitExceededException.class)
-    public void test_disconnect_client_prevent_lwt_limit_exceeded() throws Throwable {
+    @Test
+    public void test_disconnect_client_prevent_lwt_limit_exceeded() {
         when(pluginServiceRateLimitService.rateLimitExceeded()).thenReturn(true);
-        try {
-            clientService.disconnectClient(clientId, true).get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> clientService.disconnectClient(clientId, true).get())
+                .hasCauseInstanceOf(RateLimitExceededException.class);
     }
 
-    @Test(expected = RateLimitExceededException.class)
-    public void test_invalidate_session_limit_exceeded() throws Throwable {
+    @Test
+    public void test_invalidate_session_limit_exceeded() {
         when(pluginServiceRateLimitService.rateLimitExceeded()).thenReturn(true);
-        try {
-            clientService.invalidateSession(clientId).get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> clientService.invalidateSession(clientId).get()).hasCauseInstanceOf(RateLimitExceededException.class);
     }
 
-    @Test(expected = ExecutionException.class)
-    public void test_disconnect_prevent_lwt_failed() throws Throwable {
+    @Test
+    public void test_disconnect_prevent_lwt_failed() {
 
         when(clientSessionPersistence.forceDisconnectClient(clientId, true, EXTENSION, null, null)).thenReturn(
                 Futures.immediateFailedFuture(TestException.INSTANCE));
-        clientService.disconnectClient(clientId, true).get();
+        assertThatThrownBy(() -> clientService.disconnectClient(clientId, true).get()).isInstanceOf(ExecutionException.class);
 
     }
 
-    @Test(expected = ExecutionException.class)
-    public void test_disconnect_do_not_prevent_lwt_failed() throws Throwable {
+    @Test
+    public void test_disconnect_do_not_prevent_lwt_failed() {
 
         when(clientSessionPersistence.forceDisconnectClient(clientId, false, EXTENSION, null, null)).thenReturn(
                 Futures.immediateFailedFuture(TestException.INSTANCE));
-        clientService.disconnectClient(clientId).get();
+        assertThatThrownBy(() -> clientService.disconnectClient(clientId).get()).isInstanceOf(ExecutionException.class);
 
     }
 
-    @Test(expected = ExecutionException.class)
-    public void test_invalidate_session_request_failed() throws Throwable {
+    @Test
+    public void test_invalidate_session_request_failed() {
 
         when(clientSessionPersistence.invalidateSession(clientId, EXTENSION)).thenReturn(
                 Futures.immediateFailedFuture(TestException.INSTANCE));
-        clientService.invalidateSession(clientId).get();
+        assertThatThrownBy(() -> clientService.invalidateSession(clientId).get()).isInstanceOf(ExecutionException.class);
 
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_isClientConnected_client_id_null() {
-        clientService.isClientConnected(null);
+
+        assertThrows(NullPointerException.class, () -> clientService.isClientConnected(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_getSession_client_id_null() {
-        clientService.getSession(null);
+
+        assertThrows(NullPointerException.class, () -> clientService.getSession(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_disconnectClient_client_id_null() {
-        clientService.disconnectClient(null);
+
+        assertThrows(NullPointerException.class, () -> clientService.disconnectClient(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_disconnectClient_prevent_client_id_null() {
-        clientService.disconnectClient(null, false);
+
+        assertThrows(NullPointerException.class, () -> clientService.disconnectClient(null, false));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_invalidateSession_client_id_null() {
-        clientService.invalidateSession(null);
+
+        assertThrows(NullPointerException.class, () -> clientService.invalidateSession(null));
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_client_connected_null_success() throws Throwable {
 
         when(clientSessionPersistence.getSession(clientId, false)).thenReturn(null);
@@ -193,13 +187,15 @@ public class ClientServiceImplTest {
 
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_get_session_null_success() throws Throwable {
         when(clientSessionPersistence.getSession(clientId, false)).thenReturn(null);
         assertEquals(Optional.empty(), clientService.getSession(clientId).get());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_get_session_success() throws Throwable {
 
         final ClientSession session = getSession(true);
@@ -208,47 +204,53 @@ public class ClientServiceImplTest {
         final Optional<SessionInformation> sessionInformation = clientService.getSession(clientId).get();
 
         assertTrue(sessionInformation.isPresent());
-        assertEquals(true, sessionInformation.get().isConnected());
+        assertTrue(sessionInformation.get().isConnected());
         assertEquals(clientId, sessionInformation.get().getClientIdentifier());
         assertEquals(sessionExpiry, sessionInformation.get().getSessionExpiryInterval());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_disconnect_client_do_not_prevent_lwt_null_success() throws Throwable {
         when(clientSessionPersistence.forceDisconnectClient(clientId, false, EXTENSION, null, null)).thenReturn(
                 Futures.immediateFuture(null));
-        assertEquals(null, clientService.disconnectClient(clientId).get());
+        assertNull(clientService.disconnectClient(clientId).get());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_disconnect_client_do_not_prevent_lwt_true_success() throws Throwable {
         when(clientSessionPersistence.forceDisconnectClient(clientId, false, EXTENSION, null, null)).thenReturn(
                 Futures.immediateFuture(true));
-        assertEquals(true, clientService.disconnectClient(clientId).get());
+        assertTrue(clientService.disconnectClient(clientId).get());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_disconnect_client_do_not_prevent_lwt_false_success() throws Throwable {
         when(clientSessionPersistence.forceDisconnectClient(clientId, false, EXTENSION, null, null)).thenReturn(
                 Futures.immediateFuture(false));
-        assertEquals(false, clientService.disconnectClient(clientId).get());
+        assertFalse(clientService.disconnectClient(clientId).get());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_disconnect_client_prevent_lwt_null_success() throws Throwable {
         when(clientSessionPersistence.forceDisconnectClient(clientId, true, EXTENSION, null, null)).thenReturn(
                 Futures.immediateFuture(null));
-        assertEquals(null, clientService.disconnectClient(clientId, true).get());
+        assertNull(clientService.disconnectClient(clientId, true).get());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_disconnect_client_prevent_lwt_true_success() throws Throwable {
         when(clientSessionPersistence.forceDisconnectClient(clientId, true, EXTENSION, null, null)).thenReturn(
                 Futures.immediateFuture(true));
-        assertEquals(true, clientService.disconnectClient(clientId, true).get());
+        assertTrue(clientService.disconnectClient(clientId, true).get());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_disconnect_with_reason_Code() throws Throwable {
         when(clientSessionPersistence.forceDisconnectClient(
                 clientId, true, EXTENSION, Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION,
@@ -258,67 +260,73 @@ public class ClientServiceImplTest {
                         "Disconnecting Normally").get());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_disconnect_with_deprecated_reason_code() {
         final EmbeddedChannel channel = new EmbeddedChannel();
         final ClientConnection clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
         when(clientSessionPersistence.getSession(eq("client"), anyBoolean())).thenReturn(new ClientSession(true, 0));
-        clientService.disconnectClient("client", true, DisconnectReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
-                "reason-string");
+        assertThatThrownBy(() -> clientService.disconnectClient("client", true, DisconnectReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
+                "reason-string")).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_disconnect_with_client_reason_code() {
         final EmbeddedChannel channel = new EmbeddedChannel();
         final ClientConnection clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
         when(clientSessionPersistence.getSession(eq("client"), anyBoolean())).thenReturn(new ClientSession(true, 0));
-        clientService.disconnectClient("client", true, DisconnectReasonCode.DISCONNECT_WITH_WILL_MESSAGE,
-                "reason-string");
+        assertThatThrownBy(() -> clientService.disconnectClient("client", true, DisconnectReasonCode.DISCONNECT_WITH_WILL_MESSAGE,
+                "reason-string")).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_disconnect_client_prevent_lwt_false_success() throws Throwable {
         when(clientSessionPersistence.forceDisconnectClient(clientId, true, EXTENSION, null, null)).thenReturn(
                 Futures.immediateFuture(false));
-        assertEquals(false, clientService.disconnectClient(clientId, true).get());
+        assertFalse(clientService.disconnectClient(clientId, true).get());
     }
 
-    @Test(timeout = 20000, expected = ExecutionException.class)
-    public void test_invalidate_session_null_failed() throws Throwable {
+    @Test
+    @Timeout(20)
+    public void test_invalidate_session_null_failed() {
         when(clientSessionPersistence.invalidateSession(clientId, EXTENSION)).thenReturn(Futures.immediateFuture(null));
-        assertEquals(null, clientService.invalidateSession(clientId).get());
+        assertThatThrownBy(() -> clientService.invalidateSession(clientId).get()).isInstanceOf(ExecutionException.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_invalidate_session_true_success() throws Throwable {
         when(clientSessionPersistence.invalidateSession(clientId, EXTENSION)).thenReturn(Futures.immediateFuture(true));
-        assertEquals(true, clientService.invalidateSession(clientId).get());
+        assertTrue(clientService.invalidateSession(clientId).get());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_invalidate_session_false_success() throws Throwable {
         when(clientSessionPersistence.invalidateSession(clientId, EXTENSION)).thenReturn(
                 Futures.immediateFuture(false));
-        assertEquals(false, clientService.invalidateSession(clientId).get());
+        assertFalse(clientService.invalidateSession(clientId).get());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_client_connected_true_success() throws Throwable {
 
         when(clientSessionPersistence.getSession(clientId, false)).thenReturn(getSession(true));
-        assertEquals(true, clientService.isClientConnected(clientId).get());
+        assertTrue(clientService.isClientConnected(clientId).get());
 
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void test_client_connected_false_success() throws Throwable {
 
         when(clientSessionPersistence.getSession(clientId, false)).thenReturn(getSession(false));
-        assertEquals(false, clientService.isClientConnected(clientId).get());
+        assertFalse(clientService.isClientConnected(clientId).get());
 
     }
 
@@ -327,30 +335,32 @@ public class ClientServiceImplTest {
         return new ClientSession(connected, sessionExpiry, new ClientSessionWill(mock(MqttWillPublish.class), 12345L), 23456L);
     }
 
-    @Test(timeout = 10000, expected = RateLimitExceededException.class)
-    public void test_iterate_all_rate_limit_exceeded() throws Throwable {
+    @Test
+    @Timeout(10)
+    public void test_iterate_all_rate_limit_exceeded() {
         when(pluginServiceRateLimitService.rateLimitExceeded()).thenReturn(true);
 
-        try {
-            clientService.iterateAllClients((context, value) -> {
-            }).get();
-        } catch (final ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> clientService.iterateAllClients((context, value) -> {
+        }).get()).hasCauseInstanceOf(RateLimitExceededException.class);
     }
 
-    @Test(timeout = 10000, expected = NullPointerException.class)
-    public void test_iterate_all_callback_null() throws Throwable {
-        clientService.iterateAllClients(null).get();
+    @Test
+    @Timeout(10)
+    public void test_iterate_all_callback_null() {
+        assertThatThrownBy(() -> clientService.iterateAllClients(null).get())
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(timeout = 10000, expected = NullPointerException.class)
-    public void test_iterate_all_callback_executor_null() throws Throwable {
-        clientService.iterateAllClients((context, value) -> {
-        }, null).get();
+    @Test
+    @Timeout(10)
+    public void test_iterate_all_callback_executor_null() {
+        assertThatThrownBy(() -> clientService.iterateAllClients((context, value) -> {
+        }, null).get())
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_item_callback() throws Exception {
         final ArrayList<SessionInformation> items = Lists.newArrayList();
 
@@ -368,14 +378,15 @@ public class ClientServiceImplTest {
                 new SessionInformationImpl("client3", 3, false)
         ));
 
-        assertEquals(true, onItems.get());
+        assertTrue(onItems.get());
 
         assertEquals(3, items.size());
 
         executor.shutdownNow();
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_item_callback_abort() throws Exception {
 
         final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -390,12 +401,13 @@ public class ClientServiceImplTest {
                 new SessionInformationImpl("client3", 3, false)
         ));
 
-        assertEquals(false, onItems.get());
+        assertFalse(onItems.get());
 
         executor.shutdownNow();
     }
 
-    @Test(timeout = 10000, expected = RuntimeException.class)
+    @Test
+    @Timeout(10)
     public void test_item_callback_exception() throws Throwable {
 
         final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -410,16 +422,13 @@ public class ClientServiceImplTest {
                 new SessionInformationImpl("client3", 3, false)
         ));
 
-        try {
-            onItems.get();
-        } catch (final ExecutionException e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> onItems.get()).hasCauseInstanceOf(RuntimeException.class);
 
         executor.shutdownNow();
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void test_iteration_started() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(1);

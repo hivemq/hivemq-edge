@@ -10,6 +10,7 @@ import { register as registerCypressGrep } from '@cypress/grep'
 
 import { mountWithProviders } from './commands/mountWithProviders.tsx'
 import './commands'
+import './commands/checkI18nKeys'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace

@@ -17,7 +17,6 @@
 package com.hivemq.extensions;
 
 import com.hivemq.extension.sdk.api.ExtensionMain;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
@@ -27,10 +26,11 @@ import com.hivemq.extensions.config.HiveMQExtensionXMLReader;
 import com.hivemq.extensions.parameter.ExtensionStartOutputImpl;
 import com.hivemq.extensions.parameter.ExtensionStartStopInputImpl;
 import com.hivemq.extensions.parameter.ExtensionStopOutputImpl;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import util.TestExtensionUtil;
 
 import java.io.File;
@@ -38,7 +38,7 @@ import java.util.Collections;
 import java.util.Optional;
 
 import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -47,8 +47,8 @@ import static org.mockito.Mockito.mock;
 @SuppressWarnings("NullabilityAnnotations")
 public class HiveMQExtensionExtensionTest extends AbstractExtensionTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder tmpFolder = new TemporaryFolder();
+    @TempDir
+    public File tmpFolder;
 
     private final @NotNull ServerInformation serverInformation = mock(ServerInformation.class);
 
@@ -59,11 +59,12 @@ public class HiveMQExtensionExtensionTest extends AbstractExtensionTest {
     private ExtensionStartOutputImpl extensionStartOutput;
     private ExtensionStopOutputImpl extensionStopOutput;
     private ExtensionStartStopInputImpl extensionStartStopInput;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
+        var extensionFolder = new File(tmpFolder,"extension");
+        extensionFolder.mkdir();
         final File validExtensionFolder =
-                TestExtensionUtil.createValidExtension(tmpFolder.newFolder("extension"), "id");
+                TestExtensionUtil.createValidExtension(extensionFolder, "id");
         final Optional<HiveMQExtensionEntity> extensionEntityFromXML =
                 HiveMQExtensionXMLReader.getExtensionEntityFromXML(validExtensionFolder.toPath(), true);
         assertTrue(extensionEntityFromXML.isPresent());
@@ -89,13 +90,15 @@ public class HiveMQExtensionExtensionTest extends AbstractExtensionTest {
                 serverInformation);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_instantiate_and_start() throws Throwable {
         startExtension.start(extensionStartStopInput, extensionStartOutput);
         assertTrue(StartTestExtension.start);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_plugin_stop() throws Throwable {
         stopExtension.start(extensionStartStopInput, extensionStartOutput);
         stopExtension.stop(extensionStartStopInput, extensionStopOutput);
@@ -103,7 +106,8 @@ public class HiveMQExtensionExtensionTest extends AbstractExtensionTest {
         assertTrue(StopTestExtension.stop);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_start_reason_gets_set() throws Throwable {
         reasonExtension.start(extensionStartStopInput, extensionStartOutput);
 

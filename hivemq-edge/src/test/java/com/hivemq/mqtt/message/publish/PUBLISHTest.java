@@ -22,8 +22,10 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.MemoryEstimator;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @since 4.0.0
@@ -54,39 +56,39 @@ public class PUBLISHTest {
                     MemoryEstimator.ENUM_OVERHEAD +  // QoS
                     MemoryEstimator.ENUM_OVERHEAD;   // payloadFormatIndicator
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_publish_qos_null() {
-
-        new PUBLISHFactory.Mqtt5Builder()
-                .withHivemqId("hivemqId")
-                .withUserProperties(Mqtt5UserProperties.of())
-                .withTopic("topic")
-                .build();
-
+        assertThrows(NullPointerException.class, () -> {
+            new PUBLISHFactory.Mqtt5Builder()
+                    .withHivemqId("hivemqId")
+                    .withUserProperties(Mqtt5UserProperties.of())
+                    .withTopic("topic")
+                    .build();
+        });
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_publish_topic_null() {
-
-        new PUBLISHFactory.Mqtt5Builder()
-                .withHivemqId("hivemqId")
-                .withUserProperties(Mqtt5UserProperties.of())
-                .withQoS(QoS.AT_MOST_ONCE)
-                .withOnwardQos(QoS.AT_MOST_ONCE)
-                .build();
-
+        assertThrows(NullPointerException.class, () -> {
+            new PUBLISHFactory.Mqtt5Builder()
+                    .withHivemqId("hivemqId")
+                    .withUserProperties(Mqtt5UserProperties.of())
+                    .withQoS(QoS.AT_MOST_ONCE)
+                    .withOnwardQos(QoS.AT_MOST_ONCE)
+                    .build();
+        });
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_publish_hivemq_id_null() {
-
-        new PUBLISHFactory.Mqtt5Builder()
-                .withQoS(QoS.AT_MOST_ONCE)
-                .withOnwardQos(QoS.AT_MOST_ONCE)
-                .withTopic("topic")
-                .withUserProperties(Mqtt5UserProperties.of())
-                .build();
-
+        assertThrows(NullPointerException.class, () -> {
+            new PUBLISHFactory.Mqtt5Builder()
+                    .withQoS(QoS.AT_MOST_ONCE)
+                    .withOnwardQos(QoS.AT_MOST_ONCE)
+                    .withTopic("topic")
+                    .withUserProperties(Mqtt5UserProperties.of())
+                    .build();
+        });
     }
 
     @Test

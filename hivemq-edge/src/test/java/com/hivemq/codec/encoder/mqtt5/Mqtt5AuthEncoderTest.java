@@ -20,8 +20,8 @@ import com.hivemq.mqtt.message.auth.AUTH;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.reason.Mqtt5AuthReasonCode;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Waldemar Ruck
@@ -29,8 +29,7 @@ import org.junit.Test;
 public class Mqtt5AuthEncoderTest extends AbstractMqtt5EncoderTest {
 
     private static final Mqtt5AuthReasonCode CONTINUE = Mqtt5AuthReasonCode.CONTINUE_AUTHENTICATION;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         testMessageEncoder.getSecurityConfigurationService().setAllowRequestProblemInformation(true);

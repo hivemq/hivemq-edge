@@ -26,12 +26,17 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Christoph Schäbel
@@ -41,9 +46,7 @@ public class SubscriptionAuthorizerInputImplTest {
 
     private Channel channel;
     private ClientConnection clientConnection;
-
-
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
         channel = new EmbeddedChannel();
@@ -62,8 +65,8 @@ public class SubscriptionAuthorizerInputImplTest {
 
         assertNotNull(input.getClientInformation());
         assertNotNull(input.getConnectionInformation());
-        assertEquals(true, input.getSubscription().getNoLocal());
-        assertEquals(true, input.getSubscription().getRetainAsPublished());
+        assertTrue(input.getSubscription().getNoLocal());
+        assertTrue(input.getSubscription().getRetainAsPublished());
         assertEquals(RetainHandling.SEND_IF_NEW_SUBSCRIPTION, input.getSubscription().getRetainHandling());
         assertEquals(Qos.EXACTLY_ONCE, input.getSubscription().getQos());
         assertEquals("topic", input.getSubscription().getTopicFilter());
@@ -79,38 +82,42 @@ public class SubscriptionAuthorizerInputImplTest {
 
         assertNotNull(input.getClientInformation());
         assertNotNull(input.getConnectionInformation());
-        assertEquals(false, input.getSubscription().getNoLocal());
-        assertEquals(false, input.getSubscription().getRetainAsPublished());
+        assertFalse(input.getSubscription().getNoLocal());
+        assertFalse(input.getSubscription().getRetainAsPublished());
         assertEquals(RetainHandling.SEND, input.getSubscription().getRetainHandling());
         assertEquals(Qos.EXACTLY_ONCE, input.getSubscription().getQos());
         assertEquals("topic", input.getSubscription().getTopicFilter());
-        assertEquals(false, input.getSubscriptionIdentifier().isPresent());
+        assertFalse(input.getSubscriptionIdentifier().isPresent());
         assertNotNull(input.getUserProperties());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_userproperties_null() {
         final Topic topic = new Topic("topic", QoS.EXACTLY_ONCE);
-        new SubscriptionAuthorizerInputImpl(null, topic, channel, "client");
+        assertThatThrownBy(() -> new SubscriptionAuthorizerInputImpl(null, topic, channel, "client"))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_topic_null() {
         final UserPropertiesImpl userProperties = UserPropertiesImpl.of(ImmutableList.of());
-        new SubscriptionAuthorizerInputImpl(userProperties, null, channel, "client");
+        assertThatThrownBy(() -> new SubscriptionAuthorizerInputImpl(userProperties, null, channel, "client"))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_channel_null() {
         final UserPropertiesImpl userProperties = UserPropertiesImpl.of(ImmutableList.of());
         final Topic topic = new Topic("topic", QoS.EXACTLY_ONCE);
-        new SubscriptionAuthorizerInputImpl(userProperties, topic, null, "client");
+        assertThatThrownBy(() -> new SubscriptionAuthorizerInputImpl(userProperties, topic, null, "client"))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_clientid_null() {
         final UserPropertiesImpl userProperties = UserPropertiesImpl.of(ImmutableList.of());
         final Topic topic = new Topic("topic", QoS.EXACTLY_ONCE);
-        new SubscriptionAuthorizerInputImpl(userProperties, topic, channel, null);
+        assertThatThrownBy(() -> new SubscriptionAuthorizerInputImpl(userProperties, topic, channel, null))
+                .isInstanceOf(NullPointerException.class);
     }
 }

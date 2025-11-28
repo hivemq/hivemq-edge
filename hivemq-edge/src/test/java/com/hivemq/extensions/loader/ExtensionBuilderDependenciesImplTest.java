@@ -19,13 +19,13 @@ package com.hivemq.extensions.loader;
 import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.builder.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.function.Supplier;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -40,8 +40,7 @@ public class ExtensionBuilderDependenciesImplTest {
     private final @NotNull WillPublishBuilder willPublishBuilder = mock(WillPublishBuilder.class);
 
     private @NotNull ExtensionBuilderDependenciesImpl extensionBuilderDependencies;
-
-    @Before
+    @BeforeEach
     public void before() {
         extensionBuilderDependencies = new ExtensionBuilderDependenciesImpl(
                 () -> retainedPublishBuilder,

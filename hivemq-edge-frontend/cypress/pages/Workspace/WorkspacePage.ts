@@ -1,7 +1,5 @@
 import { EDGE_MENU_LINKS } from 'cypress/utils/constants.utils.ts'
 import { ShellPage } from '../ShellPage.ts'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { DuplicateCombinerModal, CombinerMappingsList } from '@/modules/Workspace/components/modals'
 
 export class WorkspacePage extends ShellPage {
   get navLink() {
@@ -51,7 +49,7 @@ export class WorkspacePage extends ShellPage {
     },
 
     get presetsButton() {
-      return cy.get('button[aria-label*="preset"]').first()
+      return cy.getByTestId('workspace-preset-trigger')
     },
 
     get optionsButton() {
@@ -60,17 +58,23 @@ export class WorkspacePage extends ShellPage {
 
     presetsMenu: {
       get saveOption() {
-        return cy.get('[role="menu"] [role="menuitem"]').first()
+        return cy.getByTestId('workspace-layout-preset-save')
+      },
+
+      get presets() {
+        return cy.getByTestId('workspace-layout-preset-item')
       },
 
       presetItem(name: string) {
-        return cy.get('[role="menu"]').within(() => {
-          cy.contains('[role="menuitem"]', name)
-        })
+        return cy.get("[data-preset='" + name + "']").findByTestId('workspace-layout-preset-item-open')
+      },
+
+      presetItemDelete(name: string) {
+        return cy.get("[data-preset='" + name + "']").findByTestId('workspace-layout-preset-item-delete')
       },
 
       get emptyMessage() {
-        return cy.get('[role="menu"]').contains('No saved presets')
+        return cy.getByTestId('workspace-layout-preset-empty')
       },
     },
 

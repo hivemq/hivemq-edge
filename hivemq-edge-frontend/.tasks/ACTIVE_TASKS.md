@@ -1,15 +1,18 @@
 # Active Tasks Index
 
 **📍 LOCATION: All task files are in the `.tasks/` directory**
+
 This file helps identify and resume work on tasks across different conversation threads.
 
 ## How to Use This File
 
 **To resume work on a task in a new conversation:**
+
 Simply tell the AI agent:
 
 > "We're working on task **{task-id}**" or "Continue work on **{task-id}**"
-> The agent will **automatically look in the `.tasks/` directory** and:
+
+The agent will **automatically look in the `.tasks/` directory** and:
 
 1. Read this index file (`.tasks/ACTIVE_TASKS.md`)
 2. Find the task directory under `.tasks/{task-id}-{task-name}/`
@@ -17,108 +20,168 @@ Simply tell the AI agent:
 4. Review TASK_SUMMARY.md for completed subtasks
 5. Check the latest CONVERSATION_SUBTASK_N.md files for recent work
 6. Be ready to continue where you left off
-   **Remember:** All task documentation lives in `.tasks/` - never at the project root.
+
+**Remember:** All task documentation lives in `.tasks/` - never at the project root.
 
 ---
 
 ## Active Tasks
 
-### 29472-policy-success-summary
+### 38111-workspace-operation-wizard
 
-**Status:** Planning 📋  
-**Directory:** `.tasks# Active Tasks Index
-**📍 LOCATION: All task files are in the `.tasks/` directory**
-This file hva**📍 LOCATION: Aly This file helps identify and resume work on tasks across differte## How to Use This File
-**To resume work on a task in a new conversation:**
-Simply tell??\*\*To resume work on a thSimply tell the AI agent:
+**Status:** ✅ Phase 1 Complete (Adapters, Bridges, Combiners, Asset Mappers)  
+**Directory:** `.tasks/38111-workspace-operation-wizard/`  
+**Description:** Interactive wizard system for creating entities directly in the workspace  
+**Next Phase:** Integration Point Wizards (TAGs, Topic Filters, Data Mappings)
 
-> "We're working on tasked> "We're working on taskmpThe agent will **automatically look in the `.tasks/` directory** and:
+**Key Documents:**
 
-1. Rle1. Read this index file (`.tasks/ACTIVE_TASKS.md`)
-2. Find the task cy2. Find the task directory under `.tasks/{task-idDA3. Read the TASK_BRIEF.md for context
-3. Review TASK_SUMMARY.mdHU4. Review TASK_SUMMARY.md for comple_M5. Check the latest CONVERSATION_SUBTASK_N.md fES6. Be ready to continue where you left off
-   **Remember:** All task y-**Remember:** All task documentation live-----
+- [TASK_BRIEF.md](./38111-workspace-operation-wizard/TASK_BRIEF.md) - Requirements and specifications
+- [TASK_PLAN.md](./38111-workspace-operation-wizard/TASK_PLAN.md) - 20 subtask implementation plan
+- [TASK_SUMMARY.md](./38111-workspace-operation-wizard/TASK_SUMMARY.md) - Progress tracking
+- [ARCHITECTURE.md](./38111-workspace-operation-wizard/ARCHITECTURE.md) - Technical design decisions
+- [WEB_PRODUCT_DOCUMENTATION.md](38139-wizard-group/WEB_PRODUCT_DOCUMENTATION.md) - User documentation
 
-## Active Tasks
+**Completed:**
 
-### 29472-policy-success-summary
+- ✅ Wizard state management (Zustand store)
+- ✅ Metadata registry for all wizard types
+- ✅ Trigger button with dropdown menu
+- ✅ Progress bar component
+- ✅ Ghost node system (multi-node preview)
+- ✅ Configuration panel integration
+- ✅ Interactive selection system (Combiner, Asset Mapper)
+- ✅ Adapter wizard (complete flow)
+- ✅ Bridge wizard (complete flow)
+- ✅ Combiner wizard (with selection)
+- ✅ Asset Mapper wizard (with Pulse Agent requirement)
 
-**Status:** Planning 📋  
-**e-#ove### 29472-poliec**Status:** Planning 📋  
-**Dnt**Directory:** `.tasks# Ac **📍 LOCATION: All task files are in thesThis file hva**📍 LOCATION: Aly This file helps identify and -
-**To resume work on a task in a new conversation:**
-Simply tell??\*\*To resume work on a thSimply tell the AI agent:
+---
 
-> "We'**Simply tell??**To resume work on a thSimply tell tto> "We're working on tasked> "We're working on taskmpThe agentom1. Rle1. Read this index file (`.tasks/ACTIVE_TASKS.md`) 2. Find the task cy2. Find the task director ✅
+### 38139-wizard-group
 
-- 37943-toolbar-2. Find the task cy2. Find the task directory under `.tso4. Review TASK*SUMMARY.mdHU4cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && pnpm vitest run src/extensions/datahub/utils/policy-summary.utils.spec.ts
-  cat /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/api/**generated**/models/DataPolicyMatching.ts
-  head -50 /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/api/**generated**/models/DataPolicyMatching.ts
-  grep -A 3 "export enum functionType" /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/api/**generated**/models/Script.ts
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && pnpm vitest run src/extensions/datahub/utils/policy-summary.utils.spec.ts --reporter=verbose
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && timeout 30 pnpm vitest run src/extensions/datahub/utils/policy-summary.utils.spec.ts 2>&1 | head -100
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && npx vitest run src/extensions/datahub/utils/policy-summary.utils.spec.ts --no-coverage 2>&1
-  cat /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/extensions/datahub/locales/en/datahub.json | jq '.workspace.dryRun' | head -50
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && pnpm cypress:run:component --spec "src/extensions/datahub/components/helpers/PolicyOverview.spec.cy.tsx"
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && timeout 60 pnpm cypress:run:component --spec "src/extensions/datahub/components/helpers/PolicyOverview.spec.cy.tsx" 2>&1 | tail -50
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && sed -i '' "s/handleCopyTab(schemasJson, 'schemas')/handleCopyTab(schemasJson)/g" src/extensions/datahub/components/helpers/PolicyJsonView.tsx && sed -i '' "s/handleCopyTab(scriptsJson, 'scripts')/handleCopyTab(scriptsJson)/g" src/extensions/datahub/components/helpers/PolicyJsonView.tsx
-  cat /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/extensions/datahub/components/helpers/PolicySummaryReport.tsx
-  head -50 /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/extensions/datahub/components/helpers/PolicySummaryReport.tsx
-  ls -la /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/extensions/datahub/components/helpers/PolicySummaryReport.tsx
-  wc -l /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/extensions/datahub/components/helpers/PolicySummaryReport.tsx && cat /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/extensions/datahub/components/helpers/PolicySummaryReport.tsx
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && sed -i '' '2s/.*/import type { AlertStatus } from '\''@chakra-ui\/react'\''/' src/extensions/datahub/components/helpers/PolicySummaryReport.tsx && sed -i '' '3s/._/import { Alert, AlertDescription, AlertIcon, AlertTitle, Box, Text, VStack } from '\''@chakra-ui\/react'\''/' src/extensions/datahub/components/helpers/PolicySummaryReport.tsx && sed -i '' '5s/._/import { PolicyDryRunStatus, type DesignerStatus, type DryRunResults } from '\''@datahub\/types.ts'\''/' src/extensions/datahub/components/helpers/PolicySummaryReport.tsx
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && tail -n 227 src/extensions/datahub/components/helpers/PolicyJsonView.tsx | head -n 227
-  wc -l /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/extensions/datahub/components/helpers/PolicyJsonView.tsx
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && pnpm vitest run src/extensions/datahub/utils/policy-summary.utils.spec.ts --reporter=verbose 2>&1 | head -100
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && pnpm vitest run src/extensions/datahub/utils/policy-summary.utils.spec.ts --reporter=verbose 2>&1 | tail -50
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && pnpm cypress:run:component --spec "src/extensions/datahub/components/helpers/PolicyOverview.spec.cy.tsx" 2>&1 | grep -A 5 "should display policy icon"
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && pnpm cypress:run:component --spec "src/extensions/datahub/components/helpers/NodeIcon.spec.cy.tsx"
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && pnpm cypress:run:component --spec "src/extensions/datahub/components/helpers/PolicyOverview.spec.cy.tsx" 2>&1 | grep -E "(should display policy icon|✓|✗|passing|failing)" | head -20
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && pnpm cypress:run:component --spec "src/extensions/datahub/components/helpers/CopyButton.spec.cy.tsx"
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && pnpm cypress:run:component --spec "src/extensions/datahub/components/helpers/CopyButton.spec.cy.tsx"
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && grep -l "cy.get\('\[data-testid=" src/extensions/datahub/components/helpers/_.spec.cy.tsx src/extensions/datahub/utils/_.spec.ts 2>/dev/null | head -10
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && grep -r "cy\.get\(\'\[data-testid=" src/extensions/datahub/components/helpers/_.spec.cy.tsx | head -5
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && grep "data-testid" src/extensions/datahub/components/helpers/PolicyJsonView.spec.cy.tsx | head -3
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && find src/extensions/datahub/components/helpers -name "_.spec.cy.tsx" -exec grep -l 'data-testid' {} \;
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && sed -i '' "s/cy\.get('\[data-testid=\"\([^\"]\_\)\"\]')/cy.getByTestId('\1')/g" src/extensions/datahub/components/helpers/PolicyJsonView.spec.cy.tsx && echo "PolicyJsonView.spec.cy.tsx updated"
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && for file in src/extensions/datahub/components/helpers/{PolicyOverview,ResourcesBreakdown,CopyButton,PolicySummaryReport}.spec.cy.tsx; do sed -i '' "s/cy\.get('\[data-testid=\"\([^\"]*\)\"\]')/cy.getByTestId('\1')/g" "$file" && echo "Updated: $file"; done
-cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && grep "cy.getByTestId" src/extensions/datahub/components/helpers/PolicyJsonView.spec.cy.tsx | head -5
-cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && cat > /tmp/fix_testid.sh << 'SCRIPT'
-#!/bin/bash
-FILE="$1"
-perl -i -pe 's/cy\.get\(\x27\[data-testid="([^"]+)"\]\x27\)/cy.getByTestId(\x27$1\x27)/g' "$FILE"
-  SCRIPT
-  chmod +x /tmp/fix_testid.sh && /tmp/fix_testid.sh src/extensions/datahub/components/helpers/PolicyJsonView.spec.cy.tsx && echo "Fixed PolicyJsonView.spec.cy.tsx"
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && grep -n "cy.get.*data-testid" src/extensions/datahub/components/helpers/PolicyJsonView.spec.cy.tsx | wc -l
-  cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend && python3 << 'PYTHON'
-  import re
-  import glob
+**Status:** 📋 Planning Complete - Ready for Implementation  
+**Directory:** `.tasks/38139-wizard-group/`  
+**Description:** Group wizard implementation (continuation of task 38111)  
+**Dependencies:** Task 38111 (Workspace Operation Wizard)
 
-# Pattern to match cy.get('[data-testid="..."]])
+**Key Documents:**
 
-pattern = r'''cy\.get\(['"]\[data-testid="([^"]+)"\]['"])\)'''
-replacement = r"cy.getByTestId('\1')"
-files = glob.glob('src/extensions/datahub/components/helpers/\*.spec.cy.tsx')
-for filepath in files:
-with open(filepath, 'r') as f:
-content = f.read() # Replace pattern
-new_content = re.sub(pattern, replacement, content)
-if new_content != content:
-with open(filepath, 'w') as f:
-f.write(new_content)
-print(f"Updated: {filepath}")
-else:
-print(f"No changes: {filepath}")
-PYTHON
-cd /Users/nicolas/IdeaProjects/hivemq-edge/hivemq-edge-frontend/src/extensions/datahub/components/helpers && python3 << 'EOF'
-import re
-def fix_file(filename):
-with open(filename, 'r') as f:
-content = f.read() # Replace single quotes variant
-content = re.sub(r"cy\.get\('\[data-testid=\"([^\"]+)\"\]'\)", r"cy.getByTestId('\1')", content) # Replace double quotes variant  
- content = re.sub(r'cy\.get\("\[data-testid="([^"]+)"\]"\)', r"cy.getByTestId('\1')", content)
-with open(filename, 'w') as f:
-f.write(content)
-print(f"Fixed {filename}")
-for f in ['PolicyJsonView.spec.cy.tsx', 'PolicyOverview.spec.cy.tsx', 'ResourcesBreakdown.spec.cy.tsx', 'CopyButton.spec.cy.tsx', 'PolicySummaryReport.spec.cy.tsx']:
-fix_file(f)
+- [TASK_BRIEF.md](./38139-wizard-group/TASK_BRIEF.md) - Requirements and constraints
+- [TASK_PLAN.md](./38139-wizard-group/TASK_PLAN.md) - 8 subtask implementation plan (2-3 weeks)
+- [QUICK_REFERENCE.md](./38139-wizard-group/QUICK_REFERENCE.md) - Quick start guide
+
+**Planned Subtasks:**
+
+**Phase 1: Foundation (Days 1-3)**
+
+- [ ] Subtask 1: Group Selection Constraints (1-2 days)
+- [ ] Subtask 2: Auto-Inclusion Visual Feedback (1 day)
+
+**Phase 2: Ghost System (Days 4-7)**
+
+- [ ] Subtask 3: Ghost Group Factory (2 days)
+- [ ] Subtask 4: Ghost Group Renderer Enhancement (2 days)
+
+**Phase 3: Configuration (Days 8-10)**
+
+- [ ] Subtask 5: Configuration Panel (1.5 days)
+- [ ] Subtask 6: Wizard Completion (2 days)
+
+**Phase 4: Testing & Polish (Days 11-13)**
+
+- [ ] Subtask 7: E2E Testing (1.5 days)
+- [ ] Subtask 8: Documentation & Polish (1 day)
+
+**Key Requirements:**
+
+- Groups can select ADAPTER, BRIDGE, CLUSTER (group) nodes
+- Nodes already in groups cannot be re-grouped
+- DEVICE/HOST nodes auto-included (not directly selectable)
+- Ghost group appears in Step 1 (preview), not Step 0 (selection)
+- React Flow parent-child group implementation
+- Reuse existing `createGroup` utility
+
+**Next Action:** Begin Subtask 1 (Group Selection Constraints)
+
+---
+
+### 37542-code-coverage
+
+**Status:** 🔄 Active  
+**Directory:** `.tasks/37542-code-coverage/`  
+**Description:** Code coverage improvements for HiveMQ Edge Frontend  
+**Progress:** 3 subtasks completed, 42 tests added, 11 files improved
+
+---
+
+## Completed Tasks
+
+### 37884-typescript-errors
+
+**Status:** ✅ Complete  
+**Description:** Fixed TypeScript errors across the codebase
+
+### 36665-resource-version-update
+
+**Status:** ✅ Complete  
+**Description:** Updated resource version handling
+
+### 37055-workspace-search
+
+**Status:** ✅ Complete  
+**Description:** Workspace search functionality
+
+### 32118-workspace-status
+
+**Status:** ✅ Complete  
+**Description:** Workspace status indicators and propagation
+
+### 25337-workspace-auto-layout
+
+**Status:** ✅ Complete  
+**Description:** Automatic layout algorithms for workspace
+
+---
+
+## Task Naming Convention
+
+Tasks follow the pattern: `{task-id}-{kebab-case-description}`
+
+Example: `38139-wizard-group`
+
+---
+
+## Task Documentation Structure
+
+Each task directory contains:
+
+```
+.tasks/{task-id}-{task-name}/
+├── TASK_BRIEF.md                   # Requirements and objectives
+├── TASK_PLAN.md                    # Implementation plan with subtasks
+├── TASK_SUMMARY.md                 # Progress tracking
+├── QUICK_REFERENCE.md              # Quick start guide (optional)
+├── ARCHITECTURE.md                 # Technical decisions (optional)
+├── CONVERSATION_SUBTASK_N.md       # Session logs
+└── SESSION_FEEDBACK.md             # Feedback and learnings
+```
+
+---
+
+## Guidelines & References
+
+All tasks should follow these guidelines located in `.tasks/`:
+
+- **AUTONOMY_TEMPLATE.md** - Work patterns for AI agents
+- **DATAHUB_ARCHITECTURE.md** - DataHub designer architecture
+- **DESIGN_GUIDELINES.md** - UI component patterns
+- **TESTING_GUIDELINES.md** - Mandatory accessibility testing
+- **I18N_GUIDELINES.md** - Translation key structure
+- **WORKSPACE_TOPOLOGY.md** - Node types and relationships
+- **REACT_FLOW_BEST_PRACTICES.md** - React Flow patterns
+
+---
+
+**Last Updated:** November 21, 2025  
+**Maintained By:** AI Agents & Development Team

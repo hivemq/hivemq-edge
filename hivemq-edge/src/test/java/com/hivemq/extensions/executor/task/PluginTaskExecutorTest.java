@@ -20,9 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -35,8 +36,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Christoph Schäbel
@@ -50,8 +51,7 @@ public class PluginTaskExecutorTest {
 
     @Mock
     IsolatedExtensionClassloader classloader;
-
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
         executionOrder = Collections.synchronizedList(new ArrayList<>());
@@ -59,13 +59,13 @@ public class PluginTaskExecutorTest {
         pluginTaskExecutor = new PluginTaskExecutor(new AtomicLong(0));
         pluginTaskExecutor.postConstruct();
     }
-
-    @After
+    @AfterEach
     public void after() {
         pluginTaskExecutor.stop();
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_inout_task_is_executed() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -75,7 +75,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_inout_tasks_for_same_client_are_executed_in_order() throws Exception {
 
         final int tries = 1000;
@@ -93,7 +94,8 @@ public class PluginTaskExecutorTest {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_inout_tasks_for_different_clients_are_executed() throws Exception {
 
         final int tries = 1000;
@@ -116,7 +118,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_inout_async_tasks_for_same_client_are_executed_in_order() throws Exception {
 
         final int tries = 1000;
@@ -134,7 +137,8 @@ public class PluginTaskExecutorTest {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_inout_async_tasks_for_different_clients_are_executed() throws Exception {
 
         final int tries = 1000;
@@ -148,7 +152,8 @@ public class PluginTaskExecutorTest {
     }
 
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_inout_async_tasks_for_different_clients_from_different_producers_are_executed() throws Exception {
 
         final int tries = 250;
@@ -170,7 +175,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_inout_tasks_for_different_clients_from_different_producers_are_executed() throws Exception {
 
         final int tries = 250;
@@ -192,7 +198,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_inout_async_tasks_for_different_clients_from_different_producers_are_executed_delay() throws Exception {
 
         final int tries = 250;
@@ -214,7 +221,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_inout_tasks_for_different_clients_from_different_producers_are_executed_delay() throws Exception {
 
         final int tries = 250;
@@ -236,7 +244,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_out_task_is_executed() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -246,7 +255,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_out_tasks_for_same_client_are_executed_in_order() throws Exception {
 
         final int tries = 1000;
@@ -264,7 +274,8 @@ public class PluginTaskExecutorTest {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_out_tasks_for_different_clients_are_executed() throws Exception {
 
         final int tries = 1000;
@@ -277,7 +288,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_async_out_task_is_executed() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -287,7 +299,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_out_async_tasks_for_same_client_are_executed_in_order() throws Exception {
 
         final int tries = 1000;
@@ -305,7 +318,8 @@ public class PluginTaskExecutorTest {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_out_async_tasks_for_different_clients_are_executed() throws Exception {
 
         final int tries = 1000;
@@ -319,7 +333,8 @@ public class PluginTaskExecutorTest {
     }
 
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_out_async_tasks_for_different_clients_from_different_producers_are_executed() throws Exception {
 
         final int tries = 250;
@@ -341,7 +356,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_out_tasks_for_different_clients_from_different_producers_are_executed() throws Exception {
 
         final int tries = 250;
@@ -363,7 +379,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_out_async_tasks_for_different_clients_from_different_producers_are_executed_delay() throws Exception {
 
         final int tries = 250;
@@ -385,7 +402,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_out_tasks_for_different_clients_from_different_producers_are_executed_delay() throws Exception {
 
         final int tries = 250;
@@ -407,7 +425,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_in_task_is_executed() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -417,7 +436,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_in_tasks_for_same_client_are_executed_in_order() throws Exception {
 
         final int tries = 1000;
@@ -435,7 +455,8 @@ public class PluginTaskExecutorTest {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_in_tasks_for_different_clients_are_executed() throws Exception {
 
         final int tries = 1000;
@@ -448,7 +469,8 @@ public class PluginTaskExecutorTest {
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_multiple_in_tasks_for_different_clients_from_different_producers_are_executed_delay() throws Exception {
 
         final int tries = 250;
@@ -487,7 +509,8 @@ public class PluginTaskExecutorTest {
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_async_task_throws_exception_queue_can_continue() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(2);
@@ -504,7 +527,8 @@ public class PluginTaskExecutorTest {
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_post_throws_exception_queue_can_continue() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(2);
@@ -521,7 +545,8 @@ public class PluginTaskExecutorTest {
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_async_post_throws_exception_queue_can_continue() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(2);
@@ -539,7 +564,8 @@ public class PluginTaskExecutorTest {
     }
 
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_async_throws_exception_queue_can_continue() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(2);

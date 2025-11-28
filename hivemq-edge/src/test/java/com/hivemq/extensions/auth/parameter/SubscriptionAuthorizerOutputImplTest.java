@@ -18,13 +18,18 @@ package com.hivemq.extensions.auth.parameter;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extension.sdk.api.packets.subscribe.SubackReasonCode;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import static com.hivemq.extensions.auth.parameter.SubscriptionAuthorizerOutputImpl.AuthorizationState.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Christoph Schäbel
@@ -36,8 +41,7 @@ public class SubscriptionAuthorizerOutputImplTest {
     private PluginOutPutAsyncer asyncer;
 
     private SubscriptionAuthorizerOutputImpl output;
-
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
         output = new SubscriptionAuthorizerOutputImpl(asyncer);
@@ -58,14 +62,14 @@ public class SubscriptionAuthorizerOutputImplTest {
     public void test_output_continue() {
         output.nextExtensionOrDefault();
         assertEquals(CONTINUE, output.getAuthorizationState());
-        assertEquals(false, output.isCompleted());
+        assertFalse(output.isCompleted());
     }
 
     @Test
     public void test_output_fail() {
         output.failAuthorization();
         assertEquals(FAIL, output.getAuthorizationState());
-        assertEquals(true, output.isCompleted());
+        assertTrue(output.isCompleted());
     }
 
     @Test
@@ -73,7 +77,7 @@ public class SubscriptionAuthorizerOutputImplTest {
         output.authorizeSuccessfully();
         output.forceFailedAuthorization();
         assertEquals(FAIL, output.getAuthorizationState());
-        assertEquals(true, output.isCompleted());
+        assertTrue(output.isCompleted());
     }
 
     @Test
@@ -81,7 +85,7 @@ public class SubscriptionAuthorizerOutputImplTest {
         output.failAuthorization(SubackReasonCode.QUOTA_EXCEEDED);
         assertEquals(FAIL, output.getAuthorizationState());
         assertEquals(SubackReasonCode.QUOTA_EXCEEDED, output.getSubackReasonCode());
-        assertEquals(true, output.isCompleted());
+        assertTrue(output.isCompleted());
     }
 
     @Test
@@ -90,14 +94,14 @@ public class SubscriptionAuthorizerOutputImplTest {
         assertEquals(FAIL, output.getAuthorizationState());
         assertEquals(SubackReasonCode.IMPLEMENTATION_SPECIFIC_ERROR, output.getSubackReasonCode());
         assertEquals("test-string", output.getReasonString());
-        assertEquals(true, output.isCompleted());
+        assertTrue(output.isCompleted());
     }
 
     @Test
     public void test_output_disconnect() {
         output.disconnectClient();
         assertEquals(DISCONNECT, output.getAuthorizationState());
-        assertEquals(true, output.isCompleted());
+        assertTrue(output.isCompleted());
     }
 
     @Test
@@ -105,7 +109,7 @@ public class SubscriptionAuthorizerOutputImplTest {
         output.disconnectClient(DisconnectReasonCode.CONNECTION_RATE_EXCEEDED);
         assertEquals(DISCONNECT, output.getAuthorizationState());
         assertEquals(DisconnectReasonCode.CONNECTION_RATE_EXCEEDED, output.getDisconnectReasonCode());
-        assertEquals(true, output.isCompleted());
+        assertTrue(output.isCompleted());
     }
 
     @Test
@@ -114,40 +118,46 @@ public class SubscriptionAuthorizerOutputImplTest {
         assertEquals(DISCONNECT, output.getAuthorizationState());
         assertEquals(DisconnectReasonCode.CONNECTION_RATE_EXCEEDED, output.getDisconnectReasonCode());
         assertEquals("test-string", output.getReasonString());
-        assertEquals(true, output.isCompleted());
+        assertTrue(output.isCompleted());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void test_exception_multiple_result_next() {
         output.authorizeSuccessfully();
-        output.nextExtensionOrDefault();
+        assertThatThrownBy(() ->output.nextExtensionOrDefault())
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void test_exception_multiple_result_success() {
         output.authorizeSuccessfully();
-        output.authorizeSuccessfully();
+        assertThatThrownBy(() -> output.authorizeSuccessfully())
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void test_exception_multiple_result_fail() {
         output.authorizeSuccessfully();
-        output.failAuthorization();
+        assertThatThrownBy(() -> output.failAuthorization())
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void test_exception_multiple_result_disconnect() {
         output.authorizeSuccessfully();
-        output.disconnectClient();
+        assertThatThrownBy(() -> output.disconnectClient())
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_fail_sucess_code() {
-        output.failAuthorization(SubackReasonCode.GRANTED_QOS_0);
+    
+        assertThrows(IllegalArgumentException.class, () -> output.failAuthorization(SubackReasonCode.GRANTED_QOS_0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_fail_string_sucess_code() {
-        output.failAuthorization(SubackReasonCode.GRANTED_QOS_1, "test-string");
+    
+        assertThrows(IllegalArgumentException.class, () -> output.failAuthorization(SubackReasonCode.GRANTED_QOS_1, "test-string"));
     }
 }

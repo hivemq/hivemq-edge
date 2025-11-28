@@ -19,36 +19,44 @@ package com.hivemq.extensions;
 import com.hivemq.configuration.info.SystemInformationImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import com.hivemq.extension.sdk.api.ExtensionMain;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStopInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStopOutput;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 import com.hivemq.extensions.client.parameter.ServerInformationImpl;
-import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mockito;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.same;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Georg Held
  */
 public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
-
-    @Rule
-    public final @NotNull TemporaryFolder tmpFolder = new TemporaryFolder();
 
     private final @NotNull HiveMQExtension extension1 = mock(HiveMQExtension.class);
     private final @NotNull HiveMQExtension extension2 = mock(HiveMQExtension.class);
@@ -61,8 +69,7 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
     private @NotNull String id2;
 
     private @NotNull HiveMQExtensions hiveMQExtensions;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         id1 = "extension1";
         id2 = "extension2";
@@ -82,12 +89,14 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
         hiveMQExtensions.addHiveMQExtension(extension1);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_disabled_extension_is_not_started() {
         assertFalse(hiveMQExtensions.extensionStart(id1));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_enabled_extension_is_started() throws Throwable {
         when(extension1.isEnabled()).thenReturn(true);
         assertTrue(hiveMQExtensions.extensionStart(id1));
@@ -98,12 +107,14 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
         assertEquals(extension1, hiveMQExtensions.getExtensionForClassloader(loader1));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_disabled_extension_is_not_disabled() {
         assertFalse(hiveMQExtensions.extensionStop(id1, false));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_enabled_extension_is_not_disabled() throws Throwable {
         when(extension1.isEnabled()).thenReturn(true);
         assertTrue(hiveMQExtensions.extensionStart(id1));
@@ -115,7 +126,8 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
         assertNull(hiveMQExtensions.getExtensionForClassloader(loader1));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_extension_stop_throws_exception() throws Throwable {
         when(extension1.isEnabled()).thenReturn(true);
         hiveMQExtensions.extensionStart(id1);
@@ -131,7 +143,8 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
         assertTrue(hiveMQExtensions.getClassloaderToExtensionMap().isEmpty());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_enabled_extension_is_returned() {
         hiveMQExtensions.addHiveMQExtension(extension2);
         when(extension1.isEnabled()).thenReturn(true);
@@ -142,13 +155,15 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
         assertFalse(enabledHiveMQExtensions.containsKey(id2));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_enabled_extensions_is_empty() {
         final Map<String, HiveMQExtension> enabledHiveMQExtensions = hiveMQExtensions.getEnabledHiveMQExtensions();
         assertEquals(0, enabledHiveMQExtensions.size());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_previous_version_is_set() {
         final String version = "some-old-version";
         when(extension1.getVersion()).thenReturn(version);
@@ -159,7 +174,8 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
         verify(extension2, times(1)).setPreviousVersion(same(version));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_previous_version_is_not_set() {
         final String version = "some-old-version";
         when(extension1.getVersion()).thenReturn(version);
@@ -170,7 +186,8 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
         verify(extension2, never()).setPreviousVersion(anyString());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_before_stop_callback() throws Throwable {
         when(extension1.isEnabled()).thenReturn(true);
 
@@ -191,7 +208,8 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
         assertEquals(1, extensionStopCallback.count);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_before_stop_callback_exception() throws Throwable {
         when(extension1.isEnabled()).thenReturn(true);
 
@@ -212,7 +230,8 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
         assertEquals(1, extensionStopCallback.count);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_after_stop_callback() throws Throwable {
         when(extension1.isEnabled()).thenReturn(true);
 
@@ -234,7 +253,8 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
         assertEquals(1, extensionStopCallback.count);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_after_stop_callback_exception() throws Throwable {
         when(extension1.isEnabled()).thenReturn(true);
 

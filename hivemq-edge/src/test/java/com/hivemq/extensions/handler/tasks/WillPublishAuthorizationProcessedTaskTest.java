@@ -27,12 +27,12 @@ import com.hivemq.extensions.handler.PluginAuthorizerServiceImpl.AuthorizeWillRe
 import com.hivemq.mqtt.message.connect.CONNECT;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import util.CollectUserEventsHandler;
 import util.TestMessageUtil;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 public class WillPublishAuthorizationProcessedTaskTest {
@@ -41,8 +41,7 @@ public class WillPublishAuthorizationProcessedTaskTest {
     private @NotNull EmbeddedChannel channel;
     private @NotNull WillPublishAuthorizationProcessedTask task;
     private @NotNull PublishAuthorizerOutputImpl output;
-
-    @Before
+    @BeforeEach
     public void before() {
         eventsCollector = new CollectUserEventsHandler<>(AuthorizeWillResultEvent.class);
         channel = new EmbeddedChannel(eventsCollector);

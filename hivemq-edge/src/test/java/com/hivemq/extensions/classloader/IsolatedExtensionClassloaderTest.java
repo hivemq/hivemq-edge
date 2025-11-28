@@ -17,14 +17,13 @@
 package com.hivemq.extensions.classloader;
 
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.classloader.ClassLoaderTestClass;
 import com.hivemq.extension.sdk.api.services.Services;
 import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import util.OnTheFlyCompilationUtil;
 
 import java.io.File;
@@ -35,18 +34,23 @@ import java.util.Enumeration;
 import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class IsolatedExtensionClassloaderTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private @NotNull File folder;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        folder = temporaryFolder.newFolder();
+        folder = new File(temporaryFolder, "newFolder");
+        folder.mkdir();
     }
 
     /**
@@ -60,7 +64,8 @@ public class IsolatedExtensionClassloaderTest {
     @Test
     public void test_modified_class_loaded() throws Exception {
         final File javaSrcFile = getJavaSrcFileForClassFile(ClassLoadedClass.class);
-        final File file = temporaryFolder.newFile(ClassLoadedClass.class.getSimpleName() + ".java");
+        final File file = new File(temporaryFolder, ClassLoadedClass.class.getSimpleName() + ".java");
+        file.createNewFile();
         FileUtils.copyFile(javaSrcFile, file);
 
         replaceFileContent(file, "original", "modified");
@@ -102,7 +107,8 @@ public class IsolatedExtensionClassloaderTest {
     @Test
     public void test_restricted_class_loaded_from_parent() throws Exception {
         final File javaSrcFile = getJavaSrcFileForClassFile(ClassLoaderTestClass.class);
-        final File file = temporaryFolder.newFile(ClassLoaderTestClass.class.getSimpleName() + ".java");
+        final File file = new File(temporaryFolder, ClassLoaderTestClass.class.getSimpleName() + ".java");
+        file.createNewFile();
         FileUtils.copyFile(javaSrcFile, file);
 
         replaceFileContent(file, "original", "modified");
@@ -130,7 +136,8 @@ public class IsolatedExtensionClassloaderTest {
     @Test
     public void test_restricted_class_loaded_from_parent_not_found_fallback_to_child() throws Exception {
         final File javaSrcFile = getJavaSrcFileForClassFile(ClassLoadedClass.class);
-        final File file = temporaryFolder.newFile(ClassLoadedClass.class.getSimpleName() + ".java");
+        final File file = new File(temporaryFolder, ClassLoadedClass.class.getSimpleName() + ".java");
+        file.createNewFile();
         FileUtils.copyFile(javaSrcFile, file);
 
         replaceFileContent(file, "package com.hivemq.extensions.classloader;", "package com.hivemq.extensions.api.test;");

@@ -21,13 +21,15 @@ import com.hivemq.mqtt.message.connect.CONNECT;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import static com.hivemq.mqtt.message.connack.CONNACK.KEEP_ALIVE_NOT_SET;
 import static com.hivemq.mqtt.message.connack.CONNACK.SESSION_EXPIRY_NOT_SET;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Waldemar Ruck
@@ -35,8 +37,6 @@ import static org.junit.Assert.*;
  */
 public class CONNACKBuilderTest {
 
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
     private final CONNACK.Mqtt5Builder builder = new CONNACK.Mqtt5Builder().withReasonCode(Mqtt5ConnAckReasonCode.SUCCESS);
     private final String dataExceeded = new String(new char[65535 + 1]);
     private final int sizeExceeded = 65535 + 1;
@@ -46,22 +46,22 @@ public class CONNACKBuilderTest {
 
         final CONNACK connack = builder.build();
 
-        assertEquals(connack.getReturnCode(), Mqtt3ConnAckReturnCode.ACCEPTED);
+        assertEquals(Mqtt3ConnAckReturnCode.ACCEPTED, connack.getReturnCode());
         assertNull(connack.getAssignedClientIdentifier());
         assertNull(connack.getAuthData());
         assertNull(connack.getAuthMethod());
-        assertEquals(connack.getMaximumPacketSize(), CONNECT.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT);
+        assertEquals(CONNECT.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT, connack.getMaximumPacketSize());
         assertNull(connack.getMaximumQoS());
-        assertEquals(connack.getReceiveMaximum(), CONNECT.DEFAULT_RECEIVE_MAXIMUM);
+        assertEquals(CONNECT.DEFAULT_RECEIVE_MAXIMUM, connack.getReceiveMaximum());
         assertNull(connack.getResponseInformation());
-        assertEquals(connack.getServerKeepAlive(), KEEP_ALIVE_NOT_SET);
+        assertEquals(KEEP_ALIVE_NOT_SET, connack.getServerKeepAlive());
         assertNull(connack.getServerReference());
-        assertEquals(connack.getSessionExpiryInterval(), SESSION_EXPIRY_NOT_SET);
-        assertEquals(connack.getTopicAliasMaximum(), CONNECT.DEFAULT_TOPIC_ALIAS_MAXIMUM);
-        assertEquals(connack.getType(), MessageType.CONNACK);
-        assertEquals(connack.getPacketIdentifier(), 0);
-        assertEquals(connack.getReasonCode(), Mqtt5ConnAckReasonCode.SUCCESS);
-        assertEquals(connack.getUserProperties().asList().size(), 0);
+        assertEquals(SESSION_EXPIRY_NOT_SET, connack.getSessionExpiryInterval());
+        assertEquals(CONNECT.DEFAULT_TOPIC_ALIAS_MAXIMUM, connack.getTopicAliasMaximum());
+        assertEquals(MessageType.CONNACK, connack.getType());
+        assertEquals(0, connack.getPacketIdentifier());
+        assertEquals(Mqtt5ConnAckReasonCode.SUCCESS, connack.getReasonCode());
+        assertEquals(0, connack.getUserProperties().asList().size());
         assertFalse(connack.isSessionPresent());
         assertNull(connack.getReasonString());
         assertTrue(connack.isRetainAvailable());
@@ -116,97 +116,100 @@ public class CONNACKBuilderTest {
                 .withWildcardSubscriptionAvailable(wildcardSubscriptionAvailable)
                 .build();
 
-        assertEquals(connack.getServerKeepAlive(), serverKeepAlive);
-        assertEquals(connack.getTopicAliasMaximum(), topicAliasMaximum);
-        assertEquals(connack.getMaximumPacketSize(), maximumPacketSize);
-        assertEquals(connack.getSessionExpiryInterval(), sessionExpiryInterval);
-        assertEquals(connack.getServerReference(), serverReference);
-        assertEquals(connack.getResponseInformation(), responseInformation);
+        assertEquals(serverKeepAlive, connack.getServerKeepAlive());
+        assertEquals(topicAliasMaximum, connack.getTopicAliasMaximum());
+        assertEquals(maximumPacketSize, connack.getMaximumPacketSize());
+        assertEquals(sessionExpiryInterval, connack.getSessionExpiryInterval());
+        assertEquals(serverReference, connack.getServerReference());
+        assertEquals(responseInformation, connack.getResponseInformation());
         assertEquals(connack.getAuthData(), authData);
-        assertEquals(connack.getAuthMethod(), authMethod);
-        assertEquals(connack.getReceiveMaximum(), receiveMaximum);
-        assertEquals(connack.getMaximumQoS(), maximumQoS);
-        assertEquals(connack.isSessionPresent(), sessionPresent);
-        assertEquals(connack.getAssignedClientIdentifier(), assignedClientIdentifier);
-        assertEquals(connack.getReasonString(), reasonString);
-        assertEquals(connack.isRetainAvailable(), retainAvailable);
-        assertEquals(connack.isSharedSubscriptionAvailable(), sharedSubscriptionAvailable);
-        assertEquals(connack.isSubscriptionIdentifierAvailable(), subscriptionIdentifierAvailable);
+        assertEquals(authMethod, connack.getAuthMethod());
+        assertEquals(receiveMaximum, connack.getReceiveMaximum());
+        assertEquals(maximumQoS, connack.getMaximumQoS());
+        assertEquals(sessionPresent, connack.isSessionPresent());
+        assertEquals(assignedClientIdentifier, connack.getAssignedClientIdentifier());
+        assertEquals(reasonString, connack.getReasonString());
+        assertEquals(retainAvailable, connack.isRetainAvailable());
+        assertEquals(sharedSubscriptionAvailable, connack.isSharedSubscriptionAvailable());
+        assertEquals(subscriptionIdentifierAvailable, connack.isSubscriptionIdentifierAvailable());
         assertEquals(connack.getUserProperties(), userProperties);
-        assertEquals(connack.isWildcardSubscriptionAvailable(), wildcardSubscriptionAvailable);
+        assertEquals(wildcardSubscriptionAvailable, connack.isWildcardSubscriptionAvailable());
 
-        assertEquals(connack.getReturnCode(), Mqtt3ConnAckReturnCode.ACCEPTED);
-        assertEquals(connack.getType(), MessageType.CONNACK);
-        assertEquals(connack.getPacketIdentifier(), 0);
-        assertEquals(connack.getReasonCode(), Mqtt5ConnAckReasonCode.SUCCESS);
+        assertEquals(Mqtt3ConnAckReturnCode.ACCEPTED, connack.getReturnCode());
+        assertEquals(MessageType.CONNACK, connack.getType());
+        assertEquals(0, connack.getPacketIdentifier());
+        assertEquals(Mqtt5ConnAckReasonCode.SUCCESS, connack.getReasonCode());
     }
 
     @Test
     public void test_receiveMaximum_precondition() {
-        checkForException("Receive maximum must never be zero");
-        builder.withReceiveMaximum(0).build();
+        assertThatThrownBy(() -> builder.withReceiveMaximum(0).build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Receive maximum must never be zero");
     }
 
     @Test
     public void test_authMethod_precondition() {
-        checkForException("An auth method must never exceed 65.535 bytes");
-        builder.withAuthMethod(dataExceeded).build();
+        assertThatThrownBy(() -> builder.withAuthMethod(dataExceeded).build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("An auth method must never exceed 65.535 bytes");
     }
 
     @Test
     public void test_authData_method_precondition() {
-        exceptionRule.expect(NullPointerException.class);
-        exceptionRule.expectMessage("Auth method must be set if auth data is set");
-
         final byte[] dataExceeded = new byte[65535];
-        builder.withAuthData(dataExceeded).build();
+        assertThatThrownBy(() -> builder.withAuthData(dataExceeded).build())
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Auth method must be set if auth data is set");
     }
 
     @Test
     public void test_authData_precondition() {
-        checkForException("An auth data must never exceed 65.535 bytes");
         final byte[] dataExceeded = new byte[sizeExceeded];
-        builder.withAuthMethod("Method").withAuthData(dataExceeded).build();
+        assertThatThrownBy(() -> builder.withAuthMethod("Method").withAuthData(dataExceeded).build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("An auth data must never exceed 65.535 bytes");
     }
 
     @Test
     public void test_responseInformation_precondition() {
-        checkForException("A response information must never exceed 65.535 bytes");
-        builder.withResponseInformation(dataExceeded).build();
+        assertThatThrownBy(() -> builder.withResponseInformation(dataExceeded).build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A response information must never exceed 65.535 bytes");
     }
 
     @Test
     public void test_serverReference_precondition() {
-        checkForException("A server reference must never exceed 65.535 bytes");
-        builder.withServerReference(dataExceeded).build();
+        assertThatThrownBy(() -> builder.withServerReference(dataExceeded).build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A server reference must never exceed 65.535 bytes");
     }
 
     @Test
     public void test_sessionExpiryInterval_precondition() {
-        checkForException("A session expiry interval must never be larger than 4.294.967.296");
-        builder.withSessionExpiryInterval(4294967296L + 1).build();
+        assertThatThrownBy(() -> builder.withSessionExpiryInterval(4294967296L + 1).build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A session expiry interval must never be larger than 4.294.967.296");
     }
 
     @Test
     public void test_maximumPacketSize_precondition() {
-        checkForException("A maximum packet size must never be larger than 268.435.460");
-        builder.withMaximumPacketSize(268435460 + 1).build();
+        assertThatThrownBy(() -> builder.withMaximumPacketSize(268435460 + 1).build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A maximum packet size must never be larger than 268.435.460");
     }
 
     @Test
     public void test_topicAliasMaximum_precondition() {
-        checkForException("A topic alias maximum must never be larger than 65.535");
-        builder.withTopicAliasMaximum(sizeExceeded).build();
+        assertThatThrownBy(() -> builder.withTopicAliasMaximum(sizeExceeded).build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A topic alias maximum must never be larger than 65.535");
     }
 
     @Test
     public void test_serverKeepAlive_precondition() {
-        checkForException("A server keep alive must never be larger than 65.535");
-        builder.withServerKeepAlive(sizeExceeded).build();
-    }
-
-    private void checkForException(final String message) {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(message);
+        assertThatThrownBy(() -> builder.withServerKeepAlive(sizeExceeded).build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A server keep alive must never be larger than 65.535");
     }
 }

@@ -30,8 +30,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigInteger;
 import java.security.*;
@@ -42,15 +44,14 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class SslClientCertificateImplTest {
 
     private Certificate certificate;
     private SslClientCertificate clientCertificate;
-
-    @Before
+    @BeforeEach
     public void before() throws Exception {
 
         certificate = generateCert();
@@ -126,9 +127,10 @@ public class SslClientCertificateImplTest {
         assertNull(clientCertificate.state());
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_certs_not_null() throws Exception {
-        new SslClientCertificateImpl(null);
+    @Test
+    public void test_certs_not_null() {
+    
+        assertThrows(NullPointerException.class, () -> new SslClientCertificateImpl(null));
     }
 
     @Test

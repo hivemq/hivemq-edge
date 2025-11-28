@@ -34,17 +34,18 @@ import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.local.ClientSessionSubscriptionLocalPersistence;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestSingleWriterFactory;
 
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyByte;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -86,8 +87,7 @@ public class ClientSessionSubscriptionPersistenceImplTest {
     private SingleWriterService singleWriterService;
     private final @NotNull InternalConfigurationService
             internalConfigurationService = new InternalConfigurationServiceImpl();
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         closeableMock = MockitoAnnotations.openMocks(this);
         when(topicTree.addTopic(anyString(), any(Topic.class), anyByte(), anyString())).thenReturn(true);
@@ -102,15 +102,15 @@ public class ClientSessionSubscriptionPersistenceImplTest {
                 new Chunker(internalConfigurationService),
                 mock(MqttServerDisconnector.class));
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         persistence.closeDB();
         singleWriterService.stop();
         closeableMock.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void test_add_subscriptions() throws Exception {
 
         when(clientSessionLocalPersistence.getSession("client")).thenReturn(new ClientSession(true, 360));
@@ -122,7 +122,8 @@ public class ClientSessionSubscriptionPersistenceImplTest {
         verify(localPersistence).addSubscriptions(eq("client"), any(ImmutableSet.class), anyLong(), anyInt());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void test_add_subscriptions_session_expired() throws Exception {
         when(clientSessionLocalPersistence.getSession("client")).thenReturn(null);
 
@@ -133,7 +134,8 @@ public class ClientSessionSubscriptionPersistenceImplTest {
         verify(localPersistence, never()).addSubscriptions(eq("client"), any(ImmutableSet.class), anyLong(), anyInt());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void test_add_subscriptions_shared() throws Exception {
         when(clientSessionLocalPersistence.getSession("client")).thenReturn(new ClientSession(true, 360));
 
@@ -229,14 +231,16 @@ public class ClientSessionSubscriptionPersistenceImplTest {
 
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void test_remove_subscriptions_responsible() throws ExecutionException, InterruptedException {
 
         persistence.removeSubscriptions("client", ImmutableSet.of("topic1", "topic2")).get();
         verify(topicTree, times(2)).removeSubscriber(eq("client"), anyString(), any());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void test_remove_shared_subscriptions() throws ExecutionException, InterruptedException {
 
         when(sharedSubscriptionService.checkForSharedSubscription("$share/group/topic1")).thenReturn(new SharedSubscriptionServiceImpl.SharedSubscription(
@@ -255,7 +259,8 @@ public class ClientSessionSubscriptionPersistenceImplTest {
                 anyInt());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void test_addSubscription() throws Exception {
 
         when(clientSessionLocalPersistence.getSession("client")).thenReturn(new ClientSession(true, 350));
@@ -267,7 +272,8 @@ public class ClientSessionSubscriptionPersistenceImplTest {
         verify(localPersistence).addSubscription(eq("client"), eq(topic), anyLong(), anyInt());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void test_getSubscriptions() throws Exception {
 
         when(clientSessionLocalPersistence.getSession("client")).thenReturn(new ClientSession(true, 350));
@@ -282,7 +288,8 @@ public class ClientSessionSubscriptionPersistenceImplTest {
 
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void test_addSubscription_no_session_found() throws Exception {
 
         when(clientSessionLocalPersistence.getSession("client")).thenReturn(null);
@@ -295,7 +302,8 @@ public class ClientSessionSubscriptionPersistenceImplTest {
         verify(localPersistence, never()).addSubscription(eq("client"), eq(topic), anyLong(), anyInt());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void test_addSubscription_shared() throws Exception {
 
         when(clientSessionLocalPersistence.getSession("client")).thenReturn(new ClientSession(true, 350));
@@ -327,7 +335,8 @@ public class ClientSessionSubscriptionPersistenceImplTest {
 
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void test_addSubscription_shared_qos2() throws Exception {
 
         when(clientSessionLocalPersistence.getSession("client")).thenReturn(new ClientSession(true, 350));

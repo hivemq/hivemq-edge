@@ -21,13 +21,16 @@ import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
 
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Robin Atherton
@@ -36,8 +39,7 @@ import static org.junit.Assert.*;
 public class ModifiableOutboundDisconnectPacketImplTest {
 
     private @NotNull ConfigurationService configurationService;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
     }
@@ -80,7 +82,7 @@ public class ModifiableOutboundDisconnectPacketImplTest {
         assertEquals(DisconnectReasonCode.ADMINISTRATIVE_ACTION, modifiablePacket.getReasonCode());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void setReasonCode_null() {
         final DisconnectPacketImpl packet = new DisconnectPacketImpl(
                 DisconnectReasonCode.ADMINISTRATIVE_ACTION,
@@ -91,7 +93,8 @@ public class ModifiableOutboundDisconnectPacketImplTest {
         final ModifiableOutboundDisconnectPacketImpl modifiablePacket =
                 new ModifiableOutboundDisconnectPacketImpl(packet, configurationService);
 
-        modifiablePacket.setReasonCode(null);
+        assertThatThrownBy(() -> modifiablePacket.setReasonCode(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -151,7 +154,7 @@ public class ModifiableOutboundDisconnectPacketImplTest {
         assertEquals(Optional.of("same"), modifiablePacket.getReasonString());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setReasonString_invalid() {
         final DisconnectPacketImpl packet = new DisconnectPacketImpl(
                 DisconnectReasonCode.ADMINISTRATIVE_ACTION,
@@ -162,10 +165,11 @@ public class ModifiableOutboundDisconnectPacketImplTest {
         final ModifiableOutboundDisconnectPacketImpl modifiablePacket =
                 new ModifiableOutboundDisconnectPacketImpl(packet, configurationService);
 
-        modifiablePacket.setReasonString("topic" + '\u0001');
+        assertThatThrownBy(() -> modifiablePacket.setReasonString("topic" + '\u0001'))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setReasonString_exceedsMaxLength() {
         final DisconnectPacketImpl packet = new DisconnectPacketImpl(
                 DisconnectReasonCode.ADMINISTRATIVE_ACTION,
@@ -180,7 +184,8 @@ public class ModifiableOutboundDisconnectPacketImplTest {
         for (int i = 0; i < 65535; i++) {
             s.append("s");
         }
-        modifiablePacket.setReasonString(s.toString());
+        assertThatThrownBy(() -> modifiablePacket.setReasonString(s.toString()))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -240,7 +245,7 @@ public class ModifiableOutboundDisconnectPacketImplTest {
         assertEquals(Optional.of("serverReference"), modifiablePacket.getServerReference());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setServerReference_invalid() {
         final DisconnectPacketImpl packet = new DisconnectPacketImpl(
                 DisconnectReasonCode.ADMINISTRATIVE_ACTION,
@@ -251,10 +256,11 @@ public class ModifiableOutboundDisconnectPacketImplTest {
         final ModifiableOutboundDisconnectPacketImpl modifiablePacket =
                 new ModifiableOutboundDisconnectPacketImpl(packet, configurationService);
 
-        modifiablePacket.setServerReference("topic" + '\u0001');
+        assertThatThrownBy(() -> modifiablePacket.setServerReference("topic" + '\u0001'))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setServerReference_exceedsMaxLength() {
         final DisconnectPacketImpl packet = new DisconnectPacketImpl(
                 DisconnectReasonCode.ADMINISTRATIVE_ACTION,
@@ -269,7 +275,8 @@ public class ModifiableOutboundDisconnectPacketImplTest {
         for (int i = 0; i < 65535; i++) {
             s.append("s");
         }
-        modifiablePacket.setServerReference(s.toString());
+        assertThatThrownBy(() -> modifiablePacket.setServerReference(s.toString()))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

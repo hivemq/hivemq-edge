@@ -488,6 +488,7 @@
       "installation": "This adapter needs to be installed separately. Check the instructions"
     },
     "error": {
+      "title": "Error",
       "loading": "We cannot load your adapters for the time being. Please try again later"
     },
     "loading": {
@@ -964,6 +965,7 @@
       "type_BRIDGE_NODE": "bridge",
       "type_EDGE_NODE": "edge",
       "type_DEVICE_NODE": "device",
+      "type_HOST_NODE": "host",
       "type_CLUSTER_NODE": "Group"
     },
     "layout": {
@@ -1058,9 +1060,14 @@
             "restartAll": "Restart all"
           }
         },
+        "contentManagement": "Content Management",
         "eventLog": {
           "header": "The 5 most recent events for devices in the group",
-          "showMore": "Show more in the Event Log"
+          "showMore": "Show more in the Event Log",
+          "preview": "Event logs will be available after the group is created"
+        },
+        "metrics": {
+          "preview": "Metrics will be available after the group is created"
         },
         "title": "Configure the group",
         "input-title": "Title",
@@ -1071,7 +1078,10 @@
       "title": "Grouping",
       "by_type": "By type",
       "by_subscriptionCardinality": "By subscription count",
-      "by_runtimeDuration": "By duration"
+      "by_runtimeDuration": "By duration",
+      "error": {
+        "cannotCollapse": "Cannot collapse group"
+      }
     },
     "property": {
       "header_ADAPTER_NODE": "Adapter Overview",
@@ -1100,6 +1110,172 @@
     "datahub": {
       "aria-label": "Open the Data Hub policy",
       "list": "Show all the policies"
+    },
+    "ghost": {
+      "adapter": "New Adapter",
+      "bridge": "New Bridge",
+      "combiner": "New Combiner",
+      "mapper": "New Asset Mapper",
+      "group": "New Group",
+      "host": "New Bridge Host",
+      "device": "New Adapter Device"
+    },
+    "wizard": {
+      "trigger": {
+        "buttonLabel": "Create New",
+        "buttonAriaLabel": "Create new entity or integration point",
+        "menuTitle": "What would you like to create?",
+        "disabledTooltip": "Complete or cancel current wizard first"
+      },
+      "category": {
+        "entities": "Entities",
+        "integrationPoints": "Integration Points"
+      },
+      "entityType": {
+        "name_ADAPTER": "Adapter",
+        "name_BRIDGE": "Bridge",
+        "name_COMBINER": "Combiner",
+        "name_ASSET_MAPPER": "Asset Mapper",
+        "name_GROUP": "Group",
+        "name_TAG": "Tags",
+        "name_TOPIC_FILTER": "Topic Filters",
+        "name_DATA_MAPPING_NORTH": "Data Mapping (Northbound)",
+        "name_DATA_MAPPING_SOUTH": "Data Mapping (Southbound)",
+        "name_DATA_COMBINING": "Data Combining"
+      },
+      "progress": {
+        "ariaLabel": "Wizard progress",
+        "stepLabel": "Step {{current}} of {{total}}",
+        "progressAriaLabel": "{{percent}} percent complete",
+        "backLabel": "Back",
+        "nextLabel": "Next",
+        "completeLabel": "Complete",
+        "cancelLabel": "Cancel",
+        "cancelAriaLabel": "Cancel wizard and return to workspace",
+        "step_step_ADAPTER_0": "Review adapter preview",
+        "step_step_ADAPTER_1": "Select protocol type",
+        "step_step_ADAPTER_2": "Configure adapter settings",
+        "step_step_BRIDGE_0": "Review bridge preview",
+        "step_step_BRIDGE_1": "Configure bridge settings",
+        "step_step_COMBINER_0": "Select data sources",
+        "step_step_COMBINER_1": "Configure combining logic",
+        "step_step_ASSET_MAPPER_0": "Select data sources",
+        "step_step_ASSET_MAPPER_1": "Configure asset mappings",
+        "step_step_GROUP_0": "Select nodes to group",
+        "step_step_GROUP_1": "Configure group settings",
+        "step_step_TAG_0": "Select device node",
+        "step_step_TAG_1": "Configure tags",
+        "step_step_TOPIC_FILTER_0": "Select Edge Broker",
+        "step_step_TOPIC_FILTER_1": "Configure topic filters",
+        "step_step_DATA_MAPPING_NORTH_0": "Select adapter",
+        "step_step_DATA_MAPPING_NORTH_1": "Configure northbound mappings",
+        "step_step_DATA_MAPPING_SOUTH_0": "Select adapter",
+        "step_step_DATA_MAPPING_SOUTH_1": "Configure southbound mappings",
+        "step_step_DATA_COMBINING_0": "Select combiner",
+        "step_step_DATA_COMBINING_1": "Configure combining logic"
+      },
+      "configPanel": {
+        "ariaLabel": "Wizard configuration panel"
+      },
+      "adapter": {
+        "selectProtocol": "Select Protocol Type",
+        "selectProtocolDescription": "Choose the protocol adapter you want to create",
+        "showSearch": "Show Search & Filters",
+        "hideSearch": "Hide Search & Filters",
+        "configure": "Configure Adapter",
+        "back": "Back",
+        "submit": "Create Adapter"
+      },
+      "bridge": {
+        "configure": "Configure Bridge",
+        "back": "Back",
+        "submit": "Create Bridge"
+      },
+      "success": {
+        "adapterCreated": "{{name}} has been created successfully",
+        "bridgeCreated": "{{name}} has been created successfully"
+      },
+      "selection": {
+        "title": "Select Nodes",
+        "description_one": "Select at least {{count}} node to continue",
+        "description_other": "Select at least {{count}} nodes to continue",
+        "selected": "Selected",
+        "next": "Next",
+        "back": "Back",
+        "remove": "Remove from selection",
+        "clickToSelect": "Click nodes on the canvas to select them",
+        "minWarning_one": "Select at least {{count}} more node to continue",
+        "minWarning_other": "Select at least {{count}} more nodes to continue",
+        "maxExceeded_one": "Maximum of {{count}} node exceeded",
+        "maxExceeded_other": "Maximum of {{count}} nodes exceeded",
+        "maxReached": "Maximum reached",
+        "maxReachedDescription_one": "You can only select {{count}} node",
+        "maxReachedDescription_other": "You can only select {{count}} nodes",
+        "allowedTypes": "You can select:",
+        "selectMoreTooltip_one": "Select at least {{count}} node first",
+        "selectMoreTooltip_other": "Select at least {{count}} nodes first"
+      },
+      "combiner": {
+        "back": "Back to Selection",
+        "create": "Create Combiner",
+        "success": {
+          "title": "Combiner Created",
+          "message": "{{name}} has been created successfully"
+        },
+        "error": {
+          "title": "Creation Failed",
+          "message": "Failed to create combiner. Please try again."
+        }
+      },
+      "group": {
+        "alreadyGrouped": {
+          "title": "Node Already in Group",
+          "description": "{{nodeName}} is already in group \"{{groupName}}\" and cannot be selected for another group"
+        },
+        "unknownGroup": "Unknown Group",
+        "autoIncluded": "These nodes will also be included:",
+        "selectionCount_one": "{{count}} node selected",
+        "selectionCount_other": "{{count}} nodes selected",
+        "selectionCountWithAuto_one": "{{count}} node selected ({{autoCount}} auto-included)",
+        "selectionCountWithAuto_other": "{{count}} nodes selected ({{autoCount}} auto-included)",
+        "configTitle": "Configure Group",
+        "titleLabel": "Group Title",
+        "titlePlaceholder": "Enter group name",
+        "titleHelp": "Give your group a descriptive name",
+        "colorLabel": "Group Color",
+        "color": {
+          "blue": "Blue",
+          "green": "Green",
+          "red": "Red",
+          "purple": "Purple",
+          "orange": "Orange"
+        },
+        "back": "Back to Preview",
+        "create": "Create Group",
+        "success": {
+          "title": "Group Created",
+          "description": "Group \"{{title}}\" has been created successfully"
+        },
+        "error": {
+          "title": "Creation Failed",
+          "message": "Failed to create group. Please try again."
+        }
+      },
+      "assetMapper": {
+        "back": "Back to Selection",
+        "create": "Create Asset Mapper",
+        "requiresPulse": "Pulse Agent required",
+        "pulseAgentRequired": "Pulse Agent automatically included",
+        "comingSoon": "Coming soon",
+        "success": {
+          "title": "Asset Mapper Created",
+          "message": "{{name}} has been created successfully"
+        },
+        "error": {
+          "title": "Creation Failed",
+          "message": "Failed to create asset mapper. Please try again."
+        }
+      }
     },
     "topicWheel": {
       "control": {

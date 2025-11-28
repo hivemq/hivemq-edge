@@ -24,30 +24,34 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestAddToTopicTreeImpl {
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         InternalConfigurations.TOPIC_TREE_MAP_CREATION_THRESHOLD.set(1);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_subscriber_null() {
         final LocalTopicTree topicTree = new LocalTopicTree(new MetricsHolder(new MetricRegistry()));
-        topicTree.addTopic(null, new Topic("topic", QoS.AT_MOST_ONCE), (byte) 0, null);
+        assertThatThrownBy(() -> topicTree.addTopic(null, new Topic("topic", QoS.AT_MOST_ONCE), (byte) 0, null))
+                .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_topic_null() throws Exception {
         final LocalTopicTree topicTree = new LocalTopicTree(new MetricsHolder(new MetricRegistry()));
-        topicTree.addTopic("subscriber", null, (byte) 0, null);
+        assertThatThrownBy(() -> topicTree.addTopic("subscriber", null, (byte) 0, null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test

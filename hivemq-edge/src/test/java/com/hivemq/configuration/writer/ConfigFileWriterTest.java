@@ -21,7 +21,6 @@ import com.hivemq.configuration.entity.api.PreLoginNoticeEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
@@ -32,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class ConfigFileWriterTest extends AbstractConfigWriterTest {
@@ -61,6 +61,6 @@ public class ConfigFileWriterTest extends AbstractConfigWriterTest {
             System.err.println(originalXml);
             System.err.println(copiedFileContent);
         }
-        Assert.assertTrue("XML Content Should Match", diff.similar());
+        assertTrue(diff.similar(), "XML Content Should Match");
     }
 }

@@ -20,9 +20,9 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.entity.MqttTcpListener;
 import io.netty.channel.Channel;
 import io.netty.util.Attribute;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.LoggerFactory;
@@ -34,7 +34,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -64,8 +64,7 @@ public class EventLogTest {
     private Channel channel;
 
     private ClientConnection clientConnection;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
@@ -81,8 +80,7 @@ public class EventLogTest {
 
         logMessageBuffer = new StringBuffer();
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         LogbackCapturingAppender.Factory.cleanUp();
     }
@@ -223,6 +221,6 @@ public class EventLogTest {
             }
         }
 
-        assertTrue("The event message was not logged", isLogged);
+        assertTrue(isLogged, "The event message was not logged");
     }
 }

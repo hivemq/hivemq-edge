@@ -146,6 +146,7 @@ class S7ProtocolAdapterConfigTest {
                 3,
                 4,
                 5,
+                false,
                 new S7ToMqttConfig(
                         12,
                         13,

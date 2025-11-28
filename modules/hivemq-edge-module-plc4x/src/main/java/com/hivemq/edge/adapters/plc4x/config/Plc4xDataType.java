@@ -57,6 +57,7 @@ public class Plc4xDataType {
         LTIME_OF_DAY((short) 0x56, LocalTime.class),
         DATE_AND_TIME((short) 0x57, LocalDateTime.class),
         LDATE_AND_TIME((short) 0x58, LocalDateTime.class),
+        DATE_AND_LTIME((short) 0x1F, LocalDateTime.class),
         RAW_BYTE_ARRAY((short) 0x71, Byte.class);
 
 

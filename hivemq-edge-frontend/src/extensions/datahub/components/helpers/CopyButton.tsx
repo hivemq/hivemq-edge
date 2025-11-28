@@ -1,3 +1,4 @@
+import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import type { FC } from 'react'
 import { useEffect, useState } from 'react'
 import { Button, Icon, useToast } from '@chakra-ui/react'
@@ -38,18 +39,15 @@ export const CopyButton: FC<CopyButtonProps> = ({ content, size = 'xs', label, '
       () => {
         setHasCopied(true)
         toast({
+          ...DEFAULT_TOAST_OPTION,
           title: t('workspace.dryRun.report.success.details.json.copied'),
-          status: 'success',
-          duration: 2000,
-          isClosable: true,
         })
       },
       () => {
         toast({
+          ...DEFAULT_TOAST_OPTION,
           title: t('workspace.dryRun.report.success.details.json.failed'),
           status: 'error',
-          duration: 2000,
-          isClosable: true,
         })
       }
     )

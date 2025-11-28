@@ -77,6 +77,8 @@ describe('MappingTargetWidget', () => {
   })
 
   it('should render properly when not found', () => {
+    cy.intercept('/api/v1/management/combiners', { statusCode: 202, log: false })
+
     cy.mountWithProviders(generateMappingWidgetWrapper(MOCK_PULSE_ASSET_MAPPED_UNIQUE.mapping.mappingId))
 
     cy.getByTestId('root_mapping_mappingId').within(() => {

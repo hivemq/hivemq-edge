@@ -16,12 +16,12 @@
 package com.hivemq.metrics.gauges;
 
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 /**
@@ -33,8 +33,7 @@ public class RetainedMessagesGaugeTest {
     RetainedMessagePersistence retainedMessagePersistence;
 
     private RetainedMessagesGauge retainedMessagesGauge;
-
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
 

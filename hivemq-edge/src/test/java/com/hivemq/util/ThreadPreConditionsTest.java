@@ -17,20 +17,19 @@ package com.hivemq.util;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hivemq.util.ThreadPreConditions.ThreadPreConditionException;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author Lukas Brandl
  */
 public class ThreadPreConditionsTest {
-
-    @After
+    @AfterEach
     public void tearDown() {
         ThreadPreConditions.disable();
     }

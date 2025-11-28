@@ -21,8 +21,8 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.puback.PUBACK;
 import com.hivemq.mqtt.message.reason.Mqtt5PubAckReasonCode;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Waldemar Ruck
@@ -31,8 +31,7 @@ import org.junit.Test;
 public class Mqtt5PubackEncoderTest extends AbstractMqtt5EncoderTest {
 
     private final Mqtt5PubAckReasonCode reasonCode = Mqtt5PubAckReasonCode.SUCCESS;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         testMessageEncoder.getSecurityConfigurationService().setAllowRequestProblemInformation(true);

@@ -20,6 +20,7 @@ declare global {
           wrapper?: React.JSXElementConstructor<{ children: React.ReactNode }>
         }
       ): Cypress.Chainable<MountReturn>
+      checkI18nKeys(): Chainable<void>
     }
   }
 }

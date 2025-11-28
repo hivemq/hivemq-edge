@@ -31,17 +31,17 @@ import com.hivemq.persistence.clientsession.ClientSession;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import com.hivemq.persistence.clientsession.SharedSubscriptionService;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Set;
 
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.hasItems;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -60,8 +60,7 @@ public class TopicTreeStartupTest {
 
     private LocalTopicTree topicTree;
     private TopicTreeStartup topicTreeStartup;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
@@ -90,10 +89,10 @@ public class TopicTreeStartupTest {
         final Set<SubscriberWithIdentifiers> subscribersForTopic2 = topicTree.findTopicSubscribers("topic2").getSubscribers();
         final Set<SubscriberWithIdentifiers> subscribersForTopic3 = topicTree.findTopicSubscribers("topic3").getSubscribers();
 
-        assertThat(subscribersForTopic1, hasItems(new SubscriberWithIdentifiers("client1", 1, (byte) 0, null, ImmutableList.of(), null),
-                new SubscriberWithIdentifiers("client2", 1, (byte) 0, null, ImmutableList.of(), null)));
-        assertThat(subscribersForTopic2, hasItems(new SubscriberWithIdentifiers("client2", 2, SubscriptionFlag.getDefaultFlags(false, false, false), null, ImmutableList.of(), null)));
-        assertThat(subscribersForTopic3, hasItems(new SubscriberWithIdentifiers("client3", 0, SubscriptionFlag.getDefaultFlags(false, true, true), null, ImmutableList.of(), null)));
+        assertThat(subscribersForTopic1).contains(new SubscriberWithIdentifiers("client1", 1, (byte) 0, null, ImmutableList.of(), null),
+                new SubscriberWithIdentifiers("client2", 1, (byte) 0, null, ImmutableList.of(), null));
+        assertThat(subscribersForTopic2).contains(new SubscriberWithIdentifiers("client2", 2, SubscriptionFlag.getDefaultFlags(false, false, false), null, ImmutableList.of(), null));
+        assertThat(subscribersForTopic3).contains(new SubscriberWithIdentifiers("client3", 0, SubscriptionFlag.getDefaultFlags(false, true, true), null, ImmutableList.of(), null));
     }
 
     @Test

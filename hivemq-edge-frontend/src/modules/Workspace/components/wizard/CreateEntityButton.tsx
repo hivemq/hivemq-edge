@@ -1,0 +1,156 @@
+import type { FC } from 'react'
+import { ChevronDownIcon } from '@chakra-ui/icons'
+import {
+  Button,
+  HStack,
+  Icon,
+  Menu,
+  MenuButton,
+  MenuDivider,
+  MenuGroup,
+  MenuItem,
+  MenuList,
+  Portal,
+  Text,
+} from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
+import { LuPlus } from 'react-icons/lu'
+
+import { Capability } from '@/api/__generated__'
+import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability'
+import { useWizardActions, useWizardState } from '@/modules/Workspace/hooks/useWizardStore'
+import type { WizardType } from './types'
+import { EntityType } from './types'
+import { getEntityWizardTypes, getIntegrationWizardTypes, getWizardIcon } from './utils/wizardMetadata'
+
+/**
+ * Button that opens a menu to start different wizard types
+ */
+const CreateEntityButton: FC = () => {
+  const { t } = useTranslation()
+  const { isActive } = useWizardState()
+  const { startWizard } = useWizardActions()
+  const { data: hasPulse } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
+
+  const entityTypes = getEntityWizardTypes()
+  const integrationTypes = getIntegrationWizardTypes()
+
+  // Track which wizards are implemented
+  // Note: Combiner, Asset Mapper enabled after Subtask 9 (Selection System)
+  // GROUP enabled after Subtask 3 (Ghost Group Factory) - partially functional
+  const implementedWizards = new Set(['ADAPTER', 'BRIDGE', 'COMBINER', 'ASSET_MAPPER', 'GROUP'])
+
+  const handleSelectWizard = (type: WizardType) => {
+    startWizard(type)
+  }
+
+  const isWizardImplemented = (type: WizardType): boolean => {
+    return implementedWizards.has(type)
+  }
+
+  const isWizardAvailable = (type: WizardType): boolean => {
+    // Asset Mapper requires Pulse capability
+    if (type === EntityType.ASSET_MAPPER && !hasPulse) {
+      return false
+    }
+    return isWizardImplemented(type)
+  }
+
+  return (
+    <Menu placement="bottom-start">
+      <MenuButton
+        as={Button}
+        variant="outline"
+        size="sm"
+        leftIcon={<Icon as={LuPlus} />}
+        rightIcon={<ChevronDownIcon />}
+        aria-label={t('workspace.wizard.trigger.buttonAriaLabel')}
+        data-testid="create-entity-button"
+        isDisabled={isActive}
+        title={isActive ? t('workspace.wizard.trigger.disabledTooltip') : undefined}
+      >
+        {t('workspace.wizard.trigger.buttonLabel')}
+      </MenuButton>
+
+      <Portal>
+        <MenuList maxH="400px" overflowY="auto" role="menu" aria-label={t('workspace.wizard.trigger.menuTitle')}>
+          <MenuGroup title={t('workspace.wizard.category.entities')}>
+            {entityTypes.map((type) => {
+              const IconComponent = getWizardIcon(type)
+              const isAvailable = isWizardAvailable(type)
+              const isImplemented = isWizardImplemented(type)
+              const isPulseRequired = type === EntityType.ASSET_MAPPER && !hasPulse
+
+              return (
+                <MenuItem
+                  key={type}
+                  icon={<Icon as={IconComponent} boxSize={4} />}
+                  onClick={() => handleSelectWizard(type)}
+                  data-testid={`wizard-option-${type}`}
+                  isDisabled={!isAvailable}
+                  opacity={isAvailable ? 1 : 0.5}
+                  cursor={isAvailable ? 'pointer' : 'not-allowed'}
+                  title={
+                    isPulseRequired
+                      ? t('workspace.wizard.assetMapper.requiresPulse')
+                      : !isImplemented
+                        ? t('workspace.wizard.assetMapper.comingSoon')
+                        : undefined
+                  }
+                >
+                  <HStack spacing={2} align="center">
+                    <Text>{t('workspace.wizard.entityType.name', { context: type })}</Text>
+                    {isPulseRequired && (
+                      <Text fontSize="xs" color="gray.500">
+                        {t('workspace.wizard.assetMapper.requiresPulse')}
+                      </Text>
+                    )}
+                    {!isImplemented && !isPulseRequired && (
+                      <Text fontSize="xs" color="gray.500">
+                        {t('workspace.wizard.assetMapper.comingSoon')}
+                      </Text>
+                    )}
+                  </HStack>
+                </MenuItem>
+              )
+            })}
+          </MenuGroup>
+
+          <MenuDivider />
+
+          <MenuGroup title={t('workspace.wizard.category.integrationPoints')}>
+            {integrationTypes.map((type) => {
+              const IconComponent = getWizardIcon(type)
+              const isAvailable = isWizardAvailable(type)
+              const isImplemented = isWizardImplemented(type)
+
+              return (
+                <MenuItem
+                  key={type}
+                  icon={<Icon as={IconComponent} boxSize={4} />}
+                  onClick={() => handleSelectWizard(type)}
+                  data-testid={`wizard-option-${type}`}
+                  isDisabled={!isAvailable}
+                  opacity={isAvailable ? 1 : 0.5}
+                  cursor={isAvailable ? 'pointer' : 'not-allowed'}
+                  title={!isImplemented ? 'Coming soon' : undefined}
+                >
+                  <HStack spacing={2} align="center">
+                    <Text>{t('workspace.wizard.entityType.name', { context: type })}</Text>
+                    {!isImplemented && (
+                      <Text fontSize="xs" color="gray.500">
+                        {t('workspace.wizard.assetMapper.comingSoon')}
+                      </Text>
+                    )}
+                  </HStack>
+                </MenuItem>
+              )
+            })}
+          </MenuGroup>
+        </MenuList>
+      </Portal>
+    </Menu>
+  )
+}
+
+export default CreateEntityButton

@@ -32,6 +32,7 @@ describe('Workspace Layout - Presets', () => {
       statusCode: 202,
       log: false,
     })
+    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
 
     cy.intercept('GET', '/api/v1/management/protocol-adapters/adapters/**/tags', (req) => {
       const pathname = new URL(req.url).pathname
@@ -59,7 +60,7 @@ describe('Workspace Layout - Presets', () => {
     workspacePage.layoutControls.presetsMenu.emptyMessage.should('be.visible')
   })
 
-  it('should open save preset modal', () => {
+  it('should open save preset modal', { tags: ['@flaky'] }, () => {
     // Expand toolbar to access layout controls
     workspacePage.canvasToolbar.expandButton.click()
 
@@ -163,9 +164,9 @@ describe('Workspace Layout - Presets', () => {
     workspacePage.layoutControls.presetsButton.click()
 
     // Click delete button for the preset
-    cy.get('[role="menu"]').within(() => {
-      cy.get('button[aria-label*="Delete"]').first().click()
-    })
+    workspacePage.layoutControls.presetsMenu.presetItem('Delete Test').should('be.visible')
+
+    workspacePage.layoutControls.presetsMenu.presetItemDelete('Delete Test').click()
 
     // Preset should be removed
     workspacePage.layoutControls.presetsButton.click()

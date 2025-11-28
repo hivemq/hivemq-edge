@@ -1,3 +1,5 @@
+import { mockEdgeEvent } from '@/api/hooks/useEvents/__handlers__'
+import { MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
 import { drop, factory, primaryKey } from '@mswjs/data'
 
 import { cy_interceptCoreE2E, cy_interceptWithMockDB } from 'cypress/utils/intercept.utils.ts'
@@ -158,6 +160,9 @@ describe('Bridges', () => {
       cy.intercept('/api/v1/management/topic-filters', {
         items: [MOCK_TOPIC_FILTER],
       })
+      cy.intercept('/api/v1/management/events?*', { items: [...mockEdgeEvent(150)] })
+      cy.intercept('/api/v1/metrics', { items: MOCK_METRICS })
+      cy.intercept('/api/v1/metrics/**/*', { statusCode: 202, log: false })
     })
 
     it('should create a bridge also in the Workspace', () => {

@@ -28,15 +28,18 @@ import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.message.pubrec.PUBREC;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestMqttDecoder;
 
 import java.nio.channels.ClosedChannelException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -52,8 +55,7 @@ public class FlowControlHandlerTest {
 
     @Mock
     EventLog eventLog;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         MockitoAnnotations.initMocks(this);
@@ -88,7 +90,7 @@ public class FlowControlHandlerTest {
 
     }
 
-    @Test(expected = ClosedChannelException.class)
+    @Test
     public void test_sending_publish_after_disconnect() {
 
         final EmbeddedChannel channel = new EmbeddedChannel(TestMqttDecoder.create(), flowControlHandler);
@@ -100,9 +102,11 @@ public class FlowControlHandlerTest {
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientReceiveMaximum(10);
 
-        for (int i = 0; i < 12; i++) {
-            channel.writeInbound(builder.build());
-        }
+        assertThatThrownBy(() -> {
+            for (int i = 0; i < 12; i++) {
+                channel.writeInbound(builder.build());
+            }
+        }).isInstanceOf(ClosedChannelException.class);
 
     }
 

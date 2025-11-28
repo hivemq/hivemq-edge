@@ -23,7 +23,7 @@ describe('MappingDrawer', () => {
       ],
     }).as('getTopicFilters')
 
-    cy.intercept(`/api/v1/management/protocol-adapters/adapters/${mockAdapterId}/tags`, {
+    cy.intercept('GET', `/api/v1/management/protocol-adapters/adapters/${mockAdapterId}/tags`, {
       items: MOCK_DEVICE_TAGS(mockAdapterId, MockAdapterType.OPC_UA),
     }).as('getTags')
 
@@ -37,6 +37,8 @@ describe('MappingDrawer', () => {
 
     cy.intercept('/api/v1/management/sampling/topic/**', { items: [] })
     cy.intercept('/api/v1/management/sampling/schema/*', GENERATE_DATA_MODELS(true, 'my-topic'))
+
+    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/*/*', { statusCode: 203, log: false })
   })
 
   it('should render properly', () => {
@@ -94,8 +96,8 @@ describe('MappingDrawer', () => {
 
     cy.mountWithProviders(
       <MappingDrawer
-        adapterId="testid"
-        adapterType="my-type"
+        adapterId={mockAdapterId}
+        adapterType={MockAdapterType.OPC_UA}
         onClose={cy.stub()}
         onSubmit={cy.stub()}
         onChange={cy.stub()}

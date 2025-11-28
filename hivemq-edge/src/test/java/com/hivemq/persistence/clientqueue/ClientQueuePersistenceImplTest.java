@@ -42,9 +42,10 @@ import com.hivemq.persistence.payload.PublishPayloadPersistence;
 
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestSingleWriterFactory;
@@ -53,7 +54,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -92,8 +93,7 @@ public class ClientQueuePersistenceImplTest {
     private SingleWriterService singleWriterService;
     private final @NotNull InternalConfigurationService
             internalConfigurationService = new InternalConfigurationServiceImpl();
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         closeableMock = MockitoAnnotations.openMocks(this);
         internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "" + bucketSize);
@@ -105,15 +105,15 @@ public class ClientQueuePersistenceImplTest {
                         clientSessionLocalPersistence, messageDroppedService, topicTree, connectionPersistence,
                         ()->publishPollService, mock(MessageForwarder.class));
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         clientQueuePersistence.closeDB();
         singleWriterService.stop();
         closeableMock.close();
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_add() throws ExecutionException, InterruptedException {
         clientQueuePersistence.add("client", false, createPublish(1, QoS.AT_LEAST_ONCE, "topic"), false, 1000L).get();
         verify(localPersistence).add(
@@ -122,7 +122,8 @@ public class ClientQueuePersistenceImplTest {
         verify(messageDroppedService, never()).queueFull("client", "topic", 1);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_add_shared() throws ExecutionException, InterruptedException {
         clientQueuePersistence.add("name/topic", true, createPublish(1, QoS.AT_LEAST_ONCE, "topic"), false, 1000L).get();
         verify(localPersistence).add(
@@ -130,7 +131,8 @@ public class ClientQueuePersistenceImplTest {
                 anyBoolean(), anyInt());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_publish_avaliable() {
 
         final EmbeddedChannel channel = new EmbeddedChannel();
@@ -147,7 +149,8 @@ public class ClientQueuePersistenceImplTest {
         verify(publishPollService, timeout(2000)).pollNewMessages("client", channel);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_publish_avaliable_channel_inactive() {
 
         final EmbeddedChannel channel = new EmbeddedChannel();
@@ -165,7 +168,8 @@ public class ClientQueuePersistenceImplTest {
         verify(publishPollService, never()).pollNewMessages("client", channel);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_publish_avaliable_inflight_messages_not_sent() {
 
         final EmbeddedChannel channel = new EmbeddedChannel();
@@ -181,7 +185,8 @@ public class ClientQueuePersistenceImplTest {
         verify(publishPollService, never()).pollNewMessages("client", channel);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_publish_avaliable_inflight_messages_sending() {
 
         final EmbeddedChannel channel = new EmbeddedChannel();
@@ -198,7 +203,8 @@ public class ClientQueuePersistenceImplTest {
         verify(publishPollService, never()).pollNewMessages("client", channel);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_publish_avaliable_channel_null() {
 
         when(clientSessionLocalPersistence.getSession("client")).thenReturn(new ClientSession(true, 1000L));
@@ -207,14 +213,16 @@ public class ClientQueuePersistenceImplTest {
         verify(publishPollService, never()).pollNewMessages(eq("client"), any(Channel.class));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_publish_avaliable_not_connected() {
         when(clientSessionLocalPersistence.getSession("client")).thenReturn(new ClientSession(false, 1000L));
         clientQueuePersistence.publishAvailable("client");
         verify(publishPollService, never()).pollNewMessages(eq("client"), any(Channel.class));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_new() throws ExecutionException, InterruptedException {
 
         when(localPersistence.readNew(
@@ -229,7 +237,8 @@ public class ClientQueuePersistenceImplTest {
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_clear() throws ExecutionException, InterruptedException {
 
         clientQueuePersistence.clear("client", false).get();
@@ -237,7 +246,8 @@ public class ClientQueuePersistenceImplTest {
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_read_inflight() throws ExecutionException, InterruptedException {
         when(localPersistence.readInflight(anyString(), anyBoolean(), anyInt(), anyLong(), anyInt())).thenReturn(
                 ImmutableList.of(createPublish(1, QoS.AT_LEAST_ONCE, "topic")));
@@ -246,7 +256,8 @@ public class ClientQueuePersistenceImplTest {
         verify(localPersistence).readInflight(eq("client"), eq(false), eq(11), eq(10L), anyInt());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_clean_up() throws ExecutionException, InterruptedException {
 
         when(localPersistence.cleanUp(eq(0))).thenReturn(ImmutableSet.of("group/topic"));
@@ -257,19 +268,22 @@ public class ClientQueuePersistenceImplTest {
         verify(topicTree).getSharedSubscriber(anyString(), anyString());
     }
 
-    @Test(timeout = 50000)
+    @Test
+    @Timeout(5)
     public void test_shared_publish_available() {
         clientQueuePersistence.sharedPublishAvailable("group/topic");
         verify(publishPollService).pollSharedPublishes("group/topic");
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_remove_all_qos0() throws ExecutionException, InterruptedException {
         clientQueuePersistence.removeAllQos0Messages("client", false).get();
         verify(localPersistence).removeAllQos0Messages(eq("client"), eq(false), anyInt());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_batched_add_no_new_message() throws ExecutionException, InterruptedException {
         when(localPersistence.size(eq("client"), anyBoolean(), anyInt())).thenReturn(1);
         final ImmutableList<PUBLISH> publishes = ImmutableList.of(
@@ -284,7 +298,8 @@ public class ClientQueuePersistenceImplTest {
         verify(messageDroppedService, never()).queueFull("client", "topic", 1);
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_batched_add_new_message() throws ExecutionException, InterruptedException {
         when(localPersistence.size(eq("client"), anyBoolean(), anyInt())).thenReturn(0);
         final ImmutableList<PUBLISH> publishes = ImmutableList.of(

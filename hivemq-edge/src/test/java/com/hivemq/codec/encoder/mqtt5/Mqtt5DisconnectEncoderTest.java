@@ -23,8 +23,8 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
@@ -35,8 +35,7 @@ import static com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode.*;
  * @author Florian Limpöck
  */
 public class Mqtt5DisconnectEncoderTest extends AbstractMqtt5EncoderTest {
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         testMessageEncoder.getSecurityConfigurationService().setAllowRequestProblemInformation(true);

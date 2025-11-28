@@ -158,7 +158,7 @@ const registerProtobufLanguage = (monaco: MonacoInstance) => {
         // Numbers
         [/\d+/, 'number'],
         // Comments
-        [/\/\/.*$/, 'comment'],
+        [/\/\/[^\r\n]*/, 'comment'],
         [/\/\*/, 'comment', '@comment'],
       ],
       string: [

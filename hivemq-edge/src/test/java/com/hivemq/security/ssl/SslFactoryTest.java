@@ -28,9 +28,12 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.LoggerFactory;
@@ -46,11 +49,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 public class SslFactoryTest {
@@ -71,8 +74,7 @@ public class SslFactoryTest {
     private @NotNull LogbackCapturingAppender logCapture;
 
     private @NotNull AutoCloseable openMocks;
-
-    @Before
+    @BeforeEach
     public void before() {
         openMocks = MockitoAnnotations.openMocks(this);
 
@@ -86,8 +88,7 @@ public class SslFactoryTest {
 
         testKeyStoreGenerator = new TestKeyStoreGenerator();
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         openMocks.close();
         LogbackCapturingAppender.Factory.cleanUp();
@@ -123,8 +124,7 @@ public class SslFactoryTest {
         assertFalse(sslHandler.engine().getUseClientMode());
     }
 
-
-    @Test(expected = SslException.class)
+    @Test
     public void test_invalid_keystore() {
 
 
@@ -145,10 +145,11 @@ public class SslFactoryTest {
 
         //Only check if the exception is really thrown and not caught somewhere by accident
         //noinspection unused
-        final SslContext sslContext = sslFactory.getSslContext(tls);
+        assertThatThrownBy(() ->  sslFactory.getSslContext(tls))
+                .isInstanceOf(SslException.class);
     }
 
-    @Test(expected = SslException.class)
+    @Test
     public void test_invalid_trust_store() throws Exception {
         final File file = testKeyStoreGenerator.generateKeyStore("teststore", "JKS", "passwd1", "passwd2");
         final String keystorePath = file.getAbsolutePath();
@@ -170,7 +171,8 @@ public class SslFactoryTest {
 
         //Only check if the exception is really thrown and not caught somewhere by accident
         //noinspection unused
-        final SslContext sslContext = sslFactory.getSslContext(tls);
+        assertThatThrownBy(() -> sslFactory.getSslContext(tls))
+                .isInstanceOf(SslException.class);
     }
 
     @Test

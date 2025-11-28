@@ -16,26 +16,35 @@
 
 package com.hivemq.extensions.services.auth;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.auth.Authenticator;
 import com.hivemq.extension.sdk.api.auth.EnhancedAuthenticator;
 import com.hivemq.extension.sdk.api.auth.SimpleAuthenticator;
-import com.hivemq.extension.sdk.api.auth.parameter.*;
+import com.hivemq.extension.sdk.api.auth.parameter.AuthenticatorProviderInput;
+import com.hivemq.extension.sdk.api.auth.parameter.EnhancedAuthConnectInput;
+import com.hivemq.extension.sdk.api.auth.parameter.EnhancedAuthInput;
+import com.hivemq.extension.sdk.api.auth.parameter.EnhancedAuthOutput;
+import com.hivemq.extension.sdk.api.auth.parameter.SimpleAuthInput;
+import com.hivemq.extension.sdk.api.auth.parameter.SimpleAuthOutput;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthenticatorProvider;
 import com.hivemq.extension.sdk.api.services.auth.provider.EnhancedAuthenticatorProvider;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
 
+import java.io.File;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -43,8 +52,8 @@ import static org.mockito.Mockito.when;
 
 public class SecurityRegistryImplTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull AuthenticatorProviderInput input = mock(AuthenticatorProviderInput.class);
 
@@ -60,10 +69,9 @@ public class SecurityRegistryImplTest {
     private @NotNull EnhancedAuthenticatorProvider enhancedProvider2;
     private @NotNull EnhancedAuthenticator enhancedAuthenticator1;
     private @NotNull EnhancedAuthenticator enhancedAuthenticator2;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.getRoot()
+        try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
                 .toPath(), new Class[]{
                 TestProvider1.class, TestProvider2.class, TestSimpleAuthenticator.class, EnhancedTestProvider1.class,
                 EnhancedTestProvider2.class, TestEnhancedAuthenticator.class
@@ -101,7 +109,8 @@ public class SecurityRegistryImplTest {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_set_authenticator_provider() {
         securityRegistry.setAuthenticatorProvider(provider1);
 
@@ -112,7 +121,8 @@ public class SecurityRegistryImplTest {
         assertSame(authenticator1, registeredAuthenticators.values().iterator().next().getAuthenticator(input));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_set_second_authenticator_provider_from_same_classloader() {
         securityRegistry.setAuthenticatorProvider(provider1);
         Map<String, WrappedAuthenticatorProvider> registeredAuthenticators =
@@ -128,7 +138,8 @@ public class SecurityRegistryImplTest {
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_set_enhanced_authenticator_provider() {
         securityRegistry.setEnhancedAuthenticatorProvider(enhancedProvider1);
 
@@ -140,7 +151,8 @@ public class SecurityRegistryImplTest {
                 registeredAuthenticators.values().iterator().next().getEnhancedAuthenticator(input));
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_set_second_enhanced_authenticator_provider_from_same_classloader() {
         securityRegistry.setEnhancedAuthenticatorProvider(enhancedProvider1);
         Map<String, WrappedAuthenticatorProvider> registeredAuthenticators =
@@ -158,10 +170,12 @@ public class SecurityRegistryImplTest {
 
     }
 
-    @Test(timeout = 5000, expected = NullPointerException.class)
+    @Test
+    @Timeout(5)
     @SuppressWarnings("ConstantConditions")
     public void test_set_null_authenticator_provider() {
-        securityRegistry.setAuthenticatorProvider(null);
+        assertThatThrownBy(() -> securityRegistry.setAuthenticatorProvider(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     public static class TestProvider1 implements AuthenticatorProvider {

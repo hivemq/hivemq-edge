@@ -19,18 +19,17 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.core.spi.FilterReply;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NettyLogLevelModifierTest {
     private NettyLogLevelModifier nettyLogLevelModifier;
 
     private final String format = "Test-String";
     private Logger rootLogger;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         final LoggerContext context = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();

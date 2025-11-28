@@ -1,6 +1,6 @@
 # HiveMQ Edge Frontend - Testing Guidelines
 
-**Last Updated:** October 31, 2025
+**Last Updated:** November 12, 2025
 
 ---
 
@@ -17,6 +17,7 @@
 - ❌ Create completion documentation without test verification
 - ❌ Claim "tests should work" or make assumptions
 - ❌ Mark test-related work as done without green test results
+- ❌ Run every Cypress test unless instructed to do so
 
 **ALWAYS:**
 
@@ -25,6 +26,7 @@
 - ✅ See the actual pass/fail counts
 - ✅ Fix failures immediately
 - ✅ Include real test results in completion documentation
+- ✅ Run individual Cypress tests, using the --spec option
 
 ### Required Test Commands
 
@@ -102,12 +104,79 @@ Toolbar
 
 ## Table of Contents
 
-1. [Accessibility Testing](#accessibility-testing)
-2. [Component Testing Patterns](#component-testing-patterns)
-3. [Screenshot Documentation](#screenshot-documentation)
-4. [Test Naming Conventions](#test-naming-conventions)
-5. [Dynamic IDs and Partial Selectors](#dynamic-ids-and-partial-selectors)
+1. [Cypress Testing Guidelines](#cypress-testing-guidelines) ⚠️ **COMPREHENSIVE CYPRESS REFERENCE**
+2. [Accessibility Testing Patterns](#accessibility-testing-patterns)
+3. [Component Testing Patterns](#component-testing-patterns)
+4. [Selector Best Practices](#selector-best-practices)
+5. [Screenshot Documentation](#screenshot-documentation)
 6. [Page Object Linking](#page-object-linking)
+
+---
+
+## Cypress Testing Guidelines
+
+**⚠️ Comprehensive Cypress reference has been consolidated into a single document.**
+
+### 📖 Reference Document
+
+**All Cypress testing guidelines including critical rules, best practices, logging configuration, and debugging techniques are now in:**
+
+### 👉 **[CYPRESS_TESTING_GUIDELINES.md](./CYPRESS_TESTING_GUIDELINES.md)**
+
+This document covers:
+
+- **Critical Rules** (5 essential rules all tests must follow)
+- **Selector Strategy** (best practices for finding elements)
+- **Assertion Best Practices** (specific and reliable assertions)
+- **Test Organization** (templates and structure)
+- **Logging Configuration** (debugging setup - already configured!)
+- **Avoiding Flaky Tests** (common pitfalls and solutions)
+- **Test Naming Conventions** (clear, descriptive test names)
+- **Accessibility Testing** (mandatory patterns)
+- **Workspace-Specific Testing** (mock data, page objects)
+- **Quick Reference Commands** (copy-paste ready)
+
+**If you're writing Cypress tests, START with that document!**
+
+---
+
+### 📚 Additional Resources
+
+**Related testing documentation:**
+
+- **[CYPRESS_LOGGING_INDEX.md](./CYPRESS_LOGGING_INDEX.md)** - Master index for logging documentation (if you need detailed logging info)
+- **[WORKSPACE_TESTING_GUIDELINES.md](./WORKSPACE_TESTING_GUIDELINES.md)** - Workspace-specific mock data and patterns
+
+---
+
+### 🎯 Quick Links to Common Patterns
+
+**From CYPRESS_TESTING_GUIDELINES.md:**
+
+- [Critical Rules](./CYPRESS_TESTING_GUIDELINES.md#critical-rules-start-here) - Start here
+- [Selector Strategy](./CYPRESS_TESTING_GUIDELINES.md#selector-strategy--best-practices)
+- [Test Organization](./CYPRESS_TESTING_GUIDELINES.md#test-organization--structure)
+- [Logging Configuration](./CYPRESS_TESTING_GUIDELINES.md#cypress-logging-configuration)
+- [Common Testing Patterns](./CYPRESS_TESTING_GUIDELINES.md#working-with-menus-and-dropdowns)
+- [Accessibility Testing](./CYPRESS_TESTING_GUIDELINES.md#accessibility-testing)
+- [Workspace Testing](./CYPRESS_TESTING_GUIDELINES.md#workspace-specific-testing)
+
+---
+
+- https://github.com/archfz/cypress-terminal-report
+
+**Key Options:**
+
+- `printLogsToConsole`: `'always'` | `'onFail'` | `'never'`
+- `includeSuccessfulHookLogs`: Show/hide beforeEach/afterEach logs
+- `collectTypes`: Which log types to capture (default: all)
+
+**When to read docs:**
+
+- Need to filter specific log types
+- Want to customize log format
+- Need to integrate with CI tools
+- Want to save logs to files
 
 ---
 
@@ -147,6 +216,83 @@ cy.getByTestId('dialog-title').should('be.visible')
 **Available custom commands you MUST use:**
 
 - `cy.mountWithProviders()` - Mount React components with providers
+
+---
+
+## React Flow Component Testing
+
+### ✅ MANDATORY: Use ReactFlowTesting Wrapper for Components Using React Flow
+
+**CRITICAL:** Components that use `useReactFlow()` or depend on nodes/edges require special setup.
+
+#### The Problem
+
+Components using `useReactFlow().getNodes()` or `useReactFlow().getEdges()` need nodes/edges to be in React Flow's internal state, not just the workspace store.
+
+#### The Solution: ReactFlowTesting Wrapper
+
+**Location:** `src/__test-utils__/react-flow/ReactFlowTesting.tsx`
+
+**Example Pattern:**
+
+```typescript
+import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting'
+import type { Node } from '@xyflow/react'
+
+const mockNodes: Node[] = [
+  {
+    id: 'adapter-1',
+    type: 'ADAPTER_NODE',
+    position: { x: 100, y: 100 },
+    data: { id: 'adapter-1', label: 'My Adapter' },
+  },
+]
+
+const getWrapperWith = (initialNodes?: Node[]) => {
+  const Wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
+    return (
+      <ReactFlowTesting
+        config={{
+          initialState: {
+            nodes: initialNodes,
+            edges: [],
+          },
+        }}
+      >
+        {children}
+      </ReactFlowTesting>
+    )
+  }
+  return Wrapper
+}
+
+// In your test:
+cy.mountWithProviders(<MyComponent />, { wrapper: getWrapperWith(mockNodes) })
+```
+
+**What ReactFlowTesting Does:**
+
+1. Resets workspace store
+2. Calls `onAddNodes()` and `onAddEdges()` to properly add items
+3. Wraps in EdgeFlowProvider and ReactFlowProvider
+4. Ensures React Flow's `getNodes()`/`getEdges()` return the test data
+
+**When to Use:**
+
+- ✅ Component uses `useReactFlow()`
+- ✅ Component calls `getNodes()` or `getEdges()`
+- ✅ Component depends on workspace nodes/edges being in React Flow state
+
+**Real Example:** See `src/modules/Workspace/components/drawers/DevicePropertyDrawer.spec.cy.tsx`
+
+**⚠️ Known Limitation:**
+ReactFlowTesting uses `useEffect` to add nodes/edges, which is async. Components that call `getNodes()` immediately on mount will see an empty array initially, then re-render when nodes are added. If testing such components:
+
+1. Wait for workspace store to have nodes: `cy.wrap(null).should(() => expect(useWorkspaceStore.getState().nodes.length).to.be.greaterThan(0))`
+2. Wait for the specific DOM elements that depend on nodes to appear
+3. Use longer timeouts if needed
+4. Consider if the component can be tested differently (e.g., test props/events instead of node rendering)
+
 - `cy.injectAxe()` - Inject axe-core for accessibility testing
 - `cy.checkAccessibility()` - Run accessibility checks (DO NOT use `cy.checkA11y()` directly!)
 - `cy.getByTestId(id)` - Select elements by data-testid (DO NOT use `cy.get('[data-testid="..."]')`)
@@ -237,214 +383,678 @@ cy.checkAccessibility() // Always use our custom command
 
 ---
 
+## i18n Translation Key Testing
+
+### ✅ MANDATORY: Check for Missing Translation Keys During Development
+
+**CRITICAL REQUIREMENT:** During active development and testing phase, accessibility tests MUST include `cy.checkI18nKeys()` to detect missing translation keys.
+
+#### The Pragmatic Testing Strategy
+
+**Phase 1: Development & Testing (MANDATORY)**
+
+During development, ALL accessibility tests MUST include i18n key checking:
+
+```typescript
+it('should be accessible', () => {
+  cy.injectAxe()
+  cy.mountWithProviders(<YourComponent {...meaningfulProps} />)
+  cy.checkAccessibility()
+
+  // ✅ MANDATORY during development phase
+  cy.checkI18nKeys()
+})
+```
+
+**Why This Matters:**
+
+- Catches missing translation keys immediately during development
+- Prevents deploying components with untranslated text
+- Ensures all user-facing text is properly internationalized
+- Fails tests early when keys are missing, forcing immediate fixes
+
+**Phase 2: Post-Development (OPTIONAL)**
+
+After ALL tests pass and translation keys are fixed, you MAY remove `cy.checkI18nKeys()`:
+
+```typescript
+it('should be accessible', () => {
+  cy.injectAxe()
+  cy.mountWithProviders(<YourComponent {...meaningfulProps} />)
+  cy.checkAccessibility()
+
+  // Optional: Remove after all keys are verified present
+  // cy.checkI18nKeys()
+})
+```
+
+**Decision: Keep or Remove?**
+
+There are two valid approaches:
+
+**Option A: Remove (Current Recommendation)**
+
+- ✅ Tests run faster without i18n checks
+- ✅ Cleaner test code
+- ✅ i18n config already logs errors to console
+- ⚠️ Missing keys only caught during development phase
+
+**Option B: Keep Permanently (Regression Prevention)**
+
+- ✅ Continuous regression detection for missing keys
+- ✅ Catches accidental removal of translation keys
+- ✅ Same philosophy as permanent accessibility testing
+- ⚠️ Slightly slower test execution
+
+**Current Strategy:** Remove after verification, similar to how we handle other development-time checks. The i18n `missingKeyHandler` in production will still catch issues.
+
+#### Required Test Pattern
+
+```typescript
+it('should be accessible', () => {
+  cy.injectAxe()
+  cy.mountWithProviders(<YourComponent {...meaningfulProps} />)
+  cy.checkAccessibility()
+
+  // Check for missing i18n translation keys
+  cy.checkI18nKeys()
+})
+```
+
+#### What cy.checkI18nKeys() Does
+
+1. Reads `window.__i18nextMissingKeys` array populated by i18n config
+2. Fails the test if any missing keys are detected
+3. Shows exact missing keys in error message:
+
+   ```
+   ❌ Missing i18n translation keys detected:
+     - translation:workspace.wizard.group.configure
+     - translation:workspace.grouping.editor.contentManagement
+
+   Add these keys to src/locales/en/translation.json
+   ```
+
+#### How It Works
+
+**i18n Configuration** (`src/config/i18n.config.ts`):
+
+- Includes `missingKeyHandler` that stores missing keys in `window.__i18nextMissingKeys`
+- Logs errors to console for visibility
+- Works automatically in all environments
+
+**Cypress Command** (`cypress/support/commands/checkI18nKeys.ts`):
+
+- Custom command that reads the stored missing keys
+- Fails test if any keys are missing
+- Clears array after each check to prevent accumulation
+
+#### Fixing Missing Keys
+
+When test fails with missing keys:
+
+1. **Find the component** using the key (e.g., search codebase for `t('workspace.wizard.group.configure')`)
+2. **Check if key exists** in `src/locales/en/translation.json`
+3. **Add missing key** to appropriate section in translation.json:
+   ```json
+   {
+     "workspace": {
+       "wizard": {
+         "group": {
+           "configure": "Configure Group"
+         }
+       }
+     }
+   }
+   ```
+4. **Re-run test** to verify fix
+
+#### Best Practices
+
+1. **Use Proper i18n Keys** - Never use hardcoded strings in components:
+
+   ```tsx
+   // ❌ Wrong
+   <Heading>Configure Group</Heading>
+
+   // ✅ Correct
+   <Heading>{t('workspace.wizard.group.configure')}</Heading>
+   ```
+
+2. **Follow Key Naming Convention** - Use descriptive, hierarchical keys:
+
+   ```
+   workspace.wizard.group.configure  ✅ Clear hierarchy
+   workspace.wizard.group.title      ✅ Consistent pattern
+   workspace.configGroup             ❌ Not hierarchical
+   configureGroup                    ❌ No namespace
+   ```
+
+3. **Check Existing Keys** - Before adding new keys, search for similar ones:
+
+   ```bash
+   grep -r "configure" src/locales/en/translation.json
+   ```
+
+4. **Use i18next Context** - For variations, use context instead of multiple keys:
+
+   ```typescript
+   // ✅ Good - One key with context
+   t('workspace.device.type', { context: nodeType })
+
+   // ❌ Bad - Multiple hardcoded keys
+   if (nodeType === 'DEVICE_NODE') return 'Device'
+   if (nodeType === 'HOST_NODE') return 'Host'
+   ```
+
+#### TypeScript Support
+
+The `cy.checkI18nKeys()` command is properly typed in `src/types/cypress.d.ts`:
+
+```typescript
+interface Chainable {
+  checkI18nKeys(): Chainable<void>
+}
+```
+
+---
+
+## Accessibility Testing Patterns
+
+### Template for Accessibility Tests
+
+```typescript
+it('should be accessible', () => {
+  cy.injectAxe()
+
+  cy.mountWithProviders(<ComponentName />, { wrapper })
+
+  cy.checkAccessibility(undefined, {
+    rules: {
+      // Disable rules that are legitimately unsupported
+      'scrollable-region-focusable': { enabled: false },
+      'color-contrast': { enabled: false },
+    },
+  })
+})
+```
+
+### Critical Accessibility Rules (Don't Disable Without Reason)
+
+These rules must always pass:
+
+- ✅ `select-name` - Select elements MUST have accessible names
+- ✅ `button-name` - Buttons MUST have accessible names
+- ✅ `link-name` - Links MUST have accessible names
+- ✅ `form-field-multiple-labels` - Form fields shouldn't have multiple labels
+- ✅ `input-button-name` - Input buttons need accessible names
+
+**Example - Fix for Select without Name:**
+
+```typescript
+// ❌ Bad - Select has no accessible name
+<Select placeholder="Choose layout">
+
+// ✅ Good - Select has aria-label
+<Select
+  placeholder="Choose layout"
+  aria-label={t('workspace.autoLayout.selector.ariaLabel')}
+/>
+```
+
+---
+
 ## Component Testing Patterns
 
-### Basic Accessibility Test
+### Basic Component Test Structure
 
-```tsx
-describe('MyComponent', () => {
-  it('should render correctly', () => {
-    // ... rendering tests
+```typescript
+describe('ComponentName', () => {
+  beforeEach(() => {
+    cy.viewport(800, 600)
+
+    // Reset store before each test
+    useWorkspaceStore.getState().reset()
+  })
+
+  it('should render component', () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <EdgeFlowProvider>
+        <ReactFlowProvider>{children}</ReactFlowProvider>
+      </EdgeFlowProvider>
+    )
+
+    cy.mountWithProviders(<ComponentName />, { wrapper })
+
+    cy.getByTestId('component-name').should('be.visible')
   })
 
   it('should be accessible', () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <EdgeFlowProvider>
+        <ReactFlowProvider>{children}</ReactFlowProvider>
+      </EdgeFlowProvider>
+    )
+
     cy.injectAxe()
-    cy.mountWithProviders(<MyComponent title="Example" isOpen={true} />)
-    cy.checkAccessibility()
+    cy.mountWithProviders(<ComponentName />, { wrapper })
+
+    cy.checkAccessibility(undefined, {
+      rules: {
+        region: { enabled: false },
+        'color-contrast': { enabled: false },
+      },
+    })
   })
 })
 ```
 
-### Accessibility Test with Interactions
+### Testing Loading States
 
-Test accessibility during common user interactions:
+**Pattern:** `LoaderSpinner` always has `data-testid="loading-spinner"`
+
+```typescript
+// Wait for loading spinner to appear
+cy.getByTestId('loading-spinner').should('be.visible')
+
+// Wait for loading to finish
+cy.getByTestId('loading-spinner').should('not.exist')
+```
+
+### Testing Components with Drawer Context
+
+```typescript
+const mountComponent = () => {
+  const Wrapper = () => (
+    <Drawer isOpen={true} onClose={() => {}} placement="right" size="lg">
+      <DrawerOverlay />
+      <DrawerContent>
+        <YourComponent />
+      </DrawerContent>
+    </Drawer>
+  )
+  return cy.mountWithProviders(<Wrapper />)
+}
+```
+
+### 🚨 CRITICAL: Understanding Drawer/Modal Overlay Patterns in E2E Tests
+
+**Context:** When a drawer or modal is open, it overlays the main UI, making background elements non-interactive.
+
+#### The Pattern: Drawers Have Their Own Navigation Controls
+
+**NEVER use `{force: true}` to click buttons that are legitimately covered by overlays!**
+
+**Why This Matters:**
+
+When you see an error like:
+
+```
+`cy.click()` failed because this element is being covered by another element:
+  <footer class="chakra-modal__footer">...</footer>
+```
+
+This is **BY DESIGN** - the UI is telling you that users cannot click that button while the drawer/modal is open.
+
+#### How to Recognize This Pattern
+
+1. **Error mentions modal/drawer footer/overlay** - This indicates a drawer/modal is active
+2. **Background buttons are covered** - Progress bars, toolbars, etc. become non-interactive
+3. **Drawer/modal has its own controls** - Look for buttons INSIDE the drawer/modal
+
+#### Example: Group Wizard Configuration
+
+**❌ WRONG APPROACH:**
+
+```typescript
+// Trying to click progress bar back button while drawer is open
+wizardPage.progressBar.backButton.click({ force: true }) // ❌ Forces click on covered element
+```
+
+**✅ CORRECT APPROACH:**
+
+```typescript
+// Use the back button INSIDE the drawer footer
+wizardPage.groupConfig.backButton.click() // ✅ Clicks the drawer's own back button
+```
+
+#### How to Find the Correct Selector
+
+1. **Check the component source code:**
+
+   ```typescript
+   // In WizardGroupForm.tsx
+   <DrawerFooter borderTopWidth="1px">
+     <Button onClick={onBack} data-testid="wizard-group-form-back">
+       {t('workspace.wizard.group.back')}
+     </Button>
+   </DrawerFooter>
+   ```
+
+2. **Look for drawer-specific elements:**
+
+   - `<DrawerHeader>`, `<DrawerBody>`, `<DrawerFooter>`
+   - `<ModalHeader>`, `<ModalBody>`, `<ModalFooter>`
+   - These contain the controls you should use
+
+3. **Update page objects to use correct selectors:**
+
+   ```typescript
+   // ❌ Wrong - points to progress bar (covered by drawer)
+   get backButton() {
+     return cy.getByTestId('wizard-back-button')
+   }
+
+   // ✅ Correct - points to drawer footer button
+   get backButton() {
+     return cy.getByTestId('wizard-group-form-back')
+   }
+   ```
+
+#### Design Pattern Recognition
+
+**Standard Chakra UI Drawer/Modal Structure:**
 
 ```tsx
-it('should be accessible', () => {
-  cy.injectAxe()
-  cy.mountWithProviders(<MyModal isOpen={true} onClose={cy.stub()} />)
+<Drawer isOpen={true}>
+  <DrawerOverlay /> {/* This covers the background UI */}
+  <DrawerContent>
+    <DrawerCloseButton /> {/* Often triggers onClose/onBack */}
+    <DrawerHeader>Title</DrawerHeader>
+    <DrawerBody>Content</DrawerBody>
+    <DrawerFooter>
+      <Button onClick={onBack}>Back</Button> {/* Use THIS */}
+      <Button onClick={onSubmit}>Submit</Button>
+    </DrawerFooter>
+  </DrawerContent>
+</Drawer>
+```
 
-  // Test initial state
-  cy.checkAccessibility()
+**Key Indicators:**
 
-  // Test after interaction
-  cy.getByTestId('modal-button').click()
-  cy.checkAccessibility()
+- `DrawerOverlay` creates a semi-transparent layer that blocks interaction
+- Controls are self-contained within the drawer
+- Background UI (toolbars, sidebars) is intentionally non-interactive
 
-  // Test keyboard navigation
-  cy.get('body').type('{tab}')
-  cy.checkAccessibility()
+#### When You Should Investigate
+
+If you see:
+
+- `is being covered by another element` error
+- Reference to `modal__footer`, `drawer__footer`, `modal__overlay`
+- Background buttons not clickable
+
+**Steps to take:**
+
+1. ✅ Check if a drawer/modal is open in the UI
+2. ✅ Find the drawer/modal component in source code
+3. ✅ Look for navigation controls INSIDE the drawer/modal
+4. ✅ Update page object to use correct test IDs
+5. ❌ NEVER use `{force: true}` to bypass this - it masks design issues
+
+#### Real-World Example from Group Wizard
+
+**Scenario:** Testing back navigation from configuration step
+
+**Initial Error:**
+
+```
+CypressError: element is being covered by <footer class="chakra-modal__footer">
+```
+
+**Investigation Process:**
+
+1. Recognized "modal footer" indicates overlay pattern
+2. Checked `WizardGroupForm.tsx` source code
+3. Found `<DrawerFooter>` with back button: `data-testid="wizard-group-form-back"`
+4. Updated page object from `wizard-back-button` to `wizard-group-form-back`
+5. Test passed without `{force: true}`
+
+**Learning:** The error message itself provided the clue - "covered by footer" means look for controls in that footer, not elsewhere!
+
+### Testing Scrollable Content
+
+```typescript
+// Split scrollIntoView and assertion for ESLint compliance
+cy.contains('My Element').scrollIntoView()
+cy.contains('My Element').should('be.visible')
+```
+
+---
+
+## Selector Best Practices
+
+### NEVER Use CSS Classnames as Selectors
+
+**CRITICAL RULE: DO NOT use classnames like `.chakra-grid`, `.css-xyz123` in tests!**
+
+**Why classnames are forbidden:**
+
+- Implementation details that change with library updates
+- Generated classes like `.css-xyz123` are random/unstable
+- Break when switching CSS-in-JS libraries
+- Break when updating Chakra UI or other UI libraries
+
+**Priority order (best to worst):**
+
+1. **`data-testid`** - Best, explicit test identifier
+2. **`id`** - Good if stable and semantic
+3. **ARIA roles** - `[role="search"]`, `[role="list"]`, `[role="dialog"]`
+4. **ARIA labels** - `[aria-label="Close"]`, `[aria-labelledby="..."]`
+5. **Text content** - `cy.contains('Button Text')`
+6. **Semantic elements** - `button`, `input[type="text"]`
+
+**Examples:**
+
+```typescript
+// ✅ Use data-testid
+cy.getByTestId('loading-spinner')
+
+// ✅ Use id
+cy.get('#facet-search-input')
+
+// ✅ Use ARIA role
+cy.get('[role="search"]').should('be.visible')
+cy.get('[role="list"]').should('be.visible')
+
+// ✅ Use ARIA label
+cy.get('[aria-label="Close"]').click()
+
+// ✅ Use text content
+cy.contains('Submit').click()
+
+// ✅ Combine for specificity
+cy.get('[role="dialog"]').within(() => {
+  cy.contains('button', 'Save').click()
 })
 ```
 
-### Accessibility Test with Screenshot
+### Testing Layout/Structure (Don't Test CSS)
 
-Capture a visual reference for PR documentation:
-
-```tsx
-it('should be accessible', () => {
-  cy.injectAxe()
-  cy.mountWithProviders(<MyComponent {...representativeProps} />)
-
-  // Verify accessibility
-  cy.checkAccessibility()
-
-  // Capture screenshot for PR documentation
-  cy.screenshot('my-component-accessible-state', {
-    capture: 'fullPage',
-    overwrite: true,
-  })
+```typescript
+// ❌ WRONG - Testing CSS classes
+it('should show grid layout', () => {
+  cy.get('.chakra-grid').should('exist')
 })
+
+// ✅ CORRECT - Test the visible elements
+it('should show search panel and protocols side by side', () => {
+  cy.get('[role="search"]').should('be.visible')
+  cy.get('[role="list"]').should('be.visible')
+  cy.get('#facet-search-input').should('be.visible')
+})
+```
+
+---
+
+## Critical Testing Requirements
+
+### ✅ MANDATORY: All Mocks Must Be Typed
+
+**CRITICAL:** Every mock object in tests MUST have explicit TypeScript typing.
+
+```typescript
+// ❌ Wrong - Untyped Mock
+const mockData = {
+  id: '123',
+  name: 'Test',
+}
+
+// ✅ Correct - Typed Mock
+const mockData: MyDataType = {
+  id: '123',
+  name: 'Test',
+}
+```
+
+### ✅ MANDATORY: Use Enums, Not String Literals
+
+**CRITICAL:** Always use the correct enum types from the API, never string literals.
+
+```typescript
+// ❌ Wrong - String Literals
+const mockMapping = {
+  type: 'ADAPTER', // String literal
+}
+
+// ✅ Correct - Enum Types
+const mockMapping: DataCombining = {
+  type: EntityType.ADAPTER, // Enum
+}
+```
+
+### ✅ MANDATORY: No Arbitrary Waits
+
+**CRITICAL:** Never use `cy.wait()` with arbitrary time periods.
+
+```typescript
+// ❌ Wrong - Arbitrary Wait
+cy.wait(500)
+cy.getByTestId('data').should('be.visible')
+
+// ✅ Correct - Wait for Conditions
+cy.getByTestId('data').should('be.visible')
+```
+
+---
+
+## Waiting for CSS Animations Before Screenshots
+
+### Problem: Transparent or Incomplete Elements
+
+When taking screenshots of components with CSS animations, the screenshot may capture mid-animation.
+
+### ✅ Correct - Wait for Animation Completion
+
+```typescript
+it('should be accessible', { tags: ['@percy'] }, () => {
+  cy.injectAxe()
+  cy.mountWithProviders(<MyModal isOpen={true} />)
+
+  cy.getByTestId('modal').should('be.visible')
+  cy.checkAccessibility()
+  cy.percySnapshot('My Modal')
+
+  // ✅ Wait for opacity to reach 1 (animation complete)
+  cy.getByTestId('modal').should('have.css', 'opacity', '1')
+
+  // Now screenshot will show fully rendered modal
+  cy.screenshot('my-modal', { capture: 'viewport', overwrite: true })
+})
+```
+
+### Order of Operations
+
+```typescript
+// 1. Verify element visibility
+cy.getByTestId('modal').should('be.visible')
+
+// 2. Run accessibility checks
+cy.checkAccessibility()
+
+// 3. Take Percy snapshot
+cy.percySnapshot('My Modal')
+
+// 4. Wait for animation completion
+cy.getByTestId('modal').should('have.css', 'opacity', '1')
+
+// 5. Take Cypress screenshot (LAST)
+cy.screenshot('modal-state', { capture: 'viewport', overwrite: true })
 ```
 
 ---
 
 ## Screenshot Documentation
 
-### When to Capture Screenshots
+### Using Cypress Screenshots for PR Docs
 
-Screenshots in accessibility tests serve multiple purposes:
+```typescript
+// Basic screenshot
+cy.screenshot('my-component', {
+  capture: 'viewport',
+  overwrite: true,
+})
 
-1. **PR Documentation**: Visual reference for reviewers
-2. **Design Review**: Show component appearance to stakeholders
-3. **Regression Detection**: Baseline for visual testing
-4. **Accessibility Audit**: Document accessible states
-
-### Screenshot Best Practices
-
-```tsx
-it('should be accessible', () => {
-  cy.viewport(1280, 900) // Consistent viewport size
-  cy.injectAxe()
-
-  cy.mountWithProviders(<MyComponent {...meaningfulProps} />)
-
-  // Wait for animations/loading
-  cy.wait(500)
-
-  // Check accessibility first
-  cy.checkAccessibility()
-
-  // Then capture screenshot
-  cy.screenshot('component-name-description', {
-    capture: 'fullPage',
-    overwrite: true,
-  })
+// Fullpage screenshot
+cy.screenshot('my-component-full', {
+  capture: 'fullPage',
+  overwrite: true,
 })
 ```
 
-### Screenshot Naming Convention
+### Using Percy for Visual Regression
 
-Format: `{component-name}-{state-description}`
-
-Examples:
-
-- `duplicate-combiner-modal-with-mappings`
-- `combiner-mappings-list-empty-state`
-- `toolbar-multiple-selection`
+```typescript
+// Percy snapshot (for visual regression testing)
+cy.percySnapshot('Component Name')
+```
 
 ---
 
 ## Test Naming Conventions
 
-### Standard Test Names
+### Use Descriptive Test Names
 
-Use consistent, descriptive test names:
-
-✅ **Good Examples:**
-
-```tsx
-it('should render the modal with combiner information', () => {})
-it('should call onSubmit when form is submitted', () => {})
-it('should disable button when loading', () => {})
-it('should be accessible', () => {})
+```typescript
+// ✅ Good - Descriptive and specific
+it('should render layout selector with all algorithm options')
+it('should apply dagre vertical layout when button clicked')
+it('should save custom preset with unique name')
+it('should display error message when validation fails')
+it('should be accessible with proper aria labels')
 ```
 
-❌ **Bad Examples:**
+### Use "should" in Test Names
 
-```tsx
-it('works', () => {})
-it('test modal', () => {})
-it('check if accessible', () => {}) // Wrong name!
+```typescript
+// ✅ Preferred format
+it('should render the component')
+it('should handle user click')
+it('should display error message')
+it('should be accessible')
 ```
-
-### Accessibility Test Name
-
-**MUST BE:** `"should be accessible"`
-
-This exact naming ensures:
-
-- Easy identification in test reports
-- Consistent grep/search results
-- Team-wide understanding
-- Automated tooling compatibility
 
 ---
 
-## Complete Example
+## Page Object Linking
 
-Here's a complete component test file following all guidelines:
+### Workspace Page Object Usage
 
-```tsx
-/// <reference types="cypress" />
+```typescript
+import { loginPage, workspacePage } from 'cypress/pages'
 
-import MyModal from './MyModal'
+beforeEach(() => {
+  cy_interceptCoreE2E()
+  loginPage.visit('/app/workspace')
+  loginPage.loginButton.click()
+  workspacePage.navLink.click()
+})
 
-describe('MyModal', () => {
-  const mockProps = {
-    isOpen: true,
-    onClose: cy.stub(),
-    title: 'Example Modal',
-    items: [
-      { id: '1', name: 'Item 1' },
-      { id: '2', name: 'Item 2' },
-    ],
-  }
-
-  beforeEach(() => {
-    cy.viewport(1280, 900)
-  })
-
-  it('should render the modal with title and items', () => {
-    cy.mountWithProviders(<MyModal {...mockProps} />)
-
-    cy.getByTestId('modal-title').should('contain.text', 'Example Modal')
-    cy.getByTestId('modal-items').children().should('have.length', 2)
-  })
-
-  it('should call onClose when cancel button is clicked', () => {
-    const onClose = cy.stub().as('onClose')
-
-    cy.mountWithProviders(<MyModal {...mockProps} onClose={onClose} />)
-
-    cy.getByTestId('modal-button-cancel').click()
-    cy.get('@onClose').should('have.been.calledOnce')
-  })
-
-  it('should support keyboard navigation', () => {
-    cy.mountWithProviders(<MyModal {...mockProps} />)
-
-    cy.get('body').type('{esc}')
-    // Assert expected behavior
-  })
-
-  it('should be accessible', () => {
-    cy.injectAxe()
-    cy.mountWithProviders(<MyModal {...mockProps} />)
-
-    // Test initial accessible state
-    cy.checkAccessibility()
-
-    // Test accessibility after interaction
-    cy.getByTestId('modal-button').click()
-    cy.checkAccessibility()
-
-    // Optional: Capture screenshot for PR documentation
-    cy.screenshot('my-modal-accessible', {
-      capture: 'fullPage',
-      overwrite: true,
-    })
-  })
+it('should apply layout', () => {
+  workspacePage.canvasToolbar.expandButton.click()
+  workspacePage.layoutControls.algorithmSelector.select('DAGRE_TB')
+  workspacePage.layoutControls.applyButton.click()
+  workspacePage.edgeNode.should('be.visible')
 })
 ```
 
@@ -462,384 +1072,37 @@ When creating a new Cypress component test:
 - [ ] **Includes `"should be accessible"` test** ✅ MANDATORY
 - [ ] Accessibility test uses `cy.injectAxe()` before mount
 - [ ] Accessibility test uses representative props
+- [ ] **Accessibility test includes `cy.checkI18nKeys()` during development** ✅ MANDATORY (can be removed after verification)
 - [ ] **All mocks are properly typed** ✅ MANDATORY
 - [ ] **Uses correct enum types (not string literals)** ✅ MANDATORY
 - [ ] **No arbitrary waits (`cy.wait()` with numbers)** ✅ MANDATORY
-- [ ] Optional: Captures screenshot for PR documentation
+- [ ] No CSS classname selectors
 - [ ] All tests pass locally before committing
 
 ---
 
-## Critical Testing Requirements
+## Quick Test Command Reference
 
-### ✅ MANDATORY: All Mocks Must Be Typed
+```bash
+# Run specific component test
+pnpm cypress:run:component --spec "src/path/to/Component.spec.cy.tsx"
 
-**CRITICAL:** Every mock object in tests MUST have explicit TypeScript typing.
+# Run E2E tests matching pattern
+pnpm cypress:run:e2e --spec "cypress/e2e/feature/test-*.spec.cy.ts"
 
-#### ❌ Wrong - Untyped Mock
+# Run tests matching grep tag
+pnpm cypress:run:component -- --env grep="@accessibility"
 
-```tsx
-it('should render correctly', () => {
-  // BAD: No type annotation
-  const mockData = {
-    id: '123',
-    name: 'Test',
-  }
-
-  cy.mountWithProviders(<MyComponent data={mockData} />)
-})
+# Open Cypress UI (best for debugging)
+pnpm cypress:open:component
+pnpm cypress:open:e2e
 ```
-
-#### ✅ Correct - Typed Mock
-
-```tsx
-it('should render correctly', () => {
-  // GOOD: Explicit type annotation
-  const mockData: MyDataType = {
-    id: '123',
-    name: 'Test',
-  }
-
-  cy.mountWithProviders(<MyComponent data={mockData} />)
-})
-```
-
-**Why this matters:**
-
-- Catches type errors at compile time
-- Ensures mocks match actual data structures
-- Prevents runtime errors from mock data mismatches
-- Makes tests more maintainable when types change
 
 ---
 
-### ✅ MANDATORY: Use Enums, Not String Literals
-
-**CRITICAL:** Always use the correct enum types from the API, never string literals.
-
-#### ❌ Wrong - String Literals
-
-```tsx
-const mockMapping = {
-  id: 'mapping-1',
-  sources: {
-    primary: {
-      id: 'source-1',
-      type: 'ADAPTER', // ❌ Wrong! String literal
-    },
-  },
-}
-```
-
-#### ✅ Correct - Enum Types
-
-```tsx
-import { DataIdentifierReference } from '@/api/__generated__'
-
-const mockMapping: DataCombining = {
-  id: 'mapping-1',
-  sources: {
-    primary: {
-      id: 'source-1',
-      type: DataIdentifierReference.type.TAG, // ✅ Correct! Enum
-    },
-  },
-}
-```
-
-**Common enum types:**
-
-- `EntityType.ADAPTER`, `EntityType.BRIDGE`, `EntityType.EDGE_BROKER`, etc. (for combiner sources)
-- `DataIdentifierReference.type.TAG`, `DataIdentifierReference.type.TOPIC_FILTER`, `DataIdentifierReference.type.PULSE_ASSET` (for mapping sources)
-
-**Why this matters:**
-
-- Type safety - compiler catches invalid values
-- Refactoring - changes to enums update everywhere
-- Consistency - ensures test data matches production data
-- Documentation - makes valid values obvious
-
----
-
-### ✅ MANDATORY: No Arbitrary Waits
-
-**CRITICAL:** Never use `cy.wait()` with arbitrary time periods.
-
-#### ❌ Wrong - Arbitrary Wait
-
-```tsx
-it('should display data', () => {
-  cy.mountWithProviders(<MyComponent />)
-
-  cy.wait(500) // ❌ Wrong! Arbitrary wait
-  cy.getByTestId('data').should('be.visible')
-})
-```
-
-#### ✅ Correct - Wait for Conditions
-
-```tsx
-it('should display data', () => {
-  cy.mountWithProviders(<MyComponent />)
-
-  // GOOD: Wait for specific condition
-  cy.getByTestId('data').should('be.visible')
-
-  // GOOD: Wait for network request
-  cy.intercept('GET', '/api/data').as('getData')
-  cy.wait('@getData')
-
-  // GOOD: Wait for element state
-  cy.getByTestId('spinner').should('not.exist')
-  cy.getByTestId('content').should('be.visible')
-})
-```
-
-**Alternatives to arbitrary waits:**
-
-- `cy.get().should()` - Wait for element conditions
-- `cy.wait('@alias')` - Wait for intercepted network requests
-- `cy.should()` assertions - Automatically retry until condition met
-- Custom commands with built-in retrying
-
-**Why this matters:**
-
-- Flaky tests - arbitrary waits may be too short or too long
-- Slow tests - waiting longer than necessary
-- False positives - test passes during wait, fails after
-- Maintainability - magic numbers are unclear
-
-**ESLint will error:** `cypress/no-unnecessary-waiting`
-
----
-
-## Waiting for CSS Animations Before Screenshots
-
-### Problem: Transparent or Incomplete Elements in Screenshots
-
-When taking screenshots of components with CSS animations (modals, dialogs, tooltips), the screenshot may capture the element mid-animation, resulting in:
-
-- Partial transparency/opacity
-- Incomplete slide-in animations
-- Blurred or distorted elements
-- Unprofessional appearance in PR documentation
-
-#### ❌ Wrong - Taking Screenshot Immediately
-
-```tsx
-it('should be accessible', { tags: ['@percy'] }, () => {
-  cy.injectAxe()
-  cy.mountWithProviders(<MyModal isOpen={true} />)
-
-  cy.getByTestId('modal').should('be.visible')
-  cy.checkAccessibility()
-
-  // ❌ Bad: Screenshot may capture animation mid-flight
-  cy.screenshot('my-modal', { capture: 'viewport' })
-})
-```
-
-#### ❌ Also Wrong - Using Arbitrary Wait
-
-```tsx
-// ❌ Bad: Arbitrary wait triggers ESLint warning
-cy.wait(400) // cypress/no-unnecessary-waiting
-cy.screenshot('my-modal', { capture: 'viewport' })
-```
-
-#### ✅ Correct - Wait for Animation Completion via CSS Property
-
-```tsx
-it('should be accessible', { tags: ['@percy'] }, () => {
-  cy.injectAxe()
-  cy.mountWithProviders(<MyModal isOpen={true} />)
-
-  cy.getByTestId('modal').should('be.visible')
-  cy.checkAccessibility()
-  cy.percySnapshot('My Modal')
-
-  // ✅ Good: Wait for opacity to reach 1 (animation complete)
-  cy.getByTestId('modal').should('have.css', 'opacity', '1')
-
-  // Now screenshot will show fully rendered modal
-  cy.screenshot('my-modal', { capture: 'viewport', overwrite: true })
-})
-```
-
-### How It Works
-
-**Chakra UI Animations**: Components using `motionPreset` (like `"slideInBottom"`, `"scale"`, etc.) animate CSS properties including:
-
-- `opacity`: 0 → 1
-- `transform`: translateY/scale changes
-- `transition`: Smooth easing over ~200-400ms
-
-**Cypress Retry-ability**: The `.should('have.css', 'opacity', '1')` assertion:
-
-- Automatically retries until opacity reaches exactly `1`
-- Adapts to different system speeds
-- No arbitrary timing needed
-- Self-documenting code
-
-### Common CSS Properties to Check
-
-Depending on the animation type, check the appropriate property:
-
-```tsx
-// For fade-in animations
-cy.getByTestId('element').should('have.css', 'opacity', '1')
-
-// For slide animations (check transform is at final position)
-cy.getByTestId('element').should('have.css', 'transform', 'none')
-// or verify it's not "matrix(...)" which indicates ongoing transform
-
-// For visibility-based animations
-cy.getByTestId('element').should('be.visible')
-cy.getByTestId('element').should('not.have.class', 'animating')
-```
-
-### Real Example: Duplicate Combiner Modal
-
-From `cypress/e2e/workspace/duplicate-combiner.spec.cy.ts`:
-
-```typescript
-it('should be accessible', { tags: ['@percy'] }, () => {
-  cy.injectAxe()
-
-  // Create combiner and trigger duplicate modal
-  workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
-  workspacePage.toolbar.combine.click()
-
-  // Modal becomes visible
-  workspacePage.duplicateCombinerModal.modal.should('be.visible')
-
-  // Check accessibility
-  cy.checkAccessibility(undefined, {
-    rules: {
-      region: { enabled: false },
-      'color-contrast': { enabled: false },
-    },
-  })
-
-  // Percy snapshot (can handle animations)
-  cy.percySnapshot('Workspace - Duplicate Combiner Modal')
-
-  // ✅ Wait for modal slide-in animation to complete by checking opacity
-  workspacePage.duplicateCombinerModal.modal.should('have.css', 'opacity', '1')
-
-  // ✅ Screenshot for PR template (last command, after animation complete)
-  cy.screenshot('pr-screenshots/after-modal-empty-state', {
-    capture: 'viewport',
-    overwrite: true,
-  })
-})
-```
-
-### Best Practices for Screenshot Timing
-
-**1. Order of Operations:**
-
-```tsx
-// 1. Verify element visibility
-cy.getByTestId('modal').should('be.visible')
-
-// 2. Run accessibility checks (don't need fully rendered UI)
-cy.checkAccessibility()
-
-// 3. Take Percy snapshot (handles animations automatically)
-cy.percySnapshot('My Modal')
-
-// 4. Wait for animation completion
-cy.getByTestId('modal').should('have.css', 'opacity', '1')
-
-// 5. Take Cypress screenshot (LAST - needs fully rendered UI)
-cy.screenshot('modal-state', { capture: 'viewport', overwrite: true })
-```
-
-**2. Why Accessibility Checks Come Before Animation Wait:**
-
-- Accessibility checks test semantic structure, not visual appearance
-- No need to wait for full visual rendering
-- If accessibility fails, we don't waste time on screenshot
-- Screenshots are only taken if all previous checks pass
-
-**3. Screenshot Position:**
-Screenshots should **always be the last command** in a test because:
-
-- Only capture if all validations pass
-- Ensure fully rendered state
-- No wasted screenshots from failed tests
-- Clean test output
-
-### When to Use This Pattern
-
-Use CSS property checks before screenshots when:
-
-- ✅ Component uses Chakra UI `motionPreset`
-- ✅ Component has CSS transitions/animations
-- ✅ Taking screenshots for PR documentation
-- ✅ Visual appearance is critical (modals, tooltips, popovers)
-- ✅ Percy snapshots show transparency issues
-
-Don't use for:
-
-- ❌ Simple static components without animations
-- ❌ Tests that don't take screenshots
-- ❌ Components that are already fully rendered
-
-### Troubleshooting
-
-**Screenshot still looks transparent:**
-
-- Check if multiple elements animate (e.g., modal + overlay)
-- Verify the correct element selector
-- Inspect actual CSS in browser DevTools
-- Consider checking multiple properties (opacity + transform)
-
-**Animation takes too long:**
-
-- Default Cypress timeout is 4000ms - should be plenty
-- Check if animation is actually completing
-- Verify CSS transitions are defined correctly
-- Look for JavaScript animation conflicts
-
-### ESLint Compliance
-
-✅ **This pattern avoids ESLint warnings:**
-
-- No `cy.wait()` with numbers
-- Uses built-in Cypress retry-ability
-- Self-documenting assertions
-- Follows Cypress best practices
-
----
-
-## Checklist for New Component Tests
-
-### axe-core Integration
-
-The `cy.checkAccessibility()` command uses [axe-core](https://github.com/dequelabs/axe-core) to detect:
-
-- Missing ARIA labels
-- Insufficient color contrast
-- Invalid HTML structure
-- Keyboard navigation issues
-- Focus management problems
-- Screen reader compatibility
-
-### Custom Accessibility Checks
-
-For specific accessibility requirements:
-
-```tsx
-it('should be accessible', () => {
-  cy.injectAxe()
-  cy.mountWithProviders(<MyComponent />)
-
-  // Check all accessibility issues
-  cy.checkAccessibility()
-
-  // Or check specific rules
-  cy.checkAccessibility({
-    runOnly:
-```
+## Additional Resources
+
+- **Cypress Official Docs:** https://docs.cypress.io
+- **WAI-ARIA Patterns:** https://www.w3.org/WAI/ARIA/apg/patterns/
+- **Workspace Testing:** See `WORKSPACE_TESTING_GUIDELINES.md`
+- **User Documentation:** See `USER_DOCUMENTATION_GUIDELINE.md`

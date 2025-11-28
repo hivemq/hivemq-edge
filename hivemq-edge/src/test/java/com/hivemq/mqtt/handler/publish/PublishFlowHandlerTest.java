@@ -42,17 +42,29 @@ import com.hivemq.persistence.qos.IncomingMessageFlowPersistenceImpl;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestMessageUtil;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class PublishFlowHandlerTest {
@@ -74,8 +86,7 @@ public class PublishFlowHandlerTest {
     private OrderedTopicService orderedTopicService;
 
     private EmbeddedChannel channel;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES = 5;
@@ -91,8 +102,7 @@ public class PublishFlowHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId(CLIENT_ID);
     }
-
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES = 50;
     }
@@ -104,7 +114,7 @@ public class PublishFlowHandlerTest {
         final PUBLISH publish = createPublish(QoS.AT_MOST_ONCE);
         channel.writeInbound(publish);
 
-        assertEquals(true, channel.outboundMessages().isEmpty());
+        assertTrue(channel.outboundMessages().isEmpty());
     }
 
     @Test
@@ -113,7 +123,7 @@ public class PublishFlowHandlerTest {
         final PUBLISH publish = createPublish(QoS.AT_LEAST_ONCE);
         channel.writeInbound(publish);
 
-        assertEquals(true, channel.outboundMessages().isEmpty());
+        assertTrue(channel.outboundMessages().isEmpty());
     }
 
 
@@ -164,7 +174,7 @@ public class PublishFlowHandlerTest {
         channel.writeInbound(publish);
         channel.writeInbound(publish);
 
-        assertEquals(true, channel.outboundMessages().isEmpty());
+        assertTrue(channel.outboundMessages().isEmpty());
     }
 
     @Test
@@ -185,7 +195,7 @@ public class PublishFlowHandlerTest {
         channel.writeInbound(publish);
         channel.writeInbound(publish);
 
-        assertEquals(true, channel.outboundMessages().isEmpty());
+        assertTrue(channel.outboundMessages().isEmpty());
     }
 
     @Test
@@ -194,7 +204,7 @@ public class PublishFlowHandlerTest {
         final PUBLISH publish = createPublish(QoS.EXACTLY_ONCE);
         channel.writeInbound(publish);
 
-        assertEquals(true, channel.outboundMessages().isEmpty());
+        assertTrue(channel.outboundMessages().isEmpty());
     }
 
     @Test
@@ -283,7 +293,7 @@ public class PublishFlowHandlerTest {
         final PUBREL pubrel = new PUBREL(123);
         channel.writeInbound(pubrel);
 
-        assertEquals(false, channel.outboundMessages().isEmpty());
+        assertFalse(channel.outboundMessages().isEmpty());
 
         final PUBCOMP pubComp = channel.readOutbound();
 
@@ -304,7 +314,7 @@ public class PublishFlowHandlerTest {
         final PUBACK puback = new PUBACK(123);
         channel.writeOutbound(puback);
 
-        assertEquals(false, channel.outboundMessages().isEmpty());
+        assertFalse(channel.outboundMessages().isEmpty());
 
         final PUBACK pubackOut = channel.readOutbound();
 
@@ -338,7 +348,7 @@ public class PublishFlowHandlerTest {
         final PUBACK puback = new PUBACK(123);
         channel.writeInbound(puback);
 
-        assertEquals(true, channel.outboundMessages().isEmpty());
+        assertTrue(channel.outboundMessages().isEmpty());
     }
 
     @Test
@@ -349,7 +359,7 @@ public class PublishFlowHandlerTest {
         final PUBREC pubrec = new PUBREC(123);
         channel.writeInbound(pubrec);
 
-        assertEquals(false, channel.outboundMessages().isEmpty());
+        assertFalse(channel.outboundMessages().isEmpty());
 
         final PUBREL pubrel = channel.readOutbound();
 
@@ -365,7 +375,7 @@ public class PublishFlowHandlerTest {
         final PUBCOMP pubcomp = new PUBCOMP(123);
         channel.writeInbound(pubcomp);
 
-        assertEquals(true, channel.outboundMessages().isEmpty());
+        assertTrue(channel.outboundMessages().isEmpty());
     }
 
     @Test
@@ -379,7 +389,7 @@ public class PublishFlowHandlerTest {
                 .build();
         channel.writeOutbound(publish);
 
-        assertEquals(false, channel.outboundMessages().isEmpty());
+        assertFalse(channel.outboundMessages().isEmpty());
 
         final PUBLISH publishOut = channel.readOutbound();
 
@@ -402,7 +412,7 @@ public class PublishFlowHandlerTest {
 
         channel.writeOutbound(publish);
 
-        assertEquals(false, channel.outboundMessages().isEmpty());
+        assertFalse(channel.outboundMessages().isEmpty());
 
         final PUBLISH publishOut = channel.readOutbound();
 
@@ -426,7 +436,7 @@ public class PublishFlowHandlerTest {
 
         channel.writeOutbound(publishWithFuture);
 
-        assertEquals(false, channel.outboundMessages().isEmpty());
+        assertFalse(channel.outboundMessages().isEmpty());
 
         final PUBLISH publishOut = channel.readOutbound();
 
@@ -443,7 +453,7 @@ public class PublishFlowHandlerTest {
                 new PUBREL(1, Mqtt5PubRelReasonCode.SUCCESS, null, Mqtt5UserProperties.NO_USER_PROPERTIES);
         channel.writeOutbound(pubrel);
 
-        assertEquals(false, channel.outboundMessages().isEmpty());
+        assertFalse(channel.outboundMessages().isEmpty());
 
         final PUBREL pubrelOut = channel.readOutbound();
 
@@ -459,7 +469,7 @@ public class PublishFlowHandlerTest {
         final MessageWithID messageWithID = new PUBACK(1);
         channel.writeOutbound(messageWithID);
 
-        assertEquals(false, channel.outboundMessages().isEmpty());
+        assertFalse(channel.outboundMessages().isEmpty());
 
         final MessageWithID messageOut = channel.readOutbound();
 
@@ -469,7 +479,8 @@ public class PublishFlowHandlerTest {
 
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_qos1_release_next_message_on_next_puback() throws Exception {
 
         final PUBLISH publish = createPublish("topic", 1, QoS.AT_LEAST_ONCE);
@@ -495,7 +506,8 @@ public class PublishFlowHandlerTest {
         assertEquals(1, orderedTopicService.unacknowledgedMessages().size());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_qos1_release_next_message_on_dropped() throws Exception {
 
         InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES = 1;
@@ -521,7 +533,8 @@ public class PublishFlowHandlerTest {
     }
 
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_qos1_send_puback_queued_messages() throws Exception {
 
 
@@ -553,7 +566,8 @@ public class PublishFlowHandlerTest {
         assertEquals(0, orderedTopicService.unacknowledgedMessages().size());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_qos1_send_puback_queued_messages_multiple_pubacks() throws Exception {
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientReceiveMaximum(3);
@@ -605,7 +619,8 @@ public class PublishFlowHandlerTest {
         assertEquals(0, orderedTopicService.unacknowledgedMessages().size());
     }
 
-    @Test(timeout = 4_000)
+    @Test
+    @Timeout(5)
     public void test_remove_messages() throws Exception {
         InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES = 1;
 
@@ -642,7 +657,8 @@ public class PublishFlowHandlerTest {
         assertTrue(orderedTopicService.queue.isEmpty());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_qos2_release_next_message_on_next_pubcomp() throws Exception {
 
         InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES = 1;
@@ -670,7 +686,8 @@ public class PublishFlowHandlerTest {
         assertEquals(1, orderedTopicService.unacknowledgedMessages().size());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_qos2_release_next_message_on_failed_pubrec() throws Exception {
 
         InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES = 1;
@@ -706,7 +723,8 @@ public class PublishFlowHandlerTest {
         assertEquals(1, orderedTopicService.unacknowledgedMessages().size());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_qos1_return_publish_status_on_puback() throws Exception {
 
         final PUBLISH publish = createPublish("topic", 1, QoS.AT_LEAST_ONCE);
@@ -725,7 +743,8 @@ public class PublishFlowHandlerTest {
         assertEquals(PublishStatus.DELIVERED, future.get());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_qos2_return_publish_status_on_pubcomp() throws Exception {
 
         final PUBLISH publish = createPublish("topic", 1, QoS.EXACTLY_ONCE);
@@ -744,7 +763,8 @@ public class PublishFlowHandlerTest {
         assertEquals(PublishStatus.DELIVERED, future.get());
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void test_max_inflight_window() throws Exception {
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientReceiveMaximum(50);

@@ -21,8 +21,9 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.MockitoAnnotations;
 
 import java.util.*;
@@ -32,8 +33,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Christoph Schäbel
@@ -45,8 +47,7 @@ public class AsyncLocalChunkIteratorTest {
     private TestFetchCallback fetchCallback;
     private TestItemCallback itemCallback;
     private ExecutorService executorService;
-
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
         executorService = Executors.newFixedThreadPool(2);
@@ -56,49 +57,45 @@ public class AsyncLocalChunkIteratorTest {
     }
 
 
-    @Test(timeout = 15_000, expected = RuntimeException.class)
+    @Test
+    @Timeout(15)
     public void test_fetch_failed() throws Throwable {
 
         fetchCallback.setException(new RuntimeException("test-exception"));
 
         asyncIterator.fetchAndIterate();
 
-        try {
-            asyncIterator.getFetchFuture().get();
-        } catch (final Exception e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> asyncIterator.getFetchFuture().get())
+                .hasCauseInstanceOf(RuntimeException.class);
     }
 
-    @Test(timeout = 15_000, expected = RuntimeException.class)
+    @Test
+    @Timeout(15)
     public void test_failed() throws Throwable {
 
         fetchCallback.setException(new RuntimeException("test-exception"));
 
         asyncIterator.fetchAndIterate();
 
-        try {
-            asyncIterator.getFinishedFuture().get();
-        } catch (final Exception e) {
-            throw e.getCause();
-        }
+        assertThatThrownBy(() -> asyncIterator.getFinishedFuture().get())
+                .hasCauseInstanceOf(RuntimeException.class);
     }
 
-    @Test(timeout = 15_000, expected = NullPointerException.class)
+    @Test
+    @Timeout(15)
     public void test_fetch_result_null() throws Throwable {
 
         asyncIterator = new AsyncLocalChunkIterator<>((cursor) -> Futures.immediateFuture(null), itemCallback, executorService);
 
         asyncIterator.fetchAndIterate();
 
-        try {
-            asyncIterator.getFinishedFuture().get();
-        } catch (final Exception e) {
-            throw e.getCause();
-        }
+
+        assertThatThrownBy(() -> asyncIterator.getFinishedFuture().get())
+                .hasCauseInstanceOf(NullPointerException.class);
     }
 
-    @Test(timeout = 15_000)
+    @Test
+    @Timeout(15)
     public void test_iterate_multiple() throws Exception {
 
         fetchCallback.setChunks(new ArrayDeque<>(List.of(List.of("a1", "b", "c1"), List.of("a2", "b", "d", "e"))));
@@ -111,7 +108,8 @@ public class AsyncLocalChunkIteratorTest {
         assertEquals(itemCallback.getItems(), ImmutableList.of("a1", "b", "c1", "a2", "b", "d", "e"));
     }
 
-    @Test(timeout = 15_000)
+    @Test
+    @Timeout(15)
     public void test_iterate_emtpy_result() throws Exception {
 
         fetchCallback.setChunks(new ArrayDeque<>(List.of(List.of())));
@@ -124,7 +122,8 @@ public class AsyncLocalChunkIteratorTest {
         assertEquals(0, itemCallback.getItems().size());
     }
 
-    @Test(timeout = 15_000)
+    @Test
+    @Timeout(15)
     public void test_abort_on_first_item() throws Exception {
 
         fetchCallback.setChunks(new ArrayDeque<>(List.of(List.of("a1", "b", "c1"), List.of("d", "e"))));
@@ -135,7 +134,7 @@ public class AsyncLocalChunkIteratorTest {
 
         asyncIterator.getFinishedFuture().get();
 
-        assertTrue("Should only contain max 3 item, was " + itemCallback.getItems().size() + " items", itemCallback.getItems().size() <= 3);
+        assertTrue(itemCallback.getItems().size() <= 3);
     }
 
     private static class TestItemCallback implements AsyncIterator.ItemCallback<String> {

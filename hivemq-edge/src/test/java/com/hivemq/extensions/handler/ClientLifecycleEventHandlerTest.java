@@ -19,8 +19,6 @@ package com.hivemq.extensions.handler;
 import com.google.common.collect.Maps;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListener;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListenerProvider;
 import com.hivemq.extension.sdk.api.events.client.parameters.AuthenticationSuccessfulInput;
@@ -29,7 +27,11 @@ import com.hivemq.extension.sdk.api.events.client.parameters.ConnectionStartInpu
 import com.hivemq.extension.sdk.api.events.client.parameters.DisconnectEventInput;
 import com.hivemq.extension.sdk.api.packets.general.DisconnectedReasonCode;
 import com.hivemq.extensions.HiveMQExtensions;
-import com.hivemq.extensions.events.*;
+import com.hivemq.extensions.events.LifecycleEventListeners;
+import com.hivemq.extensions.events.OnAuthFailedEvent;
+import com.hivemq.extensions.events.OnAuthSuccessEvent;
+import com.hivemq.extensions.events.OnClientDisconnectEvent;
+import com.hivemq.extensions.events.OnServerDisconnectEvent;
 import com.hivemq.extensions.executor.PluginTaskExecutorService;
 import com.hivemq.extensions.executor.PluginTaskExecutorServiceImpl;
 import com.hivemq.extensions.executor.task.PluginTaskExecutor;
@@ -43,20 +45,24 @@ import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.util.concurrent.ImmediateEventExecutor;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestMessageUtil;
 
+import java.io.File;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -65,8 +71,8 @@ import static org.mockito.Mockito.when;
  */
 public class ClientLifecycleEventHandlerTest {
 
-    @Rule
-    public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private final @NotNull ChannelHandlerContext channelHandlerContext = mock(ChannelHandlerContext.class);
     private final @NotNull LifecycleEventListeners lifecycleEventListeners = mock(LifecycleEventListeners.class);
@@ -74,8 +80,7 @@ public class ClientLifecycleEventHandlerTest {
 
     private @NotNull ClientLifecycleEventHandler clientLifecycleEventHandler;
     private @NotNull PluginTaskExecutor executor;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         executor = new PluginTaskExecutor(new AtomicLong());
         executor.postConstruct();
@@ -352,7 +357,7 @@ public class ClientLifecycleEventHandlerTest {
     private ClientLifecycleEventListenerProvider getTestProvider(final @NotNull CountDownLatch countDownLatch)
             throws Exception {
         final Class<?> providerClass =
-                IsolatedExtensionClassloaderUtil.loadClass(temporaryFolder.getRoot().toPath(), TestProvider.class);
+                IsolatedExtensionClassloaderUtil.loadClass(temporaryFolder.toPath(), TestProvider.class);
         return (ClientLifecycleEventListenerProvider) providerClass.getDeclaredConstructor(CountDownLatch.class)
                 .newInstance(countDownLatch);
     }

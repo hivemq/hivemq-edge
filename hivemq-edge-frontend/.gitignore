@@ -24,9 +24,8 @@ pnpm-error.log*
 cypress/videos
 cypress/screenshots
 cypress/downloads/
-
-# Exclude test-results
-test-results
+cypress/html-snapshots/
+cypress/results/
 
 # Exclude code coverage
 /.nyc_output/

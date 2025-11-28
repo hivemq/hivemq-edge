@@ -32,8 +32,11 @@ import com.hivemq.extensions.services.publish.RetainedPublishImpl;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
 import util.TestMessageUtil;
 
@@ -41,7 +44,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Florian Limpöck
@@ -52,129 +55,150 @@ public class RetainedPublishBuilderImplTest {
 
     private RetainedPublishBuilder retainedPublishBuilder;
     private ConfigurationService configurationService;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
         retainedPublishBuilder = new RetainedPublishBuilderImpl(configurationService);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_qos_validation() {
         configurationService.mqttConfiguration().setMaximumQos(QoS.AT_LEAST_ONCE);
-        new RetainedPublishBuilderImpl(configurationService).qos(Qos.EXACTLY_ONCE);
+        assertThatThrownBy(() -> new RetainedPublishBuilderImpl(configurationService).qos(Qos.EXACTLY_ONCE))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_topic_validation() {
-        retainedPublishBuilder.topic("#");
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.topic("#"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_topic_validation_utf_8_should_not() {
-        retainedPublishBuilder.topic("topic" + '\u0001');
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.topic("topic" + '\u0001'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_topic_validation_utf_8_must_not() {
-        retainedPublishBuilder.topic("topic" + '\uD800');
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.topic("topic" + '\uD800'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_message_expiry_validation() {
         configurationService.mqttConfiguration().setMaxMessageExpiryInterval(10);
-        new RetainedPublishBuilderImpl(configurationService).messageExpiryInterval(11);
+        assertThatThrownBy(() -> new RetainedPublishBuilderImpl(configurationService).messageExpiryInterval(11))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_message_expiry_less_than_zero() {
-        retainedPublishBuilder.messageExpiryInterval(-1);
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.messageExpiryInterval(-1));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_null_qos() {
-        retainedPublishBuilder.qos(null);
+    
+        assertThrows(NullPointerException.class, () -> retainedPublishBuilder.qos(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_null_topic() {
-        retainedPublishBuilder.topic(null);
+    
+        assertThrows(NullPointerException.class, () -> retainedPublishBuilder.topic(null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_null_user_property_key() {
-        retainedPublishBuilder.userProperty(null, "value");
+    
+        assertThrows(NullPointerException.class, () -> retainedPublishBuilder.userProperty(null, "value"));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_null_user_property_value() {
-        retainedPublishBuilder.userProperty("key", null);
+    
+        assertThrows(NullPointerException.class, () -> retainedPublishBuilder.userProperty("key", null));
     }
 
-    @Test(expected = DoNotImplementException.class)
+    @Test
     public void test_from_invalid_publish_implementation() {
-        retainedPublishBuilder.fromPublish(new TestPublish()).build();
-
+    
+        assertThrows(DoNotImplementException.class, () -> retainedPublishBuilder.fromPublish(new TestPublish()).build());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_response_topic_validation_utf_8_should_not() {
-        retainedPublishBuilder.responseTopic("topic" + '\u0001');
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.responseTopic("topic" + '\u0001'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_response_topic_validation_utf_8_must_not() {
-        retainedPublishBuilder.responseTopic("topic" + '\uD800');
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.responseTopic("topic" + '\uD800'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_content_type_validation_utf_8_should_not() {
-        retainedPublishBuilder.contentType("topic" + '\u0001');
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.contentType("topic" + '\u0001'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_content_type_validation_utf_8_must_not() {
-        retainedPublishBuilder.contentType("topic" + '\uD800');
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.contentType("topic" + '\uD800'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_user_property_name_validation_utf_8_should_not() {
-        retainedPublishBuilder.userProperty("topic" + '\u0001', "val");
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("topic" + '\u0001', "val"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_user_property_name_validation_utf_8_must_not() {
-        retainedPublishBuilder.userProperty("topic" + '\uD800', "val");
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("topic" + '\uD800', "val"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_user_property_value_validation_utf_8_should_not() {
-        retainedPublishBuilder.userProperty("key", "val" + '\u0001');
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("key", "val" + '\u0001'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_user_property_value_validation_utf_8_must_not() {
-        retainedPublishBuilder.userProperty("key", "val" + '\uD800');
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("key", "val" + '\uD800'));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_user_property_name_too_long() {
-        retainedPublishBuilder.userProperty(RandomStringUtils.randomAlphanumeric(65536), "val");
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty(RandomStringUtils.randomAlphanumeric(65536), "val"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_user_property_value_too_long() {
-        retainedPublishBuilder.userProperty("name", RandomStringUtils.randomAlphanumeric(65536));
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("name", RandomStringUtils.randomAlphanumeric(65536)));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_response_topic_too_long() {
-        retainedPublishBuilder.responseTopic(RandomStringUtils.randomAlphanumeric(65536));
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.responseTopic(RandomStringUtils.randomAlphanumeric(65536)));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_content_type_too_long() {
-        retainedPublishBuilder.contentType(RandomStringUtils.randomAlphanumeric(65536));
+    
+        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.contentType(RandomStringUtils.randomAlphanumeric(65536)));
     }
 
     @Test
@@ -211,7 +235,7 @@ public class RetainedPublishBuilderImplTest {
         assertEquals(retainedPublish.getUserProperties().asList().size(), built.getUserProperties().asList().size());
 
         assertEquals(Qos.AT_MOST_ONCE, built.getQos());
-        assertEquals(true, built.getRetain());
+        assertTrue(built.getRetain());
         assertEquals("topic", built.getTopic());
         assertTrue(built.getPayloadFormatIndicator().isPresent());
         assertEquals(PayloadFormatIndicator.UTF_8, built.getPayloadFormatIndicator().get());
@@ -247,7 +271,7 @@ public class RetainedPublishBuilderImplTest {
         assertEquals(publishPacket.getUserProperties().asList().size(), built.getUserProperties().asList().size());
 
         assertEquals(Qos.EXACTLY_ONCE, built.getQos());
-        assertEquals(true, built.getRetain());
+        assertTrue(built.getRetain());
         assertEquals("topic", built.getTopic());
         assertTrue(built.getPayloadFormatIndicator().isPresent());
         assertEquals(PayloadFormatIndicator.UTF_8, built.getPayloadFormatIndicator().get());
@@ -265,17 +289,19 @@ public class RetainedPublishBuilderImplTest {
 
     }
 
-    @Test(expected = DoNotImplementException.class)
+    @Test
     public void test_from_publish_packet_implemented() {
 
         final PublishPacket publishPacket = new TestPublishPacket();
-        retainedPublishBuilder.fromPublish(publishPacket).build();
+        assertThatThrownBy(() -> retainedPublishBuilder.fromPublish(publishPacket).build())
+                .isInstanceOf(DoNotImplementException.class);
 
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_precondition_topic() {
-        retainedPublishBuilder.build();
+    
+        assertThrows(NullPointerException.class, () -> retainedPublishBuilder.build());
     }
 
     @Test

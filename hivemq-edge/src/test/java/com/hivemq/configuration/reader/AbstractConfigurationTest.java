@@ -39,9 +39,8 @@ import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UsageTrackingConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.MockitoAnnotations;
 
 import java.io.File;
@@ -49,8 +48,8 @@ import java.util.List;
 
 public class AbstractConfigurationTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     ListenerConfigurationService listenerConfigurationService;
     File xmlFile;
@@ -68,13 +67,12 @@ public class AbstractConfigurationTest {
     InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
 
     BridgeExtractor bridgeConfiguration;
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         listenerConfigurationService = new ListenerConfigurationServiceImpl();
 
-        xmlFile = temporaryFolder.newFile();
+        xmlFile = new File(temporaryFolder, "config.xml");
         securityConfigurationService = new SecurityConfigurationServiceImpl();
         mqttConfigurationService = new MqttConfigurationServiceImpl();
         mqttsnConfigurationService = new MqttsnConfigurationServiceImpl();

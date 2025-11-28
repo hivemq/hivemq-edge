@@ -27,25 +27,28 @@ import org.jetbrains.annotations.Nullable;
  */
 public enum MsgSecurityMode {
 
-    @JsonProperty("None")
+    @JsonProperty("IGNORED")
+    IGNORED(null),
+
+    @JsonProperty("NONE")
     NONE(MessageSecurityMode.None),
 
-    @JsonProperty("Sign")
+    @JsonProperty("SIGN")
     SIGN(MessageSecurityMode.Sign),
 
-    @JsonProperty("SignAndEncrypt")
+    @JsonProperty("SIGN_AND_ENCRYPT")
     SIGN_AND_ENCRYPT(MessageSecurityMode.SignAndEncrypt);
 
-    private final @NotNull MessageSecurityMode miloMode;
+    private final @Nullable MessageSecurityMode miloMode;
 
-    MsgSecurityMode(final @NotNull MessageSecurityMode miloMode) {
+    MsgSecurityMode(final @Nullable MessageSecurityMode miloMode) {
         this.miloMode = miloMode;
     }
 
     /**
      * @return the corresponding Eclipse Milo MessageSecurityMode
      */
-    public @NotNull MessageSecurityMode getMiloMode() {
+    public @Nullable MessageSecurityMode getMiloMode() {
         return miloMode;
     }
 
