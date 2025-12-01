@@ -20,15 +20,19 @@ import com.hivemq.configuration.entity.adapter.fieldmapping.InstructionEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-
 // JAXB can not handle records ... :-(
+@XmlRootElement(name = "data-combining")
+@XmlAccessorType(XmlAccessType.NONE)
 public class DataCombiningEntity {
 
     @JsonProperty(value = "id", required = true)

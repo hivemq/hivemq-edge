@@ -20,9 +20,14 @@ import com.hivemq.combining.model.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
 
+@XmlRootElement(name = "entity-reference")
+@XmlAccessorType(XmlAccessType.NONE)
 public class EntityReferenceEntity {
 
     @JsonProperty(value = "type", required = true)

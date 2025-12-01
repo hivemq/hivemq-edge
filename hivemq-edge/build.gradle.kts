@@ -605,3 +605,24 @@ artifacts {
     add(releaseJar.name, tasks.shadowJar)
     add(thirdPartyLicenses.name, tasks.updateThirdPartyLicenses.flatMap { it.outputDirectory })
 }
+
+/* ******************** XSD Generation ******************** */
+
+val generateXsd by tasks.registering(JavaExec::class) {
+    group = "build"
+    description = "Generates XSD schema from JAXB-annotated configuration entity classes"
+
+    dependsOn(tasks.testClasses)
+
+    mainClass.set("com.hivemq.configuration.GenSchemaMain")
+    classpath = sourceSets.test.get().runtimeClasspath
+
+    val outputFile = layout.buildDirectory.file("generated-xsd/config-generated.xsd")
+    args(outputFile.get().asFile.absolutePath)
+
+    outputs.file(outputFile)
+
+    doFirst {
+        outputFile.get().asFile.parentFile.mkdirs()
+    }
+}

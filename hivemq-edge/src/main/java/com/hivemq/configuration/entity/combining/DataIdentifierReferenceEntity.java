@@ -21,10 +21,15 @@ import com.hivemq.configuration.entity.EntityValidatable;
 import org.jetbrains.annotations.NotNull;
 
 import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.List;
 import java.util.Objects;
 
+@XmlRootElement(name = "primary-reference")
+@XmlAccessorType(XmlAccessType.NONE)
 public class DataIdentifierReferenceEntity implements EntityValidatable {
 
     @JsonProperty("id")
