@@ -63,6 +63,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -89,6 +90,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     // Retry attempt tracking for exponential backoff
     private final @NotNull AtomicLong reconnectAttempts = new AtomicLong(0);
     private final @NotNull AtomicLong lastReconnectTimestamp = new AtomicLong(0);
+    private final @NotNull AtomicInteger consecutiveRetryAttempts = new AtomicInteger(0);
 
     // Lock to prevent concurrent reconnections
     private final @NotNull ReentrantLock reconnectLock = new ReentrantLock();
@@ -113,8 +115,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.config = input.getConfig();
         this.opcUaClientConnection = new AtomicReference<>();
-        this.opcUaServiceFaultListener = new OpcUaServiceFaultListener(
-                protocolAdapterMetricsService,
+        this.opcUaServiceFaultListener = new OpcUaServiceFaultListener(protocolAdapterMetricsService,
                 input.moduleServices().eventService(),
                 adapterId,
                 this::reconnect,
@@ -127,7 +128,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
      * If attemptCount exceeds the number of configured delays, returns the last configured delay.
      *
      * @param retryIntervalMs comma-separated string of backoff delays in milliseconds
-     * @param attemptCount the number of consecutive retry attempts (1-indexed)
+     * @param attemptCount    the number of consecutive retry attempts (1-indexed)
      * @return the backoff delay in milliseconds
      * @throws NumberFormatException when the format is incorrect
      */
@@ -191,15 +192,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
 
         final OpcUaClientConnection conn;
-        if (opcUaClientConnection.compareAndSet(null, conn = new OpcUaClientConnection(adapterId,
-                tagList,
-                protocolAdapterState,
-                input.moduleServices().protocolAdapterTagStreamingService(),
-                dataPointFactory,
-                input.moduleServices().eventService(),
-                protocolAdapterMetricsService,
-                config,
-                opcUaServiceFaultListener))) {
+        if (opcUaClientConnection.compareAndSet(null,
+                conn = new OpcUaClientConnection(adapterId,
+                        tagList,
+                        protocolAdapterState,
+                        input.moduleServices().protocolAdapterTagStreamingService(),
+                        dataPointFactory,
+                        input.moduleServices().eventService(),
+                        protocolAdapterMetricsService,
+                        config,
+                        opcUaServiceFaultListener))) {
 
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             // Attempt initial connection asynchronously
@@ -274,8 +276,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             final long currentTime = System.currentTimeMillis();
             final long lastReconnectTime = lastReconnectTimestamp.get();
             if (reconnectAttempts.get() > 0 &&
-                    currentTime - lastReconnectTime < config.getConnectionOptions().retryIntervalMs()) {
-                log.debug("Reconnection for adapter '{}' attempted too soon after last reconnect - skipping", adapterId);
+                    currentTime - lastReconnectTime <
+                            calculateBackoffDelayMs(config.getConnectionOptions().retryIntervalMs(), 0)) {
+                log.debug("Reconnection for adapter '{}' attempted too soon after last reconnect - skipping",
+                        adapterId);
                 return;
             }
             reconnectAttempts.incrementAndGet();
@@ -652,7 +656,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
         // Increment retry attempt counter and calculate backoff delay
         final int attemptCount = consecutiveRetryAttempts.updateAndGet(count -> count + 1);
-        long backoffDelayMs ;
+        long backoffDelayMs;
         try {
             backoffDelayMs = calculateBackoffDelayMs(config.getConnectionOptions().retryIntervalMs(), attemptCount);
         } catch (final Exception e) {

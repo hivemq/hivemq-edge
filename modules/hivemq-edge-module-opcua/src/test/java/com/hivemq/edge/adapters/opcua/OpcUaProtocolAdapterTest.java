@@ -42,6 +42,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import util.EmbeddedOpcUaServerExtension;
 
 import java.time.Duration;
@@ -49,18 +52,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Integration test for OpcUaProtocolAdapter with embedded OPC UA server.
@@ -74,6 +69,10 @@ public class OpcUaProtocolAdapterTest {
     private @Nullable OpcUaProtocolAdapter adapter;
     private @NotNull ProtocolAdapterState protocolAdapterState;
     private @NotNull FakeEventService eventService;
+
+    static long getUpperBound(final long value) {
+        return (long) (value * (1 + ConnectionOptions.DEFAULT_RETRY_JITTER));
+    }
 
     @BeforeEach
     void setUp() {
@@ -229,7 +228,7 @@ public class OpcUaProtocolAdapterTest {
                         // health check interval
                         10000L,
                         // retry interval
-                        2000L,
+                        "2000",
                         true,
                         true));
 
@@ -326,10 +325,6 @@ public class OpcUaProtocolAdapterTest {
         when(input.moduleServices()).thenReturn(moduleServices);
 
         return input;
-    }
-
-    static long getUpperBound(final long value) {
-        return (long) (value * (1 + ConnectionOptions.DEFAULT_RETRY_JITTER));
     }
 
     /**
