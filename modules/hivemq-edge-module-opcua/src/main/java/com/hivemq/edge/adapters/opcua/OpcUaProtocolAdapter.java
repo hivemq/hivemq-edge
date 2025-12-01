@@ -275,12 +275,20 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
             final long currentTime = System.currentTimeMillis();
             final long lastReconnectTime = lastReconnectTimestamp.get();
-            if (reconnectAttempts.get() > 0 &&
-                    currentTime - lastReconnectTime <
-                            calculateBackoffDelayMs(config.getConnectionOptions().retryIntervalMs(), 0)) {
-                log.debug("Reconnection for adapter '{}' attempted too soon after last reconnect - skipping",
-                        adapterId);
-                return;
+            if (reconnectAttempts.get() > 0) {
+                long backoffDelayMs;
+                try {
+                    backoffDelayMs = calculateBackoffDelayMs(config.getConnectionOptions().retryIntervalMs(),
+                            (int) reconnectAttempts.get());
+                } catch (final Exception e) {
+                    backoffDelayMs = calculateBackoffDelayMs(ConnectionOptions.DEFAULT_RETRY_INTERVALS,
+                            (int) reconnectAttempts.get());
+                }
+                if (currentTime - lastReconnectTime < backoffDelayMs) {
+                    log.debug("Reconnection for adapter '{}' attempted too soon after last reconnect - skipping",
+                            adapterId);
+                    return;
+                }
             }
             reconnectAttempts.incrementAndGet();
             lastReconnectTimestamp.set(currentTime);
@@ -636,6 +644,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                             adapterId);
                 }
 
+                cancelHealthCheck();
                 // Schedule retry attempt with exponential backoff
                 scheduleRetry(input);
             }
@@ -655,7 +664,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
 
         // Increment retry attempt counter and calculate backoff delay
-        final int attemptCount = consecutiveRetryAttempts.updateAndGet(count -> count + 1);
+        final int attemptCount = consecutiveRetryAttempts.incrementAndGet();
         long backoffDelayMs;
         try {
             backoffDelayMs = calculateBackoffDelayMs(config.getConnectionOptions().retryIntervalMs(), attemptCount);
