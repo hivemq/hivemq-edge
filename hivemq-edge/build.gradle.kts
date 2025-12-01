@@ -617,12 +617,19 @@ val generateXsd by tasks.registering(JavaExec::class) {
     mainClass.set("com.hivemq.configuration.GenSchemaMain")
     classpath = sourceSets.test.get().runtimeClasspath
 
-    val outputFile = layout.buildDirectory.file("generated-xsd/config-generated.xsd")
+    val outputDir = layout.buildDirectory.dir("generated-resources/xsd")
+    val outputFile = outputDir.map { it.file("config.xsd") }
     args(outputFile.get().asFile.absolutePath)
 
-    outputs.file(outputFile)
+    outputs.dir(outputDir)
 
     doFirst {
-        outputFile.get().asFile.parentFile.mkdirs()
+        outputDir.get().asFile.mkdirs()
     }
+}
+
+// Include the generated XSD in the jar (runs after test compilation)
+tasks.jar {
+    dependsOn(generateXsd)
+    from(generateXsd.map { it.outputs.files })
 }
