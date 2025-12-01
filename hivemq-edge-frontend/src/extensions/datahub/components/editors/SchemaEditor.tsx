@@ -44,7 +44,7 @@ export const SchemaEditor: FC<SchemaEditorProps> = ({ isOpen, onClose, schema })
   const createSchema = useCreateSchema()
 
   const [formData, setFormData] = useState<SchemaData | null>(null)
-  const [hasValidationErrors, setHasValidationErrors] = useState(false)
+  const [hasErrors, setHasErrors] = useState(false)
   const [initialFormData, setInitialFormData] = useState<SchemaData | null>(null)
   const [isFormDirty, setIsFormDirty] = useState(false)
 
@@ -98,6 +98,8 @@ export const SchemaEditor: FC<SchemaEditorProps> = ({ isOpen, onClose, schema })
   const handleChange = useCallback(
     (changeEvent: IChangeEvent<SchemaData>, id?: string) => {
       const newData = changeEvent.formData
+      setHasErrors(changeEvent.errors.length > 0)
+
       if (!newData) return
 
       let updatedData = newData
@@ -128,19 +130,16 @@ export const SchemaEditor: FC<SchemaEditorProps> = ({ isOpen, onClose, schema })
   const customValidate: CustomValidator<SchemaData> = useCallback(
     (formData, errors) => {
       if (!formData) {
-        setHasValidationErrors(false)
         return errors
       }
 
       const { type, schemaSource, name, messageType } = formData
-      let hasErrors = false
 
       // Check for duplicate name when creating (not editing)
       if (!schema && name && allSchemas?.items) {
         const isDuplicate = allSchemas.items.some((existingSchema) => existingSchema.id === name)
         if (isDuplicate) {
           errors.name?.addError(t('error.validation.schema.duplicate', { name }))
-          hasErrors = true
         }
       }
 
@@ -150,21 +149,16 @@ export const SchemaEditor: FC<SchemaEditorProps> = ({ isOpen, onClose, schema })
           parse(schemaSource)
         } catch (e) {
           errors.schemaSource?.addError((e as SyntaxError).message)
-          hasErrors = true
         }
 
         // Validate messageType is required and exists in schema
-        if (!messageType) {
-          errors.messageType?.addError(t('error.validation.schema.messageType.required'))
-          hasErrors = true
-        } else {
+        if (messageType) {
           // Optionally validate that messageType exists in the parsed schema
           try {
             const root = parse(schemaSource).root
             const messageExists = root.lookup(messageType)
             if (!messageExists) {
               errors.messageType?.addError(t('error.validation.schema.messageType.notFound', { messageType }))
-              hasErrors = true
             }
           } catch (e) {
             // Schema parsing already failed, skip this validation
@@ -178,11 +172,9 @@ export const SchemaEditor: FC<SchemaEditorProps> = ({ isOpen, onClose, schema })
           JSON.parse(schemaSource)
         } catch (e) {
           errors.schemaSource?.addError((e as SyntaxError).message)
-          hasErrors = true
         }
       }
 
-      setHasValidationErrors(hasErrors)
       return errors
     },
     [schema, allSchemas?.items, t]
@@ -284,6 +276,7 @@ export const SchemaEditor: FC<SchemaEditorProps> = ({ isOpen, onClose, schema })
         <DrawerBody>
           {formData && (
             <ReactFlowSchemaForm
+              id="schema-editor-form"
               schema={MOCK_SCHEMA_SCHEMA.schema as RJSFSchema}
               formData={formData}
               uiSchema={getUISchema(formData)}
@@ -291,6 +284,11 @@ export const SchemaEditor: FC<SchemaEditorProps> = ({ isOpen, onClose, schema })
               formContext={{ currentSchemaSource: formData.schemaSource }}
               customValidate={customValidate}
               onChange={handleChange}
+              onError={(errors) => {
+                console.log('XXXXXX schema', errors)
+                setHasErrors(errors.length > 0)
+              }}
+              onSubmit={handleSave}
             />
           )}
         </DrawerBody>
@@ -302,10 +300,11 @@ export const SchemaEditor: FC<SchemaEditorProps> = ({ isOpen, onClose, schema })
             </Button>
             <Button
               variant="primary"
-              onClick={handleSave}
+              type="submit"
+              form="schema-editor-form"
               isLoading={isLoading}
               data-testid="save-schema-button"
-              isDisabled={hasValidationErrors || !isFormDirty}
+              isDisabled={hasErrors || !isFormDirty}
             >
               {t('Listings.action.save')}
             </Button>

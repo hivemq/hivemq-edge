@@ -47,7 +47,7 @@ export const ScriptEditor: FC<ScriptEditorProps> = ({ isOpen, onClose, script })
   const createScript = useCreateScript()
 
   const [formData, setFormData] = useState<FunctionData | null>(null)
-  const [hasValidationErrors, setHasValidationErrors] = useState(false)
+  const [hasErrors, setHasErrors] = useState(false)
   const [initialFormData, setInitialFormData] = useState<FunctionData | null>(null)
   const [isFormDirty, setIsFormDirty] = useState(false)
 
@@ -85,6 +85,7 @@ export const ScriptEditor: FC<ScriptEditorProps> = ({ isOpen, onClose, script })
   const handleChange = useCallback(
     (changeEvent: IChangeEvent<FunctionData>) => {
       const newData = changeEvent.formData
+      setHasErrors(changeEvent.errors.length > 0)
       if (!newData) return
 
       setFormData(newData)
@@ -104,19 +105,16 @@ export const ScriptEditor: FC<ScriptEditorProps> = ({ isOpen, onClose, script })
   const customValidate: CustomValidator<FunctionData> = useCallback(
     (formData, errors) => {
       if (!formData) {
-        setHasValidationErrors(false)
         return errors
       }
 
       const { sourceCode, name } = formData
-      let hasErrors = false
 
       // Check for duplicate name when creating (not editing)
       if (!script && name && allScripts?.items) {
         const isDuplicate = allScripts.items.some((existingScript) => existingScript.id === name)
         if (isDuplicate) {
           errors.name?.addError(t('error.validation.script.duplicate', { name }))
-          hasErrors = true
         }
       }
 
@@ -127,11 +125,9 @@ export const ScriptEditor: FC<ScriptEditorProps> = ({ isOpen, onClose, script })
           new Function(sourceCode)
         } catch (e) {
           errors.sourceCode?.addError((e as SyntaxError).message)
-          hasErrors = true
         }
       }
 
-      setHasValidationErrors(hasErrors)
       return errors
     },
     [script, allScripts?.items, t]
@@ -212,12 +208,18 @@ export const ScriptEditor: FC<ScriptEditorProps> = ({ isOpen, onClose, script })
         <DrawerBody>
           {formData && (
             <ReactFlowSchemaForm
+              id="script-editor-form"
               schema={MOCK_FUNCTION_SCHEMA.schema as RJSFSchema}
               formData={formData}
               uiSchema={getUISchema()}
               widgets={datahubRJSFWidgets}
               customValidate={customValidate}
               onChange={handleChange}
+              onError={(errors) => {
+                console.log('XXXXXX sc', errors)
+                setHasErrors(errors.length > 0)
+              }}
+              onSubmit={handleSave}
             />
           )}
         </DrawerBody>
@@ -228,11 +230,12 @@ export const ScriptEditor: FC<ScriptEditorProps> = ({ isOpen, onClose, script })
               {t('Listings.action.cancel')}
             </Button>
             <Button
+              form="script-editor-form"
               variant="primary"
-              onClick={handleSave}
+              type="submit"
               isLoading={isLoading}
               data-testid="save-script-button"
-              isDisabled={hasValidationErrors || !isFormDirty}
+              isDisabled={hasErrors || !isFormDirty}
             >
               {t('Listings.action.save')}
             </Button>

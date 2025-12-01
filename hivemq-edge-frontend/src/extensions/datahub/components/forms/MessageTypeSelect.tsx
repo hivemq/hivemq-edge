@@ -78,16 +78,27 @@ export const MessageTypeSelect: FC<WidgetProps> = (props) => {
   const hasErrors = rawErrors && rawErrors.length > 0
 
   return (
-    <FormControl isDisabled={disabled || readonly} isRequired={required} isReadOnly={readonly} isInvalid={hasErrors}>
-      <FormLabel htmlFor={id}>{schema.title || 'Message Type'}</FormLabel>
+    <FormControl
+      data-testid={id}
+      isDisabled={disabled || readonly}
+      isRequired={required}
+      isReadOnly={readonly}
+      isInvalid={hasErrors}
+    >
+      <FormLabel htmlFor={id} id={`${id}-label`}>
+        {schema.title || 'Message Type'}
+      </FormLabel>
 
       <CreatableSelect<MessageTypeOption, false>
+        id={`${id}-widget`}
+        name={id}
+        instanceId={id}
         inputId={id}
         options={options}
         value={selectedValue}
         onChange={onSelectChange}
         onMenuOpen={handleMenuOpen}
-        isClearable={!required}
+        isClearable={true}
         isDisabled={disabled || readonly}
         placeholder={
           options.length === 0 ? t('resource.schema.messageType.noMessages') : t('resource.schema.messageType.select')
