@@ -169,6 +169,16 @@ public class GenSchemaMain {
 
     /**
      * Makes the config-version element optional (minOccurs="0").
+     * <p>
+     * <b>Why this is needed:</b>
+     * The {@code config-version} element has a default value in the Java entity, but JAXB generates
+     * schema elements as required by default. Existing config files may omit this element entirely.
+     * <p>
+     * <b>Why JAXB cannot express this directly:</b>
+     * JAXB's {@code @XmlElement(required = false)} only affects marshalling behavior (whether null
+     * values are written), not schema generation. JAXB always generates elements without
+     * {@code minOccurs="0"} unless they are part of a collection. There is no annotation to
+     * explicitly set {@code minOccurs} in the generated schema.
      */
     private static void makeConfigVersionOptional(Document doc) {
         Element complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
@@ -182,6 +192,26 @@ public class GenSchemaMain {
 
     /**
      * Replaces xs:sequence with xs:all in hiveMQConfigEntity to allow elements in any order.
+     * <p>
+     * <b>Why this is needed:</b>
+     * JAXB always generates {@code xs:sequence} for complex types, which requires XML elements
+     * to appear in a specific order matching the field declaration order in the Java class.
+     * However, existing config files have elements in arbitrary order, so we need {@code xs:all}
+     * which allows elements in any order.
+     * <p>
+     * <b>Why JAXB cannot express this directly:</b>
+     * <ul>
+     *   <li>There is no JAXB annotation to generate {@code xs:all} instead of {@code xs:sequence}.
+     *       {@code @XmlType(propOrder = {...})} controls element order within a sequence but
+     *       cannot switch to {@code xs:all}.</li>
+     *   <li>JAXB was designed primarily for marshalling/unmarshalling Java objects, not for
+     *       schema-first design. The Java object model naturally maps to sequences (ordered fields).</li>
+     *   <li>In XSD 1.0, {@code xs:all} has restrictions (each element can appear at most once,
+     *       cannot be nested within other model groups) that make it less suitable for JAXB's
+     *       general-purpose schema generation.</li>
+     * </ul>
+     * <p>
+     * Post-processing the generated XSD is the standard workaround for this JAXB limitation.
      */
     private static void replaceSequenceWithAllForRootEntity(Document doc) {
         Element complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
@@ -214,6 +244,19 @@ public class GenSchemaMain {
 
     /**
      * Fixes mqtt-listeners to use xs:choice with all listener types.
+     * <p>
+     * <b>Why this is needed:</b>
+     * The mqtt-listeners wrapper contains polymorphic listener elements (tcp-listener, tls-tcp-listener,
+     * websocket-listener, tls-websocket-listener). The schema needs {@code xs:choice} to allow any of
+     * these element types in any order and quantity.
+     * <p>
+     * <b>Why JAXB cannot express this directly:</b>
+     * The Java entity uses {@code @XmlElementRef} on a {@code List<ListenerEntity>} where
+     * {@code ListenerEntity} is a base class. JAXB generates a reference to an abstract type or
+     * a single element reference, not an {@code xs:choice} with all concrete subtypes. JAXB's
+     * {@code @XmlElements} annotation can list multiple types but generates {@code xs:choice}
+     * only at the element level, not properly handling the inheritance hierarchy with
+     * {@code @XmlElementWrapper}.
      */
     private static void fixMqttListeners(Document doc) {
         fixListenerElement(doc, "mqtt-listeners", new String[]{
@@ -223,6 +266,8 @@ public class GenSchemaMain {
 
     /**
      * Fixes mqtt-sn-listeners to use xs:choice with appropriate listener types.
+     * <p>
+     * See {@link #fixMqttListeners(Document)} for explanation of why this post-processing is needed.
      */
     private static void fixMqttSnListeners(Document doc) {
         fixListenerElement(doc, "mqtt-sn-listeners", new String[]{
@@ -232,6 +277,10 @@ public class GenSchemaMain {
 
     /**
      * Generic method to fix listener wrapper elements with proper xs:choice.
+     *
+     * @param doc           the XSD document to modify
+     * @param elementName   the wrapper element name (e.g., "mqtt-listeners")
+     * @param listenerTypes the concrete listener element names to include in the choice
      */
     private static void fixListenerElement(Document doc, String elementName, String[] listenerTypes) {
         // Find the element in hiveMQConfigEntity
@@ -267,8 +316,25 @@ public class GenSchemaMain {
 
     /**
      * Fixes protocol-adapters to use xs:any for both new and legacy adapter formats.
-     * Using xs:any alone avoids non-determinism issues that occur when mixing
-     * named elements with xs:any in a choice.
+     * <p>
+     * <b>Why this is needed:</b>
+     * Protocol adapters can be configured in two ways: the new format uses {@code <protocol-adapter>}
+     * elements, while legacy configs use adapter-specific element names like {@code <simulation>},
+     * {@code <opcua>}, etc. The schema must accept any element within protocol-adapters.
+     * <p>
+     * <b>Why JAXB cannot express this directly:</b>
+     * <ul>
+     *   <li>JAXB has {@code @XmlAnyElement} which generates {@code xs:any}, but it cannot be
+     *       combined with typed elements in the same collection.</li>
+     *   <li>The Java entity uses {@code @XmlElement(name = "protocol-adapter")} for the new format,
+     *       which generates a specific element reference, not a wildcard.</li>
+     *   <li>To support both formats, we need {@code xs:any processContents="skip"} which tells
+     *       the validator to accept any element without validation - this cannot be expressed
+     *       through JAXB annotations while keeping the typed Java binding.</li>
+     * </ul>
+     * <p>
+     * Note: Using {@code xs:any} alone avoids non-determinism issues that occur when mixing
+     * named elements with {@code xs:any} in a choice.
      */
     private static void fixProtocolAdapters(Document doc) {
         Element complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
@@ -304,6 +370,18 @@ public class GenSchemaMain {
 
     /**
      * Fixes modules element to use xs:any for arbitrary module configurations.
+     * <p>
+     * <b>Why this is needed:</b>
+     * The modules element contains arbitrary configuration for dynamically loaded modules.
+     * Each module can define its own XML structure, so the schema cannot know the element names
+     * or structure in advance.
+     * <p>
+     * <b>Why JAXB cannot express this directly:</b>
+     * The Java entity uses {@code @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)} to handle
+     * the dynamic content as a {@code Map<String, Object>}. JAXB generates a reference to the
+     * adapter's mapped type, not {@code xs:any}. While {@code @XmlAnyElement} exists, it requires
+     * the field to be {@code List<Element>} or similar DOM types, which would change the Java API.
+     * The adapter approach provides a cleaner Java API but requires schema post-processing.
      */
     private static void fixModules(Document doc) {
         Element complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
@@ -332,6 +410,17 @@ public class GenSchemaMain {
     /**
      * Fixes dataCombinerEntity and dataCombiningEntity to use xs:all instead of xs:sequence
      * for flexible element ordering, and makes wrapper elements optional.
+     * <p>
+     * <b>Why this is needed:</b>
+     * Like the root entity, data combiner configurations may have elements in any order in
+     * existing config files. Additionally, wrapper elements like {@code entity-references} and
+     * {@code data-combinings} should be optional when empty.
+     * <p>
+     * <b>Why JAXB cannot express this directly:</b>
+     * See {@link #replaceSequenceWithAllForRootEntity(Document)} for the explanation of why
+     * {@code xs:all} cannot be generated by JAXB. For the optional wrapper elements, JAXB's
+     * {@code @XmlElementWrapper} does not support a {@code required} attribute - wrappers are
+     * always generated as required in the schema even when the collection can be empty.
      */
     private static void fixDataCombinerEntity(Document doc) {
         replaceSequenceWithAll(doc, "dataCombinerEntity");
@@ -347,6 +436,10 @@ public class GenSchemaMain {
 
     /**
      * Makes a specific element optional (minOccurs="0") within a complex type.
+     *
+     * @param doc         the XSD document to modify
+     * @param typeName    the name of the complex type containing the element
+     * @param elementName the name of the element to make optional
      */
     private static void makeElementOptionalInType(Document doc, String typeName, String elementName) {
         Element complexType = findComplexTypeByName(doc, typeName);
@@ -360,6 +453,11 @@ public class GenSchemaMain {
 
     /**
      * Replaces xs:sequence with xs:all in the specified complex type.
+     * <p>
+     * See {@link #replaceSequenceWithAllForRootEntity(Document)} for explanation of why this is needed.
+     *
+     * @param doc      the XSD document to modify
+     * @param typeName the name of the complex type to modify
      */
     private static void replaceSequenceWithAll(Document doc, String typeName) {
         Element complexType = findComplexTypeByName(doc, typeName);
@@ -386,7 +484,19 @@ public class GenSchemaMain {
 
     /**
      * Fixes complex types that can appear as empty elements by making all children optional.
-     * This allows configurations like {@code <mqtt-sn/>} or {@code <admin-api/>} to validate.
+     * <p>
+     * <b>Why this is needed:</b>
+     * Some configuration sections can be specified as empty self-closing elements like
+     * {@code <mqtt-sn/>} or {@code <admin-api/>} to use all default values. The schema must
+     * allow these elements to have no children.
+     * <p>
+     * <b>Why JAXB cannot express this directly:</b>
+     * JAXB generates child elements as required by default. While {@code @XmlElement(required = false)}
+     * exists, it only affects marshalling behavior (whether to write null values), not the
+     * {@code minOccurs} attribute in the generated schema. There is no JAXB annotation to set
+     * {@code minOccurs="0"} on generated elements. Additionally, for types using inheritance
+     * (like {@code adminApiEntity} extending {@code enabledEntity}), the base type's elements
+     * also need to be made optional, which requires modifying multiple generated complex types.
      */
     private static void fixEmptyElementTypes(Document doc) {
         String[] typesToFix = {
@@ -405,6 +515,9 @@ public class GenSchemaMain {
 
     /**
      * Makes all child elements optional (minOccurs="0") in the specified complex type.
+     *
+     * @param doc      the XSD document to modify
+     * @param typeName the name of the complex type whose children should be made optional
      */
     private static void makeAllChildrenOptional(Document doc, String typeName) {
         Element complexType = findComplexTypeByName(doc, typeName);
@@ -421,6 +534,18 @@ public class GenSchemaMain {
 
     /**
      * Adds custom simple types for value constraints (only if they don't already exist).
+     * <p>
+     * <b>Why this is needed:</b>
+     * XSD simple types with restrictions (like port numbers 0-65535, non-empty strings, UUIDs)
+     * provide better validation and documentation than plain {@code xs:string} or {@code xs:int}.
+     * <p>
+     * <b>Why JAXB cannot express this directly:</b>
+     * JAXB maps Java types directly to XSD built-in types (String → xs:string, int → xs:int).
+     * There is no annotation to specify XSD facets like {@code minInclusive}, {@code maxInclusive},
+     * {@code pattern}, or {@code minLength}. While custom {@code XmlAdapter} implementations can
+     * transform values during marshalling/unmarshalling, they do not affect schema generation.
+     * Bean Validation annotations (like {@code @Min}, {@code @Max}, {@code @Pattern}) are also
+     * not translated to XSD constraints by JAXB.
      */
     private static void addCustomSimpleTypes(Document doc) {
         Element schemaElement = doc.getDocumentElement();
