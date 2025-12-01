@@ -162,6 +162,8 @@ public class GenSchemaMain {
         fixMqttSnListeners(doc);
         fixProtocolAdapters(doc);
         fixModules(doc);
+        fixDataCombinerEntity(doc);
+        fixEmptyElementTypes(doc);
         addCustomSimpleTypes(doc);
     }
 
@@ -328,6 +330,96 @@ public class GenSchemaMain {
     }
 
     /**
+     * Fixes dataCombinerEntity and dataCombiningEntity to use xs:all instead of xs:sequence
+     * for flexible element ordering, and makes wrapper elements optional.
+     */
+    private static void fixDataCombinerEntity(Document doc) {
+        replaceSequenceWithAll(doc, "dataCombinerEntity");
+        replaceSequenceWithAll(doc, "dataCombiningEntity");
+
+        // Make wrapper elements optional in dataCombinerEntity
+        makeElementOptionalInType(doc, "dataCombinerEntity", "entity-references");
+        makeElementOptionalInType(doc, "dataCombinerEntity", "data-combinings");
+
+        // Make sources optional in dataCombiningEntity
+        makeElementOptionalInType(doc, "dataCombiningEntity", "sources");
+    }
+
+    /**
+     * Makes a specific element optional (minOccurs="0") within a complex type.
+     */
+    private static void makeElementOptionalInType(Document doc, String typeName, String elementName) {
+        Element complexType = findComplexTypeByName(doc, typeName);
+        if (complexType == null) return;
+
+        Element element = findChildElementByName(complexType, elementName);
+        if (element != null) {
+            element.setAttribute("minOccurs", "0");
+        }
+    }
+
+    /**
+     * Replaces xs:sequence with xs:all in the specified complex type.
+     */
+    private static void replaceSequenceWithAll(Document doc, String typeName) {
+        Element complexType = findComplexTypeByName(doc, typeName);
+        if (complexType == null) return;
+
+        NodeList children = complexType.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child instanceof Element && "sequence".equals(child.getLocalName())) {
+                Element allElement = doc.createElementNS(XS_NAMESPACE, "xs:all");
+
+                // Move all children from sequence to all
+                NodeList sequenceChildren = child.getChildNodes();
+                while (sequenceChildren.getLength() > 0) {
+                    Node seqChild = sequenceChildren.item(0);
+                    allElement.appendChild(seqChild);
+                }
+
+                complexType.replaceChild(allElement, child);
+                break;
+            }
+        }
+    }
+
+    /**
+     * Fixes complex types that can appear as empty elements by making all children optional.
+     * This allows configurations like {@code <mqtt-sn/>} or {@code <admin-api/>} to validate.
+     */
+    private static void fixEmptyElementTypes(Document doc) {
+        String[] typesToFix = {
+                "mqttSnConfigEntity",
+                "adminApiEntity",
+                "dynamicConfigEntity",
+                "usageTrackingConfigEntity",
+                // Base types that are inherited by types above
+                "enabledEntity"
+        };
+
+        for (String typeName : typesToFix) {
+            makeAllChildrenOptional(doc, typeName);
+        }
+    }
+
+    /**
+     * Makes all child elements optional (minOccurs="0") in the specified complex type.
+     */
+    private static void makeAllChildrenOptional(Document doc, String typeName) {
+        Element complexType = findComplexTypeByName(doc, typeName);
+        if (complexType == null) return;
+
+        NodeList elements = complexType.getElementsByTagNameNS(XS_NAMESPACE, "element");
+        for (int i = 0; i < elements.getLength(); i++) {
+            Element element = (Element) elements.item(i);
+            if (!element.hasAttribute("minOccurs")) {
+                element.setAttribute("minOccurs", "0");
+            }
+        }
+    }
+
+    /**
      * Adds custom simple types for value constraints (only if they don't already exist).
      */
     private static void addCustomSimpleTypes(Document doc) {
@@ -455,9 +547,13 @@ public class GenSchemaMain {
             Node child = children.item(i);
             if (child instanceof Element) {
                 Element childElement = (Element) child;
-                if ("element".equals(childElement.getLocalName()) &&
-                        nameValue.equals(childElement.getAttribute("name"))) {
-                    return childElement;
+                if ("element".equals(childElement.getLocalName())) {
+                    // Check both "name" attribute and "ref" attribute
+                    String name = childElement.getAttribute("name");
+                    String ref = childElement.getAttribute("ref");
+                    if (nameValue.equals(name) || nameValue.equals(ref)) {
+                        return childElement;
+                    }
                 }
             }
         }
