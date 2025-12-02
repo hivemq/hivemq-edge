@@ -26,23 +26,19 @@ import com.hivemq.configuration.entity.combining.DataIdentifierReferenceEntity;
 import com.hivemq.configuration.entity.combining.EntityReferenceEntity;
 import com.hivemq.configuration.entity.listener.TCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsTCPListenerEntity;
-import com.hivemq.configuration.entity.listener.WebsocketListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsWebsocketListenerEntity;
-import com.hivemq.configuration.entity.listener.UDPListenerEntity;
 import com.hivemq.configuration.entity.listener.UDPBroadcastListenerEntity;
+import com.hivemq.configuration.entity.listener.UDPListenerEntity;
+import com.hivemq.configuration.entity.listener.WebsocketListenerEntity;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.SchemaOutputResolver;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Result;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -93,11 +89,11 @@ public class GenSchemaMain {
             UDPBroadcastListenerEntity.class
     };
 
-    public static void main(String[] args) throws Exception {
-        String outputPath = args.length > 0 ? args[0] : "build/generated-xsd/config-generated.xsd";
-        File outputFile = new File(outputPath);
+    public static void main(final String[] args) throws Exception {
+        final var outputPath = args.length > 0 ? args[0] : "build/generated-xsd/config-generated.xsd";
+        final var outputFile = new File(outputPath);
 
-        File parentDir = outputFile.getParentFile();
+        final var parentDir = outputFile.getParentFile();
         if (parentDir != null && !parentDir.exists()) {
             if (!parentDir.mkdirs()) {
                 throw new IOException("Failed to create directory: " + parentDir.getAbsolutePath());
@@ -111,42 +107,42 @@ public class GenSchemaMain {
     /**
      * Generates the XSD schema to the specified file with all post-processing applied.
      */
-    public static void generateSchema(File outputFile) throws Exception {
+    public static void generateSchema(final File outputFile) throws Exception {
         // Step 1: Generate base schema from JAXB
-        File tempFile = File.createTempFile("schema", ".xsd");
+        final var tempFile = File.createTempFile("schema", ".xsd");
         tempFile.deleteOnExit();
         generateBaseSchema(tempFile);
 
         // Step 2: Load and post-process the schema
-        Document doc = loadXmlDocument(tempFile);
+        final var doc = loadXmlDocument(tempFile);
         postProcessSchema(doc);
 
         // Step 3: Write the final schema
         writeXmlDocument(doc, outputFile);
     }
 
-    private static void generateBaseSchema(File outputFile) throws JAXBException, IOException {
-        JAXBContext context = JAXBContext.newInstance(SCHEMA_CLASSES);
+    private static void generateBaseSchema(final File outputFile) throws JAXBException, IOException {
+        final var context = JAXBContext.newInstance(SCHEMA_CLASSES);
         context.generateSchema(new SchemaOutputResolver() {
             @Override
-            public Result createOutput(String namespaceUri, String suggestedFileName) throws IOException {
-                StreamResult result = new StreamResult(outputFile);
+            public Result createOutput(final String namespaceUri, final String suggestedFileName) {
+                final var result = new StreamResult(outputFile);
                 result.setSystemId(outputFile.toURI().toString());
                 return result;
             }
         });
     }
 
-    private static Document loadXmlDocument(File file) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    private static Document loadXmlDocument(final File file) throws Exception {
+        final var factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
-        DocumentBuilder builder = factory.newDocumentBuilder();
+        final var builder = factory.newDocumentBuilder();
         return builder.parse(file);
     }
 
-    private static void writeXmlDocument(Document doc, File outputFile) throws Exception {
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
+    private static void writeXmlDocument(final Document doc, final File outputFile) throws Exception {
+        final var transformerFactory = TransformerFactory.newInstance();
+        final var transformer = transformerFactory.newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
         transformer.transform(new DOMSource(doc), new StreamResult(outputFile));
@@ -155,7 +151,7 @@ public class GenSchemaMain {
     /**
      * Applies all post-processing transformations to make the schema backwards compatible.
      */
-    private static void postProcessSchema(Document doc) {
+    private static void postProcessSchema(final Document doc) {
         replaceSequenceWithAllForRootEntity(doc);
         makeConfigVersionOptional(doc);
         fixMqttListeners(doc);
@@ -180,11 +176,11 @@ public class GenSchemaMain {
      * {@code minOccurs="0"} unless they are part of a collection. There is no annotation to
      * explicitly set {@code minOccurs} in the generated schema.
      */
-    private static void makeConfigVersionOptional(Document doc) {
-        Element complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
+    private static void makeConfigVersionOptional(final Document doc) {
+        final var complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
         if (complexType == null) return;
 
-        Element configVersionElement = findChildElementByName(complexType, "config-version");
+        final var configVersionElement = findChildElementByName(complexType, "config-version");
         if (configVersionElement != null) {
             configVersionElement.setAttribute("minOccurs", "0");
         }
@@ -213,25 +209,25 @@ public class GenSchemaMain {
      * <p>
      * Post-processing the generated XSD is the standard workaround for this JAXB limitation.
      */
-    private static void replaceSequenceWithAllForRootEntity(Document doc) {
-        Element complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
+    private static void replaceSequenceWithAllForRootEntity(final Document doc) {
+        final var complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
         if (complexType == null) {
             System.err.println("Warning: Could not find hiveMQConfigEntity complexType");
             return;
         }
 
         // Find the xs:sequence child
-        NodeList children = complexType.getChildNodes();
+        final var children = complexType.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
+            final var child = children.item(i);
             if (child instanceof Element && "sequence".equals(child.getLocalName())) {
                 // Create new xs:all element
-                Element allElement = doc.createElementNS(XS_NAMESPACE, "xs:all");
+                final var allElement = doc.createElementNS(XS_NAMESPACE, "xs:all");
 
                 // Move all children from sequence to all
-                NodeList sequenceChildren = child.getChildNodes();
+                final var sequenceChildren = child.getChildNodes();
                 while (sequenceChildren.getLength() > 0) {
-                    Node seqChild = sequenceChildren.item(0);
+                    final var seqChild = sequenceChildren.item(0);
                     allElement.appendChild(seqChild);
                 }
 
@@ -258,7 +254,7 @@ public class GenSchemaMain {
      * only at the element level, not properly handling the inheritance hierarchy with
      * {@code @XmlElementWrapper}.
      */
-    private static void fixMqttListeners(Document doc) {
+    private static void fixMqttListeners(final Document doc) {
         fixListenerElement(doc, "mqtt-listeners", new String[]{
                 "tcp-listener", "tls-tcp-listener", "websocket-listener", "tls-websocket-listener"
         });
@@ -269,7 +265,7 @@ public class GenSchemaMain {
      * <p>
      * See {@link #fixMqttListeners(Document)} for explanation of why this post-processing is needed.
      */
-    private static void fixMqttSnListeners(Document doc) {
+    private static void fixMqttSnListeners(final Document doc) {
         fixListenerElement(doc, "mqtt-sn-listeners", new String[]{
                 "udp-listener", "udp-broadcast-listener"
         });
@@ -282,16 +278,16 @@ public class GenSchemaMain {
      * @param elementName   the wrapper element name (e.g., "mqtt-listeners")
      * @param listenerTypes the concrete listener element names to include in the choice
      */
-    private static void fixListenerElement(Document doc, String elementName, String[] listenerTypes) {
+    private static void fixListenerElement(final Document doc, final String elementName, final String[] listenerTypes) {
         // Find the element in hiveMQConfigEntity
-        Element complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
+        final var complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
         if (complexType == null) return;
 
-        Element listenersElement = findChildElementByName(complexType, elementName);
+        final var listenersElement = findChildElementByName(complexType, elementName);
         if (listenersElement == null) return;
 
         // Find the inner complexType
-        Element innerComplexType = findFirstChildElement(listenersElement, "complexType");
+        final var innerComplexType = findFirstChildElement(listenersElement, "complexType");
         if (innerComplexType == null) return;
 
         // Replace the content with xs:choice
@@ -301,12 +297,12 @@ public class GenSchemaMain {
         }
 
         // Create xs:choice with all listener types
-        Element choice = doc.createElementNS(XS_NAMESPACE, "xs:choice");
+        final var choice = doc.createElementNS(XS_NAMESPACE, "xs:choice");
         choice.setAttribute("minOccurs", "0");
         choice.setAttribute("maxOccurs", "unbounded");
 
-        for (String listenerType : listenerTypes) {
-            Element elementRef = doc.createElementNS(XS_NAMESPACE, "xs:element");
+        for (final var listenerType : listenerTypes) {
+            final var elementRef = doc.createElementNS(XS_NAMESPACE, "xs:element");
             elementRef.setAttribute("ref", listenerType);
             choice.appendChild(elementRef);
         }
@@ -336,14 +332,14 @@ public class GenSchemaMain {
      * Note: Using {@code xs:any} alone avoids non-determinism issues that occur when mixing
      * named elements with {@code xs:any} in a choice.
      */
-    private static void fixProtocolAdapters(Document doc) {
-        Element complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
+    private static void fixProtocolAdapters(final Document doc) {
+        final var complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
         if (complexType == null) return;
 
-        Element adaptersElement = findChildElementByName(complexType, "protocol-adapters");
+        final var adaptersElement = findChildElementByName(complexType, "protocol-adapters");
         if (adaptersElement == null) return;
 
-        Element innerComplexType = findFirstChildElement(adaptersElement, "complexType");
+        final var innerComplexType = findFirstChildElement(adaptersElement, "complexType");
         if (innerComplexType == null) return;
 
         // Clear existing content
@@ -353,14 +349,14 @@ public class GenSchemaMain {
 
         // Create xs:sequence with xs:any (skip validation for all adapter elements)
         // This allows both <protocol-adapter> and legacy adapter-specific elements like <simulation>
-        Element sequence = doc.createElementNS(XS_NAMESPACE, "xs:sequence");
+        final var sequence = doc.createElementNS(XS_NAMESPACE, "xs:sequence");
 
-        Element choice = doc.createElementNS(XS_NAMESPACE, "xs:choice");
+        final var choice = doc.createElementNS(XS_NAMESPACE, "xs:choice");
         choice.setAttribute("minOccurs", "0");
         choice.setAttribute("maxOccurs", "unbounded");
 
         // Use xs:any alone to avoid non-determinism
-        Element anyElement = doc.createElementNS(XS_NAMESPACE, "xs:any");
+        final var anyElement = doc.createElementNS(XS_NAMESPACE, "xs:any");
         anyElement.setAttribute("processContents", "skip");
         choice.appendChild(anyElement);
 
@@ -383,21 +379,21 @@ public class GenSchemaMain {
      * the field to be {@code List<Element>} or similar DOM types, which would change the Java API.
      * The adapter approach provides a cleaner Java API but requires schema post-processing.
      */
-    private static void fixModules(Document doc) {
-        Element complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
+    private static void fixModules(final Document doc) {
+        final var complexType = findComplexTypeByName(doc, "hiveMQConfigEntity");
         if (complexType == null) return;
 
-        Element modulesElement = findChildElementByName(complexType, "modules");
+        final var modulesElement = findChildElementByName(complexType, "modules");
         if (modulesElement == null) return;
 
         // Remove the type attribute and add inline complexType with xs:any
         modulesElement.removeAttribute("type");
 
         // Create inline complexType
-        Element innerComplexType = doc.createElementNS(XS_NAMESPACE, "xs:complexType");
-        Element sequence = doc.createElementNS(XS_NAMESPACE, "xs:sequence");
+        final var innerComplexType = doc.createElementNS(XS_NAMESPACE, "xs:complexType");
+        final var sequence = doc.createElementNS(XS_NAMESPACE, "xs:sequence");
 
-        Element anyElement = doc.createElementNS(XS_NAMESPACE, "xs:any");
+        final var anyElement = doc.createElementNS(XS_NAMESPACE, "xs:any");
         anyElement.setAttribute("processContents", "skip");
         anyElement.setAttribute("minOccurs", "0");
         anyElement.setAttribute("maxOccurs", "unbounded");
@@ -422,7 +418,7 @@ public class GenSchemaMain {
      * {@code @XmlElementWrapper} does not support a {@code required} attribute - wrappers are
      * always generated as required in the schema even when the collection can be empty.
      */
-    private static void fixDataCombinerEntity(Document doc) {
+    private static void fixDataCombinerEntity(final Document doc) {
         replaceSequenceWithAll(doc, "dataCombinerEntity");
         replaceSequenceWithAll(doc, "dataCombiningEntity");
 
@@ -441,11 +437,11 @@ public class GenSchemaMain {
      * @param typeName    the name of the complex type containing the element
      * @param elementName the name of the element to make optional
      */
-    private static void makeElementOptionalInType(Document doc, String typeName, String elementName) {
-        Element complexType = findComplexTypeByName(doc, typeName);
+    private static void makeElementOptionalInType(final Document doc, final String typeName, final String elementName) {
+        final var complexType = findComplexTypeByName(doc, typeName);
         if (complexType == null) return;
 
-        Element element = findChildElementByName(complexType, elementName);
+        final var element = findChildElementByName(complexType, elementName);
         if (element != null) {
             element.setAttribute("minOccurs", "0");
         }
@@ -459,20 +455,20 @@ public class GenSchemaMain {
      * @param doc      the XSD document to modify
      * @param typeName the name of the complex type to modify
      */
-    private static void replaceSequenceWithAll(Document doc, String typeName) {
-        Element complexType = findComplexTypeByName(doc, typeName);
+    private static void replaceSequenceWithAll(final Document doc, final String typeName) {
+        final var complexType = findComplexTypeByName(doc, typeName);
         if (complexType == null) return;
 
-        NodeList children = complexType.getChildNodes();
+        final var children = complexType.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
+            final var child = children.item(i);
             if (child instanceof Element && "sequence".equals(child.getLocalName())) {
-                Element allElement = doc.createElementNS(XS_NAMESPACE, "xs:all");
+                final var allElement = doc.createElementNS(XS_NAMESPACE, "xs:all");
 
                 // Move all children from sequence to all
-                NodeList sequenceChildren = child.getChildNodes();
+                final var sequenceChildren = child.getChildNodes();
                 while (sequenceChildren.getLength() > 0) {
-                    Node seqChild = sequenceChildren.item(0);
+                    final var seqChild = sequenceChildren.item(0);
                     allElement.appendChild(seqChild);
                 }
 
@@ -498,8 +494,8 @@ public class GenSchemaMain {
      * (like {@code adminApiEntity} extending {@code enabledEntity}), the base type's elements
      * also need to be made optional, which requires modifying multiple generated complex types.
      */
-    private static void fixEmptyElementTypes(Document doc) {
-        String[] typesToFix = {
+    private static void fixEmptyElementTypes(final Document doc) {
+        final String[] typesToFix = {
                 "mqttSnConfigEntity",
                 "adminApiEntity",
                 "dynamicConfigEntity",
@@ -508,7 +504,7 @@ public class GenSchemaMain {
                 "enabledEntity"
         };
 
-        for (String typeName : typesToFix) {
+        for (final var typeName : typesToFix) {
             makeAllChildrenOptional(doc, typeName);
         }
     }
@@ -519,13 +515,13 @@ public class GenSchemaMain {
      * @param doc      the XSD document to modify
      * @param typeName the name of the complex type whose children should be made optional
      */
-    private static void makeAllChildrenOptional(Document doc, String typeName) {
-        Element complexType = findComplexTypeByName(doc, typeName);
+    private static void makeAllChildrenOptional(final Document doc, final String typeName) {
+        final var complexType = findComplexTypeByName(doc, typeName);
         if (complexType == null) return;
 
-        NodeList elements = complexType.getElementsByTagNameNS(XS_NAMESPACE, "element");
+        final var elements = complexType.getElementsByTagNameNS(XS_NAMESPACE, "element");
         for (int i = 0; i < elements.getLength(); i++) {
-            Element element = (Element) elements.item(i);
+            final var element = (Element) elements.item(i);
             if (!element.hasAttribute("minOccurs")) {
                 element.setAttribute("minOccurs", "0");
             }
@@ -547,8 +543,8 @@ public class GenSchemaMain {
      * Bean Validation annotations (like {@code @Min}, {@code @Max}, {@code @Pattern}) are also
      * not translated to XSD constraints by JAXB.
      */
-    private static void addCustomSimpleTypes(Document doc) {
-        Element schemaElement = doc.getDocumentElement();
+    private static void addCustomSimpleTypes(final Document doc) {
+        final var schemaElement = doc.getDocumentElement();
 
         addSimpleTypeIfNotExists(doc, schemaElement, "port", "xs:int",
                 new String[]{"minInclusive", "0"}, new String[]{"maxInclusive", "65535"});
@@ -576,10 +572,10 @@ public class GenSchemaMain {
                 new String[]{"minInclusive", "0"});
     }
 
-    private static boolean simpleTypeExists(Document doc, String name) {
-        NodeList simpleTypes = doc.getElementsByTagNameNS(XS_NAMESPACE, "simpleType");
+    private static boolean simpleTypeExists(final Document doc, final String name) {
+        final var simpleTypes = doc.getElementsByTagNameNS(XS_NAMESPACE, "simpleType");
         for (int i = 0; i < simpleTypes.getLength(); i++) {
-            Element st = (Element) simpleTypes.item(i);
+            final var st = (Element) simpleTypes.item(i);
             if (name.equals(st.getAttribute("name"))) {
                 return true;
             }
@@ -587,29 +583,29 @@ public class GenSchemaMain {
         return false;
     }
 
-    private static void addSimpleTypeIfNotExists(Document doc, Element parent, String name, String baseType, String[]... facets) {
+    private static void addSimpleTypeIfNotExists(final Document doc, final Element parent, final String name, final String baseType, final String[]... facets) {
         if (simpleTypeExists(doc, name)) {
             return;
         }
         addSimpleType(doc, parent, name, baseType, facets);
     }
 
-    private static void addSimpleTypeWithEnumerationIfNotExists(Document doc, Element parent, String name, String baseType, String... values) {
+    private static void addSimpleTypeWithEnumerationIfNotExists(final Document doc, final Element parent, final String name, final String baseType, final String... values) {
         if (simpleTypeExists(doc, name)) {
             return;
         }
         addSimpleTypeWithEnumeration(doc, parent, name, baseType, values);
     }
 
-    private static void addSimpleType(Document doc, Element parent, String name, String baseType, String[]... facets) {
-        Element simpleType = doc.createElementNS(XS_NAMESPACE, "xs:simpleType");
+    private static void addSimpleType(final Document doc, final Element parent, final String name, final String baseType, final String[]... facets) {
+        final var simpleType = doc.createElementNS(XS_NAMESPACE, "xs:simpleType");
         simpleType.setAttribute("name", name);
 
-        Element restriction = doc.createElementNS(XS_NAMESPACE, "xs:restriction");
+        final var restriction = doc.createElementNS(XS_NAMESPACE, "xs:restriction");
         restriction.setAttribute("base", baseType);
 
-        for (String[] facet : facets) {
-            Element facetElement = doc.createElementNS(XS_NAMESPACE, "xs:" + facet[0]);
+        for (final String[] facet : facets) {
+            final var facetElement = doc.createElementNS(XS_NAMESPACE, "xs:" + facet[0]);
             facetElement.setAttribute("value", facet[1]);
             restriction.appendChild(facetElement);
         }
@@ -618,15 +614,15 @@ public class GenSchemaMain {
         parent.appendChild(simpleType);
     }
 
-    private static void addSimpleTypeWithEnumeration(Document doc, Element parent, String name, String baseType, String... values) {
-        Element simpleType = doc.createElementNS(XS_NAMESPACE, "xs:simpleType");
+    private static void addSimpleTypeWithEnumeration(final Document doc, final Element parent, final String name, final String baseType, final String... values) {
+        final var simpleType = doc.createElementNS(XS_NAMESPACE, "xs:simpleType");
         simpleType.setAttribute("name", name);
 
-        Element restriction = doc.createElementNS(XS_NAMESPACE, "xs:restriction");
+        final var restriction = doc.createElementNS(XS_NAMESPACE, "xs:restriction");
         restriction.setAttribute("base", baseType);
 
-        for (String value : values) {
-            Element enumElement = doc.createElementNS(XS_NAMESPACE, "xs:enumeration");
+        for (final String value : values) {
+            final var enumElement = doc.createElementNS(XS_NAMESPACE, "xs:enumeration");
             enumElement.setAttribute("value", value);
             restriction.appendChild(enumElement);
         }
@@ -637,10 +633,10 @@ public class GenSchemaMain {
 
     // Helper methods for DOM traversal
 
-    private static Element findComplexTypeByName(Document doc, String name) {
-        NodeList complexTypes = doc.getElementsByTagNameNS(XS_NAMESPACE, "complexType");
+    private static Element findComplexTypeByName(final Document doc, final String name) {
+        final var complexTypes = doc.getElementsByTagNameNS(XS_NAMESPACE, "complexType");
         for (int i = 0; i < complexTypes.getLength(); i++) {
-            Element ct = (Element) complexTypes.item(i);
+            final var ct = (Element) complexTypes.item(i);
             if (name.equals(ct.getAttribute("name"))) {
                 return ct;
             }
@@ -648,17 +644,16 @@ public class GenSchemaMain {
         return null;
     }
 
-    private static Element findChildElementByName(Element parent, String elementName) {
+    private static Element findChildElementByName(final Element parent, final String elementName) {
         // Search through xs:all or xs:sequence children
-        NodeList children = parent.getChildNodes();
+        final var children = parent.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (child instanceof Element) {
-                Element childElement = (Element) child;
-                String localName = childElement.getLocalName();
+            final var child = children.item(i);
+            if (child instanceof final Element childElement) {
+                final var localName = childElement.getLocalName();
                 if ("all".equals(localName) || "sequence".equals(localName)) {
                     // Search within all/sequence
-                    Element found = findElementWithNameAttribute(childElement, elementName);
+                    final var found = findElementWithNameAttribute(childElement, elementName);
                     if (found != null) return found;
                 }
             }
@@ -666,16 +661,15 @@ public class GenSchemaMain {
         return null;
     }
 
-    private static Element findElementWithNameAttribute(Element parent, String nameValue) {
-        NodeList children = parent.getChildNodes();
+    private static Element findElementWithNameAttribute(final Element parent, final String nameValue) {
+        final var children = parent.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (child instanceof Element) {
-                Element childElement = (Element) child;
+            final var child = children.item(i);
+            if (child instanceof final Element childElement) {
                 if ("element".equals(childElement.getLocalName())) {
                     // Check both "name" attribute and "ref" attribute
-                    String name = childElement.getAttribute("name");
-                    String ref = childElement.getAttribute("ref");
+                    final var name = childElement.getAttribute("name");
+                    final var ref = childElement.getAttribute("ref");
                     if (nameValue.equals(name) || nameValue.equals(ref)) {
                         return childElement;
                     }
@@ -685,10 +679,10 @@ public class GenSchemaMain {
         return null;
     }
 
-    private static Element findFirstChildElement(Element parent, String localName) {
-        NodeList children = parent.getChildNodes();
+    private static Element findFirstChildElement(final Element parent, final String localName) {
+        final var children = parent.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
+            final var child = children.item(i);
             if (child instanceof Element && localName.equals(child.getLocalName())) {
                 return (Element) child;
             }
