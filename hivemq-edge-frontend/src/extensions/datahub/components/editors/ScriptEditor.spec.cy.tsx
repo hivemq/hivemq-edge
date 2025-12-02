@@ -112,9 +112,6 @@ describe('ScriptEditor', () => {
       // Save button should be enabled (dirty state detected)
       cy.contains('button', 'Save').should('not.be.disabled')
 
-      // Wait a moment for validation to run
-      cy.wait(100)
-
       // Save button should now be disabled due to validation error
       cy.contains('button', 'Save').should('be.disabled')
 
