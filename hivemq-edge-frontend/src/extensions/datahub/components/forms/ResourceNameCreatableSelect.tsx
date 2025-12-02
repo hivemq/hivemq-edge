@@ -182,7 +182,7 @@ export const SchemaNameCreatableSelect = (props: WidgetProps) => {
     return Object.values(options)
   }, [data])
 
-  return ResourceNameCreatableSelect(props, DataHubNodeType.SCHEMA, options, createNewSchemaOption, isLoading, false)
+  return ResourceNameCreatableSelect(props, DataHubNodeType.SCHEMA, options, createNewSchemaOption, isLoading, true)
 }
 
 export const ScriptNameCreatableSelect = (props: WidgetProps) => {
@@ -194,7 +194,7 @@ export const ScriptNameCreatableSelect = (props: WidgetProps) => {
     return Object.values(options)
   }, [data])
 
-  return ResourceNameCreatableSelect(props, DataHubNodeType.FUNCTION, options, createNewScriptOption, isLoading, false)
+  return ResourceNameCreatableSelect(props, DataHubNodeType.FUNCTION, options, createNewScriptOption, isLoading, true)
 }
 
 /**
