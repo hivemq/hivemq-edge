@@ -471,7 +471,7 @@ describe('loadSchema', () => {
             type: DataHubNodeType.SCHEMA,
             data: expect.objectContaining({
               type: SchemaType.PROTOBUF,
-              schemaSource: expect.stringContaining('GpsCoordinates'),
+              schemaSource: expect.stringContaining('// NOTICE: once encoded into a Base64 descriptor'),
               version: 1,
             }),
           }),

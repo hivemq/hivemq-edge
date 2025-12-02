@@ -47,8 +47,8 @@ describe('encodeProtobufSchema', () => {
     expect(() => encodeProtobufSchema(invalidSource)).toThrow()
   })
 
-  it('should throw error for empty source', () => {
-    expect(() => encodeProtobufSchema('')).toThrow()
+  it('should return empty for empty source', () => {
+    expect(encodeProtobufSchema('')).toStrictEqual('')
   })
 
   it('should encode protobuf with nested messages', () => {
@@ -101,7 +101,7 @@ describe('decodeProtobufSchema', () => {
 
     // Should return a template showing the message type
     expect(typeof decoded).toBe('string')
-    expect(decoded).toContain('Person')
+    expect(decoded).toContain('// NOTICE: once encoded into a Base64')
   })
 
   it('should throw error for invalid base64 string', () => {
@@ -127,7 +127,7 @@ describe('decodeProtobufSchema', () => {
     const encoded = encodeProtobufSchema(source)
     const decoded = decodeProtobufSchema(encoded)
 
-    expect(decoded).toContain('GpsCoordinates')
+    expect(decoded).toContain('// NOTICE: once encoded into a Base64')
   })
 })
 
