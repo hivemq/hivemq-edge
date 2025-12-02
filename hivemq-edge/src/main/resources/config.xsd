@@ -136,7 +136,7 @@
     
   <xs:element name="wildcard-subscriptions" type="wildcardSubscriptionsConfigEntity"/>
     
-  <xs:complexType name="hiveMQConfigEntity">
+  <xs:complexType mixed="true" name="hiveMQConfigEntity">
         
     <xs:all>
             
@@ -284,7 +284,7 @@
             
       <xs:element name="bind-address" type="xs:string"/>
             
-      <xs:element minOccurs="0" name="name" type="xs:string"/>
+      <xs:element minOccurs="0" name="name" type="nonEmptyString"/>
             
       <xs:element minOccurs="0" name="external-hostname" type="xs:string"/>
           
@@ -324,11 +324,11 @@
       
   </xs:complexType>
     
-  <xs:complexType name="queuedMessagesConfigEntity">
+  <xs:complexType mixed="true" name="queuedMessagesConfigEntity">
         
     <xs:all>
             
-      <xs:element default="1000" name="max-queue-size" type="xs:long"/>
+      <xs:element default="1000" name="max-queue-size" type="maxQueueSizeType"/>
             
       <xs:element default="discard" minOccurs="0" name="strategy" type="strategy"/>
           
@@ -374,7 +374,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="qoSConfigEntity">
+  <xs:complexType mixed="true" name="qoSConfigEntity">
         
     <xs:all>
             
@@ -392,7 +392,7 @@
                 
         <xs:sequence>
                     
-          <xs:element default="5" name="max-per-client" type="xs:int"/>
+          <xs:element default="5" name="max-per-client" type="uint16NonZeroType"/>
                   
         </xs:sequence>
               
@@ -408,7 +408,7 @@
             
       <xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="skip"/>
             
-      <xs:element default="4294967296" minOccurs="0" name="max-interval" type="xs:long"/>
+      <xs:element default="4294967296" minOccurs="0" name="max-interval" type="messageExpiryIntervalType"/>
           
     </xs:sequence>
       
@@ -420,7 +420,7 @@
             
       <xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="skip"/>
             
-      <xs:element default="4294967295" minOccurs="0" name="max-interval" type="xs:long"/>
+      <xs:element default="4294967295" minOccurs="0" name="max-interval" type="sessionExpiryIntervalType"/>
           
     </xs:sequence>
       
@@ -454,11 +454,11 @@
       
   </xs:complexType>
     
-  <xs:complexType name="keepAliveConfigEntity">
+  <xs:complexType mixed="true" name="keepAliveConfigEntity">
         
     <xs:all>
             
-      <xs:element default="65535" name="max-keep-alive" type="xs:int"/>
+      <xs:element default="65535" name="max-keep-alive" type="keepAliveType"/>
             
       <xs:element default="true" name="allow-unlimited" type="xs:boolean"/>
           
@@ -466,21 +466,21 @@
       
   </xs:complexType>
     
-  <xs:complexType name="packetsConfigEntity">
+  <xs:complexType mixed="true" name="packetsConfigEntity">
         
     <xs:all>
             
-      <xs:element default="268435460" name="max-packet-size" type="xs:int"/>
+      <xs:element default="268435460" name="max-packet-size" type="maxPacketSizeType"/>
           
     </xs:all>
       
   </xs:complexType>
     
-  <xs:complexType name="receiveMaximumConfigEntity">
+  <xs:complexType mixed="true" name="receiveMaximumConfigEntity">
         
     <xs:all>
             
-      <xs:element default="10" name="server-receive-maximum" type="xs:int"/>
+      <xs:element default="10" name="server-receive-maximum" type="uint16NonZeroType"/>
           
     </xs:all>
       
@@ -648,25 +648,25 @@
     
   <xs:complexType mixed="true" name="restrictionsEntity">
         
-    <xs:sequence>
+    <xs:all>
             
-      <xs:element default="-1" minOccurs="0" name="max-connections" type="xs:long"/>
+      <xs:element default="-1" minOccurs="0" name="max-connections" type="maxConnectionsType"/>
             
-      <xs:element default="65535" minOccurs="0" name="max-client-id-length" type="xs:int"/>
+      <xs:element default="65535" minOccurs="0" name="max-client-id-length" type="maxLengthType"/>
             
-      <xs:element default="65535" minOccurs="0" name="max-topic-length" type="xs:int"/>
+      <xs:element default="65535" minOccurs="0" name="max-topic-length" type="maxLengthType"/>
             
-      <xs:element default="10000" minOccurs="0" name="no-connect-idle-timeout" type="xs:long"/>
+      <xs:element default="10000" minOccurs="0" name="no-connect-idle-timeout" type="timeoutMsType"/>
             
-      <xs:element default="0" minOccurs="0" name="incoming-bandwidth-throttling" type="xs:long"/>
+      <xs:element default="0" minOccurs="0" name="incoming-bandwidth-throttling" type="bandwidthType"/>
           
-    </xs:sequence>
+    </xs:all>
       
   </xs:complexType>
     
   <xs:complexType mixed="true" name="securityConfigEntity">
         
-    <xs:sequence>
+    <xs:all>
             
       <xs:element minOccurs="0" ref="payload-format-validation"/>
             
@@ -676,7 +676,7 @@
             
       <xs:element minOccurs="0" ref="allow-request-problem-information"/>
           
-    </xs:sequence>
+    </xs:all>
       
   </xs:complexType>
     
@@ -748,11 +748,11 @@
     
   <xs:complexType mixed="true" name="mqttBridgeEntity">
         
-    <xs:sequence>
+    <xs:all>
             
-      <xs:element name="id" type="xs:string"/>
+      <xs:element minOccurs="0" name="id" type="xs:string"/>
             
-      <xs:element ref="remote-broker"/>
+      <xs:element minOccurs="0" ref="remote-broker"/>
             
       <xs:element minOccurs="0" name="remote-subscriptions">
                 
@@ -782,47 +782,47 @@
               
       </xs:element>
             
-      <xs:element ref="loop-prevention"/>
+      <xs:element minOccurs="0" ref="loop-prevention"/>
             
-      <xs:element name="persist" type="xs:boolean"/>
+      <xs:element minOccurs="0" name="persist" type="xs:boolean"/>
           
-    </xs:sequence>
+    </xs:all>
       
   </xs:complexType>
     
   <xs:complexType mixed="true" name="remoteBrokerEntity">
         
-    <xs:sequence>
+    <xs:all>
             
-      <xs:element default="1883" name="port" type="xs:int"/>
+      <xs:element default="1883" minOccurs="0" name="port" type="xs:int"/>
             
-      <xs:element name="host" type="xs:string"/>
+      <xs:element minOccurs="0" name="host" type="xs:string"/>
             
-      <xs:element ref="mqtt"/>
+      <xs:element minOccurs="0" name="mqtt" type="bridgeMqttEntity"/>
             
-      <xs:element ref="authentication"/>
+      <xs:element minOccurs="0" ref="authentication"/>
             
-      <xs:element ref="websocket"/>
+      <xs:element minOccurs="0" ref="websocket"/>
             
-      <xs:element ref="tls"/>
+      <xs:element minOccurs="0" ref="tls"/>
           
-    </xs:sequence>
+    </xs:all>
       
   </xs:complexType>
     
   <xs:complexType mixed="true" name="bridgeMqttEntity">
         
-    <xs:sequence>
+    <xs:all>
             
       <xs:element minOccurs="0" name="client-id" type="xs:string"/>
             
-      <xs:element default="false" name="clean-start" type="xs:boolean"/>
+      <xs:element default="false" minOccurs="0" name="clean-start" type="xs:boolean"/>
             
-      <xs:element default="3600" name="session-expiry" type="xs:long"/>
+      <xs:element default="3600" minOccurs="0" name="session-expiry" type="xs:long"/>
             
-      <xs:element default="60" name="keep-alive" type="xs:int"/>
+      <xs:element default="60" minOccurs="0" name="keep-alive" type="xs:int"/>
           
-    </xs:sequence>
+    </xs:all>
       
   </xs:complexType>
     
@@ -936,7 +936,7 @@
     
   <xs:complexType mixed="true" name="remoteSubscriptionEntity">
         
-    <xs:sequence>
+    <xs:all>
             
       <xs:element minOccurs="0" name="filters">
                 
@@ -952,9 +952,9 @@
               
       </xs:element>
             
-      <xs:element name="max-qos" type="xs:int"/>
+      <xs:element minOccurs="0" name="max-qos" type="xs:int"/>
             
-      <xs:element default="false" name="preserve-retain" type="xs:boolean"/>
+      <xs:element default="false" minOccurs="0" name="preserve-retain" type="xs:boolean"/>
             
       <xs:element minOccurs="0" name="destination" type="xs:string"/>
             
@@ -972,7 +972,7 @@
               
       </xs:element>
           
-    </xs:sequence>
+    </xs:all>
       
   </xs:complexType>
     
@@ -990,7 +990,7 @@
     
   <xs:complexType mixed="true" name="forwardedTopicEntity">
         
-    <xs:sequence>
+    <xs:all>
             
       <xs:element minOccurs="0" name="filters">
                 
@@ -1006,9 +1006,9 @@
               
       </xs:element>
             
-      <xs:element name="max-qos" type="xs:int"/>
+      <xs:element minOccurs="0" name="max-qos" type="xs:int"/>
             
-      <xs:element default="false" name="preserve-retain" type="xs:boolean"/>
+      <xs:element default="false" minOccurs="0" name="preserve-retain" type="xs:boolean"/>
             
       <xs:element minOccurs="0" name="destination" type="xs:string"/>
             
@@ -1042,19 +1042,19 @@
             
       <xs:element minOccurs="0" name="queue-limit" type="xs:long"/>
           
-    </xs:sequence>
+    </xs:all>
       
   </xs:complexType>
     
   <xs:complexType mixed="true" name="loopPreventionEntity">
         
-    <xs:sequence>
+    <xs:all>
             
       <xs:element default="true" name="enabled" type="xs:boolean"/>
             
       <xs:element default="1" name="hop-count-limit" type="xs:int"/>
           
-    </xs:sequence>
+    </xs:all>
       
   </xs:complexType>
     
@@ -1136,7 +1136,7 @@
             
       <xs:element name="port" type="xs:int"/>
             
-      <xs:element name="bind-address" type="xs:string"/>
+      <xs:element default="0.0.0.0" minOccurs="0" name="bind-address" type="xs:string"/>
           
     </xs:sequence>
       
@@ -1594,7 +1594,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="dataCombinerEntity">
+  <xs:complexType mixed="true" name="dataCombinerEntity">
         
     <xs:all>
             
@@ -1648,7 +1648,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="dataCombiningEntity">
+  <xs:complexType mixed="true" name="dataCombiningEntity">
         
     <xs:all>
             
@@ -1750,15 +1750,15 @@
     
   <xs:complexType mixed="true" name="managed-asset">
         
-    <xs:sequence>
+    <xs:all>
             
       <xs:element name="schema" type="xs:string"/>
             
       <xs:element name="mapping" type="mapping"/>
           
-    </xs:sequence>
+    </xs:all>
         
-    <xs:attribute name="id" type="xs:string" use="required"/>
+    <xs:attribute name="id" type="uuidType" use="required"/>
         
     <xs:attribute name="name" type="xs:string" use="required"/>
         
@@ -1772,7 +1772,7 @@
         
     <xs:sequence/>
         
-    <xs:attribute name="id" type="xs:string"/>
+    <xs:attribute name="id" type="uuidType"/>
         
     <xs:attribute name="status" type="pulseAssetMappingStatus" use="required"/>
       
@@ -2090,6 +2090,62 @@
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="nonNegativeLong">
+    <xs:restriction base="xs:long">
+      <xs:minInclusive value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="maxPacketSizeType">
+    <xs:restriction base="xs:int">
+      <xs:minInclusive value="15"/>
+      <xs:maxInclusive value="268435460"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="uint16NonZeroType">
+    <xs:restriction base="xs:int">
+      <xs:minInclusive value="1"/>
+      <xs:maxInclusive value="65535"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="keepAliveType">
+    <xs:restriction base="xs:int">
+      <xs:minInclusive value="1"/>
+      <xs:maxInclusive value="65535"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="sessionExpiryIntervalType">
+    <xs:restriction base="xs:long">
+      <xs:minInclusive value="0"/>
+      <xs:maxInclusive value="4294967295"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="messageExpiryIntervalType">
+    <xs:restriction base="xs:long">
+      <xs:minInclusive value="0"/>
+      <xs:maxInclusive value="4294967296"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="maxQueueSizeType">
+    <xs:restriction base="xs:long">
+      <xs:minInclusive value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="maxConnectionsType">
+    <xs:restriction base="xs:long">
+      <xs:minInclusive value="-1"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="maxLengthType">
+    <xs:restriction base="xs:int">
+      <xs:minInclusive value="1"/>
+      <xs:maxInclusive value="65535"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="timeoutMsType">
+    <xs:restriction base="xs:int">
+      <xs:minInclusive value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="bandwidthType">
     <xs:restriction base="xs:long">
       <xs:minInclusive value="0"/>
     </xs:restriction>

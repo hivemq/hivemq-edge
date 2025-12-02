@@ -573,12 +573,43 @@ public class GenSchemaMain {
                 "sharedSubscriptionsConfigEntity",
                 "subscriptionIdentifierConfigEntity",
                 "topicAliasConfigEntity",
-                "wildcardSubscriptionsConfigEntity"
+                "wildcardSubscriptionsConfigEntity",
+                // Restriction types
+                "restrictionsEntity",
+                // Bridge types that need flexible element ordering
+                "mqttBridgeEntity",
+                "remoteBrokerEntity",
+                "remoteSubscriptionEntity",
+                "localSubscriptionEntity",
+                "loopPreventionEntity",
+                "bridgeMqttEntity",
+                "forwardedTopicEntity",
+                // Security config types
+                "securityConfigEntity",
+                // Pulse config types - note: these use hyphenated names in XSD
+                "managed-asset"
         };
 
         for (final var typeName : typesToFix) {
             replaceSequenceWithAll(doc, typeName);
         }
+
+        // Make bridge elements optional that have defaults
+        makeAllChildrenOptional(doc, "mqttBridgeEntity");
+        makeAllChildrenOptional(doc, "remoteBrokerEntity");
+        makeAllChildrenOptional(doc, "remoteSubscriptionEntity");
+        makeAllChildrenOptional(doc, "localSubscriptionEntity");
+        makeAllChildrenOptional(doc, "bridgeMqttEntity");
+        makeAllChildrenOptional(doc, "forwardedTopicEntity");
+
+        // Fix element references in remoteBrokerEntity to use proper types instead of global refs
+        // JAXB generates ref="mqtt" which references the global mqtt element with xs:anyType
+        // We need to replace it with an inline element of type bridgeMqttEntity
+        replaceElementRefWithTypedElement(doc, "remoteBrokerEntity", "mqtt", "bridgeMqttEntity");
+
+        // API listener entity: bind-address is optional (has default "0.0.0.0" in Java)
+        // The Java entity has required=true but the old XSD allowed it to be optional
+        makeElementOptionalWithDefault(doc, "apiListenerEntity", "bind-address", "0.0.0.0");
     }
 
     /**
@@ -609,8 +640,8 @@ public class GenSchemaMain {
         for (int i = 0; i < complexTypes.getLength(); i++) {
             final var complexType = (Element) complexTypes.item(i);
 
-            // Check if this complex type has a direct xs:sequence child
-            if (hasDirectSequenceChild(complexType)) {
+            // Check if this complex type has a direct xs:sequence or xs:all child
+            if (hasDirectSequenceOrAllChild(complexType)) {
                 complexType.setAttribute("mixed", "true");
                 continue;
             }
@@ -624,14 +655,18 @@ public class GenSchemaMain {
     }
 
     /**
-     * Checks if a complex type has a direct xs:sequence child element.
+     * Checks if a complex type has a direct xs:sequence or xs:all child element.
+     * Both need mixed="true" to allow whitespace (formatting) between child elements.
      */
-    private static boolean hasDirectSequenceChild(final Element complexType) {
+    private static boolean hasDirectSequenceOrAllChild(final Element complexType) {
         final var children = complexType.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             final var child = children.item(i);
-            if (child instanceof Element && "sequence".equals(child.getLocalName())) {
-                return true;
+            if (child instanceof Element) {
+                final String localName = child.getLocalName();
+                if ("sequence".equals(localName) || "all".equals(localName)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -700,6 +735,168 @@ public class GenSchemaMain {
 
         addSimpleTypeIfNotExists(doc, schemaElement, "nonNegativeLong", "xs:long",
                 new String[]{"minInclusive", "0"});
+
+        // MQTT configuration value constraints
+        // max-packet-size: 15 to 268435460 (MQTT spec)
+        addSimpleTypeIfNotExists(doc, schemaElement, "maxPacketSizeType", "xs:int",
+                new String[]{"minInclusive", "15"}, new String[]{"maxInclusive", "268435460"});
+
+        // server-receive-maximum and max-per-client: 1 to 65535 (MQTT spec)
+        addSimpleTypeIfNotExists(doc, schemaElement, "uint16NonZeroType", "xs:int",
+                new String[]{"minInclusive", "1"}, new String[]{"maxInclusive", "65535"});
+
+        // max-keep-alive: 1 to 65535 (MQTT spec)
+        addSimpleTypeIfNotExists(doc, schemaElement, "keepAliveType", "xs:int",
+                new String[]{"minInclusive", "1"}, new String[]{"maxInclusive", "65535"});
+
+        // session-expiry max-interval: 0 to 4294967295 (MQTT spec - uint32)
+        addSimpleTypeIfNotExists(doc, schemaElement, "sessionExpiryIntervalType", "xs:long",
+                new String[]{"minInclusive", "0"}, new String[]{"maxInclusive", "4294967295"});
+
+        // message-expiry max-interval: 0 to 4294967296 (allows disabling with max+1)
+        addSimpleTypeIfNotExists(doc, schemaElement, "messageExpiryIntervalType", "xs:long",
+                new String[]{"minInclusive", "0"}, new String[]{"maxInclusive", "4294967296"});
+
+        // max-queue-size: 1 or more
+        addSimpleTypeIfNotExists(doc, schemaElement, "maxQueueSizeType", "xs:long",
+                new String[]{"minInclusive", "1"});
+
+        // Restriction constraints
+        // max-connections: -1 (unlimited) or positive
+        addSimpleTypeIfNotExists(doc, schemaElement, "maxConnectionsType", "xs:long",
+                new String[]{"minInclusive", "-1"});
+
+        // max-client-id-length, max-topic-length: 1 to 65535
+        addSimpleTypeIfNotExists(doc, schemaElement, "maxLengthType", "xs:int",
+                new String[]{"minInclusive", "1"}, new String[]{"maxInclusive", "65535"});
+
+        // no-connect-idle-timeout: 0 or more
+        addSimpleTypeIfNotExists(doc, schemaElement, "timeoutMsType", "xs:int",
+                new String[]{"minInclusive", "0"});
+
+        // incoming-bandwidth-throttling: 0 or more
+        addSimpleTypeIfNotExists(doc, schemaElement, "bandwidthType", "xs:long",
+                new String[]{"minInclusive", "0"});
+
+        // Apply the custom types to the relevant elements
+        applyValueConstraints(doc);
+    }
+
+    /**
+     * Applies value constraint types to specific elements in the XSD.
+     * <p>
+     * <b>Why this is needed:</b>
+     * JAXB generates elements with basic types (xs:int, xs:long) without value constraints.
+     * The old hand-written XSD had inline simpleType restrictions for many elements to enforce
+     * valid value ranges. This method replaces the basic types with custom constrained types.
+     */
+    private static void applyValueConstraints(final Document doc) {
+        // packetsConfigEntity: max-packet-size
+        changeElementTypeInComplexType(doc, "packetsConfigEntity", "max-packet-size", "maxPacketSizeType");
+
+        // receiveMaximumConfigEntity: server-receive-maximum
+        changeElementTypeInComplexType(doc, "receiveMaximumConfigEntity", "server-receive-maximum", "uint16NonZeroType");
+
+        // topicAliasConfigEntity: max-per-client
+        changeElementTypeInComplexType(doc, "topicAliasConfigEntity", "max-per-client", "uint16NonZeroType");
+
+        // keepAliveConfigEntity: max-keep-alive
+        changeElementTypeInComplexType(doc, "keepAliveConfigEntity", "max-keep-alive", "keepAliveType");
+
+        // queuedMessagesConfigEntity: max-queue-size
+        changeElementTypeInComplexType(doc, "queuedMessagesConfigEntity", "max-queue-size", "maxQueueSizeType");
+
+        // sessionExpiryConfigEntity: max-interval
+        changeElementTypeInComplexType(doc, "sessionExpiryConfigEntity", "max-interval", "sessionExpiryIntervalType");
+
+        // messageExpiryConfigEntity: max-interval
+        changeElementTypeInComplexType(doc, "messageExpiryConfigEntity", "max-interval", "messageExpiryIntervalType");
+
+        // restrictionsEntity: various constraints
+        changeElementTypeInComplexType(doc, "restrictionsEntity", "max-connections", "maxConnectionsType");
+        changeElementTypeInComplexType(doc, "restrictionsEntity", "max-client-id-length", "maxLengthType");
+        changeElementTypeInComplexType(doc, "restrictionsEntity", "max-topic-length", "maxLengthType");
+        changeElementTypeInComplexType(doc, "restrictionsEntity", "no-connect-idle-timeout", "timeoutMsType");
+        changeElementTypeInComplexType(doc, "restrictionsEntity", "incoming-bandwidth-throttling", "bandwidthType");
+
+        // listenerEntity: name must be non-empty (whitespace collapses to empty string)
+        changeElementTypeInComplexType(doc, "listenerEntity", "name", "nonEmptyString");
+
+        // Pulse managed-asset: id attribute must be UUID
+        changeAttributeTypeInComplexType(doc, "managed-asset", "id", "uuidType");
+
+        // Pulse mapping: id attribute must be UUID
+        changeAttributeTypeInComplexType(doc, "mapping", "id", "uuidType");
+    }
+
+    /**
+     * Changes the type attribute of a specific element within a complex type.
+     */
+    private static void changeElementTypeInComplexType(
+            final Document doc,
+            final String complexTypeName,
+            final String elementName,
+            final String newType) {
+        final var complexType = findComplexTypeByName(doc, complexTypeName);
+        if (complexType == null) {
+            return;
+        }
+
+        final var elements = complexType.getElementsByTagNameNS(XS_NAMESPACE, "element");
+        for (int i = 0; i < elements.getLength(); i++) {
+            final var element = (Element) elements.item(i);
+            if (elementName.equals(element.getAttribute("name"))) {
+                element.setAttribute("type", newType);
+                break;
+            }
+        }
+    }
+
+    /**
+     * Changes the type attribute of a specific attribute within a complex type.
+     */
+    private static void changeAttributeTypeInComplexType(
+            final Document doc,
+            final String complexTypeName,
+            final String attributeName,
+            final String newType) {
+        final var complexType = findComplexTypeByName(doc, complexTypeName);
+        if (complexType == null) {
+            return;
+        }
+
+        final var attributes = complexType.getElementsByTagNameNS(XS_NAMESPACE, "attribute");
+        for (int i = 0; i < attributes.getLength(); i++) {
+            final var attr = (Element) attributes.item(i);
+            if (attributeName.equals(attr.getAttribute("name"))) {
+                attr.setAttribute("type", newType);
+                break;
+            }
+        }
+    }
+
+    /**
+     * Makes a specific element optional (minOccurs="0") with a default value in a complex type.
+     */
+    private static void makeElementOptionalWithDefault(
+            final Document doc,
+            final String complexTypeName,
+            final String elementName,
+            final String defaultValue) {
+        final var complexType = findComplexTypeByName(doc, complexTypeName);
+        if (complexType == null) {
+            return;
+        }
+
+        final var elements = complexType.getElementsByTagNameNS(XS_NAMESPACE, "element");
+        for (int i = 0; i < elements.getLength(); i++) {
+            final var element = (Element) elements.item(i);
+            if (elementName.equals(element.getAttribute("name"))) {
+                element.setAttribute("minOccurs", "0");
+                element.setAttribute("default", defaultValue);
+                break;
+            }
+        }
     }
 
     private static boolean simpleTypeExists(final Document doc, final String name) {
@@ -818,5 +1015,46 @@ public class GenSchemaMain {
             }
         }
         return null;
+    }
+
+    /**
+     * Replaces an element reference (ref="elementName") with an inline typed element in a complex type.
+     * <p>
+     * <b>Why this is needed:</b>
+     * JAXB generates element references (ref="...") for {@code @XmlElementRef} annotated fields.
+     * This references the global element declaration which may have an inappropriate type
+     * (e.g., xs:anyType). For proper validation, we need inline elements with specific types.
+     *
+     * @param doc              the XSD document to modify
+     * @param complexTypeName  the name of the complex type containing the element reference
+     * @param elementName      the element name to replace (the ref value)
+     * @param newTypeName      the type to use for the new inline element
+     */
+    private static void replaceElementRefWithTypedElement(
+            final Document doc,
+            final String complexTypeName,
+            final String elementName,
+            final String newTypeName) {
+        final var complexType = findComplexTypeByName(doc, complexTypeName);
+        if (complexType == null) return;
+
+        // Find the element with ref="elementName" in the complex type
+        final var refElement = findChildElementByName(complexType, elementName);
+        if (refElement == null || !refElement.hasAttribute("ref")) {
+            return;
+        }
+
+        // Preserve the minOccurs attribute if it exists
+        final String minOccurs = refElement.getAttribute("minOccurs");
+
+        // Remove ref attribute and set name and type instead
+        refElement.removeAttribute("ref");
+        refElement.setAttribute("name", elementName);
+        refElement.setAttribute("type", newTypeName);
+
+        // Restore minOccurs if it was present
+        if (!minOccurs.isEmpty()) {
+            refElement.setAttribute("minOccurs", minOccurs);
+        }
     }
 }

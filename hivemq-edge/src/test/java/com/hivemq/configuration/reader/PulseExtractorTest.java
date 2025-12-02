@@ -347,8 +347,8 @@ public class PulseExtractorTest {
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
         assertThat(logCapture.isLogCaptured()).isTrue();
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
-        assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
-                "Invalid content was found starting with element 'mapping'. One of '{schema}' is expected.");
+        // With xs:all content model, the error message format differs from xs:sequence
+        assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains("One of '{schema}' is expected.");
     }
 
     @Test
@@ -433,8 +433,9 @@ public class PulseExtractorTest {
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
         assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
                 "Value 'INVALID' is not facet-valid with respect to enumeration '[DRAFT, MISSING, REQUIRES_REMAPPING, STREAMING, UNMAPPED]'. It must be a value from the enumeration.");
+        // The type name is generated from the XSD, which uses a named type 'pulseAssetMappingStatus'
         assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
-                "The value 'INVALID' of attribute 'status' on element 'mapping' is not valid with respect to its type, '#AnonType_statuspulseAssetMappingEntity'.");
+                "The value 'INVALID' of attribute 'status' on element 'mapping' is not valid with respect to its type, 'pulseAssetMappingStatus'.");
     }
 
     @ParameterizedTest
