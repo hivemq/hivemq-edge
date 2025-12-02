@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
 
+import React from 'react'
 import { Script } from '@/api/__generated__'
 import { ScriptEditor } from './ScriptEditor.tsx'
 
@@ -14,7 +15,6 @@ describe('ScriptEditor', () => {
   })
 
   describe('Create Mode (script = undefined)', () => {
-    // ✅ ACTIVE - Accessibility testing
     it('should be accessible', () => {
       cy.injectAxe()
       cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub} />)
@@ -25,7 +25,6 @@ describe('ScriptEditor', () => {
       cy.checkAccessibility()
     })
 
-    // ✅ ACTIVE - Keyboard navigation
     it('should support keyboard navigation', () => {
       cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub} />)
 
@@ -41,39 +40,150 @@ describe('ScriptEditor', () => {
       cy.focused().should('exist') // Should focus next element (version or sourceCode)
     })
 
-    // ⏭️ SKIPPED - Will activate during Phase 4
-    it.skip('should create a new script', () => {
-      // Test: Fill form with script name and source
-      // Test: Save button enabled when name filled
-      // Test: POST to API with correct payload (base64 encoded)
-      // Test: Success toast shown
-      // Test: Drawer closes on success
+    it('should create a new script', () => {
+      const onCloseSpy = cy.spy().as('onCloseSpy')
+
+      // Intercept POST to scripts API
+      cy.intercept('POST', '/api/v1/data-hub/scripts', {
+        statusCode: 201,
+        body: {
+          id: 'my-new-script',
+          functionType: Script.functionType.TRANSFORMATION,
+          source: btoa('function transform(publish, context) { return publish; }'),
+          version: 1,
+          createdAt: new Date().toISOString(),
+        },
+      }).as('createScript')
+
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={onCloseSpy} />)
+
+      // Fill in script name
+      cy.get('#root_name').type('my-new-script')
+
+      // Keep default source code (template should be pre-filled)
+
+      // Save button should be enabled (form is dirty after name entered)
+      cy.contains('button', 'Save').should('not.be.disabled')
+
+      // Click save
+      cy.contains('button', 'Save').click()
+
+      // Wait for API call
+      cy.wait('@createScript')
+        .its('request.body')
+        .should((body) => {
+          expect(body.id).to.equal('my-new-script')
+          expect(body.functionType).to.equal(Script.functionType.TRANSFORMATION)
+          expect(body.source).to.exist // Should be base64 encoded
+        })
+
+      // Success toast should appear
+      cy.contains('Script Saved').should('be.visible')
+
+      // Drawer should close
+      cy.get('@onCloseSpy').should('have.been.calledOnce')
     })
 
-    it.skip('should validate JavaScript syntax', () => {
-      // Test: Enter invalid JavaScript
-      // Test: Monaco editor shows syntax errors
-      // Test: Can still save (backend may validate further)
+    it('should validate JavaScript syntax', () => {
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      // Enter name
+      cy.get('#root_name').type('test-script')
+
+      // Get Monaco editor and enter invalid JavaScript
+      cy.get('#root_sourceCode').click()
+
+      // Verify Monaco editor is loaded
+      cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+
+      // Test that form validates syntax on save attempt
+      // The ScriptEditor uses new Function() to validate syntax in customValidate
+      cy.window().then((win) => {
+        // @ts-ignore
+        const monaco = win.monaco
+        // @ts-ignore
+        const editors = monaco.editor.getEditors()
+        const editor = editors[0]
+
+        // Enter invalid JavaScript (syntax error)
+        editor.setValue('function invalid( { // missing closing brace')
+      })
+
+      // Save button should be enabled (dirty state detected)
+      cy.contains('button', 'Save').should('not.be.disabled')
+
+      // Wait a moment for validation to run
+      cy.wait(100)
+
+      // Save button should now be disabled due to validation error
+      cy.contains('button', 'Save').should('be.disabled')
+
+      // Error message should appear in form (any syntax error message)
+      cy.get('#root_sourceCode__error').should('be.visible').and('not.be.empty')
     })
 
-    it.skip('should disable save button when name is empty', () => {
-      // Test: Save button disabled initially (no name)
-      // Test: Enable when name entered
-      // Test: Disable when name cleared
+    it('should disable save button when name is empty', () => {
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      // Initially name is empty, save should be disabled (not dirty)
+      cy.contains('button', 'Save').should('be.disabled')
+
+      // Enter name -> save button should be enabled (form is dirty)
+      cy.get('#root_name').type('my-script')
+      cy.contains('button', 'Save').should('not.be.disabled')
+
+      // Clear name -> save button should be disabled (required field empty)
+      cy.get('#root_name').clear()
+      cy.contains('button', 'Save').should('be.disabled')
     })
 
-    it.skip('should show version as DRAFT', () => {
-      // Test: Version field shows "DRAFT"
-      // Test: Version field is readonly
+    it('should show version as DRAFT', () => {
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      // Version field uses custom widget - verify the version label exists and the field contains DRAFT
+      cy.get('label#root_version-label').should('be.visible').should('contain.text', 'Version')
+      // The version value should be visible near its label
+      cy.get('label#root_version-label').parent().should('contain.text', 'DRAFT')
     })
 
-    it.skip('should allow optional description', () => {
-      // Test: Description field is optional
-      // Test: Can save without description
-      // Test: Description is preserved when provided
+    it('should allow optional description', () => {
+      cy.intercept('POST', '/api/v1/data-hub/scripts', {
+        statusCode: 201,
+        body: {
+          id: 'script-no-desc',
+          functionType: Script.functionType.TRANSFORMATION,
+          source: btoa('function transform(publish, context) { return publish; }'),
+          version: 1,
+          createdAt: new Date().toISOString(),
+        },
+      }).as('createScript')
+
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      // Fill name but leave description empty
+      cy.get('#root_name').type('script-no-desc')
+
+      // Verify description field exists and is empty
+      cy.get('#root_description').should('exist')
+      cy.get('#root_description').should('have.value', '')
+
+      // Save button should be enabled
+      cy.contains('button', 'Save').should('not.be.disabled')
+      cy.contains('button', 'Save').click()
+
+      // Should save successfully without description
+      cy.wait('@createScript')
+        .its('request.body')
+        .should((body) => {
+          expect(body.id).to.equal('script-no-desc')
+          // Description can be empty string or undefined when not provided
+          expect(body.description === '' || body.description === undefined).to.be.true
+        })
+
+      cy.contains('Script Saved').should('be.visible')
     })
 
-    it.skip('should prevent duplicate script names', () => {
+    it('should prevent duplicate script names', () => {
       const existingScripts = [
         {
           id: 'existing-script',
@@ -100,7 +210,7 @@ describe('ScriptEditor', () => {
       cy.get('#root_name').blur()
 
       // Verify validation error is shown
-      cy.get('#root_name-helper')
+      cy.get('#root_name__error')
         .should('be.visible')
         .and('contain', 'A script with the name "existing-script" already exists')
 
@@ -108,34 +218,81 @@ describe('ScriptEditor', () => {
       cy.getByTestId('save-script-button').should('be.disabled')
 
       // Clear and enter a different name
-      cy.get('#root_name').clear().type('new-unique-script')
+      cy.get('#root_name').clear()
+      cy.get('#root_name').type('new-unique-script')
       cy.get('#root_name').blur()
 
       // Verify validation error is cleared
-      cy.get('#root_name-helper').should('not.exist')
+      cy.get('#root_name__error').should('not.exist')
 
       // Verify save button is enabled
       cy.getByTestId('save-script-button').should('not.be.disabled')
     })
 
-    it.skip('should disable save button when form is not modified', () => {
-      // Test: Intercept GET scripts with mockScript
-      // Test: Mount ScriptEditor in modify mode with existing script
-      // Test: Verify save button is initially disabled (no changes yet)
-      // Test: Modify script source code
-      // Test: Verify save button becomes enabled
-      // Test: Revert changes back to original
-      // Test: Verify save button becomes disabled again
-    })
+    it('should track dirty state for all editable fields', () => {
+      const mockScript: Script = {
+        id: 'test-script',
+        version: 1,
+        functionType: Script.functionType.TRANSFORMATION,
+        source: btoa('function transform(publish, context) { return publish; }'),
+        description: 'Original description',
+        createdAt: '2025-11-26T10:00:00Z',
+      }
 
-    it.skip('should track dirty state for all editable fields', () => {
-      // Test: Mount ScriptEditor in modify mode
-      // Test: Initially save button disabled (no changes)
-      // Test: Change script name (should not be possible in modify mode - readonly)
-      // Test: Change description -> save button enabled
-      // Test: Revert description -> save button disabled
-      // Test: Change source code -> save button enabled
-      // Test: Revert source -> save button disabled
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} script={mockScript} />)
+
+      // Wait for Monaco to load
+      cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+
+      // Initially save button should be disabled (no changes made yet)
+      cy.contains('button', 'Save').should('be.disabled')
+
+      // Name is readonly in modify mode - verify we can't change it
+      cy.get('#root_name').should('have.attr', 'readonly')
+
+      // Change description -> save button should become enabled
+      cy.get('#root_description').clear()
+      cy.get('#root_description').type('New description')
+
+      // Save button should now be enabled (dirty state detected)
+      cy.contains('button', 'Save').should('not.be.disabled')
+
+      // Revert description back to original -> save button should be disabled again
+      cy.get('#root_description').clear()
+      cy.get('#root_description').type('Original description')
+
+      // Save button should be disabled (back to original state)
+      cy.contains('button', 'Save').should('be.disabled')
+
+      // Change source code using Monaco API -> save button enabled
+      cy.window().then((win) => {
+        // @ts-ignore
+        const monaco = win.monaco
+        // @ts-ignore
+        const editors = monaco.editor.getEditors()
+        const editor = editors[0]
+
+        // Modify the content
+        editor.setValue('function transform(publish, context) { return {}; }')
+      })
+
+      // Save button should be enabled (source code changed)
+      cy.contains('button', 'Save').should('not.be.disabled')
+
+      // Revert source code back to original -> save button disabled
+      cy.window().then((win) => {
+        // @ts-ignore
+        const monaco = win.monaco
+        // @ts-ignore
+        const editors = monaco.editor.getEditors()
+        const editor = editors[0]
+
+        // Revert to original content
+        editor.setValue('function transform(publish, context) { return publish; }')
+      })
+
+      // Save button should be disabled (back to original state)
+      cy.contains('button', 'Save').should('be.disabled')
     })
   })
 
@@ -149,7 +306,6 @@ describe('ScriptEditor', () => {
       createdAt: '2025-11-26T10:00:00Z',
     }
 
-    // ✅ ACTIVE - Accessibility testing for modify mode
     it('should be accessible', () => {
       // Intercept the create script API call (used for creating new versions)
       cy.intercept('POST', '/api/v1/data-hub/scripts', {
@@ -169,59 +325,189 @@ describe('ScriptEditor', () => {
       cy.checkAccessibility()
     })
 
-    // ⏭️ SKIPPED - Will activate during Phase 4
-    it.skip('should create new version from existing script', () => {
-      // Test: Pass script prop (e.g., version 2 of 5 existing versions)
-      // Test: Form pre-populated with that script's data
-      // Test: Name field is readonly
-      // Test: Version shows "MODIFIED - a new version will be created"
-      // Test: Save creates new version (backend auto-increments to highest + 1)
-      // Test: Success toast shown with "New version created" message
+    it('should create new version from existing script', () => {
+      cy.intercept('POST', '/api/v1/data-hub/scripts', {
+        statusCode: 201,
+        body: {
+          ...mockScript,
+          version: 3, // Backend increments version
+        },
+      }).as('createScript')
+
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} script={mockScript} />)
+
+      // Name should be pre-filled and readonly
+      cy.get('#root_name').should('have.value', 'temperature-converter')
+      cy.get('#root_name').should('have.attr', 'readonly')
+
+      // Version should show MODIFIED in the version field
+      cy.get('label#root_version-label').parent().should('contain.text', 'MODIFIED')
+
+      // The content must be modified to enable submit
+      cy.contains('button', 'Save').should('be.disabled')
+      cy.get('#root_sourceCode').click()
+
+      // Wait for Monaco to load and change the source
+      cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+      cy.window().then((win) => {
+        // @ts-ignore
+        expect(win.monaco).to.exist
+        // @ts-ignore
+        const monaco = win.monaco
+        // @ts-ignore
+        const editors = monaco.editor.getEditors()
+        const editor = editors[0]
+
+        editor.setValue('function transform(publish, context) { return {}; }')
+      })
+
+      cy.contains('button', 'Save').should('not.be.disabled')
+      cy.contains('button', 'Save').click()
+
+      cy.wait('@createScript')
+      cy.contains('Script Saved').should('be.visible')
     })
 
-    it.skip('should have readonly name field', () => {
-      // Test: Mount with script prop
-      // Test: Name field is readonly
-      // Test: Name field does not have autofocus
+    it('should have readonly name field', () => {
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} script={mockScript} />)
+
+      cy.get('#root_name').should('have.attr', 'readonly')
+      cy.get('#root_name').should('not.have.focus')
     })
 
-    it.skip('should show version as MODIFIED', () => {
-      // Test: Version field shows "MODIFIED - a new version will be created"
-      // Test: Version field is readonly
+    it('should show version as MODIFIED', () => {
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} script={mockScript} />)
+
+      // Verify MODIFIED text is shown in the version field
+      cy.get('label#root_version-label').parent().should('contain.text', 'MODIFIED')
     })
 
-    it.skip('should load script content correctly', () => {
-      // Test: Script source is decoded from base64
-      // Test: Description is pre-filled if exists
-      // Test: Can edit the script source
+    it('should load script content correctly', () => {
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} script={mockScript} />)
+
+      // Description should be pre-filled
+      cy.get('#root_description').should('have.value', 'Converts temperature data')
+
+      // Verify Monaco editor is loaded and ready
+      cy.get('#root_sourceCode').find('.monaco-editor').should('be.visible')
+      cy.get('#root_sourceCode').find('.monaco-editor .view-lines').should('exist')
+
+      // Verify source code is loaded (decoded from base64)
+      cy.window().then((win) => {
+        // @ts-ignore
+        const monaco = win.monaco
+        // @ts-ignore
+        const editors = monaco.editor.getEditors()
+        const editor = editors[0]
+        const content = editor.getValue()
+
+        expect(content).to.include('function transform(publish, context)')
+      })
     })
   })
 
   describe('Common Behaviors', () => {
-    // ⏭️ SKIPPED - Will activate during Phase 4
-    it.skip('should handle save errors', () => {
-      // Test: API returns error
-      // Test: Error toast shown
-      // Test: Drawer stays open
-      // Test: User can retry
+    it('should handle save errors', () => {
+      cy.intercept('POST', '/api/v1/data-hub/scripts', {
+        statusCode: 500,
+        body: { title: 'Internal Server Error' },
+      }).as('createScript')
+
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      cy.get('#root_name').type('error-script')
+      cy.contains('button', 'Save').click()
+
+      cy.wait('@createScript')
+
+      // Error toast should be shown
+      cy.contains('Save Failed').should('be.visible')
+
+      // Drawer should stay open (user can retry)
+      cy.get('[role="dialog"]').should('be.visible')
     })
 
-    it.skip('should show loading state during save', () => {
-      // Test: isLoading on save button
-      // Test: Cancel button disabled during save
+    it('should show loading state during save', () => {
+      cy.intercept('POST', '/api/v1/data-hub/scripts', {
+        statusCode: 201,
+        delay: 1000,
+        body: {
+          id: 'test-script',
+          functionType: Script.functionType.TRANSFORMATION,
+          source: btoa('function transform(publish, context) { return publish; }'),
+          version: 1,
+          createdAt: new Date().toISOString(),
+        },
+      }).as('createScript')
+
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      cy.get('#root_name').type('test-script')
+      cy.contains('button', 'Save').click()
+
+      // Save button should be disabled during save
+      cy.contains('button', 'Save').should('be.disabled')
+
+      cy.wait('@createScript')
+      cy.contains('Script Saved').should('be.visible')
     })
 
-    it.skip('should reset form when drawer closes and reopens', () => {
-      // Test: Fill form
-      // Test: Close drawer
-      // Test: Reopen drawer
-      // Test: Form reset to initial state
+    it('should reset form when drawer closes and reopens', () => {
+      const TestWrapper: React.FC = () => {
+        const [isOpen, setIsOpen] = React.useState(true)
+
+        return (
+          <React.Fragment>
+            <button onClick={() => setIsOpen(true)}>Open</button>
+            <ScriptEditor isOpen={isOpen} onClose={() => setIsOpen(false)} />
+          </React.Fragment>
+        )
+      }
+
+      cy.mountWithProviders(<TestWrapper />)
+
+      // Fill form
+      cy.get('#root_name').type('test-script')
+      cy.get('#root_description').type('Test description')
+
+      // Close drawer
+      cy.get('[aria-label="Close"]').click()
+
+      // Verify drawer closed
+      cy.get('[role="dialog"]').should('not.exist')
+
+      // Reopen drawer
+      cy.contains('button', 'Open').click()
+
+      // Verify form reset to initial state
+      cy.get('#root_name').should('have.value', '')
+      cy.get('#root_description').should('have.value', '')
     })
 
-    it.skip('should close drawer on successful save', () => {
-      // Test: Submit form
-      // Test: Wait for API success
-      // Test: onClose callback triggered
+    it('should close drawer on successful save', () => {
+      const onCloseSpy = cy.spy().as('onCloseSpy')
+
+      cy.intercept('POST', '/api/v1/data-hub/scripts', {
+        statusCode: 201,
+        body: {
+          id: 'test-script',
+          functionType: Script.functionType.TRANSFORMATION,
+          source: btoa('function transform(publish, context) { return publish; }'),
+          version: 1,
+          createdAt: new Date().toISOString(),
+        },
+      }).as('createScript')
+
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={onCloseSpy} />)
+
+      cy.get('#root_name').type('test-script')
+      cy.contains('button', 'Save').click()
+
+      cy.wait('@createScript')
+      cy.contains('Script Saved').should('be.visible')
+
+      // onClose callback should be triggered
+      cy.get('@onCloseSpy').should('have.been.calledOnce')
     })
   })
 })

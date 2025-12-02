@@ -1,8 +1,137 @@
 import { describe, it, expect } from 'vitest'
-import { extractProtobufMessageTypes } from './protobuf.utils'
+import { decodeProtobufSchema, encodeProtobufSchema, extractProtobufMessageTypes } from './protobuf.utils'
+
+describe('encodeProtobufSchema', () => {
+  it('should encode a simple protobuf schema', () => {
+    const source = `
+      syntax = "proto3";
+
+      message Person {
+        string name = 1;
+        int32 age = 2;
+      }
+    `
+
+    const encoded = encodeProtobufSchema(source)
+
+    // Should return a base64 string
+    expect(typeof encoded).toBe('string')
+    expect(encoded.length).toBeGreaterThan(0)
+
+    // Base64 strings only contain valid base64 characters
+    expect(encoded).toMatch(/^[A-Za-z0-9+/=]+$/)
+  })
+
+  it('should encode protobuf with multiple messages', () => {
+    const source = `
+      syntax = "proto3";
+
+      message Person {
+        string name = 1;
+      }
+
+      message Address {
+        string street = 1;
+        string city = 2;
+      }
+    `
+
+    const encoded = encodeProtobufSchema(source)
+    expect(typeof encoded).toBe('string')
+    expect(encoded.length).toBeGreaterThan(0)
+  })
+
+  it('should throw error for invalid protobuf syntax', () => {
+    const invalidSource = 'this is not valid protobuf'
+
+    expect(() => encodeProtobufSchema(invalidSource)).toThrow()
+  })
+
+  it('should throw error for empty source', () => {
+    expect(() => encodeProtobufSchema('')).toThrow()
+  })
+
+  it('should encode protobuf with nested messages', () => {
+    const source = `
+      syntax = "proto3";
+
+      message Outer {
+        message Inner {
+          string value = 1;
+        }
+        Inner inner = 1;
+      }
+    `
+
+    const encoded = encodeProtobufSchema(source)
+    expect(typeof encoded).toBe('string')
+    expect(encoded.length).toBeGreaterThan(0)
+  })
+
+  it('should encode GPS coordinates protobuf schema', () => {
+    const source = `
+      syntax = "proto3";
+
+      message GpsCoordinates {
+        double latitude = 1;
+        double longitude = 2;
+        double altitude = 3;
+      }
+    `
+
+    const encoded = encodeProtobufSchema(source)
+    expect(typeof encoded).toBe('string')
+    expect(encoded.length).toBeGreaterThan(0)
+  })
+})
+
+describe('decodeProtobufSchema', () => {
+  it('should decode an encoded protobuf schema', () => {
+    const source = `
+      syntax = "proto3";
+
+      message Person {
+        string name = 1;
+        int32 age = 2;
+      }
+    `
+
+    const encoded = encodeProtobufSchema(source)
+    const decoded = decodeProtobufSchema(encoded)
+
+    // Should return a template showing the message type
+    expect(typeof decoded).toBe('string')
+    expect(decoded).toContain('Person')
+  })
+
+  it('should throw error for invalid base64 string', () => {
+    const invalidEncoded = 'not-valid-base64!!!'
+
+    expect(() => decodeProtobufSchema(invalidEncoded)).toThrow()
+  })
+
+  it('should throw error for empty string', () => {
+    expect(() => decodeProtobufSchema('')).toThrow()
+  })
+
+  it('should preserve message type name in encode-decode roundtrip', () => {
+    const source = `
+      syntax = "proto3";
+
+      message GpsCoordinates {
+        double latitude = 1;
+        double longitude = 2;
+      }
+    `
+
+    const encoded = encodeProtobufSchema(source)
+    const decoded = decodeProtobufSchema(encoded)
+
+    expect(decoded).toContain('GpsCoordinates')
+  })
+})
 
 describe('extractProtobufMessageTypes', () => {
-  // ✅ ACTIVE - Basic functionality test
   it('should extract message types from simple protobuf source', () => {
     const source = `
       syntax = "proto3";
@@ -24,7 +153,6 @@ describe('extractProtobufMessageTypes', () => {
     expect(messages).toHaveLength(2)
   })
 
-  // ✅ ACTIVE - Nested messages
   it('should extract nested message types with dot notation', () => {
     const source = `
       syntax = "proto3";
@@ -43,20 +171,17 @@ describe('extractProtobufMessageTypes', () => {
     expect(messages).toHaveLength(2)
   })
 
-  // ✅ ACTIVE - Empty source
   it('should return empty array for empty source', () => {
     const messages = extractProtobufMessageTypes('')
     expect(messages).toEqual([])
   })
 
-  // ✅ ACTIVE - Invalid syntax
   it('should return empty array for invalid protobuf syntax', () => {
     const source = 'this is not valid protobuf'
     const messages = extractProtobufMessageTypes(source)
     expect(messages).toEqual([])
   })
 
-  // ✅ ACTIVE - Real-world example (GPS coordinates)
   it('should extract message from GPS coordinates example', () => {
     const source = `
       syntax = "proto3";
@@ -73,7 +198,6 @@ describe('extractProtobufMessageTypes', () => {
     expect(messages).toHaveLength(1)
   })
 
-  // ✅ ACTIVE - Multiple levels of nesting
   it('should handle deeply nested messages', () => {
     const source = `
       syntax = "proto3";
