@@ -180,7 +180,7 @@
             
       <xs:element minOccurs="0" name="mqtt-bridges">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -202,7 +202,7 @@
             
       <xs:element minOccurs="0" name="protocol-adapters">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
           <xs:sequence>
             <xs:choice maxOccurs="unbounded" minOccurs="0">
               <xs:any processContents="skip"/>
@@ -214,7 +214,7 @@
             
       <xs:element minOccurs="0" name="data-combiners">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -228,7 +228,7 @@
             
       <xs:element minOccurs="0" name="asset-mappers">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -243,7 +243,7 @@
       <xs:element minOccurs="0" ref="pulse"/>
             
       <xs:element minOccurs="0" name="modules">
-        <xs:complexType>
+        <xs:complexType mixed="true">
           <xs:sequence>
             <xs:any maxOccurs="unbounded" minOccurs="0" processContents="skip"/>
           </xs:sequence>
@@ -254,7 +254,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="internalConfigEntity">
+  <xs:complexType mixed="true" name="internalConfigEntity">
         
     <xs:sequence>
             
@@ -264,7 +264,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="optionEntity">
+  <xs:complexType mixed="true" name="optionEntity">
         
     <xs:sequence>
             
@@ -276,7 +276,7 @@
       
   </xs:complexType>
     
-  <xs:complexType abstract="true" name="listenerEntity">
+  <xs:complexType abstract="true" mixed="true" name="listenerEntity">
         
     <xs:sequence>
             
@@ -292,7 +292,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="mqttConfigEntity">
+  <xs:complexType mixed="true" name="mqttConfigEntity">
         
     <xs:sequence>
             
@@ -326,17 +326,17 @@
     
   <xs:complexType name="queuedMessagesConfigEntity">
         
-    <xs:sequence>
+    <xs:all>
             
       <xs:element default="1000" name="max-queue-size" type="xs:long"/>
             
       <xs:element default="discard" minOccurs="0" name="strategy" type="strategy"/>
           
-    </xs:sequence>
+    </xs:all>
       
   </xs:complexType>
     
-  <xs:complexType name="retainedMessagesConfigEntity">
+  <xs:complexType mixed="true" name="retainedMessagesConfigEntity">
         
     <xs:complexContent>
             
@@ -350,7 +350,7 @@
       
   </xs:complexType>
     
-  <xs:complexType abstract="true" name="enabledEntity">
+  <xs:complexType abstract="true" mixed="true" name="enabledEntity">
         
     <xs:sequence>
             
@@ -360,7 +360,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="wildcardSubscriptionsConfigEntity">
+  <xs:complexType mixed="true" name="wildcardSubscriptionsConfigEntity">
         
     <xs:complexContent>
             
@@ -376,15 +376,15 @@
     
   <xs:complexType name="qoSConfigEntity">
         
-    <xs:sequence>
+    <xs:all>
             
       <xs:element default="2" name="max-qos" type="xs:int"/>
           
-    </xs:sequence>
+    </xs:all>
       
   </xs:complexType>
     
-  <xs:complexType name="topicAliasConfigEntity">
+  <xs:complexType mixed="true" name="topicAliasConfigEntity">
         
     <xs:complexContent>
             
@@ -402,27 +402,31 @@
       
   </xs:complexType>
     
-  <xs:complexType name="messageExpiryConfigEntity">
+  <xs:complexType mixed="true" name="messageExpiryConfigEntity">
         
     <xs:sequence>
             
-      <xs:element default="4294967296" name="max-interval" type="xs:long"/>
+      <xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="skip"/>
+            
+      <xs:element default="4294967296" minOccurs="0" name="max-interval" type="xs:long"/>
           
     </xs:sequence>
       
   </xs:complexType>
     
-  <xs:complexType name="sessionExpiryConfigEntity">
+  <xs:complexType mixed="true" name="sessionExpiryConfigEntity">
         
     <xs:sequence>
             
-      <xs:element default="4294967295" name="max-interval" type="xs:long"/>
+      <xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="skip"/>
+            
+      <xs:element default="4294967295" minOccurs="0" name="max-interval" type="xs:long"/>
           
     </xs:sequence>
       
   </xs:complexType>
     
-  <xs:complexType name="subscriptionIdentifierConfigEntity">
+  <xs:complexType mixed="true" name="subscriptionIdentifierConfigEntity">
         
     <xs:complexContent>
             
@@ -436,7 +440,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="sharedSubscriptionsConfigEntity">
+  <xs:complexType mixed="true" name="sharedSubscriptionsConfigEntity">
         
     <xs:complexContent>
             
@@ -452,43 +456,43 @@
     
   <xs:complexType name="keepAliveConfigEntity">
         
-    <xs:sequence>
+    <xs:all>
             
       <xs:element default="65535" name="max-keep-alive" type="xs:int"/>
             
       <xs:element default="true" name="allow-unlimited" type="xs:boolean"/>
           
-    </xs:sequence>
+    </xs:all>
       
   </xs:complexType>
     
   <xs:complexType name="packetsConfigEntity">
         
-    <xs:sequence>
+    <xs:all>
             
       <xs:element default="268435460" name="max-packet-size" type="xs:int"/>
           
-    </xs:sequence>
+    </xs:all>
       
   </xs:complexType>
     
   <xs:complexType name="receiveMaximumConfigEntity">
         
-    <xs:sequence>
+    <xs:all>
             
       <xs:element default="10" name="server-receive-maximum" type="xs:int"/>
           
-    </xs:sequence>
+    </xs:all>
       
   </xs:complexType>
     
-  <xs:complexType name="mqttSnConfigEntity">
+  <xs:complexType mixed="true" name="mqttSnConfigEntity">
         
     <xs:sequence>
             
       <xs:element minOccurs="0" name="predefined-topics">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -518,7 +522,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="mqttsnPredefinedTopicAliasEntity">
+  <xs:complexType mixed="true" name="mqttsnPredefinedTopicAliasEntity">
         
     <xs:sequence>
             
@@ -530,7 +534,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="allowEmptyClientIdentifierEntity">
+  <xs:complexType mixed="true" name="allowEmptyClientIdentifierEntity">
         
     <xs:complexContent>
             
@@ -544,7 +548,7 @@
       
   </xs:complexType>
     
-  <xs:complexType abstract="true" name="disabledEntity">
+  <xs:complexType abstract="true" mixed="true" name="disabledEntity">
         
     <xs:sequence>
             
@@ -554,7 +558,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="discoveryEntity">
+  <xs:complexType mixed="true" name="discoveryEntity">
         
     <xs:complexContent>
             
@@ -564,7 +568,7 @@
                     
           <xs:element minOccurs="0" name="broadcast-addresses">
                         
-            <xs:complexType>
+            <xs:complexType mixed="true">
                             
               <xs:sequence>
                                 
@@ -586,7 +590,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="broadcastAddress">
+  <xs:complexType mixed="true" name="broadcastAddress">
         
     <xs:complexContent>
             
@@ -600,7 +604,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="allowAnonymousPublishMinus1Entity">
+  <xs:complexType mixed="true" name="allowAnonymousPublishMinus1Entity">
         
     <xs:complexContent>
             
@@ -614,7 +618,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="allowWakingPingToHijackSessionEntity">
+  <xs:complexType mixed="true" name="allowWakingPingToHijackSessionEntity">
         
     <xs:complexContent>
             
@@ -628,7 +632,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="topicRegistrationsHeldDuringSleepEntity">
+  <xs:complexType mixed="true" name="topicRegistrationsHeldDuringSleepEntity">
         
     <xs:complexContent>
             
@@ -642,7 +646,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="restrictionsEntity">
+  <xs:complexType mixed="true" name="restrictionsEntity">
         
     <xs:sequence>
             
@@ -660,7 +664,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="securityConfigEntity">
+  <xs:complexType mixed="true" name="securityConfigEntity">
         
     <xs:sequence>
             
@@ -676,7 +680,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="payloadFormatValidationEntity">
+  <xs:complexType mixed="true" name="payloadFormatValidationEntity">
         
     <xs:complexContent>
             
@@ -690,7 +694,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="utf8ValidationEntity">
+  <xs:complexType mixed="true" name="utf8ValidationEntity">
         
     <xs:complexContent>
             
@@ -704,7 +708,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="allowEmptyClientIdEntity">
+  <xs:complexType mixed="true" name="allowEmptyClientIdEntity">
         
     <xs:complexContent>
             
@@ -718,7 +722,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="requestProblemInformationEntityConfig">
+  <xs:complexType mixed="true" name="requestProblemInformationEntityConfig">
         
     <xs:complexContent>
             
@@ -732,7 +736,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="persistenceEntity">
+  <xs:complexType mixed="true" name="persistenceEntity">
         
     <xs:sequence>
             
@@ -742,7 +746,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="mqttBridgeEntity">
+  <xs:complexType mixed="true" name="mqttBridgeEntity">
         
     <xs:sequence>
             
@@ -752,7 +756,7 @@
             
       <xs:element minOccurs="0" name="remote-subscriptions">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -766,7 +770,7 @@
             
       <xs:element minOccurs="0" name="forwarded-topics">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -786,7 +790,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="remoteBrokerEntity">
+  <xs:complexType mixed="true" name="remoteBrokerEntity">
         
     <xs:sequence>
             
@@ -806,7 +810,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="bridgeMqttEntity">
+  <xs:complexType mixed="true" name="bridgeMqttEntity">
         
     <xs:sequence>
             
@@ -822,7 +826,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="bridgeAuthenticationEntity">
+  <xs:complexType mixed="true" name="bridgeAuthenticationEntity">
         
     <xs:sequence>
             
@@ -832,7 +836,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="mqttSimpleAuthenticationEntity">
+  <xs:complexType mixed="true" name="mqttSimpleAuthenticationEntity">
         
     <xs:sequence>
             
@@ -844,7 +848,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="bridgeWebsocketConfigurationEntity">
+  <xs:complexType mixed="true" name="bridgeWebsocketConfigurationEntity">
         
     <xs:sequence>
             
@@ -858,7 +862,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="bridgeTlsEntity">
+  <xs:complexType mixed="true" name="bridgeTlsEntity">
         
     <xs:sequence>
             
@@ -870,7 +874,7 @@
             
       <xs:element minOccurs="0" name="protocols">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -884,7 +888,7 @@
             
       <xs:element minOccurs="0" name="cipher-suites">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -904,7 +908,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="keystoreEntity">
+  <xs:complexType mixed="true" name="keystoreEntity">
         
     <xs:sequence>
             
@@ -918,7 +922,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="truststoreEntity">
+  <xs:complexType mixed="true" name="truststoreEntity">
         
     <xs:sequence>
             
@@ -930,13 +934,13 @@
       
   </xs:complexType>
     
-  <xs:complexType name="remoteSubscriptionEntity">
+  <xs:complexType mixed="true" name="remoteSubscriptionEntity">
         
     <xs:sequence>
             
       <xs:element minOccurs="0" name="filters">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -956,7 +960,7 @@
             
       <xs:element minOccurs="0" name="custom-user-properties">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -972,7 +976,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="customUserPropertyEntity">
+  <xs:complexType mixed="true" name="customUserPropertyEntity">
         
     <xs:sequence>
             
@@ -984,13 +988,13 @@
       
   </xs:complexType>
     
-  <xs:complexType name="forwardedTopicEntity">
+  <xs:complexType mixed="true" name="forwardedTopicEntity">
         
     <xs:sequence>
             
       <xs:element minOccurs="0" name="filters">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1010,7 +1014,7 @@
             
       <xs:element minOccurs="0" name="custom-user-properties">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1024,7 +1028,7 @@
             
       <xs:element minOccurs="0" name="excludes">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1042,7 +1046,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="loopPreventionEntity">
+  <xs:complexType mixed="true" name="loopPreventionEntity">
         
     <xs:sequence>
             
@@ -1054,7 +1058,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="adminApiEntity">
+  <xs:complexType mixed="true" name="adminApiEntity">
         
     <xs:complexContent>
             
@@ -1064,7 +1068,7 @@
                     
           <xs:element minOccurs="0" name="listeners">
                         
-            <xs:complexType>
+            <xs:complexType mixed="true">
                             
               <xs:sequence>
                                 
@@ -1086,7 +1090,7 @@
                     
           <xs:element minOccurs="0" name="users">
                         
-            <xs:complexType>
+            <xs:complexType mixed="true">
                             
               <xs:sequence>
                                 
@@ -1112,7 +1116,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="httpListenerEntity">
+  <xs:complexType mixed="true" name="httpListenerEntity">
         
     <xs:complexContent>
             
@@ -1126,7 +1130,7 @@
       
   </xs:complexType>
     
-  <xs:complexType abstract="true" name="apiListenerEntity">
+  <xs:complexType abstract="true" mixed="true" name="apiListenerEntity">
         
     <xs:sequence>
             
@@ -1138,7 +1142,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="httpsListenerEntity">
+  <xs:complexType mixed="true" name="httpsListenerEntity">
         
     <xs:complexContent>
             
@@ -1156,7 +1160,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="apiTlsEntity">
+  <xs:complexType mixed="true" name="apiTlsEntity">
         
     <xs:sequence>
             
@@ -1164,7 +1168,7 @@
             
       <xs:element minOccurs="0" name="protocols">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1178,7 +1182,7 @@
             
       <xs:element minOccurs="0" name="cipher-suites">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1194,7 +1198,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="apiJwsEntity">
+  <xs:complexType mixed="true" name="apiJwsEntity">
         
     <xs:sequence>
             
@@ -1212,7 +1216,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="userEntity">
+  <xs:complexType mixed="true" name="userEntity">
         
     <xs:sequence>
             
@@ -1222,7 +1226,7 @@
             
       <xs:element minOccurs="0" name="roles">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1238,13 +1242,13 @@
       
   </xs:complexType>
     
-  <xs:complexType name="ldapAuthenticationEntity">
+  <xs:complexType mixed="true" name="ldapAuthenticationEntity">
         
     <xs:sequence>
             
       <xs:element name="servers">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1282,7 +1286,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="ldapServerEntity">
+  <xs:complexType mixed="true" name="ldapServerEntity">
         
     <xs:sequence>
             
@@ -1294,7 +1298,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="trustStoreEntity">
+  <xs:complexType mixed="true" name="trustStoreEntity">
         
     <xs:sequence>
             
@@ -1308,7 +1312,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="ldapSimpleBindEntity">
+  <xs:complexType mixed="true" name="ldapSimpleBindEntity">
         
     <xs:sequence>
             
@@ -1320,7 +1324,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="preLoginNoticeEntity">
+  <xs:complexType mixed="true" name="preLoginNoticeEntity">
         
     <xs:sequence>
             
@@ -1336,7 +1340,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="unsConfigEntity">
+  <xs:complexType mixed="true" name="unsConfigEntity">
         
     <xs:sequence>
             
@@ -1346,7 +1350,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="isa95Entity">
+  <xs:complexType mixed="true" name="isa95Entity">
         
     <xs:complexContent>
             
@@ -1374,7 +1378,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="dynamicConfigEntity">
+  <xs:complexType mixed="true" name="dynamicConfigEntity">
         
     <xs:sequence>
             
@@ -1386,7 +1390,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="usageTrackingConfigEntity">
+  <xs:complexType mixed="true" name="usageTrackingConfigEntity">
         
     <xs:sequence>
             
@@ -1396,7 +1400,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="protocolAdapterEntity">
+  <xs:complexType mixed="true" name="protocolAdapterEntity">
         
     <xs:sequence>
             
@@ -1410,7 +1414,7 @@
             
       <xs:element minOccurs="0" name="tags">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1424,7 +1428,7 @@
             
       <xs:element minOccurs="0" name="northboundMappings">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1438,7 +1442,7 @@
             
       <xs:element minOccurs="0" name="southboundMappings">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1454,7 +1458,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="elementMap">
+  <xs:complexType mixed="true" name="elementMap">
         
     <xs:sequence>
             
@@ -1464,7 +1468,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="tagEntity">
+  <xs:complexType mixed="true" name="tagEntity">
         
     <xs:sequence>
             
@@ -1478,7 +1482,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="northboundMappingEntity">
+  <xs:complexType mixed="true" name="northboundMappingEntity">
         
     <xs:sequence>
             
@@ -1496,7 +1500,7 @@
             
       <xs:element name="mqttUserProperties">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1514,7 +1518,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="mqttUserPropertyEntity">
+  <xs:complexType mixed="true" name="mqttUserPropertyEntity">
         
     <xs:sequence>
             
@@ -1526,7 +1530,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="southboundMappingEntity">
+  <xs:complexType mixed="true" name="southboundMappingEntity">
         
     <xs:sequence>
             
@@ -1542,13 +1546,13 @@
       
   </xs:complexType>
     
-  <xs:complexType name="fieldMappingEntity">
+  <xs:complexType mixed="true" name="fieldMappingEntity">
         
     <xs:sequence>
             
       <xs:element minOccurs="0" name="instructions">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1564,7 +1568,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="instructionEntity">
+  <xs:complexType mixed="true" name="instructionEntity">
         
     <xs:sequence>
             
@@ -1578,7 +1582,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="dataIdentifierReferenceEntity">
+  <xs:complexType mixed="true" name="dataIdentifierReferenceEntity">
         
     <xs:sequence>
             
@@ -1602,7 +1606,7 @@
             
       <xs:element minOccurs="0" name="entity-references">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1616,7 +1620,7 @@
             
       <xs:element minOccurs="0" name="data-combinings">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1632,7 +1636,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="entityReferenceEntity">
+  <xs:complexType mixed="true" name="entityReferenceEntity">
         
     <xs:sequence>
             
@@ -1656,7 +1660,7 @@
             
       <xs:element name="instructions">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1672,7 +1676,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="dataCombiningSourcesEntity">
+  <xs:complexType mixed="true" name="dataCombiningSourcesEntity">
         
     <xs:sequence>
             
@@ -1680,7 +1684,7 @@
             
       <xs:element minOccurs="0" name="tags">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1694,7 +1698,7 @@
             
       <xs:element minOccurs="0" name="topic-filters">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1710,7 +1714,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="dataCombiningDestinationEntity">
+  <xs:complexType mixed="true" name="dataCombiningDestinationEntity">
         
     <xs:sequence>
             
@@ -1724,7 +1728,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="pulseEntity">
+  <xs:complexType mixed="true" name="pulseEntity">
         
     <xs:sequence>
             
@@ -1734,7 +1738,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="managed-assets">
+  <xs:complexType mixed="true" name="managed-assets">
         
     <xs:sequence>
             
@@ -1744,7 +1748,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="managed-asset">
+  <xs:complexType mixed="true" name="managed-asset">
         
     <xs:sequence>
             
@@ -1764,7 +1768,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="mapping">
+  <xs:complexType mixed="true" name="mapping">
         
     <xs:sequence/>
         
@@ -1774,7 +1778,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="tcpListenerEntity">
+  <xs:complexType mixed="true" name="tcpListenerEntity">
         
     <xs:complexContent>
             
@@ -1788,7 +1792,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="tlsTCPListenerEntity">
+  <xs:complexType mixed="true" name="tlsTCPListenerEntity">
         
     <xs:complexContent>
             
@@ -1806,7 +1810,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="tlsEntity">
+  <xs:complexType mixed="true" name="tlsEntity">
         
     <xs:sequence>
             
@@ -1820,7 +1824,7 @@
             
       <xs:element minOccurs="0" name="protocols">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1834,7 +1838,7 @@
             
       <xs:element minOccurs="0" name="cipher-suites">
                 
-        <xs:complexType>
+        <xs:complexType mixed="true">
                     
           <xs:sequence>
                         
@@ -1852,7 +1856,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="websocketListenerEntity">
+  <xs:complexType mixed="true" name="websocketListenerEntity">
         
     <xs:complexContent>
             
@@ -1864,7 +1868,7 @@
                     
           <xs:element minOccurs="0" name="subprotocols">
                         
-            <xs:complexType>
+            <xs:complexType mixed="true">
                             
               <xs:sequence>
                                 
@@ -1886,7 +1890,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="tlsWebsocketListenerEntity">
+  <xs:complexType mixed="true" name="tlsWebsocketListenerEntity">
         
     <xs:complexContent>
             
@@ -1898,7 +1902,7 @@
                     
           <xs:element minOccurs="0" name="subprotocols">
                         
-            <xs:complexType>
+            <xs:complexType mixed="true">
                             
               <xs:sequence>
                                 
@@ -1922,7 +1926,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="udpListenerEntity">
+  <xs:complexType mixed="true" name="udpListenerEntity">
         
     <xs:complexContent>
             
@@ -1936,7 +1940,7 @@
       
   </xs:complexType>
     
-  <xs:complexType name="udpBroadcastListenerEntity">
+  <xs:complexType mixed="true" name="udpBroadcastListenerEntity">
         
     <xs:complexContent>
             

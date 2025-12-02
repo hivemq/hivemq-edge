@@ -160,6 +160,9 @@ public class GenSchemaMain {
         fixModules(doc);
         fixDataCombinerEntity(doc);
         fixEmptyElementTypes(doc);
+        fixExpiryConfigTypes(doc);
+        fixMqttConfigTypes(doc);
+        addMixedContentToSequenceTypes(doc);
         addCustomSimpleTypes(doc);
     }
 
@@ -526,6 +529,133 @@ public class GenSchemaMain {
                 element.setAttribute("minOccurs", "0");
             }
         }
+    }
+
+    /**
+     * Fixes expiry config types to make the max-interval element optional.
+     * <p>
+     * <b>Why this is needed:</b>
+     * The session-expiry and message-expiry elements support both simple text format
+     * ({@code <session-expiry>123</session-expiry>}) and nested element format
+     * ({@code <session-expiry><max-interval>123</max-interval></session-expiry>}).
+     * The max-interval element must be optional to support the simple text format.
+     * <p>
+     * <b>Why JAXB cannot express this directly:</b>
+     * The entity uses {@code @XmlMixed} + {@code @XmlAnyElement} for flexible reading
+     * and {@code @XmlElement} for structured writing. JAXB generates the max-interval
+     * as required by default.
+     */
+    private static void fixExpiryConfigTypes(final Document doc) {
+        makeElementOptionalInType(doc, "sessionExpiryConfigEntity", "max-interval");
+        makeElementOptionalInType(doc, "messageExpiryConfigEntity", "max-interval");
+    }
+
+    /**
+     * Fixes MQTT configuration types to use xs:all instead of xs:sequence.
+     * <p>
+     * <b>Why this is needed:</b>
+     * The old hand-written XSD used {@code xs:all} for MQTT config types, allowing elements
+     * in any order. Existing config files rely on this flexibility. The generated XSD uses
+     * {@code xs:sequence} which requires strict element ordering.
+     * <p>
+     * <b>Why JAXB cannot express this directly:</b>
+     * See {@link #replaceSequenceWithAllForRootEntity(Document)} for the explanation.
+     */
+    private static void fixMqttConfigTypes(final Document doc) {
+        // MQTT configuration types that need flexible element ordering
+        final String[] typesToFix = {
+                "keepAliveConfigEntity",
+                "packetsConfigEntity",
+                "qoSConfigEntity",
+                "queuedMessagesConfigEntity",
+                "receiveMaximumConfigEntity",
+                "retainedMessagesConfigEntity",
+                "sharedSubscriptionsConfigEntity",
+                "subscriptionIdentifierConfigEntity",
+                "topicAliasConfigEntity",
+                "wildcardSubscriptionsConfigEntity"
+        };
+
+        for (final var typeName : typesToFix) {
+            replaceSequenceWithAll(doc, typeName);
+        }
+    }
+
+    /**
+     * Adds mixed="true" attribute to complex types that use xs:sequence to allow whitespace
+     * between elements when JAXB marshals with pretty-printing.
+     * <p>
+     * <b>Why this is needed:</b>
+     * By default, XSD complex types with {@code xs:sequence} have "element-only" content model,
+     * which means text nodes (including whitespace) are not allowed between child elements.
+     * When JAXB marshals XML with formatting enabled, it adds newlines and indentation as text
+     * nodes, which violates the schema constraint.
+     * <p>
+     * <b>Why JAXB cannot express this directly:</b>
+     * There is no JAXB annotation to generate {@code mixed="true"} on complex types.
+     * JAXB assumes element-only content for most types. The {@code @XmlMixed} annotation exists
+     * but only works with {@code @XmlAnyElement} for capturing arbitrary mixed content, not for
+     * simply allowing whitespace in formatted output.
+     * <p>
+     * Adding {@code mixed="true"} tells the XSD validator to allow text content (whitespace)
+     * between child elements, making the schema compatible with pretty-printed XML output.
+     * <p>
+     * <b>Important:</b> When a type extends another type via {@code xs:complexContent/xs:extension},
+     * both the base and derived types must have the same mixed content model. This method handles
+     * both direct sequence types and types that extend other types.
+     */
+    private static void addMixedContentToSequenceTypes(final Document doc) {
+        final var complexTypes = doc.getElementsByTagNameNS(XS_NAMESPACE, "complexType");
+        for (int i = 0; i < complexTypes.getLength(); i++) {
+            final var complexType = (Element) complexTypes.item(i);
+
+            // Check if this complex type has a direct xs:sequence child
+            if (hasDirectSequenceChild(complexType)) {
+                complexType.setAttribute("mixed", "true");
+                continue;
+            }
+
+            // Check if this complex type extends another type (xs:complexContent/xs:extension)
+            // If so, it must also be mixed to match the base type
+            if (hasComplexContentExtension(complexType)) {
+                complexType.setAttribute("mixed", "true");
+            }
+        }
+    }
+
+    /**
+     * Checks if a complex type has a direct xs:sequence child element.
+     */
+    private static boolean hasDirectSequenceChild(final Element complexType) {
+        final var children = complexType.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            final var child = children.item(i);
+            if (child instanceof Element && "sequence".equals(child.getLocalName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if a complex type uses xs:complexContent with xs:extension (type inheritance).
+     */
+    private static boolean hasComplexContentExtension(final Element complexType) {
+        final var children = complexType.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            final var child = children.item(i);
+            if (child instanceof Element && "complexContent".equals(child.getLocalName())) {
+                // Check for xs:extension child
+                final var complexContentChildren = child.getChildNodes();
+                for (int j = 0; j < complexContentChildren.getLength(); j++) {
+                    final var ccChild = complexContentChildren.item(j);
+                    if (ccChild instanceof Element && "extension".equals(ccChild.getLocalName())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     /**

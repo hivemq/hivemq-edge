@@ -628,13 +628,8 @@ val generateXsd by tasks.registering(JavaExec::class) {
     }
 }
 
-// Include the generated XSD in the jar (runs after test compilation)
-tasks.jar {
-    dependsOn(generateXsd)
-    from(generateXsd.map { it.outputs.files })
-}
-
 // Copy XSD to resources directory for version control
+// The XSD is included in the jar automatically via processResources from src/main/resources
 val copyXsdToResources by tasks.registering(Copy::class) {
     group = "build"
     description = "Copies generated XSD to src/main/resources for version control"
