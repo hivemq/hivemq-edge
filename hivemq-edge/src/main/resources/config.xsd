@@ -1,0 +1,2093 @@
+<?xml version="1.0" encoding="UTF-8"?><xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
+    
+  <xs:element name="address" type="broadcastAddress"/>
+    
+  <xs:element name="admin-api" type="adminApiEntity"/>
+    
+  <xs:element name="allow-anonymous-publish-minus-one" type="allowAnonymousPublishMinus1Entity"/>
+    
+  <xs:element name="allow-empty-client-id" type="allowEmptyClientIdEntity"/>
+    
+  <xs:element name="allow-empty-client-identifier" type="allowEmptyClientIdentifierEntity"/>
+    
+  <xs:element name="allow-request-problem-information" type="requestProblemInformationEntityConfig"/>
+    
+  <xs:element name="allow-waking-ping-session-hijack" type="allowWakingPingToHijackSessionEntity"/>
+    
+  <xs:element name="authentication" type="bridgeAuthenticationEntity"/>
+    
+  <xs:element name="data-combiner" type="dataCombinerEntity"/>
+    
+  <xs:element name="data-combining" type="dataCombiningEntity"/>
+    
+  <xs:element name="destination" type="dataCombiningDestinationEntity"/>
+    
+  <xs:element name="discovery" type="discoveryEntity"/>
+    
+  <xs:element name="dynamic-configuration" type="dynamicConfigEntity"/>
+    
+  <xs:element name="entity-reference" type="entityReferenceEntity"/>
+    
+  <xs:element name="forwarded-topic" type="forwardedTopicEntity"/>
+    
+  <xs:element name="generated-tokens" type="apiJwsEntity"/>
+    
+  <xs:element name="hivemq" type="hiveMQConfigEntity"/>
+    
+  <xs:element name="http-listener" type="httpListenerEntity"/>
+    
+  <xs:element name="https-listener" type="httpsListenerEntity"/>
+    
+  <xs:element name="instruction" type="instructionEntity"/>
+    
+  <xs:element name="internal" type="internalConfigEntity"/>
+    
+  <xs:element name="isa95" type="isa95Entity"/>
+    
+  <xs:element name="keep-alive" type="keepAliveConfigEntity"/>
+    
+  <xs:element name="keystore" type="keystoreEntity"/>
+    
+  <xs:element name="ldap" type="ldapAuthenticationEntity"/>
+    
+  <xs:element name="loop-prevention" type="loopPreventionEntity"/>
+    
+  <xs:element name="message-expiry" type="messageExpiryConfigEntity"/>
+    
+  <xs:element name="mqtt" nillable="true" type="xs:anyType"/>
+    
+  <xs:element name="mqtt-bridge" type="mqttBridgeEntity"/>
+    
+  <xs:element name="mqtt-simple-authentication" type="mqttSimpleAuthenticationEntity"/>
+    
+  <xs:element name="mqtt-sn" type="mqttSnConfigEntity"/>
+    
+  <xs:element name="option" type="optionEntity"/>
+    
+  <xs:element name="packets" type="packetsConfigEntity"/>
+    
+  <xs:element name="payload-format-validation" type="payloadFormatValidationEntity"/>
+    
+  <xs:element name="persistence" type="persistenceEntity"/>
+    
+  <xs:element name="pre-login-notice" type="preLoginNoticeEntity"/>
+    
+  <xs:element name="predefined-topic" type="mqttsnPredefinedTopicAliasEntity"/>
+    
+  <xs:element name="primary-reference" type="dataIdentifierReferenceEntity"/>
+    
+  <xs:element name="pulse" type="pulseEntity"/>
+    
+  <xs:element name="quality-of-service" type="qoSConfigEntity"/>
+    
+  <xs:element name="queued-messages" type="queuedMessagesConfigEntity"/>
+    
+  <xs:element name="receive-maximum" type="receiveMaximumConfigEntity"/>
+    
+  <xs:element name="remote-broker" type="remoteBrokerEntity"/>
+    
+  <xs:element name="remote-subscription" type="remoteSubscriptionEntity"/>
+    
+  <xs:element name="restrictions" type="restrictionsEntity"/>
+    
+  <xs:element name="retained-messages" type="retainedMessagesConfigEntity"/>
+    
+  <xs:element name="security" type="securityConfigEntity"/>
+    
+  <xs:element name="session-expiry" type="sessionExpiryConfigEntity"/>
+    
+  <xs:element name="shared-subscriptions" type="sharedSubscriptionsConfigEntity"/>
+    
+  <xs:element name="sources" type="dataCombiningSourcesEntity"/>
+    
+  <xs:element name="subscription-identifier" type="subscriptionIdentifierConfigEntity"/>
+    
+  <xs:element name="tcp-listener" type="tcpListenerEntity"/>
+    
+  <xs:element name="tls" nillable="true" type="xs:anyType"/>
+    
+  <xs:element name="tls-tcp-listener" type="tlsTCPListenerEntity"/>
+    
+  <xs:element name="tls-websocket-listener" type="tlsWebsocketListenerEntity"/>
+    
+  <xs:element name="topic-alias" type="topicAliasConfigEntity"/>
+    
+  <xs:element name="topic-registrations-held-during-sleep" type="topicRegistrationsHeldDuringSleepEntity"/>
+    
+  <xs:element name="truststore" type="truststoreEntity"/>
+    
+  <xs:element name="udp-broadcast-listener" type="udpBroadcastListenerEntity"/>
+    
+  <xs:element name="udp-listener" type="udpListenerEntity"/>
+    
+  <xs:element name="uns" type="unsConfigEntity"/>
+    
+  <xs:element name="usage-tracking" type="usageTrackingConfigEntity"/>
+    
+  <xs:element name="user" type="userEntity"/>
+    
+  <xs:element name="user-property" type="customUserPropertyEntity"/>
+    
+  <xs:element name="utf8-validation" type="utf8ValidationEntity"/>
+    
+  <xs:element name="websocket" type="bridgeWebsocketConfigurationEntity"/>
+    
+  <xs:element name="websocket-listener" type="websocketListenerEntity"/>
+    
+  <xs:element name="wildcard-subscriptions" type="wildcardSubscriptionsConfigEntity"/>
+    
+  <xs:complexType name="hiveMQConfigEntity">
+        
+    <xs:all>
+            
+      <xs:element minOccurs="0" ref="internal"/>
+            
+      <xs:element default="1" minOccurs="0" name="config-version" type="xs:int"/>
+            
+      <xs:element minOccurs="0" name="mqtt-listeners">
+                
+        <xs:complexType>
+          <xs:choice maxOccurs="unbounded" minOccurs="0">
+            <xs:element ref="tcp-listener"/>
+            <xs:element ref="tls-tcp-listener"/>
+            <xs:element ref="websocket-listener"/>
+            <xs:element ref="tls-websocket-listener"/>
+          </xs:choice>
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="mqtt-sn-listeners">
+                
+        <xs:complexType>
+          <xs:choice maxOccurs="unbounded" minOccurs="0">
+            <xs:element ref="udp-listener"/>
+            <xs:element ref="udp-broadcast-listener"/>
+          </xs:choice>
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" ref="mqtt"/>
+            
+      <xs:element minOccurs="0" ref="mqtt-sn"/>
+            
+      <xs:element minOccurs="0" ref="restrictions"/>
+            
+      <xs:element minOccurs="0" ref="security"/>
+            
+      <xs:element minOccurs="0" ref="persistence"/>
+            
+      <xs:element minOccurs="0" name="mqtt-bridges">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" ref="mqtt-bridge"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" ref="admin-api"/>
+            
+      <xs:element minOccurs="0" ref="uns"/>
+            
+      <xs:element minOccurs="0" ref="dynamic-configuration"/>
+            
+      <xs:element minOccurs="0" ref="usage-tracking"/>
+            
+      <xs:element minOccurs="0" name="protocol-adapters">
+                
+        <xs:complexType>
+          <xs:sequence>
+            <xs:choice maxOccurs="unbounded" minOccurs="0">
+              <xs:any processContents="skip"/>
+            </xs:choice>
+          </xs:sequence>
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="data-combiners">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" ref="data-combiner"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="asset-mappers">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="asset-mapper" type="dataCombinerEntity"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" ref="pulse"/>
+            
+      <xs:element minOccurs="0" name="modules">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:any maxOccurs="unbounded" minOccurs="0" processContents="skip"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+          
+    </xs:all>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="internalConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element maxOccurs="unbounded" minOccurs="0" ref="option"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="optionEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="key" type="xs:string"/>
+            
+      <xs:element name="value" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType abstract="true" name="listenerEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="port" type="xs:int"/>
+            
+      <xs:element name="bind-address" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="name" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="external-hostname" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="mqttConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" ref="queued-messages"/>
+            
+      <xs:element minOccurs="0" ref="retained-messages"/>
+            
+      <xs:element minOccurs="0" ref="wildcard-subscriptions"/>
+            
+      <xs:element minOccurs="0" ref="quality-of-service"/>
+            
+      <xs:element minOccurs="0" ref="topic-alias"/>
+            
+      <xs:element minOccurs="0" ref="message-expiry"/>
+            
+      <xs:element minOccurs="0" ref="session-expiry"/>
+            
+      <xs:element minOccurs="0" ref="subscription-identifier"/>
+            
+      <xs:element minOccurs="0" ref="shared-subscriptions"/>
+            
+      <xs:element minOccurs="0" ref="keep-alive"/>
+            
+      <xs:element minOccurs="0" ref="packets"/>
+            
+      <xs:element minOccurs="0" ref="receive-maximum"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="queuedMessagesConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="1000" name="max-queue-size" type="xs:long"/>
+            
+      <xs:element default="discard" minOccurs="0" name="strategy" type="strategy"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="retainedMessagesConfigEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="enabledEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType abstract="true" name="enabledEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="true" minOccurs="0" name="enabled" type="xs:boolean"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="wildcardSubscriptionsConfigEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="enabledEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="qoSConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="2" name="max-qos" type="xs:int"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="topicAliasConfigEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="enabledEntity">
+                
+        <xs:sequence>
+                    
+          <xs:element default="5" name="max-per-client" type="xs:int"/>
+                  
+        </xs:sequence>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="messageExpiryConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="4294967296" name="max-interval" type="xs:long"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="sessionExpiryConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="4294967295" name="max-interval" type="xs:long"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="subscriptionIdentifierConfigEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="enabledEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="sharedSubscriptionsConfigEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="enabledEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="keepAliveConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="65535" name="max-keep-alive" type="xs:int"/>
+            
+      <xs:element default="true" name="allow-unlimited" type="xs:boolean"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="packetsConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="268435460" name="max-packet-size" type="xs:int"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="receiveMaximumConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="10" name="server-receive-maximum" type="xs:int"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="mqttSnConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" name="predefined-topics">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" ref="predefined-topic"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" ref="allow-empty-client-identifier"/>
+            
+      <xs:element minOccurs="0" ref="discovery"/>
+            
+      <xs:element minOccurs="0" ref="allow-anonymous-publish-minus-one"/>
+            
+      <xs:element minOccurs="0" ref="allow-waking-ping-session-hijack"/>
+            
+      <xs:element minOccurs="0" ref="topic-registrations-held-during-sleep"/>
+            
+      <xs:element default="23" minOccurs="0" name="max-client-identifier-length" type="xs:int"/>
+            
+      <xs:element default="1" minOccurs="0" name="gateway-id" type="xs:int"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="mqttsnPredefinedTopicAliasEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="topicName" type="xs:string"/>
+            
+      <xs:element name="alias" type="xs:int"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="allowEmptyClientIdentifierEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="disabledEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType abstract="true" name="disabledEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="false" name="enabled" type="xs:boolean"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="discoveryEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="disabledEntity">
+                
+        <xs:sequence>
+                    
+          <xs:element minOccurs="0" name="broadcast-addresses">
+                        
+            <xs:complexType>
+                            
+              <xs:sequence>
+                                
+                <xs:element maxOccurs="unbounded" minOccurs="0" ref="address"/>
+                              
+              </xs:sequence>
+                          
+            </xs:complexType>
+                      
+          </xs:element>
+                    
+          <xs:element default="30" name="discovery-interval-seconds" type="xs:int"/>
+                  
+        </xs:sequence>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="broadcastAddress">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="listenerEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="allowAnonymousPublishMinus1Entity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="disabledEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="allowWakingPingToHijackSessionEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="disabledEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="topicRegistrationsHeldDuringSleepEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="disabledEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="restrictionsEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="-1" minOccurs="0" name="max-connections" type="xs:long"/>
+            
+      <xs:element default="65535" minOccurs="0" name="max-client-id-length" type="xs:int"/>
+            
+      <xs:element default="65535" minOccurs="0" name="max-topic-length" type="xs:int"/>
+            
+      <xs:element default="10000" minOccurs="0" name="no-connect-idle-timeout" type="xs:long"/>
+            
+      <xs:element default="0" minOccurs="0" name="incoming-bandwidth-throttling" type="xs:long"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="securityConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" ref="payload-format-validation"/>
+            
+      <xs:element minOccurs="0" ref="utf8-validation"/>
+            
+      <xs:element minOccurs="0" ref="allow-empty-client-id"/>
+            
+      <xs:element minOccurs="0" ref="allow-request-problem-information"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="payloadFormatValidationEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="disabledEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="utf8ValidationEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="enabledEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="allowEmptyClientIdEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="enabledEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="requestProblemInformationEntityConfig">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="enabledEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="persistenceEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="in-memory" minOccurs="0" name="mode" type="mode"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="mqttBridgeEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="id" type="xs:string"/>
+            
+      <xs:element ref="remote-broker"/>
+            
+      <xs:element minOccurs="0" name="remote-subscriptions">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" ref="remote-subscription"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="forwarded-topics">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" ref="forwarded-topic"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element ref="loop-prevention"/>
+            
+      <xs:element name="persist" type="xs:boolean"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="remoteBrokerEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="1883" name="port" type="xs:int"/>
+            
+      <xs:element name="host" type="xs:string"/>
+            
+      <xs:element ref="mqtt"/>
+            
+      <xs:element ref="authentication"/>
+            
+      <xs:element ref="websocket"/>
+            
+      <xs:element ref="tls"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="bridgeMqttEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" name="client-id" type="xs:string"/>
+            
+      <xs:element default="false" name="clean-start" type="xs:boolean"/>
+            
+      <xs:element default="3600" name="session-expiry" type="xs:long"/>
+            
+      <xs:element default="60" name="keep-alive" type="xs:int"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="bridgeAuthenticationEntity">
+        
+    <xs:sequence>
+            
+      <xs:element ref="mqtt-simple-authentication"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="mqttSimpleAuthenticationEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" name="username" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="password" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="bridgeWebsocketConfigurationEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="enabled" type="xs:boolean"/>
+            
+      <xs:element minOccurs="0" name="server-path" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="subprotocol" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="bridgeTlsEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="enabled" type="xs:boolean"/>
+            
+      <xs:element minOccurs="0" ref="keystore"/>
+            
+      <xs:element minOccurs="0" ref="truststore"/>
+            
+      <xs:element minOccurs="0" name="protocols">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="protocol" type="xs:string"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="cipher-suites">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="cipher-suite" type="xs:string"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element default="10" name="handshake-timeout" type="xs:int"/>
+            
+      <xs:element default="true" name="verify-hostname" type="xs:boolean"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="keystoreEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="path" type="xs:string"/>
+            
+      <xs:element name="password" type="xs:string"/>
+            
+      <xs:element name="private-key-password" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="truststoreEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="path" type="xs:string"/>
+            
+      <xs:element name="password" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="remoteSubscriptionEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" name="filters">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="mqtt-topic-filter" type="xs:string"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element name="max-qos" type="xs:int"/>
+            
+      <xs:element default="false" name="preserve-retain" type="xs:boolean"/>
+            
+      <xs:element minOccurs="0" name="destination" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="custom-user-properties">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" ref="user-property"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="customUserPropertyEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="key" type="xs:string"/>
+            
+      <xs:element name="value" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="forwardedTopicEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" name="filters">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="mqtt-topic-filter" type="xs:string"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element name="max-qos" type="xs:int"/>
+            
+      <xs:element default="false" name="preserve-retain" type="xs:boolean"/>
+            
+      <xs:element minOccurs="0" name="destination" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="custom-user-properties">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" ref="user-property"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="excludes">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="mqtt-topic-filter" type="xs:string"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="queue-limit" type="xs:long"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="loopPreventionEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="true" name="enabled" type="xs:boolean"/>
+            
+      <xs:element default="1" name="hop-count-limit" type="xs:int"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="adminApiEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="enabledEntity">
+                
+        <xs:sequence>
+                    
+          <xs:element minOccurs="0" name="listeners">
+                        
+            <xs:complexType>
+                            
+              <xs:sequence>
+                                
+                <xs:choice maxOccurs="unbounded" minOccurs="0">
+                                    
+                  <xs:element minOccurs="0" ref="http-listener"/>
+                                    
+                  <xs:element minOccurs="0" ref="https-listener"/>
+                                  
+                </xs:choice>
+                              
+              </xs:sequence>
+                          
+            </xs:complexType>
+                      
+          </xs:element>
+                    
+          <xs:element minOccurs="0" ref="generated-tokens"/>
+                    
+          <xs:element minOccurs="0" name="users">
+                        
+            <xs:complexType>
+                            
+              <xs:sequence>
+                                
+                <xs:element maxOccurs="unbounded" minOccurs="0" ref="user"/>
+                              
+              </xs:sequence>
+                          
+            </xs:complexType>
+                      
+          </xs:element>
+                    
+          <xs:element minOccurs="0" ref="ldap"/>
+                    
+          <xs:element minOccurs="0" ref="tls"/>
+                    
+          <xs:element minOccurs="0" ref="pre-login-notice"/>
+                  
+        </xs:sequence>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="httpListenerEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="apiListenerEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType abstract="true" name="apiListenerEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="port" type="xs:int"/>
+            
+      <xs:element name="bind-address" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="httpsListenerEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="apiListenerEntity">
+                
+        <xs:sequence>
+                    
+          <xs:element ref="tls"/>
+                  
+        </xs:sequence>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="apiTlsEntity">
+        
+    <xs:sequence>
+            
+      <xs:element ref="keystore"/>
+            
+      <xs:element minOccurs="0" name="protocols">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="protocol" type="xs:string"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="cipher-suites">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="cipher-suite" type="xs:string"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="apiJwsEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="keySize" type="xs:int"/>
+            
+      <xs:element default="HiveMQ-Edge" name="issuer" type="xs:string"/>
+            
+      <xs:element default="HiveMQ-Edge-Api" name="audience" type="xs:string"/>
+            
+      <xs:element default="30" name="expiryTimeMinutes" type="xs:int"/>
+            
+      <xs:element default="2" name="tokenEarlyEpochThresholdMinutes" type="xs:int"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="userEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" name="username" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="password" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="roles">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="role" type="xs:string"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="ldapAuthenticationEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="servers">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="ldap-server" type="ldapServerEntity"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="tls-mode" type="xs:string"/>
+            
+      <xs:element minOccurs="0" ref="tls"/>
+            
+      <xs:element name="connect-timeout-millis" type="xs:int"/>
+            
+      <xs:element name="response-timeout-millis" type="xs:int"/>
+            
+      <xs:element default="1" name="max-connections" type="xs:int"/>
+            
+      <xs:element minOccurs="0" name="uid-attribute" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="rdns" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="required-object-class" type="xs:string"/>
+            
+      <xs:element name="directory-descent" type="xs:boolean"/>
+            
+      <xs:element name="search-timeout-seconds" type="xs:int"/>
+            
+      <xs:element name="simple-bind" type="ldapSimpleBindEntity"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="ldapServerEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="host" type="xs:string"/>
+            
+      <xs:element default="389" name="port" type="xs:int"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="trustStoreEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="" name="truststore-path" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="truststore-password" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="truststore-type" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="ldapSimpleBindEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="rdns" type="xs:string"/>
+            
+      <xs:element name="userPassword" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="preLoginNoticeEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="enabled" type="xs:boolean"/>
+            
+      <xs:element minOccurs="0" name="title" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="message" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="consent" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="unsConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" ref="isa95"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="isa95Entity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="disabledEntity">
+                
+        <xs:sequence>
+                    
+          <xs:element name="prefix-all-topics" type="xs:boolean"/>
+                    
+          <xs:element minOccurs="0" name="enterprise" type="xs:string"/>
+                    
+          <xs:element minOccurs="0" name="site" type="xs:string"/>
+                    
+          <xs:element minOccurs="0" name="area" type="xs:string"/>
+                    
+          <xs:element minOccurs="0" name="production-line" type="xs:string"/>
+                    
+          <xs:element minOccurs="0" name="work-cell" type="xs:string"/>
+                  
+        </xs:sequence>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="dynamicConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="false" minOccurs="0" name="allow-configuration-export" type="xs:boolean"/>
+            
+      <xs:element default="true" minOccurs="0" name="allow-mutable-configuration" type="xs:boolean"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="usageTrackingConfigEntity">
+        
+    <xs:sequence>
+            
+      <xs:element default="true" minOccurs="0" name="enabled" type="xs:boolean"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="protocolAdapterEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="adapterId" type="xs:string"/>
+            
+      <xs:element name="protocolId" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="configVersion" type="xs:int"/>
+            
+      <xs:element minOccurs="0" name="config" type="elementMap"/>
+            
+      <xs:element minOccurs="0" name="tags">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="tag" type="tagEntity"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="northboundMappings">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="northboundMapping" type="northboundMappingEntity"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="southboundMappings">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="southboundMapping" type="southboundMappingEntity"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="elementMap">
+        
+    <xs:sequence>
+            
+      <xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="skip"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="tagEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="name" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="description" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="definition" type="elementMap"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="northboundMappingEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="tagName" type="xs:string"/>
+            
+      <xs:element name="topic" type="xs:string"/>
+            
+      <xs:element name="maxQos" type="xs:int"/>
+            
+      <xs:element default="MQTTMessagePerTag" minOccurs="0" name="messageHandlingOptions" type="messageHandlingOptions"/>
+            
+      <xs:element name="includeTagNames" type="xs:boolean"/>
+            
+      <xs:element name="includeTimestamp" type="xs:boolean"/>
+            
+      <xs:element name="mqttUserProperties">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="mqttUserProperty" type="mqttUserPropertyEntity"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element name="messageExpiryInterval" type="xs:long"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="mqttUserPropertyEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="name" type="xs:string"/>
+            
+      <xs:element name="value" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="southboundMappingEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="topicFilter" type="xs:string"/>
+            
+      <xs:element name="tagName" type="xs:string"/>
+            
+      <xs:element name="fieldMapping" type="fieldMappingEntity"/>
+            
+      <xs:element name="fromNorthSchema" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="fieldMappingEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" name="instructions">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" ref="instruction"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="instructionEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" name="source" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="destination" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="origin" type="dataIdentifierReferenceEntity"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="dataIdentifierReferenceEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" name="id" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="type" type="type"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="dataCombinerEntity">
+        
+    <xs:all>
+            
+      <xs:element name="id" type="xs:string"/>
+            
+      <xs:element name="name" type="xs:string"/>
+            
+      <xs:element name="description" type="xs:string"/>
+            
+      <xs:element minOccurs="0" name="entity-references">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" ref="entity-reference"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="data-combinings">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" ref="data-combining"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+          
+    </xs:all>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="entityReferenceEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="type" type="entityType"/>
+            
+      <xs:element name="id" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="dataCombiningEntity">
+        
+    <xs:all>
+            
+      <xs:element name="id" type="xs:string"/>
+            
+      <xs:element minOccurs="0" ref="sources"/>
+            
+      <xs:element ref="destination"/>
+            
+      <xs:element name="instructions">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" ref="instruction"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+          
+    </xs:all>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="dataCombiningSourcesEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" ref="primary-reference"/>
+            
+      <xs:element minOccurs="0" name="tags">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="tag" type="xs:string"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="topic-filters">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="topic-filter" type="xs:string"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="dataCombiningDestinationEntity">
+        
+    <xs:sequence>
+            
+      <xs:element minOccurs="0" name="assetId" type="xs:string"/>
+            
+      <xs:element name="topic" type="xs:string"/>
+            
+      <xs:element name="schema" type="xs:string"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="pulseEntity">
+        
+    <xs:sequence>
+            
+      <xs:element name="managed-assets" type="managed-assets"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="managed-assets">
+        
+    <xs:sequence>
+            
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="managed-asset" type="managed-asset"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="managed-asset">
+        
+    <xs:sequence>
+            
+      <xs:element name="schema" type="xs:string"/>
+            
+      <xs:element name="mapping" type="mapping"/>
+          
+    </xs:sequence>
+        
+    <xs:attribute name="id" type="xs:string" use="required"/>
+        
+    <xs:attribute name="name" type="xs:string" use="required"/>
+        
+    <xs:attribute name="description" type="xs:string"/>
+        
+    <xs:attribute name="topic" type="xs:string" use="required"/>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="mapping">
+        
+    <xs:sequence/>
+        
+    <xs:attribute name="id" type="xs:string"/>
+        
+    <xs:attribute name="status" type="pulseAssetMappingStatus" use="required"/>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="tcpListenerEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="listenerEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="tlsTCPListenerEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="listenerEntity">
+                
+        <xs:sequence>
+                    
+          <xs:element ref="tls"/>
+                  
+        </xs:sequence>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="tlsEntity">
+        
+    <xs:sequence>
+            
+      <xs:element ref="keystore"/>
+            
+      <xs:element minOccurs="0" ref="truststore"/>
+            
+      <xs:element default="10000" minOccurs="0" name="handshake-timeout" type="xs:int"/>
+            
+      <xs:element default="NONE" minOccurs="0" name="client-authentication-mode" type="clientAuthenticationMode"/>
+            
+      <xs:element minOccurs="0" name="protocols">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="protocol" type="xs:string"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="cipher-suites">
+                
+        <xs:complexType>
+                    
+          <xs:sequence>
+                        
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="cipher-suite" type="xs:string"/>
+                      
+          </xs:sequence>
+                  
+        </xs:complexType>
+              
+      </xs:element>
+            
+      <xs:element minOccurs="0" name="prefer-server-cipher-suites" type="xs:boolean"/>
+          
+    </xs:sequence>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="websocketListenerEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="listenerEntity">
+                
+        <xs:sequence>
+                    
+          <xs:element name="path" type="xs:string"/>
+                    
+          <xs:element minOccurs="0" name="subprotocols">
+                        
+            <xs:complexType>
+                            
+              <xs:sequence>
+                                
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="subprotocol" type="xs:string"/>
+                              
+              </xs:sequence>
+                          
+            </xs:complexType>
+                      
+          </xs:element>
+                    
+          <xs:element default="false" minOccurs="0" name="allow-extensions" type="xs:boolean"/>
+                  
+        </xs:sequence>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="tlsWebsocketListenerEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="listenerEntity">
+                
+        <xs:sequence>
+                    
+          <xs:element name="path" type="xs:string"/>
+                    
+          <xs:element minOccurs="0" name="subprotocols">
+                        
+            <xs:complexType>
+                            
+              <xs:sequence>
+                                
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="subprotocol" type="xs:string"/>
+                              
+              </xs:sequence>
+                          
+            </xs:complexType>
+                      
+          </xs:element>
+                    
+          <xs:element default="false" name="allow-extensions" type="xs:boolean"/>
+                    
+          <xs:element ref="tls"/>
+                  
+        </xs:sequence>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="udpListenerEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="listenerEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:complexType name="udpBroadcastListenerEntity">
+        
+    <xs:complexContent>
+            
+      <xs:extension base="listenerEntity">
+                
+        <xs:sequence/>
+              
+      </xs:extension>
+          
+    </xs:complexContent>
+      
+  </xs:complexType>
+    
+  <xs:simpleType name="strategy">
+        
+    <xs:restriction base="xs:string">
+            
+      <xs:enumeration value="discard-oldest"/>
+            
+      <xs:enumeration value="discard"/>
+          
+    </xs:restriction>
+      
+  </xs:simpleType>
+    
+  <xs:simpleType name="mode">
+        
+    <xs:restriction base="xs:string">
+            
+      <xs:enumeration value="file-native"/>
+            
+      <xs:enumeration value="file"/>
+            
+      <xs:enumeration value="in-memory"/>
+          
+    </xs:restriction>
+      
+  </xs:simpleType>
+    
+  <xs:simpleType name="messageHandlingOptions">
+        
+    <xs:restriction base="xs:string">
+            
+      <xs:enumeration value="MQTTMessagePerTag"/>
+            
+      <xs:enumeration value="MQTTMessagePerSubscription"/>
+          
+    </xs:restriction>
+      
+  </xs:simpleType>
+    
+  <xs:simpleType name="type">
+        
+    <xs:restriction base="xs:string">
+            
+      <xs:enumeration value="PULSE_ASSET"/>
+            
+      <xs:enumeration value="TAG"/>
+            
+      <xs:enumeration value="TOPIC_FILTER"/>
+          
+    </xs:restriction>
+      
+  </xs:simpleType>
+    
+  <xs:simpleType name="entityType">
+        
+    <xs:restriction base="xs:string">
+            
+      <xs:enumeration value="ADAPTER"/>
+            
+      <xs:enumeration value="DEVICE"/>
+            
+      <xs:enumeration value="BRIDGE"/>
+            
+      <xs:enumeration value="EDGE_BROKER"/>
+            
+      <xs:enumeration value="PULSE_AGENT"/>
+          
+    </xs:restriction>
+      
+  </xs:simpleType>
+    
+  <xs:simpleType name="pulseAssetMappingStatus">
+        
+    <xs:restriction base="xs:string">
+            
+      <xs:enumeration value="DRAFT"/>
+            
+      <xs:enumeration value="MISSING"/>
+            
+      <xs:enumeration value="REQUIRES_REMAPPING"/>
+            
+      <xs:enumeration value="STREAMING"/>
+            
+      <xs:enumeration value="UNMAPPED"/>
+          
+    </xs:restriction>
+      
+  </xs:simpleType>
+    
+  <xs:simpleType name="clientAuthenticationMode">
+        
+    <xs:restriction base="xs:string">
+            
+      <xs:enumeration value="OPTIONAL"/>
+            
+      <xs:enumeration value="REQUIRED"/>
+            
+      <xs:enumeration value="NONE"/>
+          
+    </xs:restriction>
+      
+  </xs:simpleType>
+  
+  <xs:simpleType name="port">
+    <xs:restriction base="xs:int">
+      <xs:minInclusive value="0"/>
+      <xs:maxInclusive value="65535"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="nonEmptyString">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1"/>
+      <xs:whiteSpace value="collapse"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="uuidType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="qosType">
+    <xs:restriction base="xs:int">
+      <xs:minInclusive value="0"/>
+      <xs:maxInclusive value="2"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="positiveInteger">
+    <xs:restriction base="xs:int">
+      <xs:minInclusive value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="nonNegativeInteger">
+    <xs:restriction base="xs:int">
+      <xs:minInclusive value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="nonNegativeLong">
+    <xs:restriction base="xs:long">
+      <xs:minInclusive value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>

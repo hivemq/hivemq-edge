@@ -633,3 +633,19 @@ tasks.jar {
     dependsOn(generateXsd)
     from(generateXsd.map { it.outputs.files })
 }
+
+// Copy XSD to resources directory for version control
+val copyXsdToResources by tasks.registering(Copy::class) {
+    group = "build"
+    description = "Copies generated XSD to src/main/resources for version control"
+
+    dependsOn(generateXsd)
+
+    from(generateXsd.map { it.outputs.files })
+    into(file("src/main/resources"))
+}
+
+// Run XSD copy as part of the build (after jar, avoiding circular dependency with processResources)
+tasks.build {
+    dependsOn(copyXsdToResources)
+}
