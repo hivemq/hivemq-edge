@@ -120,12 +120,13 @@ export const ScriptEditor: FC<ScriptEditorProps> = ({ isOpen, onClose, script })
 
       // Validate JavaScript syntax using browser's Function constructor
       if (sourceCode) {
-        try {
-          // Try to parse the JavaScript code - Function constructor will throw SyntaxError if invalid
-          new Function(sourceCode)
-        } catch (e) {
-          errors.sourceCode?.addError((e as SyntaxError).message)
-        }
+        // TODO[NVL] THis is prone to code injection attacks - we need to utilise Monaco's built-in syntax checking instead
+        // try {
+        //   // Try to parse the JavaScript code - Function constructor will throw SyntaxError if invalid
+        //   new Function(sourceCode)
+        // } catch (e) {
+        //   errors.sourceCode?.addError((e as SyntaxError).message)
+        // }
       }
 
       return errors
@@ -216,7 +217,6 @@ export const ScriptEditor: FC<ScriptEditorProps> = ({ isOpen, onClose, script })
               customValidate={customValidate}
               onChange={handleChange}
               onError={(errors) => {
-                console.log('XXXXXX sc', errors)
                 setHasErrors(errors.length > 0)
               }}
               onSubmit={handleSave}

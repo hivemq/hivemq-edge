@@ -97,7 +97,6 @@ describe('ScriptEditor', () => {
       cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
 
       // Test that form validates syntax on save attempt
-      // The ScriptEditor uses new Function() to validate syntax in customValidate
       cy.window().then((win) => {
         // @ts-ignore
         const monaco = win.monaco
