@@ -84,7 +84,8 @@ describe('ScriptEditor', () => {
       cy.get('@onCloseSpy').should('have.been.calledOnce')
     })
 
-    it('should validate JavaScript syntax', () => {
+    it.skip('should validate JavaScript syntax', () => {
+      // Validation of JS has been disabled (38512)
       cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
 
       // Enter name
