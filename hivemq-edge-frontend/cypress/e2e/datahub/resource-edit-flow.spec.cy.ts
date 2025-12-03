@@ -91,7 +91,7 @@ describe('DataHub - Resource Edit Flow', () => {
       }).as('saveSchema')
     })
 
-    it('should create a new JSON schema from Schema table', () => {
+    it('should create a new JSON schema from Schema table', { tags: ['@percy'] }, () => {
       // NARRATIVE: User wants to create a new JSON schema for temperature readings
       // They navigate to schemas, click create, fill in details, and save
 
@@ -278,7 +278,7 @@ describe('DataHub - Resource Edit Flow', () => {
       }).as('saveScript')
     })
 
-    it('should create a new JavaScript script from Script table', () => {
+    it('should create a new JavaScript script from Script table', { tags: ['@percy'] }, () => {
       // NARRATIVE: User wants to create a transformation script for temperature conversion
       // They navigate to scripts, create new, provide name/description, write code, and save
 
@@ -386,7 +386,7 @@ describe('DataHub - Resource Edit Flow', () => {
   })
 
   describe('Policy Designer Integration', () => {
-    it('should select existing schema in policy designer using simplified panel', () => {
+    it('should select existing schema in policy designer using simplified panel', { tags: ['@percy'] }, () => {
       // NARRATIVE: User has existing schema and wants to use it in a policy
       // They open designer, drag schema node, and select the schema
 
