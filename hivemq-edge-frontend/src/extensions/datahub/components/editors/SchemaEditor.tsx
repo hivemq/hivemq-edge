@@ -285,7 +285,6 @@ export const SchemaEditor: FC<SchemaEditorProps> = ({ isOpen, onClose, schema })
               customValidate={customValidate}
               onChange={handleChange}
               onError={(errors) => {
-                console.log('XXXXXX schema', errors)
                 setHasErrors(errors.length > 0)
               }}
               onSubmit={handleSave}

@@ -26,7 +26,6 @@ export function encodeProtobufSchema(source: string): string {
   const encodedGraphBytes = new Uint8Array(protobufUtils.base64.length(encoded))
   protobufUtils.base64.decode(encoded, encodedGraphBytes, 0)
   const decodedMessage = descriptor.FileDescriptorSet.decode(encodedGraphBytes)
-  console.log('XXXXXX', { encoded, decodedMessage, descriptorMessage })
 
   if (JSON.stringify(descriptorMessage) !== JSON.stringify(decodedMessage)) {
     throw new Error('Protobuf encoding verification failed')

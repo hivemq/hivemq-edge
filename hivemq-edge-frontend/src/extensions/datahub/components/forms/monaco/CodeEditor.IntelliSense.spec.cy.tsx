@@ -28,8 +28,7 @@ describe('Monaco IntelliSense - Integration Tests (Configuration Verification)',
     cy.viewport(1200, 800)
 
     // Ignore Monaco worker loading errors
-    cy.on('uncaught:exception', (err, _, pro) => {
-      console.log('XXXXXXX', { err, pro })
+    cy.on('uncaught:exception', (err) => {
       return !(err.message.includes('importScripts') || err.message.includes('ts.worker'))
     })
   })
