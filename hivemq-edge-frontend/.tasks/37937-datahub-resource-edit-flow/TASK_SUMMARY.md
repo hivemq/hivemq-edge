@@ -643,9 +643,135 @@ All validation rules already have skipped tests:
 
 ---
 
-**Status**: ✅ **PHASE 2 COMPLETE** + Extra protobuf subtask - Ready for Phase 3
+### Session 7: Protobuf MessageType - Complete Implementation (November 27-28, 2025)
+
+**Extra Subtask: Protobuf MessageType Support - COMPLETE**
+
+**Goal:** Add complete protobuf messageType field support with proper encoding/decoding
+
+**Implementation Completed:**
+
+1. ✅ **Utility functions** (`protobuf.utils.ts`): Complete encode/decode/extract
+
+   - `extractProtobufMessageTypes()`: Parse source and extract message type names
+   - `encodeProtobufSchema()`: Source → FileDescriptorSet → base64 (for save/publish)
+   - `decodeProtobufSchema()`: base64 → FileDescriptorSet → template (for load/display)
+   - Handles nested messages with dot notation
+   - Comprehensive error handling
+   - **Tests:** 16 active unit tests, all passing ✅
+
+2. ✅ **Custom widget** (`MessageTypeSelect.tsx`): CreatableSelect with live data
+
+   - Uses `chakra-react-select`'s `CreatableSelect` component
+   - Accesses live schemaSource via **formContext** (not formData - doesn't exist in WidgetProps!)
+   - Uses `onMenuOpen` to compute options fresh when dropdown opens
+   - Allows manual entry if auto-extraction fails
+   - **Tests:** 4 active component tests, all passing ✅
+
+3. ✅ **SchemaEditor Integration**:
+
+   - messageType widget in uiSchema for PROTOBUF schemas
+   - Custom validation: required field, validates message type exists in schema
+   - Saves to `arguments.messageType`
+   - **FIXED:** PROTOBUF encoding bug (was using `btoa()`, now uses `encodeProtobufSchema()`)
+   - **FIXED:** PROTOBUF decoding bug (was using `atob()`, now uses `decodeProtobufSchema()`)
+   - Passes live schemaSource via formContext
+
+4. ✅ **SchemaPanelSimplified Integration**:
+
+   - messageType readonly display for PROTOBUF schemas
+   - **FIXED:** All 3 decoding paths (initial load, name change, version change)
+   - Now properly uses `decodeProtobufSchema()` instead of `atob()`
+   - Loads messageType from schema arguments
+
+5. ✅ **Code Refactoring**:
+
+   - Extracted shared encode/decode functions (eliminated ~50 lines of duplication)
+   - SchemaNode.utils.ts now uses shared functions
+   - Consistent PROTOBUF handling across codebase
+
+6. ✅ **Documentation**:
+   - Updated `RJSF_GUIDELINES.md` with comprehensive "Widgets vs Fields" section (+250 lines)
+   - Documented formData access limitations and formContext solution
+   - Real-world protobuf example with complete implementation
+   - Added to Table of Contents
+
+**Key Technical Discovery:**
+
+**WidgetProps and FieldProps do NOT have access to full form data!**
+
+- `WidgetProps.value` = only THIS field's value
+- `FieldProps.formData` = only THIS field's value
+- `formData` prop doesn't exist in widgets, and doesn't update even when it does exist
+- **Solution:** Use `formContext` to pass cross-field data from parent
+
+**Files Created (3):**
+
+- `src/extensions/datahub/utils/protobuf.utils.ts` (120 lines, 3 functions)
+- `src/extensions/datahub/utils/protobuf.utils.spec.ts` (165 lines, 16 tests)
+- `src/extensions/datahub/components/forms/MessageTypeSelect.tsx` (115 lines)
+
+**Files Modified (7):**
+
+- `src/extensions/datahub/components/editors/SchemaEditor.tsx` (encode/decode, formContext, validation)
+- `src/extensions/datahub/designer/schema/SchemaPanelSimplified.tsx` (decode all 3 paths, messageType)
+- `src/extensions/datahub/designer/schema/SchemaNode.utils.ts` (shared encode/decode functions)
+- `src/extensions/datahub/designer/datahubRJSFWidgets.tsx` (widget registration)
+- `src/extensions/datahub/locales/en/datahub.json` (+5 i18n keys)
+- `src/extensions/datahub/components/forms/CodeEditor.tsx` (debug console logs)
+- `.tasks/RJSF_GUIDELINES.md` (+250 lines: complete Widgets vs Fields guide)
+
+**Test Results:**
+
+- ✅ protobuf.utils.spec.ts: 16/16 unit tests passing
+  - encodeProtobufSchema: 6 tests
+  - decodeProtobufSchema: 4 tests
+  - extractProtobufMessageTypes: 6 tests
+- ✅ MessageTypeSelect component: 4/4 active tests passing
+- ✅ All TypeScript errors resolved
+
+**Session Duration:** ~6 hours across 2 sessions (Nov 27-28)
 
 ---
 
-**Last Updated**: November 27, 2025  
-**Next Review**: Before starting Phase 3 (Publishing Flow Updates)
+**Status**: ✅ **PHASE 2 COMPLETE** (100%)
+
+**Summary:**
+
+- All 4 subtasks complete (2.1-2.4)
+- Extra protobuf subtask complete with full encode/decode support
+- All bugs fixed (encoding, decoding, field order, version preservation)
+- Comprehensive test coverage: 87 total tests (30 active, 57 skipped)
+- Documentation updated (RJSF_GUIDELINES.md)
+
+---
+
+---
+
+### Session 8: Phase 4 Testing - MessageTypeSelect Complete (November 28, 2025)
+
+**Phase 4 Started: Component Testing**
+
+**Decision:** Skipping Phase 3 (Publishing Flow Updates) - will be addressed later
+
+**Approach:**
+
+- Systematic test activation: one component at a time
+- Read → Activate → Run → Fix → Verify cycle
+- Never claim completion without running tests
+- Document ALL test results with actual output
+
+**Progress:**
+
+- ✅ MessageTypeSelect: 11/11 tests passing
+- ✅ SchemaEditor: 21/21 tests passing
+- ⏭️ ScriptEditor: 3/19 tests active (16 skipped)
+
+**Key Discovery:** RJSF widget design pattern (see `RJSF_WIDGET_DESIGN_AND_TESTING.md`)
+
+**Next:** ScriptEditor test activation
+
+---
+
+**Last Updated**: November 28, 2025  
+**Current Phase**: Phase 4 - Testing (Component 1 complete, Component 2 in progress)

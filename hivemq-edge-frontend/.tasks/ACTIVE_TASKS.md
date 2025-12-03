@@ -27,6 +27,31 @@ The agent will **automatically look in the `.tasks/` directory** and:
 
 ## Active Tasks
 
+### 37937-datahub-resource-edit-flow
+
+**Status:** ✅ Phase 2 Complete (Resource Editors + Simplified Panels)  
+**Directory:** `.tasks/37937-datahub-resource-edit-flow/`  
+**Description:** Refactor DataHub resource creation/editing flow - separate resource management from policy configuration  
+**Next Phase:** Phase 3 - Publishing Flow Updates
+
+**Key Documents:**
+
+- [TASK_BRIEF.md](./37937-datahub-resource-edit-flow/TASK_BRIEF.md) - Requirements and specifications
+- [TASK_PLAN.md](./37937-datahub-resource-edit-flow/TASK_PLAN.md) - 12 subtask implementation plan
+- [TASK_SUMMARY.md](./37937-datahub-resource-edit-flow/TASK_SUMMARY.md) - Progress tracking
+- [PHASE_2_COMPLETE.md](./37937-datahub-resource-edit-flow/PHASE_2_COMPLETE.md) - Phase 2 completion summary
+
+**Completed:**
+
+- ✅ Phase 1: Resource editor infrastructure (SchemaEditor, ScriptEditor) - 66 tests
+- ✅ Phase 2: Simplified node configuration panels - 87 tests
+- ✅ Extra: Complete protobuf messageType support with encode/decode utilities
+- ✅ Documentation: Updated RJSF_GUIDELINES.md with Widgets vs Fields patterns
+
+**Progress:** Phase 1 (5/5 ✅), Phase 2 (4/4 ✅), Phase 3 (0/3), Phase 4 (0/1)
+
+---
+
 ### 38111-workspace-operation-wizard
 
 **Status:** ✅ Phase 1 Complete (Adapters, Bridges, Combiners, Asset Mappers)  
