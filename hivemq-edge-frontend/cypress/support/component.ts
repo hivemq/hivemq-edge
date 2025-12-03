@@ -7,16 +7,10 @@ import { type MountOptions, type MountReturn, mount } from 'cypress/react'
 import type { ReactNode } from 'react'
 import type { MemoryRouterProps } from 'react-router-dom'
 import { register as registerCypressGrep } from '@cypress/grep'
-import installLogsCollector from 'cypress-terminal-report/src/installLogsCollector'
 
 import { mountWithProviders } from './commands/mountWithProviders.tsx'
 import './commands'
 import './commands/checkI18nKeys'
-
-// Configure logs collector to capture accessibility violations
-installLogsCollector({
-  collectTypes: ['cy:log', 'cy:xhr', 'cy:request', 'cy:intercept', 'cy:command'],
-})
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
