@@ -192,5 +192,24 @@ export function loadSchema(
     ]
   }
 
-  throw new Error(i18n.t('datahub:error.loading.schema.unknown', { type: schema.type }) as string)
+  throw new Error(i18n.t('datahub:error.loading.schema.unknown', { type: schema.type }))
+}
+
+export const getSourceFromSchema = (schema: PolicySchema) => {
+  const schemaType = enumFromStringValue(SchemaType, schema.type) || SchemaType.JSON
+
+  // Decode schema source based on type
+  let schemaSource: string
+  if (schemaType === SchemaType.PROTOBUF) {
+    try {
+      schemaSource = decodeProtobufSchema(schema.schemaDefinition)
+    } catch (e) {
+      schemaSource = i18n.t('datahub:error.validation.protobuf.decoding', {
+        error: e instanceof Error ? e.message : String(e),
+      })
+    }
+  } else {
+    schemaSource = atob(schema.schemaDefinition)
+  }
+  return schemaSource
 }
