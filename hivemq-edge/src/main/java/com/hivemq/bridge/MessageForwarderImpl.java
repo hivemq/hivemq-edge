@@ -171,6 +171,54 @@ public class MessageForwarderImpl implements MessageForwarder {
                 throw new RuntimeException(e);
             }
         });
+        mqttForwarder.setResetAllInflightMarkersCallback((fwdId) -> {
+            // Reset ALL inflight markers for all queues associated with this forwarder.
+            // This is called on reconnection to handle messages that were read from persistence
+            // but never made it to the forwarder's local queues.
+            //
+            // IMPORTANT: We collect all futures and wait for them using Futures.allAsList to
+            // ensure all inflight markers are reset before onReconnect triggers checkBuffers().
+            // This is safe because the persistence operations are submitted to SingleWriter
+            // and don't hold any locks that could cause deadlock.
+            final Set<String> forwarderQueueIds = queueIdsForForwarder.get(fwdId);
+            if (forwarderQueueIds != null && !forwarderQueueIds.isEmpty()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Resetting inflight markers for forwarder '{}', {} queue(s)",
+                            fwdId, forwarderQueueIds.size());
+                }
+                final ImmutableList.Builder<ListenableFuture<Void>> futuresBuilder = ImmutableList.builder();
+                for (final String queueIdToReset : forwarderQueueIds) {
+                    futuresBuilder.add(queuePersistence.get().removeAllInFlightMarkers(queueIdToReset));
+                }
+                try {
+                    // Wait for all inflight markers to be reset before returning
+                    // This ensures onReconnect() will see clean queues when it triggers checkBuffers()
+                    Futures.allAsList(futuresBuilder.build()).get(30, TimeUnit.SECONDS);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Reset all inflight markers for forwarder '{}', {} queue(s)",
+                                fwdId, forwarderQueueIds.size());
+                    }
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.error("Interrupted while resetting inflight markers for forwarder '{}'", fwdId, e);
+                } catch (final ExecutionException e) {
+                    log.error("Failed to reset inflight markers for forwarder '{}'", fwdId, e);
+                } catch (final java.util.concurrent.TimeoutException e) {
+                    log.error("Timeout resetting inflight markers for forwarder '{}' - possible deadlock", fwdId, e);
+                }
+            }
+        });
+        mqttForwarder.setOnReconnectCallback(() -> {
+            if (log.isDebugEnabled()) {
+                log.debug("OnReconnect callback triggered for forwarder '{}', checking buffers", forwarderId);
+            }
+            // Re-add all queue IDs to notEmptyQueues to ensure they get polled after reconnect
+            final Set<String> forwarderQueueIds = queueIdsForForwarder.get(forwarderId);
+            if (forwarderQueueIds != null) {
+                notEmptyQueues.addAll(forwarderQueueIds);
+            }
+            checkBuffers();
+        });
 
         forwarders.put(forwarderId, mqttForwarder);
         queueIdsForForwarder.put(forwarderId, queueIds);

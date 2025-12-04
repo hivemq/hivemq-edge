@@ -407,6 +407,8 @@ public class BridgeMqttClient {
                             forwarderCount, bridge.getId());
                 }
                 forwarders.forEach(MqttForwarder::drainQueue);
+                // Fix 3: Trigger checkBuffers() to poll from persistence queue for messages that need retrying
+                forwarders.forEach(MqttForwarder::onReconnect);
             }
             eventBuilder(Event.SEVERITY.INFO).withMessage("Bridge '" + bridge.getId() + "' connected").fire();
         });

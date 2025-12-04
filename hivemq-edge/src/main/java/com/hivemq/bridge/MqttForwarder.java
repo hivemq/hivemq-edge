@@ -38,6 +38,15 @@ public interface MqttForwarder {
 
     void setResetInflightMarkerCallback(@NotNull MqttForwarder.ResetInflightMarkerCallback callback);
 
+    void setResetAllInflightMarkersCallback(@NotNull MqttForwarder.ResetAllInflightMarkersCallback callback);
+
+    void setOnReconnectCallback(@NotNull MqttForwarder.OnReconnectCallback callback);
+
+    /**
+     * Called after the remote client reconnects. This triggers the reconnect callback
+     * which should poll from the persistence queue for any messages that need to be retried.
+     */
+    void onReconnect();
 
     void setExecutorService(@NotNull ExecutorService executorService);
 
@@ -53,5 +62,15 @@ public interface MqttForwarder {
     @FunctionalInterface
     interface ResetInflightMarkerCallback {
         void afterMessage(@NotNull String sharedSubscription, @NotNull String uniqueId);
+    }
+
+    @FunctionalInterface
+    interface ResetAllInflightMarkersCallback {
+        void resetAll(@NotNull String sharedSubscription);
+    }
+
+    @FunctionalInterface
+    interface OnReconnectCallback {
+        void onReconnect();
     }
 }

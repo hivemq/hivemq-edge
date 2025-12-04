@@ -69,10 +69,13 @@ public class RemoteMqttForwarder implements MqttForwarder {
     private final @NotNull BridgeInterceptorHandler bridgeInterceptorHandler;
     private final AtomicInteger inflightCounter = new AtomicInteger(0);
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicBoolean draining = new AtomicBoolean(false);
     private final ConcurrentLinkedQueue<BufferedPublishInformation> queue = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OutflightPublishInformation> outflightQueue = new ConcurrentLinkedQueue<>();
     private volatile @Nullable MqttForwarder.AfterForwardCallback afterForwardCallback;
     private volatile @Nullable ResetInflightMarkerCallback resetInflightMarkerCallback;
+    private volatile @Nullable ResetAllInflightMarkersCallback resetAllInflightMarkersCallback;
+    private volatile @Nullable OnReconnectCallback onReconnectCallback;
     private volatile @Nullable ExecutorService executorService;
 
     public RemoteMqttForwarder(
@@ -121,6 +124,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
             int clearedQueued = 0;
             BufferedPublishInformation queueMessage = queue.poll();
             while (queueMessage != null) {
+                final var resetInflightMarkerCallback = this.resetInflightMarkerCallback;
                 if (resetInflightMarkerCallback != null) {
                     resetInflightMarkerCallback.afterMessage(queueMessage.queueId, queueMessage.publish.getUniqueId());
                 }
@@ -165,6 +169,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
             if (log.isTraceEnabled()) {
                 log.trace("Forwarder '{}' not running, dropping message on topic '{}'", id, publish.getTopic());
             }
+            final var resetInflightMarkerCallback = this.resetInflightMarkerCallback;
             if (resetInflightMarkerCallback != null) {
                 resetInflightMarkerCallback.afterMessage(queueId, publish.getUniqueId());
             }
@@ -253,8 +258,24 @@ public class RemoteMqttForwarder implements MqttForwarder {
             final @NotNull String uniqueId,
             final @NotNull String queueId) {
         inflightCounter.decrementAndGet();
+        final var afterForwardCallback = this.afterForwardCallback;
         if (afterForwardCallback != null) {
             afterForwardCallback.afterMessage(originalQoS, uniqueId, queueId, false);
+        }
+    }
+
+    /**
+     * Called when a publish fails - resets the inflight marker so the message can be retried
+     * instead of being removed from persistence. This prevents message loss on transient failures.
+     */
+    private void finishProcessingWithRetry(
+            final @NotNull QoS originalQoS,
+            final @NotNull String uniqueId,
+            final @NotNull String queueId) {
+        inflightCounter.decrementAndGet();
+        // Reset inflight marker instead of removing the message, allowing retry
+        if (resetInflightMarkerCallback != null) {
+            resetInflightMarkerCallback.afterMessage(queueId, uniqueId);
         }
     }
 
@@ -285,13 +306,10 @@ public class RemoteMqttForwarder implements MqttForwarder {
             return;
         }
 
-        // first send the publishes that are inflight
-        final int bufferSize = queue.size();
-        if (bufferSize > 0 && log.isDebugEnabled()) {
-            log.debug("Draining {} buffered message(s) before sending new message for bridge '{}'",
-                    bufferSize, bridge.getId());
-        }
-        drainQueue();
+        // First send any buffered messages that accumulated while disconnected.
+        // Note: This does NOT reset inflight markers - these messages were already
+        // marked as inflight when they were originally polled from persistence.
+        sendBufferedMessages();
 
         final long publishStartTime = log.isDebugEnabled() ? System.nanoTime() : 0;
         final Mqtt5Publish mqtt5Publish = convertPublishForClient(publish);
@@ -303,6 +321,9 @@ public class RemoteMqttForwarder implements MqttForwarder {
         publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
             if (throwable != null) {
                 handlePublishError(publish, throwable);
+                // On failure, reset the inflight marker so the message can be retried
+                // instead of being removed from persistence
+                finishProcessingWithRetry(originalQoS, originalUniqueId, queueId);
             } else {
                 perBridgeMetrics.getPublishForwardSuccessCounter().inc();
                 if (log.isDebugEnabled()) {
@@ -310,52 +331,122 @@ public class RemoteMqttForwarder implements MqttForwarder {
                     log.debug("Successfully published message on topic '{}' to remote broker for bridge '{}' in {} μs",
                             publish.getTopic(), bridge.getId(), durationMicros);
                 }
+                finishProcessing(originalQoS, originalUniqueId, queueId);
             }
-            finishProcessing(originalQoS, originalUniqueId, queueId);
             outflightQueue.remove(outflightPublishInformation);
         });
     }
 
-    @Override
-    public synchronized void drainQueue() {
-        final int initialQueueSize = queue.size();
-        if (initialQueueSize > 0 && log.isDebugEnabled()) {
-            log.debug("Draining {} buffered message(s) for bridge '{}'", initialQueueSize, bridge.getId());
+    /**
+     * Sends buffered messages that accumulated while disconnected.
+     * Does NOT reset inflight markers - these messages were already marked as inflight
+     * when they were originally polled from persistence.
+     */
+    private synchronized void sendBufferedMessages() {
+        final int bufferSize = queue.size();
+        if (bufferSize > 0 && log.isDebugEnabled()) {
+            log.debug("Sending {} buffered message(s) for bridge '{}'", bufferSize, bridge.getId());
         }
 
-        int drainedCount = 0;
         BufferedPublishInformation buffered = queue.poll();
-        while (buffered != null) {
-            drainedCount++;
-            if (log.isTraceEnabled()) {
-                log.trace("Sending buffered message on topic '{}' ({}/{}) for bridge '{}'",
-                        buffered.publish.getTopic(), drainedCount, initialQueueSize, bridge.getId());
-            }
-
+        while (buffered != null && remoteMqttClient.isConnected()) {
+            final BufferedPublishInformation current = buffered;
+            final long publishStartTime = log.isDebugEnabled() ? System.nanoTime() : 0;
+            final Mqtt5Publish mqtt5Publish = convertPublishForClient(current.publish);
             final CompletableFuture<Mqtt5PublishResult> publishResult =
-                    remoteMqttClient.getMqtt5Client().publish(convertPublishForClient(buffered.publish));
+                    remoteMqttClient.getMqtt5Client().publish(mqtt5Publish);
             final OutflightPublishInformation outflightPublishInformation =
-                    new OutflightPublishInformation(buffered.queueId, buffered.publish.getUniqueId());
+                    new OutflightPublishInformation(current.queueId, current.uniqueId);
             outflightQueue.add(outflightPublishInformation);
-
-            // lambdas hate this trick. (we need a final variable for the lamdba)
-            final BufferedPublishInformation finalBufferedPublishInformation = buffered;
             publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
                 if (throwable != null) {
-                    handlePublishError(finalBufferedPublishInformation.publish, throwable);
+                    handlePublishError(current.publish, throwable);
+                    finishProcessingWithRetry(current.originalQqS, current.uniqueId, current.queueId);
                 } else {
                     perBridgeMetrics.getPublishForwardSuccessCounter().inc();
+                    if (log.isDebugEnabled()) {
+                        final long durationMicros = (System.nanoTime() - publishStartTime) / 1000;
+                        log.debug("Successfully published buffered message on topic '{}' to remote broker for bridge '{}' in {} μs",
+                                current.publish.getTopic(), bridge.getId(), durationMicros);
+                    }
+                    finishProcessing(current.originalQqS, current.uniqueId, current.queueId);
                 }
-                finishProcessing(finalBufferedPublishInformation.originalQqS,
-                        finalBufferedPublishInformation.uniqueId,
-                        finalBufferedPublishInformation.queueId);
                 outflightQueue.remove(outflightPublishInformation);
             });
             buffered = queue.poll();
         }
+    }
 
-        if (drainedCount > 0 && log.isDebugEnabled()) {
-            log.debug("Drained {} buffered message(s) for bridge '{}'", drainedCount, bridge.getId());
+    @Override
+    public void drainQueue() {
+        // Called on reconnection to reset all in-flight state.
+        // This method is NOT synchronized to avoid deadlock with sendPublishToRemote callbacks.
+        // Instead, we use a draining flag to coordinate with message processing.
+
+        // Use compareAndSet to ensure only one drain operation runs at a time
+        if (!draining.compareAndSet(false, true)) {
+            if (log.isDebugEnabled()) {
+                log.debug("drainQueue() already in progress for forwarder '{}', skipping", id);
+            }
+            return;
+        }
+
+        try {
+            if (log.isDebugEnabled()) {
+                log.debug("drainQueue() entered for forwarder '{}' on bridge '{}'", id, bridge.getId());
+            }
+
+            // Clear stale outflight messages from the previous connection FIRST.
+            // These were sent but their completion callbacks might not have been called.
+            // Clearing these before resetting inflight markers prevents race conditions.
+            int clearedOutflight = 0;
+            OutflightPublishInformation staleOutflight = outflightQueue.poll();
+            while (staleOutflight != null) {
+                clearedOutflight++;
+                staleOutflight = outflightQueue.poll();
+            }
+
+            // Clear the in-memory queue buffer as well.
+            // These messages were buffered while disconnected and should be retried from persistence
+            // to maintain proper ordering and avoid duplicates.
+            int clearedQueued = 0;
+            BufferedPublishInformation queuedMessage = queue.poll();
+            while (queuedMessage != null) {
+                clearedQueued++;
+                queuedMessage = queue.poll();
+            }
+
+            // Reset the inflight counter since we've just reconnected and there are no
+            // messages actually in flight anymore. Any pending completion handlers from
+            // the old connection will decrement harmlessly.
+            final int previousInflight = inflightCounter.getAndSet(0);
+
+            if (log.isDebugEnabled() && (clearedOutflight > 0 || clearedQueued > 0 || previousInflight > 0)) {
+                log.debug("Reconnection reset for bridge '{}': cleared {} outflight, {} queued messages, " +
+                                "reset inflightCounter from {} to 0",
+                        bridge.getId(), clearedOutflight, clearedQueued, previousInflight);
+            }
+
+            // CRITICAL: Reset ALL inflight markers in persistence for all queues this forwarder handles.
+            // This handles the case where messages were read from persistence (marking them as in-flight)
+            // but never made it to our local queues (e.g., they were in the interceptor chain when
+            // the connection dropped). Without this, those messages would remain stuck in persistence
+            // with inflight markers and never be re-delivered.
+            //
+            // This is done AFTER clearing local state to ensure any concurrent message processing
+            // sees the reset state before new messages arrive from persistence.
+            final var resetAllInflightMarkersCallback = this.resetAllInflightMarkersCallback;
+            if (resetAllInflightMarkersCallback != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("drainQueue() calling resetAllInflightMarkersCallback for forwarder '{}'", id);
+                }
+                resetAllInflightMarkersCallback.resetAll(id);
+                if (log.isDebugEnabled()) {
+                    log.debug("drainQueue() resetAllInflightMarkersCallback completed for forwarder '{}'", id);
+                }
+            }
+        } finally {
+            draining.set(false);
         }
     }
 
@@ -478,6 +569,28 @@ public class RemoteMqttForwarder implements MqttForwarder {
     @Override
     public void setResetInflightMarkerCallback(final @NotNull ResetInflightMarkerCallback callback) {
         resetInflightMarkerCallback = callback;
+    }
+
+    @Override
+    public void setResetAllInflightMarkersCallback(final @NotNull ResetAllInflightMarkersCallback callback) {
+        resetAllInflightMarkersCallback = callback;
+    }
+
+    @Override
+    public void setOnReconnectCallback(final @NotNull OnReconnectCallback callback) {
+        onReconnectCallback = callback;
+    }
+
+    @Override
+    public void onReconnect() {
+        if (log.isDebugEnabled()) {
+            log.debug("Forwarder '{}' notified of reconnection for bridge '{}'", id, bridge.getId());
+        }
+        // Trigger the callback to poll from persistence queue for messages that need to be retried
+        final var onReconnectCallback = this.onReconnectCallback;
+        if (onReconnectCallback != null) {
+            onReconnectCallback.onReconnect();
+        }
     }
 
     @Override
