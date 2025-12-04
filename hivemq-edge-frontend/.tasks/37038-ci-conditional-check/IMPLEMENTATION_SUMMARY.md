@@ -12,18 +12,18 @@ December 4, 2025
 
 ### Changes Applied
 
-#### 1. Updated Job Conditions (Lines ~79-91)
+#### 1. Removed Unnecessary Dependencies (Lines ~73-85)
 
 **Before:**
 
 ```yaml
 check-frontend:
-  needs: [check-for-changes, check-openapi]
+  needs: [check-for-changes, check-openapi] # ← Unnecessary dependency
   uses: ./.github/workflows/check-frontend.yml
   if: needs.check-for-changes.outputs.frontend-changed == 'true'
 
 check-backend:
-  needs: [check-for-changes, check-openapi]
+  needs: [check-for-changes, check-openapi] # ← Unnecessary dependency
   uses: ./.github/workflows/check-backend.yml
   if: needs.check-for-changes.outputs.backend-changed == 'true'
 ```
@@ -32,16 +32,14 @@ check-backend:
 
 ```yaml
 check-frontend:
-  needs: [check-for-changes, check-openapi]
+  needs: check-for-changes # ← Only depends on change detection
   uses: ./.github/workflows/check-frontend.yml
-  # Always evaluate condition even if check-openapi was skipped
-  if: always() && needs.check-for-changes.outputs.frontend-changed == 'true'
+  if: needs.check-for-changes.outputs.frontend-changed == 'true'
 
 check-backend:
-  needs: [check-for-changes, check-openapi]
+  needs: check-for-changes # ← Only depends on change detection
   uses: ./.github/workflows/check-backend.yml
-  # Always evaluate condition even if check-openapi was skipped
-  if: always() && needs.check-for-changes.outputs.backend-changed == 'true'
+  if: needs.check-for-changes.outputs.backend-changed == 'true'
 ```
 
 #### 2. Added Documentation Comment (Line ~21)
@@ -50,18 +48,24 @@ Added explanatory comment at the top of the `jobs` section:
 
 ```yaml
 jobs:
-  # Note: check-frontend and check-backend use `if: always() &&` to ensure they
-  # evaluate their conditions even when check-openapi is skipped.
-  # Without this, GitHub Actions would skip them when any dependency is skipped.
+  # Note: check-frontend, check-backend, and check-openapi run independently based on detected changes.
+  # They all depend only on check-for-changes to avoid unnecessary dependency chains.
 ```
 
 ## What This Fixes
 
 ### The Problem
 
-- When `check-openapi` was skipped (no openapi changes), dependent jobs were also skipped
-- This happened despite the change detection working correctly
-- The `if: always() &&` modifier allows jobs to evaluate their own conditions independently
+- `check-frontend` and `check-backend` had unnecessary dependencies on `check-openapi`
+- When `check-openapi` was skipped (no openapi changes), dependent jobs were also automatically skipped
+- This happened despite the change detection working correctly and those jobs having their own conditions
+
+### The Solution
+
+- Removed the unnecessary `check-openapi` dependency from `check-frontend` and `check-backend`
+- All three check jobs now run independently, depending only on `check-for-changes`
+- This allows jobs to run based on their own detected changes without dependency chain issues
+- **Preserves fail-fast behavior**: Jobs can be cancelled and failures propagate correctly
 
 ### Expected Behavior After Fix
 
@@ -108,13 +112,18 @@ jobs:
 
 ## Rollback Plan
 
-If issues occur, revert by removing `always() &&` from the two modified `if` conditions:
+If issues occur, revert by adding back the `check-openapi` dependency:
 
 ```yaml
 # Revert to:
-if: needs.check-for-changes.outputs.frontend-changed == 'true'
-if: needs.check-for-changes.outputs.backend-changed == 'true'
+check-frontend:
+  needs: [check-for-changes, check-openapi]
+
+check-backend:
+  needs: [check-for-changes, check-openapi]
 ```
+
+However, this would reintroduce the original bug where jobs skip when dependencies are skipped.
 
 ## Impact Assessment
 
