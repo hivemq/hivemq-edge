@@ -586,6 +586,10 @@ public class GenSchemaMain {
                 "forwardedTopicEntity",
                 // Security config types
                 "securityConfigEntity",
+                // LDAP authentication types - elements can appear in any order
+                "ldapAuthenticationEntity",
+                "ldapServerEntity",
+                "ldapSimpleBindEntity",
                 // Pulse config types - note: these use hyphenated names in XSD
                 "managed-asset"
         };
@@ -601,6 +605,11 @@ public class GenSchemaMain {
         makeAllChildrenOptional(doc, "localSubscriptionEntity");
         makeAllChildrenOptional(doc, "bridgeMqttEntity");
         makeAllChildrenOptional(doc, "forwardedTopicEntity");
+
+        // Make LDAP elements optional that have defaults
+        makeAllChildrenOptional(doc, "ldapAuthenticationEntity");
+        makeAllChildrenOptional(doc, "ldapServerEntity");
+        makeAllChildrenOptional(doc, "ldapSimpleBindEntity");
 
         // Fix element references in remoteBrokerEntity to use proper types instead of global refs
         // JAXB generates ref="mqtt" which references the global mqtt element with xs:anyType
