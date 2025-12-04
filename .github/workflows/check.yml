@@ -19,9 +19,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Note: check-frontend and check-backend use `if: always() &&` to ensure they
-  # evaluate their conditions even when check-openapi is skipped.
-  # Without this, GitHub Actions would skip them when any dependency is skipped.
+  # Note: check-frontend, check-backend, and check-openapi run independently based on detected changes.
+  # They all depend only on check-for-changes to avoid unnecessary dependency chains.
   check-for-changes:
     runs-on: ubuntu-latest
     outputs:
@@ -76,25 +75,18 @@ jobs:
     uses: ./.github/workflows/check-openapi.yml
     if: needs.check-for-changes.outputs.openapi-changed == 'true'
 
-  # NOTE: check-frontend and check-backend currently depend on check-openapi for ordering only.
-  # If OpenAPI artifacts are required for frontend/backend builds, consider:
-  # 1. Making check-openapi run when ANY changes are detected (not just openapi changes)
-  # 2. Using check-openapi.result != 'failure' in the conditions below
-  # Current approach: Use `if: always() &&` to evaluate conditions independently of check-openapi status
   check-frontend:
-    needs: [ check-for-changes, check-openapi ]
+    needs: check-for-changes
     uses: ./.github/workflows/check-frontend.yml
-    # Always evaluate condition even if check-openapi was skipped
-    if: always() && needs.check-for-changes.outputs.frontend-changed == 'true'
+    if: needs.check-for-changes.outputs.frontend-changed == 'true'
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
   check-backend:
-    needs: [ check-for-changes, check-openapi ]
+    needs: check-for-changes
     uses: ./.github/workflows/check-backend.yml
-    # Always evaluate condition even if check-openapi was skipped
-    if: always() && needs.check-for-changes.outputs.backend-changed == 'true'
+    if: needs.check-for-changes.outputs.backend-changed == 'true'
 
 
   check:
