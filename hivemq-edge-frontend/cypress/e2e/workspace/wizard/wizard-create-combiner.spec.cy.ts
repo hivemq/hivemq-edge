@@ -138,7 +138,7 @@ describe('Wizard: Create Combiner', () => {
    * Tests removing nodes from selection
    * Verifies panel updates when deselecting
    */
-  it.only('should allow removing nodes from selection', { tags: ['@flaky'] }, () => {
+  it('should allow removing nodes from selection', { tags: ['@flaky'] }, () => {
     wizardPage.createEntityButton.click()
     wizardPage.wizardMenu.selectOption('COMBINER')
     workspacePage.toolbox.fit.click()
