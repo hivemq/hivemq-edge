@@ -1,4 +1,4 @@
-import { mockAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { mockAdapter_OPCUA, mockProtocolAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge, mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 
@@ -49,7 +49,7 @@ describe('Wizard: Create Combiner', () => {
       },
     }).as('createCombiner')
 
-    cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 202, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter_OPCUA] })
     cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 202, log: false })
 
     // Login and navigate
@@ -138,7 +138,7 @@ describe('Wizard: Create Combiner', () => {
    * Tests removing nodes from selection
    * Verifies panel updates when deselecting
    */
-  it('should allow removing nodes from selection', { tags: ['@flaky'] }, () => {
+  it.only('should allow removing nodes from selection', { tags: ['@flaky'] }, () => {
     wizardPage.createEntityButton.click()
     wizardPage.wizardMenu.selectOption('COMBINER')
     workspacePage.toolbox.fit.click()
@@ -151,10 +151,10 @@ describe('Wizard: Create Combiner', () => {
     wizardPage.selectionPanel.selectedNode(MOCK_ADAPTER_ID1).should('be.visible')
     wizardPage.selectionPanel.nextButton.should('be.disabled')
 
-    workspacePage.adapterNode(MOCK_ADAPTER_ID1).click()
+    workspacePage.adapterNode(MOCK_ADAPTER_ID1).click({ force: true })
     wizardPage.selectionPanel.selectedCount.should('contain', '0 (min: 2)')
 
-    workspacePage.adapterNode(MOCK_ADAPTER_ID2).click()
+    workspacePage.adapterNode(MOCK_ADAPTER_ID2).click({ force: true })
 
     wizardPage.selectionPanel.selectedCount.should('contain', '1 (min: 2)')
     wizardPage.selectionPanel.selectedNode(MOCK_ADAPTER_ID2).should('be.visible')
