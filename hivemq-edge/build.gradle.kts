@@ -605,3 +605,42 @@ artifacts {
     add(releaseJar.name, tasks.shadowJar)
     add(thirdPartyLicenses.name, tasks.updateThirdPartyLicenses.flatMap { it.outputDirectory })
 }
+
+/* ******************** XSD Generation ******************** */
+
+val generateXsd by tasks.registering(JavaExec::class) {
+    group = "build"
+    description = "Generates XSD schema from JAXB-annotated configuration entity classes"
+
+    dependsOn(tasks.testClasses)
+
+    mainClass.set("com.hivemq.configuration.GenSchemaMain")
+    classpath = sourceSets.test.get().runtimeClasspath
+
+    val outputDir = layout.buildDirectory.dir("generated-resources/xsd")
+    val outputFile = outputDir.map { it.file("config.xsd") }
+    args(outputFile.get().asFile.absolutePath)
+
+    outputs.dir(outputDir)
+
+    doFirst {
+        outputDir.get().asFile.mkdirs()
+    }
+}
+
+// Copy XSD to resources directory for version control
+// The XSD is included in the jar automatically via processResources from src/main/resources
+val copyXsdToResources by tasks.registering(Copy::class) {
+    group = "build"
+    description = "Copies generated XSD to src/main/resources for version control"
+
+    dependsOn(generateXsd)
+
+    from(generateXsd.map { it.outputs.files })
+    into(file("src/main/resources"))
+}
+
+// Run XSD copy as part of the build (after jar, avoiding circular dependency with processResources)
+tasks.build {
+    dependsOn(copyXsdToResources)
+}
