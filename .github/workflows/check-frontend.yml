@@ -148,11 +148,22 @@ jobs:
     strategy:
       matrix:
         cypress: [
-          { component: false, spec: "./cypress/e2e/**/*", target: "E2E" },
+          # E2E split into 3 jobs
+          { component: false, spec: './cypress/e2e/adapters/**/*', target: 'E2E-Adapters' },
+          { component: false, spec: './cypress/e2e/workspace/**/*', target: 'E2E-Workspace' },
+          { component: false, spec: './cypress/e2e/!(adapters|workspace)/**/*', target: 'E2E-Core' },
+
+          # All components
           { component: true, spec: "./src/components/**/*", target: "Components" },
+
+          # Extensions (Datahub)
           { component: true, spec: "./src/extensions/**/*", target: "Extensions" },
-          { component: true, spec: "./src/modules/!(Workspace)**/*", target: "Modules" },
-          { component: true, spec: "./src/modules/Workspace/**/*", target: "Workspace" }
+
+          # Modules split into 4 jobs
+          { component: true, spec: "./src/modules/Workspace/**/*", target: "Workspace" },
+          { component: true, spec: "./src/modules/Mappings/**/*", target: "Mappings" },
+          { component: true, spec: "./src/modules/Pulse/**/*", target: "Pulse" },
+          { component: true, spec: "./src/modules/!(Workspace|Mappings|Pulse)/**/*", target: "Modules" }
         ]
     name: Cypress - ${{ matrix.cypress.target }}
     steps:
