@@ -19,9 +19,10 @@ This document captures patterns, best practices, and guidelines for using React 
 4. [UI Schema Patterns](#ui-schema-patterns)
 5. [Component Integration](#component-integration)
 6. [Custom Widgets](#custom-widgets)
-7. [Validation](#validation)
-8. [Best Practices](#best-practices)
-9. [Common Pitfalls](#common-pitfalls)
+7. [Widgets vs Fields: Understanding formData Access](#widgets-vs-fields-understanding-formdata-access)
+8. [Validation](#validation)
+9. [Best Practices](#best-practices)
+10. [Common Pitfalls](#common-pitfalls)
 
 ---
 
@@ -583,6 +584,397 @@ export const myUISchema: UiSchema = {
 - **ToggleWidget** - ChakraUI Switch for booleans
 - **UpDownWidget** - Number input with stepper buttons
 - _(Check `/src/components/rjsf/Widgets/` for full list)_
+
+---
+
+## Widgets vs Fields: Understanding formData Access
+
+**Added:** November 27, 2025  
+**Task:** 37937 - DataHub Resource Edit Flow (Protobuf messageType feature)
+
+### The Problem: Cross-Field Dependencies
+
+Sometimes a custom widget/field needs access to **other fields** in the form to compute its values. For example:
+
+- A message type selector that needs the protobuf schema source code
+- A validator that depends on another field's value
+- Dynamic options based on sibling field values
+
+**Key Discovery:** `WidgetProps` and `FieldProps` **do NOT provide access** to the full form data!
+
+### Widgets vs Fields
+
+#### Widgets (`WidgetProps`)
+
+**What they are:**
+
+- Custom input components for individual fields
+- Replace the default input (text, select, checkbox, etc.)
+- Registered in widget registry
+
+**Props received:**
+
+- `id` - Field ID
+- `value` - **Current field's value only**
+- `onChange` - Update this field
+- `schema` - This field's JSON schema
+- `rawErrors` - Validation errors for this field
+- `formContext` - ✅ **Custom context passed from parent**
+
+**Cannot access:**
+
+- ❌ Other field values
+- ❌ Full form data
+- ❌ Sibling fields
+
+**Example:**
+
+```typescript
+import type { WidgetProps } from '@rjsf/utils'
+
+export const MyWidget: FC<WidgetProps> = (props) => {
+  const { id, value, onChange, formContext } = props
+
+  // ✅ Can access THIS field's value
+  console.log(value)
+
+  // ❌ CANNOT access other fields
+  // props.formData does NOT exist!
+
+  // ✅ CAN access formContext
+  const context = formContext as MyContext
+  console.log(context.someSharedData)
+
+  return <input id={id} value={value} onChange={e => onChange(e.target.value)} />
+}
+```
+
+#### Fields (`FieldProps`)
+
+**What they are:**
+
+- Custom field components that render entire field groups
+- Can include label, description, error messages, and custom layout
+- Registered in fields registry
+
+**Props received:**
+
+- `formData` - **Current field's value** (not full form!)
+- `onChange` - Update this field
+- `schema` - This field's JSON schema
+- `idSchema` - ID schema for this field
+- `errorSchema` - Error schema for this field
+- `formContext` - ✅ **Custom context passed from parent**
+
+**Cannot access:**
+
+- ❌ Other field values
+- ❌ Full form data
+- ❌ Sibling fields
+
+**Example:**
+
+```typescript
+import type { FieldProps } from '@rjsf/utils'
+
+export const MyField: FC<FieldProps> = (props) => {
+  const { formData, onChange, schema, idSchema, formContext } = props
+
+  // ✅ Can access THIS field's value
+  console.log(formData)  // Value of THIS field only
+
+  // ❌ CANNOT access other fields
+  // formData is NOT the full form!
+
+  // ✅ CAN access formContext
+  const context = formContext as MyContext
+  console.log(context.someSharedData)
+
+  return (
+    <FormControl>
+      <FormLabel htmlFor={idSchema.$id}>{schema.title}</FormLabel>
+      <input value={formData} onChange={e => onChange(e.target.value)} />
+    </FormControl>
+  )
+}
+```
+
+### ✅ Solution: Use `formContext`
+
+**The ONLY way** to access other field values or shared data is through `formContext`.
+
+#### Pattern 1: Pass Live Data via formContext
+
+```typescript
+// Parent component (e.g., SchemaEditor)
+const MyEditor: FC = () => {
+  const [formData, setFormData] = useState<MyFormData>({
+    schemaSource: '',
+    messageType: ''
+  })
+
+  return (
+    <ReactFlowSchemaForm
+      schema={mySchema}
+      uiSchema={myUISchema}
+      formData={formData}
+      // ✅ Pass live data through formContext
+      formContext={{
+        currentSchemaSource: formData.schemaSource,  // Updated on every change!
+      }}
+      onChange={(e) => setFormData(e.formData)}
+    />
+  )
+}
+```
+
+```typescript
+// Custom widget
+interface MyFormContext {
+  currentSchemaSource?: string
+}
+
+export const MessageTypeSelect: FC<WidgetProps> = (props) => {
+  const { value, onChange, formContext } = props
+
+  // ✅ Access live data from formContext
+  const context = formContext as MyFormContext
+  const schemaSource = context?.currentSchemaSource
+
+  // Now we can use schemaSource to compute options!
+  const options = useMemo(() => {
+    if (!schemaSource) return []
+    return extractMessageTypes(schemaSource)
+  }, [schemaSource])
+
+  return <Select value={value} options={options} onChange={onChange} />
+}
+```
+
+#### Pattern 2: Compute on Demand (onMenuOpen)
+
+For expensive operations or when you need the LATEST value at interaction time:
+
+```typescript
+export const MessageTypeSelect: FC<WidgetProps> = (props) => {
+  const { value, onChange, formContext } = props
+  const [options, setOptions] = useState<Option[]>([])
+
+  const context = formContext as MyFormContext
+  const currentSchemaSource = context?.currentSchemaSource
+
+  // ✅ Compute options when user opens dropdown
+  const handleMenuOpen = useCallback(() => {
+    const schemaSource = currentSchemaSource || ''
+    if (!schemaSource) {
+      setOptions([])
+      return
+    }
+
+    const messageTypes = extractMessageTypes(schemaSource)
+    setOptions(messageTypes.map(t => ({ label: t, value: t })))
+  }, [currentSchemaSource])
+
+  return (
+    <CreatableSelect
+      value={value}
+      options={options}
+      onChange={onChange}
+      onMenuOpen={handleMenuOpen}  // Compute fresh on open!
+    />
+  )
+}
+```
+
+### Widget vs Field: When to Use What?
+
+#### Use Widget When:
+
+- ✅ Replacing just the input component
+- ✅ Don't need custom label/layout
+- ✅ Simpler to implement
+- ✅ Need access via `formContext` is sufficient
+
+#### Use Field When:
+
+- ✅ Need complete control over layout
+- ✅ Custom label positioning
+- ✅ Complex field groups
+- ✅ Multiple inputs in one field
+
+**Recommendation:** Start with **widgets** - they're simpler and cleaner. Only use fields if you need custom layout.
+
+### Registration
+
+#### Widget Registration
+
+```typescript
+// src/extensions/datahub/designer/datahubRJSFWidgets.tsx
+import { MessageTypeSelect } from '@datahub/components/forms/MessageTypeSelect.tsx'
+
+export const datahubRJSFWidgets: RegistryWidgetsType = {
+  'datahub:message-type': MessageTypeSelect,
+  // ... other widgets
+}
+```
+
+```typescript
+// Usage in uiSchema
+messageType: {
+  'ui:widget': 'datahub:message-type',  // String name from registry
+}
+```
+
+#### Field Registration
+
+```typescript
+// Pass directly to form
+<ReactFlowSchemaForm
+  schema={mySchema}
+  uiSchema={myUISchema}
+  fields={{ MessageTypeSelect }}  // Direct component reference
+/>
+```
+
+```typescript
+// Usage in uiSchema
+messageType: {
+  'ui:field': 'MessageTypeSelect',  // String name must match key
+}
+```
+
+### Important Gotchas
+
+#### ❌ WRONG: Trying to access full form in widget
+
+```typescript
+export const MyWidget: FC<WidgetProps> = (props) => {
+  // ❌ This does NOT exist!
+  const fullFormData = props.formData
+
+  // ❌ This is also NOT available!
+  const otherField = props.registry.formData
+
+  // ❌ Value is THIS field only!
+  console.log(props.value) // Only this field's value
+}
+```
+
+#### ✅ CORRECT: Using formContext
+
+```typescript
+export const MyWidget: FC<WidgetProps> = (props) => {
+  const { formContext } = props
+
+  // ✅ Access shared data from context
+  const context = formContext as MyContext
+  const otherFieldValue = context.otherFieldValue
+}
+```
+
+#### ❌ WRONG: formContext not updating
+
+```typescript
+// Parent component
+const [formData, setFormData] = useState(initialData)
+
+return (
+  <ReactFlowSchemaForm
+    formData={formData}
+    // ❌ This object is created once and never updates!
+    formContext={{ someValue: initialData.field }}
+  />
+)
+```
+
+#### ✅ CORRECT: formContext updates with formData
+
+```typescript
+// Parent component
+const [formData, setFormData] = useState(initialData)
+
+return (
+  <ReactFlowSchemaForm
+    formData={formData}
+    // ✅ This recreates on every render, so it's always fresh
+    formContext={{ someValue: formData.field }}
+    onChange={(e) => setFormData(e.formData)}  // Updates formData, which updates formContext
+  />
+)
+```
+
+### Real-World Example: Protobuf Message Type Selector
+
+**Requirement:** A widget that extracts message type names from a protobuf schema source and displays them in a dropdown.
+
+**Challenge:** The message type field needs access to the `schemaSource` field value (which contains the protobuf code).
+
+**Solution:**
+
+```typescript
+// 1. Parent passes live schemaSource via formContext
+<ReactFlowSchemaForm
+  schema={schemaSchema}
+  formData={formData}
+  formContext={{ currentSchemaSource: formData.schemaSource }}  // ✅ Live data
+  onChange={handleChange}
+/>
+```
+
+```typescript
+// 2. Widget accesses it from formContext
+interface SchemaFormContext {
+  currentSchemaSource?: string
+}
+
+export const MessageTypeSelect: FC<WidgetProps> = (props) => {
+  const { value, onChange, formContext } = props
+  const [options, setOptions] = useState<Option[]>([])
+
+  const context = formContext as SchemaFormContext
+  const currentSchemaSource = context?.currentSchemaSource
+
+  const handleMenuOpen = useCallback(() => {
+    const schemaSource = currentSchemaSource || ''
+    if (!schemaSource) {
+      setOptions([])
+      return
+    }
+
+    // ✅ Extract message types from protobuf source
+    const messageTypes = extractProtobufMessageTypes(schemaSource)
+    setOptions(messageTypes.map(t => ({ label: t, value: t })))
+  }, [currentSchemaSource])
+
+  return (
+    <CreatableSelect
+      value={value}
+      options={options}
+      onChange={onChange}
+      onMenuOpen={handleMenuOpen}  // Fresh data when user opens!
+      // Allow manual entry if extraction fails
+    />
+  )
+}
+```
+
+**Why this works:**
+
+1. Monaco editor triggers `onChange` when user types
+2. Parent's `handleChange` updates `formData.schemaSource`
+3. React re-renders with new `formContext={{ currentSchemaSource: ... }}`
+4. Widget receives updated `formContext`
+5. User opens dropdown → `onMenuOpen` fires
+6. Widget reads fresh `currentSchemaSource` from context
+7. Extracts message types and displays them ✅
+
+### Key Takeaways
+
+1. **WidgetProps and FieldProps do NOT have access to full form data**
+2. **Use `formContext` to pass cross-field data**
+3. **Parent must update formContext when formData changes**
+4. **Widgets are simpler than fields - prefer widgets**
+5. **Compute on-demand (onMenuOpen, onFocus) for latest values**
 
 ---
 

@@ -15,6 +15,7 @@ interface DataHubListActionProps {
   onDownload?: MouseEventHandler<HTMLButtonElement>
   canDelete?: boolean
   canDownload?: boolean
+  canEdit?: boolean
 }
 
 const DataHubListAction: FC<DataHubListActionProps> = ({
@@ -24,6 +25,7 @@ const DataHubListAction: FC<DataHubListActionProps> = ({
   onDownload,
   canDownload = true,
   canDelete = true,
+  canEdit = false,
 }) => {
   const { t } = useTranslation('datahub')
   const navigate = useNavigate()
@@ -33,6 +35,14 @@ const DataHubListAction: FC<DataHubListActionProps> = ({
     // If not policy, it's a resource toolbar
     return (
       <ButtonGroup size="sm" isAttached>
+        {canEdit && (
+          <IconButton
+            data-testid="list-action-edit"
+            onClick={onEdit}
+            aria-label={t('Listings.action.edit')}
+            icon={<LuFileEdit />}
+          />
+        )}
         {canDownload && (
           <IconButton
             data-testid="list-action-download"

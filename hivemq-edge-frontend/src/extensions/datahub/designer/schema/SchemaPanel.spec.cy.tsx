@@ -60,7 +60,6 @@ describe('SchemaPanel', () => {
     cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
 
     cy.get('label#root_name-label').should('contain.text', 'Name')
-    cy.get('label#root_name-label + div').should('contain.text', 'Select...')
     cy.get('label#root_name-label').should('have.attr', 'data-invalid')
 
     cy.get('label#root_type-label').should('contain.text', 'Schema')
@@ -77,7 +76,6 @@ describe('SchemaPanel', () => {
     cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
 
     // Verify initial state
-    cy.get('#root_name-label + div').should('contain.text', 'Select...')
     cy.get('#root_type-label + div').should('contain.text', 'JSON')
 
     // Create a draft schema

@@ -1,9 +1,10 @@
 import type { FC } from 'react'
-import { useMemo } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import type { CellContext, ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { HStack, Skeleton, Text } from '@chakra-ui/react'
+import { Button, HStack, Skeleton, Text } from '@chakra-ui/react'
+import { LuPlus } from 'react-icons/lu'
 
 import type { PolicySchema, SchemaList } from '@/api/__generated__'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
@@ -15,6 +16,7 @@ import { useDeleteSchema } from '@datahub/api/hooks/DataHubSchemasService/useDel
 import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.ts'
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
+import { SchemaEditor } from '@datahub/components/editors/SchemaEditor.tsx'
 import { ExpandVersionButton } from '@datahub/components/helpers/ExpandVersionButton.tsx'
 import type { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 import { groupResourceItems, type ExpandableGroupedResource } from '@datahub/utils/policy.utils.ts'
@@ -24,6 +26,24 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
   const { isLoading, data, isError } = useGetAllSchemas()
   const deleteSchema = useDeleteSchema()
+
+  const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [editingSchema, setEditingSchema] = useState<PolicySchema | undefined>(undefined)
+
+  const handleCreateNew = useCallback(() => {
+    setEditingSchema(undefined)
+    setIsEditorOpen(true)
+  }, [])
+
+  const handleEdit = useCallback((schema: PolicySchema) => {
+    setEditingSchema(schema)
+    setIsEditorOpen(true)
+  }, [])
+
+  const handleCloseEditor = useCallback(() => {
+    setIsEditorOpen(false)
+    setEditingSchema(undefined)
+  }, [])
 
   const expandedData = useMemo(() => {
     if (isLoading) return [mockSchemaTempHumidity]
@@ -105,26 +125,44 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
           return (
             <Skeleton isLoaded={!isLoading}>
               <DataHubListAction
+                onEdit={() => handleEdit(info.row.original)}
                 onDelete={() => onDeleteItem?.(deleteSchema.mutateAsync, DataHubNodeType.SCHEMA, info.row.original.id)}
                 onDownload={onHandleDownload(info)}
                 canDownload={!info.row.getCanExpand()}
                 canDelete={!info.row.getParentRow()}
+                canEdit={!info.row.getCanExpand()} // Only individual versions can be edited
               />
             </Skeleton>
           )
         },
       },
     ]
-  }, [deleteSchema.mutateAsync, isLoading, onDeleteItem, t])
+  }, [deleteSchema.mutateAsync, isLoading, onDeleteItem, t, handleEdit])
 
   return (
-    <PaginatedTable<ExpandableGroupedResource<PolicySchema>>
-      aria-label={t('Listings.schema.label')}
-      data={expandedData}
-      columns={columns}
-      isError={isError}
-      getSubRows={(data) => data.children}
-    />
+    <>
+      <PaginatedTable<ExpandableGroupedResource<PolicySchema>>
+        aria-label={t('Listings.schema.label')}
+        data={expandedData}
+        columns={columns}
+        isError={isError}
+        getSubRows={(data) => data.children}
+        enableGlobalFilter
+        customControls={
+          <Button
+            leftIcon={<LuPlus />}
+            variant="outline"
+            size="sm"
+            onClick={handleCreateNew}
+            data-testid="schema-create-new-button"
+          >
+            {t('Listings.schema.action.create')}
+          </Button>
+        }
+      />
+
+      <SchemaEditor isOpen={isEditorOpen} onClose={handleCloseEditor} schema={editingSchema} />
+    </>
   )
 }
 

@@ -115,7 +115,8 @@ describe('DataHub - Policy Report Content', () => {
       datahubDesignerPage.dryRunPanel.topicFiltersList.find('li').should('have.length.at.least', 1)
     })
 
-    it('should show resources breakdown with schemas and scripts', () => {
+    it.skip('should show resources breakdown with schemas and scripts', () => {
+      // The report is now obsolescent, since resources are not published along the policy [38516]
       Cypress.on('uncaught:exception', () => {
         return false
       })

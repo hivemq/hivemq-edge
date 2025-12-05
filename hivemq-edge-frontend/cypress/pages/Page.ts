@@ -27,5 +27,9 @@ export abstract class Page {
         cy.getByAriaLabel('Close').click()
       })
     },
+
+    shouldContain(text: string) {
+      return cy.get('[role="status"]').should('contain', text)
+    },
   }
 }

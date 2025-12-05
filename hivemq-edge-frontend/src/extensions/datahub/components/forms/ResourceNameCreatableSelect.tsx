@@ -62,7 +62,8 @@ const ResourceNameCreatableSelect = (
   type: DataHubNodeType.SCHEMA | DataHubNodeType.FUNCTION,
   defaultOptions: Options<ResourceFamily>,
   createNewOption: (inputValue: string) => ResourceFamily,
-  isLoading: boolean
+  isLoading: boolean,
+  allowCreate = true // New parameter to control creation
 ) => {
   const { t } = useTranslation('datahub')
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
@@ -72,16 +73,17 @@ const ResourceNameCreatableSelect = (
     if (defaultOptions.length) {
       const options = [...defaultOptions]
       const { isDraft } = props.options
-      if (isDraft)
+      // Only add draft option if creation is allowed
+      if (allowCreate && isDraft)
         options.push({
           name: props.value,
           versions: [],
         })
       setOptions(options)
     }
-  }, [defaultOptions, props.options, props.value])
+  }, [defaultOptions, props.options, props.value, allowCreate])
 
-  const onCreatableSelectChange = useCallback<
+  const onSelectChange = useCallback<
     (newValue: OnChangeValue<ResourceFamily, false>, actionMeta: ActionMeta<ResourceFamily>) => void
   >(
     (newValue, actionMeta) => {
@@ -91,6 +93,10 @@ const ResourceNameCreatableSelect = (
       }
       if (actionMeta.action === 'create-option' && newValue) {
         props.onChange(newValue.label)
+        return
+      }
+      if (actionMeta.action === 'clear') {
+        props.onChange(undefined)
         return
       }
     },
@@ -103,6 +109,7 @@ const ResourceNameCreatableSelect = (
   }
 
   const value = options?.find((e) => e.name === props.value)
+
   return (
     <FormControl
       {...chakraProps}
@@ -123,7 +130,9 @@ const ResourceNameCreatableSelect = (
         options={options}
         value={value}
         isLoading={isLoading}
-        onChange={onCreatableSelectChange}
+        onChange={onSelectChange}
+        isClearable={false}
+        isValidNewOption={allowCreate ? undefined : () => false} // Disable creation if allowCreate is false
         components={{
           Option,
           SingleValue,
@@ -131,12 +140,13 @@ const ResourceNameCreatableSelect = (
         filterOption={createFilter({
           // search in the name and description
           stringify: (option) => {
-            return `${option.data.name}${option.data.description}`
+            return `${option.data.name}${option.data.description || ''}`
           },
         })}
         noOptionsMessage={() => t('workspace.name.noOption', { type })}
         formatCreateLabel={(inputValue) => t('workspace.name.createOption', { type, inputValue })}
-        onCreateOption={handleCreate}
+        placeholder={t('workspace.name.selectPlaceholder', { type })}
+        onCreateOption={allowCreate ? handleCreate : undefined}
       />
     </FormControl>
   )
@@ -172,7 +182,7 @@ export const SchemaNameCreatableSelect = (props: WidgetProps) => {
     return Object.values(options)
   }, [data])
 
-  return ResourceNameCreatableSelect(props, DataHubNodeType.SCHEMA, options, createNewSchemaOption, isLoading)
+  return ResourceNameCreatableSelect(props, DataHubNodeType.SCHEMA, options, createNewSchemaOption, isLoading, true)
 }
 
 export const ScriptNameCreatableSelect = (props: WidgetProps) => {
@@ -184,5 +194,36 @@ export const ScriptNameCreatableSelect = (props: WidgetProps) => {
     return Object.values(options)
   }, [data])
 
-  return ResourceNameCreatableSelect(props, DataHubNodeType.FUNCTION, options, createNewScriptOption, isLoading)
+  return ResourceNameCreatableSelect(props, DataHubNodeType.FUNCTION, options, createNewScriptOption, isLoading, true)
+}
+
+/**
+ * Schema name selector (select-only, no creation)
+ * For use in SchemaPanelSimplified
+ */
+export const SchemaNameSelect = (props: WidgetProps) => {
+  const { data, isLoading } = useGetAllSchemas()
+  const options = useMemo<ResourceFamily[]>(() => {
+    if (!data?.items) return []
+    const families = getSchemaFamilies(data.items)
+    return Object.values(families)
+  }, [data])
+
+  return ResourceNameCreatableSelect(props, DataHubNodeType.SCHEMA, options, createNewSchemaOption, isLoading, false)
+}
+
+/**
+ * Script name selector (select-only, no creation)
+ * For use in FunctionPanelSimplified
+ */
+export const ScriptNameSelect = (props: WidgetProps) => {
+  const { isLoading, data } = useGetAllScripts({})
+
+  const options = useMemo<ResourceFamily[]>(() => {
+    if (!data?.items) return []
+    const families = getScriptFamilies(data.items)
+    return Object.values(families)
+  }, [data])
+
+  return ResourceNameCreatableSelect(props, DataHubNodeType.FUNCTION, options, createNewScriptOption, isLoading, false)
 }

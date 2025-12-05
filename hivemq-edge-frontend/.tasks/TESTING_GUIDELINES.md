@@ -110,6 +110,8 @@ Toolbar
 4. [Selector Best Practices](#selector-best-practices)
 5. [Screenshot Documentation](#screenshot-documentation)
 6. [Page Object Linking](#page-object-linking)
+7. [RJSF Widget Design & Testing](./RJSF_WIDGET_DESIGN_AND_TESTING.md) 📄 **CRITICAL** - Unified guide for design + testing
+8. [React-Select Testing Patterns](./REACT_SELECT_TESTING_PATTERNS.md) 📄 (See RJSF guide for widget usage)
 
 ---
 

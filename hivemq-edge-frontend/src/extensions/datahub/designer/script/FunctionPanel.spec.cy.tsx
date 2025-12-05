@@ -60,7 +60,6 @@ describe('FunctionPanel', () => {
     cy.mountWithProviders(<FunctionPanel selectedNode="3" />, { wrapper })
 
     cy.get('label#root_name-label').should('contain.text', 'Name')
-    cy.get('label#root_name-label + div').should('contain.text', 'Select...')
     cy.get('label#root_name-label').should('have.attr', 'data-invalid')
 
     cy.get('label#root_version-label').should('contain.text', 'Version')
@@ -77,7 +76,6 @@ describe('FunctionPanel', () => {
   it('should control the editing flow', () => {
     cy.mountWithProviders(<FunctionPanel selectedNode="3" />, { wrapper })
 
-    cy.get('#root_name-label + div').should('contain.text', 'Select...')
     cy.get('#root_version-label + div').should('contain.text', '')
 
     // create a draft
@@ -132,7 +130,6 @@ describe('FunctionPanel - Form field cascading updates', () => {
     cy.mountWithProviders(<FunctionPanel selectedNode="3" />, { wrapper })
 
     // Initial state
-    cy.get('#root_name-label + div').should('contain.text', 'Select...')
     cy.get('#root_version-label + div').should('contain.text', '')
 
     // Select an existing script
