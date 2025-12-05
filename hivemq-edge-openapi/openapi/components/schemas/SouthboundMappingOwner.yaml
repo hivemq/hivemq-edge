@@ -1,0 +1,9 @@
+allOf:
+  - $ref: "./SouthboundMapping.yaml"
+  - type: object
+    properties:
+      adapterId:
+        type: string
+        description: The id of the adapter owning the tag
+    required:
+      - adapterId

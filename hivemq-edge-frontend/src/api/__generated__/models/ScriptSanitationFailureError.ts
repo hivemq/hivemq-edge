@@ -3,4 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export type Errors = Record<string, any>;
+import type { ApiProblemDetails } from './ApiProblemDetails';
+
+export type ScriptSanitationFailureError = ApiProblemDetails;
+

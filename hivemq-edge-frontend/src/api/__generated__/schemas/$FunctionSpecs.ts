@@ -17,12 +17,12 @@ export const $FunctionSpecs = {
         },
         schema: {
             type: 'JsonNode',
-            description: `the full JSON-Schema describimng the function and its arguments`,
+            description: `the full JSON-Schema describing the function and its arguments`,
             isRequired: true,
         },
         uiSchema: {
             type: 'JsonNode',
-            description: `An optional UI Schema to customise the rendering of the configuraton form`,
+            description: `An optional UI Schema to customise the rendering of the configuration form`,
         },
     },
 } as const;

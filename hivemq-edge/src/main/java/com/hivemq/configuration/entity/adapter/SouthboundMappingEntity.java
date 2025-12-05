@@ -72,6 +72,10 @@ public class SouthboundMappingEntity implements EntityValidatable {
         return topicFilter;
     }
 
+    public @Nullable FieldMappingEntity getFieldMapping() {
+        return fieldMapping;
+    }
+
     @Override
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
         EntityValidatable.notEmpty(validationEvents, topicFilter, "topicFilter");

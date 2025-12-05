@@ -16,11 +16,12 @@
 
 package com.hivemq.pulse.converters;
 
+import com.hivemq.configuration.entity.EntityConverter;
 import com.hivemq.edge.api.model.ManagedAsset;
 import com.hivemq.pulse.asset.PulseAgentAsset;
 import org.jetbrains.annotations.NotNull;
 
-public class PulseAgentAssetConverter implements PulseApiEntityConverter<ManagedAsset, PulseAgentAsset> {
+public class PulseAgentAssetConverter implements EntityConverter<ManagedAsset, PulseAgentAsset> {
     public static final PulseAgentAssetConverter INSTANCE = new PulseAgentAssetConverter();
 
     private PulseAgentAssetConverter() {

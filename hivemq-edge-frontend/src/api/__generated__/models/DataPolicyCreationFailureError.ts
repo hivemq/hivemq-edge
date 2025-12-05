@@ -2,10 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export const $Errors = {
-    type: 'dictionary',
-    contains: {
-        properties: {
-        },
-    },
-} as const;
+
+import type { ApiProblemDetails } from './ApiProblemDetails';
+
+export type DataPolicyCreationFailureError = ApiProblemDetails;
+
