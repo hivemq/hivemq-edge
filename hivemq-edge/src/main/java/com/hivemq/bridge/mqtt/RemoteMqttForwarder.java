@@ -378,6 +378,18 @@ public class RemoteMqttForwarder implements MqttForwarder {
     }
 
     @Override
+    public void flushBufferedMessages() {
+        // This method is called on initial connection to send messages that were buffered
+        // while waiting for the remote broker to become available.
+        // Unlike drainQueue(), this does NOT reset persistence inflight markers.
+        if (log.isDebugEnabled()) {
+            log.debug("Flushing {} buffered message(s) for forwarder '{}' on bridge '{}'",
+                    queue.size(), id, bridge.getId());
+        }
+        sendBufferedMessages();
+    }
+
+    @Override
     public void drainQueue() {
         // Called on reconnection to reset all in-flight state.
         // This method is NOT synchronized to avoid deadlock with sendPublishToRemote callbacks.

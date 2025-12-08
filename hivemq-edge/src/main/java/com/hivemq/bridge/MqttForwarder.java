@@ -34,6 +34,16 @@ public interface MqttForwarder {
 
     void drainQueue();
 
+    /**
+     * Sends any messages that were buffered in-memory while the remote broker was disconnected.
+     * Unlike {@link #drainQueue()}, this does NOT reset inflight markers in persistence -
+     * it only sends messages that are already in the local queue buffer.
+     * <p>
+     * This should be called on initial connection when messages may have been buffered
+     * while waiting for the remote broker to become available.
+     */
+    void flushBufferedMessages();
+
     void setAfterForwardCallback(@NotNull MqttForwarder.AfterForwardCallback callback);
 
     void setResetInflightMarkerCallback(@NotNull MqttForwarder.ResetInflightMarkerCallback callback);
