@@ -27,6 +27,31 @@ The agent will **automatically look in the `.tasks/` directory** and:
 
 ## Active Tasks
 
+### 37937-datahub-resource-edit-flow
+
+**Status:** ✅ Phase 2 Complete (Resource Editors + Simplified Panels)  
+**Directory:** `.tasks/37937-datahub-resource-edit-flow/`  
+**Description:** Refactor DataHub resource creation/editing flow - separate resource management from policy configuration  
+**Next Phase:** Phase 3 - Publishing Flow Updates
+
+**Key Documents:**
+
+- [TASK_BRIEF.md](./37937-datahub-resource-edit-flow/TASK_BRIEF.md) - Requirements and specifications
+- [TASK_PLAN.md](./37937-datahub-resource-edit-flow/TASK_PLAN.md) - 12 subtask implementation plan
+- [TASK_SUMMARY.md](./37937-datahub-resource-edit-flow/TASK_SUMMARY.md) - Progress tracking
+- [PHASE_2_COMPLETE.md](./37937-datahub-resource-edit-flow/PHASE_2_COMPLETE.md) - Phase 2 completion summary
+
+**Completed:**
+
+- ✅ Phase 1: Resource editor infrastructure (SchemaEditor, ScriptEditor) - 66 tests
+- ✅ Phase 2: Simplified node configuration panels - 87 tests
+- ✅ Extra: Complete protobuf messageType support with encode/decode utilities
+- ✅ Documentation: Updated RJSF_GUIDELINES.md with Widgets vs Fields patterns
+
+**Progress:** Phase 1 (5/5 ✅), Phase 2 (4/4 ✅), Phase 3 (0/3), Phase 4 (0/1)
+
+---
+
 ### 38111-workspace-operation-wizard
 
 **Status:** ✅ Phase 1 Complete (Adapters, Bridges, Combiners, Asset Mappers)  
@@ -103,6 +128,70 @@ The agent will **automatically look in the `.tasks/` directory** and:
 - Reuse existing `createGroup` utility
 
 **Next Action:** Begin Subtask 1 (Group Selection Constraints)
+
+---
+
+### 37937-datahub-resource-edit-flow
+
+**Status:** 📋 Planning Complete - Ready for Implementation  
+**Directory:** `.tasks/37937-datahub-resource-edit-flow/`  
+**Description:** Refactor DataHub resource (schemas and scripts) creation and editing flow  
+**Progress:** 0/12 subtasks, Planning phase complete
+
+**Key Documents:**
+
+- [TASK_BRIEF.md](./37937-datahub-resource-edit-flow/TASK_BRIEF.md) - Requirements and context
+- [TASK_PLAN.md](./37937-datahub-resource-edit-flow/TASK_PLAN.md) - 12 subtask implementation plan (4 phases)
+- [TASK_SUMMARY.md](./37937-datahub-resource-edit-flow/TASK_SUMMARY.md) - Progress tracking
+- [QUICK_REFERENCE.md](./37937-datahub-resource-edit-flow/QUICK_REFERENCE.md) - Quick start guide
+
+**Objective:**
+
+Separate DataHub resource management from policy node configuration:
+
+- Move schema/script creation to DataHub main page (from tables)
+- Simplify node panels to resource selection only (name + version dropdowns)
+- Remove resource publishing from policy publish flow
+- Reduce panel complexity by >50% LOC
+
+**Planned Phases:**
+
+**Phase 1: Resource Editor Infrastructure (Days 1-5)**
+
+- [ ] Subtask 1.1: ResourceEditorDrawer base component
+- [ ] Subtask 1.2: SchemaEditor implementation
+- [ ] Subtask 1.3: ScriptEditor implementation
+- [ ] Subtask 1.4: Integration with SchemaTable
+- [ ] Subtask 1.5: Integration with ScriptTable
+
+**Phase 2: Simplified Node Configuration (Days 6-9)**
+
+- [ ] Subtask 2.1: ResourceSelector component
+- [ ] Subtask 2.2: SchemaPanelSimplified (<100 LOC)
+- [ ] Subtask 2.3: FunctionPanelSimplified (<100 LOC)
+- [ ] Subtask 2.4: Node display updates
+
+**Phase 3: Publishing Flow Updates (Days 10-12)**
+
+- [ ] Subtask 3.1: Dry-run validation updates
+- [ ] Subtask 3.2: Publishing logic refactor
+- [ ] Subtask 3.3: PolicySummaryReport updates
+
+**Phase 4: Testing & Documentation (Days 13-15)**
+
+- [ ] Subtask 4.1: Component test coverage (>80%)
+- [ ] Subtask 4.2: E2E test scenarios
+- [ ] Subtask 4.3: Documentation & migration guide
+
+**Key Requirements:**
+
+- Resource CRUD from DataHub main page (Schema/Script tables)
+- Node panels: simple selection only (no creation)
+- > 50% LOC reduction in SchemaPanel/FunctionPanel
+- Backward compatibility with existing policies
+- Feature flag for gradual rollout
+
+**Next Action:** Review task plan and begin Subtask 1.1 (ResourceEditorDrawer)
 
 ---
 
