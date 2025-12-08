@@ -70,6 +70,10 @@ export class DesignerPage extends Page {
     get schema() {
       return cy.getByAriaLabel('Schema')
     },
+
+    get function() {
+      return cy.getByAriaLabel('JS Function')
+    },
   }
 
   statusBar = {
@@ -85,6 +89,38 @@ export class DesignerPage extends Page {
 
     get zoomIn() {
       return cy.getByAriaLabel('Zoom in')
+    },
+  }
+
+  schemaPanel = {
+    get nameSelect() {
+      return cy.get('label#root_name-label + div')
+    },
+    selectSchema(schemaName: string) {
+      this.nameSelect.click()
+      cy.contains('[role="option"]', schemaName).click()
+    },
+    get versionDisplay() {
+      return cy.get('label#root_version-label + div')
+    },
+    get submitButton() {
+      return cy.get('button[type="submit"]')
+    },
+  }
+
+  scriptPanel = {
+    get nameSelect() {
+      return cy.get('label#root_name-label + div')
+    },
+    selectScript(scriptName: string) {
+      this.nameSelect.click()
+      cy.contains('[role="option"]', scriptName).click()
+    },
+    get versionDisplay() {
+      return cy.get('label#root_version-label + div')
+    },
+    get submitButton() {
+      return cy.get('button[type="submit"]')
     },
   }
 
