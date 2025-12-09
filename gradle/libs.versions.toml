@@ -71,10 +71,10 @@ plugin-github-release = "2.5.2"
 plugin-javadoc-links = "0.8.0"
 plugin-license = "0.16.1"
 plugin-metadata = "0.5.0"
-plugin-openapigenerator = "7.13.0"
+plugin-openapigenerator = "7.16.0"
 plugin-shadow = "8.3.9"
-plugin-spotbugs = "6.3.0"
-plugin-versions = "0.51.0"
+plugin-spotbugs = "6.4.7"
+plugin-versions = "0.53.0"
 
 [libraries]
 apache-commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "apache-commons-compress" }
