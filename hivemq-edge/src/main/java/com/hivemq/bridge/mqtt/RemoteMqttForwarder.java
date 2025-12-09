@@ -274,6 +274,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
             final @NotNull String queueId) {
         inflightCounter.decrementAndGet();
         // Reset inflight marker instead of removing the message, allowing retry
+        final var resetInflightMarkerCallback = this.resetInflightMarkerCallback;
         if (resetInflightMarkerCallback != null) {
             resetInflightMarkerCallback.afterMessage(queueId, uniqueId);
         }
