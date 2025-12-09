@@ -55,6 +55,30 @@ describe('DataHubListAction', () => {
 
       cy.getByTestId('list-action-draft').should('not.exist')
       cy.getByTestId('list-action-view-edit').should('not.exist')
+      cy.getByTestId('list-action-edit').should('not.exist') // Edit not shown by default
+    })
+
+    it('should render Edit button when canEdit is true', () => {
+      cy.mountWithProviders(
+        <DataHubListAction
+          policy={undefined}
+          onEdit={cy.stub().as('onEdit')}
+          onDownload={cy.stub().as('onDownload')}
+          onDelete={cy.stub().as('onDelete')}
+          canEdit={true}
+        />
+      )
+
+      cy.get('button').should('have.length', 3)
+
+      cy.get('@onEdit').should('not.have.been.called')
+      cy.getByTestId('list-action-edit').should('not.be.disabled')
+      cy.getByTestId('list-action-edit').should('have.attr', 'aria-label', 'Edit')
+      cy.getByTestId('list-action-edit').click()
+      cy.get('@onEdit').should('have.been.called')
+
+      cy.getByTestId('list-action-download').should('exist')
+      cy.getByTestId('list-action-delete').should('exist')
     })
 
     it('should render the actions for multiple versions', () => {
