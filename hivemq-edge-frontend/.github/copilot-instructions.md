@@ -1,5 +1,23 @@
 # AI Context and Task Documentation
 
+## ⚠️ READ THIS FIRST: MANDATORY RULES
+
+**[AI_MANDATORY_RULES.md](.github/AI_MANDATORY_RULES.md)** ← **READ THIS ENTIRE DOCUMENT BEFORE DOING ANYTHING**
+
+This document contains rules that prevent you from wasting 1-2 hours on problems that take 15 minutes to solve when you follow guidelines.
+
+**Common failures these rules prevent:**
+
+- Not reading guidelines when user references them (wastes 1-2 hours)
+- Running all tests instead of one test when debugging (wastes 1 hour)
+- Not using HTML snapshots for Cypress debugging (wastes 1-2 hours)
+- Skipping tests instead of fixing them (incomplete work)
+- Ignoring repeated instructions (frustrates user)
+
+**READ THE MANDATORY RULES NOW. IT TAKES 3 MINUTES AND SAVES HOURS.**
+
+---
+
 ## Quick Reference for AI Agents
 
 All task-related documentation is located in the `.tasks/` directory:
