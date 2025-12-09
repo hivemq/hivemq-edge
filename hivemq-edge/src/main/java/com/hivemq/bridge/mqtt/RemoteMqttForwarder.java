@@ -361,7 +361,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
             publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
                 if (throwable != null) {
                     handlePublishError(current.publish, throwable);
-                    finishProcessingWithRetry(current.originalQqS, current.uniqueId, current.queueId);
+                    finishProcessingWithRetry(current.originalQoS, current.uniqueId, current.queueId);
                 } else {
                     perBridgeMetrics.getPublishForwardSuccessCounter().inc();
                     if (log.isDebugEnabled()) {
@@ -369,7 +369,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
                         log.debug("Successfully published buffered message on topic '{}' to remote broker for bridge '{}' in {} μs",
                                 current.publish.getTopic(), bridge.getId(), durationMicros);
                     }
-                    finishProcessing(current.originalQqS, current.uniqueId, current.queueId);
+                    finishProcessing(current.originalQoS, current.uniqueId, current.queueId);
                 }
                 outflightQueue.remove(outflightPublishInformation);
             });
@@ -626,16 +626,16 @@ public class RemoteMqttForwarder implements MqttForwarder {
         executorService = service;
     }
 
-    private record BufferedPublishInformation(@NotNull String queueId, String uniqueId, @NotNull QoS originalQqS,
+    private record BufferedPublishInformation(@NotNull String queueId, String uniqueId, @NotNull QoS originalQoS,
                                               @NotNull PUBLISH publish) {
         private BufferedPublishInformation(
                 final @NotNull String queueId,
                 final @NotNull String uniqueId,
-                final @NotNull QoS originalQqS,
+                final @NotNull QoS originalQoS,
                 final @NotNull PUBLISH publish) {
             this.queueId = queueId;
             this.uniqueId = uniqueId;
-            this.originalQqS = originalQqS;
+            this.originalQoS = originalQoS;
             this.publish = publish;
         }
     }
