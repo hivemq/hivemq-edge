@@ -24,10 +24,69 @@
   "resource": {
     "schema": {
       "type_JSON": "JSON",
-      "type_PROTOBUF": "PROTOBUF"
+      "type_PROTOBUF": "PROTOBUF",
+      "editor": {
+        "title": {
+          "create": "Create New Schema",
+          "newVersion": "Create New Schema Version"
+        }
+      },
+      "save": {
+        "success": "Schema Saved",
+        "error": "Save Failed"
+      },
+      "create": {
+        "description": "Schema \"{{name}}\" has been created"
+      },
+      "version": {
+        "created": "New version of schema \"{{name}}\" has been created"
+      },
+      "selector": {
+        "label": "Select Schema",
+        "help": "Choose an existing schema by name and version"
+      },
+      "info": "{{type}} Schema, {{count}} version available",
+      "info_other": "{{type}} Schema, {{count}} versions available",
+      "messageType": {
+        "select": "Select a message type",
+        "noMessages": "No messages found in schema",
+        "create": "Create \"{{inputValue}}\""
+      }
     },
     "script": {
-      "functionType_TRANSFORMATION": "Transformation"
+      "functionType_TRANSFORMATION": "Transformation",
+      "editor": {
+        "title": {
+          "create": "Create New Script",
+          "newVersion": "Create New Script Version"
+        }
+      },
+      "save": {
+        "success": "Script Saved",
+        "error": "Save Failed"
+      },
+      "create": {
+        "description": "Script \"{{name}}\" has been created"
+      },
+      "version": {
+        "created": "New version of script \"{{name}}\" has been created"
+      },
+      "selector": {
+        "label": "Select Script",
+        "help": "Choose an existing script by name and version"
+      },
+      "info": "{{type}} Script, {{count}} version available",
+      "info_other": "{{type}} Script, {{count}} versions available"
+    },
+    "selector": {
+      "name": "Name",
+      "name.placeholder": "Select a {{context}}",
+      "name.placeholder_schema": "Select a schema",
+      "name.placeholder_script": "Select a script",
+      "version": "Version",
+      "version.option": "Version {{version}}",
+      "current": "Current selection",
+      "clear": "Clear"
     }
   },
   "Listings": {
@@ -40,7 +99,9 @@
       "delete": "Delete",
       "copy": "Copy",
       "expand": "Show the versions",
-      "collapse": "Hide the versions"
+      "collapse": "Hide the versions",
+      "save": "Save",
+      "cancel": "Cancel"
     },
     "tabs": {
       "policy": {
@@ -53,7 +114,7 @@
       },
       "script": {
         "title": "Scripts",
-        "description": "Your transformation code will be listed there."
+        "description": "Your transformation scripts will be listed here."
       }
     },
     "modal": {
@@ -98,6 +159,9 @@
         "type": "Type",
         "version": "Version",
         "actions": "Actions"
+      },
+      "action": {
+        "create": "Create New Schema"
       }
     },
     "script": {
@@ -109,6 +173,9 @@
         "created": "Created",
         "version": "Version",
         "actions": "Actions"
+      },
+      "action": {
+        "create": "Create New Script"
       }
     }
   },
@@ -271,6 +338,7 @@
     "name": {
       "noOption": "No $t(datahub:workspace.nodes.type, { 'context': '{{type}}' }) available",
       "createOption": "Create a new $t(datahub:workspace.nodes.type, { 'context': '{{type}}' }) \"{{inputValue}}\"",
+      "selectPlaceholder": "Select a $t(datahub:workspace.nodes.type, { 'context': '{{type}}' })",
       "draft": "(Draft)"
     },
     "transition": {
@@ -404,9 +472,20 @@
   "error": {
     "validation": {
       "noNode": "Node is unknown",
+      "schema": {
+        "duplicate": "A schema with the name \"{{name}}\" already exists",
+        "messageType": {
+          "required": "Message type is required for protobuf schemas",
+          "notFound": "Message type \"{{messageType}}\" not found in the schema definition"
+        }
+      },
+      "script": {
+        "duplicate": "A script with the name \"{{name}}\" already exists"
+      },
       "protobuf": {
-        "template": "// CANNOT DECODE THE PROTOBUF SOURCE - {{ source }}",
-        "encoding": "The encoding of the PROTOBUF code into a Base64 descriptor cannot be validated."
+        "template": "// NOTICE: once encoded into a Base64 descriptor, the PROTOBUF code cannot be extracted again.\n// Use your own documents to retrieve the source.",
+        "encoding": "The encoding of the PROTOBUF code into a Base64 descriptor cannot be validated.",
+        "decoding": "// Error decoding PROTOBUF schema: {{ error }}"
       },
       "topicFilter": {
         "duplicate": "The topic filter {{ filter }} is already defined",

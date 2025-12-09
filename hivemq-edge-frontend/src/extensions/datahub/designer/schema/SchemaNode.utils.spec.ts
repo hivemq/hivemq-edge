@@ -1,5 +1,6 @@
-import type { SchemaReference } from '@/api/__generated__'
+import type { PolicySchema, SchemaReference } from '@/api/__generated__'
 import { MOCK_PROTOBUF_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
+import { encodeProtobufSchema } from '@datahub/utils/protobuf.utils.ts'
 import { expect } from 'vitest'
 import type { Node } from '@xyflow/react'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
@@ -13,6 +14,7 @@ import {
   getScriptFamilies,
   getSchemaRefVersion,
   loadSchema,
+  getSourceFromSchema,
 } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers__'
 import { SCRIPT_FUNCTION_LATEST } from '@datahub/utils/datahub.utils.ts'
@@ -471,12 +473,67 @@ describe('loadSchema', () => {
             type: DataHubNodeType.SCHEMA,
             data: expect.objectContaining({
               type: SchemaType.PROTOBUF,
-              schemaSource: expect.stringContaining('GpsCoordinates'),
+              schemaSource: expect.stringContaining('// NOTICE: once encoded into a Base64 descriptor'),
               version: 1,
             }),
           }),
         })
       )
     })
+  })
+})
+
+describe('getSourceFromSchema', () => {
+  it('should decode JSON schema from base64', () => {
+    const jsonSchema: PolicySchema = {
+      id: 'test-json-schema',
+      type: SchemaType.JSON,
+      schemaDefinition: btoa('{"type": "object"}'),
+      version: 1,
+    }
+
+    const result = getSourceFromSchema(jsonSchema)
+
+    expect(result).toBe('{"type": "object"}')
+  })
+
+  it('should decode PROTOBUF schema', () => {
+    const protobufSchema: PolicySchema = {
+      id: 'test-protobuf-schema',
+      type: SchemaType.PROTOBUF,
+      schemaDefinition: encodeProtobufSchema(MOCK_PROTOBUF_SCHEMA),
+      version: 1,
+    }
+
+    const result = getSourceFromSchema(protobufSchema)
+
+    expect(result).toContain('// NOTICE: once encoded into a Base64 descriptor')
+  })
+
+  it('should handle PROTOBUF decoding errors gracefully', () => {
+    const invalidProtobufSchema: PolicySchema = {
+      id: 'invalid-protobuf',
+      type: SchemaType.PROTOBUF,
+      schemaDefinition: 'invalid-base64-data',
+      version: 1,
+    }
+
+    const result = getSourceFromSchema(invalidProtobufSchema)
+
+    expect(result).toContain('// Error decoding PROTOBUF schema: invalid encoding')
+  })
+
+  it('should default to JSON when schema type is unknown', () => {
+    const unknownSchema: PolicySchema = {
+      id: 'unknown-schema',
+      // @ts-ignore - testing unknown type
+      type: 'UNKNOWN_TYPE',
+      schemaDefinition: btoa('{"test": "data"}'),
+      version: 1,
+    }
+
+    const result = getSourceFromSchema(unknownSchema)
+
+    expect(result).toBe('{"test": "data"}')
   })
 })

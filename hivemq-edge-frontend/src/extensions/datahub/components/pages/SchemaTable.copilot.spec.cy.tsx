@@ -66,7 +66,7 @@ describe('SchemaTable (Copilot)', () => {
           cy.get('td').eq(2).should('contain', '2')
           // without clock the date is not correct
           cy.get('td').eq(3).should('contain', '2 days ago')
-          cy.get('td').eq(4).find('button').should('have.length', 2)
+          cy.get('td').eq(4).find('button').should('have.length', 3)
         })
     })
   })
