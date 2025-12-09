@@ -19,6 +19,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Note: check-frontend, check-backend, and check-openapi run independently based on detected changes.
+  # They all depend only on check-for-changes to avoid unnecessary dependency chains.
   check-for-changes:
     runs-on: ubuntu-latest
     outputs:
@@ -27,7 +29,7 @@ jobs:
       openapi-changed: ${{ steps.openapi.outputs.changed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           fetch-depth: 0
           
@@ -74,7 +76,7 @@ jobs:
     if: needs.check-for-changes.outputs.openapi-changed == 'true'
 
   check-frontend:
-    needs: [ check-for-changes, check-openapi ]
+    needs: check-for-changes
     uses: ./.github/workflows/check-frontend.yml
     if: needs.check-for-changes.outputs.frontend-changed == 'true'
     secrets:
@@ -82,7 +84,7 @@ jobs:
       PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
   check-backend:
-    needs: [ check-for-changes, check-openapi ]
+    needs: check-for-changes
     uses: ./.github/workflows/check-backend.yml
     if: needs.check-for-changes.outputs.backend-changed == 'true'
 

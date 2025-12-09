@@ -36,7 +36,7 @@ describe('DataHubListings', () => {
       .should('contain.text', 'All your schemas used for validation or transformation will be listed there')
 
     cy.get('@tabs').eq(2).click()
-    cy.get("[role='tabpanel']").eq(2).should('contain.text', 'Your transformation code will be listed there')
+    cy.get("[role='tabpanel']").eq(2).should('contain.text', 'Your transformation scripts will be listed here')
   })
 
   it('should support deletion', () => {

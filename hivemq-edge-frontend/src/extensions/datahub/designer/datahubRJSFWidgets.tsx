@@ -5,10 +5,13 @@ import FunctionCreatableSelect from '@datahub/components/forms/FunctionCreatable
 import { MetricCounterInput } from '@datahub/components/forms/MetricCounterInput.tsx'
 import { VersionManagerSelect } from '@datahub/components/forms/VersionManagerSelect.tsx'
 import { MessageInterpolationTextArea } from '@datahub/components/forms/MessageInterpolationTextArea.tsx'
+import { MessageTypeSelect } from '@datahub/components/forms/MessageTypeSelect.tsx'
 import { TransitionSelect } from '@datahub/components/forms/TransitionSelect.tsx'
 import {
   SchemaNameCreatableSelect,
   ScriptNameCreatableSelect,
+  SchemaNameSelect,
+  ScriptNameSelect,
 } from '@datahub/components/forms/ResourceNameCreatableSelect.tsx'
 
 export const datahubRJSFWidgets: RegistryWidgetsType = {
@@ -20,7 +23,10 @@ export const datahubRJSFWidgets: RegistryWidgetsType = {
   'datahub:metric-counter': MetricCounterInput,
   'datahub:function-name': ScriptNameCreatableSelect,
   'datahub:schema-name': SchemaNameCreatableSelect,
+  'datahub:function-name-select': ScriptNameSelect, // Select-only version (no create)
+  'datahub:schema-name-select': SchemaNameSelect, // Select-only version (no create)
   'datahub:version': VersionManagerSelect,
   'datahub:message-interpolation': MessageInterpolationTextArea,
+  'datahub:message-type': MessageTypeSelect, // Protobuf message type selector
   'edge:adapter-selector': AdapterSelect,
 }

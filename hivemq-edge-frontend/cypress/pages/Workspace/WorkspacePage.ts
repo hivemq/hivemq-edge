@@ -306,13 +306,12 @@ export class WorkspacePage extends ShellPage {
      */
     selectReactFlowNodes(nodes: string[]) {
       const [first, ...rest] = nodes
-      workspacePage.adapterNode(first).type('{meta}', { release: false })
+      workspacePage.adapterNode(first).type('{meta}', { release: false, force: true })
       workspacePage.adapterNode(first).click()
       rest.forEach((node) => {
         workspacePage.adapterNode(node).click()
       })
-      workspacePage.adapterNode(first).type('{meta}')
-      // workspacePage.adapterNode('first').type('{leftArrow}{leftArrow}')
+      workspacePage.adapterNode(first).type('{meta}', { force: true })
     },
   }
 }

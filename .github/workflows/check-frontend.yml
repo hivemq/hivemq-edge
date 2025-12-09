@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -48,7 +48,7 @@ jobs:
         run: pnpm test:coverage
 
       - name: 💾 Upload Vitest Code Coverage
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: lcov-vitest
           path: hivemq-edge-frontend/coverage-vitest/lcov.info
@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -73,7 +73,7 @@ jobs:
           VITE_COVERAGE: true
 
       - name: Upload artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: application-instrumented
           path: ./hivemq-edge-frontend/dist
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -95,7 +95,7 @@ jobs:
         run: pnpm run build --base=/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: application-clean
           path: ./hivemq-edge-frontend/dist
@@ -107,10 +107,10 @@ jobs:
     needs: [ build_production ]
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Download artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
           name: application-clean
           path: ./hivemq-edge-frontend/dist
@@ -131,7 +131,7 @@ jobs:
       LOCAL_NONCE: ${{ steps.percy.outputs.nonce }}
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - id: percy
         run: |
           echo "nonce=$(date +'%s')" >> "$GITHUB_OUTPUT"
@@ -148,16 +148,27 @@ jobs:
     strategy:
       matrix:
         cypress: [
-          { component: false, spec: "./cypress/e2e/**/*", target: "E2E" },
+          # E2E split into 3 jobs
+          { component: false, spec: './cypress/e2e/adapters/**/*', target: 'E2E-Adapters' },
+          { component: false, spec: './cypress/e2e/workspace/**/*', target: 'E2E-Workspace' },
+          { component: false, spec: './cypress/e2e/!(adapters|workspace)/**/*', target: 'E2E-Core' },
+
+          # All components
           { component: true, spec: "./src/components/**/*", target: "Components" },
+
+          # Extensions (Datahub)
           { component: true, spec: "./src/extensions/**/*", target: "Extensions" },
-          { component: true, spec: "./src/modules/!(Workspace)**/*", target: "Modules" },
-          { component: true, spec: "./src/modules/Workspace/**/*", target: "Workspace" }
+
+          # Modules split into 4 jobs
+          { component: true, spec: "./src/modules/Workspace/**/*", target: "Workspace" },
+          { component: true, spec: "./src/modules/Mappings/**/*", target: "Mappings" },
+          { component: true, spec: "./src/modules/Pulse/**/*", target: "Pulse" },
+          { component: true, spec: "./src/modules/!(Workspace|Mappings|Pulse)/**/*", target: "Modules" }
         ]
     name: Cypress - ${{ matrix.cypress.target }}
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -166,7 +177,7 @@ jobs:
           run-install: true
 
       - name: Download artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
           name: application-instrumented
           path: ./hivemq-edge-frontend/dist
@@ -187,7 +198,7 @@ jobs:
       # after the test, store videos
       - name: 💾 Upload Cypress - ${{ matrix.cypress.target }} videos
         if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: cypress-${{ matrix.cypress.target }}-videos
           path: hivemq-edge-frontend/cypress/videos
@@ -196,7 +207,7 @@ jobs:
 
       - name: 💾 Upload Cypress Code Coverage
         if: success() || failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: lcov-cypress-${{ matrix.cypress.target }}
           path: hivemq-edge-frontend/coverage-cypress/lcov.info
@@ -211,11 +222,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Download all LCOV Artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
           path: hivemq-edge-frontend/coverage-combined
           pattern: lcov-*
@@ -226,7 +237,7 @@ jobs:
           ls -R ./coverage-combined
           ls -R **/**/*.info
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@2500896589ef8f7247069a56136f8dc177c27ccf # v5
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6
         with:
           projectBaseDir: hivemq-edge-frontend
           args: >
@@ -245,7 +256,7 @@ jobs:
       PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
