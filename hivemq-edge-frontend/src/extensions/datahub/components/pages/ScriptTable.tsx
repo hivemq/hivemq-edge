@@ -1,8 +1,9 @@
-import { type FC, useMemo } from 'react'
+import { type FC, useMemo, useState, useCallback } from 'react'
 import type { CellContext, ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { HStack, Skeleton, Text } from '@chakra-ui/react'
+import { Button, HStack, Skeleton, Text } from '@chakra-ui/react'
+import { LuPlus } from 'react-icons/lu'
 
 import type { Script, ScriptList } from '@/api/__generated__'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
@@ -14,6 +15,7 @@ import { useGetAllScripts } from '@datahub/api/hooks/DataHubScriptsService/useGe
 import { useDeleteScript } from '@datahub/api/hooks/DataHubScriptsService/useDeleteScript.ts'
 import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers__'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
+import { ScriptEditor } from '@datahub/components/editors/ScriptEditor.tsx'
 import { ExpandVersionButton } from '@datahub/components/helpers/ExpandVersionButton.tsx'
 import type { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 import { groupResourceItems, type ExpandableGroupedResource } from '@datahub/utils/policy.utils.ts'
@@ -23,6 +25,24 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
   const { isLoading, data, isError } = useGetAllScripts({})
   const deleteScript = useDeleteScript()
+
+  const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [editingScript, setEditingScript] = useState<Script | undefined>(undefined)
+
+  const handleCreateNew = useCallback(() => {
+    setEditingScript(undefined)
+    setIsEditorOpen(true)
+  }, [])
+
+  const handleEdit = useCallback((script: Script) => {
+    setEditingScript(script)
+    setIsEditorOpen(true)
+  }, [])
+
+  const handleCloseEditor = useCallback(() => {
+    setIsEditorOpen(false)
+    setEditingScript(undefined)
+  }, [])
 
   const expandedData = useMemo(() => {
     if (isLoading) return [mockScript]
@@ -113,28 +133,46 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
           return (
             <Skeleton isLoaded={!isLoading}>
               <DataHubListAction
+                onEdit={() => handleEdit(info.row.original)}
                 onDelete={() =>
                   onDeleteItem?.(deleteScript.mutateAsync, DataHubNodeType.FUNCTION, info.row.original.id)
                 }
                 onDownload={onHandleDownload(info)}
                 canDownload={!info.row.getCanExpand()}
                 canDelete={!info.row.getParentRow()}
+                canEdit={!info.row.getCanExpand()} // Only individual versions can be edited
               />
             </Skeleton>
           )
         },
       },
     ]
-  }, [deleteScript.mutateAsync, isLoading, onDeleteItem, t])
+  }, [deleteScript.mutateAsync, isLoading, onDeleteItem, t, handleEdit])
 
   return (
-    <PaginatedTable<ExpandableGroupedResource<Script>>
-      aria-label={t('Listings.script.label')}
-      data={expandedData}
-      columns={columns}
-      isError={isError}
-      getSubRows={(data) => data.children}
-    />
+    <>
+      <PaginatedTable<ExpandableGroupedResource<Script>>
+        aria-label={t('Listings.script.label')}
+        data={expandedData}
+        columns={columns}
+        isError={isError}
+        getSubRows={(data) => data.children}
+        enableGlobalFilter
+        customControls={
+          <Button
+            leftIcon={<LuPlus />}
+            variant="outline"
+            size="sm"
+            onClick={handleCreateNew}
+            data-testid="script-create-new-button"
+          >
+            {t('Listings.script.action.create')}
+          </Button>
+        }
+      />
+
+      <ScriptEditor isOpen={isEditorOpen} onClose={handleCloseEditor} script={editingScript} />
+    </>
   )
 }
 
