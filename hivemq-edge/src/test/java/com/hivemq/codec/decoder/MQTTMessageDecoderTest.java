@@ -27,7 +27,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockitoAnnotations;
 import util.TestConfigurationBootstrap;
 import util.TestMqttDecoder;
 
@@ -37,6 +36,7 @@ public class MQTTMessageDecoderTest {
 
     private @NotNull EmbeddedChannel channel;
     private @NotNull ClientConnection clientConnection;
+
     @BeforeEach
     public void setUp() throws Exception {
         channel = new EmbeddedChannel(TestMqttDecoder.create());
