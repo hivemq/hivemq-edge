@@ -607,6 +607,20 @@ public class RemoteMqttForwarder implements MqttForwarder {
     }
 
     @Override
+    public void forceReconnect() {
+        if (remoteMqttClient.isConnected()) {
+            log.warn("Force reconnect triggered for forwarder '{}' on bridge '{}' - disconnecting to trigger auto-reconnect",
+                    id, bridge.getId());
+            remoteMqttClient.getMqtt5Client().disconnect();
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Force reconnect requested but client already disconnected for forwarder '{}' on bridge '{}'",
+                        id, bridge.getId());
+            }
+        }
+    }
+
+    @Override
     public @NotNull String getId() {
         return id;
     }

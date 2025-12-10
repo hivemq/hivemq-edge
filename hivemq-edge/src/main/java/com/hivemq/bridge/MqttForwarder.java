@@ -58,6 +58,16 @@ public interface MqttForwarder {
      */
     void onReconnect();
 
+    /**
+     * Forces a reconnection by disconnecting the underlying MQTT client.
+     * The auto-reconnect logic will then establish a new connection.
+     * <p>
+     * This is used to recover from timeout situations where inflight markers
+     * could not be reset within the expected time. Forcing a reconnection
+     * triggers a new {@link #drainQueue()} cycle which will retry the marker reset.
+     */
+    void forceReconnect();
+
     void setExecutorService(@NotNull ExecutorService executorService);
 
     @NotNull String getId();

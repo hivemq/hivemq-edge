@@ -211,7 +211,11 @@ public class MessageForwarderImpl implements MessageForwarder {
                 } catch (final ExecutionException e) {
                     log.error("Failed to reset inflight markers for forwarder '{}'", fwdId, e);
                 } catch (final TimeoutException e) {
-                    log.error("Timeout resetting inflight markers for forwarder '{}' - possible deadlock", fwdId, e);
+                    log.warn("Timeout resetting inflight markers for forwarder '{}' - forcing reconnect to retry", fwdId, e);
+                    final MqttForwarder forwarder = forwarders.get(fwdId);
+                    if (forwarder != null) {
+                        forwarder.forceReconnect();
+                    }
                 }
             }
         });
