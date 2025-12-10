@@ -54,21 +54,23 @@ export const validateJavaScript = async (
     // Create temporary model for validation
     model = monacoInstance.editor.createModel(code, 'javascript', modelUri)
 
-    // Wait for TypeScript language service to process the model
-    // The language service runs in a Web Worker, so we need to wait for it to analyze the code
-    // We use a Promise-based approach to wait for markers to be available
-    await waitForValidation(monacoInstance, model)
+    if (model) {
+      // Wait for TypeScript language service to process the model
+      // The language service runs in a Web Worker, so we need to wait for it to analyze the code
+      // We use a Promise-based approach to wait for markers to be available
+      await waitForValidation(monacoInstance, model)
+    }
 
     // Get diagnostics from Monaco
     const markers = monacoInstance.editor.getModelMarkers({
-      resource: model.uri,
+      resource: model?.uri,
     })
 
     // Separate errors and warnings
     const errors: ValidationError[] = []
     const warnings: ValidationError[] = []
 
-    markers.forEach((marker) => {
+    markers.forEach((marker: monaco.editor.IMarker) => {
       const error: ValidationError = {
         message: marker.message,
         line: marker.startLineNumber,
@@ -130,7 +132,6 @@ const waitForValidation = async (monacoInstance: Monaco, model: monaco.editor.IT
         setTimeout(checkMarkers, checkInterval)
       }
     }
-
     checkMarkers()
   })
 }
