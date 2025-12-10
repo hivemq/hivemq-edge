@@ -142,13 +142,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
 
         // Array is 0-indexed, attemptCount is 1-indexed, so we need attemptCount - 1
-        final int index = attemptCount - 1;
-
-        // If attemptCount exceeds array size, use the last value (max delay)
-        if (index >= backoffDelays.length) {
-            return backoffDelays[backoffDelays.length - 1];
-        }
-
+        final int index = Math.min(Math.max(0, attemptCount - 1), backoffDelays.length - 1);
         final double backoffDelay =
                 backoffDelays[index] * (1 + new Random().nextDouble(ConnectionOptions.DEFAULT_RETRY_JITTER));
         return Double.valueOf(backoffDelay).longValue();
