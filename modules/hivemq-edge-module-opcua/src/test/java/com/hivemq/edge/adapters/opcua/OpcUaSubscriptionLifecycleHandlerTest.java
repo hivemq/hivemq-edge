@@ -34,6 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
+import static com.hivemq.edge.adapters.opcua.listeners.OpcUaSubscriptionLifecycleHandler.KEEP_ALIVE_SAFETY_MARGIN_MS;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -87,7 +88,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
         final OpcUaSubscriptionLifecycleHandler handler = createHandler(config);
 
         // Then: Timeout should be calculated correctly
-        final long expectedTimeout = 10_000 * (3 + 1) + 5_000; // 45 seconds
+        final long expectedTimeout = 10_000 * (3 + 1) + KEEP_ALIVE_SAFETY_MARGIN_MS; // 45 seconds
         assertEquals(expectedTimeout,
                 handler.getKeepAliveTimeoutMs(),
                 "Keep-alive timeout should be keepAliveInterval × (failuresAllowed + 1) + safetyMargin");
@@ -101,8 +102,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
     @Test
     void testKeepAliveTimeout_withCustomShortInterval() {
         // Given: Custom short interval configuration
-        final ConnectionOptions connectionOptions = new ConnectionOptions(
-                120_000L,  // sessionTimeout
+        final ConnectionOptions connectionOptions = new ConnectionOptions(120_000L,  // sessionTimeout
                 30_000L,   // requestTimeout
                 5_000L,    // keepAliveInterval: 5s
                 2,         // keepAliveFailuresAllowed: 2
@@ -118,7 +118,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
         final OpcUaSubscriptionLifecycleHandler handler = createHandler(config);
 
         // Then: Timeout should be calculated correctly
-        final long expectedTimeout = 5_000 * (2 + 1) + 5_000; // 20 seconds
+        final long expectedTimeout = 5_000 * (2 + 1) + KEEP_ALIVE_SAFETY_MARGIN_MS; // 20 seconds
         assertEquals(expectedTimeout, handler.getKeepAliveTimeoutMs());
     }
 
@@ -130,8 +130,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
     @Test
     void testKeepAliveTimeout_withCustomLongInterval() {
         // Given: Custom long interval configuration
-        final ConnectionOptions connectionOptions = new ConnectionOptions(
-                120_000L,  // sessionTimeout
+        final ConnectionOptions connectionOptions = new ConnectionOptions(120_000L,  // sessionTimeout
                 30_000L,   // requestTimeout
                 20_000L,   // keepAliveInterval: 20s
                 5,         // keepAliveFailuresAllowed: 5
@@ -183,17 +182,16 @@ class OpcUaSubscriptionLifecycleHandlerTest {
     }
 
     /**
-     * Test that health check returns true just before timeout.
-     * This tests the boundary condition.
+     * Test that health check returns true shortly before timeout expires.
+     * Uses a short timeout and waits just under it to verify boundary behavior.
      */
     @Test
-    void testKeepAliveHealthy_justBeforeTimeout() {
-        // Given: Handler with very short timeout for testing
-        // keepAliveInterval=50ms, failuresAllowed=1 -> timeout = 50 × (1+1) + 5000 = 5100ms
-        final ConnectionOptions connectionOptions = new ConnectionOptions(
-                120_000L,  // sessionTimeout
+    void testKeepAliveHealthy_shortlyBeforeTimeoutExpires() throws InterruptedException {
+        // Given: Handler with short timeout for testing
+        // keepAliveInterval=10ms, failuresAllowed=1 -> timeout = 10 × (1+1) + 5000 = 5020ms
+        final ConnectionOptions connectionOptions = new ConnectionOptions(120_000L,  // sessionTimeout
                 30_000L,   // requestTimeout
-                50L,       // keepAliveInterval: 50ms
+                10L,       // keepAliveInterval: 10ms
                 1,         // keepAliveFailuresAllowed: 1
                 30_000L,   // connectionTimeout
                 30_000L,   // healthCheckInterval
@@ -202,14 +200,14 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 true       // reconnectOnServiceFault
         );
         final OpcUaSpecificAdapterConfig config = createConfig(connectionOptions);
-
-        // Create handler and simulate passage of time by manipulating system time conceptually
-        // Since we can't manipulate System.currentTimeMillis(), we'll use a wait that's slightly less than timeout
         final OpcUaSubscriptionLifecycleHandler handler = createHandler(config);
 
-        // Expected timeout: 5100ms
-        // We'll check immediately (should be healthy)
-        assertTrue(handler.isKeepAliveHealthy(), "Handler should be healthy at time 0");
+        // Expected timeout: 5020ms
+        // Wait 4800ms (well under timeout but significant time passed)
+        Thread.sleep(4800);
+
+        // Then: Should still be healthy (4800ms < 5020ms timeout)
+        assertTrue(handler.isKeepAliveHealthy(), "Handler should be healthy shortly before timeout expires");
     }
 
     /**
@@ -219,8 +217,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
     void testOnKeepAliveReceived_resetsHealthTimer() throws InterruptedException {
         // Given: Handler with short timeout
         // keepAliveInterval=100ms, failuresAllowed=1 -> timeout = 100 × (1+1) + 5000 = 5200ms
-        final ConnectionOptions connectionOptions = new ConnectionOptions(
-                120_000L,  // sessionTimeout
+        final ConnectionOptions connectionOptions = new ConnectionOptions(120_000L,  // sessionTimeout
                 30_000L,   // requestTimeout
                 100L,      // keepAliveInterval: 100ms
                 1,         // keepAliveFailuresAllowed: 1
@@ -285,8 +282,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
     void testKeepAliveHealthy_afterTimeoutExpires() throws InterruptedException {
         // Given: Handler with very short timeout for testing
         // keepAliveInterval=20ms, failuresAllowed=1 -> timeout = 20 × (1+1) + 5000 = 5040ms
-        final ConnectionOptions connectionOptions = new ConnectionOptions(
-                120_000L,  // sessionTimeout
+        final ConnectionOptions connectionOptions = new ConnectionOptions(120_000L,  // sessionTimeout
                 30_000L,   // requestTimeout
                 20L,       // keepAliveInterval: 20ms
                 1,         // keepAliveFailuresAllowed: 1
@@ -313,8 +309,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
     void testMultipleKeepAliveCycles() throws InterruptedException {
         // Given: Handler with moderate timeout
         // keepAliveInterval=100ms, failuresAllowed=2 -> timeout = 100 × (2+1) + 5000 = 5300ms
-        final ConnectionOptions connectionOptions = new ConnectionOptions(
-                120_000L,  // sessionTimeout
+        final ConnectionOptions connectionOptions = new ConnectionOptions(120_000L,  // sessionTimeout
                 30_000L,   // requestTimeout
                 100L,      // keepAliveInterval: 100ms
                 2,         // keepAliveFailuresAllowed: 2
@@ -348,8 +343,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
     void testKeepAliveTimeout_minimumConfiguration() {
         // Given: Minimum allowed configuration values
         // keepAliveInterval=1s, failuresAllowed=1 -> timeout = 1000 × (1+1) + 5000 = 7000ms
-        final ConnectionOptions connectionOptions = new ConnectionOptions(
-                10_000L,   // sessionTimeout: 10s (minimum)
+        final ConnectionOptions connectionOptions = new ConnectionOptions(10_000L,   // sessionTimeout: 10s (minimum)
                 5_000L,    // requestTimeout: 5s (minimum)
                 1_000L,    // keepAliveInterval: 1s (minimum)
                 1,         // keepAliveFailuresAllowed: 1 (minimum)
@@ -368,6 +362,152 @@ class OpcUaSubscriptionLifecycleHandlerTest {
         final long expectedTimeout = 7_000L; // 7 seconds
         assertEquals(expectedTimeout, handler.getKeepAliveTimeoutMs());
         assertTrue(handler.isKeepAliveHealthy(), "Should be healthy with minimum configuration");
+    }
+
+    /**
+     * Test keep-alive timeout calculation with maximum allowed configuration values.
+     * Maximum: keepAliveInterval=60s, failuresAllowed=10, safetyMargin=5s
+     * Expected: 60000 × (10 + 1) + 5000 = 665000ms (11 minutes 5 seconds)
+     */
+    @Test
+    void testKeepAliveTimeout_maximumConfiguration() {
+        // Given: Maximum allowed configuration values
+        final ConnectionOptions connectionOptions = new ConnectionOptions(3600_000L, // sessionTimeout: 1 hour (maximum)
+                300_000L,  // requestTimeout: 5 min (maximum)
+                60_000L,   // keepAliveInterval: 60s (maximum)
+                10,        // keepAliveFailuresAllowed: 10 (maximum)
+                300_000L,  // connectionTimeout: 5 min (maximum)
+                300_000L,  // healthCheckInterval: 5 min (maximum)
+                300_000L,  // retryInterval: 5 min (maximum)
+                true,      // autoReconnect
+                true       // reconnectOnServiceFault
+        );
+        final OpcUaSpecificAdapterConfig config = createConfig(connectionOptions);
+
+        // When: Handler is created
+        final OpcUaSubscriptionLifecycleHandler handler = createHandler(config);
+
+        // Then: Timeout should be calculated correctly with maximum values (no overflow)
+        final long expectedTimeout = 60_000L * (10 + 1) + KEEP_ALIVE_SAFETY_MARGIN_MS; // 665000ms = 11 min 5 sec
+        assertEquals(expectedTimeout, handler.getKeepAliveTimeoutMs());
+        assertTrue(handler.isKeepAliveHealthy(), "Should be healthy with maximum configuration");
+    }
+
+    /**
+     * Test that the boundary condition at exact timeout returns unhealthy.
+     * When timeSinceLastKeepAlive == timeout, the check uses strict less-than,
+     * so it should return false (unhealthy).
+     */
+    @Test
+    void testKeepAliveHealthy_atExactTimeoutBoundary() throws InterruptedException {
+        // Given: Handler with short timeout for testing
+        // keepAliveInterval=10ms, failuresAllowed=1 -> timeout = 10 × (1+1) + 5000 = 5020ms
+        final ConnectionOptions connectionOptions = new ConnectionOptions(120_000L,  // sessionTimeout
+                30_000L,   // requestTimeout
+                10L,       // keepAliveInterval: 10ms
+                1,         // keepAliveFailuresAllowed: 1
+                30_000L,   // connectionTimeout
+                30_000L,   // healthCheckInterval
+                30_000L,   // retryInterval
+                true,      // autoReconnect
+                true       // reconnectOnServiceFault
+        );
+        final OpcUaSpecificAdapterConfig config = createConfig(connectionOptions);
+        final OpcUaSubscriptionLifecycleHandler handler = createHandler(config);
+        final long timeout = handler.getKeepAliveTimeoutMs();
+
+        // When: Wait exactly at timeout plus small buffer for timing variance
+        Thread.sleep(timeout + 50);
+
+        // Then: Should be unhealthy (uses strict less-than comparison)
+        assertFalse(handler.isKeepAliveHealthy(),
+                "Handler should be unhealthy when time since last keep-alive >= timeout");
+    }
+
+    /**
+     * Test that receiving keep-alive after being unhealthy restores health.
+     * Simulates recovery scenario where server comes back online.
+     */
+    @Test
+    void testKeepAliveHealthy_recoveryAfterTimeout() throws InterruptedException {
+        // Given: Handler with short timeout
+        // keepAliveInterval=10ms, failuresAllowed=1 -> timeout = 5020ms
+        final ConnectionOptions connectionOptions = new ConnectionOptions(120_000L,  // sessionTimeout
+                30_000L,   // requestTimeout
+                10L,       // keepAliveInterval: 10ms
+                1,         // keepAliveFailuresAllowed: 1
+                30_000L,   // connectionTimeout
+                30_000L,   // healthCheckInterval
+                30_000L,   // retryInterval
+                true,      // autoReconnect
+                true       // reconnectOnServiceFault
+        );
+        final OpcUaSpecificAdapterConfig config = createConfig(connectionOptions);
+        final OpcUaSubscriptionLifecycleHandler handler = createHandler(config);
+
+        // When: Wait for timeout to expire
+        Thread.sleep(5100);
+
+        // Then: Should be unhealthy
+        assertFalse(handler.isKeepAliveHealthy(), "Handler should be unhealthy after timeout");
+
+        // When: Keep-alive is received (server recovered)
+        final OpcUaSubscription mockSubscription = org.mockito.Mockito.mock(OpcUaSubscription.class);
+        when(mockSubscription.getSubscriptionId()).thenReturn(java.util.Optional.of(uint(99999)));
+        handler.onKeepAliveReceived(mockSubscription);
+
+        // Then: Should be healthy again
+        assertTrue(handler.isKeepAliveHealthy(), "Handler should recover to healthy after receiving keep-alive");
+    }
+
+    /**
+     * Test that concurrent calls to isKeepAliveHealthy and onKeepAliveReceived are thread-safe.
+     * The lastKeepAliveTimestamp field is volatile, ensuring visibility across threads.
+     */
+    @Test
+    void testKeepAliveHealthy_threadSafety() throws InterruptedException {
+        // Given: Handler with default configuration
+        final OpcUaSpecificAdapterConfig config = createConfig(ConnectionOptions.defaultConnectionOptions());
+        final OpcUaSubscriptionLifecycleHandler handler = createHandler(config);
+
+        final OpcUaSubscription mockSubscription = org.mockito.Mockito.mock(OpcUaSubscription.class);
+        when(mockSubscription.getSubscriptionId()).thenReturn(java.util.Optional.of(uint(12345)));
+
+        final java.util.concurrent.atomic.AtomicBoolean failed = new java.util.concurrent.atomic.AtomicBoolean(false);
+        final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(2);
+
+        // When: Multiple threads concurrently read and write
+        final Thread reader = new Thread(() -> {
+            try {
+                for (int i = 0; i < 1000; i++) {
+                    handler.isKeepAliveHealthy(); // Should not throw
+                }
+            } catch (final Exception e) {
+                failed.set(true);
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        final Thread writer = new Thread(() -> {
+            try {
+                for (int i = 0; i < 1000; i++) {
+                    handler.onKeepAliveReceived(mockSubscription);
+                }
+            } catch (final Exception e) {
+                failed.set(true);
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        reader.start();
+        writer.start();
+        assertTrue(latch.await(10, java.util.concurrent.TimeUnit.SECONDS));
+
+        // Then: No exceptions should have occurred
+        assertFalse(failed.get(), "Concurrent access should not cause exceptions");
+        assertTrue(handler.isKeepAliveHealthy(), "Handler should remain healthy after concurrent operations");
     }
 
     private OpcUaSubscriptionLifecycleHandler createHandler(final @NotNull OpcUaSpecificAdapterConfig config) {
