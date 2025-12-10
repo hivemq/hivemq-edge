@@ -103,7 +103,6 @@
     "immutable-json-patch": "6.0.2",
     "luxon": "3.3.0",
     "mermaid": "11.12.1",
-    "monaco-editor": "^0.54.0",
     "mqtt": "5.10.1",
     "mqtt-match": "3.0.0",
     "nyc": "17.1.0",
@@ -191,5 +190,8 @@
   "engines": {
     "node": "22",
     "pnpm": "10"
+  },
+  "overrides": {
+    "js-yaml": "4.1.1"
   }
 }
