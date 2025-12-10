@@ -63,6 +63,7 @@ public class MessageForwarderImpl implements MessageForwarder {
     public static final @NotNull String FORWARDER_PREFIX = "forwarder#";
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(MessageForwarderImpl.class);
+    public static final int RESET_INFLIGHT_COUNTERS_TIMEOUT_IN_SECONDS = 30;
 
     private final @NotNull LocalTopicTree topicTree;
     private final @NotNull HivemqId hivemqId;
@@ -200,7 +201,7 @@ public class MessageForwarderImpl implements MessageForwarder {
                 try {
                     // Wait for all inflight markers to be reset before returning
                     // This ensures onReconnect() will see clean queues when it triggers checkBuffers()
-                    Futures.allAsList(futuresBuilder.build()).get(30, TimeUnit.SECONDS);
+                    Futures.allAsList(futuresBuilder.build()).get(RESET_INFLIGHT_COUNTERS_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
                     if (log.isDebugEnabled()) {
                         log.debug("Reset all inflight markers for forwarder '{}', {} queue(s)",
                                 fwdId, forwarderQueueIds.size());
