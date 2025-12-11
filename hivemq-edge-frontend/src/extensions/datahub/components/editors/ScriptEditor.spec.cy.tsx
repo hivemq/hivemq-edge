@@ -439,7 +439,7 @@ describe('ScriptEditor', () => {
 
       cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
 
-      cy.get('#root_name').type('test-script')
+      cy.get('#root_name').type('test-script2')
       cy.contains('button', 'Save').click()
 
       // Save button should be disabled during save
@@ -481,8 +481,18 @@ describe('ScriptEditor', () => {
       cy.get('#root_description').should('have.value', '')
     })
 
-    it.only('should close drawer on successful save', () => {
+    it('should close drawer on successful save', () => {
       const onCloseSpy = cy.spy().as('onCloseSpy')
+
+      // IMPORTANT: Always intercept GET /api/v1/data-hub/scripts when testing create mode
+      // ScriptEditor calls this API to check for duplicate names during validation.
+      // Without this intercept, Cypress may return mock data that conflicts with test data,
+      // causing duplicate name validation errors and disabling the Save button.
+      // Return empty array to ensure test names are always unique.
+      cy.intercept('GET', '/api/v1/data-hub/scripts*', {
+        statusCode: 200,
+        body: { items: [] },
+      }).as('getScripts')
 
       cy.intercept('POST', '/api/v1/data-hub/scripts', {
         statusCode: 201,
@@ -497,7 +507,17 @@ describe('ScriptEditor', () => {
 
       cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={onCloseSpy} />)
 
+      // Wait for scripts to load
+      cy.wait('@getScripts')
+
+      // Wait for Monaco to load
+      cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+
       cy.get('#root_name').type('test-script')
+
+      // Wait for form to mark as dirty and Save button to be enabled
+      cy.getByTestId('save-script-button').should('not.be.disabled')
+
       cy.contains('button', 'Save').click()
 
       cy.wait('@createScript')
