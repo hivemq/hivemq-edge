@@ -200,6 +200,9 @@ importers:
       mermaid:
         specifier: 11.12.1
         version: 11.12.1
+      monaco-editor:
+        specifier: ^0.55.1
+        version: 0.55.1
       mqtt:
         specifier: 5.10.1
         version: 5.10.1
