@@ -98,6 +98,7 @@ public class OpcUaProtocolAdapterTest {
                 null,
                 new OpcUaToMqttConfig(1, 1000),
                 null,
+                null,
                 null);
 
         // Create a tag that maps to a node in the test server
@@ -156,6 +157,7 @@ public class OpcUaProtocolAdapterTest {
                 null,
                 null,
                 new OpcUaToMqttConfig(1, 1000),
+                null,
                 null,
                 null);
 
@@ -243,7 +245,8 @@ public class OpcUaProtocolAdapterTest {
                         // retry interval
                         "2000",
                         true,
-                        true));
+                        true),
+                null);
 
         final OpcuaTag tag =
                 new OpcuaTag("testTag", "Test tag", new OpcuaTagDefinition("ns=0;i=1234567890")); // Server/ServerStatus

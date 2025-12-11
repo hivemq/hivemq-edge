@@ -65,39 +65,42 @@ public class OpcUaToJsonConverter {
     private static final @NotNull Base64.Encoder BASE_64 = Base64.getEncoder();
 
     public static @NotNull ByteBuffer convertPayload(
-            final @NotNull EncodingContext serializationContext, final @NotNull DataValue dataValue) {
+            final @NotNull EncodingContext serializationContext,
+            final @NotNull DataValue dataValue) {
+        return convertPayload(serializationContext, dataValue, false);
+    }
+
+    public static @NotNull ByteBuffer convertPayload(
+            final @NotNull EncodingContext serializationContext,
+            final @NotNull DataValue dataValue,
+            final boolean includeMetadata) {
         final Object value = dataValue.getValue().getValue();
         if (value == null) {
             return ByteBuffer.wrap(EMPTY_BYTES);
         }
         final JsonObject jsonObject = new JsonObject();
-        if (value instanceof final DataValue v) {
-            if (v.getStatusCode().getValue() > 0) {
-                jsonObject.add("statusCode", convertStatusCode(v.getStatusCode()));
+
+        // Extract metadata from the outer DataValue when includeMetadata is enabled
+        if (includeMetadata) {
+            if (dataValue.getStatusCode() != null && dataValue.getStatusCode().getValue() > 0) {
+                jsonObject.add("statusCode", convertStatusCode(dataValue.getStatusCode()));
             }
-            if (v.getSourceTime() != null) {
-                jsonObject.add(
-                        "sourceTimestamp",
-                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(
-                                v.getSourceTime().getJavaInstant())));
+            if (dataValue.getSourceTime() != null) {
+                jsonObject.add("sourceTimestamp",
+                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(dataValue.getSourceTime().getJavaInstant())));
             }
-            if (v.getSourcePicoseconds() != null) {
-                jsonObject.add(
-                        "sourcePicoseconds",
-                        new JsonPrimitive(v.getSourcePicoseconds().intValue()));
+            if (dataValue.getSourcePicoseconds() != null) {
+                jsonObject.add("sourcePicoseconds", new JsonPrimitive(dataValue.getSourcePicoseconds().intValue()));
             }
-            if (v.getServerTime() != null) {
-                jsonObject.add(
-                        "serverTimestamp",
-                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(
-                                v.getServerTime().getJavaInstant())));
+            if (dataValue.getServerTime() != null) {
+                jsonObject.add("serverTimestamp",
+                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(dataValue.getServerTime().getJavaInstant())));
             }
-            if (v.getServerPicoseconds() != null) {
-                jsonObject.add(
-                        "serverPicoseconds",
-                        new JsonPrimitive(v.getServerPicoseconds().intValue()));
+            if (dataValue.getServerPicoseconds() != null) {
+                jsonObject.add("serverPicoseconds", new JsonPrimitive(dataValue.getServerPicoseconds().intValue()));
             }
         }
+
         jsonObject.add("value", convertValue(value, serializationContext));
         return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
     }

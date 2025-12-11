@@ -115,6 +115,58 @@ public class BuiltinJsonSchema {
         }
     }
 
+    /**
+     * Adds readonly metadata properties to the schema for OPC UA DataValue metadata.
+     * These properties are marked as readOnly and are not required.
+     */
+    static void addReadOnlyMetadataProperties(
+            final @NotNull ObjectNode propertiesNode,
+            final @NotNull ObjectMapper objectMapper) {
+        // sourceTimestamp - DateTime as ISO 8601 string
+        final ObjectNode sourceTimestamp = objectMapper.createObjectNode();
+        sourceTimestamp.put(TYPE, STRING_DATA_TYPE);
+        sourceTimestamp.put("format", DATETIME_DATA_TYPE);
+        sourceTimestamp.put("readOnly", true);
+        propertiesNode.set("sourceTimestamp", sourceTimestamp);
+
+        // serverTimestamp - DateTime as ISO 8601 string
+        final ObjectNode serverTimestamp = objectMapper.createObjectNode();
+        serverTimestamp.put(TYPE, STRING_DATA_TYPE);
+        serverTimestamp.put("format", DATETIME_DATA_TYPE);
+        serverTimestamp.put("readOnly", true);
+        propertiesNode.set("serverTimestamp", serverTimestamp);
+
+        // sourcePicoseconds - UShort (0-65535)
+        final ObjectNode sourcePicoseconds = objectMapper.createObjectNode();
+        sourcePicoseconds.put(TYPE, Constants.INTEGER_DATA_TYPE);
+        sourcePicoseconds.put(Constants.MINIMUM_KEY_WORD, 0);
+        sourcePicoseconds.put(Constants.MAXIMUM_KEY_WORD, 65535);
+        sourcePicoseconds.put("readOnly", true);
+        propertiesNode.set("sourcePicoseconds", sourcePicoseconds);
+
+        // serverPicoseconds - UShort (0-65535)
+        final ObjectNode serverPicoseconds = objectMapper.createObjectNode();
+        serverPicoseconds.put(TYPE, Constants.INTEGER_DATA_TYPE);
+        serverPicoseconds.put(Constants.MINIMUM_KEY_WORD, 0);
+        serverPicoseconds.put(Constants.MAXIMUM_KEY_WORD, 65535);
+        serverPicoseconds.put("readOnly", true);
+        propertiesNode.set("serverPicoseconds", serverPicoseconds);
+
+        // statusCode - object with code and symbol
+        final ObjectNode statusCode = objectMapper.createObjectNode();
+        statusCode.put(TYPE, OBJECT_DATA_TYPE);
+        statusCode.put("readOnly", true);
+        final ObjectNode statusCodeProps = objectMapper.createObjectNode();
+        final ObjectNode codeNode = objectMapper.createObjectNode();
+        codeNode.put(TYPE, Constants.INTEGER_DATA_TYPE);
+        statusCodeProps.set("code", codeNode);
+        final ObjectNode symbolNode = objectMapper.createObjectNode();
+        symbolNode.put(TYPE, STRING_DATA_TYPE);
+        statusCodeProps.set("symbol", symbolNode);
+        statusCode.set("properties", statusCodeProps);
+        propertiesNode.set("statusCode", statusCode);
+    }
+
     static void populatePropertiesForArray(
             final @NotNull ObjectNode propertiesNode,
             final @NotNull OpcUaDataType builtinDataType,
@@ -264,7 +316,15 @@ public class BuiltinJsonSchema {
     }
 
     static @NotNull JsonNode createJsonSchemaForArrayType(
-            final @NotNull OpcUaDataType builtinDataType, final @NotNull UInteger @NotNull [] dimensions) {
+            final @NotNull OpcUaDataType builtinDataType,
+            final @NotNull UInteger @NotNull [] dimensions) {
+        return createJsonSchemaForArrayType(builtinDataType, dimensions, false);
+    }
+
+    static @NotNull JsonNode createJsonSchemaForArrayType(
+            final @NotNull OpcUaDataType builtinDataType,
+            final @NotNull UInteger @NotNull [] dimensions,
+            final boolean includeMetadata) {
         final ObjectNode rootNode = MAPPER.createObjectNode();
         final ObjectNode propertiesNode = MAPPER.createObjectNode();
         final ObjectNode valueNode = MAPPER.createObjectNode();
@@ -276,6 +336,10 @@ public class BuiltinJsonSchema {
 
         populatePropertiesForArray(valueNode, builtinDataType, MAPPER, dimensions);
 
+        if (includeMetadata) {
+            addReadOnlyMetadataProperties(propertiesNode, MAPPER);
+        }
+
         final ArrayNode requiredAttributes = MAPPER.createArrayNode();
         requiredAttributes.add("value");
         rootNode.set("required", requiredAttributes);
@@ -283,6 +347,32 @@ public class BuiltinJsonSchema {
     }
 
     static @Nullable JsonNode createJsonSchemaForBuiltInType(final @NotNull OpcUaDataType builtinDataType) {
-        return BUILT_IN_TYPES.get(builtinDataType);
+        return createJsonSchemaForBuiltInType(builtinDataType, false);
+    }
+
+    static @Nullable JsonNode createJsonSchemaForBuiltInType(
+            final @NotNull OpcUaDataType builtinDataType,
+            final boolean includeMetadata) {
+        if (!includeMetadata) {
+            return BUILT_IN_TYPES.get(builtinDataType);
+        }
+        // Generate dynamically with metadata
+        final String title = builtinDataType.name() + " JsonSchema";
+        final ObjectNode rootNode = MAPPER.createObjectNode();
+        final ObjectNode propertiesNode = MAPPER.createObjectNode();
+        final ObjectNode valueNode = MAPPER.createObjectNode();
+        rootNode.set("$schema", new TextNode(SCHEMA_URI));
+        rootNode.set("title", new TextNode(title));
+        rootNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
+        rootNode.set("properties", propertiesNode);
+        propertiesNode.set("value", valueNode);
+
+        populatePropertiesForBuiltinType(valueNode, builtinDataType, MAPPER);
+        addReadOnlyMetadataProperties(propertiesNode, MAPPER);
+
+        final ArrayNode requiredAttributes = MAPPER.createArrayNode();
+        requiredAttributes.add("value");
+        rootNode.set("required", requiredAttributes);
+        return rootNode;
     }
 }

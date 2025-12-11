@@ -125,18 +125,6 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         return Optional.empty();
     }
 
-    private static @NotNull String extractPayload(final @NotNull OpcUaClient client, final @NotNull DataValue value)
-            throws UaException {
-        if (value.getValue().getValue() == null) {
-            return "";
-        }
-
-        final ByteBuffer byteBuffer = OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(), value);
-        final byte[] buffer = new byte[byteBuffer.remaining()];
-        byteBuffer.get(buffer);
-        return new String(buffer, StandardCharsets.UTF_8);
-    }
-
     /**
      * Subscribes to the OPC UA client.
      * If a subscription ID is provided, it attempts to transfer the subscription.
@@ -333,5 +321,19 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private @NotNull String extractPayload(final @NotNull OpcUaClient client, final @NotNull DataValue value)
+            throws UaException {
+        if (value.getValue().getValue() == null) {
+            return "";
+        }
+
+        final ByteBuffer byteBuffer = OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(),
+                value,
+                config.isIncludeMetadata());
+        final byte[] buffer = new byte[byteBuffer.remaining()];
+        byteBuffer.get(buffer);
+        return new String(buffer, StandardCharsets.UTF_8);
     }
 }

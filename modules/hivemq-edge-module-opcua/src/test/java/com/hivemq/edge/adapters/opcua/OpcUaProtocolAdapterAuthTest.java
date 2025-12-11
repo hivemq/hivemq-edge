@@ -100,6 +100,7 @@ class OpcUaProtocolAdapterAuthTest {
                 null,
                 new OpcUaToMqttConfig(1, 1000),
                 null,
+                null,
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
@@ -123,7 +124,15 @@ class OpcUaProtocolAdapterAuthTest {
     public void whenBasicAuthAndNoSubscriptions_thenConnectSuccessfully() {
         final Auth auth = new Auth(new BasicAuth("testuser", "testpass"), null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
-                opcUaServerExtension.getServerUri(), false, null, auth, null, null, null, null);
+                opcUaServerExtension.getServerUri(),
+                false,
+                null,
+                auth,
+                null,
+                null,
+                null,
+                null,
+                null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
 
@@ -144,7 +153,15 @@ class OpcUaProtocolAdapterAuthTest {
         final Security security = new Security(SecPolicy.NONE);
         final Tls tls = new Tls(true, TlsChecks.NONE, null, null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
-                opcUaServerExtension.getServerUri(), false, null, null, tls, null, security, null);
+                opcUaServerExtension.getServerUri(),
+                false,
+                null,
+                null,
+                tls,
+                null,
+                security,
+                null,
+                null);
         when(protocolAdapterInput.getConfig()).thenReturn(config);
 
         final OpcUaProtocolAdapter protocolAdapter =
@@ -169,7 +186,15 @@ class OpcUaProtocolAdapterAuthTest {
         final Tls tls =
                 new Tls(true, TlsChecks.NONE, new Keystore(keystore.getAbsolutePath(), "password", "password"), null);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
-                opcUaServerExtension.getServerUri(), false, null, auth, tls, null, null, null);
+                opcUaServerExtension.getServerUri(),
+                false,
+                null,
+                auth,
+                tls,
+                null,
+                null,
+                null,
+                null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
 
