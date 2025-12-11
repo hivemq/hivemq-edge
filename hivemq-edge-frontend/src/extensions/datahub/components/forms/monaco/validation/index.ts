@@ -7,3 +7,5 @@ export {
 } from './javascriptValidator'
 
 export { useJavaScriptValidation } from './useJavaScriptValidation'
+
+export { validateJavaScriptSync, validateJavaScriptWithTypes } from './tsValidator'
