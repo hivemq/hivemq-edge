@@ -10,6 +10,9 @@ import { validateJavaScript, type ValidationResult } from './javascriptValidator
  *
  * @returns Object with validate function and Monaco ready state
  *
+ * @deprecated Not in use anymore, use validateJavaScriptSync instead.
+ * @see validateJavaScriptSync
+ *
  * @example
  * ```typescript
  * const { validate, isReady } = useJavaScriptValidation()

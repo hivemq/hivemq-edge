@@ -27,6 +27,9 @@ export interface ValidationError {
  * @param uri - Optional URI for the temporary model (default: inmemory://model/validation.js)
  * @returns Promise with validation results
  *
+ * @deprecated Not in use anymore, use validateJavaScriptSync instead.
+ * @see validateJavaScriptSync
+ *
  * @example
  * ```typescript
  * const result = await validateJavaScript(monaco, 'function test() { return true; }')
