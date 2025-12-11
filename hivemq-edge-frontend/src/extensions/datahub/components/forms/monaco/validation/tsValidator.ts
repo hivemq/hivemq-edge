@@ -1,4 +1,8 @@
+import i18n from '@/config/i18n.config.ts'
 import ts from 'typescript'
+import debug from 'debug'
+
+const debugLogger = debug('DataHub:validation:js')
 
 /**
  * Synchronously validate JavaScript code using TypeScript compiler
@@ -60,14 +64,14 @@ export const validateJavaScriptSync = (code: string): string | null => {
 
       // Format error message (same format as Monaco)
       const message = ts.flattenDiagnosticMessageText(firstError.messageText, '\n')
-      return `Line ${line}, Column ${column}: ${message}`
+      return i18n.t('error.validation.script.errorAtLine', { ns: 'datahub', line, column, message })
     }
 
     return null
   } catch (error) {
     // Catch any unexpected errors during validation
-    console.error('TypeScript validation error:', error)
-    return 'Validation error: Unable to parse code'
+    debugLogger('TypeScript validation error:', error)
+    return i18n.t('error.validation.script.parsing', { ns: 'datahub' })
   }
 }
 

@@ -480,7 +480,9 @@
         }
       },
       "script": {
-        "duplicate": "A script with the name \"{{name}}\" already exists"
+        "duplicate": "A script with the name \"{{name}}\" already exists",
+        "parsing": "Validation error: Unable to parse the code",
+        "errorAtLine": "Line {{ line }}, column {{ column }}: {{ message }}"
       },
       "protobuf": {
         "template": "// NOTICE: once encoded into a Base64 descriptor, the PROTOBUF code cannot be extracted again.\n// Use your own documents to retrieve the source.",
