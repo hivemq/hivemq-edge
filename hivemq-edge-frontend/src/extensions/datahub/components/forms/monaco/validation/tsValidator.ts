@@ -129,6 +129,8 @@ export const validateJavaScriptWithTypes = (code: string): string | null => {
 
     if (adjustedLine > 0) {
       return error.replace(/^Line \d+,/, `Line ${adjustedLine},`)
+    } else {
+      return null
     }
   }
 

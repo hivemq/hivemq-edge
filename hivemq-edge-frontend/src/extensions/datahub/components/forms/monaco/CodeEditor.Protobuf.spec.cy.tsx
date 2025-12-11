@@ -205,7 +205,7 @@ message Person {
       const monaco = win.monaco as Monaco
 
       // Get language configuration for proto
-      const languages: languages.ILanguageExtensionPoint[] = monaco.languages.getLanguages() //
+      const languages: languages.ILanguageExtensionPoint[] = monaco.languages.getLanguages()
       const protoLang = languages.find((lang) => lang.id === 'proto')
 
       if (protoLang) {

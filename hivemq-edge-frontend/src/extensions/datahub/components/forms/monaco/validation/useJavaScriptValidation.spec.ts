@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useJavaScriptValidation } from './useJavaScriptValidation'
 import * as monacoReact from '@monaco-editor/react'
