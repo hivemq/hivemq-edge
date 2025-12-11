@@ -28,6 +28,7 @@ import { MOCK_FUNCTION_SCHEMA } from '@datahub/designer/script/FunctionData.ts'
 import { ResourceWorkingVersion } from '@datahub/types.ts'
 import type { FunctionData } from '@datahub/types.ts'
 import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
+import { validateJavaScriptSync } from '@datahub/components/forms/monaco/validation'
 
 const MOCK_JAVASCRIPT_SOURCE = `function transform(publish, context) {
     // Your transformation logic here
@@ -118,15 +119,12 @@ export const ScriptEditor: FC<ScriptEditorProps> = ({ isOpen, onClose, script })
         }
       }
 
-      // Validate JavaScript syntax using browser's Function constructor
+      // Validate JavaScript syntax using TypeScript Compiler API (synchronous, safe)
       if (sourceCode) {
-        // TODO[NVL] THis is prone to code injection attacks - we need to utilise Monaco's built-in syntax checking instead
-        // try {
-        //   // Try to parse the JavaScript code - Function constructor will throw SyntaxError if invalid
-        //   new Function(sourceCode)
-        // } catch (e) {
-        //   errors.sourceCode?.addError((e as SyntaxError).message)
-        // }
+        const jsError = validateJavaScriptSync(sourceCode)
+        if (jsError) {
+          errors.sourceCode?.addError(jsError)
+        }
       }
 
       return errors
