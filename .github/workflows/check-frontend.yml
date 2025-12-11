@@ -68,7 +68,8 @@ jobs:
           working-directory: ./hivemq-edge-frontend/
 
       - name: 🏗️ Build Application with Coverage
-        run: pnpm run build --base=/
+        ## Increased memory due to TypeScript compiler adding ~1.3MB to bundle size
+        run: NODE_OPTIONS="--max_old_space_size=4096" pnpm run build --base=/
         env:
           VITE_COVERAGE: true
 
