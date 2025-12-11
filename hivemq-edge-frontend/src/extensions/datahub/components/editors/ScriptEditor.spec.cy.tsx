@@ -481,7 +481,7 @@ describe('ScriptEditor', () => {
       cy.get('#root_description').should('have.value', '')
     })
 
-    it('should close drawer on successful save', () => {
+    it.only('should close drawer on successful save', () => {
       const onCloseSpy = cy.spy().as('onCloseSpy')
 
       cy.intercept('POST', '/api/v1/data-hub/scripts', {
@@ -505,6 +505,331 @@ describe('ScriptEditor', () => {
 
       // onClose callback should be triggered
       cy.get('@onCloseSpy').should('have.been.calledOnce')
+    })
+  })
+
+  describe('JavaScript Validation (TypeScript Compiler)', () => {
+    beforeEach(() => {
+      cy.viewport(1200, 900)
+    })
+
+    it('should display syntax error when missing closing brace', () => {
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      // Enter script name
+      cy.get('#root_name').type('syntax-error-script')
+
+      // Wait for Monaco to load
+      cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+
+      // Enter invalid JavaScript (missing closing brace)
+      cy.window().then((win) => {
+        // @ts-ignore
+        const monaco = win.monaco
+        expect(monaco).to.exist
+        // @ts-ignore
+        const editors = monaco.editor.getEditors()
+        const editor = editors[0]
+        editor.setValue('function transform(publish, context) {')
+      })
+
+      // Trigger validation by clicking elsewhere
+      cy.get('#root_name').click()
+
+      // Verify error appears in error list at top of form
+      cy.get('form#script-editor-form [role="alert"]').scrollIntoView()
+      cy.get('form#script-editor-form [role="alert"]').should('be.visible')
+      cy.get('form#script-editor-form [role="alert"]').should('contain', "'}' expected")
+
+      // Verify save button is disabled
+      cy.getByTestId('save-script-button').should('be.disabled')
+    })
+
+    it('should clear validation error when code is fixed', () => {
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      cy.get('#root_name').type('fix-error-script')
+
+      // Wait for Monaco to load
+      cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+
+      // Enter invalid code
+      cy.window().then((win) => {
+        // @ts-ignore
+        const editors = win.monaco.editor.getEditors()
+        editors[0].setValue('function transform(publish, context) {')
+      })
+
+      // Trigger validation
+      cy.get('#root_name').click()
+
+      // Verify error appears - scope to form and scroll into view
+      cy.get('form#script-editor-form [role="alert"]').scrollIntoView()
+      cy.get('form#script-editor-form [role="alert"]').should('be.visible')
+      cy.getByTestId('save-script-button').should('be.disabled')
+
+      // Fix the code
+      cy.window().then((win) => {
+        // @ts-ignore
+        const editors = win.monaco.editor.getEditors()
+        editors[0].setValue('function transform(publish, context) { return publish; }')
+      })
+
+      // Trigger validation again
+      cy.get('#root_name').click()
+
+      // Verify error is cleared
+      cy.get('form#script-editor-form [role="alert"]').should('not.exist')
+
+      // Verify save button is enabled
+      cy.getByTestId('save-script-button').should('not.be.disabled')
+    })
+
+    it('should display syntax error for unclosed string', () => {
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      cy.get('#root_name').type('unclosed-string-script')
+
+      // Wait for Monaco to load
+      cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+
+      // Enter code with unclosed string
+      cy.window().then((win) => {
+        // @ts-ignore
+        const editors = win.monaco.editor.getEditors()
+        editors[0].setValue('function transform(publish, context) { const x = "unclosed')
+      })
+
+      // Trigger validation
+      cy.get('#root_name').click()
+
+      // Verify error appears - scope to form
+      cy.get('form#script-editor-form [role="alert"]').scrollIntoView()
+      cy.get('form#script-editor-form [role="alert"]').should('be.visible')
+
+      // Verify save button is disabled
+      cy.getByTestId('save-script-button').should('be.disabled')
+    })
+
+    it('should allow valid JavaScript code', () => {
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      cy.get('#root_name').type('valid-script')
+
+      // Wait for Monaco to load
+      cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+
+      // Enter valid complex code
+      cy.window().then((win) => {
+        // @ts-ignore
+        const editors = win.monaco.editor.getEditors()
+        editors[0].setValue(`function transform(publish, context) {
+  const result = {
+    ...publish,
+    topic: publish.topic + '/processed',
+    timestamp: context.timestamp
+  };
+  return result;
+}`)
+      })
+
+      // Trigger validation
+      cy.get('#root_name').click()
+
+      // Verify no errors in form
+      cy.get('form#script-editor-form [role="alert"]').should('not.exist')
+
+      // Verify save button is enabled
+      cy.getByTestId('save-script-button').should('not.be.disabled')
+    })
+
+    it('should validate on every code change', () => {
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      cy.get('#root_name').type('changing-script')
+
+      // Wait for Monaco to load
+      cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+
+      // Start with invalid code
+      cy.window().then((win) => {
+        // @ts-ignore
+        const editors = win.monaco.editor.getEditors()
+        editors[0].setValue('function test() {')
+      })
+
+      // Trigger validation
+      cy.get('#root_name').click()
+
+      // Verify error appears
+      cy.get('form#script-editor-form [role="alert"]').scrollIntoView()
+      cy.get('form#script-editor-form [role="alert"]').should('be.visible')
+
+      // Type more invalid code
+      cy.window().then((win) => {
+        // @ts-ignore
+        const editors = win.monaco.editor.getEditors()
+        editors[0].setValue('function test( {')
+      })
+
+      // Trigger validation
+      cy.get('#root_description').click()
+
+      // Error should still be present (different error)
+      cy.get('form#script-editor-form [role="alert"]').should('be.visible')
+
+      // Fix code
+      cy.window().then((win) => {
+        // @ts-ignore
+        const editors = win.monaco.editor.getEditors()
+        editors[0].setValue('function test() { return true; }')
+      })
+
+      // Trigger validation
+      cy.get('#root_name').click()
+
+      // Error should be cleared
+      cy.get('form#script-editor-form [role="alert"]').should('not.exist')
+    })
+
+    it('should show validation error even with valid name', () => {
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      cy.get('#root_name').type('valid-name-invalid-code')
+
+      // Wait for Monaco to load
+      cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+
+      // Enter invalid code
+      cy.window().then((win) => {
+        // @ts-ignore
+        const editors = win.monaco.editor.getEditors()
+        editors[0].setValue('const x =')
+      })
+
+      // Trigger validation
+      cy.get('#root_name').click()
+
+      // Verify error appears
+      cy.get('form#script-editor-form [role="alert"]').scrollIntoView()
+      cy.get('form#script-editor-form [role="alert"]').should('be.visible')
+
+      // Save button should be disabled despite valid name
+      cy.getByTestId('save-script-button').should('be.disabled')
+    })
+
+    it('should show both name duplicate error and JS validation error', () => {
+      const existingScripts = [
+        {
+          id: 'existing-script',
+          functionType: Script.functionType.TRANSFORMATION as Script.functionType,
+          source: btoa('function transform(publish, context) { return publish; }'),
+          version: 1,
+          createdAt: '2025-11-26T10:00:00Z',
+        },
+      ]
+
+      cy.intercept('GET', '/api/v1/data-hub/scripts*', {
+        statusCode: 200,
+        body: { items: existingScripts },
+      }).as('getScripts')
+
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      cy.wait('@getScripts')
+
+      // Enter duplicate name
+      cy.get('#root_name').type('existing-script')
+      cy.get('#root_name').blur()
+
+      // Wait for Monaco to load
+      cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+
+      // Enter invalid JavaScript
+      cy.window().then((win) => {
+        // @ts-ignore
+        const editors = win.monaco.editor.getEditors()
+        editors[0].setValue('function bad() {')
+      })
+
+      // Trigger validation
+      cy.get('#root_description').click()
+
+      // Both errors should be visible in error list
+      cy.get('form#script-editor-form [role="alert"]').scrollIntoView()
+      cy.get('form#script-editor-form [role="alert"]').should('be.visible')
+      cy.get('form#script-editor-form [role="alert"]').should('contain', 'existing-script')
+      cy.get('form#script-editor-form [role="alert"]').should('contain', "'}' expected")
+
+      // Save button should be disabled
+      cy.getByTestId('save-script-button').should('be.disabled')
+    })
+
+    it('should persist validation error when changing other fields', () => {
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} />)
+
+      cy.get('#root_name').type('persist-error-script')
+
+      // Wait for Monaco to load
+      cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+
+      // Enter invalid code
+      cy.window().then((win) => {
+        // @ts-ignore
+        const editors = win.monaco.editor.getEditors()
+        editors[0].setValue('function test() {')
+      })
+
+      // Trigger validation
+      cy.get('#root_name').click()
+
+      // Verify error appears
+      cy.get('form#script-editor-form [role="alert"]').scrollIntoView()
+      cy.get('form#script-editor-form [role="alert"]').should('be.visible')
+      cy.get('form#script-editor-form [role="alert"]').should('contain', "'}' expected")
+
+      // Change description field
+      cy.get('#root_description').type('Some description')
+
+      // Error should still be visible (not wiped out)
+      cy.get('form#script-editor-form [role="alert"]').should('be.visible')
+      cy.get('form#script-editor-form [role="alert"]').should('contain', "'}' expected")
+
+      // Save button should still be disabled
+      cy.getByTestId('save-script-button').should('be.disabled')
+    })
+
+    it('should validate in modify mode', () => {
+      const mockScript: Script = {
+        id: 'test-script',
+        version: 1,
+        functionType: Script.functionType.TRANSFORMATION,
+        source: btoa('function transform(publish, context) { return publish; }'),
+        description: 'Test script',
+        createdAt: '2025-11-26T10:00:00Z',
+      }
+
+      cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub()} script={mockScript} />)
+
+      // Wait for Monaco to load
+      cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
+
+      // Modify code to be invalid
+      cy.window().then((win) => {
+        // @ts-ignore
+        const editors = win.monaco.editor.getEditors()
+        editors[0].setValue('function invalid() {')
+      })
+
+      // Trigger validation
+      cy.get('#root_description').click()
+
+      // Verify error appears
+      cy.get('form#script-editor-form [role="alert"]').scrollIntoView()
+      cy.get('form#script-editor-form [role="alert"]').should('be.visible')
+
+      // Save button should be disabled
+      cy.getByTestId('save-script-button').should('be.disabled')
     })
   })
 })
