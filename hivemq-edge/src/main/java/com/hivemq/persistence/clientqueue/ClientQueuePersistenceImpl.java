@@ -401,6 +401,17 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
 
     @NotNull
     @Override
+    public ListenableFuture<Void> removeAllInFlightMarkers(final @NotNull String sharedSubscription) {
+        return singleWriter.submit(sharedSubscription, (bucketIndex) -> {
+            localPersistence.removeAllInFlightMarkers(sharedSubscription, bucketIndex);
+            // We notify the clients that there are new messages to poll.
+            sharedPublishAvailable(sharedSubscription);
+            return null;
+        });
+    }
+
+    @NotNull
+    @Override
     public ListenableFuture<Void> removeAllQos0Messages(final @NotNull String queueId, final boolean shared) {
         return singleWriter.submit(queueId, (bucketIndex) -> {
             localPersistence.removeAllQos0Messages(queueId, shared, bucketIndex);
