@@ -60,6 +60,7 @@ class OpcUaEndpointFilterTest {
                 new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
                 null,
                 null,
+                null,
                 null);
 
         final String configUri = convertToUri(BASIC256SHA256);
@@ -77,7 +78,7 @@ class OpcUaEndpointFilterTest {
     @Test
     public void whenSingleEndpointConfigSetAndNoKeystorePresent_thenPickNoEndpoint() {
         final OpcUaSpecificAdapterConfig config =
-                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null, null);
+                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null, null, null);
 
         final String configUri = convertToUri(BASIC256SHA256);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", configUri, null, config);
@@ -91,7 +92,7 @@ class OpcUaEndpointFilterTest {
     public void whenSingleEndpointConfigSetAndNotAvailOnServer_thenPickNoEndpoint() {
         final String configUri = convertToUri(BASIC256SHA256);
         final OpcUaSpecificAdapterConfig config =
-                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null, null);
+                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null, null, null);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", configUri, null, config);
 
         final Optional<EndpointDescription> result =
@@ -103,7 +104,7 @@ class OpcUaEndpointFilterTest {
     @Test
     public void whenDefaultEndpointConfigSet_thenPickMatchingEndpoint() {
         final OpcUaSpecificAdapterConfig config =
-                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null, null);
+                new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null, null, null);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", convertToUri(
                 DEFAULT_SECURITY_POLICY), null, config);
 
@@ -124,6 +125,7 @@ class OpcUaEndpointFilterTest {
                 null,
                 null,
                 new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
+                null,
                 null,
                 null,
                 null);
@@ -170,6 +172,7 @@ class OpcUaEndpointFilterTest {
                 new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
                 null,
                 null,
+                null,
                 null);
 
         final String policyUri = convertToUri(BASIC256SHA256);
@@ -201,6 +204,7 @@ class OpcUaEndpointFilterTest {
                 null,
                 null,
                 new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
+                null,
                 null,
                 null,
                 null);

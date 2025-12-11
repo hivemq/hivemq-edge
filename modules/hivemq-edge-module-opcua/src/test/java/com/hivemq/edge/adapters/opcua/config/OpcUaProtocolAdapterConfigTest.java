@@ -183,6 +183,7 @@ class OpcUaProtocolAdapterConfigTest {
                         new Truststore("my/truststore/path", "truststore-password")),
                 new OpcUaToMqttConfig(1, 1000),
                 new Security(BASIC128RSA15),
+                null,
                 null
         );
 
@@ -226,6 +227,7 @@ class OpcUaProtocolAdapterConfigTest {
                 null,
                 null,
                 new OpcUaToMqttConfig(1, 1000),
+                null,
                 null,
                 null
         );
