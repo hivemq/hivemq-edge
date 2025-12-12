@@ -41,7 +41,8 @@ export class DataHubScriptsService {
                 'cursor': cursor,
             },
             errors: {
-                503: `Temporary not available`,
+                400: `URL parameter missing`,
+                503: `Request resource temporary unavailable`,
             },
         });
     }
@@ -67,11 +68,11 @@ export class DataHubScriptsService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Script is invalid`,
+                400: `Script creation failed`,
                 409: `Script is already present`,
                 412: `Script doesn't match etag`,
                 500: `Internal server error`,
-                503: `Temporary not available`,
+                503: `Request resource temporary unavailable`,
                 507: `Insufficient storage`,
             },
         });
@@ -99,11 +100,11 @@ export class DataHubScriptsService {
                 'If-Match': ifMatch,
             },
             errors: {
-                400: `Script is referenced`,
+                400: `URL parameter missing`,
                 404: `Script not found`,
                 412: `Script doesn't match etag`,
                 500: `Internal Server error`,
-                503: `Temporary not available`,
+                503: `Request resource temporary unavailable`,
             },
         });
     }
@@ -133,7 +134,7 @@ export class DataHubScriptsService {
                 400: `URL parameter missing`,
                 404: `Script not found`,
                 500: `Internal Server error`,
-                503: `Temporary not available`,
+                503: `Request resource temporary unavailable`,
             },
         });
     }

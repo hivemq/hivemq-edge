@@ -78,5 +78,9 @@ describe('NodePropertyDrawer', () => {
         'color-contrast': { enabled: false },
       },
     })
+
+    // check the panel control
+    cy.getByTestId('metrics-toggle').should('be.visible')
+    cy.getByTestId('overview-event-log').should('contain.text', 'The 5 most recent events for adapter my-adapter')
   })
 })

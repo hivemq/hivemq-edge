@@ -19,11 +19,11 @@ export type FunctionSpecs = {
      */
     metadata: FunctionMetadata;
     /**
-     * the full JSON-Schema describimng the function and its arguments
+     * the full JSON-Schema describing the function and its arguments
      */
     schema: JsonNode;
     /**
-     * An optional UI Schema to customise the rendering of the configuraton form
+     * An optional UI Schema to customise the rendering of the configuration form
      */
     uiSchema?: JsonNode;
 };

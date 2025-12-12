@@ -53,10 +53,10 @@ describe('useGetSunburstData', () => {
 
   it('should return empty state when no topics or tags are available', async () => {
     server.use(
-      http.get('*/management/protocol-adapters/northboundMappings', () => {
+      http.get('*/management/protocol-adapters/mappings/northboundMappings', () => {
         return HttpResponse.json({ items: [] }, { status: 200 })
       }),
-      http.get('*/management/protocol-adapters/southboundMappings', () => {
+      http.get('*/management/protocol-adapters/mappings/southboundMappings', () => {
         return HttpResponse.json({ items: [] }, { status: 200 })
       }),
       http.get('*/management/domain-tags', () => {
@@ -84,10 +84,10 @@ describe('useGetSunburstData', () => {
 
   it('should handle empty edgeTopics array', async () => {
     server.use(
-      http.get('*/management/protocol-adapters/northboundMappings', () => {
+      http.get('*/management/protocol-adapters/mappings/northboundMappings', () => {
         return HttpResponse.json({ items: [] }, { status: 200 })
       }),
-      http.get('*/management/protocol-adapters/southboundMappings', () => {
+      http.get('*/management/protocol-adapters/mappings/southboundMappings', () => {
         return HttpResponse.json({ items: [] }, { status: 200 })
       }),
       http.get('*/management/domain-tags', () => {

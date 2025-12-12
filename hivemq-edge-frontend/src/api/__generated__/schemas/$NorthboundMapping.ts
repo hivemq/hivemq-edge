@@ -21,9 +21,6 @@ export const $NorthboundMapping = {
             description: `The message expiry interval.`,
             format: 'int64',
         },
-        messageHandlingOptions: {
-            type: 'Enum',
-        },
         tagName: {
             type: 'string',
             description: `The tag for which values hould be collected and sent out.`,
