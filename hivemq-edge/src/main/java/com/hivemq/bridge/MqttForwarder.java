@@ -34,10 +34,39 @@ public interface MqttForwarder {
 
     void drainQueue();
 
+    /**
+     * Sends any messages that were buffered in-memory while the remote broker was disconnected.
+     * Unlike {@link #drainQueue()}, this does NOT reset inflight markers in persistence -
+     * it only sends messages that are already in the local queue buffer.
+     * <p>
+     * This should be called on initial connection when messages may have been buffered
+     * while waiting for the remote broker to become available.
+     */
+    void flushBufferedMessages();
+
     void setAfterForwardCallback(@NotNull MqttForwarder.AfterForwardCallback callback);
 
     void setResetInflightMarkerCallback(@NotNull MqttForwarder.ResetInflightMarkerCallback callback);
 
+    void setResetAllInflightMarkersCallback(@NotNull MqttForwarder.ResetAllInflightMarkersCallback callback);
+
+    void setOnReconnectCallback(@NotNull MqttForwarder.OnReconnectCallback callback);
+
+    /**
+     * Called after the remote client reconnects. This triggers the reconnect callback
+     * which should poll from the persistence queue for any messages that need to be retried.
+     */
+    void onReconnect();
+
+    /**
+     * Forces a reconnection by disconnecting the underlying MQTT client.
+     * The auto-reconnect logic will then establish a new connection.
+     * <p>
+     * This is used to recover from timeout situations where inflight markers
+     * could not be reset within the expected time. Forcing a reconnection
+     * triggers a new {@link #drainQueue()} cycle which will retry the marker reset.
+     */
+    void forceReconnect();
 
     void setExecutorService(@NotNull ExecutorService executorService);
 
@@ -53,5 +82,15 @@ public interface MqttForwarder {
     @FunctionalInterface
     interface ResetInflightMarkerCallback {
         void afterMessage(@NotNull String sharedSubscription, @NotNull String uniqueId);
+    }
+
+    @FunctionalInterface
+    interface ResetAllInflightMarkersCallback {
+        void resetAll(@NotNull String sharedSubscription);
+    }
+
+    @FunctionalInterface
+    interface OnReconnectCallback {
+        void onReconnect();
     }
 }

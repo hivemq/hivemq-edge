@@ -100,6 +100,7 @@ public class BridgeMqttClient {
     private final @NotNull AtomicReference<SettableFuture<Void>> startFutureRef;
     private final @NotNull AtomicReference<SettableFuture<Void>> stopFutureRef;
     private final @NotNull AtomicBoolean stopped;
+    private final @NotNull AtomicBoolean everConnected;
     private final @NotNull List<MqttForwarder> forwarders;
 
     public BridgeMqttClient(
@@ -119,6 +120,7 @@ public class BridgeMqttClient {
         this.perBridgeMetrics = new PerBridgeMetrics(bridge.getId(), metricRegistry);
         this.connected = new AtomicBoolean();
         this.stopped = new AtomicBoolean();
+        this.everConnected = new AtomicBoolean();
         this.forwarders = Collections.synchronizedList(new ArrayList<>());
         this.executorService = MoreExecutors.newDirectExecutorService();
         this.operationState = new AtomicReference<>(OperationState.IDLE);
@@ -175,11 +177,8 @@ public class BridgeMqttClient {
                             log.debug("Bridge '{}' MQTT connection established in {} μs", bridge.getId(), connectMicros);
                         }
 
-                        final int forwarderCount = forwarders.size();
-                        if (forwarderCount > 0 && log.isDebugEnabled()) {
-                            log.debug("Draining queues for {} forwarder(s) on bridge '{}'", forwarderCount, bridge.getId());
-                        }
-                        forwarders.forEach(MqttForwarder::drainQueue);
+                        // Note: drainQueue() and onReconnect() are handled by addConnectedListener
+                        // which correctly distinguishes between initial connections and reconnections.
 
                         final ImmutableList.Builder<@NotNull CompletableFuture<Mqtt5SubAck>> subFutures =
                                 new ImmutableList.Builder<>();
@@ -400,13 +399,31 @@ public class BridgeMqttClient {
             }
             log.info("Bridge '{}' connected to {}:{}", bridge.getId(), bridge.getHost(), bridge.getPort());
             connected.set(true);
+
+            // Check if this is a reconnection (not the initial connection)
+            // On initial connection, we only flush buffered messages without resetting persistence state.
+            // On reconnection, we need to drain all stale state and re-poll from persistence.
+            final boolean isReconnection = !everConnected.compareAndSet(false, true);
+
             final int forwarderCount = forwarders.size();
             if (forwarderCount > 0) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Draining queues for {} forwarder(s) after reconnection on bridge '{}'",
-                            forwarderCount, bridge.getId());
+                if (isReconnection) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Draining queues for {} forwarder(s) after reconnection on bridge '{}'",
+                                forwarderCount, bridge.getId());
+                    }
+                    forwarders.forEach(MqttForwarder::drainQueue);
+                    // Trigger checkBuffers() to poll from persistence queue for messages that need retrying
+                    forwarders.forEach(MqttForwarder::onReconnect);
+                } else {
+                    // Initial connection: send any messages that were buffered while waiting for remote
+                    // but do NOT reset persistence inflight markers (to avoid duplicate delivery on restart)
+                    if (log.isDebugEnabled()) {
+                        log.debug("Flushing buffered messages for {} forwarder(s) on initial connection to bridge '{}'",
+                                forwarderCount, bridge.getId());
+                    }
+                    forwarders.forEach(MqttForwarder::flushBufferedMessages);
                 }
-                forwarders.forEach(MqttForwarder::drainQueue);
             }
             eventBuilder(Event.SEVERITY.INFO).withMessage("Bridge '" + bridge.getId() + "' connected").fire();
         });

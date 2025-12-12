@@ -5128,6 +5128,7 @@ components:
           format: uri
       required:
         - title
+        - type
     PaginationCursor:
       type: object
       description: Links for pagination

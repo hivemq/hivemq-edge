@@ -774,6 +774,29 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @ExecuteInSingleWriter
+    public void removeAllInFlightMarkers(final @NotNull String queueId, final int bucketIndex) {
+        checkNotNull(queueId, "QueueId must not be null");
+        ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
+
+        final Map<String, Messages> bucket = sharedBuckets[bucketIndex];
+        final Messages messages = bucket.get(queueId);
+        if (messages == null) {
+            return;
+        }
+
+        for (final MessageWithID messageWithID : messages.qos1Or2Messages) {
+            if (messageWithID instanceof PublishWithRetained) {
+                final PublishWithRetained publish = (PublishWithRetained) messageWithID;
+                publish.setPacketIdentifier(NO_PACKET_ID);
+            }
+        }
+    }
+
     @Override
     @ExecuteInSingleWriter
     public void closeDB(final int bucketIndex) {
