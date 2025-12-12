@@ -245,4 +245,13 @@ public interface ClientQueueLocalPersistence extends LocalPersistence {
      * @param bucketIndex provided by the single writer
      */
     void removeInFlightMarker(@NotNull String queueId, @NotNull String uniqueId, int bucketIndex);
+
+    /**
+     * Remove all in-flight markers for a queue.
+     * This is called when a bridge reconnects to reset the state and allow messages to be re-delivered.
+     *
+     * @param queueId     for which all markers should be removed
+     * @param bucketIndex provided by the single writer
+     */
+    void removeAllInFlightMarkers(@NotNull String queueId, int bucketIndex);
 }
