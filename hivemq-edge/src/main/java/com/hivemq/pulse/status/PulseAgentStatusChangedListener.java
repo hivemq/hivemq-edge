@@ -17,7 +17,6 @@
 package com.hivemq.pulse.status;
 
 import com.hivemq.api.model.capabilities.Capability;
-import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,14 +27,10 @@ public class PulseAgentStatusChangedListener implements StatusProvider.StatusCha
             "HiveMQ Pulse Agent Asset Management",
             "This enables HiveMQ Edge to be a HiveMQ Pulse Agent.");
     private final @NotNull HiveMQCapabilityService capabilityService;
-    private final @NotNull EdgeCoreFactoryService edgeCoreFactoryService;
     private @NotNull Status status;
 
-    public PulseAgentStatusChangedListener(
-            final @NotNull HiveMQCapabilityService capabilityService,
-            final @NotNull EdgeCoreFactoryService edgeCoreFactoryService) {
+    public PulseAgentStatusChangedListener(final @NotNull HiveMQCapabilityService capabilityService) {
         this.capabilityService = capabilityService;
-        this.edgeCoreFactoryService = edgeCoreFactoryService;
         this.status = new Status(Status.ActivationStatus.DEACTIVATED, Status.ConnectionStatus.DISCONNECTED, List.of());
     }
 
@@ -48,10 +43,8 @@ public class PulseAgentStatusChangedListener implements StatusProvider.StatusCha
         this.status = status;
         if (this.status.activationStatus() == Status.ActivationStatus.ACTIVATED) {
             capabilityService.addCapability(CAPABILITY);
-            edgeCoreFactoryService.setPulseActivated(true);
         } else {
             capabilityService.removeCapability(CAPABILITY);
-            edgeCoreFactoryService.setPulseActivated(false);
         }
     }
 }
