@@ -19,6 +19,7 @@ import { DataHubSchemasService } from './services/DataHubSchemasService';
 import { DataHubScriptsService } from './services/DataHubScriptsService';
 import { DataHubStateService } from './services/DataHubStateService';
 import { DefaultService } from './services/DefaultService';
+import { DomainService } from './services/DomainService';
 import { EventsService } from './services/EventsService';
 import { FrontendService } from './services/FrontendService';
 import { GatewayEndpointService } from './services/GatewayEndpointService';
@@ -48,6 +49,7 @@ export class HiveMqClient {
     public readonly dataHubScripts: DataHubScriptsService;
     public readonly dataHubState: DataHubStateService;
     public readonly default: DefaultService;
+    public readonly domain: DomainService;
     public readonly events: EventsService;
     public readonly frontend: FrontendService;
     public readonly gatewayEndpoint: GatewayEndpointService;
@@ -65,7 +67,7 @@ export class HiveMqClient {
     constructor(config?: Partial<OpenAPIConfig>, HttpRequest: HttpRequestConstructor = AxiosHttpRequest) {
         this.request = new HttpRequest({
             BASE: config?.BASE ?? '',
-            VERSION: config?.VERSION ?? '2025.14-SNAPSHOT',
+            VERSION: config?.VERSION ?? '2025.19-SNAPSHOT',
             WITH_CREDENTIALS: config?.WITH_CREDENTIALS ?? false,
             CREDENTIALS: config?.CREDENTIALS ?? 'include',
             TOKEN: config?.TOKEN,
@@ -88,6 +90,7 @@ export class HiveMqClient {
         this.dataHubScripts = new DataHubScriptsService(this.request);
         this.dataHubState = new DataHubStateService(this.request);
         this.default = new DefaultService(this.request);
+        this.domain = new DomainService(this.request);
         this.events = new EventsService(this.request);
         this.frontend = new FrontendService(this.request);
         this.gatewayEndpoint = new GatewayEndpointService(this.request);

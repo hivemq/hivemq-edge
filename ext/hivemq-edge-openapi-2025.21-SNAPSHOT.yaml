@@ -7906,6 +7906,16 @@ components:
             $ref: '#/components/schemas/DomainTag'
       required:
         - items
+    NorthboundMappingOwner:
+      allOf:
+        - $ref: '#/components/schemas/NorthboundMapping'
+        - type: object
+          properties:
+            adapterId:
+              type: string
+              description: The id of the adapter owning the tag
+          required:
+            - adapterId
     NorthboundMappingOwnerList:
       type: object
       properties:
@@ -7913,18 +7923,19 @@ components:
           type: array
           description: List of result items that are returned by this endpoint
           items:
-            type: object
-            required:
-              - adapterId
-              - mapping
-            properties:
-              adapterId:
-                type: string
-                description: The id of the adapter owning the mapping
-              mapping:
-                $ref: '#/components/schemas/NorthboundMapping'
+            $ref: '#/components/schemas/NorthboundMappingOwner'
       required:
         - items
+    SouthboundMappingOwner:
+      allOf:
+        - $ref: '#/components/schemas/SouthboundMapping'
+        - type: object
+          properties:
+            adapterId:
+              type: string
+              description: The id of the adapter owning the tag
+          required:
+            - adapterId
     SouthboundMappingOwnerList:
       type: object
       properties:
@@ -7932,16 +7943,7 @@ components:
           type: array
           description: List of result items that are returned by this endpoint
           items:
-            type: object
-            required:
-              - adapterId
-              - mapping
-            properties:
-              adapterId:
-                type: string
-                description: The id of the adapter owning the mapping
-              mapping:
-                $ref: '#/components/schemas/SouthboundMapping'
+            $ref: '#/components/schemas/SouthboundMappingOwner'
       required:
         - items
     TagSchema:
@@ -7952,6 +7954,16 @@ components:
         protocolId:
           type: string
           description: The id assigned to the protocol adapter type
+    DomainTagOwner:
+      allOf:
+        - $ref: '#/components/schemas/DomainTag'
+        - type: object
+          properties:
+            adapterId:
+              type: string
+              description: The id of the adapter owning the tag
+          required:
+            - adapterId
     DomainTagOwnerList:
       type: object
       properties:
@@ -7959,16 +7971,7 @@ components:
           type: array
           description: List of result items that are returned by this endpoint
           items:
-            type: object
-            required:
-              - adapterId
-              - mapping
-            properties:
-              adapterId:
-                type: string
-                description: The id of the adapter owning the tag
-              mapping:
-                $ref: '#/components/schemas/DomainTag'
+            $ref: '#/components/schemas/DomainTagOwner'
       required:
         - items
     ProtocolAdapterCategory:

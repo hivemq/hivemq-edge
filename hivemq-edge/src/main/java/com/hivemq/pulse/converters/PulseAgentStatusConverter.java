@@ -16,13 +16,14 @@
 
 package com.hivemq.pulse.converters;
 
+import com.hivemq.configuration.entity.EntityConverter;
 import com.hivemq.edge.api.model.PulseStatus;
 import com.hivemq.pulse.status.Status;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class PulseAgentStatusConverter implements PulseApiEntityConverter<PulseStatus, Status> {
+public class PulseAgentStatusConverter implements EntityConverter<PulseStatus, Status> {
     public final static PulseAgentStatusConverter INSTANCE = new PulseAgentStatusConverter();
 
     private PulseAgentStatusConverter() {

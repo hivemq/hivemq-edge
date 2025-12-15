@@ -14,9 +14,13 @@
  *  limitations under the License.
  */
 
-package com.hivemq.pulse.converters;
+package com.hivemq.configuration.entity;
 
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A generic interface for converting between REST entities and internal entities.
@@ -26,7 +30,7 @@ import org.jetbrains.annotations.NotNull;
  * @param <RestEntity>     the type representing the REST entity.
  * @param <InternalEntity> the type representing the internal entity.
  */
-public interface PulseApiEntityConverter<RestEntity, InternalEntity> {
+public interface EntityConverter<RestEntity, InternalEntity> {
 
     /**
      * Converts a REST entity to an internal entity.
@@ -43,4 +47,12 @@ public interface PulseApiEntityConverter<RestEntity, InternalEntity> {
      * @return the converted REST entity. Will not be null.
      */
     @NotNull RestEntity toRestEntity(final @NotNull InternalEntity internalEntity);
+
+    default @NotNull List<InternalEntity> toInternalEntities(final @NotNull List<RestEntity> restEntities) {
+        return restEntities.stream().map(this::toInternalEntity).collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    default @NotNull List<RestEntity> toRestEntities(final @NotNull List<InternalEntity> internalEntities) {
+        return internalEntities.stream().map(this::toRestEntity).collect(Collectors.toCollection(ArrayList::new));
+    }
 }

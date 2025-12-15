@@ -3,7 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
-import { type DomainTagList } from '@/api/__generated__'
+import { type DomainTagOwnerList } from '@/api/__generated__'
 import { useListDomainTags } from '@/api/hooks/useDomainModel/useListDomainTags.ts'
 
 import { handlers } from './__handlers__'
@@ -23,9 +23,10 @@ describe('useListDomainTags', () => {
       expect(result.current.isLoading).toBeFalsy()
       expect(result.current.isSuccess).toBeTruthy()
     })
-    expect(result.current.data).toStrictEqual<DomainTagList>({
+    expect(result.current.data).toStrictEqual<DomainTagOwnerList>({
       items: [
         {
+          adapterId: 'test-adapter',
           definition: {
             endIdx: 1,
             startIdx: 0,

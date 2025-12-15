@@ -43,6 +43,8 @@ export class CombinersService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
+                400: `Topic, schema, or mapping ID invalid`,
+                404: `Managed asset not found`,
                 409: `Combiner already exists`,
             },
         });
@@ -113,6 +115,8 @@ export class CombinersService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
+                400: `Topic, schema, or mapping ID invalid`,
+                404: `Managed asset not found`,
                 409: `Combiner already exists`,
             },
         });
