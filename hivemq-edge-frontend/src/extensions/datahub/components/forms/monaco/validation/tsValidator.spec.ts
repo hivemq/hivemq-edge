@@ -128,7 +128,7 @@ describe('tsValidator', () => {
         const result = validateJavaScriptSync(code)
 
         expect(result).not.toBeNull()
-        expect(result).toMatch(/Line \d+, Column \d+:/)
+        expect(result).toMatch(/Line \d+, column \d+:/)
       })
 
       it('should include error message', () => {
