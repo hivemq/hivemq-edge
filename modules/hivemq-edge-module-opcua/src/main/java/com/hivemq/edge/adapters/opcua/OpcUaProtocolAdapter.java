@@ -62,6 +62,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -144,8 +145,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         // Array is 0-indexed, attemptCount is 1-indexed, so we need attemptCount - 1
         final int index = Math.min(Math.max(0, attemptCount - 1), backoffDelays.length - 1);
         final double backoffDelay =
-                backoffDelays[index] * (1 + new Random().nextDouble(ConnectionOptions.DEFAULT_RETRY_JITTER));
-        return Double.valueOf(backoffDelay).longValue();
+                backoffDelays[index] * (1 + ThreadLocalRandom.current().nextDouble(ConnectionOptions.DEFAULT_RETRY_JITTER));
+        return (long) backoffDelay;
     }
 
     @Override
