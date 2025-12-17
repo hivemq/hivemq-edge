@@ -1,4 +1,5 @@
 import debug from 'debug'
+import type { languages } from 'monaco-editor'
 import type { MonacoInstance } from '../types'
 const debugLogger = debug('DataHub:monaco:protobuf')
 
@@ -6,7 +7,7 @@ const debugLogger = debug('DataHub:monaco:protobuf')
  * Check if Monaco has built-in protobuf support
  */
 const hasProtobufSupport = (monaco: MonacoInstance): boolean => {
-  const languages = monaco.languages.getLanguages()
+  const languages: languages.ILanguageExtensionPoint[] = monaco.languages.getLanguages()
   return languages.some((lang) => lang.id === 'proto' || lang.id === 'protobuf')
 }
 

@@ -68,7 +68,9 @@ jobs:
           working-directory: ./hivemq-edge-frontend/
 
       - name: 🏗️ Build Application with Coverage
-        run: pnpm run build --base=/
+        ## Increased to 8GB: TypeScript compiler (~1.3MB) + Istanbul instrumentation requires significant memory
+        ## Previous 4GB limit still caused OOM errors in CI environment
+        run: NODE_OPTIONS="--max_old_space_size=8192" pnpm run build --base=/
         env:
           VITE_COVERAGE: true
 
