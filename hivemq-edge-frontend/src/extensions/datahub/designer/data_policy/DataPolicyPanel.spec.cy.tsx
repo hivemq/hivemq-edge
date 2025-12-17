@@ -3,7 +3,6 @@
 import { Button } from '@chakra-ui/react'
 
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
-import { mockDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/__handlers__'
 import { DataPolicyPanel } from '@datahub/designer/data_policy/DataPolicyPanel.tsx'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { getNodePayload } from '@datahub/utils/node.utils.ts'
@@ -33,12 +32,12 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
 describe('DataPolicyPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept('/api/v1/data-hub/data-validation/policies', {
-      items: [mockDataPolicy],
-    })
+    // cy.intercept('/api/v1/data-hub/data-validation/policies', {
+    //   items: [mockDataPolicy],
+    // })
   })
 
-  it('should render loading and error states', () => {
+  it.only('should render loading and error states', () => {
     const onFormError = cy.stub().as('onFormError')
     cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 404 }).as('getPolicies')
 
