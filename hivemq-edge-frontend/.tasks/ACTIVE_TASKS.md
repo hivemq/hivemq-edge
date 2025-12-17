@@ -27,35 +27,37 @@ The agent will **automatically look in the `.tasks/` directory** and:
 
 ## Active Tasks
 
-### 22987-adapter-sdk-qa
+### 38658-adapter-jsonschema-review
 
-**Status:** Planning (60%)
-**Directory:** `.tasks/22987-adapter-sdk-qa/`
-**Description:** Improve Developer Experience for protocol adapter development
-**Type:** Multi-Repository Coordination (TypeScript + Java)
+**Status:** ✅ Phase 1 & 2 Complete - Research, Analysis & Backend Comparison  
+**Directory:** `.tasks/38658-adapter-jsonschema-review/`  
+**Description:** Cross-functional research task analyzing protocol adapter JSON-Schema and UI-Schema configurations  
+**Type:** Research / Analysis
 
 **Key Documents:**
 
-- [TASK_BRIEF.md](./22987-adapter-sdk-qa/TASK_BRIEF.md) - Full requirements and scope
-- [TASK_SUMMARY.md](./22987-adapter-sdk-qa/TASK_SUMMARY.md) - Progress tracking
+- [TASK_BRIEF.md](./38658-adapter-jsonschema-review/TASK_BRIEF.md) - Task objectives and scope
+- [ADAPTER_INVENTORY.md](./38658-adapter-jsonschema-review/ADAPTER_INVENTORY.md) - Complete adapter inventory
+- [SCHEMA_ANALYSIS.md](./38658-adapter-jsonschema-review/SCHEMA_ANALYSIS.md) - Detailed schema analysis
+- [REMEDIATION_REPORT.md](./38658-adapter-jsonschema-review/REMEDIATION_REPORT.md) - Issues and fixes (v2.0)
+- [BACKEND_COMPARISON.md](./38658-adapter-jsonschema-review/BACKEND_COMPARISON.md) - Backend vs Frontend comparison
+- [TASK_SUMMARY.md](./38658-adapter-jsonschema-review/TASK_SUMMARY.md) - Progress tracking
 
-**Repositories:**
+**Backend Modules Analyzed:** 7 modules, 7 UI schemas, 4 Java config files
 
-| Repository                          | Language   | Role                   |
-| ----------------------------------- | ---------- | ---------------------- |
-| hivemq-edge-frontend                | TypeScript | Master, Testing Suite  |
-| hivemq-edge-adapter-sdk             | Java       | SDK Documentation      |
-| hivemq-hello-world-protocol-adapter | Java       | Example/Testing Target |
+**Findings:**
 
-**Objectives:**
+- 🔴 **CRITICAL:** File adapter tag schema is complete copy of HTTP adapter (wrong fields, wrong protocolId)
+- 🔴 **HIGH:** Databases adapter backend bug - port field has invalid string constraints on Integer
+- 🟡 Modbus UI schema `id.ui:disabled` mismatch (backend=true, frontend=false)
+- 10 total issues identified
 
-1. **SDK Documentation** - Document JSON-Schema and UI-Schema patterns
-2. **QA Checklist** - Actionable checklist derived from task 38658 methodology
-3. **Visual Testing Suite** - Cypress tests for adapter form validation
+**Critical Issues:**
 
-**Related:** Task 38658 (Adapter JSON Schema Review) - source methodology
+- ❌ File adapter tag schema has wrong `protocolId`
+- ❌ Databases adapter has invalid port field constraints
 
-**Next Action:** Finalize planning, answer open questions on architecture
+**Next Steps:** Apply critical fixes or continue analysis
 
 ---
 
@@ -236,40 +238,39 @@ Separate DataHub resource management from policy node configuration:
 
 ---
 
-## Completed Tasks
+### XXXXX-frontend-chakrav3
 
-### 37884-typescript-errors
+**Status:** 📋 Investigation Phase  
+**Directory:** `.tasks/XXXXX-frontend-chakrav3/`  
+**Description:** Chakra UI v2 to v3 migration preparation and execution  
+**Progress:** Investigation complete, planning phase
 
-**Status:** ✅ Complete  
-**Description:** Fixed TypeScript errors across the codebase
+**Key Documents:**
 
-### 36665-resource-version-update
+- [TASK_BRIEF.md](./XXXXX-frontend-chakrav3/TASK_BRIEF.md) - Main overview and summary
+- [REPORT_FEATURE_DISTRIBUTION.md](./XXXXX-frontend-chakrav3/REPORT_FEATURE_DISTRIBUTION.md) - Workspace vs DataHub vs Core analysis
+- [REPORT_OPENAPI_MIGRATION.md](./XXXXX-frontend-chakrav3/REPORT_OPENAPI_MIGRATION.md) - OpenAPI generator migration analysis
+- [REPORT_RJSF_MIGRATION.md](./XXXXX-frontend-chakrav3/REPORT_RJSF_MIGRATION.md) - RJSF custom components analysis
 
-**Status:** ✅ Complete  
-**Description:** Updated resource version handling
+**Investigation Summary:**
 
-### 37055-workspace-search
+| Area      | Files  | Impact                       |
+| --------- | ------ | ---------------------------- |
+| Workspace | ~200   | High (React Flow + Chakra)   |
+| DataHub   | ~321   | High (Policy Designer)       |
+| OpenAPI   | ~210+  | Critical (complete rewrite)  |
+| RJSF      | ~100+  | Critical (major refactoring) |
+| Core App  | ~1,095 | Medium                       |
 
-**Status:** ✅ Complete  
-**Description:** Workspace search functionality
+**Next Steps:**
 
-### 32118-workspace-status
-
-**Status:** ✅ Complete  
-**Description:** Workspace status indicators and propagation
-
-### 25337-workspace-auto-layout
-
-**Status:** ✅ Complete  
-**Description:** Automatic layout algorithms for workspace
+1. [ ] Create detailed migration plan with phases
+2. [ ] Identify Chakra v2 → v3 breaking changes
+3. [ ] Evaluate OpenAPI generator with POC
+4. [ ] Monitor `@rjsf/chakra-ui` for v3 support
+5. [ ] Estimate effort for each migration phase
 
 ---
-
-## Task Naming Convention
-
-Tasks follow the pattern: `{task-id}-{kebab-case-description}`
-
-Example: `38139-wizard-group`
 
 ---
 
@@ -304,5 +305,5 @@ All tasks should follow these guidelines located in `.tasks/`:
 
 ---
 
-**Last Updated:** November 21, 2025  
+**Last Updated:** December 12, 2025  
 **Maintained By:** AI Agents & Development Team
