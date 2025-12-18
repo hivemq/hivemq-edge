@@ -38,7 +38,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -223,6 +227,95 @@ class HiveMQEdgeHttpServiceImplTest {
 
         assertFalse(service.isOnline(), "Service should be offline after stop");
         assertTrue(service.getRemoteConfiguration().isEmpty(), "Configuration should be cleared after stop");
+    }
+
+    @Test
+    void testStopCleansUpResources_concurrentStopDuringConfigFetch() throws Exception {
+        final int iterations = 50;
+        final AtomicInteger failures = new AtomicInteger(0);
+        final AtomicBoolean testFailed = new AtomicBoolean(false);
+
+        for (int i = 0; i < iterations && !testFailed.get(); i++) {
+            final CountDownLatch configRequestReceived = new CountDownLatch(1);
+            final CountDownLatch allowConfigResponse = new CountDownLatch(1);
+
+            final HttpServer localServer = HttpServer.create(new InetSocketAddress(0), 0);
+            final int localPort = localServer.getAddress().getPort();
+
+            final String servicesJson = String.format("""
+                    {
+                        "usageEndpoint": "http://localhost:%d/usage",
+                        "configEndpoint": "http://localhost:%d/config"
+                    }
+                    """, localPort, localPort);
+            final String configJson = createConfigurationJson();
+
+            localServer.createContext("/services", new JsonResponseHandler(servicesJson));
+            localServer.createContext("/config", exchange -> {
+                configRequestReceived.countDown();
+                try {
+                    allowConfigResponse.await(5, TimeUnit.SECONDS);
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                final byte[] responseBytes = configJson.getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, responseBytes.length);
+                try (final OutputStream os = exchange.getResponseBody()) {
+                    os.write(responseBytes);
+                }
+            });
+            localServer.createContext("/usage", exchange -> exchange.sendResponseHeaders(200, -1));
+            localServer.start();
+
+            final HiveMQEdgeHttpServiceImpl localService = new HiveMQEdgeHttpServiceImpl(EDGE_VERSION,
+                    objectMapper,
+                    "http://localhost:" + localPort + "/services",
+                    TIMEOUT_MILLIS,
+                    TIMEOUT_MILLIS,
+                    RETRY_MILLIS,
+                    false);
+
+            try {
+                final boolean requestReceived = configRequestReceived.await(10, TimeUnit.SECONDS);
+                if (!requestReceived) {
+                    continue;
+                }
+
+                final ExecutorService executor = Executors.newSingleThreadExecutor();
+                executor.submit(() -> {
+                    try {
+                        Thread.sleep(10);
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    localService.stop();
+                });
+
+                allowConfigResponse.countDown();
+
+                executor.shutdown();
+                executor.awaitTermination(5, TimeUnit.SECONDS);
+
+                Thread.sleep(50);
+
+                if (localService.getRemoteConfiguration().isPresent()) {
+                    failures.incrementAndGet();
+                    if (failures.get() > 5) {
+                        testFailed.set(true);
+                    }
+                }
+            } finally {
+                localService.stop();
+                localServer.stop(0);
+            }
+        }
+
+        assertEquals(0,
+                failures.get(),
+                "Configuration should be cleared after stop in all iterations, but failed " +
+                        failures.get() +
+                        " times");
     }
 
     @Test

@@ -170,12 +170,12 @@ public class HiveMQEdgeHttpServiceImpl {
 
     private void fetchRemoteConfigurationIfNeeded(final @NotNull HiveMQEdgeRemoteServices services)
             throws HiveMQEdgeRemoteConnectivityException {
-        if (remoteConfiguration != null) {
+        if (remoteConfiguration != null || !running) {
             return;
         }
         configurationLock.lock();
         try {
-            if (remoteConfiguration == null) {
+            if (remoteConfiguration == null && running) {
                 remoteConfiguration = httpGet(services.getConfigEndpoint(), HiveMQEdgeRemoteConfiguration.class);
             }
         } finally {
