@@ -64,10 +64,10 @@ public class InMemoryEventImpl implements EventStore {
 
     @Override
     public @NotNull List<Event> readEvents(final @Nullable Long since, final @Nullable Integer limit) {
-        final Lock readLock = lock.writeLock();
-        List<Event> events;
+        final Lock readLock = lock.readLock();
+        final List<Event> events;
+        readLock.lock();
         try {
-            readLock.lock();
             events = new ArrayList<>(inMemoryEventList);
         } finally {
             readLock.unlock();
