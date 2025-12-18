@@ -108,7 +108,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 2,         // keepAliveFailuresAllowed: 2
                 30_000L,   // connectionTimeout
                 30_000L,   // healthCheckInterval
-                30_000L,   // retryInterval
+                "30_000L",   // retryInterval
                 true,      // autoReconnect
                 true       // reconnectOnServiceFault
         );
@@ -136,7 +136,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 5,         // keepAliveFailuresAllowed: 5
                 30_000L,   // connectionTimeout
                 30_000L,   // healthCheckInterval
-                30_000L,   // retryInterval
+                "30_000L",   // retryInterval
                 true,      // autoReconnect
                 true       // reconnectOnServiceFault
         );
@@ -195,7 +195,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 1,         // keepAliveFailuresAllowed: 1
                 30_000L,   // connectionTimeout
                 30_000L,   // healthCheckInterval
-                30_000L,   // retryInterval
+                "30_000L",   // retryInterval
                 true,      // autoReconnect
                 true       // reconnectOnServiceFault
         );
@@ -223,7 +223,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 1,         // keepAliveFailuresAllowed: 1
                 30_000L,   // connectionTimeout
                 30_000L,   // healthCheckInterval
-                30_000L,   // retryInterval
+                "30_000L",   // retryInterval
                 true,      // autoReconnect
                 true       // reconnectOnServiceFault
         );
@@ -288,7 +288,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 1,         // keepAliveFailuresAllowed: 1
                 30_000L,   // connectionTimeout
                 30_000L,   // healthCheckInterval
-                30_000L,   // retryInterval
+                "30_000L",   // retryInterval
                 true,      // autoReconnect
                 true       // reconnectOnServiceFault
         );
@@ -315,7 +315,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 2,         // keepAliveFailuresAllowed: 2
                 30_000L,   // connectionTimeout
                 30_000L,   // healthCheckInterval
-                30_000L,   // retryInterval
+                "30_000L",   // retryInterval
                 true,      // autoReconnect
                 true       // reconnectOnServiceFault
         );
@@ -349,7 +349,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 1,         // keepAliveFailuresAllowed: 1 (minimum)
                 2_000L,    // connectionTimeout: 2s (minimum)
                 10_000L,   // healthCheckInterval: 10s (minimum)
-                5_000L,    // retryInterval: 5s (minimum)
+                "5_000L",    // retryInterval: 5s (minimum)
                 true,      // autoReconnect
                 true       // reconnectOnServiceFault
         );
@@ -378,7 +378,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 10,        // keepAliveFailuresAllowed: 10 (maximum)
                 300_000L,  // connectionTimeout: 5 min (maximum)
                 300_000L,  // healthCheckInterval: 5 min (maximum)
-                300_000L,  // retryInterval: 5 min (maximum)
+                "300_000L",  // retryInterval: 5 min (maximum)
                 true,      // autoReconnect
                 true       // reconnectOnServiceFault
         );
@@ -408,7 +408,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 1,         // keepAliveFailuresAllowed: 1
                 30_000L,   // connectionTimeout
                 30_000L,   // healthCheckInterval
-                30_000L,   // retryInterval
+                "30_000L",   // retryInterval
                 true,      // autoReconnect
                 true       // reconnectOnServiceFault
         );
@@ -438,7 +438,7 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 1,         // keepAliveFailuresAllowed: 1
                 30_000L,   // connectionTimeout
                 30_000L,   // healthCheckInterval
-                30_000L,   // retryInterval
+                "30_000L",   // retryInterval
                 true,      // autoReconnect
                 true       // reconnectOnServiceFault
         );
