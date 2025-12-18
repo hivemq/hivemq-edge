@@ -20,9 +20,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-/**
- * @author Simon L Johnson
- */
 public interface EventStore {
 
     void storeEvent(@NotNull Event event);

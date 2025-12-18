@@ -23,19 +23,17 @@ import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.EventStore;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.UUID;
 
 /**
  * SPI delegate which wraps multiple (chained) implementations and
  * manages the event listeners
- *
- * @author Simon L Johnson
  */
 @Singleton
 public class EventServiceDelegateImpl implements EventService {
@@ -85,5 +83,4 @@ public class EventServiceDelegateImpl implements EventService {
     public List<Event> readEvents(final @Nullable Long sinceTimestamp, final @Nullable Integer limit) {
         return eventStore.readEvents(sinceTimestamp, limit);
     }
-
 }

@@ -18,31 +18,28 @@ package com.hivemq.edge.impl.events;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.events.EventStore;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.util.RollingList;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * Simple rolling list implementation optimized for fast writes but slow reads as requires sort on read. (Handled
  * out of lock).
- *
- * @author Simon L Johnson
  */
 @Singleton
 public class InMemoryEventImpl implements EventStore {
     private final @NotNull RollingList<Event> inMemoryEventList;
-    private final @NotNull ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final @NotNull ReadWriteLock lock;
 
     @Inject
     public InMemoryEventImpl() {
@@ -51,13 +48,14 @@ public class InMemoryEventImpl implements EventStore {
     }
 
     public InMemoryEventImpl(final int max) {
-        this.inMemoryEventList = new RollingList<>(max);
+        inMemoryEventList = new RollingList<>(max);
+        lock = new ReentrantReadWriteLock();
     }
 
     public void storeEvent(final @NotNull Event event) {
-        Lock writeLock = lock.writeLock();
+        final Lock writeLock = lock.writeLock();
+        writeLock.lock();
         try {
-            writeLock.lock();
             inMemoryEventList.add(event);
         } finally {
             writeLock.unlock();
@@ -65,11 +63,11 @@ public class InMemoryEventImpl implements EventStore {
     }
 
     @Override
-    public @NotNull List<Event> readEvents(@Nullable Long since, @Nullable Integer limit) {
-        Lock readLock = lock.writeLock();
-        List<Event> events;
+    public @NotNull List<Event> readEvents(final @Nullable Long since, final @Nullable Integer limit) {
+        final Lock readLock = lock.readLock();
+        final List<Event> events;
+        readLock.lock();
         try {
-            readLock.lock();
             events = new ArrayList<>(inMemoryEventList);
         } finally {
             readLock.unlock();
@@ -81,6 +79,6 @@ public class InMemoryEventImpl implements EventStore {
         if (limit != null) {
             stream = stream.limit(limit);
         }
-        return stream.collect(Collectors.toUnmodifiableList());
+        return stream.toList();
     }
 }
