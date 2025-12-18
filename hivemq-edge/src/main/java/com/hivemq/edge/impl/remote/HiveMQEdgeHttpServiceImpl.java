@@ -264,13 +264,15 @@ public class HiveMQEdgeHttpServiceImpl {
 
     public void stop() {
         running = false;
-        remoteConfiguration = null;
-        remoteServices = null;
         synchronized (monitor) {
             monitor.notifyAll();
         }
         stopThread(usageClientThread, "usage client");
         stopThread(cloudClientThread, "cloud client");
+        // Clear configuration AFTER threads are stopped to prevent race condition
+        // where a thread sets the value after we clear it
+        remoteConfiguration = null;
+        remoteServices = null;
     }
 
     private void stopThread(final @Nullable Thread thread, final @NotNull String threadName) {
