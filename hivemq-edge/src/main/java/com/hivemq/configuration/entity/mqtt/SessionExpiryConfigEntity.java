@@ -15,16 +15,30 @@
  */
 package com.hivemq.configuration.entity.mqtt;
 
+import jakarta.xml.bind.Marshaller;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlAnyElement;
 import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlMixed;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
 
 /**
+ * Configuration entity for session expiry settings.
+ * <p>
+ * Supports two XML formats for backwards compatibility:
+ * <ul>
+ *   <li>Simple format: {@code <session-expiry>123</session-expiry>}</li>
+ *   <li>Nested format: {@code <session-expiry><max-interval>123</max-interval></session-expiry>}</li>
+ * </ul>
+ * Always writes in nested format for consistency.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */
@@ -33,12 +47,65 @@ import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 public class SessionExpiryConfigEntity {
 
+    // For reading: captures both text content and child elements
+    @XmlMixed
+    @XmlAnyElement
+    private List<Object> content = new ArrayList<>();
+
+    // For writing: outputs as <max-interval>value</max-interval>
     @XmlElement(name = "max-interval", defaultValue = "4294967295")
-    // => 136 Years = Unsigned Integer Max Value in seconds
-    private long maxInterval = SESSION_EXPIRY_MAX;
+    private Long maxIntervalForWrite;
+
+    // Cached parsed value
+    private Long parsedMaxInterval;
 
     public long getMaxInterval() {
-        return maxInterval;
+        if (parsedMaxInterval == null) {
+            parsedMaxInterval = parseValue();
+        }
+        return parsedMaxInterval != null ? parsedMaxInterval : SESSION_EXPIRY_MAX;
+    }
+
+    /**
+     * Called by JAXB before marshalling to ensure the write field is populated.
+     */
+    @SuppressWarnings("unused")
+    void beforeMarshal(final Marshaller marshaller) {
+        maxIntervalForWrite = getMaxInterval();
+        content = null; // Clear mixed content for clean output
+    }
+
+    /**
+     * Parses the value from either the @XmlElement field (nested format) or the mixed content (simple format).
+     * <p>
+     * Priority:
+     * 1. If maxIntervalForWrite was set by JAXB via @XmlElement, use it (nested format)
+     * 2. Otherwise, check the mixed content for simple text format
+     */
+    private Long parseValue() {
+        // First check if JAXB parsed the nested <max-interval> element
+        if (maxIntervalForWrite != null) {
+            return maxIntervalForWrite;
+        }
+
+        // Otherwise, check mixed content for simple text format
+        if (content == null) {
+            return null;
+        }
+        for (final Object item : content) {
+            if (item instanceof String text) {
+                // Simple text format: 123
+                final String trimmed = text.trim();
+                if (!trimmed.isEmpty()) {
+                    try {
+                        return Long.parseLong(trimmed);
+                    } catch (final NumberFormatException e) {
+                        // Whitespace or invalid text, ignore
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     @Override

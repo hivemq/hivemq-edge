@@ -39,7 +39,7 @@ public class AdminApiEntity extends EnabledEntity {
     @XmlElementRefs({
             @XmlElementRef(required = false, type = HttpListenerEntity.class),
             @XmlElementRef(required = false, type = HttpsListenerEntity.class)})
-    private @NotNull List<ApiListenerEntity> listeners;
+    private @NotNull List<ApiListenreserEntity> listeners;
 
     @XmlElementRef(required = false)
     private @NotNull ApiJwsEntity jws;

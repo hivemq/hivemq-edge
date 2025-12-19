@@ -24,11 +24,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+@XmlRootElement(name = "instruction")
+@XmlAccessorType(XmlAccessType.NONE)
 public class InstructionEntity implements EntityValidatable {
 
     @JsonProperty("source")

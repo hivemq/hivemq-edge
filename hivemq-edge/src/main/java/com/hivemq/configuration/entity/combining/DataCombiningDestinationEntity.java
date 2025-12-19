@@ -16,12 +16,17 @@
 package com.hivemq.configuration.entity.combining;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
+@XmlRootElement(name = "destination")
+@XmlAccessorType(XmlAccessType.NONE)
 public class DataCombiningDestinationEntity {
 
     @JsonProperty(value = "assetId")
