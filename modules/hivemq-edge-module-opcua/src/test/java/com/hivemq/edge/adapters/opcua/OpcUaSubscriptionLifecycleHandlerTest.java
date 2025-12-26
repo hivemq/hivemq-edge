@@ -61,18 +61,17 @@ class OpcUaSubscriptionLifecycleHandlerTest {
     @Mock
     private @NotNull DataPointFactory dataPointFactory;
 
-    private static @NotNull OpcUaSpecificAdapterConfig createConfig(
-            final @NotNull ConnectionOptions connectionOptions) {
-        return new OpcUaSpecificAdapterConfig(
-                "opc.tcp://localhost:4840", // uri
-                false, // overrideUri
-                null, // applicationUri
-                null, // auth
-                null, // tls
-                OpcUaToMqttConfig.defaultOpcUaToMqttConfig(), // opcuaToMqtt
-                null, // security
-                connectionOptions // connectionOptions
-                );
+    private static @NotNull OpcUaSpecificAdapterConfig createConfig(final @NotNull ConnectionOptions connectionOptions) {
+        return new OpcUaSpecificAdapterConfig("opc.tcp://localhost:4840",  // uri
+                false,                        // overrideUri
+                null,                         // applicationUri
+                null,                         // auth
+                null,                         // tls
+                OpcUaToMqttConfig.defaultOpcUaToMqttConfig(),  // opcuaToMqtt
+                null,                         // security
+                connectionOptions,            // connectionOptions
+                null                          // includeMetadata
+        );
     }
 
     private static @NotNull OpcuaTag createTestTag() {
