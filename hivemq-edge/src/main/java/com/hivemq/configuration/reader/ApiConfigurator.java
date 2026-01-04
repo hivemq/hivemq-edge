@@ -85,9 +85,10 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
         configEntity = entity;
 
         apiCfgService.setEnabled(entity.isEnabled());
+        apiCfgService.setEnforceUserRoles(entity.isEnforceUserRoles());
 
         // Users
-        if(entity.getLdap() != null) {
+        if (entity.getLdap() != null) {
             apiCfgService.setLdapConnectionProperties(LdapConnectionProperties.fromEntity(entity.getLdap()));
         } else {
             final List<UserEntity> users = entity.getUsers();
@@ -110,7 +111,7 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
                 .build());
 
         if (entity.getListeners().isEmpty()) {
-            //set default listener
+            // set default listener
             apiCfgService.setListeners(DEFAULT_LISTENERS);
         } else {
             final ImmutableList.Builder<@NotNull ApiListener> listenersBld = ImmutableList.builder();
