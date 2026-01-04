@@ -39,6 +39,7 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
     private @Nullable ApiJwtConfiguration apiJwtConfiguration;
     private @NotNull PreLoginNotice preLoginNotice = new PreLoginNotice();
     private @Nullable LdapConnectionProperties ldapConnectionProperties;
+    private boolean enforceUserRoles = true;
 
     @Override
     public @NotNull List<ApiListener> getListeners() {
@@ -103,5 +104,15 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
     @Override
     public void setPreLoginNotice(final @NotNull PreLoginNotice preLoginNotice) {
         this.preLoginNotice = preLoginNotice;
+    }
+
+    @Override
+    public boolean isEnforceUserRoles() {
+        return enforceUserRoles;
+    }
+
+    @Override
+    public void setEnforceUserRoles(final boolean enforceUserRoles) {
+        this.enforceUserRoles = enforceUserRoles;
     }
 }
