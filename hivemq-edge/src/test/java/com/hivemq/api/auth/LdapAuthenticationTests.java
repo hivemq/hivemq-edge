@@ -26,6 +26,7 @@ import com.hivemq.api.auth.provider.impl.ldap.TlsMode;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LldapContainer;
 import com.hivemq.bootstrap.ioc.Injector;
+import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.JaxrsHttpServer;
@@ -54,6 +55,7 @@ import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConne
 import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection.TEST_USERNAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Testcontainers
 public class LdapAuthenticationTests {
@@ -72,7 +74,8 @@ public class LdapAuthenticationTests {
 
     @Mock
     private static Injector injector;
-
+    @Mock
+    private static ApiConfigurationService apiConfigurationService;
     @BeforeAll
     static void setUp() throws Exception {
         // Get the dynamically mapped port from the container
@@ -118,8 +121,12 @@ public class LdapAuthenticationTests {
 
         final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
         authenticationHandlers.add(new BasicAuthenticationHandler(new LdapUsernameRolesProvider(ldapConnectionProperties, new SecurityLog())));
+
+        apiConfigurationService = mock(ApiConfigurationService.class);
+        when(apiConfigurationService.isEnforceUserRoles()).thenReturn(true);
+
         final ResourceConfig conf = new ResourceConfig(){{
-            register(new ApiAuthenticationFeature(authenticationHandlers));
+            register(new ApiAuthenticationFeature(authenticationHandlers,apiConfigurationService));
         }
         };
         conf.register(TestApiResource.class);

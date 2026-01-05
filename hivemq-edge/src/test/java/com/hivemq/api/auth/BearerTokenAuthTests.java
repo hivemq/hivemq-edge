@@ -26,6 +26,7 @@ import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.bootstrap.ioc.Injector;
+import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.edge.api.model.ApiBearerToken;
 import com.hivemq.edge.api.model.UsernamePasswordCredentials;
 import com.hivemq.http.HttpConstants;
@@ -55,6 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Simon L Johnson
@@ -69,6 +71,8 @@ public class BearerTokenAuthTests {
     @Mock
     private static Injector injector;
     protected final Logger logger = LoggerFactory.getLogger(BearerTokenAuthTests.class);
+    @Mock
+    private static ApiConfigurationService apiConfigurationService;
     @BeforeAll
     public static void setUp() throws Exception {
         final JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
@@ -80,9 +84,12 @@ public class BearerTokenAuthTests {
         final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
         authenticationHandlers.add(new BearerTokenAuthenticationHandler(jwtAuthenticationProvider));
 
+        apiConfigurationService = mock(ApiConfigurationService.class);
+        when(apiConfigurationService.isEnforceUserRoles()).thenReturn(true);
+
         final ResourceConfig conf = new ResourceConfig() {
             {
-                register(new ApiAuthenticationFeature(authenticationHandlers));
+                register(new ApiAuthenticationFeature(authenticationHandlers,apiConfigurationService));
             }
         };
         conf.register(TestApiResource.class);

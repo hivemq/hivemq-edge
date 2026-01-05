@@ -22,6 +22,7 @@ import com.hivemq.api.TestPermitAllApiResource;
 import com.hivemq.api.TestResourceLevelRolesApiResource;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.bootstrap.ioc.Injector;
+import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.JaxrsHttpServer;
@@ -43,6 +44,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Simon L Johnson
@@ -60,6 +62,8 @@ public class BasicAuthenticationTests {
 
     @Mock
     private static Injector injector;
+    @Mock
+    private static ApiConfigurationService apiConfigurationService;
     @BeforeAll
     public static void setUp() throws Exception {
         final var config = new JaxrsHttpServerConfiguration();
@@ -67,8 +71,12 @@ public class BasicAuthenticationTests {
 
         final Set<IAuthenticationHandler > authenticationHandlers = new HashSet<>();
         authenticationHandlers.add(new BasicAuthenticationHandler(AuthTestUtils.createTestUsernamePasswordProvider()));
+
+        apiConfigurationService = mock(ApiConfigurationService.class);
+        when(apiConfigurationService.isEnforceUserRoles()).thenReturn(true);
+
         final var conf = new ResourceConfig(){{
-                register(new ApiAuthenticationFeature(authenticationHandlers));
+                register(new ApiAuthenticationFeature(authenticationHandlers,apiConfigurationService));
             }
         };
         conf.register(TestApiResource.class);
@@ -88,6 +96,8 @@ public class BasicAuthenticationTests {
     protected static String getTestServerAddress(final @NotNull String protocol, final @NotNull int port, final @NotNull String uri){
         return String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
     }
+
+    //TODO there are a number of tests where the message is the wrong way around (says allowed when it should say denied)
 
     @Test
     public void testGetSecuredResourceWithoutCreds() throws IOException {
@@ -193,6 +203,7 @@ public class BasicAuthenticationTests {
         assertEquals(200,response.getStatusCode(),"Resource should be allowed");
     }
 
+    //TODO this test is misnomed: the testuser is authenticated, they just don't have the required admin role
     @Test
     public void testMethodsLevelOverridesResourceLevelRoleAllowsNonAuthenticated() throws IOException {
         final var headers = Map.of(HttpConstants.AUTH_HEADER,
