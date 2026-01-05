@@ -19,6 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.api.auth.handler.AuthenticationResult;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.ChainedAuthenticationHandler;
+import com.hivemq.configuration.service.ApiConfigurationService;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,10 +55,16 @@ public class ApiAuthenticationFeature implements DynamicFeature {
     static final Logger log = LoggerFactory.getLogger(ApiAuthenticationFeature.class);
 
     private final Set<IAuthenticationHandler> authenticationHandler;
+    private final ApiConfigurationService apiConfigurationService;
 
+    //TODO(mschoenert) I'm not sure that this is the best place to inject the ApiConfigurationService
+    // especially since this we must also inject it in ApiResourceRegistry (where it is registered)
+    // but I'm also not sure what would be a better way to have access to the isEnforceUserRoles flag
     @Inject
-    public ApiAuthenticationFeature(final @NotNull Set<IAuthenticationHandler> authenticationHandler) {
+    public ApiAuthenticationFeature(final @NotNull Set<IAuthenticationHandler> authenticationHandler,
+            final @NotNull ApiConfigurationService apiConfigurationService) {
         this.authenticationHandler = authenticationHandler;
+        this.apiConfigurationService = apiConfigurationService;
     }
 
     @Override
@@ -88,7 +95,7 @@ public class ApiAuthenticationFeature implements DynamicFeature {
     }
 
     protected ApiSecurityContext createSecurityContext(final @NotNull AuthenticationResult result){
-        ApiSecurityContext context = new ApiSecurityContext(result.getPrincipal(), result.getAuthenticationMethod(), true);
+        ApiSecurityContext context = new ApiSecurityContext(result.getPrincipal(), result.getAuthenticationMethod(), true, apiConfigurationService);
         return context;
     }
 

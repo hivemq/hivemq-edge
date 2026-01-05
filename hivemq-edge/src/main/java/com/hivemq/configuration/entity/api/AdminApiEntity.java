@@ -59,7 +59,7 @@ public class AdminApiEntity extends EnabledEntity {
     private @NotNull PreLoginNoticeEntity preLoginNotice;
 
     @XmlElement(name = "enforce-user-roles", required = false)
-    private boolean enforceUserRoles = false;
+    private @Nullable Boolean enforceUserRoles;
 
     public AdminApiEntity() {
         this.listeners = new ArrayList<>();
@@ -93,7 +93,7 @@ public class AdminApiEntity extends EnabledEntity {
     }
 
     public boolean isEnforceUserRoles() {
-        return enforceUserRoles;
+        return (enforceUserRoles != null) && enforceUserRoles;
     }
 
     @Override

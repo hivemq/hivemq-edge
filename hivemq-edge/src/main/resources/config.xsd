@@ -1174,6 +1174,7 @@
                     </xs:all>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="enforce-user-roles" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="unsEntity">
