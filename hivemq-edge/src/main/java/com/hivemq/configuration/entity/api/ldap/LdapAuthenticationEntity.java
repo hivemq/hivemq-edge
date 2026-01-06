@@ -31,10 +31,12 @@ import java.util.Objects;
 /**
  * XML entity for LDAP authentication configuration.
  * <p>
- * Configures connection to an LDAP server for user authentication in the Admin API.
+ * Configures connection to an LDAP server for user authentication in the Admin
+ * API.
  * Supports plain LDAP, LDAPS (LDAP over TLS), and START_TLS modes.
  * <p>
  * Example configuration:
+ * 
  * <pre>{@code
  * <ldap>
  *     <host>ldap.example.com</host>
@@ -52,7 +54,7 @@ import java.util.Objects;
  */
 @XmlRootElement(name = "ldap")
 @XmlAccessorType(XmlAccessType.NONE)
-@SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
+@SuppressWarnings({ "FieldMayBeFinal", "FieldCanBeLocal" })
 public class LdapAuthenticationEntity {
 
     @XmlElementWrapper(name = "servers", required = true)
@@ -91,6 +93,10 @@ public class LdapAuthenticationEntity {
 
     @XmlElement(name = "simple-bind", required = true)
     private @NotNull LdapSimpleBindEntity simpleBindEntity = new LdapSimpleBindEntity();
+
+    @XmlElementWrapper(name = "user-roles", required = false)
+    @XmlElement(name = "user-role")
+    private @Nullable List<UserRoleEntity> userRoles = null;
 
     public @NotNull String getTlsMode() {
         return tlsMode;
@@ -140,9 +146,14 @@ public class LdapAuthenticationEntity {
         return servers;
     }
 
+    public @Nullable List<UserRoleEntity> getUserRoles() {
+        return userRoles;
+    }
+
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || getClass() != o.getClass())
+            return false;
         final LdapAuthenticationEntity that = (LdapAuthenticationEntity) o;
         return getConnectTimeoutMillis() == that.getConnectTimeoutMillis() &&
                 getResponseTimeoutMillis() == that.getResponseTimeoutMillis() &&
@@ -155,7 +166,8 @@ public class LdapAuthenticationEntity {
                 Objects.equals(getUidAttribute(), that.getUidAttribute()) &&
                 Objects.equals(getRdns(), that.getRdns()) &&
                 Objects.equals(getRequiredObjectClass(), that.getRequiredObjectClass()) &&
-                Objects.equals(getSimpleBindEntity(), that.getSimpleBindEntity());
+                Objects.equals(getSimpleBindEntity(), that.getSimpleBindEntity()) &&
+                Objects.equals(getUserRoles(), that.getUserRoles());
     }
 
     @Override
@@ -171,6 +183,7 @@ public class LdapAuthenticationEntity {
                 getRequiredObjectClass(),
                 directoryDescent,
                 getSearchTimeoutSeconds(),
-                getSimpleBindEntity());
+                getSimpleBindEntity(),
+                getUserRoles());
     }
 }
