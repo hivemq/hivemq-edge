@@ -120,7 +120,8 @@ class OpenLdapTest {
                 5,
                 ADMIN,
                 false,
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         // Create and start LDAP client
         ldapClient = new LdapClient(connectionProperties, new SecurityLog());
@@ -477,7 +478,8 @@ class OpenLdapTest {
                 5,
                 ADMIN,
                 true,  // TEST ONLY: Accept any certificate
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         final LdapClient startTlsClient = new LdapClient(startTlsProps, new SecurityLog());
 
@@ -546,7 +548,8 @@ class OpenLdapTest {
                 5,
                 ADMIN,
                 true,  // TEST ONLY: Accept any certificate
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
 
         final LdapClient startTlsClient = new LdapClient(startTlsProps, new SecurityLog());
@@ -618,7 +621,8 @@ class OpenLdapTest {
                 5,
                 ADMIN,
                 true,  // TEST ONLY: Accept any certificate
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         final LdapClient plainClient = new LdapClient(plainProps, new SecurityLog());
 
@@ -637,7 +641,8 @@ class OpenLdapTest {
                 5,
                 ADMIN,
                 true,  // TEST ONLY: Accept any certificate
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         final LdapClient startTlsClient = new LdapClient(startTlsProps, new SecurityLog());
 
