@@ -4,6 +4,8 @@ delete:
 
      
   operationId: deleteDataPolicy
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The identifier of the data policy to delete.
       example: policy1
@@ -67,6 +69,10 @@ get:
 
      
   operationId: getDataPolicy
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The identifier of the policy.
       example: policy1
@@ -169,6 +175,8 @@ put:
      The matching part of policies cannot be changed with an update.
      
   operationId: updateDataPolicy
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The identifier of the policy.
       example: policy1

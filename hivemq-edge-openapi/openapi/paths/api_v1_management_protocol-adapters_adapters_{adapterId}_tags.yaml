@@ -1,6 +1,10 @@
 get:
   description: Get the domain tags for the device connected through this adapter.
   operationId: get-adapter-domainTags
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The adapter id.
       in: path
@@ -39,6 +43,8 @@ get:
 post:
   description: Add a new domain tag to the specified adapter.
   operationId: add-adapter-domainTags
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The adapter id.
       in: path
@@ -80,6 +86,8 @@ post:
 put:
   description: Update all domain tags of an adapter.
   operationId: update-adapter-domainTags
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The id of the adapter whose domain tags will be updated.
       in: path

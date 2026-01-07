@@ -1,6 +1,8 @@
 put:
   description: Add an adapter and all related parts like e.g. tags to the system.
   operationId: create-complete-adapter
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The adapter type.
       in: path

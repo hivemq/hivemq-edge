@@ -85,7 +85,6 @@ import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import com.hivemq.protocols.tag.TagSchemaCreationInputImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
@@ -368,7 +367,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    @RolesAllowed({ApiRoles.ADMIN, ApiRoles.SUPER})
     public @NotNull Response transitionAdapterStatus(
             final @NotNull String adapterId,
             final @NotNull StatusTransitionCommand command) {

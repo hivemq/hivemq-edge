@@ -1,6 +1,10 @@
 get:
   description: Get the up to date status an adapter.
   operationId: get-adapter-status
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The name of the adapter to query.
       in: path
@@ -41,6 +45,9 @@ get:
 put:
   description: Transition the runtime status of an adapter.
   operationId: transition-adapter-status
+  x-roles-allowed:
+    - admin
+    - super
   parameters:
     - description: The id of the adapter whose runtime status will change.
       in: path

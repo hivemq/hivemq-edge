@@ -1,6 +1,10 @@
 get:
   description: This endpoint provides the means to get information on the interpolation variables available for the HiveMQ Data Hub.
   operationId: getVariables
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:

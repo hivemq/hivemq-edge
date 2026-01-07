@@ -1,6 +1,10 @@
 get:
   description: Obtain isa95 config.
   operationId: get-isa95
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:
@@ -26,6 +30,8 @@ get:
 post:
   description: Set isa95 config.
   operationId: set-isa95
+  x-roles-allowed:
+    - admin
   requestBody:
     content:
       application/json:

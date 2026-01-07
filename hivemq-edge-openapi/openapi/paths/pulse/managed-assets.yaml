@@ -2,6 +2,10 @@ get:
   description: Get all managed assets from the Pulse Client
   summary: Get all managed assets
   operationId: get-managed-assets
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   tags:
     - Pulse
     - Domain
@@ -28,6 +32,8 @@ post:
   description: Add a new managed asset to the Pulse Client
   summary: Add a new managed asset
   operationId: add-managed-asset
+  x-roles-allowed:
+    - admin
   tags:
     - Pulse
   requestBody:
