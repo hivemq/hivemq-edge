@@ -58,8 +58,8 @@ public class AdminApiEntity extends EnabledEntity {
     @XmlElementRef(required = false)
     private @NotNull PreLoginNoticeEntity preLoginNotice;
 
-    @XmlElement(name = "enforce-user-roles", required = false)
-    private @Nullable Boolean enforceUserRoles;
+    @XmlElement(name = "enforce-api-auth", required = false)
+    private @Nullable Boolean enforceApiAuth;
 
     public AdminApiEntity() {
         this.listeners = new ArrayList<>();
@@ -92,8 +92,8 @@ public class AdminApiEntity extends EnabledEntity {
         return preLoginNotice;
     }
 
-    public boolean isEnforceUserRoles() {
-        return (enforceUserRoles != null) && enforceUserRoles;
+    public boolean isEnforceApiAuth() {
+        return (enforceApiAuth != null) && enforceApiAuth;
     }
 
     @Override
@@ -111,7 +111,7 @@ public class AdminApiEntity extends EnabledEntity {
                     Objects.equals(users, that.users) &&
                     Objects.equals(ldapAuthentication, that.ldapAuthentication) &&
                     Objects.equals(preLoginNotice, that.preLoginNotice) &&
-                    Objects.equals(enforceUserRoles, that.enforceUserRoles);
+                    Objects.equals(enforceApiAuth, that.enforceApiAuth);
         }
         return false;
     }
@@ -125,6 +125,6 @@ public class AdminApiEntity extends EnabledEntity {
                 users,
                 ldapAuthentication,
                 preLoginNotice,
-                enforceUserRoles);
+                enforceApiAuth);
     }
 }

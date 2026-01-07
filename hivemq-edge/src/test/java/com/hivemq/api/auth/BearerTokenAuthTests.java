@@ -85,7 +85,7 @@ public class BearerTokenAuthTests {
         authenticationHandlers.add(new BearerTokenAuthenticationHandler(jwtAuthenticationProvider));
 
         apiConfigurationService = mock(ApiConfigurationService.class);
-        when(apiConfigurationService.isEnforceUserRoles()).thenReturn(true);
+        when(apiConfigurationService.isEnforceApiAuth()).thenReturn(true);
 
         final ResourceConfig conf = new ResourceConfig() {
             {
