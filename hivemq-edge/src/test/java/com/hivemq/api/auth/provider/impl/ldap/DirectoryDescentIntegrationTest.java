@@ -146,7 +146,8 @@ class DirectoryDescentIntegrationTest {
             true,
             new LdapConnectionProperties.LdapSimpleBind(
                 "cn=admin",
-                OPENLDAP.getAdminPassword())
+                OPENLDAP.getAdminPassword()),
+            null
         );
 
         final LdapTestConnection testConn = new LdapTestConnection(props);
@@ -175,7 +176,8 @@ class DirectoryDescentIntegrationTest {
             false,
             new LdapConnectionProperties.LdapSimpleBind(
                 "uid=" + LLDAP.getAdminUsername(),
-                LLDAP.getAdminPassword())
+                LLDAP.getAdminPassword()),
+            null
         );
 
         final LdapTestConnection testConn = new LdapTestConnection(props);
