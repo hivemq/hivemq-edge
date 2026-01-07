@@ -53,11 +53,11 @@ import static org.mockito.Mockito.when;
  * but this time we do NOT enforce the user roles,
  * so the tests that expect role enforcement now return success!
  * these tests have a comment
- * // succeeds because user roles are not enforced
+ * // succeeds because api auth is not enforced
  */
-public class EnforceUserRolesTest {
+public class EnforceApiAuthTest {
 
-    protected final Logger logger = LoggerFactory.getLogger(EnforceUserRolesTest.class);
+    protected final Logger logger = LoggerFactory.getLogger(EnforceApiAuthTest.class);
 
     static final int TEST_HTTP_PORT = 8088;
     static final int CONNECT_TIMEOUT = 1000;
@@ -79,7 +79,7 @@ public class EnforceUserRolesTest {
         authenticationHandlers.add(new BasicAuthenticationHandler(AuthTestUtils.createTestUsernamePasswordProvider()));
 
         apiConfigurationService = mock(ApiConfigurationService.class);
-        when(apiConfigurationService.isEnforceUserRoles()).thenReturn(false);
+        when(apiConfigurationService.isEnforceApiAuth()).thenReturn(false);
 
         final var conf = new ResourceConfig(){{
                 register(new ApiAuthenticationFeature(authenticationHandlers,apiConfigurationService));

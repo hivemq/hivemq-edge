@@ -51,7 +51,7 @@ public class ApiSecurityContext implements SecurityContext {
 
     @Override
     public boolean isUserInRole(final String role) {
-        return (principal != null) && (!apiConfigurationService.isEnforceUserRoles() || principal.hasRole(role));
+        return (principal != null) && (!apiConfigurationService.isEnforceApiAuth() || principal.hasRole(role));
     }
 
     @Override

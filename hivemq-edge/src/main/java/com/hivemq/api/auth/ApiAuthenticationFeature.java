@@ -59,7 +59,7 @@ public class ApiAuthenticationFeature implements DynamicFeature {
 
     //TODO(mschoenert) I'm not sure that this is the best place to inject the ApiConfigurationService
     // especially since this we must also inject it in ApiResourceRegistry (where it is registered)
-    // but I'm also not sure what would be a better way to have access to the isEnforceUserRoles flag
+    // but I'm also not sure what would be a better way to have access to the isEnforceApiAuth flag
     @Inject
     public ApiAuthenticationFeature(final @NotNull Set<IAuthenticationHandler> authenticationHandler,
             final @NotNull ApiConfigurationService apiConfigurationService) {

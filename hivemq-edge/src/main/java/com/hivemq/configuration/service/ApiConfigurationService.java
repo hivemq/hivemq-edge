@@ -59,7 +59,7 @@ public interface ApiConfigurationService {
 
     void setPreLoginNotice(final @NotNull PreLoginNotice preLoginNotice);
 
-    boolean isEnforceUserRoles();
+    boolean isEnforceApiAuth();
 
-    void setEnforceUserRoles(boolean enforceUserRoles);
+    void setEnforceApiAuth(boolean enforceApiAuth);
 }

@@ -73,7 +73,7 @@ public class BasicAuthenticationTests {
         authenticationHandlers.add(new BasicAuthenticationHandler(AuthTestUtils.createTestUsernamePasswordProvider()));
 
         apiConfigurationService = mock(ApiConfigurationService.class);
-        when(apiConfigurationService.isEnforceUserRoles()).thenReturn(true);
+        when(apiConfigurationService.isEnforceApiAuth()).thenReturn(true);
 
         final var conf = new ResourceConfig(){{
                 register(new ApiAuthenticationFeature(authenticationHandlers,apiConfigurationService));
