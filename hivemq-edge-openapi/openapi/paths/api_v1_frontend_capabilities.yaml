@@ -1,6 +1,10 @@
 get:
   description: Obtain gateway capabilities.
   operationId: get-capabilities
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:

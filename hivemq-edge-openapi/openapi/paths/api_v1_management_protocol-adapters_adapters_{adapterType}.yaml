@@ -1,6 +1,8 @@
 post:
   description: Add adapter to the system.
   operationId: addAdapter
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The adapter type.
       in: path

@@ -1,6 +1,10 @@
 get:
   description: Obtain a list of configured adapters for the specified type.
   operationId: getAdaptersForType
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The adapter type.
       in: path

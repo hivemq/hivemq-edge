@@ -30,7 +30,6 @@ import com.hivemq.edge.api.MetricsApi;
 import com.hivemq.util.ErrorResponseUtil;
 import org.jetbrains.annotations.NotNull;
 
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;

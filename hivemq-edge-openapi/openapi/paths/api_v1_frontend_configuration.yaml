@@ -1,6 +1,10 @@
 get:
   description: Obtain configuration.
   operationId: get-configuration
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:

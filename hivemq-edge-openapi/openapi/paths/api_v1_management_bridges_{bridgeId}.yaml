@@ -1,6 +1,8 @@
 delete:
   description: Remove bridge configured in the system.
   operationId: removeBridge
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The id of the bridge to delete.
       in: path
@@ -29,6 +31,10 @@ delete:
 get:
   description: Get a bridge by ID.
   operationId: getBridgeByName
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The id of the bridge to query.
       in: path
@@ -104,6 +110,8 @@ get:
 put:
   description: Update bridge configured in the system.
   operationId: updateBridge
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The bridge to update.
       in: path

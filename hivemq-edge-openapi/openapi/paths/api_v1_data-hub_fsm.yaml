@@ -4,6 +4,10 @@ get:
     State Machines (FSMs) for Behavior Policies for the HiveMQ Data Hub. The
     information is provided in form of a Json Schema.
   operationId: getFsms
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:

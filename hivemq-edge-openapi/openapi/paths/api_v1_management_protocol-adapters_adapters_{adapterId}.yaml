@@ -1,6 +1,8 @@
 delete:
   description: Delete adapter configured in the system.
   operationId: deleteAdapter
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The adapter Id.
       in: path
@@ -23,6 +25,10 @@ delete:
 get:
   description: Obtain the details for a configured adapter for the specified type".
   operationId: getAdapter
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The adapter Id.
       in: path
@@ -71,6 +77,8 @@ get:
 put:
   description: Update adapter configured in the system.
   operationId: updateAdapter
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The adapter Id.
       in: path

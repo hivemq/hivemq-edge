@@ -104,6 +104,10 @@ paths:
   /:
     get:
       operationId: getRoot
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         default:
           content:
@@ -205,6 +209,10 @@ paths:
 
          
       operationId: getAllBehaviorPolicies
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, createdAt, lastUpdatedAt, deserialization, matching, behavior, onTransitions'
           example: id,createdAt
@@ -385,6 +393,8 @@ paths:
         Create a behavior policy
 
       operationId: createBehaviorPolicy
+      x-roles-allowed:
+        - admin
       requestBody:
         content:
           application/json:
@@ -510,6 +520,8 @@ paths:
 
          
       operationId: deleteBehaviorPolicy
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The identifier of the policy to delete.
           example: policy1
@@ -573,6 +585,10 @@ paths:
 
          
       operationId: getBehaviorPolicy
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The identifier of the policy.
           example: policy1
@@ -666,6 +682,8 @@ paths:
         The path parameter 'policyId' must match the 'id' of the policy in the request body.
          
       operationId: updateBehaviorPolicy
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The identifier of the policy.
           example: policy1
@@ -814,6 +832,10 @@ paths:
         Use this endpoint to get the stored state of a client for DataHub.
 
       operationId: getClientState
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The client identifier.
           example: client1
@@ -889,6 +911,10 @@ paths:
 
          
       operationId: getAllDataPolicies
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, createdAt, lastUpdatedAt, matching, validation, onSuccess, onFailure'
           example: id,createdAt
@@ -1148,6 +1174,8 @@ paths:
         Create a data policy
 
       operationId: createDataPolicy
+      x-roles-allowed:
+        - admin
       requestBody:
         content:
           application/json:
@@ -1271,6 +1299,8 @@ paths:
 
          
       operationId: deleteDataPolicy
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The identifier of the data policy to delete.
           example: policy1
@@ -1334,6 +1364,10 @@ paths:
 
          
       operationId: getDataPolicy
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The identifier of the policy.
           example: policy1
@@ -1427,6 +1461,8 @@ paths:
          The matching part of policies cannot be changed with an update.
          
       operationId: updateDataPolicy
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The identifier of the policy.
           example: policy1
@@ -1573,6 +1609,10 @@ paths:
     get:
       description: This endpoints provides the means to get information on the available Finite State Machines (FSMs) for Behavior Policies for the HiveMQ Data Hub. The information is provided in form of a Json Schema.
       operationId: getFsms
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -1662,6 +1702,10 @@ paths:
       deprecated: true
       description: This endpoints provides the means to get information on the available Functions for the HiveMQ Data Hub. The information is provided in form of a Json Schema.
       operationId: getFunctions
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -1823,6 +1867,10 @@ paths:
     get:
       description: This endpoint provides the means to get information on the interpolation variables available for the HiveMQ Data Hub.
       operationId: getVariables
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -1843,6 +1891,10 @@ paths:
     get:
       description: This endpoints provides the means to get information on the available Functions for the HiveMQ Data Hub.
       operationId: getFunctionSpecs
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -1868,6 +1920,10 @@ paths:
 
          
       operationId: getAllSchemas
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, type, schemaDefinition, createdAt'
           example: id,createdAt
@@ -2014,6 +2070,8 @@ paths:
         Creates a schema
 
       operationId: createSchema
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The entity tag
           in: header
@@ -2104,6 +2162,8 @@ paths:
 
          
       operationId: deleteSchema
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The schema identifier of the schema versions to delete.
           example: schema1
@@ -2169,6 +2229,10 @@ paths:
 
          
       operationId: getSchema
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The identifier of the schema.
           example: schema1
@@ -2236,6 +2300,10 @@ paths:
     get:
       description: Get all scripts.
       operationId: getAllScripts
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: 'Comma-separated list of fields to include in the response. Allowed values are: id, version, description, runtime, functionType, createdAt'
           example: id,createdAt,source
@@ -2372,6 +2440,8 @@ paths:
     post:
       description: Creates a script
       operationId: createScript
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The entity tag
           in: header
@@ -2465,6 +2535,8 @@ paths:
     delete:
       description: Deletes the selected script.
       operationId: deleteScript
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The script identifier of the script to delete.
           example: hello_world_function
@@ -2525,6 +2597,10 @@ paths:
     get:
       description: Get a specific script.
       operationId: getScript
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The identifier of the script.
           example: hello_world_function
@@ -2593,6 +2669,10 @@ paths:
     get:
       description: Obtain gateway capabilities.
       operationId: get-capabilities
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -2621,6 +2701,10 @@ paths:
     get:
       description: Obtain configuration.
       operationId: get-configuration
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -2708,6 +2792,10 @@ paths:
     get:
       description: Obtain gateway notifications.
       operationId: get-notifications
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -2731,6 +2819,10 @@ paths:
     get:
       description: Obtain gateway configuration.
       operationId: get-xml-configuration
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -2751,6 +2843,10 @@ paths:
     get:
       description: Obtain listener.
       operationId: get-listeners
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -2777,6 +2873,10 @@ paths:
     get:
       description: Endpoint to determine whether the gateway is considered UP.
       operationId: liveness
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -2796,6 +2896,10 @@ paths:
     get:
       description: Endpoint to determine whether the gateway is considered ready.
       operationId: readiness
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -2815,6 +2919,10 @@ paths:
     get:
       description: Get all bridges configured in the system.
       operationId: getBridges
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -2872,6 +2980,8 @@ paths:
     post:
       description: Add bridge configured in the system.
       operationId: addBridge
+      x-roles-allowed:
+        - admin
       requestBody:
         content:
           application/json:
@@ -2895,6 +3005,10 @@ paths:
     get:
       description: Obtain the details.
       operationId: get-bridges-status
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -2918,6 +3032,8 @@ paths:
     delete:
       description: Remove bridge configured in the system.
       operationId: removeBridge
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The id of the bridge to delete.
           in: path
@@ -2946,6 +3062,10 @@ paths:
     get:
       description: Get a bridge by ID.
       operationId: getBridgeByName
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The id of the bridge to query.
           in: path
@@ -3021,6 +3141,8 @@ paths:
     put:
       description: Update bridge configured in the system.
       operationId: updateBridge
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The bridge to update.
           in: path
@@ -3055,6 +3177,10 @@ paths:
     get:
       description: Get the up to date status of a bridge.
       operationId: get-bridge-status
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The name of the bridge to query.
           in: path
@@ -3096,6 +3222,9 @@ paths:
     put:
       description: Transition the connection status of a bridge.
       operationId: transition-bridge-status
+      x-roles-allowed:
+        - admin
+        - super
       parameters:
         - description: The id of the bridge whose runtime-status will change.
           in: path
@@ -3143,6 +3272,10 @@ paths:
     get:
       description: Get all bridges configured in the system.
       operationId: getEvents
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: Obtain all events since the specified epoch.
           in: query
@@ -3176,6 +3309,8 @@ paths:
     put:
       description: Add an adapter and all related parts like e.g. tags to the system.
       operationId: create-complete-adapter
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The adapter type.
           in: path
@@ -3224,6 +3359,10 @@ paths:
     get:
       description: Obtain a list of configured adapters.
       operationId: getAdapters
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -3261,6 +3400,8 @@ paths:
     delete:
       description: Delete adapter configured in the system.
       operationId: deleteAdapter
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The adapter Id.
           in: path
@@ -3283,6 +3424,10 @@ paths:
     get:
       description: Obtain the details for a configured adapter for the specified type".
       operationId: getAdapter
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The adapter Id.
           in: path
@@ -3331,6 +3476,8 @@ paths:
     put:
       description: Update adapter configured in the system.
       operationId: updateAdapter
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The adapter Id.
           in: path
@@ -3371,6 +3518,10 @@ paths:
     get:
       description: Obtain a list of available values accessible via this protocol adapter.
       operationId: discoverDataPoints
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The adapter Id.
           in: path
@@ -3444,6 +3595,10 @@ paths:
     get:
       description: Get the northbound mappings of the adapter.
       operationId: get-adapter-northboundMappings
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The adapter id.
           in: path
@@ -3470,6 +3625,8 @@ paths:
     put:
       description: Update all northbound mappings of an adapter.
       operationId: update-adapter-northboundMappings
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The id of the adapter whose northbound mappings will be updated.
           in: path
@@ -3510,6 +3667,10 @@ paths:
     get:
       description: Get the southbound mappings.
       operationId: get-adapter-southboundMappings
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The adapter id.
           in: path
@@ -3536,6 +3697,8 @@ paths:
     put:
       description: Update all southbound mappings of an adapter.
       operationId: update-adapter-southboundMappings
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The id of the adapter whose southbound mappings will be updated.
           in: path
@@ -3576,6 +3739,10 @@ paths:
     get:
       description: Get the up to date status an adapter.
       operationId: get-adapter-status
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The name of the adapter to query.
           in: path
@@ -3616,6 +3783,9 @@ paths:
     put:
       description: Transition the runtime status of an adapter.
       operationId: transition-adapter-status
+      x-roles-allowed:
+        - admin
+        - super
       parameters:
         - description: The id of the adapter whose runtime status will change.
           in: path
@@ -3663,6 +3833,10 @@ paths:
     get:
       description: Get the domain tags for the device connected through this adapter.
       operationId: get-adapter-domainTags
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The adapter id.
           in: path
@@ -3701,6 +3875,8 @@ paths:
     post:
       description: Add a new domain tag to the specified adapter.
       operationId: add-adapter-domainTags
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The adapter id.
           in: path
@@ -3742,6 +3918,8 @@ paths:
     put:
       description: Update all domain tags of an adapter.
       operationId: update-adapter-domainTags
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The id of the adapter whose domain tags will be updated.
           in: path
@@ -3776,6 +3954,8 @@ paths:
     delete:
       description: Delete the specified domain tag on the given adapter.
       operationId: delete-adapter-domainTags
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The adapter Id.
           in: path
@@ -3811,6 +3991,8 @@ paths:
     put:
       description: Update the domain tag of an adapter.
       operationId: update-adapter-domainTag
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The id of the adapter whose domain tag will be updated.
           in: path
@@ -3858,6 +4040,8 @@ paths:
     post:
       description: Add adapter to the system.
       operationId: addAdapter
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The adapter type.
           in: path
@@ -3894,6 +4078,10 @@ paths:
     get:
       description: Get all northbound mappings
       operationId: get-northboundMappings
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -3909,6 +4097,10 @@ paths:
     get:
       description: Get all southbound mappings.
       operationId: get-southboundMappings
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -3924,6 +4116,10 @@ paths:
     get:
       description: Obtain the details.
       operationId: get-adapters-status
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -3947,6 +4143,10 @@ paths:
     get:
       description: Obtain the tag schema for a specific portocol adapter.
       operationId: getTagSchema
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The protocol id.
           in: path
@@ -3974,6 +4174,10 @@ paths:
     get:
       description: Get the list of all domain tags created in this Edge instance
       operationId: get-domain-tags
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -4001,6 +4205,10 @@ paths:
     get:
       description: Get a domain tag created in this Edge instance
       operationId: get-domain-tag
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The tag name (urlencoded).
           in: path
@@ -4041,6 +4249,10 @@ paths:
     get:
       description: Obtain a list of available protocol adapter types.
       operationId: getAdapterTypes
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - name: X-Original-URI
           in: header
@@ -4061,6 +4273,10 @@ paths:
     get:
       description: Obtain a list of configured adapters for the specified type.
       operationId: getAdaptersForType
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The adapter type.
           in: path
@@ -4111,6 +4327,10 @@ paths:
     get:
       description: Get a json schema that explains the json schema that is used to write to a PLC for the given tag name."
       operationId: get-writing-schema
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The id of the adapter for which the Json Schema for writing to a PLC gets created.
           in: path
@@ -4163,6 +4383,10 @@ paths:
     get:
       description: Obtain a JsonSchema based in the stored samples for a given topic.
       operationId: getSchemaForTopic
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The topic.
           in: path
@@ -4197,6 +4421,10 @@ paths:
     get:
       description: Obtain a list of samples that their gathered for the given topic.
       operationId: getSamplesForTopic
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The topic.
           in: path
@@ -4218,6 +4446,8 @@ paths:
     post:
       description: Start sampling for the given topic.
       operationId: startSamplingForTopic
+      x-roles-allowed:
+        - admin
       parameters:
         - description: The topic.
           in: path
@@ -4236,6 +4466,10 @@ paths:
     get:
       description: Get the list of all topic filters created in this Edge instance
       operationId: get-topicFilters
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -4260,6 +4494,8 @@ paths:
     post:
       description: Add a new topic filter.
       operationId: add-topicFilters
+      x-roles-allowed:
+        - admin
       requestBody:
         content:
           application/json:
@@ -4288,6 +4524,8 @@ paths:
     put:
       description: Update all topic filters
       operationId: update-topicFilters
+      x-roles-allowed:
+        - admin
       requestBody:
         content:
           application/json:
@@ -4309,6 +4547,10 @@ paths:
     get:
       description: Get the specified topic filter
       operationId: get-topicFilter
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - $ref: '#/components/parameters/TopicFilterId'
       responses:
@@ -4324,6 +4566,8 @@ paths:
     delete:
       description: Delete the specified topic filter.
       operationId: delete-topicFilter
+      x-roles-allowed:
+        - admin
       parameters:
         - $ref: '#/components/parameters/TopicFilterId'
       responses:
@@ -4347,6 +4591,8 @@ paths:
     put:
       description: Update a topic filter
       operationId: update-topicFilter
+      x-roles-allowed:
+        - admin
       parameters:
         - $ref: '#/components/parameters/TopicFilterId'
       requestBody:
@@ -4376,6 +4622,10 @@ paths:
     get:
       description: Get the schema of the specified topic filter
       operationId: get-topicFilter-schema
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - $ref: '#/components/parameters/TopicFilterId'
       responses:
@@ -4394,6 +4644,10 @@ paths:
     get:
       description: Obtain isa95 config.
       operationId: get-isa95
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -4419,6 +4673,8 @@ paths:
     post:
       description: Set isa95 config.
       operationId: set-isa95
+      x-roles-allowed:
+        - admin
       requestBody:
         content:
           application/json:
@@ -4442,6 +4698,10 @@ paths:
     get:
       description: Obtain the latest sample for the metric requested.
       operationId: getMetrics
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -4495,6 +4755,10 @@ paths:
     get:
       description: Obtain the latest sample for the metric requested.
       operationId: getSample
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       parameters:
         - description: The metric to search for.
           in: path
@@ -4531,6 +4795,10 @@ paths:
       description: Get all combiners
       summary: Get all combiners
       operationId: get-combiners
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       tags:
         - Combiners
       responses:
@@ -4544,6 +4812,8 @@ paths:
       description: Add a new combiner.
       summary: Add a new combiner
       operationId: add-combiner
+      x-roles-allowed:
+        - admin
       tags:
         - Combiners
       requestBody:
@@ -4579,6 +4849,10 @@ paths:
       description: Get a combiner by its unique Id.
       summary: Get a combiner
       operationId: getCombinersById
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       tags:
         - Combiners
       parameters:
@@ -4600,6 +4874,8 @@ paths:
       description: Delete the specified combiner.
       summary: Delete a combiner
       operationId: delete-combiner
+      x-roles-allowed:
+        - admin
       tags:
         - Combiners
       parameters:
@@ -4617,6 +4893,8 @@ paths:
       description: Update a combiner.
       summary: Update a combiner
       operationId: update-combiner
+      x-roles-allowed:
+        - admin
       tags:
         - Combiners
       parameters:
@@ -4654,6 +4932,10 @@ paths:
       description: Get all data combining mappings for the given combiner
       summary: Get all mappings
       operationId: getCombinerMappings
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       tags:
         - Combiners
       parameters:
@@ -4676,6 +4958,10 @@ paths:
       description: Get all the instructions for a designated mapping
       summary: Get all instructions
       operationId: getMappingInstructions
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       tags:
         - Combiners
       parameters:
@@ -4702,6 +4988,8 @@ paths:
       description: Delete the activation token from the Pulse Client
       summary: Delete the Pulse activation token
       operationId: delete-pulse-activation-token
+      x-roles-allowed:
+        - admin
       tags:
         - Pulse
       responses:
@@ -4729,6 +5017,8 @@ paths:
       description: Send an activation token to the Pulse Client
       summary: Update an activation token
       operationId: update-pulse-activation-token
+      x-roles-allowed:
+        - admin
       tags:
         - Pulse
       requestBody:
@@ -4764,6 +5054,10 @@ paths:
       description: Get the status of the pulse agent
       summary: Get the status of the integrated pulse agent.
       operationId: get-pulse-status
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       tags:
         - Pulse
       responses:
@@ -4778,6 +5072,10 @@ paths:
       description: Get all managed assets from the Pulse Client
       summary: Get all managed assets
       operationId: get-managed-assets
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       tags:
         - Pulse
         - Domain
@@ -4804,6 +5102,8 @@ paths:
       description: Add a new managed asset to the Pulse Client
       summary: Add a new managed asset
       operationId: add-managed-asset
+      x-roles-allowed:
+        - admin
       tags:
         - Pulse
       requestBody:
@@ -4845,6 +5145,8 @@ paths:
       description: Delete the specified managed asset
       summary: Delete a managed asset
       operationId: delete-managed-asset
+      x-roles-allowed:
+        - admin
       tags:
         - Pulse
       parameters:
@@ -4874,6 +5176,8 @@ paths:
       description: Update a managed asset
       summary: Update a managed asset
       operationId: update-managed-asset
+      x-roles-allowed:
+        - admin
       tags:
         - Pulse
       parameters:
@@ -4911,6 +5215,10 @@ paths:
       description: Get all asset mappers
       summary: Get all asset mappers
       operationId: get-asset-mappers
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       tags:
         - Pulse
       responses:
@@ -4924,6 +5232,8 @@ paths:
       description: Add a new asset mapper.
       summary: Add a new asset mapper
       operationId: add-asset-mapper
+      x-roles-allowed:
+        - admin
       tags:
         - Pulse
       requestBody:
@@ -4959,6 +5269,10 @@ paths:
       description: Get an asset mapper by its unique Id.
       summary: Get an asset mapper
       operationId: get-asset-mapper
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       tags:
         - Pulse
       parameters:
@@ -4980,6 +5294,8 @@ paths:
       description: Delete the specified asset mapper.
       summary: Delete an asset mapper
       operationId: delete-asset-mapper
+      x-roles-allowed:
+        - admin
       tags:
         - Pulse
       parameters:
@@ -4997,6 +5313,8 @@ paths:
       description: Update an asset mapper.
       summary: Update an asset mapper
       operationId: update-asset-mapper
+      x-roles-allowed:
+        - admin
       tags:
         - Pulse
       parameters:
@@ -5034,6 +5352,10 @@ paths:
       description: Get all data combining mappings for the given combiner
       summary: Get all mappings
       operationId: get-asset-mapper-mappings
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       tags:
         - Pulse
       parameters:
@@ -5056,6 +5378,10 @@ paths:
       description: Get all the instructions for a designated mapping
       summary: Get all instructions
       operationId: get-asset-mapper-instructions
+      x-roles-allowed:
+        - admin
+        - super
+        - user
       tags:
         - Pulse
       parameters:

@@ -1,6 +1,10 @@
 get:
   description: Obtain gateway configuration.
   operationId: get-xml-configuration
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:
