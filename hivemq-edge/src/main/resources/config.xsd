@@ -1161,31 +1161,6 @@
                                 <xs:documentation>Enable directory descent instead of using direct binding.</xs:documentation>
                             </xs:annotation>
                         </xs:element>
-                        <xs:element name="user-roles" minOccurs="0" maxOccurs="1">
-                            <xs:annotation>
-                                <xs:documentation>Optional list of user roles with LDAP queries. Minimum 1, maximum 3 entries.</xs:documentation>
-                            </xs:annotation>
-                            <xs:complexType>
-                                <xs:sequence>
-                                    <xs:element name="user-role" minOccurs="1" maxOccurs="3">
-                                        <xs:complexType>
-                                            <xs:all>
-                                                <xs:element name="role" type="nonEmptyString">
-                                                    <xs:annotation>
-                                                        <xs:documentation>The role name to assign.</xs:documentation>
-                                                    </xs:annotation>
-                                                </xs:element>
-                                                <xs:element name="query" type="nonEmptyString">
-                                                    <xs:annotation>
-                                                        <xs:documentation>The LDAP query for this role.</xs:documentation>
-                                                    </xs:annotation>
-                                                </xs:element>
-                                            </xs:all>
-                                        </xs:complexType>
-                                    </xs:element>
-                                </xs:sequence>
-                            </xs:complexType>
-                        </xs:element>
                     </xs:all>
                 </xs:complexType>
             </xs:element>
