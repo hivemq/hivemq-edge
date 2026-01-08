@@ -15,6 +15,9 @@
     {{#vendorExtensions.x-roles-allowed}}
     {{#-first}}@RolesAllowed({ {{/-first}}"{{.}}"{{^-last}}, {{/-last}}{{#-last}} }){{/-last}}
     {{/vendorExtensions.x-roles-allowed}}
+    {{^vendorExtensions.x-roles-allowed}}
+    @Error("YOU MUST REMEMBER THIS, A KISS IS JUST A KISS - but you must specify x-roles-allowed")
+    {{/vendorExtensions.x-roles-allowed}}
     {{#useSwaggerAnnotations}}
     @ApiOperation(value = "{{{summary}}}", notes = "{{{notes}}}"{{#hasAuthMethods}}, authorizations = {
         {{#authMethods}}{{#isOAuth}}@Authorization(value = "{{name}}", scopes = {
