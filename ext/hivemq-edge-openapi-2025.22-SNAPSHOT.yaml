@@ -104,6 +104,8 @@ paths:
   /:
     get:
       operationId: getRoot
+      x-roles-allowed:
+        - NO_AUTH_REQUIRED
       responses:
         default:
           content:
@@ -113,6 +115,8 @@ paths:
     post:
       description: Authorize the presented user to obtain a secure token for use on the API.
       operationId: authenticate
+      x-roles-allowed:
+        - NO_AUTH_REQUIRED
       requestBody:
         content:
           application/json:
@@ -151,6 +155,8 @@ paths:
     post:
       description: Authorize the presented user to obtain a secure token for use on the API.
       operationId: refresh-token
+      x-roles-allowed:
+        - NO_AUTH_REQUIRED
       responses:
         '200':
           content:
@@ -178,6 +184,8 @@ paths:
     post:
       description: Authorize the presented user to obtain a secure token for use on the API.
       operationId: validate-token
+      x-roles-allowed:
+        - NO_AUTH_REQUIRED
       requestBody:
         content:
           application/json:

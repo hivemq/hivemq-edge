@@ -74,14 +74,14 @@ public class ApiAuthenticationFeature implements DynamicFeature {
         //-- Check if roles are defined on the resource method (these are the ones that are the most specific)
         Optional<RolesAllowed>
                 requiredRoles = ApiPermissionUtils.getAnnotationIfExists(RolesAllowed.class, resourceMethod);
-        if(requiredRoles.isPresent()){
+        if(requiredRoles.isPresent() && !Set.of(requiredRoles.get().value()).contains("NO_AUTH_REQUIRED")){
             final AuthenticationFilter filter = new AuthenticationFilter(Set.of(requiredRoles.get().value()));
             context.register(filter);
             return;
         } else {
             //-- Check if roles are defined on the resource class
             requiredRoles = ApiPermissionUtils.getAnnotationIfExists(RolesAllowed.class, resourceInfo.getResourceClass());
-            if(requiredRoles.isPresent()){
+            if(requiredRoles.isPresent() && !Set.of(requiredRoles.get().value()).contains("NO_AUTH_REQUIRED")){
                 final AuthenticationFilter filter = new AuthenticationFilter(Set.of(requiredRoles.get().value()));
                 context.register(filter);
                 return;

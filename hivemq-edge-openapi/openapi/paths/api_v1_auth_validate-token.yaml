@@ -1,6 +1,8 @@
 post:
   description: Authorize the presented user to obtain a secure token for use on the API.
   operationId: validate-token
+  x-roles-allowed:
+    - NO_AUTH_REQUIRED
   requestBody:
     content:
       application/json:
