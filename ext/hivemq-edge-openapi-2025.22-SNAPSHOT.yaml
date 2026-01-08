@@ -104,10 +104,6 @@ paths:
   /:
     get:
       operationId: getRoot
-      x-roles-allowed:
-        - admin
-        - super
-        - user
       responses:
         default:
           content:

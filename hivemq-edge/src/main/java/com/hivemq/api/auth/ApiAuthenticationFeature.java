@@ -95,7 +95,7 @@ public class ApiAuthenticationFeature implements DynamicFeature {
     }
 
     protected ApiSecurityContext createSecurityContext(final @NotNull AuthenticationResult result){
-        ApiSecurityContext context = new ApiSecurityContext(result.getPrincipal(), result.getAuthenticationMethod(), true, apiConfigurationService);
+        ApiSecurityContext context = new ApiSecurityContext(result.getPrincipal(), result.getAuthenticationMethod(), true);
         return context;
     }
 
@@ -116,11 +116,20 @@ public class ApiAuthenticationFeature implements DynamicFeature {
         @Override
         public void filter(final @NotNull ContainerRequestContext requestContext) throws IOException {
             Preconditions.checkNotNull(requestContext);
+
+            // shortcut if authentication and authorization is NOT enforced (compatibility behavior)
+            if (!apiConfigurationService.isEnforceApiAuth()) {
+                return;
+            }
+
             try {
+
+                // first check the authorization and set the security context if authentication was successful
                 ChainedAuthenticationHandler handler = new ChainedAuthenticationHandler(authenticationHandler);
                 AuthenticationResult result = handler.authenticate(requestContext);
                 if(!result.isSuccess()){
                     log.debug("Authentication failed for resource {}", requestContext.getUriInfo().getPath());
+                    // a bit counterintuitive but HTTP response codes specify UNAUTHORIZED(401) if authentication fails
                     Response.ResponseBuilder builder = Response.status(Response.Status.UNAUTHORIZED);
                     handler.decorateResponse(result, builder);
                     requestContext.abortWith(builder.build());
@@ -133,12 +142,23 @@ public class ApiAuthenticationFeature implements DynamicFeature {
                     }
                 }
 
-                if(!requiredPermissions.isEmpty() && !handler.authorized(requestContext, requiredPermissions)){
-                    log.warn("Not authorized to access resource {} -> {}", requestContext.getUriInfo().getPath(), requestContext.getSecurityContext());
-                    Response.ResponseBuilder builder = Response.status(Response.Status.FORBIDDEN);
-                    handler.decorateResponse(result, builder);
-                    requestContext.abortWith(builder.build());
+                // next check the authorization
+                if(!requiredPermissions.isEmpty()){
+                    if(!handler.authorized(requestContext, requiredPermissions)){
+                        log.warn("Not authorized to access resource {} -> {}", requestContext.getUriInfo().getPath(), requestContext.getSecurityContext());
+                        // a bit counterintuitive but HTTP response codes specify FORBIDDEN(403) if authorization fails
+                        Response.ResponseBuilder builder = Response.status(Response.Status.FORBIDDEN);
+                        handler.decorateResponse(result, builder);
+                        requestContext.abortWith(builder.build());
+                    } else {
+                        if(log.isTraceEnabled()){
+                            log.trace("Request authorized {} -> {}", requestContext.getUriInfo().getPath(), requestContext.getSecurityContext());
+                        }
+                    }
                 }
+
+                // if the request was not aborted above, that means authentication and authorization were successful
+
             } catch (final Exception e) {
                 log.error("REST API authentication failed, reason: {}", e.getMessage());
                 if (log.isDebugEnabled()) {
