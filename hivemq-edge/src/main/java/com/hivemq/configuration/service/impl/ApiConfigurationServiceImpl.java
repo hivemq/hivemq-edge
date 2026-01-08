@@ -39,7 +39,7 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
     private @Nullable ApiJwtConfiguration apiJwtConfiguration;
     private @NotNull PreLoginNotice preLoginNotice = new PreLoginNotice();
     private @Nullable LdapConnectionProperties ldapConnectionProperties;
-    private boolean enforceApiAuth = true;
+    private boolean enforceApiAuth = false;
 
     @Override
     public @NotNull List<ApiListener> getListeners() {
