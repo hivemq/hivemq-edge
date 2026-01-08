@@ -27,7 +27,6 @@ import com.hivemq.api.AbstractApi;
 import com.hivemq.api.errors.BadRequestError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
-import com.hivemq.api.auth.ApiRoles;
 import com.hivemq.api.errors.adapters.AdapterCannotBeUpdatedError;
 import com.hivemq.api.errors.adapters.AdapterFailedSchemaValidationError;
 import com.hivemq.api.errors.adapters.AdapterFailedValidationError;
