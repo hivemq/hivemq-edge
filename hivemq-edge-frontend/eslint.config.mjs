@@ -5,7 +5,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tsEslint from 'typescript-eslint'
 import eslintConfigPrettier from 'eslint-config-prettier'
-import pluginCypress from 'eslint-plugin-cypress/flat'
+import pluginCypress from 'eslint-plugin-cypress'
 import pluginQuery from '@tanstack/eslint-plugin-query'
 import sonarjs from 'eslint-plugin-sonarjs'
 
