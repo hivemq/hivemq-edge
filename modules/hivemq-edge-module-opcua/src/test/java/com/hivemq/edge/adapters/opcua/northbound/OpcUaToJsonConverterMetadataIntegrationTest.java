@@ -22,8 +22,10 @@ import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
@@ -34,10 +36,14 @@ import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
+import com.hivemq.protocols.ProtocolAdapterStopOutputImpl;
 import org.awaitility.Awaitility;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import util.EmbeddedOpcUaServerExtension;
 
@@ -48,11 +54,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-abstract class AbstractOpcUaPayloadConverterTest {
+class OpcUaToJsonConverterMetadataIntegrationTest {
 
     @RegisterExtension
     public final @NotNull EmbeddedOpcUaServerExtension opcUaServerExtension = new EmbeddedOpcUaServerExtension();
@@ -92,14 +100,63 @@ abstract class AbstractOpcUaPayloadConverterTest {
         when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
     }
 
-    @NotNull
-    protected OpcUaProtocolAdapter createAndStartAdapter(final @NotNull String subcribedNodeId)
-            throws Exception {
+    @Test
+    @Timeout(10)
+    void whenIncludeMetadataEnabled_thenReceivedDataContainsTimestamps() throws Exception {
+        final String nodeId =
+                opcUaServerExtension.getTestNamespace().addNode("TestIntNode", NodeIds.Int32, () -> 42, 999);
 
-        final OpcUaToMqttConfig opcuaToMqttConfig =
-                new OpcUaToMqttConfig(1, 1000);
-        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
-                opcUaServerExtension.getServerUri(),
+        final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapterWithMetadata(nodeId, true);
+
+        await().until(() -> ProtocolAdapterState.ConnectionStatus.CONNECTED.equals(protocolAdapter.getProtocolAdapterState()
+                .getConnectionStatus()));
+
+        final var received = expectAdapterPublish();
+        protocolAdapter.stop(new ProtocolAdapterStopInput() {
+        }, new ProtocolAdapterStopOutputImpl());
+
+        assertThat(received).containsKey(nodeId);
+        final List<DataPoint> dataPoints = received.get(nodeId);
+        assertThat(dataPoints).hasSize(1);
+
+        final String jsonValue = (String) dataPoints.getFirst().getTagValue();
+        assertThat(jsonValue).contains("\"value\":");
+        assertThat(jsonValue).contains("\"sourceTimestamp\":");
+        assertThat(jsonValue).contains("\"serverTimestamp\":");
+    }
+
+    @Test
+    @Timeout(10)
+    void whenIncludeMetadataDisabled_thenReceivedDataDoesNotContainTimestamps() throws Exception {
+        final String nodeId =
+                opcUaServerExtension.getTestNamespace().addNode("TestIntNode2", NodeIds.Int32, () -> 42, 999);
+
+        final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapterWithMetadata(nodeId, false);
+
+        await().until(() -> ProtocolAdapterState.ConnectionStatus.CONNECTED.equals(protocolAdapter.getProtocolAdapterState()
+                .getConnectionStatus()));
+
+        final var received = expectAdapterPublish();
+        protocolAdapter.stop(new ProtocolAdapterStopInput() {
+        }, new ProtocolAdapterStopOutputImpl());
+
+        assertThat(received).containsKey(nodeId);
+        final List<DataPoint> dataPoints = received.get(nodeId);
+        assertThat(dataPoints).hasSize(1);
+
+        final String jsonValue = (String) dataPoints.getFirst().getTagValue();
+        assertThat(jsonValue).contains("\"value\":");
+        assertThat(jsonValue).doesNotContain("\"sourceTimestamp\":");
+        assertThat(jsonValue).doesNotContain("\"serverTimestamp\":");
+    }
+
+    @NotNull
+    private OpcUaProtocolAdapter createAndStartAdapterWithMetadata(
+            final @NotNull String subscribedNodeId,
+            final boolean includeMetadata) throws Exception {
+
+        final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(1, 1000);
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(opcUaServerExtension.getServerUri(),
                 false,
                 null,
                 null,
@@ -107,10 +164,13 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 opcuaToMqttConfig,
                 null,
                 null,
-                null);
+                includeMetadata);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
-        when(protocolAdapterInput.getTags()).thenReturn(List.of(new OpcuaTag(subcribedNodeId, "", new OpcuaTagDefinition(subcribedNodeId))));
+        when(protocolAdapterInput.getTags()).thenReturn(List.of(new OpcuaTag(subscribedNodeId,
+                "",
+                new OpcuaTagDefinition(subscribedNodeId))));
+
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
@@ -132,12 +192,11 @@ abstract class AbstractOpcUaPayloadConverterTest {
         return protocolAdapter;
     }
 
-    protected @NotNull Map<String, List<DataPoint>> expectAdapterPublish() {
+    private @NotNull Map<String, List<DataPoint>> expectAdapterPublish() {
         Awaitility.await()
                 .pollInterval(10, TimeUnit.MILLISECONDS)
                 .timeout(Duration.ofSeconds(5))
                 .until(() -> !receivedDataPoints.isEmpty());
         return receivedDataPoints;
     }
-
 }
