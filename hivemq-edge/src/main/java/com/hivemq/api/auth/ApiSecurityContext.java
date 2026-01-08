@@ -15,8 +15,6 @@
  */
 package com.hivemq.api.auth;
 
-import com.hivemq.configuration.service.ApiConfigurationService;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,17 +29,14 @@ public class ApiSecurityContext implements SecurityContext {
     private @NotNull ApiPrincipal principal;
     private @Nullable String authenticationScheme;
     private final boolean isSecure;
-    private final ApiConfigurationService apiConfigurationService;
 
     public ApiSecurityContext(
             final @NotNull ApiPrincipal principal,
             final @Nullable String authenticationScheme,
-            final boolean isSecure,
-            final ApiConfigurationService apiConfigurationService) {
+            final boolean isSecure) {
         this.principal = principal;
         this.authenticationScheme = authenticationScheme;
         this.isSecure = isSecure;
-        this.apiConfigurationService = apiConfigurationService;
     }
 
     @Override
@@ -51,7 +46,7 @@ public class ApiSecurityContext implements SecurityContext {
 
     @Override
     public boolean isUserInRole(final String role) {
-        return (principal != null) && (!apiConfigurationService.isEnforceApiAuth() || principal.hasRole(role));
+        return principal != null && principal.hasRole(role);
     }
 
     @Override
@@ -74,7 +69,6 @@ public class ApiSecurityContext implements SecurityContext {
         sb.append("principal=").append(principal);
         sb.append(", authenticationScheme='").append(authenticationScheme).append('\'');
         sb.append(", isSecure=").append(isSecure);
-        // sb.append(", isEnforceUserRoles=").append(apiisEnforceUserRoles);
         sb.append('}');
         return sb.toString();
     }

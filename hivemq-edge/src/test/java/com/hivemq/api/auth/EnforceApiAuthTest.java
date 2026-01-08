@@ -110,7 +110,7 @@ public class EnforceApiAuthTest {
         final var response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(401,response.getStatusCode(),"Resource should be denied");
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because authentication is not enforced)");
     }
 
     @Test
@@ -120,7 +120,7 @@ public class EnforceApiAuthTest {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(401,response.getStatusCode(),"Resource should be denied");
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because authentication is not enforced)");
     }
 
     @Test
@@ -130,7 +130,7 @@ public class EnforceApiAuthTest {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(401,response.getStatusCode(),"Resource should be denied");
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because authentication is not enforced)");
     }
 
     @Test
@@ -151,7 +151,7 @@ public class EnforceApiAuthTest {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(200,response.getStatusCode(),"Resource should be accepted");
+        assertEquals(200,response.getStatusCode(),"Resource should be  allowed (because authentication is not enforced)");
     }
 
     @Test
@@ -190,7 +190,7 @@ public class EnforceApiAuthTest {
         final var response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/permitall/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(401,response.getStatusCode(),"Resource should be allowed");
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed");
     }
 
     @Test
@@ -198,7 +198,7 @@ public class EnforceApiAuthTest {
         final var response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/resource/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(401,response.getStatusCode(),"Resource should not be allowed");
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because authentication is not enforced)");
     }
 
     @Test
@@ -252,7 +252,7 @@ public class EnforceApiAuthTest {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/permitall/get/adminonly"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(200,response.getStatusCode(),"Resource should not be allowed");
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because authentication is not enforced)");
     }
 
 }
