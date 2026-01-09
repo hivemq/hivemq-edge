@@ -55,7 +55,8 @@ class LdapConnectionPropertiesTest {
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND))
+                DEFAULT_SIMPLE_BIND,
+                null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Port must be between 1 and 65535");
 
@@ -73,7 +74,8 @@ class LdapConnectionPropertiesTest {
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND))
+                DEFAULT_SIMPLE_BIND,
+                null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Port must be between 1 and 65535");
     }
@@ -94,7 +96,8 @@ class LdapConnectionPropertiesTest {
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND))
+                DEFAULT_SIMPLE_BIND,
+                null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Connect timeout cannot be negative");
 
@@ -112,7 +115,8 @@ class LdapConnectionPropertiesTest {
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND))
+                DEFAULT_SIMPLE_BIND,
+                null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Response timeout cannot be negative");
     }
@@ -134,7 +138,8 @@ class LdapConnectionPropertiesTest {
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
         assertThat(ldapsProps.trustStore()).isNull();
 
         // START_TLS allows null truststore (will use system CAs)
@@ -152,7 +157,8 @@ class LdapConnectionPropertiesTest {
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
         assertThat(startTlsProps.trustStore()).isNull();
 
         // NONE doesn't need truststore
@@ -170,7 +176,8 @@ class LdapConnectionPropertiesTest {
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
         assertThat(noneProps.trustStore()).isNull();
     }
 
@@ -190,7 +197,8 @@ class LdapConnectionPropertiesTest {
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
 
         assertThat(props.connectTimeoutMillis()).isEqualTo(0);
         assertThat(props.responseTimeoutMillis()).isEqualTo(0);
@@ -212,7 +220,8 @@ class LdapConnectionPropertiesTest {
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
 
         assertThatThrownBy(props::createSSLContext)
                 .isInstanceOf(IllegalStateException.class)
@@ -236,7 +245,8 @@ class LdapConnectionPropertiesTest {
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
 
         final javax.net.ssl.SSLContext sslContext = ldapsProps.createSSLContext();
         assertThat(sslContext)
@@ -258,7 +268,8 @@ class LdapConnectionPropertiesTest {
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
 
         final javax.net.ssl.SSLContext startTlsSslContext = startTlsProps.createSSLContext();
         assertThat(startTlsSslContext)
@@ -283,7 +294,8 @@ class LdapConnectionPropertiesTest {
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
 
         assertThat(props.trustStore().trustStorePath())
                 .as("Custom truststore path should be stored")
@@ -316,7 +328,8 @@ class LdapConnectionPropertiesTest {
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
 
         final var resolver = props.createUserDnResolver(null); // null pool for Direct Reference mode
         assertThat(resolver).isNotNull();
