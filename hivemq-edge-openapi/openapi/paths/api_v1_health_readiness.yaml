@@ -2,9 +2,7 @@ get:
   description: Endpoint to determine whether the gateway is considered ready.
   operationId: readiness
   x-roles-allowed:
-    - admin
-    - super
-    - user
+    - NO_AUTH_REQUIRED
   responses:
     '200':
       content:
