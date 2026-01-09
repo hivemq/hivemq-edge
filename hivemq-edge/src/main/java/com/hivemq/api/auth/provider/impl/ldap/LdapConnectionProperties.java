@@ -19,6 +19,8 @@ import com.hivemq.configuration.entity.api.ldap.LdapAuthenticationEntity;
 import com.hivemq.configuration.entity.api.ldap.LdapServerEntity;
 import com.hivemq.configuration.entity.api.ldap.LdapSimpleBindEntity;
 import com.hivemq.configuration.entity.api.ldap.TrustStoreEntity;
+import com.hivemq.configuration.entity.api.ldap.UserRoleEntity;
+
 import com.unboundid.ldap.sdk.LDAPConnectionOptions;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
 import com.unboundid.ldap.sdk.SearchScope;
@@ -59,6 +61,7 @@ import static java.util.Arrays.stream;
  *                                       <strong>NEVER use in production!</strong> Only for integration tests with
  *                                       testcontainers. Default: false
  * @param ldapSimpleBind                 The simple bind credentials for service account
+ * @param userRoles                      Optional list of user role configurations for role-based queries
  */
 public record LdapConnectionProperties(
         @NotNull LdapServers servers,
@@ -74,7 +77,8 @@ public record LdapConnectionProperties(
         int searchTimeoutSeconds,
         @NotNull String assignedRole,
         boolean acceptAnyCertificateForTesting,
-        @NotNull LdapSimpleBind ldapSimpleBind) {
+        @NotNull LdapSimpleBind ldapSimpleBind,
+        @Nullable List<UserRoleEntity> userRoles) {
 
     /**
      * This class represents the simple bind credentials for an LDAP connection.
@@ -192,7 +196,8 @@ public record LdapConnectionProperties(
                 entity.getSearchTimeoutSeconds(),
                 ADMIN,
                 false,  // Never allow test-only certificate acceptance from XML config
-                LdapSimpleBind.fromEntity(entity.getSimpleBindEntity())
+                LdapSimpleBind.fromEntity(entity.getSimpleBindEntity()),
+                entity.getUserRoles()
         );
     }
 
@@ -347,7 +352,8 @@ public record LdapConnectionProperties(
                 Objects.equals(trustStore(), that.trustStore()) &&
                 Objects.equals(searchScope(), that.searchScope()) &&
                 Objects.equals(requiredObjectClass(), that.requiredObjectClass()) &&
-                Objects.equals(ldapSimpleBind(), that.ldapSimpleBind());
+                Objects.equals(ldapSimpleBind(), that.ldapSimpleBind()) &&
+                Objects.equals(userRoles(), that.userRoles());
     }
 
     @Override
@@ -365,6 +371,7 @@ public record LdapConnectionProperties(
                 searchTimeoutSeconds(),
                 assignedRole(),
                 acceptAnyCertificateForTesting(),
-                ldapSimpleBind());
+                ldapSimpleBind(),
+                userRoles());
     }
 }

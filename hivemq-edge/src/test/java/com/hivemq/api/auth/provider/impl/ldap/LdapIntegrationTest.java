@@ -100,7 +100,8 @@ class LdapIntegrationTest {
                 5,
                 ADMIN,  // assignedRole
                 false,
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         // Create and start LDAP client
         ldapClient = new LdapClient(ldapConnectionProperties, new SecurityLog());
