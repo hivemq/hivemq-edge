@@ -1,6 +1,10 @@
 get:
   description: Get the southbound mappings.
   operationId: get-adapter-southboundMappings
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The adapter id.
       in: path
@@ -27,6 +31,8 @@ get:
 put:
   description: Update all southbound mappings of an adapter.
   operationId: update-adapter-southboundMappings
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The id of the adapter whose southbound mappings will be updated.
       in: path

@@ -6,6 +6,10 @@ get:
 
      
   operationId: getAllBehaviorPolicies
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: >-
         Comma-separated list of fields to include in the response. Allowed
@@ -203,6 +207,8 @@ post:
     Create a behavior policy
 
   operationId: createBehaviorPolicy
+  x-roles-allowed:
+    - admin
   requestBody:
     content:
       application/json:

@@ -1,6 +1,10 @@
 get:
   description: Obtain gateway notifications.
   operationId: get-notifications
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:

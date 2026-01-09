@@ -1,6 +1,10 @@
 get:
   description: Obtain a JsonSchema based in the stored samples for a given topic.
   operationId: getSchemaForTopic
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The topic.
       in: path

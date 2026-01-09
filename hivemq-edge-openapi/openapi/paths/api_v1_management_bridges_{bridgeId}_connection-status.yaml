@@ -1,6 +1,10 @@
 get:
   description: Get the up to date status of a bridge.
   operationId: get-bridge-status
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The name of the bridge to query.
       in: path

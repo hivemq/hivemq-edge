@@ -2,6 +2,10 @@ get:
   description: Get all data combining mappings for the given combiner
   summary: Get all mappings
   operationId: get-asset-mapper-mappings
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   tags:
     - Pulse
   parameters:

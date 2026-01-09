@@ -2,6 +2,8 @@ delete:
   description: Delete the activation token from the Pulse Client
   summary: Delete the Pulse activation token
   operationId: delete-pulse-activation-token
+  x-roles-allowed:
+    - admin
   tags:
     - Pulse
   responses:
@@ -29,6 +31,8 @@ post:
   description: Send an activation token to the Pulse Client
   summary: Update an activation token
   operationId: update-pulse-activation-token
+  x-roles-allowed:
+    - admin
   tags:
     - Pulse
   requestBody:

@@ -85,6 +85,7 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
         configEntity = entity;
 
         apiCfgService.setEnabled(entity.isEnabled());
+        apiCfgService.setEnforceApiAuth(entity.isEnforceApiAuth());
 
         // Users
         if(entity.getLdap() != null) {

@@ -4,6 +4,8 @@ delete:
 
      
   operationId: deleteSchema
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The schema identifier of the schema versions to delete.
       example: schema1
@@ -69,6 +71,10 @@ get:
 
      
   operationId: getSchema
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The identifier of the schema.
       example: schema1

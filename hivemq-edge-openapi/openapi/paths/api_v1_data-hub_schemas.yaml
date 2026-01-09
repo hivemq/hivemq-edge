@@ -6,6 +6,10 @@ get:
 
      
   operationId: getAllSchemas
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: >-
         Comma-separated list of fields to include in the response. Allowed
@@ -176,6 +180,8 @@ post:
     Creates a schema
 
   operationId: createSchema
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The entity tag
       in: header

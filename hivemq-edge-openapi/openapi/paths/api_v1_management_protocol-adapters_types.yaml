@@ -1,6 +1,10 @@
 get:
   description: Obtain a list of available protocol adapter types.
   operationId: getAdapterTypes
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - name: X-Original-URI
       in: header

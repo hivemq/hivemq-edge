@@ -1,6 +1,10 @@
 get:
   description: Obtain the details.
   operationId: get-bridges-status
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:

@@ -2,6 +2,10 @@ get:
   description: Get all combiners
   summary: Get all combiners
   operationId: get-combiners
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   tags:
     - Combiners
   responses:
@@ -15,6 +19,8 @@ post:
   description: Add a new combiner.
   summary: Add a new combiner
   operationId: add-combiner
+  x-roles-allowed:
+    - admin
   tags:
     - Combiners
   requestBody:

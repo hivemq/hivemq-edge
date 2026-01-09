@@ -1,6 +1,10 @@
 get:
   description: Obtain a list of configured adapters.
   operationId: getAdapters
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:

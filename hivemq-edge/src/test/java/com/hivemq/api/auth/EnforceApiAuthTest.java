@@ -47,11 +47,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * @author Simon L Johnson
+ * @author martin Schoenert
+ *
+ * This is basically a copy of the BasicAuthenticationTests,
+ * but this time we do NOT enforce the user roles,
+ * so the tests that expect role enforcement now return success!
+ * these tests have a comment
+ * // succeeds because api auth is not enforced
  */
-public class BasicAuthenticationTests {
+public class EnforceApiAuthTest {
 
-    protected final Logger logger = LoggerFactory.getLogger(BasicAuthenticationTests.class);
+    protected final Logger logger = LoggerFactory.getLogger(EnforceApiAuthTest.class);
 
     static final int TEST_HTTP_PORT = 8088;
     static final int CONNECT_TIMEOUT = 1000;
@@ -73,7 +79,7 @@ public class BasicAuthenticationTests {
         authenticationHandlers.add(new BasicAuthenticationHandler(AuthTestUtils.createTestUsernamePasswordProvider()));
 
         apiConfigurationService = mock(ApiConfigurationService.class);
-        when(apiConfigurationService.isEnforceApiAuth()).thenReturn(true);
+        when(apiConfigurationService.isEnforceApiAuth()).thenReturn(false);
 
         final var conf = new ResourceConfig(){{
                 register(new ApiAuthenticationFeature(authenticationHandlers,apiConfigurationService));
@@ -104,7 +110,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(401,response.getStatusCode(),"Resource should be denied");
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because authentication is not enforced)");
     }
 
     @Test
@@ -114,7 +120,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(401,response.getStatusCode(),"Resource should be denied");
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because authentication is not enforced)");
     }
 
     @Test
@@ -124,7 +130,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(401,response.getStatusCode(),"Resource should be denied");
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because authentication is not enforced)");
     }
 
     @Test
@@ -134,7 +140,8 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(403,response.getStatusCode(),"Resource should be denied");
+        // succeeds because user roles are not enforced
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because user roles are not enforced)");
     }
 
     @Test
@@ -144,7 +151,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(200,response.getStatusCode(),"Resource should be accepted");
+        assertEquals(200,response.getStatusCode(),"Resource should be  allowed (because authentication is not enforced)");
     }
 
     @Test
@@ -164,7 +171,8 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/user"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(403,response.getStatusCode(),"Resource should be denied");
+        // succeeds because user roles are not enforced
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because user roles are not enforced)");
     }
 
     @Test
@@ -182,7 +190,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/permitall/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(401,response.getStatusCode(),"Resource should be allowed");
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed");
     }
 
     @Test
@@ -190,7 +198,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(null,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/resource/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(401,response.getStatusCode(),"Resource should not be allowed");
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because authentication is not enforced)");
     }
 
     @Test
@@ -211,7 +219,8 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/resource/get/onlyadmin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(403,response.getStatusCode(),"Resource should be allowed");
+        // succeeds because user roles are not enforced
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because user roles are not enforced)");
     }
 
     @Test
@@ -232,7 +241,8 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/permitall/get/adminonly"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(403,response.getStatusCode(),"Resource should not be allowed");
+        // succeeds because user roles are not enforced
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because user roles are not enforced)");
     }
 
     @Test
@@ -242,7 +252,7 @@ public class BasicAuthenticationTests {
         final var response =
                 HttpUrlConnectionClient.get(headers,
                         getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/permitall/get/adminonly"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(200,response.getStatusCode(),"Resource should not be allowed");
+        assertEquals(200,response.getStatusCode(),"Resource should be allowed (because authentication is not enforced)");
     }
 
 }

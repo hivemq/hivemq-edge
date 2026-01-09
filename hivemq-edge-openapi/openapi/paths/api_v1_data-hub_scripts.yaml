@@ -1,6 +1,10 @@
 get:
   description: Get all scripts.
   operationId: getAllScripts
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: >-
         Comma-separated list of fields to include in the response. Allowed
@@ -161,6 +165,8 @@ get:
 post:
   description: Creates a script
   operationId: createScript
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The entity tag
       in: header
