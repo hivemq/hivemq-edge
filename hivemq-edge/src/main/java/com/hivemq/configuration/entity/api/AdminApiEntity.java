@@ -93,7 +93,7 @@ public class AdminApiEntity extends EnabledEntity {
     }
 
     public boolean isEnforceApiAuth() {
-        return (enforceApiAuth != null) && enforceApiAuth;
+        return (enforceApiAuth == null) || (enforceApiAuth != null && enforceApiAuth);
     }
 
     @Override
