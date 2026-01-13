@@ -52,9 +52,15 @@ public class JsonSchemaGenerator {
 
     private final @NotNull OpcUaClient client;
     private final @NotNull DataTypeTree tree;
+    private final boolean includeMetadata;
 
     public JsonSchemaGenerator(final @NotNull OpcUaClient client) {
+        this(client, false);
+    }
+
+    public JsonSchemaGenerator(final @NotNull OpcUaClient client, final boolean includeMetadata) {
         this.client = client;
+        this.includeMetadata = includeMetadata;
         try {
             this.tree = client.getDataTypeTree();
         } catch (final UaException e) {
@@ -64,13 +70,13 @@ public class JsonSchemaGenerator {
 
     public @NotNull CompletableFuture<Optional<JsonNode>> createMqttPayloadJsonSchema(final @NotNull OpcuaTag tag) {
         final String nodeId = tag.getDefinition().getNode();
-        final var jsonSchemaGenerator = new JsonSchemaGenerator(client);
+        final var jsonSchemaGenerator = new JsonSchemaGenerator(client, includeMetadata);
         final var parsed = NodeId.parse(nodeId);
         return jsonSchemaGenerator.collectTypeInfo(parsed).thenApply(info -> {
             if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
-                return createJsonSchemaForArrayType(info.dataType(), info.arrayDimensions);
+                return createJsonSchemaForArrayType(info.dataType(), info.arrayDimensions, includeMetadata);
             } else if (info.nestedFields() == null || info.nestedFields().isEmpty()) {
-                return createJsonSchemaForBuiltInType(info.dataType());
+                return createJsonSchemaForBuiltInType(info.dataType(), includeMetadata);
             } else {
                 return jsonSchemaGenerator.jsonSchemaFromNodeId(info);
             }
@@ -251,8 +257,12 @@ public class JsonSchemaGenerator {
                                 fieldInformation.customDataType().getNodeId().toParseableString())));
         rootNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
 
+        // Create the root properties node that contains "value" and metadata
+        final ObjectNode rootPropertiesNode = MAPPER.createObjectNode();
+        rootNode.set("properties", rootPropertiesNode);
+
         final ObjectNode valueNode = MAPPER.createObjectNode();
-        rootNode.set("value", valueNode);
+        rootPropertiesNode.set("value", valueNode);
         valueNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
 
         final ObjectNode propertiesNode = MAPPER.createObjectNode();
@@ -268,6 +278,11 @@ public class JsonSchemaGenerator {
         });
 
         valueNode.set("required", requiredAttributesArray);
+
+        // Add metadata properties if enabled
+        if (includeMetadata) {
+            BuiltinJsonSchema.addReadOnlyMetadataProperties(rootPropertiesNode, MAPPER);
+        }
 
         final ArrayNode requiredProperties = MAPPER.createArrayNode();
         requiredProperties.add("value");
