@@ -2,9 +2,7 @@ get:
   description: Obtain configuration.
   operationId: get-configuration
   x-roles-allowed:
-    - admin
-    - super
-    - user
+    - NO_AUTH_REQUIRED
   responses:
     '200':
       content:
