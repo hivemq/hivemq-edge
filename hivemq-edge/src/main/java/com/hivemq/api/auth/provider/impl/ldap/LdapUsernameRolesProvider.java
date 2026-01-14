@@ -16,14 +16,17 @@
 package com.hivemq.api.auth.provider.impl.ldap;
 
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
+import com.hivemq.configuration.entity.api.ldap.UserRoleEntity;
 import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.LDAPException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.GeneralSecurityException;
 import java.util.Optional;
+import java.util.List;
 import java.util.Set;
 
 public class LdapUsernameRolesProvider implements IUsernameRolesProvider {
@@ -32,10 +35,13 @@ public class LdapUsernameRolesProvider implements IUsernameRolesProvider {
 
     private final @NotNull LdapClient ldapClient;
     private final @NotNull Set<String> assignedRole;
+    private final @Nullable List<UserRoleEntity> userRoles;
 
     public LdapUsernameRolesProvider(final @NotNull LdapConnectionProperties ldapConnectionProperties, final @NotNull SecurityLog securityLog) {
         this.ldapClient = new LdapClient(ldapConnectionProperties, securityLog);
+        //TODO I'm not super happy about this, we should get rid of the assigned role
         this.assignedRole = Set.of(ldapConnectionProperties.assignedRole());
+        this.userRoles = ldapConnectionProperties.userRoles();
         try {
             this.ldapClient.start();
         } catch (final LDAPException | GeneralSecurityException e) {
@@ -50,7 +56,17 @@ public class LdapUsernameRolesProvider implements IUsernameRolesProvider {
             final @NotNull byte @NotNull [] password) {
         try {
             if(ldapClient.authenticateUser(userName, password)) {
-                return Optional.of(new UsernameRoles(userName, assignedRole));
+                if (userRoles != null && !userRoles.isEmpty()) {
+                    try {
+                        return Optional.of(new UsernameRoles(userName,ldapClient.getRolesForUser(userName, userRoles)));
+                    } catch (final LDAPException e) {
+                        log.error("Error querying roles for user {}", userName, e);
+                        return Optional.empty();
+                    }
+                }
+                else {
+                    return Optional.of(new UsernameRoles(userName, assignedRole));
+                }
             } else {
                 return Optional.empty();
             }

@@ -108,7 +108,8 @@ public class LdapAuthenticationTests {
                         5,
                         ADMIN,
                         false,
-                        ldapSimpleBind);
+                        ldapSimpleBind,
+                        null);
 
         // Create test user in LLDAP
         new LdapTestConnection(ldapConnectionProperties).createTestUser(
