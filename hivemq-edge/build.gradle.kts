@@ -216,7 +216,8 @@ dependencies {
 
     //FIXME: should be in module instead
     // we need better module isolation for that as the modules pick up Netty from the app class loader
-    implementation("com.google.protobuf:protobuf-java:4.33.4")
+    implementation(libs.protobuf)
+
 }
 
 configurations.all {
