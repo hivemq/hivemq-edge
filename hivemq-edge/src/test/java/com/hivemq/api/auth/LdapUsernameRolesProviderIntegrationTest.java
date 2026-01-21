@@ -83,8 +83,6 @@ class LdapUsernameRolesProviderIntegrationTest {
                         ldapSimpleBind,
                         null);
 
-        //TODO(mschoenert): also need to test this with non-empty list of user roles
-
         // Create test user in LLDAP
         new LdapTestConnection(ldapConnectionProperties).createTestUser(
                 LLDAP_CONTAINER.getAdminDn(),

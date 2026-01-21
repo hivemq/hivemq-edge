@@ -39,7 +39,6 @@ public class LdapUsernameRolesProvider implements IUsernameRolesProvider {
 
     public LdapUsernameRolesProvider(final @NotNull LdapConnectionProperties ldapConnectionProperties, final @NotNull SecurityLog securityLog) {
         this.ldapClient = new LdapClient(ldapConnectionProperties, securityLog);
-        //TODO I'm not super happy about this, we should get rid of the assigned role
         this.assignedRole = Set.of(ldapConnectionProperties.assignedRole());
         this.userRoles = ldapConnectionProperties.userRoles();
         try {
@@ -53,7 +52,7 @@ public class LdapUsernameRolesProvider implements IUsernameRolesProvider {
     @Override
     public Optional<UsernameRoles> findByUsernameAndPassword(
             final @NotNull String userName,
-            final @NotNull byte @NotNull [] password) {
+            final byte @NotNull [] password) {
         try {
             if(ldapClient.authenticateUser(userName, password)) {
                 if (userRoles != null && !userRoles.isEmpty()) {
