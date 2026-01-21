@@ -187,7 +187,8 @@ class OpenLdapTest {
             final SearchRequest searchRequest = new SearchRequest(
                     "ou=people," + OPENLDAP_CONTAINER.getBaseDn(),
                     SearchScope.ONE,
-                    "(objectClass=inetOrgPerson)");
+                    "(objectClass=inetOrgPerson)",
+                    SearchRequest.ALL_USER_ATTRIBUTES, SearchRequest.ALL_OPERATIONAL_ATTRIBUTES);
 
             final SearchResult searchResult = connection.search(searchRequest);
 
@@ -207,6 +208,7 @@ class OpenLdapTest {
             assertThat(alice.getAttributeValue("sn")).isEqualTo("Anderson");
             assertThat(alice.getAttributeValue("mail")).isEqualTo("alice@example.org");
             assertThat(alice.getAttributeValue("description")).isEqualTo("Software Engineer");
+            assertThat(alice.getAttributeValues("memberOf")).contains("cn=developers,ou=groups,dc=example,dc=org");
         }
     }
 

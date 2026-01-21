@@ -58,16 +58,37 @@ gidNumber: 10002
 homeDirectory: /home/charlie
 description: Sales Manager
 
+dn: uid=don,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: top
+uid: don
+cn: Don Duncan
+sn: Duncan
+givenName: Don
+mail: don@example.org
+userPassword: don012
+uidNumber: 10004
+gidNumber: 10003
+homeDirectory: /home/don
+description: Data Scientist
+
 # Groups
 dn: cn=developers,ou=groups,dc=example,dc=org
-objectClass: groupOfNames
+objectClass: groupOfUniqueNames
 cn: developers
 description: Software Development Team
-member: uid=alice,ou=people,dc=example,dc=org
-member: uid=bob,ou=people,dc=example,dc=org
+uniqueMember: uid=alice,ou=people,dc=example,dc=org
+uniqueMember: uid=bob,ou=people,dc=example,dc=org
 
 dn: cn=administrators,ou=groups,dc=example,dc=org
-objectClass: groupOfNames
+objectClass: groupOfUniqueNames
 cn: administrators
 description: System Administrators
-member: uid=bob,ou=people,dc=example,dc=org
+uniqueMember: uid=bob,ou=people,dc=example,dc=org
+
+dn: cn=data-scientists,ou=groups,dc=example,dc=org
+objectClass: groupOfUniqueNames
+cn: data-scientists
+description: Data Science Team
+uniqueMember: uid=don,ou=people,dc=example,dc=org
