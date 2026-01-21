@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Uses plain LDAP (no TLS) for simplicity in testing.
  */
 @Testcontainers
-class LdapUsernameRolesProviderIntegrationTest {
+class LdapUsernameRolesProviderNoRulesLldapIntegrationTest {
 
     @Container
     private static final LldapContainer LLDAP_CONTAINER = new LldapContainer();
@@ -82,8 +82,6 @@ class LdapUsernameRolesProviderIntegrationTest {
                         false,
                         ldapSimpleBind,
                         null);
-
-        //TODO(mschoenert): also need to test this with non-empty list of user roles
 
         // Create test user in LLDAP
         new LdapTestConnection(ldapConnectionProperties).createTestUser(

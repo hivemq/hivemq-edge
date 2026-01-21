@@ -195,8 +195,8 @@ class OpenLdapTest {
             // Assert - Should find 3 users (alice, bob, charlie)
             assertThat(searchResult.getResultCode()).isEqualTo(ResultCode.SUCCESS);
             assertThat(searchResult.getEntryCount())
-                    .as("Should have loaded 3 users from LDIF file")
-                    .isEqualTo(3);
+                    .as("Should have loaded 4 users from LDIF file")
+                    .isEqualTo(4);
 
             // Verify alice exists with correct attributes
             final SearchResultEntry alice = searchResult.getSearchEntries().stream()
@@ -260,7 +260,7 @@ class OpenLdapTest {
             final SearchRequest searchRequest = new SearchRequest(
                     "cn=developers,ou=groups," + OPENLDAP_CONTAINER.getBaseDn(),
                     SearchScope.BASE,
-                    "(objectClass=groupOfNames)");
+                    "(objectClass=groupOfUniqueNames)");
 
             final SearchResult searchResult = connection.search(searchRequest);
 
@@ -271,7 +271,7 @@ class OpenLdapTest {
             final SearchResultEntry developersGroup = searchResult.getSearchEntries().getFirst();
 
             // Verify group members
-            final String[] members = developersGroup.getAttributeValues("member");
+            final String[] members = developersGroup.getAttributeValues("uniqueMember");
             assertThat(members)
                     .as("Developers group should have 2 members")
                     .hasSize(2)
@@ -360,7 +360,7 @@ class OpenLdapTest {
             final SearchResult result1 = connection.search(search1);
             assertThat(result1.getEntryCount())
                     .as("All users should have @example.org email")
-                    .isEqualTo(3);
+                    .isEqualTo(4);
 
             // Search 2: Find users with uidNumber >= 10002
             final SearchRequest search2 = new SearchRequest(
@@ -370,19 +370,19 @@ class OpenLdapTest {
 
             final SearchResult result2 = connection.search(search2);
             assertThat(result2.getEntryCount())
-                    .as("Bob and Charlie have uidNumber >= 10002")
-                    .isEqualTo(2);
+                    .as("Bob, Charlie, and Don have uidNumber >= 10002")
+                    .isEqualTo(3);
 
             // Search 3: Find all groups
             final SearchRequest search3 = new SearchRequest(
                     "ou=groups," + OPENLDAP_CONTAINER.getBaseDn(),
                     SearchScope.ONE,
-                    "(objectClass=groupOfNames)");
+                    "(objectClass=groupOfUniqueNames)");
 
             final SearchResult result3 = connection.search(search3);
             assertThat(result3.getEntryCount())
-                    .as("Should have 2 groups from LDIF")
-                    .isEqualTo(2);
+                    .as("Should have 3 groups from LDIF")
+                    .isEqualTo(3);
 
             // Verify group names
             final List<String> groupNames = result3.getSearchEntries().stream()
@@ -390,7 +390,7 @@ class OpenLdapTest {
                     .toList();
 
             assertThat(groupNames)
-                    .containsExactlyInAnyOrder("developers", "administrators");
+                    .containsExactlyInAnyOrder("developers", "administrators", "data-scientists");
         }
     }
 

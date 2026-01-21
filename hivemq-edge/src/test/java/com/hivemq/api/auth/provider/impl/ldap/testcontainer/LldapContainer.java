@@ -289,9 +289,10 @@ public class LldapContainer extends GenericContainer<LldapContainer> {
      *
      * @return the admin DN
      */
-    public @NotNull String getAdminDn() {
-        return "uid=" + adminUsername + ",ou=people," + baseDn;
-    }
+    public @NotNull String getUserRdns( String username ) { return "uid=" + username + ",ou=people"; }
+    public @NotNull String getAdminRdns() { return getUserRdns(getAdminUsername()); }
+    public @NotNull String getUserDn( String username ) { return getUserRdns(username) + "," + getBaseDn(); }
+    public @NotNull String getAdminDn() { return getUserDn(getAdminUsername()); }
 
     /**
      * Builder for LldapContainer.

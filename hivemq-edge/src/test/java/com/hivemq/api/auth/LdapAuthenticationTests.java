@@ -25,7 +25,6 @@ import com.hivemq.api.auth.provider.impl.ldap.LdapUsernameRolesProvider;
 import com.hivemq.api.auth.provider.impl.ldap.TlsMode;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LldapContainer;
-import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
@@ -38,7 +37,6 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.junit.jupiter.Container;
@@ -72,10 +70,6 @@ public class LdapAuthenticationTests {
 
     protected static JaxrsHttpServer server;
 
-    @Mock
-    private static Injector injector;
-    @Mock
-    private static ApiConfigurationService apiConfigurationService;
     @BeforeAll
     static void setUp() throws Exception {
         // Get the dynamically mapped port from the container
@@ -87,7 +81,7 @@ public class LdapAuthenticationTests {
         // will be added from the rdns parameter (getBaseDn() returns "ou=people,{baseDn}")
         final var ldapSimpleBind =
                 new LdapConnectionProperties.LdapSimpleBind(
-                        "uid=" + LLDAP_CONTAINER.getAdminUsername(),
+                        LLDAP_CONTAINER.getAdminRdns(),
                         LLDAP_CONTAINER.getAdminPassword());
 
         // Create connection properties for plain LDAP (no TLS for simplicity)
@@ -102,7 +96,7 @@ public class LdapAuthenticationTests {
                         10000, // 10 second response timeout
                         1,
                         "uid",
-                        getBaseDn(),
+                        LLDAP_CONTAINER.getBaseDn(),
                         null,
                         SearchScope.SUB,
                         5,
@@ -118,31 +112,27 @@ public class LdapAuthenticationTests {
                 LLDAP_CONTAINER.getBaseDn());
 
         final var config = new JaxrsHttpServerConfiguration();
+        //-- ensure we supplied our own test mapper as this can effect output
+        config.setObjectMapper(new ObjectMapper());
         config.setPort(TEST_HTTP_PORT);
 
         final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
         authenticationHandlers.add(new BasicAuthenticationHandler(new LdapUsernameRolesProvider(ldapConnectionProperties, new SecurityLog())));
 
-        apiConfigurationService = mock(ApiConfigurationService.class);
+        final ApiConfigurationService apiConfigurationService = mock(ApiConfigurationService.class);
         when(apiConfigurationService.isEnforceApiAuth()).thenReturn(true);
 
-        final ResourceConfig conf = new ResourceConfig(){{
-            register(new ApiAuthenticationFeature(authenticationHandlers,apiConfigurationService));
-        }
-        };
-        conf.register(TestApiResource.class);
-        conf.register(TestPermitAllApiResource.class);
-        conf.register(TestResourceLevelRolesApiResource.class);
-        //-- ensure we supplied our own test mapper as this can effect output
-        final var mapper = new ObjectMapper();
-        config.setObjectMapper(mapper);
-        server = new JaxrsHttpServer(mock(), List.of(config), conf);
+        final ResourceConfig resourceConfig = new ResourceConfig();
+        resourceConfig.register(new ApiAuthenticationFeature(authenticationHandlers,apiConfigurationService));
+        resourceConfig.register(TestApiResource.class);
+        resourceConfig.register(TestPermitAllApiResource.class);
+        resourceConfig.register(TestResourceLevelRolesApiResource.class);
+
+        server = new JaxrsHttpServer(mock(), List.of(config), resourceConfig);
         server.startServer();
     }
 
-    public static String getBaseDn() {
-        return "ou=people," + LLDAP_CONTAINER.getBaseDn();
-    }
+    // public static String getBaseDn() { return "ou=people," + LLDAP_CONTAINER.getBaseDn();}
 
     @AfterAll
     public static void tearDown(){
