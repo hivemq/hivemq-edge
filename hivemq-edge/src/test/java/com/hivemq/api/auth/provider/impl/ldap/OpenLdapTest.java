@@ -102,7 +102,7 @@ class OpenLdapTest {
         // OpenLDAP admin DN: cn=admin,{baseDn}
         final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
                 new LdapConnectionProperties.LdapSimpleBind(
-                        "cn=admin",
+                        OPENLDAP_CONTAINER.getAdminRdns(),
                         OPENLDAP_CONTAINER.getAdminPassword());
 
         // Create connection properties
@@ -398,6 +398,11 @@ class OpenLdapTest {
      * Demonstrates verifying organizational structure from LDIF.
      * <p>
      * Tests that the organizational units (ou=people, ou=groups) exist.
+     * </p>
+     * <p>
+     * I'm not 100% sure what this test is for. The LDAP auth provider does not depend on ou=people even existing.
+     * Is this so that failures in the setup for the real tests are noticed early?
+     * </p>
      */
     @Test
     void testOrganizationalStructure() throws Exception {
