@@ -28,6 +28,7 @@ import {
   formatPath,
   fromJsonPath,
   isMappingSupported,
+  isReadOnly,
   toJsonPath,
 } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
@@ -123,6 +124,19 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
           <Alert status="warning" size="sm" variant="left-accent" w="140px">
             <AlertIcon />
             {t('rjsf.MqttTransformationField.validation.notSupported')}
+          </Alert>
+        </CardHeader>
+      </Card>
+    )
+
+  if (isReadOnly(property))
+    return (
+      <Card size="sm" variant="outline" w="100%" data-testid="mapping-instruction-readonly">
+        <CardHeader as={HStack} justifyContent="space-between">
+          <PropertyItem property={property} hasTooltip hasPathAsName={showPathAsName} />
+          <Alert status="info" size="sm" variant="left-accent" w="140px">
+            <AlertIcon />
+            {t('rjsf.MqttTransformationField.validation.readOnly')}
           </Alert>
         </CardHeader>
       </Card>
