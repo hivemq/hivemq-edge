@@ -4,6 +4,7 @@ import type { RJSFSchema } from '@rjsf/utils'
 import {
   MOCK_MQTT_SCHEMA_METADATA,
   MOCK_MQTT_SCHEMA_PLAIN,
+  MOCK_MQTT_SCHEMA_READONLY,
   MOCK_MQTT_SCHEMA_REFS,
 } from '@/__test-utils__/rjsf/schema.mocks.ts'
 
@@ -117,6 +118,34 @@ describe('getPropertyListFrom', () => {
     const flat = { ...(properties?.[type] as Omit<JSONSchema7, 'required'>), key: type, path: [] } as FlatJSONSchema7
 
     expect(hhhh).toStrictEqual<FlatJSONSchema7>(expect.objectContaining(flat))
+  })
+
+  it('should extract readOnly property for root-level properties', () => {
+    const properties = getPropertyListFrom(MOCK_MQTT_SCHEMA_READONLY)
+
+    const idProperty = properties.find((p) => p.key === 'id')
+    expect(idProperty).toBeDefined()
+    expect(idProperty?.readOnly).toBe(true)
+
+    const timestampProperty = properties.find((p) => p.key === 'timestamp')
+    expect(timestampProperty).toBeDefined()
+    expect(timestampProperty?.readOnly).toBe(true)
+
+    const nameProperty = properties.find((p) => p.key === 'name')
+    expect(nameProperty).toBeDefined()
+    expect(nameProperty?.readOnly).toBeUndefined()
+  })
+
+  it('should extract readOnly property for nested properties', () => {
+    const properties = getPropertyListFrom(MOCK_MQTT_SCHEMA_READONLY)
+
+    const versionProperty = properties.find((p) => p.key === 'version' && p.path.includes('config'))
+    expect(versionProperty).toBeDefined()
+    expect(versionProperty?.readOnly).toBe(true)
+
+    const settingProperty = properties.find((p) => p.key === 'setting' && p.path.includes('config'))
+    expect(settingProperty).toBeDefined()
+    expect(settingProperty?.readOnly).toBeUndefined()
   })
 })
 

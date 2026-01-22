@@ -34,6 +34,8 @@ export const SCHEMA_SUPPORTED_PROPERTIES: (keyof JSONSchema7)[] = [
   'minProperties',
   // not yet supported
   //  "required", "properties"
+  // See also https://json-schema.org/draft/2020-12/json-schema-validation#section-9.4
+  'readOnly',
 ]
 
 export interface FlatJSONSchema7 extends Omit<JSONSchema7, 'required'> {

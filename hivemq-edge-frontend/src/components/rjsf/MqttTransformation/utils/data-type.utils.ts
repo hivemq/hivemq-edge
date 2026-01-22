@@ -20,6 +20,10 @@ export const isMappingSupported = (property: FlatJSONSchema7) => {
   return property.type != undefined && property.type !== 'object'
 }
 
+export const isReadOnly = (property: FlatJSONSchema7) => {
+  return property.readOnly === true
+}
+
 export const filterSupportedProperties = (property: FlatJSONSchema7) => Boolean(property.path.length === 0)
 
 export const formatPath = (path: string) => path.replaceAll('.', '.​')
