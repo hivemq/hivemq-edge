@@ -25,6 +25,15 @@ const MOCK_PROPERTY_STRING: FlatJSONSchema7 = {
   type: 'string',
 }
 
+const MOCK_PROPERTY_STRING_REQUIRED: FlatJSONSchema7 = {
+  description: undefined,
+  path: [],
+  key: 'name',
+  title: 'Name',
+  type: 'string',
+  required: true,
+}
+
 const MOCK_PROPERTY_READONLY: FlatJSONSchema7 = {
   description: undefined,
   path: [],
@@ -39,21 +48,37 @@ describe('MappingInstruction', () => {
     cy.viewport(800, 900)
   })
 
-  it('should render number properly', () => {
+  it('should render required property without mapping with Required alert', () => {
+    cy.mountWithProviders(
+      <MappingInstruction
+        property={MOCK_PROPERTY_STRING_REQUIRED}
+        showTransformation={false}
+        onChange={cy.stub()}
+        instruction={undefined}
+      />
+    )
+
+    cy.getByAriaLabel('Clear mapping').should('be.disabled')
+    cy.getByTestId('property-name').should('have.text', 'Name')
+    cy.getByAriaLabel('Property').should('have.attr', 'data-type', 'string').should('not.have.attr', 'draggable')
+    cy.getByTestId('mapping-instruction-dropzone').should('have.text', 'Drag a source property here')
+    cy.get('[role="alert"]').should('contain.text', 'Required').should('have.attr', 'data-status', 'error')
+  })
+
+  it('should render optional property without mapping with no alert', () => {
     cy.mountWithProviders(
       <MappingInstruction
         property={MOCK_PROPERTY_STRING}
         showTransformation={false}
         onChange={cy.stub()}
-        instruction={MOCK_INSTRUCTIONS[1]}
+        instruction={undefined}
       />
     )
 
     cy.getByAriaLabel('Clear mapping').should('be.disabled')
     cy.getByTestId('property-name').should('have.text', 'Billing address')
-    cy.getByAriaLabel('Property').should('have.attr', 'data-type', 'string').should('not.have.attr', 'draggable')
     cy.getByTestId('mapping-instruction-dropzone').should('have.text', 'Drag a source property here')
-    cy.get('[role="alert"]').should('contain.text', 'Required').should('have.attr', 'data-status', 'error')
+    cy.get('[role="alert"]').should('not.exist')
   })
 
   it('should render mapping properly', () => {

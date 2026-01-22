@@ -199,12 +199,19 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
               isDisabled={Boolean(!instruction?.source)}
             />
           </ButtonGroup>
-          <Alert status={instruction?.source ? 'success' : 'error'} size="sm" variant="left-accent" w="140px">
-            <AlertIcon />
-            {instruction?.source
-              ? t('rjsf.MqttTransformationField.validation.matching')
-              : t('rjsf.MqttTransformationField.validation.required')}
-          </Alert>
+          {instruction?.source ? (
+            <Alert status="success" size="sm" variant="left-accent" w="140px">
+              <AlertIcon />
+              {t('rjsf.MqttTransformationField.validation.matching')}
+            </Alert>
+          ) : property.required ? (
+            <Alert status="error" size="sm" variant="left-accent" w="140px">
+              <AlertIcon />
+              {t('rjsf.MqttTransformationField.validation.required')}
+            </Alert>
+          ) : (
+            <Box w="140px" />
+          )}
         </CardBody>
 
         {state === DropState.COMPLETED && showTransformation && (
