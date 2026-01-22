@@ -53,9 +53,7 @@ export const filterReadOnlyInstructions = (
 ): Instruction[] => {
   if (!instructions || instructions.length === 0) return []
 
-  const readonlyPaths = new Set(
-    properties.filter(isReadOnly).map((p) => ['$', ...p.path, p.key].join('.'))
-  )
+  const readonlyPaths = new Set(properties.filter(isReadOnly).map((p) => ['$', ...p.path, p.key].join('.')))
 
   if (readonlyPaths.size === 0) return instructions
 
