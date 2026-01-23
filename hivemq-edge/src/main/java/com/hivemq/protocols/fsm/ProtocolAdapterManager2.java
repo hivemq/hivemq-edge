@@ -46,17 +46,16 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -64,7 +63,8 @@ import java.util.stream.Collectors;
 public class ProtocolAdapterManager2 {
     public static final String ADAPTER_ID = "adapterId";
     private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterManager2.class);
-    private final @NotNull Map<String, ProtocolAdapterWrapper2> protocolAdapterMap;
+    // ConcurrentHashMap provides thread-safe access without explicit locking
+    private final @NotNull Map<String, ProtocolAdapterWrapper2> protocolAdapterMap = new ConcurrentHashMap<>();
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull ModuleServicesImpl moduleServices;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
@@ -79,7 +79,6 @@ public class ProtocolAdapterManager2 {
     private final @NotNull TagManager tagManager;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
     private final @NotNull ExecutorService executorService;
-    private final @NotNull ReentrantReadWriteLock readWriteLock;
 
     public ProtocolAdapterManager2(
             final @NotNull MetricRegistry metricRegistry,
@@ -95,7 +94,6 @@ public class ProtocolAdapterManager2 {
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
             final @NotNull TagManager tagManager,
             final @NotNull ProtocolAdapterExtractor protocolAdapterConfig) {
-        this.protocolAdapterMap = new HashMap<>();
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
         this.remoteService = remoteService;
@@ -110,14 +108,15 @@ public class ProtocolAdapterManager2 {
         this.tagManager = tagManager;
         this.protocolAdapterConfig = protocolAdapterConfig;
         this.executorService = Executors.newSingleThreadExecutor();
-        this.readWriteLock = new ReentrantReadWriteLock();
         Runtime.getRuntime().addShutdownHook(new Thread(executorService::shutdown));
         protocolAdapterWritingService.addWritingChangedCallback(() -> protocolAdapterFactoryManager.writingEnabledChanged(
                 protocolAdapterWritingService.writingEnabled()));
     }
 
     public boolean isBusy() {
-        return readWriteLock.isWriteLocked();
+        // With ConcurrentHashMap, we don't have explicit locks
+        // The refresh operation runs on a single-threaded executor
+        return false;
     }
 
     public void register() {
@@ -129,101 +128,83 @@ public class ProtocolAdapterManager2 {
 
     public @NotNull Optional<ProtocolAdapterWrapper2> getProtocolAdapterWrapperByAdapterId(final @NotNull String adapterId) {
         Preconditions.checkNotNull(adapterId);
-        final ReentrantReadWriteLock.ReadLock readLock = readWriteLock.readLock();
-        try {
-            readLock.lock();
-            return Optional.ofNullable(protocolAdapterMap.get(adapterId));
-        } finally {
-            readLock.unlock();
-        }
+        return Optional.ofNullable(protocolAdapterMap.get(adapterId));
     }
 
     protected @NotNull Set<String> getProtocolAdapterIdSet() {
-        final ReentrantReadWriteLock.ReadLock readLock = readWriteLock.readLock();
-        try {
-            readLock.lock();
-            return new HashSet<>(protocolAdapterMap.keySet());
-        } finally {
-            readLock.unlock();
-        }
+        return new HashSet<>(protocolAdapterMap.keySet());
     }
 
     protected void createProtocolAdapter(final @NotNull ProtocolAdapterConfig config, final @NotNull String version) {
         Preconditions.checkNotNull(config);
         final String adapterId = config.getAdapterId();
-        final ReentrantReadWriteLock.WriteLock writeLock = readWriteLock.writeLock();
-        try {
-            writeLock.lock();
-            if (!protocolAdapterMap.containsKey(adapterId)) {
-                final String configProtocolId = config.getProtocolId();
-                // legacy handling, hardcoded here, to not add legacy stuff into the adapter-sdk
-                final String adapterType = switch (configProtocolId) {
-                    case "ethernet-ip" -> "eip";
-                    case "opc-ua-client" -> "opcua";
-                    case "file_input" -> "file";
-                    default -> configProtocolId;
-                };
 
-                final Optional<ProtocolAdapterFactory<?>> maybeFactory = protocolAdapterFactoryManager.get(adapterType);
-                if (maybeFactory.isEmpty()) {
-                    throw new IllegalArgumentException("Protocol adapter for config " + adapterType + " not found.");
-                }
-                final ProtocolAdapterFactory<?> factory = maybeFactory.get();
+        // Check if adapter already exists (fast path)
+        if (protocolAdapterMap.containsKey(adapterId)) {
+            return;
+        }
 
-                LOGGER.info("Found configuration for adapter {} / {}", config.getAdapterId(), adapterType);
-                config.missingTags().ifPresent(missingTag -> {
-                    throw new IllegalArgumentException("Tags used in mappings but not configured in adapter " +
-                            adapterType +
-                            ": " +
-                            missingTag);
+        final String configProtocolId = config.getProtocolId();
+        // legacy handling, hardcoded here, to not add legacy stuff into the adapter-sdk
+        final String adapterType = switch (configProtocolId) {
+            case "ethernet-ip" -> "eip";
+            case "opc-ua-client" -> "opcua";
+            case "file_input" -> "file";
+            default -> configProtocolId;
+        };
+
+        final Optional<ProtocolAdapterFactory<?>> maybeFactory = protocolAdapterFactoryManager.get(adapterType);
+        if (maybeFactory.isEmpty()) {
+            throw new IllegalArgumentException("Protocol adapter for config " + adapterType + " not found.");
+        }
+        final ProtocolAdapterFactory<?> factory = maybeFactory.get();
+
+        LOGGER.info("Found configuration for adapter {} / {}", config.getAdapterId(), adapterType);
+        config.missingTags().ifPresent(missingTag -> {
+            throw new IllegalArgumentException("Tags used in mappings but not configured in adapter " +
+                    adapterType +
+                    ": " +
+                    missingTag);
+        });
+
+        final ProtocolAdapterWrapper2 wrapper =
+                ClassLoaderUtils.runWithContextLoader(factory.getClass().getClassLoader(), () -> {
+                    final ProtocolAdapterMetricsService metricsService = new ProtocolAdapterMetricsServiceImpl(
+                            configProtocolId,
+                            config.getAdapterId(),
+                            metricRegistry);
+                    final ProtocolAdapterStateImpl state =
+                            new ProtocolAdapterStateImpl(moduleServices.eventService(),
+                                    config.getAdapterId(),
+                                    configProtocolId);
+                    final ModuleServicesPerModuleImpl perModule =
+                            new ModuleServicesPerModuleImpl(moduleServices.adapterPublishService(),
+                                    eventService,
+                                    protocolAdapterWritingService,
+                                    tagManager);
+                    final ProtocolAdapter protocolAdapter = factory.createAdapter(factory.getInformation(),
+                            new ProtocolAdapterInputImpl(configProtocolId,
+                                    config.getAdapterId(),
+                                    config.getAdapterConfig(),
+                                    config.getTags(),
+                                    config.getNorthboundMappings(),
+                                    version,
+                                    state,
+                                    perModule,
+                                    metricsService));
+                    // hen-egg problem. Rather solve this here as have not final fields in the adapter.
+                    perModule.setAdapter(protocolAdapter);
+                    protocolAdapterMetrics.increaseProtocolAdapterMetric(configProtocolId);
+                    return new ProtocolAdapterWrapper2(protocolAdapter);
                 });
 
-                final ProtocolAdapterWrapper2 wrapper =
-                        ClassLoaderUtils.runWithContextLoader(factory.getClass().getClassLoader(), () -> {
-                            final ProtocolAdapterMetricsService metricsService = new ProtocolAdapterMetricsServiceImpl(
-                                    configProtocolId,
-                                    config.getAdapterId(),
-                                    metricRegistry);
-                            final ProtocolAdapterStateImpl state =
-                                    new ProtocolAdapterStateImpl(moduleServices.eventService(),
-                                            config.getAdapterId(),
-                                            configProtocolId);
-                            final ModuleServicesPerModuleImpl perModule =
-                                    new ModuleServicesPerModuleImpl(moduleServices.adapterPublishService(),
-                                            eventService,
-                                            protocolAdapterWritingService,
-                                            tagManager);
-                            final ProtocolAdapter protocolAdapter = factory.createAdapter(factory.getInformation(),
-                                    new ProtocolAdapterInputImpl(configProtocolId,
-                                            config.getAdapterId(),
-                                            config.getAdapterConfig(),
-                                            config.getTags(),
-                                            config.getNorthboundMappings(),
-                                            version,
-                                            state,
-                                            perModule,
-                                            metricsService));
-                            // hen-egg problem. Rather solve this here as have not final fields in the adapter.
-                            perModule.setAdapter(protocolAdapter);
-                            protocolAdapterMetrics.increaseProtocolAdapterMetric(configProtocolId);
-                            return new ProtocolAdapterWrapper2(protocolAdapter);
-                        });
-                protocolAdapterMap.put(adapterId, wrapper);
-            }
-        } finally {
-            writeLock.unlock();
-        }
+        // Use putIfAbsent to handle race conditions - if another thread added it first, we discard ours
+        protocolAdapterMap.putIfAbsent(adapterId, wrapper);
     }
 
     protected @NotNull Optional<ProtocolAdapterWrapper2> deleteProtocolAdapterWrapperByAdapterId(final @NotNull String adapterId) {
         Preconditions.checkNotNull(adapterId);
-        final ReentrantReadWriteLock.WriteLock writeLock = readWriteLock.writeLock();
-        try {
-            writeLock.lock();
-            return Optional.ofNullable(protocolAdapterMap.remove(adapterId));
-        } finally {
-            writeLock.unlock();
-        }
+        return Optional.ofNullable(protocolAdapterMap.remove(adapterId));
     }
 
     public void start(final @NotNull String adapterId) throws ProtocolAdapterException {
