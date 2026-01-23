@@ -90,13 +90,16 @@ metadata {
     }
 }
 
-// Create a configuration for javadocLinks that excludes json-schema-inferrer
+// Create a configuration for javadocLinks that excludes dependencies without javadoc jars
 val javadocLinksClasspath: Configuration by configurations.creating {
     isCanBeConsumed = false
     isCanBeResolved = true
     extendsFrom(configurations.compileClasspath.get())
+    // jitpack.io doesn't provide a javadoc jar for json-schema-inferrer
     exclude(group = "com.github.saasquatch", module = "json-schema-inferrer")
-        // Copy attributes from compileClasspath to ensure proper resolution
+    // netty-codec is a metadata module without its own javadoc
+    exclude(group = "io.netty", module = "netty-codec")
+    // Copy attributes from compileClasspath to ensure proper resolution
     attributes {
         attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage::class.java, Usage.JAVA_API))
         attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category::class.java, Category.LIBRARY))
