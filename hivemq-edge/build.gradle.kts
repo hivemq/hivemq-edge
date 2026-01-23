@@ -90,6 +90,26 @@ metadata {
     }
 }
 
+// Create a configuration for javadocLinks that excludes json-schema-inferrer
+val javadocLinksClasspath: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    extendsFrom(configurations.compileClasspath.get())
+    exclude(group = "com.github.saasquatch", module = "json-schema-inferrer")
+        // Copy attributes from compileClasspath to ensure proper resolution
+    attributes {
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage::class.java, Usage.JAVA_API))
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category::class.java, Category.LIBRARY))
+        attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements::class.java, LibraryElements.JAR))
+        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling::class.java, Bundling.EXTERNAL))
+        attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21)
+    }
+}
+
+tasks.javadocLinks {
+    useConfiguration(javadocLinksClasspath)
+}
+
 /* ******************** java ******************** */
 
 java {
