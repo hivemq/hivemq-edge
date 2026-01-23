@@ -21,10 +21,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.Function;
 
 public enum ProtocolAdapterState {
-    Starting(ProtocolAdapterState::transitionFromStarting),
-    Started(ProtocolAdapterState::transitionFromStarted),
+    Idle(ProtocolAdapterState::transitionFromIdle),
+    Precheck(ProtocolAdapterState::transitionFromPrecheck),
+    Working(ProtocolAdapterState::transitionFromWorking),
     Stopping(ProtocolAdapterState::transitionFromStopping),
-    Stopped(ProtocolAdapterState::transitionFromStopped),
     Error(ProtocolAdapterState::transitionFromError),
     ;
 
@@ -34,21 +34,31 @@ public enum ProtocolAdapterState {
         this.transitionFunction = transitionFunction;
     }
 
-    public static @NotNull ProtocolAdapterTransitionResponse transitionFromStarting(
+    public static @NotNull ProtocolAdapterTransitionResponse transitionFromIdle(
             final @NotNull ProtocolAdapterState toState) {
-        final ProtocolAdapterState fromState = ProtocolAdapterState.Starting;
+        final ProtocolAdapterState fromState = ProtocolAdapterState.Idle;
         return switch (toState) {
-            case Starting -> ProtocolAdapterTransitionResponse.notChanged(fromState);
-            case Started, Stopping, Error -> ProtocolAdapterTransitionResponse.success(fromState, toState);
+            case Idle -> ProtocolAdapterTransitionResponse.notChanged(fromState);
+            case Precheck -> ProtocolAdapterTransitionResponse.success(fromState, toState);
             default -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
         };
     }
 
-    public static @NotNull ProtocolAdapterTransitionResponse transitionFromStarted(
+    public static @NotNull ProtocolAdapterTransitionResponse transitionFromPrecheck(
             final @NotNull ProtocolAdapterState toState) {
-        final ProtocolAdapterState fromState = ProtocolAdapterState.Started;
+        final ProtocolAdapterState fromState = ProtocolAdapterState.Precheck;
         return switch (toState) {
-            case Started -> ProtocolAdapterTransitionResponse.notChanged(fromState);
+            case Precheck -> ProtocolAdapterTransitionResponse.notChanged(fromState);
+            case Working, Error -> ProtocolAdapterTransitionResponse.success(fromState, toState);
+            default -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
+        };
+    }
+
+    public static @NotNull ProtocolAdapterTransitionResponse transitionFromWorking(
+            final @NotNull ProtocolAdapterState toState) {
+        final ProtocolAdapterState fromState = ProtocolAdapterState.Working;
+        return switch (toState) {
+            case Working -> ProtocolAdapterTransitionResponse.notChanged(fromState);
             case Stopping, Error -> ProtocolAdapterTransitionResponse.success(fromState, toState);
             default -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
         };
@@ -59,17 +69,7 @@ public enum ProtocolAdapterState {
         final ProtocolAdapterState fromState = ProtocolAdapterState.Stopping;
         return switch (toState) {
             case Stopping -> ProtocolAdapterTransitionResponse.notChanged(fromState);
-            case Stopped, Error -> ProtocolAdapterTransitionResponse.success(fromState, toState);
-            default -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
-        };
-    }
-
-    public static @NotNull ProtocolAdapterTransitionResponse transitionFromStopped(
-            final @NotNull ProtocolAdapterState toState) {
-        final ProtocolAdapterState fromState = ProtocolAdapterState.Stopped;
-        return switch (toState) {
-            case Starting -> ProtocolAdapterTransitionResponse.success(fromState, toState);
-            case Stopped -> ProtocolAdapterTransitionResponse.notChanged(fromState);
+            case Idle -> ProtocolAdapterTransitionResponse.success(fromState, toState);
             default -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
         };
     }
@@ -78,8 +78,8 @@ public enum ProtocolAdapterState {
             final @NotNull ProtocolAdapterState toState) {
         final ProtocolAdapterState fromState = ProtocolAdapterState.Error;
         return switch (toState) {
-            case Starting -> ProtocolAdapterTransitionResponse.success(fromState, toState);
             case Error -> ProtocolAdapterTransitionResponse.notChanged(fromState);
+            case Idle -> ProtocolAdapterTransitionResponse.success(fromState, toState);
             default -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
         };
     }
@@ -89,20 +89,20 @@ public enum ProtocolAdapterState {
         return transitionFunction.apply(toState);
     }
 
-    public boolean isStarting() {
-        return this == Starting;
+    public boolean isIdle() {
+        return this == Idle;
     }
 
-    public boolean isStarted() {
-        return this == Started;
+    public boolean isPrecheck() {
+        return this == Precheck;
+    }
+
+    public boolean isWorking() {
+        return this == Working;
     }
 
     public boolean isStopping() {
         return this == Stopping;
-    }
-
-    public boolean isStopped() {
-        return this == Stopped;
     }
 
     public boolean isError() {
