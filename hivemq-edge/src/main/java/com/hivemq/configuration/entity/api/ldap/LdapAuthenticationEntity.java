@@ -92,6 +92,10 @@ public class LdapAuthenticationEntity {
     @XmlElement(name = "simple-bind", required = true)
     private @NotNull LdapSimpleBindEntity simpleBindEntity = new LdapSimpleBindEntity();
 
+    @XmlElementWrapper(name = "user-roles", required = false)
+    @XmlElement(name = "user-role")
+    private @Nullable List<UserRoleEntity> userRoles = null;
+
     public @NotNull String getTlsMode() {
         return tlsMode;
     }
@@ -140,6 +144,10 @@ public class LdapAuthenticationEntity {
         return servers;
     }
 
+    public @Nullable List<UserRoleEntity> getUserRoles() {
+        return userRoles;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -155,7 +163,8 @@ public class LdapAuthenticationEntity {
                 Objects.equals(getUidAttribute(), that.getUidAttribute()) &&
                 Objects.equals(getRdns(), that.getRdns()) &&
                 Objects.equals(getRequiredObjectClass(), that.getRequiredObjectClass()) &&
-                Objects.equals(getSimpleBindEntity(), that.getSimpleBindEntity());
+                Objects.equals(getSimpleBindEntity(), that.getSimpleBindEntity()) &&
+                Objects.equals(getUserRoles(), that.getUserRoles());
     }
 
     @Override
@@ -171,6 +180,7 @@ public class LdapAuthenticationEntity {
                 getRequiredObjectClass(),
                 directoryDescent,
                 getSearchTimeoutSeconds(),
-                getSimpleBindEntity());
+                getSimpleBindEntity(),
+                getUserRoles());
     }
 }
