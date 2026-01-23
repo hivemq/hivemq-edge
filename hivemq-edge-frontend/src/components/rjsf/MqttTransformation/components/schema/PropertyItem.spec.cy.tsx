@@ -54,10 +54,38 @@ describe('PropertyItem', () => {
     cy.getByTestId('property-example').should('have.text', 'this is a sample')
   })
 
-  it('should be accessible ', () => {
+  it('should render readonly indicator when property is readOnly', () => {
+    cy.mountWithProviders(<PropertyItem property={{ ...MOCK_PROPERTY, readOnly: true }} isDraggable={false} />)
+
+    cy.getByTestId('property-readonly').should('exist')
+    cy.getByAriaLabel('Read-only property').should('exist')
+  })
+
+  it('should not render readonly indicator when property is not readOnly', () => {
+    cy.mountWithProviders(<PropertyItem property={MOCK_PROPERTY} isDraggable={false} />)
+
+    cy.getByTestId('property-readonly').should('not.exist')
+  })
+
+  it('should show tooltip on readonly indicator interaction', () => {
+    cy.mountWithProviders(<PropertyItem property={{ ...MOCK_PROPERTY, readOnly: true }} isDraggable={false} />)
+
+    cy.getByTestId('property-readonly').click()
+    cy.getByTestId('property-readonly').should('have.attr', 'aria-describedby')
+  })
+
+  it('should be accessible', () => {
     cy.injectAxe()
 
     cy.mountWithProviders(<PropertyItem property={MOCK_PROPERTY} isDraggable={false} />)
+
+    cy.checkAccessibility()
+  })
+
+  it('should be accessible with readonly property', () => {
+    cy.injectAxe()
+
+    cy.mountWithProviders(<PropertyItem property={{ ...MOCK_PROPERTY, readOnly: true }} isDraggable={false} />)
 
     cy.checkAccessibility()
   })
