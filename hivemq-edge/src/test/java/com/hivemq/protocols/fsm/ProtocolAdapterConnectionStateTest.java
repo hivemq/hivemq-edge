@@ -33,24 +33,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class ProtocolAdapterConnectionStateTest {
     private static final Map<ProtocolAdapterConnectionState, Set<ProtocolAdapterConnectionState>>
-            PROTOCOL_ADAPTER_CONNECTION_STATE_MAP = Map.of(ProtocolAdapterConnectionState.Closed,
-            Set.of(ProtocolAdapterConnectionState.Disconnected),
-            ProtocolAdapterConnectionState.Closing,
-            Set.of(ProtocolAdapterConnectionState.Closed),
-            ProtocolAdapterConnectionState.Connected,
-            Set.of(ProtocolAdapterConnectionState.Disconnecting,
-                    ProtocolAdapterConnectionState.Closing,
-                    ProtocolAdapterConnectionState.ErrorClosing),
-            ProtocolAdapterConnectionState.Connecting,
-            Set.of(ProtocolAdapterConnectionState.Connected, ProtocolAdapterConnectionState.Error),
+            PROTOCOL_ADAPTER_CONNECTION_STATE_MAP = Map.of(
             ProtocolAdapterConnectionState.Disconnected,
             Set.of(ProtocolAdapterConnectionState.Connecting),
-            ProtocolAdapterConnectionState.Disconnecting,
-            Set.of(ProtocolAdapterConnectionState.Connecting, ProtocolAdapterConnectionState.Disconnected),
+            ProtocolAdapterConnectionState.Connecting,
+            Set.of(ProtocolAdapterConnectionState.Connected,
+                    ProtocolAdapterConnectionState.Error,
+                    ProtocolAdapterConnectionState.Disconnecting),
+            ProtocolAdapterConnectionState.Connected,
+            Set.of(ProtocolAdapterConnectionState.Error, ProtocolAdapterConnectionState.Disconnecting),
             ProtocolAdapterConnectionState.Error,
-            Set.of(ProtocolAdapterConnectionState.Disconnected),
-            ProtocolAdapterConnectionState.ErrorClosing,
-            Set.of(ProtocolAdapterConnectionState.Error));
+            Set.of(ProtocolAdapterConnectionState.Disconnecting),
+            ProtocolAdapterConnectionState.Disconnecting,
+            Set.of(ProtocolAdapterConnectionState.Disconnected));
 
     @Test
     public void whenEverythingWorks_thenTransitionShouldWork() {

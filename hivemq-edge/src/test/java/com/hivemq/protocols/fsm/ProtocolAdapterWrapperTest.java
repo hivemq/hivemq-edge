@@ -43,15 +43,15 @@ public class ProtocolAdapterWrapperTest {
     @Test
     public void whenAdapterIsValid_thenStartAndStopWork() {
         final ProtocolAdapterWrapper2 wrapper = new ProtocolAdapterWrapper2(protocolAdapter);
-        assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Stopped);
+        assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
         assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         assertThat(wrapper.start()).isTrue();
-        assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Started);
+        assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Working);
         assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Connected);
         assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Connected);
         assertThat(wrapper.stop(true)).isTrue();
-        assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Stopped);
+        assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
         assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
     }

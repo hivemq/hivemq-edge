@@ -33,16 +33,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class ProtocolAdapterStateTest {
     private static final Map<ProtocolAdapterState, Set<ProtocolAdapterState>> PROTOCOL_ADAPTER_STATE_MAP_MAP = Map.of(
-            ProtocolAdapterState.Starting,
-            Set.of(ProtocolAdapterState.Started, ProtocolAdapterState.Stopping, ProtocolAdapterState.Error),
-            ProtocolAdapterState.Started,
+            ProtocolAdapterState.Idle,
+            Set.of(ProtocolAdapterState.Precheck),
+            ProtocolAdapterState.Precheck,
+            Set.of(ProtocolAdapterState.Working, ProtocolAdapterState.Error),
+            ProtocolAdapterState.Working,
             Set.of(ProtocolAdapterState.Stopping, ProtocolAdapterState.Error),
             ProtocolAdapterState.Stopping,
-            Set.of(ProtocolAdapterState.Stopped, ProtocolAdapterState.Error),
-            ProtocolAdapterState.Stopped,
-            Set.of(ProtocolAdapterState.Starting),
+            Set.of(ProtocolAdapterState.Idle),
             ProtocolAdapterState.Error,
-            Set.of(ProtocolAdapterState.Starting));
+            Set.of(ProtocolAdapterState.Idle));
 
     @Test
     public void whenEverythingWorks_thenTransitionShouldWork() {

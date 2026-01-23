@@ -33,7 +33,7 @@ public class ProtocolAdapterWrapper2 {
         this.adapter = adapter;
         northboundConnectionState = ProtocolAdapterConnectionState.Disconnected;
         southboundConnectionState = ProtocolAdapterConnectionState.Disconnected;
-        state = ProtocolAdapterState.Stopped;
+        state = ProtocolAdapterState.Idle;
     }
 
     public @NotNull ProtocolAdapterConnectionState getSouthboundConnectionState() {
@@ -58,12 +58,12 @@ public class ProtocolAdapterWrapper2 {
 
     public boolean start() {
         LOGGER.info("Starting protocol adapter {}.", getAdapterId());
-        ProtocolAdapterTransitionResponse response = transitionTo(ProtocolAdapterState.Starting);
+        ProtocolAdapterTransitionResponse response = transitionTo(ProtocolAdapterState.Precheck);
         if (response.status().isSuccess()) {
             boolean success = startNorthbound();
             success = success && startSouthbound();
             if (success) {
-                response = transitionTo(ProtocolAdapterState.Started);
+                response = transitionTo(ProtocolAdapterState.Working);
             } else {
                 response = transitionTo(ProtocolAdapterState.Error);
             }
@@ -78,7 +78,7 @@ public class ProtocolAdapterWrapper2 {
             final boolean southboundSuccess = stopSouthbound();
             final boolean northboundSuccess = stopNorthbound();
             if (northboundSuccess && southboundSuccess) {
-                response = transitionTo(ProtocolAdapterState.Stopped);
+                response = transitionTo(ProtocolAdapterState.Idle);
             } else {
                 response = transitionTo(ProtocolAdapterState.Error);
             }
