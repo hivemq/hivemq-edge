@@ -23,7 +23,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 /**
- * @author HiveMQ Adapter Generator
+ * Factory for creating ADS protocol adapter instances.
  */
 public class ADSProtocolAdapterFactory
         implements ProtocolAdapterFactory<ADSSpecificAdapterConfig> {

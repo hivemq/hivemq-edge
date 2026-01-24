@@ -68,14 +68,13 @@ import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.JSO
 import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.PLAIN_MIME_TYPE;
 
 /**
- * @author HiveMQ Adapter Generator
+ * Protocol adapter for HTTP-based data polling and publishing to MQTT.
  */
 public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
 
     private static final @NotNull String CONTENT_TYPE_HEADER = "Content-Type";
-    private static final @NotNull String BASE64_ENCODED_VALUE = "data:%s;base64,%s";
     private static final @NotNull String USER_AGENT_HEADER = "User-Agent";
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -263,7 +262,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                     }
                     final String base64 =
                             Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
-                    payloadData = String.format(BASE64_ENCODED_VALUE, responseContentType, base64);
+                    payloadData = String.format("data:%s;base64,%s", responseContentType, base64);
                 }
             }
         }
