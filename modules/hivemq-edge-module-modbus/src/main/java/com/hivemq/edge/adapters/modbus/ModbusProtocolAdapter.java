@@ -192,7 +192,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
 
             final boolean publishAllChanges = isPublishAllChanges();
 
-            CompletableFuture.allOf(readRegisterFutures).whenComplete((result, throwable) -> {
+            @SuppressWarnings("unused") var unused = CompletableFuture.allOf(readRegisterFutures).whenComplete((result, throwable) -> {
                 try {
                     if (throwable != null) {
                         protocolAdapterState.setConnectionStatus(ERROR);

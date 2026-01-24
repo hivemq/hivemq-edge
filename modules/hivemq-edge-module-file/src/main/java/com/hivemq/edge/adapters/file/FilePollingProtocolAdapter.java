@@ -21,7 +21,6 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
@@ -121,11 +120,6 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
             pollingOutput.fail(e, "An exception occurred while reading the file '" + absolutePathToFle + "'.");
         }
         pollingOutput.finish();
-    }
-
-    private static void pollFile(
-            final @NotNull PollingOutput pollingOutput, final @NotNull FileTag fileTag) {
-
     }
 
     @Override
