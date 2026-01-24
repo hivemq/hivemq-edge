@@ -70,11 +70,9 @@ public class EipTag implements Tag {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof EipTag eipTag)) {
             return false;
         }
-
-        final EipTag eipTag = (EipTag) o;
         return name.equals(eipTag.name) && definition.equals(eipTag.definition);
     }
 

@@ -487,25 +487,25 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         conn.client()
                 .ifPresentOrElse(client -> {
                     @SuppressWarnings("unused")
-                    var unused = OpcUaNodeDiscovery.discoverValues(client,
-                            input.getRootNode(),
-                            input.getDepth()).whenComplete((collectedNodes, throwable) -> {
-                        if (throwable == null) {
-                            final NodeTree nodeTree = output.getNodeTree();
-                            collectedNodes.forEach(node -> nodeTree.addNode(node.id(),
-                                    node.name(),
-                                    node.value(),
-                                    node.description(),
-                                    node.parentId(),
-                                    node.nodeType(),
-                                    node.selectable()));
-                            output.finish();
-                        } else {
-                            log.error("Unable to discover the OPC UA server", throwable);
-                            output.fail(throwable, "Unable to discover values");
-                        }
-                    });
-                }, () -> output.fail("Discovery failed: Client not connected or not initialized"));
+                    final var unused = OpcUaNodeDiscovery
+                            .discoverValues(client, input.getRootNode(), input.getDepth())
+                            .whenComplete((collectedNodes, throwable) -> {
+                                if (throwable == null) {
+                                    final NodeTree nodeTree = output.getNodeTree();
+                                    collectedNodes.forEach(node -> nodeTree.addNode(node.id(),
+                                            node.name(),
+                                            node.value(),
+                                            node.description(),
+                                            node.parentId(),
+                                            node.nodeType(),
+                                            node.selectable()));
+                                    output.finish();
+                                } else {
+                                    log.error("Unable to discover the OPC UA server", throwable);
+                                    output.fail(throwable, "Unable to discover values");
+                                }
+                            });
+                        }, () -> output.fail("Discovery failed: Client not connected or not initialized"));
     }
 
     @Override

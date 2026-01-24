@@ -102,6 +102,7 @@ public class Plc4xToMqttMapping implements PollingContext {
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
     }
 
+    @Override
     public @NotNull String getTagName() {
         return tagName;
     }

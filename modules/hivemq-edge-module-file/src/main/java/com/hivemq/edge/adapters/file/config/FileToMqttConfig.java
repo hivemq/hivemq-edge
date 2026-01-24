@@ -58,8 +58,7 @@ public class FileToMqttConfig {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final FileToMqttConfig that = (FileToMqttConfig) o;
+        if (!(o instanceof FileToMqttConfig that)) return false;
         return getPollingIntervalMillis() == that.getPollingIntervalMillis() &&
                 getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval();
     }

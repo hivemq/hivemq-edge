@@ -41,8 +41,7 @@ public class EtherIpDouble implements EtherIpValue {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        EtherIpDouble that = (EtherIpDouble) o;
+        if (!(o instanceof EtherIpDouble that)) return false;
         return Objects.equals(value, that.value) && Objects.equals(tagAddress, that.tagAddress);
     }
 

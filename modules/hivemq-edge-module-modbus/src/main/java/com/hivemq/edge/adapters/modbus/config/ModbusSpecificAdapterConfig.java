@@ -101,10 +101,9 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
 
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ModbusSpecificAdapterConfig that)) {
             return false;
         }
-        final ModbusSpecificAdapterConfig that = (ModbusSpecificAdapterConfig) o;
         return getPort() == that.getPort() &&
                 getTimeoutMillis() == that.getTimeoutMillis() &&
                 Objects.equals(getHost(), that.getHost()) &&

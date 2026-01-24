@@ -41,19 +41,21 @@ public class EtherIpValueFactory {
                 Number number = cipData.getNumber(0);
                 log.debug("Got value {} for type {} for tag address {}", number, dataType, tagAddress);
                 switch (dataType) {
-                    case BOOL:
+                    case BOOL -> {
                         return Optional.of(new EtherIpBool(tagAddress, number));
-                    case SINT:
-                    case INT:
+                    }
+                    case SINT, INT -> {
                         return Optional.of(new EtherIpInt(tagAddress, number));
-                    case DINT:
+                    }
+                    case DINT -> {
                         return Optional.of(new EtherIpLong(tagAddress, number));
-                    case REAL:
+                    }
+                    case REAL -> {
                         return Optional.of(new EtherIpDouble(tagAddress, number));
-                    case BITS:
-                    case STRUCT:
-                    case STRUCT_STRING:
+                    }
+                    case BITS, STRUCT, STRUCT_STRING -> {
                         return Optional.empty();
+                    }
                 }
                 log.warn("Unable to parse tag {}, type {} not supported", tagAddress, dataType);
                 return Optional.empty();

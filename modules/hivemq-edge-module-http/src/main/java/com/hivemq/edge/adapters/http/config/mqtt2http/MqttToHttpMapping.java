@@ -100,6 +100,7 @@ public class MqttToHttpMapping implements WritingContext {
         return tagName;
     }
 
+    @Override
     public @NotNull String getTopicFilter() {
         return mqttTopicFilter;
     }
