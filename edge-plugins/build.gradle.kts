@@ -12,10 +12,12 @@ java {
 
 repositories {
     mavenCentral()
+    gradlePluginPortal()
 }
 
 dependencies {
     implementation(libs.jackson.dataformat.xml)
+    implementation("com.diffplug.spotless:spotless-plugin-gradle:7.0.2")
 }
 
 gradlePlugin {
@@ -35,6 +37,10 @@ gradlePlugin {
         create("jacoco-convention") {
             id = "$group.$name"
             implementationClass = "$group.jacoco.JacocoConventionPlugin"
+        }
+        create("spotless-convention") {
+            id = "$group.$name"
+            implementationClass = "$group.spotless.SpotlessConventionPlugin"
         }
     }
 }
