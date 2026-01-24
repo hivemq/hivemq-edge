@@ -451,10 +451,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
         final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
         if (conn != null) {
-            CompletableFuture.runAsync(() -> {
-                conn.destroy();
-                log.info("Destroyed OPC UA protocol adapter {}", adapterId);
-            });
+            @SuppressWarnings("unused")
+            final var unused = CompletableFuture.runAsync(() -> {
+                    conn.destroy();
+                    log.info("Destroyed OPC UA protocol adapter {}", adapterId);
+                }).whenComplete((ignored, error) -> {
+                    if(error != null) {
+                        log.warn("Problem closing the connection for adapter {}", adapterId, error);
+                    }
+                });
         } else {
             log.info("Tried destroying stopped OPC UA protocol adapter {}", adapterId);
         }
@@ -480,24 +485,27 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
         conn.client()
-                .ifPresentOrElse(client -> OpcUaNodeDiscovery.discoverValues(client,
-                        input.getRootNode(),
-                        input.getDepth()).whenComplete((collectedNodes, throwable) -> {
-                    if (throwable == null) {
-                        final NodeTree nodeTree = output.getNodeTree();
-                        collectedNodes.forEach(node -> nodeTree.addNode(node.id(),
-                                node.name(),
-                                node.value(),
-                                node.description(),
-                                node.parentId(),
-                                node.nodeType(),
-                                node.selectable()));
-                        output.finish();
-                    } else {
-                        log.error("Unable to discover the OPC UA server", throwable);
-                        output.fail(throwable, "Unable to discover values");
-                    }
-                }), () -> output.fail("Discovery failed: Client not connected or not initialized"));
+                .ifPresentOrElse(client -> {
+                    @SuppressWarnings("unused")
+                    var unused = OpcUaNodeDiscovery.discoverValues(client,
+                            input.getRootNode(),
+                            input.getDepth()).whenComplete((collectedNodes, throwable) -> {
+                        if (throwable == null) {
+                            final NodeTree nodeTree = output.getNodeTree();
+                            collectedNodes.forEach(node -> nodeTree.addNode(node.id(),
+                                    node.name(),
+                                    node.value(),
+                                    node.description(),
+                                    node.parentId(),
+                                    node.nodeType(),
+                                    node.selectable()));
+                            output.finish();
+                        } else {
+                            log.error("Unable to discover the OPC UA server", throwable);
+                            output.fail(throwable, "Unable to discover values");
+                        }
+                    });
+                }, () -> output.fail("Discovery failed: Client not connected or not initialized"));
     }
 
     @Override
@@ -532,7 +540,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             final NodeId nodeId = NodeId.parse(opcuaTag.getDefinition().getNode());
             final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
 
-            client.writeValuesAsync(List.of(nodeId),
+            @SuppressWarnings("unused")
+            final var unused = client
+                    .writeValuesAsync(List.of(nodeId),
                             List.of(new DataValue(Variant.of(opcuaObject), StatusCode.GOOD, null)))
                     .whenComplete((statusCodes, throwable) -> {
                         final var badStatus = statusCodes.stream().filter(StatusCode::isBad).findFirst();
@@ -573,21 +583,25 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
         conn.client()
-                .ifPresentOrElse(client -> new JsonSchemaGenerator(client).createMqttPayloadJsonSchema(tag)
-                        .whenComplete((result, throwable) -> {
-                            if (throwable == null) {
-                                result.ifPresentOrElse(schema -> {
-                                    log.debug("Schema inferred for tag='{}'", tagName);
-                                    output.finish(schema);
-                                }, () -> {
-                                    log.error("No schema inferred for tag='{}'", tagName);
-                                    output.fail("No schema inferred for tag='" + tagName + "'");
-                                });
-                            } else {
-                                log.error("Exception while creating tag schema for '{}'", tagName, throwable);
-                                output.fail(throwable, null);
-                            }
-                        }), () -> {
+                .ifPresentOrElse(client -> {
+                    @SuppressWarnings("unused")
+                    final var unused = new JsonSchemaGenerator(client)
+                            .createMqttPayloadJsonSchema(tag)
+                            .whenComplete((result, throwable) -> {
+                                if (throwable == null) {
+                                    result.ifPresentOrElse(schema -> {
+                                        log.debug("Schema inferred for tag='{}'", tagName);
+                                        output.finish(schema);
+                                    }, () -> {
+                                        log.error("No schema inferred for tag='{}'", tagName);
+                                        output.fail("No schema inferred for tag='" + tagName + "'");
+                                    });
+                                } else {
+                                    log.error("Exception while creating tag schema for '{}'", tagName, throwable);
+                                    output.fail(throwable, null);
+                                }
+                            });
+                }, () -> {
                     log.error("Discovery failed: Client not connected or not initialized");
                     output.fail("Discovery failed: Client not connected or not initialized");
                 });
@@ -617,33 +631,36 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             final @NotNull ParsedConfig parsedConfig,
             final @NotNull ProtocolAdapterStartInput input) {
 
-        CompletableFuture.supplyAsync(() -> conn.start(parsedConfig)).whenComplete((success, throwable) -> {
-            lastReconnectTimestamp.set(System.currentTimeMillis());
-            if (success && throwable == null) {
-                reconnectAttempts.set(0);
-                // Connection succeeded - cancel any pending retries and start health check
-                cancelRetry();
-                scheduleHealthCheck();
-                log.info("OPC UA adapter '{}' connected successfully", adapterId);
-            } else {
-                // Connection failed - clean up and schedule retry with exponential backoff
-                this.opcUaClientConnection.set(null);
-                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+        @SuppressWarnings("unused")
+        final var unused = CompletableFuture
+                    .supplyAsync(() -> conn.start(parsedConfig))
+                    .whenComplete((success, throwable) -> {
+                        lastReconnectTimestamp.set(System.currentTimeMillis());
+                        if (success && throwable == null) {
+                            reconnectAttempts.set(0);
+                            // Connection succeeded - cancel any pending retries and start health check
+                            cancelRetry();
+                            scheduleHealthCheck();
+                            log.info("OPC UA adapter '{}' connected successfully", adapterId);
+                        } else {
+                            // Connection failed - clean up and schedule retry with exponential backoff
+                            this.opcUaClientConnection.set(null);
+                            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
 
-                if (throwable != null) {
-                    log.warn("OPC UA adapter '{}' connection failed, scheduling retry with exponential backoff",
-                            adapterId,
-                            throwable);
-                } else {
-                    log.warn("OPC UA adapter '{}' connection returned false, scheduling retry with exponential backoff",
-                            adapterId);
-                }
+                            if (throwable != null) {
+                                log.warn("OPC UA adapter '{}' connection failed, scheduling retry with exponential backoff",
+                                        adapterId,
+                                        throwable);
+                            } else {
+                                log.warn("OPC UA adapter '{}' connection returned false, scheduling retry with exponential backoff",
+                                        adapterId);
+                            }
 
-                cancelHealthCheck();
-                // Schedule retry attempt with exponential backoff
-                scheduleRetry(input);
-            }
-        });
+                            cancelHealthCheck();
+                            // Schedule retry attempt with exponential backoff
+                            scheduleRetry(input);
+                        }
+                    });
     }
 
     /**

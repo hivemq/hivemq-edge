@@ -83,10 +83,9 @@ public class OpcuaTag implements Tag {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof OpcuaTag opcuaTag)) {
             return false;
         }
-        final OpcuaTag opcuaTag = (OpcuaTag) o;
         return Objects.equals(name, opcuaTag.name) &&
                 Objects.equals(description, opcuaTag.description) &&
                 Objects.equals(definition, opcuaTag.definition);
