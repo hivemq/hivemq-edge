@@ -39,6 +39,12 @@ tasks.register("check") {
     dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.map { it.task(":$name") })
 }
 
+tasks.register("spotlessApply") {
+    group = "verification"
+
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.filter { it.name != "edge-plugins" }.map { it.task(":$name") })
+}
+
 tasks.register("test") {
     group = "verification"
 
