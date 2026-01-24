@@ -44,11 +44,9 @@ public class OpcuaTagDefinition implements TagDefinition {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof OpcuaTagDefinition that)) {
             return false;
         }
-
-        final OpcuaTagDefinition that = (OpcuaTagDefinition) o;
         return node.equals(that.node);
     }
 
