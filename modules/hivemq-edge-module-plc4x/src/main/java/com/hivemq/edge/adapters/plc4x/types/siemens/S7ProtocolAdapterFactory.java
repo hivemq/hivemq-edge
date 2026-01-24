@@ -22,16 +22,11 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * @author HiveMQ Adapter Generator
  */
 public class S7ProtocolAdapterFactory
         implements ProtocolAdapterFactory<S7SpecificAdapterConfig> {
-
-    private static final @NotNull Logger log = LoggerFactory.getLogger(S7ProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
 

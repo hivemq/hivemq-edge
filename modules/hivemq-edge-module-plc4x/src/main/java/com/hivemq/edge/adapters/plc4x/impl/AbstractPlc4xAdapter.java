@@ -103,7 +103,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         final Plc4xConnection<T> tempConnection = connection;
         if (tempConnection != null && tempConnection.isConnected()) {
             if (!tags.isEmpty()) {
-                tempConnection.read(tags)
+                @SuppressWarnings("unused")
+                final var unused = tempConnection.read(tags)
                         .thenApply(response -> processReadResponse(tags, response))
                         .whenComplete((sample, t) -> {
                             if (t != null) {
@@ -160,22 +161,29 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                         final Plc4xConnection<T> tempConnection = createConnection();
                         this.connection = tempConnection;
                         output.startedSuccessfully();
-                        CompletableFuture.runAsync(() -> {
-                            try {
-                                tempConnection.startConnection(input.moduleServices().eventService(), adapterId, getProtocolAdapterInformation().getProtocolId());
-                                protocolAdapterState.setConnectionStatus(CONNECTED);
-                            } catch (final Plc4xException e) {
-                                try {
-                                    tempConnection.disconnect();
-                                } catch (final Exception ex) {
-                                    log.debug("Tried disconnecting after connection error and caught exception", ex);
-                                }
-                                this.connection = null;
-                                log.error("Plc4x connection failed to start", e);
-                                protocolAdapterState.setConnectionStatus(ERROR);
-                            }
-                            connecting.set(false);
-                        });
+                        @SuppressWarnings("unused")
+                        final var unusedFuture = CompletableFuture
+                                .runAsync(() -> {
+                                    try {
+                                        tempConnection.startConnection(input.moduleServices().eventService(), adapterId, getProtocolAdapterInformation().getProtocolId());
+                                        protocolAdapterState.setConnectionStatus(CONNECTED);
+                                    } catch (final Plc4xException e) {
+                                        try {
+                                            tempConnection.disconnect();
+                                        } catch (final Exception ex) {
+                                            log.debug("Tried disconnecting after connection error and caught exception", ex);
+                                        }
+                                        this.connection = null;
+                                        log.error("Plc4x connection failed to start", e);
+                                        protocolAdapterState.setConnectionStatus(ERROR);
+                                    }
+                                    connecting.set(false);
+                                })
+                                .whenComplete((sample, t) -> {
+                                   if(t != null) {
+                                       log.error("Error starting PLC4X connection", t);
+                                   }
+                                });
                     }
                 }
             } else {

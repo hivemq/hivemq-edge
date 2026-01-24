@@ -155,7 +155,9 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
         final List<CompletableFuture<HttpData>> pollingFutures =
                 tags.stream().map(tag -> pollHttp(httpClient, tag)).toList();
 
-        CompletableFuture.allOf(pollingFutures.toArray(new CompletableFuture[]{}))
+        @SuppressWarnings("unused")
+        final var unused = CompletableFuture
+                .allOf(pollingFutures.toArray(new CompletableFuture[]{}))
                 .whenComplete((result, throwable) -> {
                     if(throwable != null) {
                         pollingOutput.fail(throwable, "Error while polling tags.");
@@ -196,29 +198,28 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
         tagDef.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
 
         switch (tagDef.getHttpRequestMethod()) {
-            case GET:
-                builder.GET();
-                break;
-            case POST:
+            case GET -> builder.GET();
+            case POST -> {
                 if (tagDef.getHttpRequestBody() != null) {
                     builder.POST(HttpRequest.BodyPublishers.ofString(tagDef.getHttpRequestBody()));
                 } else {
                     builder.POST(HttpRequest.BodyPublishers.ofString(""));
                 }
                 builder.header(CONTENT_TYPE_HEADER, tagDef.getHttpRequestBodyContentType().getMimeType());
-                break;
-            case PUT:
+            }
+            case PUT -> {
                 if (tagDef.getHttpRequestBody() != null) {
                     builder.PUT(HttpRequest.BodyPublishers.ofString(tagDef.getHttpRequestBody()));
                 } else {
                     builder.PUT(HttpRequest.BodyPublishers.ofString(""));
                 }
                 builder.header(CONTENT_TYPE_HEADER, tagDef.getHttpRequestBodyContentType().getMimeType());
-                break;
-            default:
+            }
+            default -> {
                 return CompletableFuture
                             .failedFuture(
                                 new IllegalStateException("There was an unexpected value present in the request config: " + tagDef.getHttpRequestMethod()));
+            }
         }
 
         return httpClient
