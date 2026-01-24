@@ -59,8 +59,7 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final FileSpecificAdapterConfig that = (FileSpecificAdapterConfig) o;
+        if (!(o instanceof FileSpecificAdapterConfig that)) return false;
         return Objects.equals(id, that.id) && Objects.equals(getFileToMqttConfig(), that.getFileToMqttConfig());
     }
 

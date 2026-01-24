@@ -77,7 +77,6 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
     private static final @NotNull String CONTENT_TYPE_HEADER = "Content-Type";
     private static final @NotNull String BASE64_ENCODED_VALUE = "data:%s;base64,%s";
     private static final @NotNull String USER_AGENT_HEADER = "User-Agent";
-    private static final @NotNull String RESPONSE_DATA = "httpResponseData";
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull HttpSpecificAdapterConfig adapterConfig;

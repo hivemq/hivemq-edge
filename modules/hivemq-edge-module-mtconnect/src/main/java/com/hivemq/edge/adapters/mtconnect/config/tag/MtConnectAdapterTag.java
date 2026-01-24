@@ -83,10 +83,9 @@ public class MtConnectAdapterTag implements Tag {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof MtConnectAdapterTag tag)) {
             return false;
         }
-        final MtConnectAdapterTag tag = (MtConnectAdapterTag) o;
         return Objects.equals(name, tag.name) &&
                 Objects.equals(description, tag.description) &&
                 Objects.equals(definition, tag.definition);
