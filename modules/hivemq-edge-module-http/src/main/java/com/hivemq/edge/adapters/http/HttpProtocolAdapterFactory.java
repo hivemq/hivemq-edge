@@ -24,7 +24,7 @@ import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @author HiveMQ Adapter Generator
+ * Factory for creating HTTP protocol adapter instances.
  */
 public class HttpProtocolAdapterFactory
         implements ProtocolAdapterFactory<HttpSpecificAdapterConfig> {
