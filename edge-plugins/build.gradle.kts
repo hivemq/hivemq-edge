@@ -12,10 +12,12 @@ java {
 
 repositories {
     mavenCentral()
+    gradlePluginPortal()
 }
 
 dependencies {
     implementation(libs.jackson.dataformat.xml)
+    implementation("net.ltgt.gradle:gradle-errorprone-plugin:${libs.versions.plugin.errorprone.get()}")
 }
 
 gradlePlugin {
@@ -35,6 +37,10 @@ gradlePlugin {
         create("jacoco-convention") {
             id = "$group.$name"
             implementationClass = "$group.jacoco.JacocoConventionPlugin"
+        }
+        create("errorprone-convention") {
+            id = "$group.$name"
+            implementationClass = "$group.errorprone.ErrorProneConventionPlugin"
         }
     }
 }

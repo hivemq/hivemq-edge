@@ -12,6 +12,7 @@ plugins {
     id("com.hivemq.third-party-license-generator")
     id("com.hivemq.repository-convention")
     id("com.hivemq.jacoco-convention")
+    id("com.hivemq.errorprone-convention")
 }
 
 group = "com.hivemq"

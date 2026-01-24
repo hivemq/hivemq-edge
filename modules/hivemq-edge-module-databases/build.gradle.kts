@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.license)
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
+    id("com.hivemq.errorprone-convention")
 }
 
 
