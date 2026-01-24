@@ -129,7 +129,7 @@ public class HttpToMqttMapping implements PollingContext {
         if (o == null || getClass() != o.getClass()) return false;
         final HttpToMqttMapping that = (HttpToMqttMapping) o;
         return getMqttQos() == that.getMqttQos() &&
-                getIncludeTimestamp() == that.getIncludeTimestamp() &&
+                Objects.equals(getIncludeTimestamp(), that.getIncludeTimestamp()) &&
                 Objects.equals(getTagName(), that.getTagName()) &&
                 Objects.equals(getMqttTopic(), that.getMqttTopic()) &&
                 Objects.equals(getUserProperties(), that.getUserProperties());
