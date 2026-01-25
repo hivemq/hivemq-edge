@@ -5,9 +5,10 @@ import { useTranslation } from 'react-i18next'
 import type { JSONSchema7TypeName } from 'json-schema'
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { Badge, Code, HStack, Tooltip, Box, Icon, Text, VStack, type StackProps } from '@chakra-ui/react'
+import { FaLock } from 'react-icons/fa6'
 
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
-import { DataTypeIcon } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
+import { DataTypeIcon, isReadOnly } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { EDGE_HOTKEY } from '@/hooks/useAccessibleDraggable/type'
 import { useAccessibleDraggable } from '@/hooks/useAccessibleDraggable'
@@ -111,6 +112,13 @@ const PropertyItem: FC<PropertyItemProps> = ({
             {hasPathAsName ? path : propertyName}
           </Badge>
         </Tooltip>
+        {isReadOnly(property) && (
+          <Tooltip label={t('GenericSchema.readOnly.tooltip')} placement="top" hasArrow>
+            <Box as="span" display="inline-flex" data-testid="property-readonly">
+              <Icon as={FaLock} boxSize={3} color="gray.500" aria-label={t('GenericSchema.readOnly.label')} />
+            </Box>
+          </Tooltip>
+        )}
       </HStack>
       <VStack gap={0} alignItems="flex-end">
         {examples && hasExamples && (

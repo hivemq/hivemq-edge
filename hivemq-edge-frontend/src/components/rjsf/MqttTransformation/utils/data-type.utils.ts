@@ -4,6 +4,7 @@ import { MdDataObject, MdNumbers, MdOutlineDataArray, MdOutlineTextFields, MdQue
 import { RxComponentBoolean } from 'react-icons/rx'
 import { TbDecimal } from 'react-icons/tb'
 
+import type { Instruction } from '@/api/__generated__'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 
 export const DataTypeIcon: Record<JSONSchema7TypeName, IconType> = {
@@ -18,6 +19,10 @@ export const DataTypeIcon: Record<JSONSchema7TypeName, IconType> = {
 
 export const isMappingSupported = (property: FlatJSONSchema7) => {
   return property.type != undefined && property.type !== 'object'
+}
+
+export const isReadOnly = (property: FlatJSONSchema7) => {
+  return property.readOnly === true
 }
 
 export const filterSupportedProperties = (property: FlatJSONSchema7) => Boolean(property.path.length === 0)
@@ -36,4 +41,21 @@ export const fromJsonPath = (path: string) => {
   if (path === '$') return ''
   if (path.startsWith('$.')) return path.slice(2)
   return path
+}
+
+/**
+ * Filters out instructions that target readonly properties.
+ * Returns the filtered instructions array.
+ */
+export const filterReadOnlyInstructions = (
+  instructions: Instruction[] | undefined,
+  properties: FlatJSONSchema7[]
+): Instruction[] => {
+  if (!instructions || instructions.length === 0) return []
+
+  const readonlyPaths = new Set(properties.filter(isReadOnly).map((p) => ['$', ...p.path, p.key].join('.')))
+
+  if (readonlyPaths.size === 0) return instructions
+
+  return instructions.filter((instruction) => !readonlyPaths.has(instruction.destination))
 }
