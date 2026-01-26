@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { AbsoluteCenter, Box, Flex } from '@chakra-ui/react'
 import { SkipNavContent, SkipNavLink } from '@chakra-ui/skip-nav'
 
@@ -12,6 +12,7 @@ import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 const Dashboard: FC = () => {
   const { credentials, isLoading } = useAuth()
   const { t } = useTranslation()
+  const location = useLocation()
 
   if (isLoading) {
     return (
@@ -23,7 +24,7 @@ const Dashboard: FC = () => {
     )
   }
   if (!credentials) {
-    return <Navigate to="/login" state={{ from: location }} />
+    return <Navigate to="/login" state={{ from: { pathname: location.pathname } }} />
   }
 
   return (
