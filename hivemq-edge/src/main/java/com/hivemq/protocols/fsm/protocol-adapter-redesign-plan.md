@@ -319,6 +319,66 @@ public interface ConnectionContext {
 
 ### 3.2 ProtocolAdapterWrapper2 Redesign
 
+#### 3.2.1 Async Operation Coordination
+
+The Web UI calls start/stop via REST API which expects async responses. The FSM state
+transitions themselves provide atomicity and conflict detection:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                FSM-Based Operation Coordination                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ProtocolAdapterState FSM handles conflicts:                                │
+│                                                                             │
+│  start() called:                                                            │
+│    Idle → Precheck → Working                                                │
+│                                                                             │
+│  stop() called while in Precheck:                                           │
+│    Precheck → Stopping  ✗ INVALID (FSM rejects, no such transition)         │
+│                                                                             │
+│  stop() called while in Working:                                            │
+│    Working → Stopping → Idle  ✓ VALID                                       │
+│                                                                             │
+│  start() called while in Stopping:                                          │
+│    Stopping → Precheck  ✗ INVALID (FSM rejects)                             │
+│                                                                             │
+│  start() called while already in Precheck/Working:                          │
+│    Precheck/Working → Precheck  ✗ INVALID (FSM rejects)                     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Key behaviors:**
+| Current State | start() called | stop() called |
+|---------------|----------------|---------------|
+| Idle          | → Precheck ✓   | FSM rejects (no transition) |
+| Precheck      | FSM rejects    | FSM rejects (no transition) |
+| Working       | FSM rejects    | → Stopping ✓  |
+| Stopping      | FSM rejects    | FSM rejects (already stopping) |
+| Error         | FSM rejects    | → Idle ✓ (cleanup) |
+
+The `synchronized` keyword on `start()` and `stop()` ensures only one thread executes
+at a time. The FSM transition response tells the caller whether the operation succeeded.
+
+**Async wrapper is simple:**
+```java
+// In ProtocolAdapterManager2
+public CompletableFuture<Boolean> startAsync(String adapterId) {
+    return CompletableFuture.supplyAsync(() -> {
+        ProtocolAdapterWrapper2 wrapper = getWrapper(adapterId);
+        return wrapper.start();  // FSM handles conflicts
+    });
+}
+
+public CompletableFuture<Boolean> stopAsync(String adapterId, boolean destroy) {
+    return CompletableFuture.supplyAsync(() -> {
+        ProtocolAdapterWrapper2 wrapper = getWrapper(adapterId);
+        return wrapper.stop(destroy);  // FSM handles conflicts
+    });
+}
+```
+
 ```java
 /**
  * ProtocolAdapterWrapper2 - Manages adapter lifecycle and connection states
@@ -341,6 +401,7 @@ public class ProtocolAdapterWrapper2 {
     private final @NotNull ModuleServices moduleServices;
 
     // State machines - owned by this wrapper
+    // FSM transitions are atomic and handle conflict detection
     private volatile @NotNull ProtocolAdapterState state = ProtocolAdapterState.Idle;
     private volatile @NotNull ProtocolAdapterConnectionState northboundState = ProtocolAdapterConnectionState.Disconnected;
     private volatile @NotNull ProtocolAdapterConnectionState southboundState = ProtocolAdapterConnectionState.Disconnected;
@@ -356,6 +417,11 @@ public class ProtocolAdapterWrapper2 {
     /**
      * Start the adapter.
      *
+     * This method is synchronized - only one thread can execute at a time.
+     * The FSM state transitions handle conflict detection:
+     * - If already in Precheck/Working/Stopping, the transition to Precheck fails
+     * - Caller receives false and can check the current state for details
+     *
      * Flow:
      * 1. Transition to Precheck
      * 2. Call adapter.precheck()
@@ -368,7 +434,7 @@ public class ProtocolAdapterWrapper2 {
      * - Call stopNorthbound/stopSouthbound for cleanup
      * - Transition back to Idle
      *
-     * @return true if started successfully, false otherwise
+     * @return true if started successfully, false if FSM rejected or error occurred
      */
     public synchronized boolean start() {
         log.info("Starting adapter {}", getAdapterId());
@@ -415,6 +481,12 @@ public class ProtocolAdapterWrapper2 {
     /**
      * Stop the adapter.
      *
+     * This method is synchronized - only one thread can execute at a time.
+     * The FSM state transitions handle conflict detection:
+     * - If in Idle/Precheck, the transition to Stopping fails
+     * - If already in Stopping, the transition returns "not changed"
+     * - Caller receives false and can check the current state for details
+     *
      * Flow:
      * 1. Working → Stopping
      * 2. Stop polling and writing services
@@ -423,7 +495,7 @@ public class ProtocolAdapterWrapper2 {
      * 5. When BOTH are Disconnected → Stopping → Idle
      *
      * @param destroy Whether to call adapter.destroy() after stop
-     * @return true if stopped successfully
+     * @return true if stopped successfully, false if FSM rejected or error occurred
      */
     public synchronized boolean stop(boolean destroy) {
         log.info("Stopping adapter {}", getAdapterId());
