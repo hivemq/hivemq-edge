@@ -158,7 +158,7 @@ public class ProtocolAdapterManager {
     public void shutdown() {
         protocolAdapters.values().forEach(entry -> {
             try {
-                entry.stopAsync(true).get(30, TimeUnit.SECONDS);
+                entry.stopAsync(true).get(5, TimeUnit.SECONDS);
             } catch (final InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Exception happened while shutting down adapter: ", e);
             }
