@@ -68,16 +68,14 @@ import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.JSO
 import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.PLAIN_MIME_TYPE;
 
 /**
- * @author HiveMQ Adapter Generator
+ * Protocol adapter for HTTP-based data polling and publishing to MQTT.
  */
 public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
 
     private static final @NotNull String CONTENT_TYPE_HEADER = "Content-Type";
-    private static final @NotNull String BASE64_ENCODED_VALUE = "data:%s;base64,%s";
     private static final @NotNull String USER_AGENT_HEADER = "User-Agent";
-    private static final @NotNull String RESPONSE_DATA = "httpResponseData";
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull HttpSpecificAdapterConfig adapterConfig;
@@ -156,7 +154,9 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
         final List<CompletableFuture<HttpData>> pollingFutures =
                 tags.stream().map(tag -> pollHttp(httpClient, tag)).toList();
 
-        CompletableFuture.allOf(pollingFutures.toArray(new CompletableFuture[]{}))
+        @SuppressWarnings("unused")
+        final var unused = CompletableFuture
+                .allOf(pollingFutures.toArray(new CompletableFuture[]{}))
                 .whenComplete((result, throwable) -> {
                     if(throwable != null) {
                         pollingOutput.fail(throwable, "Error while polling tags.");
@@ -197,29 +197,28 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
         tagDef.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
 
         switch (tagDef.getHttpRequestMethod()) {
-            case GET:
-                builder.GET();
-                break;
-            case POST:
+            case GET -> builder.GET();
+            case POST -> {
                 if (tagDef.getHttpRequestBody() != null) {
                     builder.POST(HttpRequest.BodyPublishers.ofString(tagDef.getHttpRequestBody()));
                 } else {
                     builder.POST(HttpRequest.BodyPublishers.ofString(""));
                 }
                 builder.header(CONTENT_TYPE_HEADER, tagDef.getHttpRequestBodyContentType().getMimeType());
-                break;
-            case PUT:
+            }
+            case PUT -> {
                 if (tagDef.getHttpRequestBody() != null) {
                     builder.PUT(HttpRequest.BodyPublishers.ofString(tagDef.getHttpRequestBody()));
                 } else {
                     builder.PUT(HttpRequest.BodyPublishers.ofString(""));
                 }
                 builder.header(CONTENT_TYPE_HEADER, tagDef.getHttpRequestBodyContentType().getMimeType());
-                break;
-            default:
+            }
+            default -> {
                 return CompletableFuture
                             .failedFuture(
                                 new IllegalStateException("There was an unexpected value present in the request config: " + tagDef.getHttpRequestMethod()));
+            }
         }
 
         return httpClient
@@ -263,7 +262,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                     }
                     final String base64 =
                             Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
-                    payloadData = String.format(BASE64_ENCODED_VALUE, responseContentType, base64);
+                    payloadData = String.format("data:%s;base64,%s", responseContentType, base64);
                 }
             }
         }

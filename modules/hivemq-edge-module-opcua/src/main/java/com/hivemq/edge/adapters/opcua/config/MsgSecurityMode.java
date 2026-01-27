@@ -46,6 +46,8 @@ public enum MsgSecurityMode {
     }
 
     /**
+     * Gets the corresponding Eclipse Milo MessageSecurityMode.
+     *
      * @return the corresponding Eclipse Milo MessageSecurityMode
      */
     public @Nullable MessageSecurityMode getMiloMode() {

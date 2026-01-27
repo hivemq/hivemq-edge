@@ -22,13 +22,9 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EipProtocolAdapterFactory
         implements ProtocolAdapterFactory<EipSpecificAdapterConfig> {
-
-    private static final @NotNull Logger log = LoggerFactory.getLogger(EipProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
 

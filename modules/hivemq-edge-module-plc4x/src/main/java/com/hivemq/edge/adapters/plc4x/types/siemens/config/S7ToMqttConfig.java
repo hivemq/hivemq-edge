@@ -40,8 +40,7 @@ public class S7ToMqttConfig extends Plc4xToMqttConfig {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final S7ToMqttConfig that = (S7ToMqttConfig) o;
+        if (!(o instanceof S7ToMqttConfig that)) return false;
         return getPollingIntervalMillis() == that.getPollingIntervalMillis() &&
                 getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval() &&
                 getPublishChangedDataOnly() == that.getPublishChangedDataOnly();

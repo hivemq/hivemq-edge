@@ -74,16 +74,16 @@ public record Security(@JsonProperty("policy") @ModuleConfigField(title = "OPC U
 
                 final Object policyValue = map.get("policy");
                 final SecPolicy policy;
-                if (policyValue instanceof String) {
-                    policy = SecPolicy.valueOf((String) policyValue);
+                if (policyValue instanceof String policyString) {
+                    policy = SecPolicy.valueOf(policyString);
                 } else {
                     policy = Constants.DEFAULT_SECURITY_POLICY;
                 }
 
                 final Object modeValue = map.get("messageSecurityMode");
                 final MsgSecurityMode messageSecurityMode;
-                if (modeValue instanceof String) {
-                    messageSecurityMode = MsgSecurityMode.fromString((String) modeValue);
+                if (modeValue instanceof String modeString) {
+                    messageSecurityMode = MsgSecurityMode.fromString(modeString);
                 } else {
                     messageSecurityMode = MsgSecurityMode.IGNORED;
                 }

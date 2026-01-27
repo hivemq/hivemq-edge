@@ -113,8 +113,7 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final EipSpecificAdapterConfig that = (EipSpecificAdapterConfig) o;
+        if (!(o instanceof EipSpecificAdapterConfig that)) return false;
         return getPort() == that.getPort() &&
                 getBackplane() == that.getBackplane() &&
                 getSlot() == that.getSlot() &&

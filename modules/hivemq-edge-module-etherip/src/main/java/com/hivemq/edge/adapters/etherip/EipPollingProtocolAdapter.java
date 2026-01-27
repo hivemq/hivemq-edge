@@ -28,6 +28,8 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
+
+import java.util.Arrays;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
 import etherip.EtherNetIP;
@@ -155,8 +157,8 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
                 pollingOutput.fail(e, "Problem accessing tag on device.");
             }
         } catch (final Exception e) {
-            log.warn("An exception occurred while reading tags '{}'.", tagAddresses, e);
-            pollingOutput.fail(e, "An exception occurred while reading tags '" + tagAddresses + "'.");
+            log.warn("An exception occurred while reading tags '{}'.", Arrays.toString(tagAddresses), e);
+            pollingOutput.fail(e, "An exception occurred while reading tags '" + Arrays.toString(tagAddresses) + "'.");
         }
     }
 

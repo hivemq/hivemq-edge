@@ -84,8 +84,7 @@ public class Plc4xTag implements Tag {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final Plc4xTag plc4xTag = (Plc4xTag) o;
+        if (!(o instanceof Plc4xTag plc4xTag)) return false;
         return Objects.equals(name, plc4xTag.name) &&
                 Objects.equals(description, plc4xTag.description) &&
                 Objects.equals(definition, plc4xTag.definition);

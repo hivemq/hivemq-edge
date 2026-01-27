@@ -38,8 +38,7 @@ public class ADSToMqttConfig extends Plc4xToMqttConfig {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final ADSToMqttConfig that = (ADSToMqttConfig) o;
+        if (!(o instanceof ADSToMqttConfig that)) return false;
         return getPollingIntervalMillis() == that.getPollingIntervalMillis() &&
                 getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval() &&
                 getPublishChangedDataOnly() == that.getPublishChangedDataOnly();
