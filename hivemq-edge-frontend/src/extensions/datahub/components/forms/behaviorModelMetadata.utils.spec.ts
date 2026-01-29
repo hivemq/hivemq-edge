@@ -57,7 +57,7 @@ describe('extractModelMetadata', () => {
         id: BehaviorPolicyType.MQTT_EVENT,
         title: 'MQTT - Events',
         description:
-          'The Mqtt.events behavior model allows you to intercept specific MQTT packets for further actions. The model itself does not enforce any particular behavior and is very useful in debugging scenarios. This model does not require any arguments.',
+          'The MQTT - Events behavior model allows you to intercept specific MQTT packets for further actions. The model itself does not enforce any particular behavior and is very useful in debugging scenarios. This model does not require any arguments.',
         requiresArguments: false,
         stateCount: 3,
         transitionCount: 5,
@@ -92,7 +92,7 @@ describe('extractModelMetadata', () => {
         id: BehaviorPolicyType.PUBLISH_DUPLICATE,
         title: 'Publish - Duplicate',
         description:
-          'The Publish.duplicate model identifies consecutive identical client messages to prevent unnecessary resource consumption. This model does not require any arguments.',
+          'The Publish - Duplicate model identifies consecutive identical client messages to prevent unnecessary resource consumption. This model does not require any arguments.',
         requiresArguments: false,
         stateCount: 6,
         transitionCount: 10,
@@ -127,7 +127,7 @@ describe('extractModelMetadata', () => {
         id: BehaviorPolicyType.PUBLISH_QUOTA,
         title: 'Publish - Quota',
         description:
-          'The Publish.quota model tracks the number of MQTT PUBLISH messages a client sends after a client connects to the broker to identify unusual behavior. When you configure a publish-quota model, at least one of the available arguments must be present. Data Hub uses the default value for the missing parameter.',
+          'The Publish - Quota model tracks the number of MQTT PUBLISH messages a client sends after a client connects to the broker to identify unusual behavior. When you configure a publish-quota model, at least one of the available arguments must be present. Data Hub uses the default value for the missing parameter.',
         requiresArguments: true,
         stateCount: 5,
         transitionCount: 7,

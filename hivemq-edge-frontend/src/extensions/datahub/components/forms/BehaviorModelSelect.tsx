@@ -14,6 +14,7 @@ import {
   RadioGroup,
   Stack,
   Text,
+  VisuallyHidden,
   VStack,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
@@ -50,7 +51,9 @@ const ModelOption: FC<ModelOptionProps> = ({ model, isSelected, onSelect }) => {
     >
       <CardBody>
         <HStack spacing={3} align="flex-start">
-          <Radio value={model.id} flex="0 0 auto" mt={1} />
+          <Radio value={model.id} flex="0 0 auto" mt={1}>
+            <VisuallyHidden>{model.title}</VisuallyHidden>
+          </Radio>
           <VStack align="flex-start" spacing={2} flex={1}>
             <HStack spacing={2} width="100%">
               <Text as="b">{model.title}</Text>
