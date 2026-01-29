@@ -178,7 +178,7 @@
           },
           {
             "name": "Disconnected",
-            "description": "Entered when MQTT client disconnects has always sent different consecutive messages.",
+            "description": "Entered when MQTT client disconnects and has always sent different consecutive messages.",
             "type": "SUCCESS"
           },
           {
