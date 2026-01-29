@@ -147,7 +147,7 @@
             "fromState": "Connected",
             "toState": "Connected",
             "description": "Triggered when MQTT client disconnects.",
-            "event": "onInboundDisconnect"
+            "event": "Mqtt.OnInboundDisconnect"
           },
           {
             "fromState": "Connected",
@@ -198,7 +198,7 @@
           },
           {
             "name": "Violated",
-            "description": "Entered when MQTT client disconnects and has always sent different consecutive messages.",
+            "description": "Entered when MQTT client disconnects after having sent at least one pair of consecutive messages with identical payloads.",
             "type": "FAILED"
           }
         ],
