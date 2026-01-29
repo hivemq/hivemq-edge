@@ -211,7 +211,7 @@ public class OpcUaClientConnection {
     synchronized void stop() {
         log.info("Stopping OPC UA client");
 
-        final ConnectionContext ctx = context.get();
+        final ConnectionContext ctx = context.getAndSet(null);
         if(ctx != null) {
             quietlyCloseClient(ctx.client(),true,  ctx.faultListener(), ctx.activityListener());
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
@@ -221,7 +221,7 @@ public class OpcUaClientConnection {
     void destroy() {
         log.info("Destroying OPC UA client");
 
-        final ConnectionContext ctx = context.get();
+        final ConnectionContext ctx = context.getAndSet(null);
         if(ctx != null) {
             quietlyCloseClient(ctx.client(), false, ctx.faultListener(), ctx.activityListener());
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);

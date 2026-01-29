@@ -635,6 +635,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         final var unused = CompletableFuture
                     .supplyAsync(() -> conn.start(parsedConfig))
                     .whenComplete((success, throwable) -> {
+                        if (stopped) {
+                            log.debug("Connection attempt completed after adapter '{}' was stopped, ignoring result",
+                                    adapterId);
+                            return;
+                        }
                         lastReconnectTimestamp.set(System.currentTimeMillis());
                         if (success && throwable == null) {
                             reconnectAttempts.set(0);
