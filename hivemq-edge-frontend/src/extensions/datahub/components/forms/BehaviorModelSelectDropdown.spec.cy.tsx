@@ -198,7 +198,7 @@ describe('BehaviorModelSelectDropdown', () => {
     cy.mountWithProviders(<MockBehaviorModelSelectDropdown onChange={onChange} />)
 
     // Find and click the clear indicator using ARIA label (selector priority #2)
-    cy.get('[aria-label="Clear selected options"]').should('exist').click()
+    cy.get('[aria-label="Clear selected options"]').click()
 
     cy.get('@onChange').should('have.been.called')
     cy.get('@onChange').then((stub) => {

@@ -33,9 +33,7 @@ describe('BehaviorModelReadOnlyDisplay', () => {
   })
 
   it('should display the model title for Publish.duplicate', () => {
-    cy.mountWithProviders(
-      <BehaviorModelReadOnlyDisplay {...MOCK_PROPS} value={BehaviorPolicyType.PUBLISH_DUPLICATE} />
-    )
+    cy.mountWithProviders(<BehaviorModelReadOnlyDisplay {...MOCK_PROPS} value={BehaviorPolicyType.PUBLISH_DUPLICATE} />)
 
     cy.get('input#model').should('have.value', 'Publish - Duplicate')
   })

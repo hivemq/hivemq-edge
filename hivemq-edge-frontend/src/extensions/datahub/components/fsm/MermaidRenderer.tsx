@@ -1,3 +1,4 @@
+import debug from 'debug'
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { useTheme, useColorMode } from '@chakra-ui/react'
@@ -5,6 +6,8 @@ import { useTheme, useColorMode } from '@chakra-ui/react'
 import { Mermaid } from '@/components/Mermaid.tsx'
 
 import type { FiniteStateMachine, FsmState, FsmTransition } from '@datahub/types.ts'
+
+const datahubLog = debug('DataHub:Mermaid')
 
 export interface MermaidRendererProps extends FiniteStateMachine {
   selectedTransition?: {
@@ -19,15 +22,8 @@ export const MermaidRenderer: FC<MermaidRendererProps> = (props) => {
   const { colorMode } = useColorMode()
 
   const script = useMemo(() => {
-    console.log('MermaidRenderer render - props:', {
-      states: props.states,
-      transitions: props.transitions,
-      selectedTransition: props.selectedTransition,
-      colorMode,
-    })
-
     if (!props.states || !props.transitions) {
-      console.log('MermaidRenderer - missing states or transitions')
+      datahubLog.log('MermaidRenderer - missing states or transitions')
       return null
     }
 
@@ -197,11 +193,6 @@ export const MermaidRenderer: FC<MermaidRendererProps> = (props) => {
     ]
 
     const finalScript = script.join('\n')
-    console.log('MermaidRenderer - Generated script:')
-    console.log(finalScript)
-    console.log('MermaidRenderer - selectedTransition:', props.selectedTransition)
-    console.log('MermaidRenderer - selectedTransitionIndex:', selectedTransitionIndex)
-    console.log('MermaidRenderer - colorMode:', colorMode)
     return { script: finalScript, index: selectedTransitionIndex }
   }, [props.states, props.transitions, props.selectedTransition, colorMode, theme])
 
