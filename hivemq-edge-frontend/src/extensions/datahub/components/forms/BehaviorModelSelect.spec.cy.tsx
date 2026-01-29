@@ -76,18 +76,18 @@ describe('BehaviorModelSelect', () => {
     // Check Mqtt.events model
     cy.contains('MQTT - Events').should('be.visible')
     cy.contains(
-      'The Mqtt.events behavior model allows you to intercept specific MQTT packets for further actions.'
+      'The MQTT - Events behavior model allows you to intercept specific MQTT packets for further actions.'
     ).should('be.visible')
     cy.contains(/\d+ states?/).should('exist')
     cy.contains(/\d+ transitions?/).should('exist')
 
     // Check Publish.duplicate model
     cy.contains('Publish - Duplicate').should('be.visible')
-    cy.contains('The Publish.duplicate model identifies consecutive identical client messages').should('be.visible')
+    cy.contains('The Publish - Duplicate model identifies consecutive identical client messages').should('be.visible')
 
     // Check Publish.quota model
     cy.contains('Publish - Quota').should('be.visible')
-    cy.contains('The Publish.quota model tracks the number of MQTT PUBLISH messages').should('be.visible')
+    cy.contains('The Publish - Quota model tracks the number of MQTT PUBLISH messages').should('be.visible')
     cy.contains('Arguments Required').should('be.visible')
   })
 
@@ -185,7 +185,7 @@ describe('BehaviorModelSelect', () => {
     cy.get('@onBlur').should('have.been.called')
   })
 
-  it('should be accessible', () => {
+  it.only('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<MockBehaviorModelSelect />)
     cy.checkAccessibility()

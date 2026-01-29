@@ -90,9 +90,9 @@ describe('BehaviorModelSelectDropdown', () => {
     cy.get('[role="option"]').contains('Publish - Quota').should('exist')
 
     // Check descriptions are visible
-    cy.contains('The Mqtt.events behavior model allows you to intercept specific MQTT packets').should('exist')
-    cy.contains('The Publish.duplicate model identifies consecutive identical client messages').should('exist')
-    cy.contains('The Publish.quota model tracks the number of MQTT PUBLISH messages').should('exist')
+    cy.contains('The MQTT - Events behavior model allows you to intercept specific MQTT packets').should('exist')
+    cy.contains('The Publish - Duplicate model identifies consecutive identical client messages').should('exist')
+    cy.contains('The Publish - Quota model tracks the number of MQTT PUBLISH messages').should('exist')
   })
 
   it('should show state and transition counts in options', () => {
