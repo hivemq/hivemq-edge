@@ -218,26 +218,28 @@
           {
             "fromState": "NotDuplicated",
             "toState": "NotDuplicated",
-            "guards": "updatedHashIsDifferent",
+            "guards": "isDifferentPayload",
             "description": "Triggered when MQTT client sends a publish and the payload is different from the previous one.",
             "event": "Mqtt.OnInboundPublish"
           },
           {
             "fromState": "NotDuplicated",
             "toState": "Duplicated",
+            "guards": "isSamePayload",
             "description": "Triggered when MQTT client sends a publish with the same payload as the previous one.",
             "event": "Mqtt.OnInboundPublish"
           },
           {
             "fromState": "Duplicated",
             "toState": "NotDuplicated",
-            "guards": "updatedHashIsDifferent",
+            "guards": "isDifferentPayload",
             "description": "Triggered when MQTT client sends a publish and the payload is different from the previous one.",
             "event": "Mqtt.OnInboundPublish"
           },
           {
             "fromState": "Duplicated",
             "toState": "Duplicated",
+            "guards": "isSamePayload",
             "description": "Triggered when MQTT client sends a publish with the same payload as the previous one.",
             "event": "Mqtt.OnInboundPublish"
           },
@@ -280,8 +282,14 @@
     }
   },
   "type": "object",
-  "required": ["model"],
+  "required": ["id", "model"],
   "properties": {
+    "id": {
+      "title": "id",
+      "description": "The unique id of this behaviour policy",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,1023}$"
+    },
     "model": {
       "title": "Behavior Model",
       "description": "Select the behavior model you want to use for this policy.",
