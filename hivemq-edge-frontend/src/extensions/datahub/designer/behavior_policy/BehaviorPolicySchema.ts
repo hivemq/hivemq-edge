@@ -7,6 +7,9 @@ import schema from '@datahub/api/__generated__/schemas/BehaviorPolicyData.json'
 export const MOCK_BEHAVIOR_POLICY_SCHEMA: PanelSpecs = {
   schema: schema as RJSFSchema,
   uiSchema: {
+    model: {
+      'ui:widget': 'datahub:behavior-model-selector',
+    },
     arguments: {
       minPublishes: {
         'ui:widget': 'updown',
