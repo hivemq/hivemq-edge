@@ -49,9 +49,9 @@ describe('TopicFilterPanel', () => {
     cy.get('[role="alert"]')
       .should('be.visible')
       .should('have.attr', 'data-status', 'error')
-      .should('have.text', 'DataPolicy not found')
+      .should('have.text', 'Not Found')
 
-    cy.get('@onFormError').should('have.been.calledWithErrorMessage', 'DataPolicy not found')
+    cy.get('@onFormError').should('have.been.calledWithErrorMessage', 'Not Found')
   })
 
   it('should render the fields for a Validator', () => {
