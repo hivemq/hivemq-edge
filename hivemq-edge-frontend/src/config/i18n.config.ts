@@ -29,7 +29,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    ns: ['translation', 'components', 'schemas'],
+    ns: ['translation', 'components', 'schemas', 'datahub'],
     defaultNS: 'translation',
     lng: 'en',
     debug: import.meta.env.MODE === 'development',
