@@ -23,7 +23,7 @@ export const MermaidRenderer: FC<MermaidRendererProps> = (props) => {
 
   const script = useMemo(() => {
     if (!props.states || !props.transitions) {
-      datahubLog.log('MermaidRenderer - missing states or transitions')
+      datahubLog('MermaidRenderer - missing states or transitions')
       return null
     }
 
