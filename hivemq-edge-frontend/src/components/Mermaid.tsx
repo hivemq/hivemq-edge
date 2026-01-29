@@ -2,12 +2,15 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { MermaidConfig } from 'mermaid'
 import mermaid from 'mermaid'
+import debug from 'debug'
 import { Card, CardBody, useTheme, useColorMode } from '@chakra-ui/react'
 
 export interface MermaidProps {
   text: string
   selectedTransitionIndex?: number
 }
+
+const datahubLog = debug('DataHub:Mermaid')
 
 const DEFAULT_CONFIG: MermaidConfig = {
   startOnLoad: false,
@@ -68,8 +71,6 @@ export const Mermaid: React.FC<MermaidProps> = ({ text, selectedTransitionIndex 
         // Generate unique ID for each render to force re-render
         const id = `mermaid-${Date.now()}-${idCounter++}`
 
-        console.log('Mermaid rendering with text:', text, 'colorMode:', colorMode, 'selectedIndex:', selectedTransitionIndex)
-
         // Render the diagram
         const { svg: renderedSvg } = await mermaid.render(id, text)
 
@@ -84,15 +85,15 @@ export const Mermaid: React.FC<MermaidProps> = ({ text, selectedTransitionIndex 
           if (transitions[selectedTransitionIndex]) {
             transitions[selectedTransitionIndex].setAttribute('data-selected', 'true')
             processedSvg = new XMLSerializer().serializeToString(doc)
-            console.log(`Marked transition ${selectedTransitionIndex} as selected`)
+            datahubLog(`Marked transition ${selectedTransitionIndex} as selected`)
           }
         }
 
         setSvg(processedSvg)
 
-        console.log('Mermaid rendered successfully')
+        datahubLog('Mermaid rendered successfully')
       } catch (error) {
-        console.error('Mermaid rendering error:', error)
+        datahubLog('Mermaid rendering error:', error)
         setSvg('')
       }
     }

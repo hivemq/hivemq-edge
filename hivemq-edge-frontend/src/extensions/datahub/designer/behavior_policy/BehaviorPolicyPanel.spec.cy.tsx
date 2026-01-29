@@ -63,7 +63,7 @@ describe('BehaviorPolicyPanel', () => {
   })
 
   it('should render the fields for the panel', () => {
-    const onSubmit = cy.stub().as('onSubmit')
+    const onSubmit = cy.stub()
 
     cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormSubmit={onSubmit} />, { wrapper })
 
@@ -127,7 +127,7 @@ describe('BehaviorPolicyPanel', () => {
     })
 
     it('should render id errors', () => {
-      const onFormSubmit = cy.stub().as('onFormSubmit')
+      const onFormSubmit = cy.stub()
       cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormSubmit={onFormSubmit} />, { wrapper })
 
       cy.wait('@getNodePayload')
@@ -142,7 +142,7 @@ describe('BehaviorPolicyPanel', () => {
     })
 
     it('should render arguments errors', () => {
-      const onFormSubmit = cy.stub().as('onFormSubmit')
+      const onFormSubmit = cy.stub()
       cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormSubmit={onFormSubmit} />, { wrapper })
 
       cy.get('#root_id').type('a123')

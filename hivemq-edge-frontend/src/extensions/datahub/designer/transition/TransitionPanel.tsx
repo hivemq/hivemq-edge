@@ -76,12 +76,10 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, on
     // Use current form data if available, otherwise fall back to node data
     if (currentFormData) {
       const { event } = currentFormData
-      console.log('selectedTransitionData (from form) - raw event:', event)
 
       // Parse the concatenated event string (format: event-from-to-type)
       if (event?.includes('-')) {
         const [parsedEvent, parsedFrom, parsedTo] = event.split('-')
-        console.log('parsed from form:', { event: parsedEvent, from: parsedFrom, to: parsedTo })
         return parsedEvent && parsedFrom && parsedTo ? { event: parsedEvent, from: parsedFrom, to: parsedTo } : null
       }
 
@@ -91,7 +89,6 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, on
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<TransitionData> | undefined
     if (!adapterNode) return null
     const { event, from, to } = adapterNode.data
-    console.log('selectedTransitionData (from node):', { event, from, to })
     return event && from && to ? { event, from, to } : null
   }, [currentFormData, nodes, selectedNode])
 
@@ -116,7 +113,6 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, on
   }, [parentPolicy])
 
   const onFormChange = useCallback((data: IChangeEvent<TransitionData>) => {
-    console.log('onFormChange:', data.formData)
     setCurrentFormData(data.formData || null)
   }, [])
 
