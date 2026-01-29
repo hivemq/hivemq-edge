@@ -12,6 +12,7 @@ describe('ScriptEditor', () => {
     cy.on('uncaught:exception', (err) => {
       return !(err.message.includes('importScripts') || err.message.includes('worker'))
     })
+    cy.intercept('/api/v1/data-hub/scripts', { statusCode: 404 })
   })
 
   describe('Create Mode (script = undefined)', () => {
