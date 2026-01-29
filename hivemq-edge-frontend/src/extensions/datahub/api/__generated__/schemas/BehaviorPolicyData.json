@@ -6,27 +6,27 @@
         "states": [
           {
             "name": "Connected",
-            "description": "State after client connected, but did not send any publishes yet.",
+            "description": "Entered when MQTT client has successfully connected to the broker.",
             "type": "INTERMEDIATE"
           },
           {
             "name": "Disconnected",
-            "description": "State, when the client disconnected and sent at least the minimum amount of publishes and not more than maximum publishes",
+            "description": "Entered when MQTT client disconnects after sending the configured amount of publishes.",
             "type": "SUCCESS"
           },
           {
             "name": "Initial",
-            "description": "Initial state before client connected.",
+            "description": "Entered as soon as MQTT client is matched by the policy.",
             "type": "INITIAL"
           },
           {
             "name": "Publishing",
-            "description": "State, when the client has published at least one publish, but not more than the configured maximum.",
+            "description": "Entered when MQTT client sends the first publish message.",
             "type": "INTERMEDIATE"
           },
           {
             "name": "Violated",
-            "description": "State, when the client sent more than the configured maximum amount of publishes or disconnected before sending enough publishes.",
+            "description": "Entered when MQTT client disconnects after sending too few or too many messages.",
             "type": "FAILED"
           }
         ],
@@ -34,67 +34,71 @@
           {
             "fromState": "Initial",
             "toState": "Connected",
-            "description": "Transition that gets triggered then the client connects.",
+            "description": "Triggered when MQTT client connects.",
             "event": "Mqtt.OnInboundConnect"
           },
           {
             "fromState": "Connected",
             "toState": "Publishing",
-            "description": "Transition that gets triggered then the client publishes the first time after connecting.",
+            "guards": "isMaxPublishNotZero",
+            "description": "Triggered when MQTT client publishes a message for the first time.",
             "event": "Mqtt.OnInboundPublish"
           },
           {
             "fromState": "Publishing",
             "toState": "Violated",
-            "description": "Transition that gets triggered then the client sends more publishes than the maximum of publishes.",
+            "guards": "isPublishCountMoreThanOrEqualToMax",
+            "description": "Triggered when MQTT client sends more publishes than the maximum allowed.",
             "event": "Mqtt.OnInboundPublish"
           },
           {
             "fromState": "Publishing",
             "toState": "Publishing",
-            "description": "Transition that gets triggered then the client sends a publish, which does not exceed the maximum amount of publishes.",
+            "description": "Triggered when MQTT client sends consecutive publishes within conditions.",
             "event": "Mqtt.OnInboundPublish"
           },
           {
             "fromState": "Connected",
             "toState": "Violated",
-            "description": "Transition that gets triggered then the client disconnects before sending any publish and there is a minimum pf publishes required.",
+            "guards": "isPublishCountLessThanMin",
+            "description": "Triggered when MQTT client disconnects before sending enough publishes.",
             "event": "Connection.OnDisconnect"
           },
           {
             "fromState": "Publishing",
             "toState": "Violated",
-            "description": "Transition that gets triggered then the client sends a publish, which does not exceed the maximum amount of publishes.",
+            "guards": "isPublishCountLessThanMin",
+            "description": "Triggered when MQTT client sends less publishes than the minimum required.",
             "event": "Connection.OnDisconnect"
           },
           {
-            "fromState": "Publishing",
+            "fromState": "Connected",
             "toState": "Disconnected",
-            "description": "Once the client connection is closed, the model transitions into the Disconnected state",
+            "description": "Triggered when MQTT client disconnects.",
             "event": "Connection.OnDisconnect"
           }
         ]
       },
       "properties": {
         "arguments": {
-          "title": "Publish.quota options",
-          "description": "When you configure a publish-quota model, at least one of the available arguments must be present",
+          "title": "Publish - Quota",
+          "description": "The Publish - Quota model tracks the number of MQTT PUBLISH messages a client sends after a client connects to the broker to identify unusual behavior. When you configure a publish-quota model, at least one of the available arguments must be present. Data Hub uses the default value for the missing parameter.",
           "type": "object",
-          "required": ["minPublishes", "maxPublishes"],
+          "required": ["maxPublishes", "minPublishes"],
           "properties": {
             "minPublishes": {
-              "title": "minPublishes",
-              "description": "Defines the minimal number of published messages that must be reached",
+              "title": "Minimum number of messages",
+              "description": "Defines the minimal number of published messages that must be reached before disconnecting. The default value is 0.",
               "type": "integer",
-              "minimum": 0,
-              "default": 0
+              "default": 0,
+              "minimum": 0
             },
             "maxPublishes": {
-              "title": "maxPublishes",
-              "description": "Defines the maximum number of published messages that must be reached. Use -1 for no limit.",
+              "title": "Maximum number of messages",
+              "description": "Defines the maximal number of published messages that must be reached before disconnecting. The default value for maxPublishes is -1 (for unlimited).",
               "type": "integer",
-              "minimum": -1,
-              "default": -1
+              "default": -1,
+              "minimum": -1
             }
           }
         }
@@ -106,17 +110,17 @@
         "states": [
           {
             "name": "Connected",
-            "description": "State while the client is connected.",
+            "description": "Entered when a client has successfully connected to the broker.",
             "type": "INTERMEDIATE"
           },
           {
             "name": "Disconnected",
-            "description": "Final state before client disconnected.",
+            "description": "Entered when a client disconnects",
             "type": "SUCCESS"
           },
           {
             "name": "Initial",
-            "description": "Initial state before client connected.",
+            "description": "Entered as soon as a client is matched by the policy.",
             "type": "INITIAL"
           }
         ],
@@ -124,39 +128,39 @@
           {
             "fromState": "Initial",
             "toState": "Connected",
-            "description": "Transition that gets triggered then the client connects.",
+            "description": "Triggered when MQTT client connects.",
             "event": "Mqtt.OnInboundConnect"
           },
           {
             "fromState": "Connected",
             "toState": "Connected",
-            "description": "Transition that gets triggered then the connected client subscribes.",
+            "description": "Triggered when MQTT client subscribes to a message.",
             "event": "Mqtt.OnInboundSubscribe"
           },
           {
             "fromState": "Connected",
             "toState": "Connected",
-            "description": "Transition that gets triggered then the connected client publishes.",
+            "description": "Triggered when MQTT client publishes a message.",
             "event": "Mqtt.OnInboundPublish"
           },
           {
             "fromState": "Connected",
             "toState": "Connected",
-            "description": "Transition that gets triggered then the connected client disconnects.",
-            "event": "Mqtt.OnInboundDisconnect"
+            "description": "Triggered when MQTT client disconnects.",
+            "event": "onInboundDisconnect"
           },
           {
             "fromState": "Connected",
             "toState": "Disconnected",
-            "description": "Once the client connection is closed, the model transitions into the Disconnected state",
+            "description": "Triggered when MQTT client disconnects.",
             "event": "Connection.OnDisconnect"
           }
         ]
       },
       "properties": {
         "arguments": {
-          "title": "Mqtt.events",
-          "description": "This FSM does not require any arguments.",
+          "title": "MQTT - Events",
+          "description": "The MQTT - Events behavior model allows you to intercept specific MQTT packets for further actions. The model itself does not enforce any particular behavior and is very useful in debugging scenarios. This model does not require any arguments.",
           "type": "object",
           "required": [],
           "properties": {}
@@ -169,32 +173,32 @@
         "states": [
           {
             "name": "Connected",
-            "description": "State after client connected, but did not send any publishes yet.",
+            "description": "Entered when MQTT client has successfully connected to the broker.",
             "type": "INTERMEDIATE"
           },
           {
             "name": "Disconnected",
-            "description": "State, when the client disconnected and the last publish was not a duplicate.",
+            "description": "Entered when MQTT client disconnects has always sent different consecutive messages.",
             "type": "SUCCESS"
           },
           {
             "name": "Duplicated",
-            "description": "State, when the client sent a publish with the same payload as the previous publish.",
+            "description": "Entered when MQTT client has sent a message which is equal to the previous one.",
             "type": "INTERMEDIATE"
           },
           {
             "name": "Initial",
-            "description": "Initial state before client connected.",
+            "description": "Entered as soon as MQTT client is matched by the policy.",
             "type": "INITIAL"
           },
           {
             "name": "NotDuplicated",
-            "description": "State, when the client sent an publish that was not a duplicate of the previous publish.",
+            "description": "Entered when MQTT client has sent its first message or two consecutive messages are different.",
             "type": "INTERMEDIATE"
           },
           {
             "name": "Violated",
-            "description": "State, when the client disconnected and the last publish was a duplicate.",
+            "description": "Entered when MQTT client disconnects and has always sent different consecutive messages.",
             "type": "FAILED"
           }
         ],
@@ -202,69 +206,72 @@
           {
             "fromState": "Initial",
             "toState": "Connected",
-            "description": "Transition that gets triggered then the client connects.",
+            "description": "Triggered when MQTT client connects.",
             "event": "Mqtt.OnInboundConnect"
           },
           {
             "fromState": "Connected",
             "toState": "NotDuplicated",
-            "description": "Transition that gets triggered then the client sends the first publish.",
+            "description": "Triggered when MQTT client sends the first publish.",
             "event": "Mqtt.OnInboundPublish"
           },
           {
             "fromState": "NotDuplicated",
             "toState": "NotDuplicated",
-            "description": "Transition that gets triggered then the client sends a publish and the payload is different from the previous one.",
+            "guards": "updatedHashIsDifferent",
+            "description": "Triggered when MQTT client sends a publish and the payload is different from the previous one.",
             "event": "Mqtt.OnInboundPublish"
           },
           {
             "fromState": "NotDuplicated",
             "toState": "Duplicated",
-            "description": "Transition that gets triggered then the client sends a publish with the same payload as the previous publish.",
+            "description": "Triggered when MQTT client sends a publish with the same payload as the previous one.",
             "event": "Mqtt.OnInboundPublish"
           },
           {
             "fromState": "Duplicated",
             "toState": "NotDuplicated",
-            "description": "Transition that gets triggered then the client sends a publish and the payload is different from the previous one while being in the DUPLICATE state.",
+            "guards": "updatedHashIsDifferent",
+            "description": "Triggered when MQTT client sends a publish and the payload is different from the previous one.",
             "event": "Mqtt.OnInboundPublish"
           },
           {
             "fromState": "Duplicated",
             "toState": "Duplicated",
-            "description": "Transition that gets triggered then the client sends a publish with the same payload as the previous publish while already being in the DUPLICATE state",
+            "description": "Triggered when MQTT client sends a publish with the same payload as the previous one.",
             "event": "Mqtt.OnInboundPublish"
           },
           {
             "fromState": "Duplicated",
             "toState": "Violated",
-            "description": "Transition that gets triggered then the client disconnects while being in the DUPLICATE state.",
+            "description": "Triggered when MQTT client disconnects while in the Duplicated state.",
             "event": "Connection.OnDisconnect"
           },
           {
             "fromState": "NotDuplicated",
             "toState": "Violated",
-            "description": "Transition that gets triggered then the client disconnects and the DUPLICATE state has every been reached during this connection.",
+            "guards": "anyMessageDuplicate",
+            "description": "Triggered when MQTT client disconnects and the Duplicated state has been reached during this connection.",
             "event": "Connection.OnDisconnect"
           },
           {
             "fromState": "Connected",
             "toState": "Disconnected",
-            "description": "Once the client connection is closed, the model transitions into the Disconnected state",
+            "description": "Triggered when MQTT client disconnects.",
             "event": "Connection.OnDisconnect"
           },
           {
             "fromState": "NotDuplicated",
             "toState": "Disconnected",
-            "description": "Once the client connection is closed, the model transitions into the Disconnected state",
+            "description": "Triggered when MQTT client disconnects while in the NotDuplicated state.",
             "event": "Connection.OnDisconnect"
           }
         ]
       },
       "properties": {
         "arguments": {
-          "title": "Publish.duplicate options",
-          "description": "This FSM does not require any arguments.",
+          "title": "Publish - Duplicate",
+          "description": "The Publish - Duplicate model identifies consecutive identical client messages to prevent unnecessary resource consumption. This model does not require any arguments.",
           "type": "object",
           "required": [],
           "properties": {}
@@ -273,18 +280,13 @@
     }
   },
   "type": "object",
-  "required": ["id", "model"],
+  "required": ["model"],
   "properties": {
-    "id": {
-      "title": "id",
-      "description": "The unique id of this behaviour policy",
-      "type": "string",
-      "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,1023}$"
-    },
     "model": {
       "title": "Behavior Model",
+      "description": "Select the behavior model you want to use for this policy.",
       "default": "Mqtt.events",
-      "enum": ["Publish.quota", "Mqtt.events", "Publish.duplicate"]
+      "enum": ["Mqtt.events", "Publish.duplicate", "Publish.quota"]
     }
   },
   "allOf": [
