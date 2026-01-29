@@ -185,7 +185,7 @@ describe('BehaviorModelSelect', () => {
     cy.get('@onBlur').should('have.been.called')
   })
 
-  it.only('should be accessible', () => {
+  it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<MockBehaviorModelSelect />)
     cy.checkAccessibility()
