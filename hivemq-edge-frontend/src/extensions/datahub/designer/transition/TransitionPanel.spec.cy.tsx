@@ -57,10 +57,10 @@ describe('TransitionPanel', () => {
   it('should render the fields for a Validator', () => {
     cy.mountWithProviders(<TransitionPanel selectedNode="3" />, { wrapper })
 
-    cy.get('label#root_model-label').should('contain.text', 'model')
-    cy.get('label#root_model-label + input').should('have.value', 'Publish.quota')
+    cy.get('label#root_model-label').should('contain.text', 'Behavior Model')
+    cy.get('label#root_model-label + input').should('have.value', 'Publish - Quota')
 
-    cy.get('label#root_event-label').should('contain.text', 'event')
+    cy.get('label#root_event-label').should('contain.text', 'Transition')
     cy.get('label#root_event-label + div').should('contain.text', 'Select...')
     cy.get('label#root_event-label + div').click()
 
