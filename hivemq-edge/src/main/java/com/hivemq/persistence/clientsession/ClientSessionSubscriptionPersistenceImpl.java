@@ -433,10 +433,7 @@ public class ClientSessionSubscriptionPersistenceImpl extends AbstractPersistenc
     @Override
     public ListenableFuture<Void> cleanUp(final int bucketIndex) {
         return singleWriter.submit(bucketIndex, (bucketIndex1) -> {
-            final var persistence = localPersistence.get();
-            if(persistence != null) {
-                persistence.cleanUp(bucketIndex1);
-            }
+            localPersistence.get().cleanUp(bucketIndex1);
             return null;
         });
     }
