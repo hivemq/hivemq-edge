@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.ListenableScheduledFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.configuration.service.InternalConfigurationService;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
@@ -210,7 +211,12 @@ public class ScheduledCleanUpService {
                 // Note that the "cancelled" CleanUpTask is expected to continue running because the implementation
                 // currently doesn't react to a set thread interrupt flag. But we expect this to be a rare case and want
                 // to ensure the progress of other cleanup procedures despite the potential additional load.
-                Futures.withTimeout(future, cleanUpTaskTimeoutSec, TimeUnit.SECONDS, scheduledExecutorService);
+                try {
+                    Futures.withTimeout(future, cleanUpTaskTimeoutSec, TimeUnit.SECONDS, scheduledExecutorService);
+                } catch (final RejectedExecutionException rejectedExecutionException) {
+                    log.warn("Clean up job timeout scheduling rejected, executor is shutting down.",
+                            rejectedExecutionException);
+                }
             } catch (final Throwable throwable) {
                 log.error("Exception in clean up job ", throwable);
                 scheduledCleanUpService.scheduleCleanUpTask();
