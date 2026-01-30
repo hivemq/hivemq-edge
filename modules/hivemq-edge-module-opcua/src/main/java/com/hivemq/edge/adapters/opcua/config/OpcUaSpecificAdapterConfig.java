@@ -89,6 +89,12 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
                        description = "Controls how heartbeats and reconnects are handled")
     private final @NotNull ConnectionOptions connectionOptions;
 
+    @JsonProperty("includeMetadata")
+    @ModuleConfigField(title = "Include Metadata",
+                       description = "Include OPC UA metadata (timestamps, status code) in JSON output and schema",
+                       defaultValue = "false")
+    private final boolean includeMetadata;
+
     @JsonCreator
     public OpcUaSpecificAdapterConfig(
             @JsonProperty(value = "uri", required = true) final @NotNull String uri,
@@ -98,7 +104,8 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
             @JsonProperty("tls") final @Nullable Tls tls,
             @JsonProperty("opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
             @JsonProperty("security") final @Nullable Security security,
-            @JsonProperty("connectionOptions") final @Nullable ConnectionOptions connectionOptions) {
+            @JsonProperty("connectionOptions") final @Nullable ConnectionOptions connectionOptions,
+            @JsonProperty("includeMetadata") final @Nullable Boolean includeMetadata) {
         this.uri = uri;
         this.overrideUri = requireNonNullElse(overrideUri, false);
         this.applicationUri = (applicationUri != null && !applicationUri.isBlank()) ? applicationUri : "";
@@ -107,6 +114,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         this.opcuaToMqttConfig = requireNonNullElseGet(opcuaToMqttConfig, OpcUaToMqttConfig::defaultOpcUaToMqttConfig);
         this.security = requireNonNullElse(security, new Security(Constants.DEFAULT_SECURITY_POLICY));
         this.connectionOptions = requireNonNullElseGet(connectionOptions, ConnectionOptions::defaultConnectionOptions);
+        this.includeMetadata = requireNonNullElse(includeMetadata, false);
     }
 
 
@@ -142,11 +150,16 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         return connectionOptions;
     }
 
+    public boolean isIncludeMetadata() {
+        return includeMetadata;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         final OpcUaSpecificAdapterConfig that = (OpcUaSpecificAdapterConfig) o;
         return getOverrideUri().equals(that.getOverrideUri()) &&
+                includeMetadata == that.includeMetadata &&
                 Objects.equals(id, that.id) &&
                 Objects.equals(getUri(), that.getUri()) &&
                 Objects.equals(getApplicationUri(), that.getApplicationUri()) &&
@@ -167,7 +180,8 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
                 getTls(),
                 getSecurity(),
                 getOpcuaToMqttConfig(),
-                connectionOptions);
+                connectionOptions,
+                includeMetadata);
     }
 
     @Override
@@ -194,6 +208,8 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
                 opcuaToMqttConfig +
                 ", connectionOptions=" +
                 connectionOptions +
+                ", includeMetadata=" +
+                includeMetadata +
                 '}';
     }
 }

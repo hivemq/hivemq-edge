@@ -573,7 +573,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
         conn.client()
-                .ifPresentOrElse(client -> new JsonSchemaGenerator(client).createMqttPayloadJsonSchema(tag)
+                .ifPresentOrElse(client -> new JsonSchemaGenerator(client, config.isIncludeMetadata()).createMqttPayloadJsonSchema(tag)
                         .whenComplete((result, throwable) -> {
                             if (throwable == null) {
                                 result.ifPresentOrElse(schema -> {
