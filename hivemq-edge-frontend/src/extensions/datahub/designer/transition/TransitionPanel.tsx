@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Node } from '@xyflow/react'
 import { getIncomers } from '@xyflow/react'
 import { Card, CardBody } from '@chakra-ui/react'
@@ -29,6 +29,7 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, on
   const { t } = useTranslation('datahub')
   const { nodes, edges } = useDataHubDraftStore()
   const { guardAlert, isNodeEditable } = usePolicyGuards(selectedNode)
+  const [currentFormData, setCurrentFormData] = useState<TransitionData | null>(null)
 
   // TODO[NVL] Error messages?
   const parentPolicy = useMemo(() => {
@@ -71,6 +72,26 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, on
     return tempData
   }, [nodes, parentPolicy, selectedNode])
 
+  const selectedTransitionData = useMemo(() => {
+    // Use current form data if available, otherwise fall back to node data
+    if (currentFormData) {
+      const { event } = currentFormData
+
+      // Parse the concatenated event string (format: event-from-to-type)
+      if (event?.includes('-')) {
+        const [parsedEvent, parsedFrom, parsedTo] = event.split('-')
+        return parsedEvent && parsedFrom && parsedTo ? { event: parsedEvent, from: parsedFrom, to: parsedTo } : null
+      }
+
+      return null
+    }
+
+    const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<TransitionData> | undefined
+    if (!adapterNode) return null
+    const { event, from, to } = adapterNode.data
+    return event && from && to ? { event, from, to } : null
+  }, [currentFormData, nodes, selectedNode])
+
   const options = useMemo(() => {
     if (!parentPolicy) {
       return null
@@ -90,6 +111,10 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, on
 
     return metadata
   }, [parentPolicy])
+
+  const onFormChange = useCallback((data: IChangeEvent<TransitionData>) => {
+    setCurrentFormData(data.formData || null)
+  }, [])
 
   const onSafeFormSubmit = useCallback(
     (data: IChangeEvent<TransitionData>) => {
@@ -122,8 +147,10 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, on
     if (!data) {
       onFormError?.(new Error(t('error.elementNotDefined.description', { nodeType: DataHubNodeType.TRANSITION })))
     }
+    // Reset form state when node changes
+    setCurrentFormData(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data])
+  }, [data, selectedNode])
 
   return (
     <Card>
@@ -150,9 +177,16 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit, on
             }}
             formData={data}
             widgets={datahubRJSFWidgets}
+            onChange={onFormChange}
             onSubmit={onSafeFormSubmit}
           />
-          {options && <FiniteStateMachineFlow transitions={options.transitions} states={options.states} />}
+          {options && data && (
+            <FiniteStateMachineFlow
+              transitions={options.transitions}
+              states={options.states}
+              selectedTransition={selectedTransitionData || undefined}
+            />
+          )}
         </CardBody>
       )}
     </Card>

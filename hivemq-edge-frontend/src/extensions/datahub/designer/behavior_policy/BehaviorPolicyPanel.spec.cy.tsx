@@ -63,25 +63,25 @@ describe('BehaviorPolicyPanel', () => {
   })
 
   it('should render the fields for the panel', () => {
-    const onSubmit = cy.stub().as('onSubmit')
+    const onSubmit = cy.stub()
 
     cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormSubmit={onSubmit} />, { wrapper })
 
     cy.get('#root_id').type('a123')
 
     cy.get('label#root_model-label').should('contain.text', 'Behavior Model')
-    cy.get('label#root_model-label + div').should('contain.text', 'Mqtt.events')
+    cy.get('label#root_model-label + div').should('contain.text', 'MQTT - Events')
     cy.get('label#root_model-label + div').click()
     cy.get('label#root_model-label + div')
       .find("[role='listbox']")
       .find("[role='option']")
       .eq(1)
-      .should('contain.text', 'Mqtt.events')
+      .should('contain.text', 'MQTT - Events')
     cy.get('label#root_model-label + div')
       .find("[role='listbox']")
       .find("[role='option']")
       .eq(0)
-      .should('contain.text', 'Publish.quota')
+      .should('contain.text', 'Publish - Quota')
     cy.get('label#root_model-label + div').find("[role='listbox']").find("[role='option']").eq(0).click()
 
     cy.get('h2').eq(0).should('contain.text', 'Publish')
@@ -103,10 +103,10 @@ describe('BehaviorPolicyPanel', () => {
 
       cy_selectBehaviourModel(0)
 
-      cy.get('h2').eq(0).should('contain.text', 'Publish.quota options')
-      cy.get('label[for="root_arguments_minPublishes"]').should('contain.text', 'minPublishes')
+      cy.get('h2').eq(0).should('contain.text', 'Publish - Quota')
+      cy.get('label[for="root_arguments_minPublishes"]').should('contain.text', 'Minimum number of messages')
       cy.get('label[for="root_arguments_minPublishes"] + div > input').should('have.value', '0')
-      cy.get('label[for="root_arguments_maxPublishes"]').should('contain.text', 'maxPublishes')
+      cy.get('label[for="root_arguments_maxPublishes"]').should('contain.text', 'Maximum number of messages')
       cy.get('label[for="root_arguments_maxPublishes"] + div > input').should('have.value', '-1')
 
       cy.get("button[type='submit']").click()
@@ -127,7 +127,11 @@ describe('BehaviorPolicyPanel', () => {
     })
 
     it('should render id errors', () => {
-      cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormSubmit={cy.stub} />, { wrapper })
+      const onFormSubmit = cy.stub()
+      cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormSubmit={onFormSubmit} />, { wrapper })
+
+      cy.wait('@getNodePayload')
+
       cy.get("button[type='submit']").click()
 
       cy.get('[role="group"]:has(> label#root_id-label) + ul > li').as('idErrors')
@@ -138,7 +142,8 @@ describe('BehaviorPolicyPanel', () => {
     })
 
     it('should render arguments errors', () => {
-      cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormSubmit={cy.stub} />, { wrapper })
+      const onFormSubmit = cy.stub()
+      cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormSubmit={onFormSubmit} />, { wrapper })
 
       cy.get('#root_id').type('a123')
       cy_selectBehaviourModel(0)

@@ -179,6 +179,19 @@
       }
     }
   },
+  "behaviorModel": {
+    "badge": {
+      "requiresArguments": "Arguments Required"
+    },
+    "summary": {
+      "states": "{{count}} state",
+      "states_other": "{{count}} states",
+      "transitions": "{{count}} transition",
+      "transitions_other": "{{count}} transitions",
+      "endStates": "End states:"
+    },
+    "notSelected": "No model selected"
+  },
   "workspace": {
     "canvas": {
       "aria-label": "Policy Designer"
@@ -343,8 +356,8 @@
     },
     "transition": {
       "select": {
-        "toState": "to: {{ state }}",
-        "fromState": "from: {{ state }}"
+        "toState": "to:",
+        "fromState": "from:"
       }
     },
     "toolbar": {
