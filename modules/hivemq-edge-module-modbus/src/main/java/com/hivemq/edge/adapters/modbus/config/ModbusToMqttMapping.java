@@ -101,6 +101,7 @@ public class ModbusToMqttMapping implements PollingContext {
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
     }
 
+    @Override
     public @NotNull String getTagName() {
         return tagName;
     }

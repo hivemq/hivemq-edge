@@ -71,10 +71,9 @@ public class DatabasesAdapterTag implements Tag {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof DatabasesAdapterTag databasesAdapterTag)) {
             return false;
         }
-        final DatabasesAdapterTag databasesAdapterTag = (DatabasesAdapterTag) o;
         return Objects.equals(name, databasesAdapterTag.name) &&
                 Objects.equals(description, databasesAdapterTag.description) &&
                 Objects.equals(definition, databasesAdapterTag.definition);

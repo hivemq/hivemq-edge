@@ -88,6 +88,7 @@ public class HttpToMqttMapping implements PollingContext {
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
     }
 
+    @Override
     public @NotNull String getTagName() {
         return tagName;
     }
@@ -126,10 +127,9 @@ public class HttpToMqttMapping implements PollingContext {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final HttpToMqttMapping that = (HttpToMqttMapping) o;
+        if (!(o instanceof HttpToMqttMapping that)) return false;
         return getMqttQos() == that.getMqttQos() &&
-                getIncludeTimestamp() == that.getIncludeTimestamp() &&
+                Objects.equals(getIncludeTimestamp(), that.getIncludeTimestamp()) &&
                 Objects.equals(getTagName(), that.getTagName()) &&
                 Objects.equals(getMqttTopic(), that.getMqttTopic()) &&
                 Objects.equals(getUserProperties(), that.getUserProperties());

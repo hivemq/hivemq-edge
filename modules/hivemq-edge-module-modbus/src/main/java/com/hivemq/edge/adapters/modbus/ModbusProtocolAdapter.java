@@ -192,30 +192,33 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
 
             final boolean publishAllChanges = isPublishAllChanges();
 
-            CompletableFuture.allOf(readRegisterFutures).whenComplete((result, throwable) -> {
-                try {
-                    if (throwable != null) {
-                        protocolAdapterState.setConnectionStatus(ERROR);
-                        pollingOutput.fail(throwable, "Unable to read tags from modbus");
-                        return;
-                    }
+            @SuppressWarnings("unused")
+            final var unused = CompletableFuture
+                    .allOf(readRegisterFutures)
+                    .whenComplete((result, throwable) -> {
+                        try {
+                            if (throwable != null) {
+                                protocolAdapterState.setConnectionStatus(ERROR);
+                                pollingOutput.fail(throwable, "Unable to read tags from modbus");
+                                return;
+                            }
 
-                    protocolAdapterState.setConnectionStatus(CONNECTED);
+                            protocolAdapterState.setConnectionStatus(CONNECTED);
 
-                    for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
-                        final ResulTuple entry = readRegisterFuture.join();
-                        final var tagName = entry.tagName();
-                        final var value = entry.value();
-                        final var dataPoints = List.of(dataPointFactory.create(tagName, value));
-                        if (publishAllChanges ||
-                                publishChangedDataOnlyHandler.replaceIfValueIsNew(tagName, dataPoints)) {
-                            dataPoints.forEach(pollingOutput::addDataPoint);
+                            for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
+                                final ResulTuple entry = readRegisterFuture.join();
+                                final var tagName = entry.tagName();
+                                final var value = entry.value();
+                                final var dataPoints = List.of(dataPointFactory.create(tagName, value));
+                                if (publishAllChanges ||
+                                        publishChangedDataOnlyHandler.replaceIfValueIsNew(tagName, dataPoints)) {
+                                    dataPoints.forEach(pollingOutput::addDataPoint);
+                                }
+                            }
+                        } finally {
+                            pollingOutput.finish();
                         }
-                    }
-                } finally {
-                    pollingOutput.finish();
-                }
-            });
+                    });
         }
     }
 

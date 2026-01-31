@@ -45,7 +45,7 @@ import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.WCHA
 import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.WSTRING;
 
 /**
- * @author HiveMQ Adapter Generator
+ * Protocol adapter for Siemens S7 PLC communication.
  */
 public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7SpecificAdapterConfig, Plc4xToMqttMapping> {
 

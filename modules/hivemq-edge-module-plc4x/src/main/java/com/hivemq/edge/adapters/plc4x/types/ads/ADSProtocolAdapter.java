@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author HiveMQ Adapter Generator
+ * Protocol adapter for Beckhoff ADS (Automation Device Specification) communication.
  */
 public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSSpecificAdapterConfig, Plc4xToMqttMapping> {
 

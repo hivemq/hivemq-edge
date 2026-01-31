@@ -224,26 +224,11 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
         final String columnName = resultSetMD.getColumnName(index);
         final int columnType = resultSetMD.getColumnType(index);
         switch (columnType) {
-            case Types.BIT:
-            case Types.TINYINT:
-            case Types.SMALLINT:
-            case Types.INTEGER:
-                node.put(columnName, result.getInt(index));
-                return;
-            case Types.BIGINT:
-                node.put(columnName, result.getLong(index));
-                return;
-            case Types.DECIMAL:
-                node.put(columnName, result.getBigDecimal(index));
-                return;
-            case Types.REAL:
-            case Types.FLOAT:
-            case Types.DOUBLE:
-            case Types.NUMERIC:
-                node.put(columnName, result.getDouble(index));
-                return;
-            default:
-                node.put(columnName, result.getString(index));
+            case Types.BIT, Types.TINYINT, Types.SMALLINT, Types.INTEGER -> node.put(columnName, result.getInt(index));
+            case Types.BIGINT -> node.put(columnName, result.getLong(index));
+            case Types.DECIMAL -> node.put(columnName, result.getBigDecimal(index));
+            case Types.REAL, Types.FLOAT, Types.DOUBLE, Types.NUMERIC -> node.put(columnName, result.getDouble(index));
+            default -> node.put(columnName, result.getString(index));
         }
     }
 

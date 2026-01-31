@@ -84,10 +84,9 @@ public class ModbusToMqttConfig {
 
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ModbusToMqttConfig that)) {
             return false;
         }
-        final ModbusToMqttConfig that = (ModbusToMqttConfig) o;
         return getPollingIntervalMillis() == that.getPollingIntervalMillis() &&
                 getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval() &&
                 getPublishChangedDataOnly() == that.getPublishChangedDataOnly();
