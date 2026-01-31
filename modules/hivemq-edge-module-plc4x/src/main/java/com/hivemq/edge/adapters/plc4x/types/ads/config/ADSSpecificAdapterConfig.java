@@ -140,8 +140,7 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final ADSSpecificAdapterConfig that = (ADSSpecificAdapterConfig) o;
+        if (!(o instanceof ADSSpecificAdapterConfig that)) return false;
         return getPort() == that.getPort() &&
                 getTargetAmsPort() == that.getTargetAmsPort() &&
                 getSourceAmsPort() == that.getSourceAmsPort() &&

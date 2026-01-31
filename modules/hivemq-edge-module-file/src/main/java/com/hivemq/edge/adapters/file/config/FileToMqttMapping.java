@@ -98,6 +98,7 @@ public class FileToMqttMapping implements PollingContext {
         this.tagName = tagName;
     }
 
+    @Override
     public @NotNull String getTagName() {
         return tagName;
     }

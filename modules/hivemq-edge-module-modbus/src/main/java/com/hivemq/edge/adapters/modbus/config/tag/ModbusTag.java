@@ -84,8 +84,7 @@ public class ModbusTag implements Tag {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final ModbusTag modbusTag = (ModbusTag) o;
+        if (!(o instanceof ModbusTag modbusTag)) return false;
         return Objects.equals(name, modbusTag.name) &&
                 Objects.equals(description, modbusTag.description) &&
                 Objects.equals(definition, modbusTag.definition);

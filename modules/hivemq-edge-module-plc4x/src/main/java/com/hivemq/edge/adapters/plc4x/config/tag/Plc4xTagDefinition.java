@@ -85,8 +85,7 @@ public class Plc4xTagDefinition implements TagDefinition {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final Plc4xTagDefinition that = (Plc4xTagDefinition) o;
+        if (!(o instanceof Plc4xTagDefinition that)) return false;
         return Objects.equals(tagAddress, that.tagAddress) && dataType == that.dataType;
     }
 

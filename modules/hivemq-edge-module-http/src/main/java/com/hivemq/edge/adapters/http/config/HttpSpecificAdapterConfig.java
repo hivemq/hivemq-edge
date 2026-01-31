@@ -149,8 +149,7 @@ public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final HttpSpecificAdapterConfig that = (HttpSpecificAdapterConfig) o;
+        if (!(o instanceof HttpSpecificAdapterConfig that)) return false;
         return getHttpConnectTimeoutSeconds() == that.getHttpConnectTimeoutSeconds() &&
                 isAllowUntrustedCertificates() == that.isAllowUntrustedCertificates() &&
                 Objects.equals(id, that.id) &&

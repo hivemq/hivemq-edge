@@ -190,17 +190,19 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
         PlcSubscriptionRequest subscriptionRequest = builder.build();
         CompletableFuture<PlcSubscriptionResponse> future =
                 (CompletableFuture<PlcSubscriptionResponse>) subscriptionRequest.execute();
-        future.whenComplete((plcSubscriptionResponse, throwable) -> {
-            if (throwable != null) {
-                log.warn("Connection subscription encountered an error;", throwable);
-            } else {
-                for (final String subscriptionName : plcSubscriptionResponse.getTagNames()) {
-                    final PlcSubscriptionHandle subscriptionHandle =
-                            plcSubscriptionResponse.getSubscriptionHandle(subscriptionName);
-                    subscriptionHandle.register(consumer);
-                }
-            }
-        });
+        @SuppressWarnings("unused")
+        final var unused = future
+                .whenComplete((plcSubscriptionResponse, throwable) -> {
+                    if (throwable != null) {
+                        log.warn("Connection subscription encountered an error;", throwable);
+                    } else {
+                        for (final String subscriptionName : plcSubscriptionResponse.getTagNames()) {
+                            final PlcSubscriptionHandle subscriptionHandle =
+                                    plcSubscriptionResponse.getSubscriptionHandle(subscriptionName);
+                            subscriptionHandle.register(consumer);
+                        }
+                    }
+                });
         return future;
     }
 
