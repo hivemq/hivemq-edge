@@ -8077,6 +8077,11 @@ components:
             - TAG
             - TOPIC_FILTER
             - PULSE_ASSET
+        scope:
+          type: string
+          nullable: true
+          description: |
+            Scoping identifier. For TAG type, this is the adapter ID that owns the tag. For other types, this is null.
     Instruction:
       type: object
       description: List of instructions to be applied to incoming data
