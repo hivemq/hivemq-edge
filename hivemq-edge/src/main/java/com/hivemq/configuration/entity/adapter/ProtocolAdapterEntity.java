@@ -17,6 +17,7 @@ package com.hivemq.configuration.entity.adapter;
 
 import static java.util.Objects.requireNonNullElse;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.tag.Tag;
@@ -29,9 +30,11 @@ import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
@@ -144,6 +147,23 @@ public class ProtocolAdapterEntity implements EntityValidatable {
 
     public @NotNull List<TagEntity> getTags() {
         return tags;
+    }
+
+    @JsonIgnore
+    public @NotNull Optional<Set<String>> getDuplicatedTagNameSet() {
+        final Set<String> tagNameSet = new HashSet<>();
+        final Set<String> duplicatedTagNameSet = new HashSet<>();
+        tags.stream().map(TagEntity::getName).forEach(tagName -> {
+            if (tagNameSet.contains(tagName)) {
+                duplicatedTagNameSet.add(tagName);
+            } else {
+                tagNameSet.add(tagName);
+            }
+        });
+        if (!duplicatedTagNameSet.isEmpty()) {
+            return Optional.of(duplicatedTagNameSet);
+        }
+        return Optional.empty();
     }
 
     @Override
