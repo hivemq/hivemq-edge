@@ -16,13 +16,13 @@ jobs:
         run: |
           git clone https://github.com/hivemq/hivemq-extension-sdk.git ../hivemq-extension-sdk
           cd ../hivemq-extension-sdk
-          git checkout ${GITHUB_REF#refs/heads/} || true
+          git checkout ${{ github.head_ref }} || true
           git clone https://github.com/hivemq/hivemq-edge-extension-sdk.git ../hivemq-edge-extension-sdk
           cd ../hivemq-edge-extension-sdk
-          git checkout ${GITHUB_REF#refs/heads/} || true
+          git checkout ${{ github.head_ref }} || true
           git clone https://github.com/hivemq/hivemq-edge-adapter-sdk.git ../hivemq-edge-adapter-sdk
           cd ../hivemq-edge-adapter-sdk
-          git checkout ${GITHUB_REF#refs/heads/} || true
+          git checkout ${{ github.head_ref }} || true
           cd ../hivemq-edge
 
       - name: Setup Java
