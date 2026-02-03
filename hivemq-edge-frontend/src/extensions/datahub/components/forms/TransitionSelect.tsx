@@ -2,7 +2,7 @@ import type { FocusEvent } from 'react'
 import { useCallback, useMemo } from 'react'
 import type { WidgetProps } from '@rjsf/utils'
 import { labelValue } from '@rjsf/utils'
-import { FormControl, FormLabel, HStack, Text, VStack } from '@chakra-ui/react'
+import { Badge, FormControl, FormLabel, HStack, Text, VStack } from '@chakra-ui/react'
 import type { OnChangeValue, SingleValueProps, OptionProps } from 'chakra-react-select'
 import { Select, chakraComponents, createFilter } from 'chakra-react-select'
 
@@ -14,14 +14,21 @@ import { getChakra } from '@/components/rjsf/utils/getChakra'
 interface FsmTransitionWithId extends FsmTransition {
   id: string
   endStateType?: FsmState.Type
+  fromStateType?: FsmState.Type
+  guards?: string
 }
 
 const SingleValue = (props: SingleValueProps<FsmTransitionWithId>) => {
+  const displayName = props.data.guards ? `${props.data.event} + ${props.data.guards}` : props.data.event
+
   return (
     <chakraComponents.SingleValue {...props}>
-      <Text>
-        {props.data.event} (<Text as="span">{props.data.fromState}</Text> - <Text as="span">{props.data.toState}</Text>)
-      </Text>
+      <HStack spacing={2}>
+        <Text as="b">{displayName}</Text>
+        <Text>
+          (<Text as="span">{props.data.fromState}</Text> → <Text as="span">{props.data.toState}</Text>)
+        </Text>
+      </HStack>
     </chakraComponents.SingleValue>
   )
 }
@@ -36,28 +43,46 @@ const Option = (props: OptionProps<FsmTransitionWithId>) => {
   if (__isNew__) {
     return <chakraComponents.Option {...props}>{props.children}</chakraComponents.Option>
   }
-  const isTerminal =
-    props.data.endStateType === FsmState.Type.FAILED || props.data.endStateType === FsmState.Type.SUCCESS
+
+  const displayName = props.data.guards ? `${props.data.event} + ${props.data.guards}` : props.data.event
+
+  const getStateColorScheme = (stateType?: FsmState.Type): string => {
+    switch (stateType) {
+      case FsmState.Type.INITIAL:
+        return 'blue'
+      case FsmState.Type.INTERMEDIATE:
+        return 'gray'
+      case FsmState.Type.SUCCESS:
+        return 'green'
+      case FsmState.Type.FAILED:
+        return 'red'
+      default:
+        return 'gray'
+    }
+  }
 
   return (
     <chakraComponents.Option {...rest} isSelected={selectedTransition && selectedTransition.id === props.data.id}>
-      <HStack w="100%" justifyContent="space-between" gap={3}>
-        <VStack alignItems="flex-start">
-          <Text as="b" flex={1}>
-            {props.data.event}
-          </Text>
-          <HStack>
-            <Text fontSize="sm">{props.data.description}</Text>
-          </HStack>
+      <HStack width="100%" justifyContent="space-between" gap={3}>
+        <VStack align="flex-start" spacing={1} flex={1}>
+          <Text as="b">{displayName}</Text>
+          <Text fontSize="sm">{props.data.description}</Text>
         </VStack>
-        <VStack alignItems="flex-end">
-          <Text fontSize="sm" whiteSpace="nowrap">
-            {t('workspace.transition.select.fromState', { state: props.data.fromState })}
-          </Text>
-          <Text fontSize="sm" whiteSpace="nowrap">
-            {t('workspace.transition.select.toState', { state: props.data.toState })}
-            {isTerminal && ` [${props.data.endStateType}]`}
-          </Text>
+
+        <VStack align="flex-end" spacing={1} fontSize="xs" whiteSpace="nowrap">
+          <HStack spacing={1}>
+            <Text>{t('workspace.transition.select.fromState')}</Text>
+            <Badge colorScheme={getStateColorScheme(props.data.fromStateType)} fontSize="xs">
+              {props.data.fromState}
+            </Badge>
+          </HStack>
+
+          <HStack spacing={1}>
+            <Text>{t('workspace.transition.select.toState')}</Text>
+            <Badge colorScheme={getStateColorScheme(props.data.endStateType)} fontSize="xs">
+              {props.data.toState}
+            </Badge>
+          </HStack>
         </VStack>
       </HStack>
     </chakraComponents.Option>
@@ -83,11 +108,13 @@ export const TransitionSelect = (props: WidgetProps) => {
     const states = metadata.states
     const opts = metadata.transitions.map<FsmTransitionWithId>((transition) => {
       const endState = states.find((state) => state.name === transition.toState)
+      const fromState = states.find((state) => state.name === transition.fromState)
 
       return {
         ...transition,
         id: `${transition.event}-${transition.fromState}-${transition.toState}-${endState?.type}`,
         endStateType: endState?.type,
+        fromStateType: fromState?.type,
       }
     })
     opts.push({

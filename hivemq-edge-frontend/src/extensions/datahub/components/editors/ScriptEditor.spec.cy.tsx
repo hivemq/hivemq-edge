@@ -12,6 +12,7 @@ describe('ScriptEditor', () => {
     cy.on('uncaught:exception', (err) => {
       return !(err.message.includes('importScripts') || err.message.includes('worker'))
     })
+    cy.intercept('/api/v1/data-hub/scripts', { statusCode: 404 })
   })
 
   describe('Create Mode (script = undefined)', () => {
@@ -311,7 +312,7 @@ describe('ScriptEditor', () => {
           ...mockScript,
           version: 3, // Backend would increment to version 3
         },
-      }).as('createScript')
+      })
 
       cy.injectAxe()
       cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub} script={mockScript} />)
