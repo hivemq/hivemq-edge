@@ -384,9 +384,10 @@ public class VanillaDataCombiningTransformationServiceTest {
 
     @Test
     public void whenTagNameHasSpecialCharacters_thenDataIsExtracted() {
+        // Note: toFullyQualifiedName() replaces dots with slashes, so "my/tag.with" becomes "my/tag/with"
         when(publish.getPayload()).thenReturn("""
                 {
-                  "TAG:my/tag.with\\" special'chars": {
+                  "TAG:my/tag/with\\" special'chars": {
                     "value": 123
                   }
                 }""".getBytes());
@@ -443,5 +444,74 @@ public class VanillaDataCombiningTransformationServiceTest {
         // Only existingTag data is in output; missingTag instruction is skipped
         assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
                 {"dest":{"existing":100}}""");
+    }
+
+    @Test
+    public void whenTagHasScope_thenScopedKeyIsUsedInJsonPath() {
+        // Merged JSON has scope prefix: "adapter1/TAG:temperature"
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "adapter1/TAG:temperature": {
+                    "value": 25.5
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(
+                new Instruction("$.value",
+                        "dest.temp",
+                        new DataIdentifierReference("temperature", DataIdentifierReference.Type.TAG, "adapter1"))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"temp":25.5}}""");
+    }
+
+    @Test
+    public void whenTwoTagsHaveSameNameButDifferentScope_thenBothAreDistinguished() {
+        // Two adapters have tags with the same name "temperature"
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "adapter1/TAG:temperature": {
+                    "value": 20
+                  },
+                  "adapter2/TAG:temperature": {
+                    "value": 30
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(
+                new Instruction("$.value",
+                        "dest.temp1",
+                        new DataIdentifierReference("temperature", DataIdentifierReference.Type.TAG, "adapter1")),
+                new Instruction("$.value",
+                        "dest.temp2",
+                        new DataIdentifierReference("temperature", DataIdentifierReference.Type.TAG, "adapter2"))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"temp1":20,"temp2":30}}""");
+    }
+
+    @Test
+    public void whenMixOfScopedAndUnscopedTags_thenBothWork() {
+        // Mixed: one tag with scope, one without (legacy)
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "adapter1/TAG:scoped": {
+                    "value": 100
+                  },
+                  "TAG:unscoped": {
+                    "value": 200
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(
+                new Instruction("$.value",
+                        "dest.scoped",
+                        new DataIdentifierReference("scoped", DataIdentifierReference.Type.TAG, "adapter1")),
+                new Instruction("$.value",
+                        "dest.unscoped",
+                        new DataIdentifierReference("unscoped", DataIdentifierReference.Type.TAG))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"scoped":100,"unscoped":200}}""");
     }
 }

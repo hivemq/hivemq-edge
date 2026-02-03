@@ -61,6 +61,19 @@ public record DataIdentifierReference(String id, Type type, @Nullable String sco
         return type == Type.TAG ? scope != null && !scope.isBlank() : scope == null;
     }
 
+    /**
+     * Returns a fully qualified name for this reference, suitable for use as a JSON key.
+     * Format: {@code [scope/]TYPE:id} where dots in id are replaced with slashes.
+     * Examples: {@code TOPIC_FILTER:topic/a}, {@code adapter1/TAG:temperature}
+     */
+    public @NotNull String toFullyQualifiedName() {
+        final String baseKey = type + ":" + id.replaceAll("\\.", "/");
+        if (scope != null) {
+            return scope + "/" + baseKey;
+        }
+        return baseKey;
+    }
+
     public enum Type {
         PULSE_ASSET,
         TAG,

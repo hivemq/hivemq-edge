@@ -316,4 +316,52 @@ class DataIdentifierReferenceTest {
     void typeRoundTrip_allValues(final Type type) {
         assertThat(Type.from(type.to())).isEqualTo(type);
     }
+
+    // --- toFullyQualifiedName tests ---
+
+    @Test
+    void toFullyQualifiedName_topicFilterWithoutScope() {
+        final DataIdentifierReference ref = new DataIdentifierReference("topic/a", Type.TOPIC_FILTER);
+        assertThat(ref.toFullyQualifiedName()).isEqualTo("TOPIC_FILTER:topic/a");
+    }
+
+    @Test
+    void toFullyQualifiedName_topicFilterWithDots_dotsReplacedWithSlashes() {
+        final DataIdentifierReference ref = new DataIdentifierReference("topic.a.b", Type.TOPIC_FILTER);
+        assertThat(ref.toFullyQualifiedName()).isEqualTo("TOPIC_FILTER:topic/a/b");
+    }
+
+    @Test
+    void toFullyQualifiedName_tagWithoutScope() {
+        final DataIdentifierReference ref = new DataIdentifierReference("temperature", Type.TAG);
+        assertThat(ref.toFullyQualifiedName()).isEqualTo("TAG:temperature");
+    }
+
+    @Test
+    void toFullyQualifiedName_tagWithScope() {
+        final DataIdentifierReference ref = new DataIdentifierReference("temperature", Type.TAG, "adapter1");
+        assertThat(ref.toFullyQualifiedName()).isEqualTo("adapter1/TAG:temperature");
+    }
+
+    @Test
+    void toFullyQualifiedName_tagWithScopeAndDots() {
+        final DataIdentifierReference ref = new DataIdentifierReference("sensor.temperature", Type.TAG, "my-adapter");
+        assertThat(ref.toFullyQualifiedName()).isEqualTo("my-adapter/TAG:sensor/temperature");
+    }
+
+    @Test
+    void toFullyQualifiedName_pulseAssetWithoutScope() {
+        final DataIdentifierReference ref = new DataIdentifierReference("asset-123", Type.PULSE_ASSET);
+        assertThat(ref.toFullyQualifiedName()).isEqualTo("PULSE_ASSET:asset-123");
+    }
+
+    @Test
+    void toFullyQualifiedName_twoTagsSameNameDifferentScope_differentKeys() {
+        final DataIdentifierReference ref1 = new DataIdentifierReference("temperature", Type.TAG, "adapter1");
+        final DataIdentifierReference ref2 = new DataIdentifierReference("temperature", Type.TAG, "adapter2");
+
+        assertThat(ref1.toFullyQualifiedName()).isEqualTo("adapter1/TAG:temperature");
+        assertThat(ref2.toFullyQualifiedName()).isEqualTo("adapter2/TAG:temperature");
+        assertThat(ref1.toFullyQualifiedName()).isNotEqualTo(ref2.toFullyQualifiedName());
+    }
 }
