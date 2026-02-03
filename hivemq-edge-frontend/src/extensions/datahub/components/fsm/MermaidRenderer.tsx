@@ -6,6 +6,7 @@ import { useTheme, useColorMode } from '@chakra-ui/react'
 import { Mermaid } from '@/components/Mermaid.tsx'
 
 import type { FiniteStateMachine, FsmState, FsmTransition } from '@datahub/types.ts'
+import { getBadgeColors, getStateClass, getTransitionLabel } from './MermaidRenderer.utils'
 
 const datahubLog = debug('DataHub:Mermaid')
 
@@ -27,104 +28,15 @@ export const MermaidRenderer: FC<MermaidRendererProps> = (props) => {
       return null
     }
 
-    // Get Chakra UI theme colors for current mode
-    const colors = theme.colors
-
-    // Helper to resolve color token to hex
-    const resolveColor = (colorPath: string): string => {
-      const parts = colorPath.split('.')
-      let value: unknown = colors
-
-      for (const part of parts) {
-        if (value && typeof value === 'object' && part in value) {
-          value = (value as Record<string, unknown>)[part]
-        } else {
-          value = undefined
-          break
-        }
-      }
-
-      // If it's an object with _light/_dark, use colorMode
-      if (typeof value === 'object' && value !== null) {
-        const modeKey = colorMode === 'dark' ? '_dark' : '_light'
-        const modeValue = (value as Record<string, unknown>)[modeKey]
-        if (typeof modeValue === 'string') {
-          return resolveColor(modeValue.replace('colors.', ''))
-        }
-      }
-
-      return typeof value === 'string' ? value : '#000000'
-    }
-
-    // Get Badge colors (matching TransitionSelect - SUBTLE variant is default)
-    const getBadgeColors = (colorScheme: string) => {
-      const isDark = colorMode === 'dark'
-
-      switch (colorScheme) {
-        case 'blue':
-          return {
-            // Subtle variant: light bg with dark text (light mode), transparent bg with light text (dark mode)
-            fill: isDark ? 'rgba(144, 205, 244, 0.16)' : resolveColor('blue.100'),
-            stroke: isDark ? resolveColor('blue.300') : resolveColor('blue.200'),
-            text: isDark ? resolveColor('blue.200') : resolveColor('blue.800'),
-          }
-        case 'gray':
-          return {
-            fill: isDark ? 'rgba(237, 242, 247, 0.16)' : resolveColor('gray.100'),
-            stroke: isDark ? resolveColor('gray.300') : resolveColor('gray.200'),
-            text: isDark ? resolveColor('gray.200') : resolveColor('gray.800'),
-          }
-        case 'green':
-          return {
-            fill: isDark ? resolveColor('green.900') : resolveColor('green.100'),
-            stroke: isDark ? resolveColor('green.300') : resolveColor('green.200'),
-            text: isDark ? resolveColor('green.200') : resolveColor('green.800'),
-          }
-        case 'red':
-          return {
-            fill: isDark ? resolveColor('red.900') : resolveColor('red.100'),
-            stroke: isDark ? resolveColor('red.300') : resolveColor('red.200'),
-            text: isDark ? resolveColor('red.200') : resolveColor('red.800'),
-          }
-        default:
-          return {
-            fill: isDark ? resolveColor('gray.900') : resolveColor('gray.100'),
-            stroke: isDark ? resolveColor('gray.300') : resolveColor('gray.200'),
-            text: isDark ? resolveColor('gray.200') : resolveColor('gray.800'),
-          }
-      }
-    }
-
-    const initialColors = getBadgeColors('blue')
-    const intermediateColors = getBadgeColors('gray')
-    const successColors = getBadgeColors('green')
-    const failedColors = getBadgeColors('red')
+    const initialColors = getBadgeColors('blue', theme, colorMode)
+    const intermediateColors = getBadgeColors('gray', theme, colorMode)
+    const successColors = getBadgeColors('green', theme, colorMode)
+    const failedColors = getBadgeColors('red', theme, colorMode)
 
     const allStates: Record<string, FsmState> = props.states.reduce(
       (accum, state) => ({ ...accum, [state.name]: state }),
       {}
     )
-
-    // Helper to get CSS class for state type
-    const getStateClass = (stateType: FsmState.Type): string => {
-      switch (stateType) {
-        case 'INITIAL':
-          return 'initial'
-        case 'SUCCESS':
-          return 'success'
-        case 'FAILED':
-          return 'failed'
-        case 'INTERMEDIATE':
-        default:
-          return 'intermediate'
-      }
-    }
-
-    // Helper to format transition label
-    const getTransitionLabel = (transition: FsmTransition): string => {
-      const guards = (transition as FsmTransition & { guards?: string }).guards
-      return guards ? `${transition.event}<br/>+ ${guards}` : transition.event
-    }
 
     // Helper to check if transition is selected
     const isSelected = (transition: FsmTransition): boolean => {
