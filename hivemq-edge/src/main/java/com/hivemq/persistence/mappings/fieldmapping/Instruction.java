@@ -67,6 +67,12 @@ public record Instruction(@NotNull String sourceFieldName, @NotNull String desti
                         return prefix + sourceFieldName;
                     }
                 })
+                .map(path -> {
+                    if (path.endsWith(".")) {
+                        return path.substring(0, path.length() - 1);
+                    }
+                    return path;
+                })
                 .orElse(sourceFieldName);
     }
 
