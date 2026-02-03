@@ -312,7 +312,7 @@ describe('ScriptEditor', () => {
           ...mockScript,
           version: 3, // Backend would increment to version 3
         },
-      }).as('createScript')
+      })
 
       cy.injectAxe()
       cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={cy.stub} script={mockScript} />)
