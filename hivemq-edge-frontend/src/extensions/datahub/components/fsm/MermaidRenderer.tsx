@@ -76,19 +76,19 @@ export const MermaidRenderer: FC<MermaidRendererProps> = (props) => {
           }
         case 'green':
           return {
-            fill: isDark ? 'rgba(154, 230, 180, 0.16)' : resolveColor('green.100'),
+            fill: isDark ? resolveColor('green.900') : resolveColor('green.100'),
             stroke: isDark ? resolveColor('green.300') : resolveColor('green.200'),
             text: isDark ? resolveColor('green.200') : resolveColor('green.800'),
           }
         case 'red':
           return {
-            fill: isDark ? 'rgba(254, 178, 178, 0.16)' : resolveColor('red.100'),
+            fill: isDark ? resolveColor('red.900') : resolveColor('red.100'),
             stroke: isDark ? resolveColor('red.300') : resolveColor('red.200'),
             text: isDark ? resolveColor('red.200') : resolveColor('red.800'),
           }
         default:
           return {
-            fill: isDark ? 'rgba(237, 242, 247, 0.16)' : resolveColor('gray.100'),
+            fill: isDark ? resolveColor('gray.900') : resolveColor('gray.100'),
             stroke: isDark ? resolveColor('gray.300') : resolveColor('gray.200'),
             text: isDark ? resolveColor('gray.200') : resolveColor('gray.800'),
           }

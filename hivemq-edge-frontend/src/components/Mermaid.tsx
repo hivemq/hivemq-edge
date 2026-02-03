@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { MermaidConfig } from 'mermaid'
 import mermaid from 'mermaid'
 import debug from 'debug'
-import { Card, CardBody, useTheme, useColorMode } from '@chakra-ui/react'
+import { Card, CardBody, useColorMode, useToken } from '@chakra-ui/react'
 
 export interface MermaidProps {
   text: string
@@ -56,8 +56,9 @@ let idCounter = 0
 export const Mermaid: React.FC<MermaidProps> = ({ text, selectedTransitionIndex }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [svg, setSvg] = useState<string>('')
-  const theme = useTheme()
   const { colorMode } = useColorMode()
+
+  const [textColor, edgeColor] = useToken('colors', ['mermaid.text', 'mermaid.border'])
 
   useEffect(() => {
     mermaid.initialize({ ...DEFAULT_CONFIG })
@@ -100,10 +101,6 @@ export const Mermaid: React.FC<MermaidProps> = ({ text, selectedTransitionIndex 
 
     renderDiagram()
   }, [text, colorMode, selectedTransitionIndex]) // Re-render when color mode or selection changes
-
-  // Get theme colors
-  const textColor = colorMode === 'dark' ? theme.colors.whiteAlpha[900] : theme.colors.gray[800]
-  const edgeColor = colorMode === 'dark' ? theme.colors.whiteAlpha[400] : theme.colors.gray[400]
 
   return (
     <Card>

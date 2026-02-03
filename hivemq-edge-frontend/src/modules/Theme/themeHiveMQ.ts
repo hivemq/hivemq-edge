@@ -4,6 +4,7 @@ import { extendTheme } from '@chakra-ui/react'
 
 import components from './components'
 import colors from './foundations/colors.ts'
+import semanticTokens from '@/modules/Theme/foundations/semanticTokens.ts'
 import { treeView } from '@/modules/Theme/globals/treeview.ts'
 import { reactFlow } from '@/modules/Theme/globals/react-flow.ts'
 
@@ -20,6 +21,7 @@ const themeHiveMQ = extendTheme({
   },
 
   colors: colors,
+  semanticTokens: semanticTokens,
   components,
 })
 
