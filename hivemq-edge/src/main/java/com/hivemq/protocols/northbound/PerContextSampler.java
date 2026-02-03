@@ -81,7 +81,7 @@ public class PerContextSampler extends AbstractSubscriptionSampler {
                 final Map<String, List<DataPoint>> dataPoints = dataSample.getDataPoints();
 
                 for (final Map.Entry<String, List<DataPoint>> tagNameTpDataPoints : dataPoints.entrySet()) {
-                    tagManager.feed(tagNameTpDataPoints.getKey(), tagNameTpDataPoints.getValue());
+                    tagManager.feed(getAdapterId(), tagNameTpDataPoints.getKey(), tagNameTpDataPoints.getValue());
                 }
                 return CompletableFuture.completedFuture(null);
             } else {
