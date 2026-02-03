@@ -45,7 +45,7 @@ const ModelOption: FC<ModelOptionProps> = ({ model, isSelected, onSelect }) => {
       size="sm"
       borderWidth={isSelected ? '2px' : '1px'}
       borderColor={isSelected ? 'blue.500' : 'gray.200'}
-      _hover={{ borderColor: 'blue.300', cursor: 'pointer' }}
+      _hover={{ borderColor: 'blue.300' }}
       transition="all 0.2s"
       onClick={handleCardClick}
     >
