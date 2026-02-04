@@ -79,7 +79,16 @@ public class DataIdentifierReferenceEntity implements EntityValidatable {
 
     @Override
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
-        // TODO
+         // The following check is disabled because it will break existing configurations during upgrade.
+//        if (type == DataIdentifierReference.Type.TAG) {
+//            EntityValidatable.notMatch(validationEvents,
+//                    () -> scope != null && !scope.isBlank(),
+//                    () -> "scope is required for TAG type");
+//        } else {
+//            EntityValidatable.notMatch(validationEvents,
+//                    () -> scope == null,
+//                    () -> "scope must be null for " + type + " type");
+//        }
     }
 
     @Override

@@ -26,6 +26,8 @@ import com.hivemq.api.errors.pulse.ActivationTokenNotDeletedError;
 import com.hivemq.api.errors.pulse.AssetMapperNotFoundError;
 import com.hivemq.api.errors.pulse.AssetMapperReferencedError;
 import com.hivemq.api.errors.pulse.DuplicatedManagedAssetIdError;
+import com.hivemq.api.errors.combiners.InvalidScopeForTagError;
+import com.hivemq.api.errors.combiners.MissingScopeForTagError;
 import com.hivemq.api.errors.pulse.InvalidDataIdentifierReferenceForAssetMapperError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetMappingIdError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetSchemaError;
@@ -36,7 +38,9 @@ import com.hivemq.api.errors.pulse.MissingEntityTypePulseAgentForAssetMapperErro
 import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
 import com.hivemq.api.errors.pulse.PulseAgentNotConnectedError;
 import com.hivemq.combining.model.DataCombiner;
+import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.combining.model.EntityType;
+import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.info.SystemInformation;
@@ -96,6 +100,7 @@ public class PulseApiImpl implements PulseApi {
     private final @NotNull AssetProviderRegistry assetProviderRegistry;
     private final @NotNull AssetMappingExtractor assetMappingExtractor;
     private final @NotNull PulseExtractor pulseExtractor;
+    private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
     private final @NotNull StatusProviderRegistry statusProviderRegistry;
     private final @NotNull SystemInformation systemInformation;
 
@@ -104,11 +109,13 @@ public class PulseApiImpl implements PulseApi {
             final @NotNull SystemInformation systemInformation,
             final @NotNull AssetMappingExtractor assetMappingExtractor,
             final @NotNull PulseExtractor pulseExtractor,
+            final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor,
             final @NotNull AssetProviderRegistry assetProviderRegistry,
             final @NotNull StatusProviderRegistry statusProviderRegistry) {
         this.assetProviderRegistry = assetProviderRegistry;
         this.assetMappingExtractor = assetMappingExtractor;
         this.pulseExtractor = pulseExtractor;
+        this.protocolAdapterExtractor = protocolAdapterExtractor;
         this.statusProviderRegistry = statusProviderRegistry;
         this.systemInformation = systemInformation;
     }
@@ -659,6 +666,18 @@ public class PulseApiImpl implements PulseApi {
                 if (mappingId != null && !Objects.equals(mappingId, dataCombiningId)) {
                     return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(
                             dataCombiningId)));
+                }
+            }
+            // Validate TAG references have scope and scope corresponds to an existing adapter
+            for (final var instruction : dataCombining.instructions()) {
+                final DataIdentifierReference ref = instruction.dataIdentifierReference();
+                if (ref != null && ref.type() == DataIdentifierReference.Type.TAG) {
+                    if (ref.scope() == null || ref.scope().isBlank()) {
+                        return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(ref.id())));
+                    }
+                    if (protocolAdapterExtractor.getAdapterByAdapterId(ref.scope()).isEmpty()) {
+                        return Optional.of(ErrorResponseUtil.errorResponse(new InvalidScopeForTagError(ref.scope(), ref.id())));
+                    }
                 }
             }
         }
