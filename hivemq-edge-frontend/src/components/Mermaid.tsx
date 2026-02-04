@@ -1,18 +1,22 @@
 import type React from 'react'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { MermaidConfig } from 'mermaid'
 import mermaid from 'mermaid'
-import { Card, CardBody } from '@chakra-ui/react'
+import debug from 'debug'
+import { Card, CardBody, useColorMode, useToken } from '@chakra-ui/react'
 
 export interface MermaidProps {
   text: string
+  selectedTransitionIndex?: number
 }
 
+const datahubLog = debug('DataHub:Mermaid')
+
 const DEFAULT_CONFIG: MermaidConfig = {
-  startOnLoad: true,
-  theme: 'neutral',
+  startOnLoad: false,
+  theme: 'base',
   logLevel: 'fatal',
-  securityLevel: 'strict',
+  securityLevel: 'loose',
   arrowMarkerAbsolute: false,
   flowchart: {
     htmlLabels: true,
@@ -47,18 +51,99 @@ const DEFAULT_CONFIG: MermaidConfig = {
   },
 }
 
-export const Mermaid: React.FC<MermaidProps> = ({ text }) => {
+let idCounter = 0
+
+export const Mermaid: React.FC<MermaidProps> = ({ text, selectedTransitionIndex }) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [svg, setSvg] = useState<string>('')
+  const { colorMode } = useColorMode()
+
+  const [textColor, edgeColor] = useToken('colors', ['mermaid.text', 'mermaid.border'])
+
   useEffect(() => {
     mermaid.initialize({ ...DEFAULT_CONFIG })
   }, [])
+
   useEffect(() => {
-    mermaid.contentLoaded()
-  }, [text])
+    const renderDiagram = async () => {
+      if (!text || !containerRef.current) return
+
+      try {
+        // Generate unique ID for each render to force re-render
+        const id = `mermaid-${Date.now()}-${idCounter++}`
+
+        // Render the diagram
+        const { svg: renderedSvg } = await mermaid.render(id, text)
+
+        // Post-process SVG to mark selected transition
+        let processedSvg = renderedSvg
+        if (selectedTransitionIndex !== undefined && selectedTransitionIndex >= 0) {
+          // Parse SVG and find transition paths
+          const parser = new DOMParser()
+          const doc = parser.parseFromString(renderedSvg, 'image/svg+xml')
+          const transitions = doc.querySelectorAll('path.transition')
+
+          if (transitions[selectedTransitionIndex]) {
+            transitions[selectedTransitionIndex].setAttribute('data-selected', 'true')
+            processedSvg = new XMLSerializer().serializeToString(doc)
+            datahubLog(`Marked transition ${selectedTransitionIndex} as selected`)
+          }
+        }
+
+        setSvg(processedSvg)
+
+        datahubLog('Mermaid rendered successfully')
+      } catch (error) {
+        datahubLog('Mermaid rendering error:', error)
+        setSvg('')
+      }
+    }
+
+    renderDiagram()
+  }, [text, colorMode, selectedTransitionIndex]) // Re-render when color mode or selection changes
 
   return (
     <Card>
-      <CardBody className="mermaid" sx={{ '& svg': { scale: '0.75 0.75' } }} data-processed={undefined}>
-        {text}
+      <CardBody
+        sx={{
+          '& svg': {
+            scale: '0.75 0.75',
+          },
+          // Theme-aware text colors
+          '& .edgeLabel text, & .edgeLabel span, & .edgeLabel p, & .edgeLabel div': {
+            fill: `${textColor} !important`,
+            color: `${textColor} !important`,
+          },
+          // Theme-aware transition lines (edges)
+          '& .transition, & path.transition': {
+            stroke: `${edgeColor} !important`,
+          },
+          // Selected transition path (using data attribute) - just thicker, same color
+          '& path.transition[data-selected="true"]': {
+            strokeWidth: '4px !important',
+          },
+          // Remove edge label backgrounds
+          '& .edgeLabel rect': {
+            fill: 'transparent !important',
+            opacity: '0 !important',
+          },
+          '& .edgeLabel .label rect': {
+            fill: 'transparent !important',
+            opacity: '0 !important',
+          },
+          '& .edgeLabel': {
+            backgroundColor: 'transparent !important',
+          },
+          '& .edgeLabel p': {
+            backgroundColor: 'transparent !important',
+          },
+          // State labels should also respect theme
+          '& .stateLabel text, & .nodeLabel': {
+            fill: 'inherit !important',
+          },
+        }}
+      >
+        <div ref={containerRef} dangerouslySetInnerHTML={{ __html: svg }} />
       </CardBody>
     </Card>
   )

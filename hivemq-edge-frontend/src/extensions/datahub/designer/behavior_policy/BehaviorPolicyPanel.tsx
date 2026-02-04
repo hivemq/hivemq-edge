@@ -11,6 +11,7 @@ import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { useGetAllBehaviorPolicies } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetAllBehaviorPolicies.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/designer/behavior_policy/BehaviorPolicySchema.ts'
+import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { usePolicyGuards } from '@datahub/hooks/usePolicyGuards.ts'
 import type { BehaviorPolicyData, PanelProps, PublishQuotaArguments } from '@datahub/types.ts'
@@ -67,6 +68,7 @@ export const BehaviorPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit
             uiSchema={MOCK_BEHAVIOR_POLICY_SCHEMA.uiSchema}
             customValidate={customValidate}
             formData={data}
+            widgets={datahubRJSFWidgets}
             onSubmit={onFormSubmit}
           />
         </CardBody>
