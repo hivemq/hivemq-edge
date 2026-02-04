@@ -97,7 +97,7 @@ public class ProtocolAdapterExtractor
         final var allConfigsTemp = List.copyOf(allConfigs);
         if (allConfigsTemp.stream().anyMatch(cfg -> protocolAdapterConfig.getAdapterId().equals(cfg.getAdapterId()))) {
             throw new IllegalArgumentException("adapter already exists by id '" +
-                    protocolAdapterConfig.getProtocolId() +
+                    protocolAdapterConfig.getAdapterId() +
                     "'");
         }
         return addTagNamesIfNoDuplicates(protocolAdapterConfig.getAdapterId(), protocolAdapterConfig.getTags()).map(
@@ -208,7 +208,7 @@ public class ProtocolAdapterExtractor
         final var duplicatedAdapterTagSet = new HashSet<AdapterTag>();
         newTags.forEach(tag -> {
             final AdapterTag adapterTag = new AdapterTag(adapterId, tag.getName());
-            if (adapterTagSet.contains(adapterTag)) {
+            if (adapterTagSet.contains(adapterTag) || newAdapterTagSet.contains(adapterTag)) {
                 duplicatedAdapterTagSet.add(adapterTag);
             } else {
                 newAdapterTagSet.add(adapterTag);
@@ -228,15 +228,26 @@ public class ProtocolAdapterExtractor
             final @NotNull List<TagEntity> newTags) {
         final Set<AdapterTag> oldTagNameSet =
                 oldTags.stream().map(tag -> new AdapterTag(adapterId, tag.getName())).collect(Collectors.toSet());
-        final Set<AdapterTag> newTagNameSet =
-                newTags.stream().map(tag -> new AdapterTag(adapterId, tag.getName())).collect(Collectors.toSet());
+        final Set<AdapterTag> newTagNameSet = new HashSet<>();
+        final Set<AdapterTag> duplicateTagNameSet = new HashSet<>();
+        newTags.stream().map(tag -> new AdapterTag(adapterId, tag.getName())).forEach(adapterTag -> {
+            if (newTagNameSet.contains(adapterTag)) {
+                duplicateTagNameSet.add(adapterTag);
+            } else {
+                newTagNameSet.add(adapterTag);
+            }
+        });
+        if (!duplicateTagNameSet.isEmpty()) {
+            log.error("Duplicate tags detected while replacing: {}", duplicateTagNameSet);
+            return Optional.of(duplicateTagNameSet);
+        }
         final Set<AdapterTag> remainingTagNameSet = Sets.intersection(oldTagNameSet, newTagNameSet);
         final Set<AdapterTag> toBeRemovedTagNameSet = Sets.difference(oldTagNameSet, remainingTagNameSet);
         final Set<AdapterTag> toBeAddedTagNameSet = Sets.difference(newTagNameSet, remainingTagNameSet);
 
         final Set<AdapterTag> currentTagNameSet = new HashSet<>(adapterTagSet);
         currentTagNameSet.removeAll(toBeRemovedTagNameSet);
-        final Set<AdapterTag> duplicateTagNameSet = Sets.intersection(currentTagNameSet, toBeAddedTagNameSet);
+        duplicateTagNameSet.addAll(Sets.intersection(currentTagNameSet, toBeAddedTagNameSet));
         if (!duplicateTagNameSet.isEmpty()) {
             log.error("Duplicate tags detected while replacing: {}", duplicateTagNameSet);
             return Optional.of(duplicateTagNameSet);
