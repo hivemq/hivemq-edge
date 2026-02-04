@@ -16,9 +16,11 @@
 package com.hivemq.configuration.reader;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.AdapterTag;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.util.ObjectMapperUtil;
 import jakarta.xml.bind.ValidationEvent;
 import org.jetbrains.annotations.NotNull;
@@ -26,13 +28,14 @@ import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class ProtocolAdapterExtractor
         implements ReloadableExtractor<List<@NotNull ProtocolAdapterEntity>, List<@NotNull ProtocolAdapterEntity>> {
@@ -112,14 +115,14 @@ public class ProtocolAdapterExtractor
 
     public synchronized boolean updateAdapter(
             final @NotNull ProtocolAdapterEntity protocolAdapterConfig) {
-        final var duplicateTags = new HashSet<AdapterTag>();
+        final var duplicatedAdapterTags = new HashSet<AdapterTag>();
         final var updated = new AtomicBoolean(false);
         final var newConfigs = allConfigs.stream().map(oldInstance -> {
             if (oldInstance.getAdapterId().equals(protocolAdapterConfig.getAdapterId())) {
                 return replaceTagNamesIfNoDuplicates(protocolAdapterConfig.getAdapterId(),
                         oldInstance.getTags(),
                         protocolAdapterConfig.getTags()).map(dupes -> {
-                    duplicateTags.addAll(dupes);
+                    duplicatedAdapterTags.addAll(dupes);
                     return oldInstance;
                 }).orElseGet(() -> {
                     updated.set(true);
@@ -130,12 +133,12 @@ public class ProtocolAdapterExtractor
             }
         }).toList();
         if (updated.get()) {
-            if (!duplicatedAdapterIdToTagNamesMap.isEmpty()) {
+            if (!duplicatedAdapterTags.isEmpty()) {
                 if (log.isErrorEnabled()) {
                     String tagsAsString;
                     try {
-                        tagsAsString = ObjectMapperUtil.NO_PRETTY_PRINT_WITH_JAVA_TIME.writeValueAsString(
-                                duplicatedAdapterIdToTagNamesMap);
+                        tagsAsString =
+                                ObjectMapperUtil.NO_PRETTY_PRINT_WITH_JAVA_TIME.writeValueAsString(duplicatedAdapterTags);
                     } catch (final Exception e) {
                         tagsAsString = e.getMessage();
                     }
@@ -155,10 +158,12 @@ public class ProtocolAdapterExtractor
         final var deleted =
                 allConfigs.stream().filter(config -> config.getAdapterId().equals(adapterId)).findFirst().map(found -> {
                     newConfigs.remove(found);
-                    adapterTagSet.removeAll(found.getTags().stream().map(TagEntity::getName).toList());
+                    found.getTags()
+                            .stream()
+                            .map(tag -> new AdapterTag(adapterId, tag.getName()))
+                            .forEach(adapterTagSet::remove);
                     return true;
-                })
-                .orElse(false);
+                }).orElse(false);
 
         if (deleted) {
             replaceConfigsAndTriggerWrite(List.copyOf(newConfigs));
@@ -197,7 +202,7 @@ public class ProtocolAdapterExtractor
     }
 
     private @NonNull Optional<Set<AdapterTag>> addTagNamesIfNoDuplicates(
-            final String adapterId,
+            final @NonNull String adapterId,
             final List<TagEntity> newTags) {
         final var newAdapterTagSet = new HashSet<AdapterTag>();
         final var duplicatedAdapterTagSet = new HashSet<AdapterTag>();
