@@ -15,6 +15,7 @@
  */
 package com.hivemq.configuration.ioc;
 
+import com.hivemq.configuration.migration.ConfigMigrationService;
 import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
@@ -34,6 +35,7 @@ import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServi
 import org.jetbrains.annotations.NotNull;
 import dagger.Module;
 import dagger.Provides;
+import dagger.multibindings.IntoSet;
 
 import jakarta.inject.Singleton;
 
@@ -128,6 +130,17 @@ public class ConfigurationModule {
     @Singleton
     static @NotNull InternalConfigurationService internalConfigurationService(final @NotNull ConfigurationService configurationService) {
         return configurationService.internalConfigurationService();
+    }
+
+    /**
+     * Eager singleton that triggers configuration migrations at startup.
+     * The migration service runs when the injector initializes eager singletons.
+     */
+    @Provides
+    @IntoSet
+    static @NotNull Boolean eagerConfigMigration(final @NotNull ConfigMigrationService configMigrationService) {
+        // ConfigMigrationService runs migrations in its constructor
+        return Boolean.TRUE;
     }
 
 }
