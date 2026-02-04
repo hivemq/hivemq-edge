@@ -27,7 +27,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class DataCombiningExtractor implements ReloadableExtractor<List<@NotNull DataCombinerEntity>, List<@NotNull DataCombiner>> {
 
@@ -68,6 +71,24 @@ public class DataCombiningExtractor implements ReloadableExtractor<List<@NotNull
             return true;
         }
         return false;
+    }
+
+    public synchronized int updateDataCombiners(final @NotNull List<DataCombiner> dataCombiners) {
+        final var counter = new AtomicInteger(0);
+        final var dataCombinerMap =
+                dataCombiners.stream().collect(Collectors.toMap(DataCombiner::id, Function.identity()));
+        final var newConfigs = config.stream()
+                .map(dataCombinerEntity -> Optional.ofNullable(dataCombinerMap.get(dataCombinerEntity.getId()))
+                        .map(dataCombiner -> {
+                            counter.incrementAndGet();
+                            return dataCombiner.toPersistence();
+                        })
+                        .orElse(dataCombinerEntity))
+                .toList();
+        if (counter.get() > 0) {
+            replaceConfigsAndTriggerWrite(newConfigs);
+        }
+        return counter.get();
     }
 
     public synchronized boolean addDataCombiner(final @NotNull DataCombiner dataCombiner) {
