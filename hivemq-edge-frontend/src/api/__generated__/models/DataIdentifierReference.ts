@@ -12,6 +12,11 @@ export type DataIdentifierReference = {
      */
     id: string;
     type: DataIdentifierReference.type;
+    /**
+     * Scoping identifier. For TAG type, this is the adapter ID that owns the tag. For other types, this is null.
+     *
+     */
+    scope?: string | null;
 };
 
 export namespace DataIdentifierReference {
