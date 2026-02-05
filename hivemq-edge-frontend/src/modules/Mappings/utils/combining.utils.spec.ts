@@ -89,6 +89,7 @@ describe('getSchemasFromReferences', () => {
     },
     {
       id: 'a/topic/+/filter',
+      scope: null, // ✅ Topic filters always have null scope
       type: DataIdentifierReference.type.TOPIC_FILTER,
     },
   ]
