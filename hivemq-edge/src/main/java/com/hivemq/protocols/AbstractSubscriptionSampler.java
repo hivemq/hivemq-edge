@@ -19,6 +19,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.RuntimeStatus;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -86,7 +87,11 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
      */
     protected void onSamplerError(
             final @NotNull Throwable exception, final boolean continuing) {
-        protocolAdapter.setErrorConnectionStatus(exception, null);
+        // Only report errors if the adapter is still running
+        // During shutdown, errors from in-flight operations should be suppressed
+        if (protocolAdapter.getRuntimeStatus() == RuntimeStatus.STARTED) {
+            protocolAdapter.setErrorConnectionStatus(exception, null);
+        }
         if (!continuing) {
             protocolAdapter.stopAsync(false);
         }
