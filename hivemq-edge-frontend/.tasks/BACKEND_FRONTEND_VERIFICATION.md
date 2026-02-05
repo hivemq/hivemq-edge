@@ -115,12 +115,14 @@ git grep -l "class DataIdentifierReference\|record DataIdentifierReference" orig
 ### 1. Model Class/Record Definition
 
 **Key Information:**
+
 - Field types and nullability annotations (`@Nullable`, `@NotNull`)
 - Default values or constructors
 - Validation methods
 - Conversion methods (to/from API models)
 
 **Example:**
+
 ```java
 public record DataIdentifierReference(
     String id,
@@ -142,6 +144,7 @@ public record DataIdentifierReference(
 ```
 
 **What this tells us:**
+
 - `scope` can be `null` (not just missing)
 - For TAG types, `scope` MUST be non-null and non-blank
 - For other types, `scope` MUST be `null` (not omitted, explicit null)
@@ -149,12 +152,14 @@ public record DataIdentifierReference(
 ### 2. Test Files
 
 **Key Information:**
+
 - Expected values in test data
 - Validation test cases
 - Round-trip serialization tests
 - Edge cases and error conditions
 
 **Example:**
+
 ```java
 @Test
 void isScopeValid_topicFilterWithNullScope_true() {
@@ -172,6 +177,7 @@ void isScopeValid_topicFilterWithScope_false() {
 ```
 
 **What this tells us:**
+
 - TOPIC_FILTER with `scope: null` is valid
 - TOPIC_FILTER with `scope: "adapter-1"` is invalid
 - Frontend MUST send explicit `null`, not omit the property
@@ -179,22 +185,25 @@ void isScopeValid_topicFilterWithScope_false() {
 ### 3. OpenAPI Schema
 
 **Key Information:**
+
 - Required vs optional fields
 - Nullable vs non-nullable
 - Enum values
 - Descriptions and constraints
 
 **Example:**
+
 ```yaml
 scope:
   type: string
-  nullable: true  # ← Can be null, not just optional
+  nullable: true # ← Can be null, not just optional
   description: >
     Scoping identifier. For TAG type, this is the adapter ID that owns
     the tag. For other types, this is null.
 ```
 
 **What this tells us:**
+
 - Property is optional (can be omitted in request)
 - Property is nullable (can explicitly be `null`)
 - Backend expects `null` for non-TAG types
@@ -202,11 +211,13 @@ scope:
 ### 4. Serialization Annotations
 
 **Key Information (Java/Jackson):**
+
 - `@JsonInclude(JsonInclude.Include.NON_NULL)` - Omit null values
 - `@JsonProperty(required = true)` - Field is required
 - `@JsonSerialize` / `@JsonDeserialize` - Custom serialization
 
 **Example:**
+
 ```java
 @JsonInclude(JsonInclude.Include.ALWAYS)  // ← Always include, even if null
 public String getScope() {
@@ -217,11 +228,13 @@ public String getScope() {
 ### 5. Validation Logic
 
 **Key Information:**
+
 - Custom validators
 - JSR-303 annotations (`@NotNull`, `@NotBlank`, `@Size`)
 - Conditional validation based on other fields
 
 **Example:**
+
 ```java
 public boolean isScopeValid() {
     // Conditional validation based on type
@@ -244,16 +257,19 @@ Frontend implementing `scope` field for `DataIdentifierReference`. Initial assum
 1. **Identified backend branch:** `origin/feature/38627-add-scope-to-data-identifier-reference`
 
 2. **Found changed files:**
+
 ```bash
 git diff --name-only origin/master...origin/feature/38627-add-scope | grep -i dataidentifier
 ```
 
 3. **Read model class:**
+
 ```bash
 git show origin/feature/38627-add-scope:hivemq-edge/src/main/java/com/hivemq/combining/model/DataIdentifierReference.java
 ```
 
 4. **Read tests:**
+
 ```bash
 git show origin/feature/38627-add-scope:hivemq-edge/src/test/java/com/hivemq/combining/model/DataIdentifierReferenceTest.java
 ```
@@ -269,6 +285,7 @@ public boolean isScopeValid() {
 ```
 
 **Tests confirmed:**
+
 - `scope: null` for TOPIC_FILTER → VALID ✅
 - `scope: "adapter-1"` for TOPIC_FILTER → INVALID ❌
 - Omitted scope (undefined) → Would fail validation
@@ -276,18 +293,21 @@ public boolean isScopeValid() {
 ### Impact on Frontend
 
 **Changed from:**
+
 ```typescript
 // WRONG ASSUMPTION
 { id: "topic", type: "TOPIC_FILTER" } // omit scope
 ```
 
 **Changed to:**
+
 ```typescript
 // CORRECT IMPLEMENTATION
 { id: "topic", type: "TOPIC_FILTER", scope: null } // explicit null
 ```
 
 **Avoided Issues:**
+
 - Backend validation would fail with omitted scope
 - Round-trip save/load would lose data
 - Integration tests would fail unexpectedly
@@ -328,15 +348,18 @@ When implementing a frontend feature that depends on backend API:
 ### ❌ Don't Assume
 
 **BAD:** "The field is optional, so I'll just omit it"
+
 - Backend may require explicit `null` vs omitted property
 - Validation rules may differ from schema
 
 **BAD:** "undefined and null are the same in JSON"
+
 - `undefined` omits the key entirely
 - `null` includes `"field": null`
 - Backend may explicitly check for `null`
 
 **BAD:** "The OpenAPI schema is the source of truth"
+
 - Schema shows structure, not validation rules
 - Backend code may have additional constraints
 
@@ -407,6 +430,7 @@ git grep "enum.*Type\|public enum" origin/feature/XXXXX -- '*.java'
 ## When to Use This Process
 
 **Always verify when:**
+
 - Implementing new API integration
 - Updating existing API contracts (schema changes)
 - Dealing with optional/nullable fields
@@ -415,6 +439,7 @@ git grep "enum.*Type\|public enum" origin/feature/XXXXX -- '*.java'
 - Handling error responses
 
 **Especially important for:**
+
 - `null` vs `undefined` decisions
 - Required vs optional fields
 - Validation rules and constraints
@@ -434,6 +459,7 @@ Add a "Backend Verification" section:
 
 **Backend Branch:** origin/feature/XXXXX-feature-name
 **Key Files Verified:**
+
 - Model: path/to/Model.java
 - Tests: path/to/ModelTest.java
 - OpenAPI: path/to/schema.yaml
@@ -448,6 +474,7 @@ Reference backend behavior in implementation notes:
 
 ```markdown
 **Backend Requirement (verified):**
+
 - TAG types: scope must be non-null, non-blank string
 - TOPIC_FILTER: scope must be explicit null
 - Evidence: DataIdentifierReference.isScopeValid() line 60
@@ -492,6 +519,7 @@ cd ../hivemq-edge-frontend
 ---
 
 **See Also:**
+
 - `.github/AI_MANDATORY_RULES.md` - General AI agent guidelines
 - `.tasks/TESTING_GUIDELINES.md` - Testing patterns
 - `.tasks/38936-tag-reference-scope/TASK_PLAN.md` - Real-world example of this process

@@ -94,11 +94,13 @@ _Screenshot: Validation error when submitting legacy combiner without scope fiel
 **Focus areas for review:**
 
 1. **Scope Validation Logic**: Review `validateDataIdentifierScope` in `useValidateCombiner.ts`
+
    - TAG types require non-null scope referencing valid adapters
    - Non-TAG types require explicit null scope
    - Validation applied to both `sources.primary` and `instructions[].sourceRef`
 
 2. **Data Creation Points**: Verify all 6 locations properly set scope
+
    - `combining.utils.ts` (line 61, 69)
    - `MappingInstruction.tsx` (lines 85-87, 167-169)
    - `AutoMapping.tsx` (lines 47-50, 71-73)
@@ -106,6 +108,7 @@ _Screenshot: Validation error when submitting legacy combiner without scope fiel
    - `PrimarySelect.tsx` (uses formContext + getAdapterIdForTag)
 
 3. **Test Data Integrity**: All mock data includes scope with correct referential integrity
+
    - Scope values reference actual adapters in sources
    - TAG mocks have adapter IDs, non-TAG mocks have explicit null
 
@@ -117,18 +120,21 @@ _Screenshot: Validation error when submitting legacy combiner without scope fiel
 **Manual testing suggestions:**
 
 1. **Create combiner with two adapters having same tag name:**
+
    - Add two OPC UA adapters (e.g., `opcua-1` and `opcua-2`)
    - Ensure both expose a tag named `temperature`
    - Create combiner selecting both adapters as sources
    - Select `temperature` as primary from `opcua-1`
 
 2. **Verify scope preservation:**
+
    - Save the combiner
    - Reload the page
    - Open the combiner editor
    - Verify `primary.scope === 'opcua-1'`
 
 3. **Test operational status:**
+
    - With combiner active, check workspace canvas
    - Edge from `opcua-1` should show operational status
    - Edge from `opcua-2` should show different status (not using its tag)
@@ -153,4 +159,3 @@ pnpm test
 # Type check
 pnpm type-check
 ```
-

@@ -189,9 +189,7 @@ export const useValidateCombiner = (
       if (!primary) return errors
 
       // Get available adapter IDs from entities (from hook closure, not context parameter)
-      const availableAdapterIds = new Set(
-        entities.filter((e) => e.type === EntityType.ADAPTER).map((e) => e.id)
-      )
+      const availableAdapterIds = new Set(entities.filter((e) => e.type === EntityType.ADAPTER).map((e) => e.id))
 
       // Validate primary source scope
       if (primary.type === DataIdentifierReference.type.TAG) {

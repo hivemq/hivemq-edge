@@ -47,6 +47,7 @@ export const getDeviceTagNames = (adapterConfig?: AdapterConfig): Set<string> =>
  *
  * @param combiner - The combiner node data
  * @param deviceTags - Set of tag names available in the device
+ * @param adapterId - the id of the owning adapter
  * @returns true if combiner has mappings using at least one device tag
  */
 export const combinerHasValidAdapterTagMappings = (

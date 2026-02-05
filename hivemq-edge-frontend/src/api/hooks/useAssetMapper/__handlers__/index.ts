@@ -44,7 +44,11 @@ export const MOCK_ASSET_MAPPER: Combiner = {
       },
       {
         id: 'c02a9d0f-02cb-4ff0-a7b4-6e1a16b08722',
-        sources: { primary: { id: '', type: DataIdentifierReference.type.TAG, scope: 'opcua-boiler1' }, tags: [], topicFilters: [] },
+        sources: {
+          primary: { id: '', type: DataIdentifierReference.type.TAG, scope: 'opcua-boiler1' },
+          tags: [],
+          topicFilters: [],
+        },
         destination: { topic: 'my/other/topic' },
         instructions: [],
       },

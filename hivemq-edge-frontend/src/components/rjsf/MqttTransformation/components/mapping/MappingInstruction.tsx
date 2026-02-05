@@ -165,7 +165,11 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
             onKeyUp={(e) => {
               if (isDragging && source && e.key === 'Enter' && isValidDrop(property)) {
                 const sourceRef: DataIdentifierReference | undefined = source?.dataReference
-                  ? { id: source?.dataReference.id, type: source?.dataReference.type, scope: source?.dataReference.scope ?? null }
+                  ? {
+                      id: source?.dataReference.id,
+                      type: source?.dataReference.type,
+                      scope: source?.dataReference.scope ?? null,
+                    }
                   : undefined
                 onChange?.(
                   [...source.property.path, source.property.key].join('.') as string,

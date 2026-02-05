@@ -89,7 +89,11 @@ export const DestinationSchemaLoader: FC<DestinationSchemaLoaderProps> = ({
     const destinationSchema = encodeDataUriJsonSchema(schema)
     const autoInstructions = properties.map<Instruction>((property) => {
       const { id, type, scope } = property.metadata || {}
-      const instruction: DataIdentifierReference = { id: id as string, type: type as DataIdentifierReference.type, scope: scope ?? null }
+      const instruction: DataIdentifierReference = {
+        id: id as string,
+        type: type as DataIdentifierReference.type,
+        scope: scope ?? null,
+      }
       const [, ...source] = property.key.split('_')
       return {
         sourceRef: instruction,

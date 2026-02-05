@@ -70,7 +70,11 @@ export const AutoMapping: FC<AutoMappingProps> = ({ formData, formContext, onCha
       const bestMatch = findBestMatch(cur, displayedSchemas, null)
       if (bestMatch?.value) {
         const { id, type, scope } = bestMatch.value.metadata || {}
-        const ref: DataIdentifierReference = { id: id as string, type: type as DataIdentifierReference.type, scope: scope ?? null }
+        const ref: DataIdentifierReference = {
+          id: id as string,
+          type: type as DataIdentifierReference.type,
+          scope: scope ?? null,
+        }
         const instruction = {
           sourceRef: ref,
           destination: toJsonPath([...cur.path, cur.key].join('.')),

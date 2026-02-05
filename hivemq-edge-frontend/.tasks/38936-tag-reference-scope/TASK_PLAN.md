@@ -52,7 +52,7 @@ void isScopeValid_topicFilterWithScope_false() {
 ```yaml
 scope:
   type: string
-  nullable: true  # Explicitly nullable, not optional
+  nullable: true # Explicitly nullable, not optional
 ```
 
 ### Implementation Rules
@@ -87,6 +87,7 @@ scope:
 **Dependencies:** None
 
 #### Objective
+
 Remove redundant `adapterId` field from `DataReference` type, use inherited `scope` from parent `DataIdentifierReference`.
 
 #### File: `src/api/hooks/useDomainModel/useGetCombinedDataSchemas.ts`
@@ -110,6 +111,7 @@ queryFn: () =>
 ```
 
 **Success Criteria:**
+
 - [ ] TypeScript compiles without errors
 - [ ] `DataReference` type extends `DataIdentifierReference` cleanly
 - [ ] No references to `adapterId` remain in this file
@@ -123,6 +125,7 @@ queryFn: () =>
 **Dependencies:** Phase 1
 
 #### Objective
+
 Set `scope` field when creating `DataReference` objects from domain tags and topic filters.
 
 #### File 1: `src/modules/Mappings/utils/combining.utils.ts`
@@ -154,6 +157,7 @@ const topicFilterDataReferences = (cur as TopicFilter[]).map<DataReference>((top
 Same pattern as File 1 - replace `adapterId` with `scope`.
 
 **Success Criteria:**
+
 - [ ] All `DataReference` objects for TAGs have `scope` set to adapterId (non-null string)
 - [ ] All `DataReference` objects for TOPIC_FILTERs have `scope: null` (explicit null)
 - [ ] TypeScript compiles without errors
@@ -169,6 +173,7 @@ Same pattern as File 1 - replace `adapterId` with `scope`.
 **Dependencies:** Phase 2
 
 #### Objective
+
 Include `scope` field when creating `Instruction.sourceRef` from drag-drop, auto-mapping, or schema merge operations.
 
 #### File 1: `src/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx`
@@ -230,6 +235,7 @@ const instruction: DataIdentifierReference = {
 ```
 
 **Success Criteria:**
+
 - [ ] Drag-drop creates `sourceRef` with scope
 - [ ] Auto-mapping creates `sourceRef` with scope
 - [ ] Schema merge creates `sourceRef` with scope
@@ -245,6 +251,7 @@ const instruction: DataIdentifierReference = {
 **Dependencies:** Phase 2
 
 #### Objective
+
 Preserve `scope` when user selects primary tag. This requires passing formContext to enable adapterId lookup.
 
 #### File 1: `src/modules/Mappings/combiner/PrimarySelect.tsx`
@@ -300,6 +307,7 @@ primary: values
 ```
 
 **Success Criteria:**
+
 - [ ] Primary selection UI works without errors
 - [ ] Selected primary saves with correct scope
 - [ ] Load-edit-save cycle preserves scope
@@ -314,6 +322,7 @@ primary: values
 **Dependencies:** Phases 1-4
 
 #### Objective
+
 Update operational status computation to use `scope` for proper tag ownership matching.
 
 #### File: `src/modules/Workspace/utils/status-adapter-edge-operational.utils.ts`
@@ -352,6 +361,7 @@ const hasValidMappings = combinerHasValidAdapterTagMappings(
 ```
 
 **Success Criteria:**
+
 - [ ] Status computation distinguishes same-named tags by scope
 - [ ] Unit tests pass with scope-aware validation
 - [ ] Manual test: Two adapters with tag "temperature", status correctly differentiates
@@ -365,6 +375,7 @@ const hasValidMappings = combinerHasValidAdapterTagMappings(
 **Dependencies:** None (can run in parallel with earlier phases)
 
 #### Objective
+
 Create utility functions for scope handling and validation.
 
 #### File: `src/modules/Mappings/utils/combining.utils.ts` (add to end)
@@ -407,15 +418,10 @@ export const createDataIdentifierReference = (
  * Extracts the adapterId (scope) for a given tag from context.
  * Used for looking up scope when only tag name is available.
  */
-export const getAdapterIdForTag = (
-  tagId: string,
-  formContext?: CombinerContext
-): string | undefined => {
+export const getAdapterIdForTag = (tagId: string, formContext?: CombinerContext): string | undefined => {
   if (!formContext?.queries || !formContext?.entities) return undefined
 
-  const adapterEntities = formContext.entities.filter(
-    (e) => e.type === EntityType.ADAPTER
-  )
+  const adapterEntities = formContext.entities.filter((e) => e.type === EntityType.ADAPTER)
 
   for (let i = 0; i < formContext.queries.length; i++) {
     const query = formContext.queries[i]
@@ -435,6 +441,7 @@ export const getAdapterIdForTag = (
 ```
 
 **Success Criteria:**
+
 - [ ] Helper functions have unit tests
 - [ ] Functions are used in Phase 4 implementation
 - [ ] TypeScript types are correct
@@ -448,25 +455,31 @@ export const getAdapterIdForTag = (
 **Dependencies:** Phases 1-6
 
 #### Objective
+
 Update all tests and mocks to include `scope` field.
 
 #### Files to Update
 
 1. **`src/api/hooks/useCombiners/__handlers__/index.ts`** (lines 48, 57, 79, 108)
+
    - Add `scope` to all `DataIdentifierReference` mocks
 
 2. **`src/modules/Mappings/utils/combining.utils.spec.ts`**
+
    - Add tests for helper functions
    - Update existing tests to include scope
 
 3. **`src/modules/Workspace/utils/status-adapter-edge-operational.utils.spec.ts`**
+
    - Add scope-aware validation tests
    - Test same-named tags from different adapters
 
 4. **`src/modules/Mappings/combiner/DataCombiningEditorField.spec.cy.tsx`**
+
    - Add test: "should preserve scope when selecting primary tag"
 
 5. **`src/api/hooks/usePulse/__handlers__/pulse-mocks.ts`**
+
    - Update Pulse-related mocks if they use `DataIdentifierReference`
 
 6. **Any other test files** that create `DataIdentifierReference` objects
@@ -496,6 +509,7 @@ primary: {
 ```
 
 **Success Criteria:**
+
 - [ ] All unit tests pass
 - [ ] All component tests pass
 - [ ] All E2E tests pass
@@ -545,6 +559,7 @@ Phase 7 (Testing)
 **Problem:** Existing combiners may have empty `scope` fields.
 
 **Solution:**
+
 1. Allow empty scope during load (don't fail validation)
 2. Use `getAdapterIdForTag` helper to resolve scope from context when missing
 3. Add warnings (not errors) for empty scope on TAGs during editing
@@ -553,22 +568,24 @@ Phase 7 (Testing)
 ### Progressive Validation
 
 **Development Mode:**
+
 - Warn when editing combiner with missing scope
 - Suggest re-selecting primary to populate scope
 
 **Production Mode:**
+
 - Gracefully handle empty scope
 - Resolve adapterId from context when possible
 - Log warnings for missing scope
 
 ## Risk Mitigation
 
-| Risk | Mitigation |
-|------|-----------|
-| PrimarySelect loses scope context | Pass formContext + add getAdapterIdForTag lookup |
-| Existing data has empty scope | Graceful degradation + context-based resolution |
+| Risk                               | Mitigation                                       |
+| ---------------------------------- | ------------------------------------------------ |
+| PrimarySelect loses scope context  | Pass formContext + add getAdapterIdForTag lookup |
+| Existing data has empty scope      | Graceful degradation + context-based resolution  |
 | Tests break with scope requirement | Update mocks systematically before running tests |
-| Type errors during refactor | Implement phases sequentially, test after each |
+| Type errors during refactor        | Implement phases sequentially, test after each   |
 
 ## Definition of Done
 
@@ -591,6 +608,7 @@ Phase 7 (Testing)
 ### What Was Delivered
 
 #### Core Implementation (Phases 1-7)
+
 1. **Type Cleanup** - Removed redundant `adapterId`, using `scope` from parent type
 2. **Data Creation** - Set scope at all DataReference creation points
 3. **Instruction Creation** - Added scope to all 3 sourceRef creation locations
@@ -600,6 +618,7 @@ Phase 7 (Testing)
 7. **Test Updates** - 8 test files updated with proper scope mocks
 
 #### Additional Work (Phase 8)
+
 8. **RJSF Validation** - Comprehensive scope integrity validation:
    - TAG types must have non-null scope referencing valid adapter
    - Non-TAG types must have explicit null scope
@@ -609,6 +628,7 @@ Phase 7 (Testing)
 ### Files Modified (23 total)
 
 **Production Code (13 files):**
+
 - `src/api/hooks/useDomainModel/useGetCombinedDataSchemas.ts`
 - `src/modules/Mappings/utils/combining.utils.ts`
 - `src/modules/Mappings/hooks/useValidateCombiner.ts`
@@ -621,6 +641,7 @@ Phase 7 (Testing)
 - `src/locales/en/translation.json`
 
 **Test Code (10 files):**
+
 - `src/api/hooks/useDomainModel/useGetCombinedDataSchemas.spec.ts`
 - `src/api/hooks/useCombiners/__handlers__/index.ts`
 - `src/api/hooks/useCombiners/useListCombiners.spec.ts`
@@ -633,6 +654,7 @@ Phase 7 (Testing)
 - `src/modules/Mappings/utils/combining.utils.spec.ts`
 
 ### Test Results
+
 - ✅ 2011 tests passing
 - ✅ 250 test files passing
 - ✅ 7 tests skipped (pre-existing)
@@ -640,11 +662,13 @@ Phase 7 (Testing)
 - ✅ Test mock referential integrity verified
 
 ### Key Learnings
+
 1. **Test Data Integrity Critical**: Mock scope values must reference actual adapters in sources
 2. **Validation Fills Gap**: Form components maintain integrity during interaction, but RJSF validation needed for payload-level checks
 3. **Backend Verification Essential**: Early backend analysis prevented implementing wrong approach (undefined vs. null)
 
 ### Next Steps
+
 1. **Manual Integration Testing** - Test complete user flows in development
 2. **Code Review** - Peer review of implementation
 3. **Backend Integration** - Deploy with backend scope changes

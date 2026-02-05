@@ -19,9 +19,11 @@ This verification prevented implementing the wrong approach that would have fail
 ## Backend Files Analyzed
 
 ### Model Class
+
 **Path:** `hivemq-edge/src/main/java/com/hivemq/combining/model/DataIdentifierReference.java`
 
 **Key Code:**
+
 ```java
 public record DataIdentifierReference(String id, Type type, @Nullable String scope) {
 
@@ -42,6 +44,7 @@ public record DataIdentifierReference(String id, Type type, @Nullable String sco
 ```
 
 ### Test File
+
 **Path:** `hivemq-edge/src/test/java/com/hivemq/combining/model/DataIdentifierReferenceTest.java`
 
 **Key Tests:**
@@ -72,12 +75,13 @@ void apiRoundTrip_topicFilterWithNullScope() {
 ```
 
 ### OpenAPI Schema
+
 **Path:** `hivemq-edge-openapi/openapi/components/schemas/DataIdentifierReference.yaml`
 
 ```yaml
 scope:
   type: string
-  nullable: true  # Can be null, not just optional
+  nullable: true # Can be null, not just optional
   description: >
     Scoping identifier. For TAG type, this is the adapter ID that owns
     the tag. For other types, this is null.
@@ -88,6 +92,7 @@ scope:
 ## Validation Rules (From Backend Code)
 
 ### TAG Types
+
 - **Requirement:** `scope != null && !scope.isBlank()`
 - **Valid:** `{ id: "temperature", type: "TAG", scope: "adapter-1" }`
 - **Invalid:** `{ id: "temperature", type: "TAG", scope: null }`
@@ -95,12 +100,14 @@ scope:
 - **Invalid:** `{ id: "temperature", type: "TAG" }` (omitted)
 
 ### TOPIC_FILTER Types
+
 - **Requirement:** `scope == null`
 - **Valid:** `{ id: "my/topic", type: "TOPIC_FILTER", scope: null }`
 - **Invalid:** `{ id: "my/topic", type: "TOPIC_FILTER", scope: "adapter-1" }`
 - **Invalid:** `{ id: "my/topic", type: "TOPIC_FILTER" }` (omitted - may not deserialize correctly)
 
 ### PULSE_ASSET Types
+
 - **Requirement:** `scope == null`
 - **Valid:** `{ id: "asset-1", type: "PULSE_ASSET", scope: null }`
 - **Invalid:** `{ id: "asset-1", type: "PULSE_ASSET", scope: "adapter-1" }`
@@ -142,12 +149,12 @@ scope:
 
 ```typescript
 // With undefined (omitted)
-const obj1 = { id: "topic", type: "TOPIC_FILTER" }
+const obj1 = { id: 'topic', type: 'TOPIC_FILTER' }
 JSON.stringify(obj1)
 // Result: {"id":"topic","type":"TOPIC_FILTER"}
 
 // With explicit null
-const obj2 = { id: "topic", type: "TOPIC_FILTER", scope: null }
+const obj2 = { id: 'topic', type: 'TOPIC_FILTER', scope: null }
 JSON.stringify(obj2)
 // Result: {"id":"topic","type":"TOPIC_FILTER","scope":null}
 ```
@@ -155,12 +162,14 @@ JSON.stringify(obj2)
 ### Backend Deserialization
 
 When backend receives `{"id":"topic","type":"TOPIC_FILTER"}`:
+
 - Jackson deserializer sees missing `scope` field
 - May set `scope` to `null` (if field is nullable)
 - **OR** may leave field uninitialized
 - Record constructor gets called: `DataIdentifierReference(id, type, ???)`
 
 When backend receives `{"id":"topic","type":"TOPIC_FILTER","scope":null}`:
+
 - Jackson deserializer explicitly sets `scope = null`
 - Record constructor gets: `DataIdentifierReference(id, type, null)`
 - Validation passes: `scope == null` ✅
@@ -249,6 +258,7 @@ const mockData: DataIdentifierReference = {
 ## Time Saved
 
 **Without backend verification:**
+
 - Implement with `undefined` (omitted): 1-2 days
 - Discover integration failure during testing: 0.5 days
 - Debug and understand root cause: 0.5-1 days
@@ -257,6 +267,7 @@ const mockData: DataIdentifierReference = {
 - **Total: 3.5-5 days wasted**
 
 **With backend verification:**
+
 - Verification process: 15 minutes
 - Update plan based on findings: 15 minutes
 - Implement correctly from start: 5-7 days (as planned)
@@ -323,6 +334,7 @@ cd /Users/nicolas/dev-projects/edge/hivemq-edge/hivemq-edge-frontend
 ## Conclusion
 
 This verification process:
+
 - ✅ Prevented implementing wrong approach
 - ✅ Saved 3.5-5 days of rework
 - ✅ Ensured backend compatibility from day 1
@@ -334,6 +346,7 @@ This verification process:
 ---
 
 **See Also:**
+
 - [BACKEND_FRONTEND_VERIFICATION.md](../BACKEND_FRONTEND_VERIFICATION.md) - General guidelines
 - [TASK_PLAN.md](./TASK_PLAN.md) - Updated implementation plan based on findings
 - [TASK_SUMMARY.md](./TASK_SUMMARY.md) - Progress tracking

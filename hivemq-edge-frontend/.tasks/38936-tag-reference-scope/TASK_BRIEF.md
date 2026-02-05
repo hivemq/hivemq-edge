@@ -21,9 +21,9 @@ The backend API has been updated to include a `scope` field in the `DataIdentifi
 
 ```typescript
 export type DataIdentifierReference = {
-  id: string;                    // The name of the tag or topic filter
-  type: DataIdentifierReference.type;  // TAG | TOPIC_FILTER | PULSE_ASSET
-  scope?: string | null;         // For TAG: adapter ID. For others: undefined/null
+  id: string // The name of the tag or topic filter
+  type: DataIdentifierReference.type // TAG | TOPIC_FILTER | PULSE_ASSET
+  scope?: string | null // For TAG: adapter ID. For others: undefined/null
 }
 ```
 
@@ -64,7 +64,7 @@ The frontend codebase has NOT been updated to properly use the new `scope` field
 
 - Change `sources.tags` from `string[]` to `DataIdentifierReference[]`
 - Change `sources.topicFilters` from `string[]` to `DataIdentifierReference[]`
-- *Requires backend API changes*
+- _Requires backend API changes_
 
 ## Scope
 
@@ -103,12 +103,12 @@ The frontend codebase has NOT been updated to properly use the new `scope` field
 
 ## Risks
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|-----------|
-| Existing data has empty scope | High | Medium | Graceful degradation + lookup helper |
-| PrimarySelect loses scope context | Medium | High | Pass formContext, add adapterId lookup |
-| Tests break with scope requirement | High | Low | Update all mocks systematically |
-| Type safety gaps | Low | Medium | Use strict type guards + runtime validation |
+| Risk                               | Likelihood | Impact | Mitigation                                  |
+| ---------------------------------- | ---------- | ------ | ------------------------------------------- |
+| Existing data has empty scope      | High       | Medium | Graceful degradation + lookup helper        |
+| PrimarySelect loses scope context  | Medium     | High   | Pass formContext, add adapterId lookup      |
+| Tests break with scope requirement | High       | Low    | Update all mocks systematically             |
+| Type safety gaps                   | Low        | Medium | Use strict type guards + runtime validation |
 
 ## Related Tasks
 
