@@ -59,7 +59,7 @@ export const getCombinedDataEntityReference = (
       const topicFilterDataReferences = (cur as TopicFilter[]).map<DataReference>((topicFilter) => ({
         id: topicFilter.topicFilter,
         type: DataIdentifierReference.type.TOPIC_FILTER,
-        scope: dataSources?.[currentIndex]?.id,
+        scope: null, // ✅ Topic filters always have null scope
       }))
       acc.push(...topicFilterDataReferences)
     }
