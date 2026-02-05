@@ -235,13 +235,13 @@ describe('getAdapterIdForTag', () => {
   // Shared mock data
   const mockTagQuery = (tags: string[]): Partial<UseQueryResult<DomainTagList, Error>> => ({
     data: {
-      items: tags.map((name) => ({ name } as DomainTag)),
+      items: tags.map((name) => ({ name }) as DomainTag),
     },
   })
 
   const mockTopicFilterQuery = (filters: string[]): Partial<UseQueryResult<TopicFilterList, Error>> => ({
     data: {
-      items: filters.map((topicFilter) => ({ topicFilter } as TopicFilter)),
+      items: filters.map((topicFilter) => ({ topicFilter }) as TopicFilter),
     },
   })
 
