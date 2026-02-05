@@ -33,6 +33,7 @@ import org.jetbrains.annotations.TestOnly;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -293,7 +294,7 @@ public class LdapClient {
             log.error("Failed to resolve DN for user '{}': {}", username, e.getMessage());
             throw e;
         }
-        final Set<String> matchedRoles = new java.util.HashSet<>();
+        final Set<String> matchedRoles = new HashSet<>();
         // Execute each role query
         for (final var userRole : userRoles) {
             final String role = userRole.getRole();
