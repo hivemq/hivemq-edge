@@ -22,7 +22,6 @@ import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.adapters.DataCombinerNotFoundError;
 import com.hivemq.api.errors.combiners.InvalidDataIdentifierReferenceTypeForCombinerError;
 import com.hivemq.api.errors.combiners.InvalidEntityTypeForCombinerError;
-import com.hivemq.api.errors.combiners.InvalidScopeForTagError;
 import com.hivemq.api.errors.combiners.MissingScopeForTagError;
 import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.combining.model.DataCombiner;
@@ -194,9 +193,16 @@ public class CombinersResourceImpl implements CombinersApi {
             return Optional.of(ErrorResponseUtil.errorResponse(new InvalidEntityTypeForCombinerError(EntityType.PULSE_AGENT)));
         }
         for (final DataCombining dataCombining : dataCombiner.dataCombinings()) {
-            if (dataCombining.sources().primaryReference().type() == DataIdentifierReference.Type.PULSE_ASSET) {
+            final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
+            if (primaryRef.type() == DataIdentifierReference.Type.PULSE_ASSET) {
                 return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
                         DataIdentifierReference.Type.PULSE_ASSET)));
+            }
+            // Validate primary TAG reference has scope
+            if (primaryRef.type() == DataIdentifierReference.Type.TAG) {
+                if (primaryRef.scope() == null || primaryRef.scope().isBlank()) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
+                }
             }
             if (dataCombining.instructions()
                     .stream()
@@ -206,15 +212,12 @@ public class CombinersResourceImpl implements CombinersApi {
                 return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
                         DataIdentifierReference.Type.PULSE_ASSET)));
             }
-            // Validate TAG references have scope and scope corresponds to an existing adapter
+            // Validate TAG references in instructions have scope
             for (final Instruction instruction : dataCombining.instructions()) {
                 final DataIdentifierReference ref = instruction.dataIdentifierReference();
                 if (ref != null && ref.type() == DataIdentifierReference.Type.TAG) {
                     if (ref.scope() == null || ref.scope().isBlank()) {
                         return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(ref.id())));
-                    }
-                    if (protocolAdapterExtractor.getAdapterByAdapterId(ref.scope()).isEmpty()) {
-                        return Optional.of(ErrorResponseUtil.errorResponse(new InvalidScopeForTagError(ref.scope(), ref.id())));
                     }
                 }
             }
