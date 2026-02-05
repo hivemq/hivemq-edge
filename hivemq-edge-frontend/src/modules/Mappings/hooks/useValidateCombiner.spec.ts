@@ -564,6 +564,241 @@ describe('useValidateCombiner', () => {
     })
   })
 
+  describe('validateDataIdentifierScope', () => {
+    const sources: EntityReference[] = [
+      {
+        id: 'the edge name',
+        type: EntityType.EDGE_BROKER,
+      },
+      {
+        id: 'opcua-1',
+        type: EntityType.ADAPTER,
+      },
+    ]
+
+    const getFormData = (mappings: DataCombining[]): Combiner => ({
+      id: mockCombinerId,
+      name: 'my-combiner',
+      sources: {
+        items: sources,
+      },
+      mappings: {
+        items: mappings,
+      },
+    })
+
+    it('should not validate when primary TAG has invalid scope reference', async () => {
+      const result = await loadingEntities(sources)
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              tags: ['opcua-1/log/event'],
+              primary: {
+                id: 'opcua-1/log/event',
+                type: DataIdentifierReference.type.TAG,
+                scope: 'non-existent-adapter', // ❌ Invalid scope
+              },
+            },
+            destination: {
+              topic: 'test/topic',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [
+              {
+                source: 'description',
+                destination: 'value',
+                sourceRef: {
+                  id: 'opcua-1/log/event',
+                  type: DataIdentifierReference.type.TAG,
+                  scope: 'opcua-1',
+                },
+              },
+            ],
+          },
+        ]),
+        result.current,
+        sources
+      )
+
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: expect.stringContaining('invalid adapter'),
+        }),
+      ])
+    })
+
+    it('should not validate when primary TOPIC_FILTER has non-null scope', async () => {
+      const result = await loadingEntities(sources)
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              topicFilters: ['a/topic/+/filter'],
+              primary: {
+                id: 'a/topic/+/filter',
+                type: DataIdentifierReference.type.TOPIC_FILTER,
+                scope: 'should-be-null', // ❌ Should be null
+              },
+            },
+            destination: {
+              topic: 'test/topic',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [
+              {
+                source: 'description',
+                destination: 'value',
+                sourceRef: {
+                  id: 'a/topic/+/filter',
+                  type: DataIdentifierReference.type.TOPIC_FILTER,
+                  scope: null,
+                },
+              },
+            ],
+          },
+        ]),
+        result.current,
+        sources
+      )
+
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: expect.stringContaining('should not have a scope'),
+        }),
+      ])
+    })
+
+    it('should not validate when instruction TAG has invalid scope reference', async () => {
+      const result = await loadingEntities(sources)
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              tags: ['opcua-1/log/event'],
+              primary: {
+                id: 'opcua-1/log/event',
+                type: DataIdentifierReference.type.TAG,
+                scope: 'opcua-1',
+              },
+            },
+            destination: {
+              topic: 'test/topic',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [
+              {
+                source: 'description',
+                destination: 'value',
+                sourceRef: {
+                  id: 'opcua-1/log/event',
+                  type: DataIdentifierReference.type.TAG,
+                  scope: 'invalid-adapter', // ❌ Invalid scope
+                },
+              },
+            ],
+          },
+        ]),
+        result.current,
+        sources
+      )
+
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: expect.stringContaining('invalid adapter'),
+        }),
+      ])
+    })
+
+    it('should not validate when instruction TOPIC_FILTER has non-null scope', async () => {
+      const result = await loadingEntities(sources)
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              topicFilters: ['a/topic/+/filter'],
+              primary: {
+                id: 'a/topic/+/filter',
+                type: DataIdentifierReference.type.TOPIC_FILTER,
+                scope: null,
+              },
+            },
+            destination: {
+              topic: 'test/topic',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [
+              {
+                source: 'description',
+                destination: 'value',
+                sourceRef: {
+                  id: 'a/topic/+/filter',
+                  type: DataIdentifierReference.type.TOPIC_FILTER,
+                  scope: 'should-be-null', // ❌ Should be null
+                },
+              },
+            ],
+          },
+        ]),
+        result.current,
+        sources
+      )
+
+      expect(errors).toStrictEqual([
+        expect.objectContaining({
+          message: expect.stringContaining('should not have a scope'),
+        }),
+      ])
+    })
+
+    it('should validate when all scopes are correct', async () => {
+      const result = await loadingEntities(sources)
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              tags: ['opcua-1/log/event'],
+              primary: {
+                id: 'opcua-1/log/event',
+                type: DataIdentifierReference.type.TAG,
+                scope: 'opcua-1', // ✅ Valid scope
+              },
+            },
+            destination: {
+              topic: 'test/topic',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [
+              {
+                source: 'description',
+                destination: 'value',
+                sourceRef: {
+                  id: 'opcua-1/log/event',
+                  type: DataIdentifierReference.type.TAG,
+                  scope: 'opcua-1', // ✅ Valid scope
+                },
+              },
+            ],
+          },
+        ]),
+        result.current,
+        sources
+      )
+
+      expect(errors).toStrictEqual([])
+    })
+  })
+
   describe('validateInstructions', () => {
     const sources: EntityReference[] = [
       {
