@@ -20,4 +20,3 @@ properties:
     format: uri
 required:
   - title
-  - type
