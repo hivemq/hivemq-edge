@@ -638,6 +638,7 @@ describe('useValidateCombiner', () => {
                 sourceRef: {
                   id: 'a/topic/+/filter',
                   type: DataIdentifierReference.type.TOPIC_FILTER,
+                  scope: null,
                 },
               },
             ],
@@ -676,6 +677,7 @@ describe('useValidateCombiner', () => {
                 sourceRef: {
                   id: 'a/topic/+/filter',
                   type: DataIdentifierReference.type.TOPIC_FILTER,
+                  scope: null,
                 },
               },
             ],
@@ -714,6 +716,7 @@ describe('useValidateCombiner', () => {
                 sourceRef: {
                   id: 'a/topic/+/filter',
                   type: DataIdentifierReference.type.TOPIC_FILTER,
+                  scope: null,
                 },
               },
             ],
@@ -778,6 +781,7 @@ describe('useValidateCombiner', () => {
                     sourceRef: {
                       id: 'a/topic/+/filter',
                       type: DataIdentifierReference.type.TOPIC_FILTER,
+                      scope: null,
                     },
                   },
                 ],
@@ -865,6 +869,7 @@ describe('useValidateCombiner', () => {
               sourceRef: {
                 id: 'a/topic/+/filter',
                 type: DataIdentifierReference.type.TOPIC_FILTER,
+                scope: null,
               },
             },
           ],

@@ -58,7 +58,7 @@ export const useValidateCombiner = (
         const tagDataReferences = (cur.data?.items as DomainTag[]).map<DataReference>((tag) => ({
           id: tag.name,
           type: DataIdentifierReference.type.TAG,
-          adapterId: dataSources?.[currentIndex]?.id,
+          scope: dataSources?.[currentIndex]?.id,
         }))
         acc.push(...tagDataReferences)
       } else if ((firstItem as TopicFilter).topicFilter) {
@@ -66,7 +66,7 @@ export const useValidateCombiner = (
         const topicFilterDataReferences = (cur.data?.items as TopicFilter[]).map<DataReference>((topicFilter) => ({
           id: topicFilter.topicFilter,
           type: DataIdentifierReference.type.TOPIC_FILTER,
-          adapterId: undefined,
+          scope: dataSources?.[currentIndex]?.id,
         }))
         acc.push(...topicFilterDataReferences)
       }

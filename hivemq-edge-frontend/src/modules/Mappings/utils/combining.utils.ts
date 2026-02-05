@@ -50,7 +50,7 @@ export const getCombinedDataEntityReference = (
         return {
           id: tag.name,
           type: DataIdentifierReference.type.TAG,
-          adapterId: dataSources?.[currentIndex]?.id,
+          scope: dataSources?.[currentIndex]?.id,
         }
       })
       acc.push(...tagDataReferences)
@@ -59,7 +59,7 @@ export const getCombinedDataEntityReference = (
       const topicFilterDataReferences = (cur as TopicFilter[]).map<DataReference>((topicFilter) => ({
         id: topicFilter.topicFilter,
         type: DataIdentifierReference.type.TOPIC_FILTER,
-        adapterId: undefined,
+        scope: dataSources?.[currentIndex]?.id,
       }))
       acc.push(...topicFilterDataReferences)
     }

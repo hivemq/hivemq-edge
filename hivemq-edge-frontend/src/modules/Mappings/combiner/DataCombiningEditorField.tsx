@@ -239,6 +239,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
                     ? {
                         id: values.value,
                         type: values.type,
+                        scope: values.adapterId ?? null,
                       }
                     : undefined,
                 },
