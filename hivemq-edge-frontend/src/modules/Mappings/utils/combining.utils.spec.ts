@@ -6,7 +6,7 @@ import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper'
 import { server } from '@/__test-utils__/msw/mockServer'
 
 import type { DomainTag, EntityReference, TopicFilter } from '@/api/__generated__'
-import { DataIdentifierReference } from '@/api/__generated__'
+import { DataIdentifierReference, EntityType } from '@/api/__generated__'
 
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import { useGetCombinedDataSchemas } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
@@ -21,6 +21,7 @@ import {
   getCombinedDataEntityReference,
   getSchemasFromReferences,
   getFilteredDataReferences,
+  getAdapterIdForTag,
 } from './combining.utils'
 
 describe('getCombinedDataEntityReference', () => {
@@ -40,12 +41,12 @@ describe('getCombinedDataEntityReference', () => {
       entities: [],
       results: [
         {
-          adapterId: undefined,
+          scope: undefined,
           id: 'opcua-1/power/off',
           type: DataIdentifierReference.type.TAG,
         },
         {
-          adapterId: undefined,
+          scope: undefined,
           id: 'opcua-1/log/event',
           type: DataIdentifierReference.type.TAG,
         },
@@ -57,7 +58,7 @@ describe('getCombinedDataEntityReference', () => {
       entities: [],
       results: [
         {
-          adapterId: undefined,
+          scope: undefined,
           id: 'a/topic/+/filter',
           type: DataIdentifierReference.type.TOPIC_FILTER,
         },
@@ -81,7 +82,7 @@ describe('getSchemasFromReferences', () => {
   const mockDataReferences: DataReference[] = [
     {
       id: 'my-tag',
-      adapterId: 'string',
+      scope: 'string',
       type: DataIdentifierReference.type.TAG,
     },
     {
@@ -101,7 +102,7 @@ describe('getSchemasFromReferences', () => {
       input: mockDataReferences,
       output: [
         expect.objectContaining({
-          adapterId: 'string',
+          scope: 'string',
           schema: expect.objectContaining({
             message: 'Your tag is currently assigned a valid schema',
             schema: expect.objectContaining({
@@ -150,7 +151,7 @@ describe('getSchemasFromReferences', () => {
       ])
     ).toStrictEqual([
       expect.objectContaining({
-        adapterId: 'string',
+        scope: 'string',
         id: 'my-tag',
         schema: expect.objectContaining({
           message: 'Your tag is currently not assigned a schema',
@@ -225,5 +226,137 @@ describe('findBestMatch', () => {
 
   it.each<TestMatchSuite>(tests)('should work for $test', ({ source, candidates, result }) => {
     expect(findBestMatch(source, candidates)).toStrictEqual(result)
+  })
+})
+
+describe('getAdapterIdForTag', () => {
+  it('should return undefined when formContext is undefined', () => {
+    expect(getAdapterIdForTag('tag1', undefined)).toBeUndefined()
+  })
+
+  it('should return undefined when formContext has no queries', () => {
+    const context = { entities: [], queries: undefined }
+    expect(getAdapterIdForTag('tag1', context as any)).toBeUndefined()
+  })
+
+  it('should return undefined when formContext has no entities', () => {
+    const context = { entities: undefined, queries: [] }
+    expect(getAdapterIdForTag('tag1', context as any)).toBeUndefined()
+  })
+
+  it('should return undefined when tag is not found', () => {
+    const mockQuery = {
+      data: {
+        items: [
+          { name: 'tag1' } as DomainTag,
+          { name: 'tag2' } as DomainTag,
+        ],
+      },
+    }
+    const context = {
+      entities: [{ id: 'adapter1', type: 'ADAPTER' }],
+      queries: [mockQuery],
+    }
+    expect(getAdapterIdForTag('nonexistent', context as any)).toBeUndefined()
+  })
+
+  it('should return adapterId when tag is found', () => {
+    const mockQuery = {
+      data: {
+        items: [
+          { name: 'temperature' } as DomainTag,
+          { name: 'pressure' } as DomainTag,
+        ],
+      },
+    }
+    const context = {
+      entities: [{ id: 'opcua-adapter-1', type: EntityType.ADAPTER }],
+      queries: [mockQuery],
+    }
+    expect(getAdapterIdForTag('temperature', context as any)).toBe('opcua-adapter-1')
+  })
+
+  it('should return correct adapterId when multiple adapters exist', () => {
+    const mockQuery1 = {
+      data: {
+        items: [
+          { name: 'tag1' } as DomainTag,
+          { name: 'tag2' } as DomainTag,
+        ],
+      },
+    }
+    const mockQuery2 = {
+      data: {
+        items: [
+          { name: 'temperature' } as DomainTag,
+          { name: 'pressure' } as DomainTag,
+        ],
+      },
+    }
+    const context = {
+      entities: [
+        { id: 'adapter1', type: EntityType.ADAPTER },
+        { id: 'adapter2', type: EntityType.ADAPTER },
+      ],
+      queries: [mockQuery1, mockQuery2],
+    }
+    expect(getAdapterIdForTag('temperature', context as any)).toBe('adapter2')
+  })
+
+  it('should skip queries with empty items', () => {
+    const mockQuery1 = {
+      data: {
+        items: [],
+      },
+    }
+    const mockQuery2 = {
+      data: {
+        items: [{ name: 'tag1' } as DomainTag],
+      },
+    }
+    const context = {
+      entities: [
+        { id: 'adapter1', type: EntityType.ADAPTER },
+        { id: 'adapter2', type: EntityType.ADAPTER },
+      ],
+      queries: [mockQuery1, mockQuery2],
+    }
+    expect(getAdapterIdForTag('tag1', context as any)).toBe('adapter2')
+  })
+
+  it('should skip queries with topic filters (not tags)', () => {
+    const mockQuery1 = {
+      data: {
+        items: [{ topicFilter: 'filter1' } as TopicFilter],
+      },
+    }
+    const mockQuery2 = {
+      data: {
+        items: [{ name: 'tag1' } as DomainTag],
+      },
+    }
+    // Queries and entities are parallel arrays - each query corresponds to an entity at the same index
+    const context = {
+      entities: [
+        { id: 'adapter1', type: EntityType.ADAPTER },
+        { id: 'adapter2', type: EntityType.ADAPTER },
+      ],
+      queries: [mockQuery1, mockQuery2],
+    }
+    // Should find tag1 in query[1] and return entities[1] (adapter2)
+    expect(getAdapterIdForTag('tag1', context as any)).toBe('adapter2')
+  })
+
+  it('should return undefined when adapter entity is missing at query index', () => {
+    const mockQuery = {
+      data: {
+        items: [{ name: 'tag1' } as DomainTag],
+      },
+    }
+    const context = {
+      entities: [], // No adapters
+      queries: [mockQuery],
+    }
+    expect(getAdapterIdForTag('tag1', context as any)).toBeUndefined()
   })
 })
