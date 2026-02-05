@@ -60,7 +60,7 @@ describe('getCombinedDataEntityReference', () => {
       entities: [],
       results: [
         {
-          scope: undefined,
+          scope: null, // ✅ Topic filters always have null scope
           id: 'a/topic/+/filter',
           type: DataIdentifierReference.type.TOPIC_FILTER,
         },
