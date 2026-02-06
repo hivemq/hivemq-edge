@@ -19,12 +19,16 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.entity.api.ldap.UserRoleEntity;
 import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.DN;
+import com.unboundid.ldap.sdk.DereferencePolicy;
+import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.PruneUnneededConnectionsLDAPConnectionPoolHealthCheck;
 import com.unboundid.ldap.sdk.RDN;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.RoundRobinServerSet;
+import com.unboundid.ldap.sdk.SearchRequest;
+import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
 import com.unboundid.ldap.sdk.StartTLSPostConnectProcessor;
 import org.jetbrains.annotations.NotNull;
@@ -305,14 +309,14 @@ public class LdapClient {
                 log.debug("Executing role query for role '{}': {}", role, query);
 
                 // Parse the query as an LDAP filter
-                final var filter = com.unboundid.ldap.sdk.Filter.create(query);
+                final var filter = Filter.create(query);
 
                 // Create search request
                 // We search from the base DN with subtree scope to find any matching entries
-                final var searchRequest = new com.unboundid.ldap.sdk.SearchRequest(
+                final var searchRequest = new SearchRequest(
                         connectionProperties.rdns(),
-                        com.unboundid.ldap.sdk.SearchScope.SUB,
-                        com.unboundid.ldap.sdk.DereferencePolicy.NEVER,
+                        SearchScope.SUB,
+                        DereferencePolicy.NEVER,
                         1, // Size limit - we only need to know if there's at least one match
                         connectionProperties.searchTimeoutSeconds(),
                         false, // Types only = false
@@ -321,14 +325,14 @@ public class LdapClient {
                 );
 
                 final var searchResult = connectionPool.search(searchRequest);
-                if (searchResult.getResultCode() == com.unboundid.ldap.sdk.ResultCode.SUCCESS &&
+                if (searchResult.getResultCode() == ResultCode.SUCCESS &&
                         searchResult.getEntryCount() > 0) {
                     log.debug("Role query for '{}' matched {} entries, adding role", role, searchResult.getEntryCount());
                     matchedRoles.add(role);
                 } else {
                     log.debug("Role query for '{}' returned no matches", role);
                 }
-            } catch (final com.unboundid.ldap.sdk.LDAPException e) {
+            } catch (final LDAPException e) {
                 // Log error but continue with other queries
                 log.error("LDAP error executing role query for role '{}': {}", role, e.getMessage(), e);
             } catch (final Exception e) {
