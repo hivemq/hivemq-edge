@@ -17,6 +17,7 @@ package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
+import com.hivemq.configuration.entity.adapter.AdapterTag;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.protocols.northbound.TagConsumer;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +29,7 @@ import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -43,7 +45,7 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     // We would need to add a callback/logic to the lifecycle of tags
     // is it intended that we might send very old data?
     // perhaps it is good enough if we ensure that northbound mappings are created before tags as adapters are restarted on config change anyway
-    private final Map<String, List<DataPoint>> lastValueForTag = new ConcurrentHashMap<>();
+    private final Map<AdapterTag, List<DataPoint>> lastValueForTag = new ConcurrentHashMap<>();
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     @Inject
@@ -51,16 +53,20 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
         this.metricsHolder = metricsHolder;
     }
 
-    private final @NotNull ConcurrentHashMap<String, List<TagConsumer>> consumers = new ConcurrentHashMap<>();
+    private final @NotNull ConcurrentHashMap<AdapterTag, List<TagConsumer>> consumers = new ConcurrentHashMap<>();
 
     @Override
-    public void feed(final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
-        lastValueForTag.put(tagName, dataPoints);
+    public void feed(
+            final @NotNull String adapterId,
+            final @NotNull String tagName,
+            final @NotNull List<DataPoint> dataPoints) {
+        final AdapterTag adapterTag = new AdapterTag(adapterId, tagName);
+        lastValueForTag.put(adapterTag, dataPoints);
         try {
             readWriteLock.readLock().lock();
-            final var tagConsumers = consumers.get(tagName);
+            final var tagConsumers = consumers.get(adapterTag);
             if (tagConsumers != null) {
-                consumers.get(tagName).forEach(consumer -> {
+                tagConsumers.forEach(consumer -> {
                     try {
                         consumer.accept(dataPoints);
                     } catch (final Exception e) {
@@ -75,10 +81,12 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
 
 
     public void addConsumer(final @NotNull TagConsumer consumer) {
+        final AdapterTag adapterTag = new AdapterTag(
+                Objects.requireNonNullElse(consumer.getScope(), ""),
+                consumer.getTagName());
         try {
             readWriteLock.writeLock().lock();
-            final String tagName = consumer.getTagName();
-            consumers.compute(tagName, (tag, current) -> {
+            consumers.compute(adapterTag, (tag, current) -> {
                 if (current != null) {
                     current.add(consumer);
                     return current;
@@ -90,7 +98,7 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
             });
 
             // if there is a value present in the cache, we sent it to the consumer
-            final List<DataPoint> dataPoints = lastValueForTag.get(tagName);
+            final List<DataPoint> dataPoints = lastValueForTag.get(adapterTag);
             if (dataPoints != null) {
                 consumer.accept(dataPoints);
             }
@@ -101,9 +109,12 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
 
 
     public void removeConsumer(final @NotNull TagConsumer consumer) {
+        final AdapterTag adapterTag = new AdapterTag(
+                Objects.requireNonNullElse(consumer.getScope(), ""),
+                consumer.getTagName());
         try {
             readWriteLock.writeLock().lock();
-            consumers.computeIfPresent(consumer.getTagName(), (tag, current) -> {
+            consumers.computeIfPresent(adapterTag, (tag, current) -> {
                 current.remove(consumer);
                 return current;
             });

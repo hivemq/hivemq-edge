@@ -22,6 +22,7 @@ import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.adapters.DataCombinerNotFoundError;
 import com.hivemq.api.errors.combiners.InvalidDataIdentifierReferenceTypeForCombinerError;
 import com.hivemq.api.errors.combiners.InvalidEntityTypeForCombinerError;
+import com.hivemq.api.errors.combiners.MissingScopeForTagError;
 import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.combining.model.DataCombining;
@@ -29,6 +30,7 @@ import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.combining.model.EntityType;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
+import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.api.CombinersApi;
 import com.hivemq.edge.api.model.Combiner;
 import com.hivemq.edge.api.model.CombinerList;
@@ -57,13 +59,16 @@ public class CombinersResourceImpl implements CombinersApi {
 
     private final @NotNull SystemInformation systemInformation;
     private final @NotNull DataCombiningExtractor dataCombiningExtractor;
+    private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
 
     @Inject
     public CombinersResourceImpl(
             final @NotNull SystemInformation systemInformation,
-            final @NotNull DataCombiningExtractor dataCombiningExtractor) {
+            final @NotNull DataCombiningExtractor dataCombiningExtractor,
+            final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor) {
         this.systemInformation = systemInformation;
         this.dataCombiningExtractor = dataCombiningExtractor;
+        this.protocolAdapterExtractor = protocolAdapterExtractor;
     }
 
     @Override
@@ -188,9 +193,16 @@ public class CombinersResourceImpl implements CombinersApi {
             return Optional.of(ErrorResponseUtil.errorResponse(new InvalidEntityTypeForCombinerError(EntityType.PULSE_AGENT)));
         }
         for (final DataCombining dataCombining : dataCombiner.dataCombinings()) {
-            if (dataCombining.sources().primaryReference().type() == DataIdentifierReference.Type.PULSE_ASSET) {
+            final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
+            if (primaryRef.type() == DataIdentifierReference.Type.PULSE_ASSET) {
                 return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
                         DataIdentifierReference.Type.PULSE_ASSET)));
+            }
+            // Validate primary TAG reference has scope
+            if (primaryRef.type() == DataIdentifierReference.Type.TAG) {
+                if (primaryRef.scope() == null || primaryRef.scope().isBlank()) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
+                }
             }
             if (dataCombining.instructions()
                     .stream()
@@ -199,6 +211,15 @@ public class CombinersResourceImpl implements CombinersApi {
                             DataIdentifierReference.Type.PULSE_ASSET)) {
                 return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
                         DataIdentifierReference.Type.PULSE_ASSET)));
+            }
+            // Validate TAG references in instructions have scope
+            for (final Instruction instruction : dataCombining.instructions()) {
+                final DataIdentifierReference ref = instruction.dataIdentifierReference();
+                if (ref != null && ref.type() == DataIdentifierReference.Type.TAG) {
+                    if (ref.scope() == null || ref.scope().isBlank()) {
+                        return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(ref.id())));
+                    }
+                }
             }
         }
         return Optional.empty();

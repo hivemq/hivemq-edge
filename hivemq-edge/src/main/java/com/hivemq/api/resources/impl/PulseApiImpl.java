@@ -20,13 +20,13 @@ import com.google.common.collect.Sets;
 import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
+import com.hivemq.api.errors.combiners.MissingScopeForTagError;
 import com.hivemq.api.errors.pulse.ActivationTokenAlreadyDeletedError;
 import com.hivemq.api.errors.pulse.ActivationTokenInvalidError;
 import com.hivemq.api.errors.pulse.ActivationTokenNotDeletedError;
 import com.hivemq.api.errors.pulse.AssetMapperNotFoundError;
 import com.hivemq.api.errors.pulse.AssetMapperReferencedError;
 import com.hivemq.api.errors.pulse.DuplicatedManagedAssetIdError;
-import com.hivemq.api.errors.pulse.InvalidDataIdentifierReferenceForAssetMapperError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetMappingIdError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetSchemaError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetTopicError;
@@ -36,11 +36,13 @@ import com.hivemq.api.errors.pulse.MissingEntityTypePulseAgentForAssetMapperErro
 import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
 import com.hivemq.api.errors.pulse.PulseAgentNotConnectedError;
 import com.hivemq.combining.model.DataCombiner;
+import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.combining.model.EntityType;
 import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.AssetMappingExtractor;
+import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.edge.api.PulseApi;
 import com.hivemq.edge.api.model.Combiner;
@@ -96,6 +98,7 @@ public class PulseApiImpl implements PulseApi {
     private final @NotNull AssetProviderRegistry assetProviderRegistry;
     private final @NotNull AssetMappingExtractor assetMappingExtractor;
     private final @NotNull PulseExtractor pulseExtractor;
+    private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
     private final @NotNull StatusProviderRegistry statusProviderRegistry;
     private final @NotNull SystemInformation systemInformation;
 
@@ -104,11 +107,13 @@ public class PulseApiImpl implements PulseApi {
             final @NotNull SystemInformation systemInformation,
             final @NotNull AssetMappingExtractor assetMappingExtractor,
             final @NotNull PulseExtractor pulseExtractor,
+            final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor,
             final @NotNull AssetProviderRegistry assetProviderRegistry,
             final @NotNull StatusProviderRegistry statusProviderRegistry) {
         this.assetProviderRegistry = assetProviderRegistry;
         this.assetMappingExtractor = assetMappingExtractor;
         this.pulseExtractor = pulseExtractor;
+        this.protocolAdapterExtractor = protocolAdapterExtractor;
         this.statusProviderRegistry = statusProviderRegistry;
         this.systemInformation = systemInformation;
     }
@@ -659,6 +664,22 @@ public class PulseApiImpl implements PulseApi {
                 if (mappingId != null && !Objects.equals(mappingId, dataCombiningId)) {
                     return Optional.of(ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(
                             dataCombiningId)));
+                }
+            }
+            // Validate primary TAG reference has scope
+            final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
+            if (primaryRef != null && primaryRef.type() == DataIdentifierReference.Type.TAG) {
+                if (primaryRef.scope() == null || primaryRef.scope().isBlank()) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
+                }
+            }
+            // Validate TAG references in instructions have scope
+            for (final var instruction : dataCombining.instructions()) {
+                final DataIdentifierReference ref = instruction.dataIdentifierReference();
+                if (ref != null && ref.type() == DataIdentifierReference.Type.TAG) {
+                    if (ref.scope() == null || ref.scope().isBlank()) {
+                        return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(ref.id())));
+                    }
                 }
             }
         }
