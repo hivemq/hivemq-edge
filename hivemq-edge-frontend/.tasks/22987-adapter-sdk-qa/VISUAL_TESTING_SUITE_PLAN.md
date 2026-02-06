@@ -74,17 +74,20 @@ hivemq-edge-adapter-sdk/
 ### Phase 1: Java Server (4 files)
 
 1. **AdapterTestServer.java** - Main entry point
+
    - Create JDK HttpServer on port 8080
    - Register `/api/v1/management/protocol-adapters/types` handler
    - Register `/` handler for static files
    - Load adapters via ServiceLoader
 
 2. **SchemaGenerator.java** - Schema generation
+
    - Copy `CustomConfigSchemaGenerator` from hivemq-edge core
    - Dependencies: victools jsonschema-generator 4.38.0
    - Processes `@ModuleConfigField` annotations
 
 3. **AdapterSchemaHandler.java** - API endpoint
+
    - Returns JSON matching Edge API contract:
      ```json
      {
@@ -103,6 +106,7 @@ hivemq-edge-adapter-sdk/
 ### Phase 2: React App (minimal RJSF)
 
 **Copy from Edge frontend:**
+
 - `ObjectFieldTemplate.tsx` - Tab support (`ui:tabs`)
 - `FieldTemplate.tsx` - Field wrapper
 - `BaseInputTemplate.tsx` - Input styling
@@ -112,6 +116,7 @@ hivemq-edge-adapter-sdk/
 - `validation.utils.ts` - Custom format validators
 
 **Simplifications (not needed):**
+
 - No AdapterTagSelect (discovery feature)
 - No EntitySelectWidget (MQTT entity browser)
 - No MqttTransformationField
@@ -119,6 +124,7 @@ hivemq-edge-adapter-sdk/
 - No React Query (simple fetch)
 
 **Pre-build strategy:**
+
 - Build with Vite
 - Commit `dist/` folder to repo
 - Java devs don't need Node.js
@@ -147,6 +153,7 @@ application {
 ### Phase 4: Cypress Tests
 
 **Automated checks from QA checklist:**
+
 - Form renders without JS errors
 - Required fields show validation errors
 - Number constraints validated (min/max)
@@ -170,23 +177,25 @@ java -cp "build/libs/my-adapter.jar:testing-ui.jar" \
 
 ## Critical Files to Reference
 
-| Purpose | File Path |
-|---------|-----------|
-| Schema Generator | `/edge/hivemq-edge/src/main/java/com/hivemq/api/json/CustomConfigSchemaGenerator.java` |
-| RJSF Setup | `/edge/hivemq-edge-frontend/src/components/rjsf/Form/ChakraRJSForm.tsx` |
-| Tab Template | `/edge/hivemq-edge-frontend/src/components/rjsf/ObjectFieldTemplate.tsx` |
-| Format Validators | `/edge/hivemq-edge-frontend/src/components/rjsf/Form/validation.utils.ts` |
-| Test Target | `/hivemq-hello-world-protocol-adapter/` |
+| Purpose           | File Path                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------- |
+| Schema Generator  | `/edge/hivemq-edge/src/main/java/com/hivemq/api/json/CustomConfigSchemaGenerator.java` |
+| RJSF Setup        | `/edge/hivemq-edge-frontend/src/components/rjsf/Form/ChakraRJSForm.tsx`                |
+| Tab Template      | `/edge/hivemq-edge-frontend/src/components/rjsf/ObjectFieldTemplate.tsx`               |
+| Format Validators | `/edge/hivemq-edge-frontend/src/components/rjsf/Form/validation.utils.ts`              |
+| Test Target       | `/hivemq-hello-world-protocol-adapter/`                                                |
 
 ## Dependencies
 
 **Java Server:**
+
 - JDK 21 (HttpServer built-in)
 - victools jsonschema-generator 4.38.0
 - Jackson 2.14.2
 - SLF4J + Logback
 
 **React App:**
+
 - @rjsf/chakra-ui 5.24.13
 - @chakra-ui/react 2.8.2
 - Vite (build only)
@@ -194,11 +203,11 @@ java -cp "build/libs/my-adapter.jar:testing-ui.jar" \
 
 ## Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
+| Decision          | Choice                           | Rationale                                                              |
+| ----------------- | -------------------------------- | ---------------------------------------------------------------------- |
 | Schema Generation | Copy CustomConfigSchemaGenerator | Self-contained, no hivemq-edge dependency. Document for future review. |
-| React Sync | Manual copy | Simple, update when needed. May drift but acceptable for testing tool. |
-| Distribution | Maven Central | Same publishing as SDK. One-line dependency for adapter devs. |
+| React Sync        | Manual copy                      | Simple, update when needed. May drift but acceptable for testing tool. |
+| Distribution      | Maven Central                    | Same publishing as SDK. One-line dependency for adapter devs.          |
 
 ## Hello-World Integration Example
 
@@ -221,11 +230,11 @@ Developer runs: `./gradlew testUI` → Browser opens http://localhost:8080
 
 ## Estimated Work Breakdown
 
-| Phase | Tasks | Files |
-|-------|-------|-------|
-| 1. Java Server | AdapterTestServer, SchemaGenerator, Handlers | 4-5 Java files |
-| 2. React App | Copy RJSF components, App.tsx, AdapterForm.tsx | ~15 files |
-| 3. Gradle Build | build.gradle.kts, settings, publishing | 3 files |
-| 4. Cypress Tests | Basic form rendering, validation tests | 2-3 test files |
-| 5. Documentation | README.md, integration guide | 2 files |
-| 6. Hello-World | Add testUI task, verify integration | 1 file |
+| Phase            | Tasks                                          | Files          |
+| ---------------- | ---------------------------------------------- | -------------- |
+| 1. Java Server   | AdapterTestServer, SchemaGenerator, Handlers   | 4-5 Java files |
+| 2. React App     | Copy RJSF components, App.tsx, AdapterForm.tsx | ~15 files      |
+| 3. Gradle Build  | build.gradle.kts, settings, publishing         | 3 files        |
+| 4. Cypress Tests | Basic form rendering, validation tests         | 2-3 test files |
+| 5. Documentation | README.md, integration guide                   | 2 files        |
+| 6. Hello-World   | Add testUI task, verify integration            | 1 file         |

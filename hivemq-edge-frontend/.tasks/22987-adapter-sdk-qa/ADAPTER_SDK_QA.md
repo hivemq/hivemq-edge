@@ -3,6 +3,7 @@
 ## Objective
 
 Improve Developer Experience of protocol adapter development by providing:
+
 1. Documentation for JSON Schema and UI Schema configuration
 2. Actionable QA checklist for adapter developers
 3. Visual Testing Suite for adapter configuration forms
@@ -13,27 +14,30 @@ Improve Developer Experience of protocol adapter development by providing:
 
 Created comprehensive guides in `hivemq-edge-adapter-sdk/docs/`:
 
-| Document | Purpose |
-|----------|---------|
-| `JSON_SCHEMA_CONFIGURATION_GUIDE.md` | Guide for `@ModuleConfigField` annotations |
-| `UI_SCHEMA_CONFIGURATION_GUIDE.md` | Guide for UI Schema with `getUiSchema()` examples |
-| `ADAPTER_QA_CHECKLIST.md` | Structured checklist with 36 automatable + 20 manual items |
+| Document                             | Purpose                                                    |
+| ------------------------------------ | ---------------------------------------------------------- |
+| `JSON_SCHEMA_CONFIGURATION_GUIDE.md` | Guide for `@ModuleConfigField` annotations                 |
+| `UI_SCHEMA_CONFIGURATION_GUIDE.md`   | Guide for UI Schema with `getUiSchema()` examples          |
+| `ADAPTER_QA_CHECKLIST.md`            | Structured checklist with 36 automatable + 20 manual items |
 
 ### 2. Visual Testing Suite (SDK Repo)
 
 Built a self-contained testing tool in `hivemq-edge-adapter-sdk/testing/ui/`:
 
 **Architecture:**
+
 - Java server (JDK HttpServer) - Discovers adapters via ServiceLoader, generates JSON Schema
 - React frontend (RJSF + Chakra UI) - Renders configuration forms
 
 **Features:**
+
 - Visual form preview at `http://localhost:8080/`
 - Clean form-only view at `http://localhost:8080/form`
 - Tabs for JSON Schema, UI Schema, and Form Data inspection
 - Support for `ui:tabs` tabbed layouts
 
 **Usage:**
+
 ```bash
 # From SDK repo
 cd testing/ui
@@ -44,11 +48,11 @@ cd testing/ui
 
 Created 38 automated tests organized by QA checklist sections:
 
-| Test File | Tests | Coverage |
-|-----------|-------|----------|
-| `1-json-schema.cy.ts` | 13 | Field metadata, type constraints, required fields, enums, formats |
-| `2-ui-schema.cy.ts` | 12 | Structure (tabs, order), widgets, field behavior, arrays |
-| `6-visual-testing.cy.ts` | 13 | Form rendering, validation, accessibility, interactions |
+| Test File                | Tests | Coverage                                                          |
+| ------------------------ | ----- | ----------------------------------------------------------------- |
+| `1-json-schema.cy.ts`    | 13    | Field metadata, type constraints, required fields, enums, formats |
+| `2-ui-schema.cy.ts`      | 12    | Structure (tabs, order), widgets, field behavior, arrays          |
+| `6-visual-testing.cy.ts` | 13    | Form rendering, validation, accessibility, interactions           |
 
 **Test IDs map to checklist items** (e.g., `[1.1.1]` = "Every field has title attribute")
 
@@ -63,11 +67,11 @@ Running tests against the hello-world adapter revealed:
 
 ### Technical Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Schema Generation | Copy `CustomConfigSchemaGenerator` | Self-contained, no hivemq-edge dependency |
-| React Components | Manual copy from Edge frontend | Simple, update when needed |
-| RJSF Templates | Use built-in `@rjsf/chakra-ui` | Removed custom `FieldTemplate` (was causing duplicate labels) |
+| Decision          | Choice                             | Rationale                                                     |
+| ----------------- | ---------------------------------- | ------------------------------------------------------------- |
+| Schema Generation | Copy `CustomConfigSchemaGenerator` | Self-contained, no hivemq-edge dependency                     |
+| React Components  | Manual copy from Edge frontend     | Simple, update when needed                                    |
+| RJSF Templates    | Use built-in `@rjsf/chakra-ui`     | Removed custom `FieldTemplate` (was causing duplicate labels) |
 
 ## Files Created/Modified
 
@@ -128,12 +132,14 @@ npm run qa:check  # Runs tests + generates report
 ```
 
 **Features:**
+
 - Headless Cypress tests with mochawesome reporter
 - Report generator (`scripts/generate-report.mjs`)
 - Severity classification (critical/high/medium/low)
 - Rationale and suggested fixes for each failing check
 
 **Sample Output:**
+
 ```
 ================================================================================
 ADAPTER QA REPORT

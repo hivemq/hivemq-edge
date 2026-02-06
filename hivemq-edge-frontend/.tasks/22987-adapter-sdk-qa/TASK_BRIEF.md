@@ -51,12 +51,12 @@ This part of the proposal needs planning and discussion. A rough idea could be a
 
 ## Repositories Involved
 
-| Repository                        | Language   | Role                                      |
-| --------------------------------- | ---------- | ----------------------------------------- |
-| hivemq-edge-frontend              | TypeScript | Master/Coordination, Testing Suite        |
-| hivemq-edge-adapter-sdk           | Java       | SDK Documentation                         |
-| hivemq-hello-world-protocol-adapter | Java     | Example Adapter, Testing Target           |
-| hivemq-edge                       | Java       | OpenAPI Specs, Core Adapter Infrastructure |
+| Repository                          | Language   | Role                                       |
+| ----------------------------------- | ---------- | ------------------------------------------ |
+| hivemq-edge-frontend                | TypeScript | Master/Coordination, Testing Suite         |
+| hivemq-edge-adapter-sdk             | Java       | SDK Documentation                          |
+| hivemq-hello-world-protocol-adapter | Java       | Example Adapter, Testing Target            |
+| hivemq-edge                         | Java       | OpenAPI Specs, Core Adapter Infrastructure |
 
 ---
 
@@ -78,6 +78,7 @@ Update the Protocol Adapter SDK documentation with:
 Create an actionable checklist derived from task 38658 methodology:
 
 **JSON Schema Checklist:**
+
 - [ ] All `@ModuleConfigField` annotations have `title` and `description`
 - [ ] Titles are properly capitalized (not camelCase)
 - [ ] Descriptions are grammatically correct US-EN
@@ -90,6 +91,7 @@ Create an actionable checklist derived from task 38658 methodology:
 - [ ] Getter methods return correct field values
 
 **UI Schema Checklist:**
+
 - [ ] UI schema has appropriate tabs for field grouping
 - [ ] `ui:order` array defines logical field sequence
 - [ ] `updown` widget for bounded numeric fields (ports, intervals)
@@ -104,18 +106,21 @@ Create an actionable checklist derived from task 38658 methodology:
 Create a **self-contained testing framework** that lives in the SDK repo:
 
 **Key Constraint:** Java developers won't have access to the Edge frontend during adapter development. The test suite must be:
+
 - Located entirely within the SDK repository
 - Familiar to Java developers (npm/node as only external dependency)
 - Simple to run: `npm install` → `npm test` (or equivalent)
 - No knowledge of the frontend codebase required
 
 **Components:**
+
 - Pre-built React app bundle with RJSF and all frontend customizations (widgets, validators, templates)
 - Simple HTTP server to serve the test app and receive adapter schemas
 - Cypress test suite with generic adapter form tests
 - CLI wrapper for easy execution
 
 **Developer Workflow:**
+
 ```bash
 # From adapter project root
 cd testing/ui
@@ -124,6 +129,7 @@ npm test           # Run visual tests against local adapter
 ```
 
 **Test Coverage:**
+
 - Form renders without errors
 - All properties from JSON Schema are present in the form
 - UI Schema customizations are applied (tabs, widgets, ordering)
@@ -246,12 +252,14 @@ Located in `com.hivemq.adapter.sdk.api.annotations.ModuleConfigField`:
 ### Related Task 38658 Findings
 
 The QA analysis identified 28 issues across adapters:
+
 - 2 Critical (File tag schema wrong, Databases getter bug)
 - 7 High (Invalid constraints, missing dependencies)
 - 13 Medium (Title casing, grammar, missing tabs)
 - 6 Low (Grammar, orphaned components)
 
 Key patterns to document:
+
 - Type constraint mismatches (string constraints on Integer fields)
 - Missing conditional field dependencies
 - Inconsistent ui:disabled usage
@@ -284,12 +292,14 @@ testing/ui/
 ```
 
 **Key Design Decisions:**
+
 1. **Pre-built app bundle** - The React app is built in the frontend repo and committed as dist/ to the SDK. Java devs don't need to build it.
 2. **Minimal dependencies** - Only Node.js required (npm comes with it)
 3. **Schema injection** - Lightweight Java server exposes adapter schemas via API
 4. **Generic tests** - Tests work with any adapter, not adapter-specific
 
 **Two Servers Running:**
+
 1. **Node.js (frontend)** - Serves the pre-built React app on port 3000
 2. **Java (backend)** - Exposes adapter schema on port 8080
 
@@ -313,6 +323,7 @@ The Java server implements a minimal version of `/api/v1/management/protocol-ada
 ```
 
 **Lightweight Java Server Requirements:**
+
 - Loads adapter class at runtime (from compiled JAR/classes)
 - Extracts `configSchema` using existing SDK schema generation
 - Loads `uiSchema` from classpath resources
@@ -320,12 +331,14 @@ The Java server implements a minimal version of `/api/v1/management/protocol-ada
 - No auth, no persistence - dev-only
 
 **Existing Stack (from hello-world adapter):**
+
 - **Build:** Gradle with Kotlin DSL (`build.gradle.kts`)
 - **Testing:** JUnit 5 + Mockito (already configured)
 - **Serialization:** Jackson-databind
 - **Logging:** SLF4J + Logback
 
 **Java HTTP Server Options:**
+
 1. **Javalin** - Lightweight, popular, good DX, uses Jetty
 2. **Spark Java** - Similar to Javalin, minimal footprint
 3. **JDK HttpServer** - Built-in, zero additional dependencies
@@ -333,6 +346,7 @@ The Java server implements a minimal version of `/api/v1/management/protocol-ada
 **Recommendation:** Use **Javalin** or JDK HttpServer to minimize dependency footprint while maintaining good developer experience.
 
 **Build Pipeline (Frontend Side):**
+
 ```bash
 # In hivemq-edge-frontend
 pnpm build:adapter-test-app   # Builds standalone RJSF app

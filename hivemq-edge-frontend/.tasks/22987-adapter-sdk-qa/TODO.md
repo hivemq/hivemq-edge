@@ -27,12 +27,14 @@ npm run qa:report     # Generate developer-friendly report
 ```
 
 **Report includes:**
+
 - Pass/fail status per checklist item
 - Rationale explaining why each check matters
 - Suggested fixes for failures
 - Severity classification (critical/high/medium/low)
 
 **Output:**
+
 - Console: Formatted report with severity icons
 - File: `qa-report.json` for programmatic use
 
@@ -69,20 +71,22 @@ Removed the custom `FieldTemplate` from the RJSF templates configuration. The `@
 
 **Action Required:**
 Review the Edge frontend's `FieldTemplate.tsx` to determine if:
+
 1. It can be removed entirely (preferred if no custom behavior is needed)
 2. Or modified to not render labels when `@rjsf/chakra-ui` already handles them
 
 **Files to Review:**
+
 - `/hivemq-edge-frontend/src/components/rjsf/Form/FieldTemplate.tsx`
 - `/hivemq-edge-frontend/src/components/rjsf/Form/ChakraRJSForm.tsx`
 
 ## Test Coverage Summary
 
-| Test File | Count | Coverage |
-|-----------|-------|----------|
-| `1-json-schema.cy.ts` | 13 | Field metadata, constraints, required, enums, formats |
-| `2-ui-schema.cy.ts` | 12 | Tabs, order, widgets, field behavior, arrays |
-| `6-visual-testing.cy.ts` | 13 | Rendering, validation, accessibility |
-| **Total** | **38** | |
+| Test File                | Count  | Coverage                                              |
+| ------------------------ | ------ | ----------------------------------------------------- |
+| `1-json-schema.cy.ts`    | 13     | Field metadata, constraints, required, enums, formats |
+| `2-ui-schema.cy.ts`      | 12     | Tabs, order, widgets, field behavior, arrays          |
+| `6-visual-testing.cy.ts` | 13     | Rendering, validation, accessibility                  |
+| **Total**                | **38** |                                                       |
 
 Tests map to QA checklist items (e.g., `[1.1.1]` = checklist item 1.1.1)

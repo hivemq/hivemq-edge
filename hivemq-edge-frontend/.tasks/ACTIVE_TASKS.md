@@ -41,11 +41,11 @@ The agent will **automatically look in the `.tasks/` directory** and:
 
 **Repositories:**
 
-| Repository | Language | Role |
-|------------|----------|------|
-| hivemq-edge-frontend | TypeScript | Master, Testing Suite |
-| hivemq-edge-adapter-sdk | Java | SDK Documentation |
-| hivemq-hello-world-protocol-adapter | Java | Example/Testing Target |
+| Repository                          | Language   | Role                   |
+| ----------------------------------- | ---------- | ---------------------- |
+| hivemq-edge-frontend                | TypeScript | Master, Testing Suite  |
+| hivemq-edge-adapter-sdk             | Java       | SDK Documentation      |
+| hivemq-hello-world-protocol-adapter | Java       | Example/Testing Target |
 
 **Objectives:**
 

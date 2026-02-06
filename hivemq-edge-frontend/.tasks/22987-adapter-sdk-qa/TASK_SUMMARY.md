@@ -7,12 +7,12 @@
 
 ## Progress Overview
 
-| Phase | Status | Progress |
-|-------|--------|----------|
-| Planning | Complete | 100% |
-| QA Checklist | **Transferred to SDK** | 95% |
-| SDK Documentation | **Transferred to SDK** | 95% |
-| Testing Suite | **Implementation Complete** | 90% |
+| Phase             | Status                      | Progress |
+| ----------------- | --------------------------- | -------- |
+| Planning          | Complete                    | 100%     |
+| QA Checklist      | **Transferred to SDK**      | 95%      |
+| SDK Documentation | **Transferred to SDK**      | 95%      |
+| Testing Suite     | **Implementation Complete** | 90%      |
 
 ---
 
@@ -20,29 +20,32 @@
 
 All documentation now lives in the SDK repository (single source of truth).
 
-| Deliverable | Status | Location |
-|-------------|--------|----------|
-| Developer QA Checklist | **In SDK** | `hivemq-edge-adapter-sdk/docs/ADAPTER_QA_CHECKLIST.md` |
-| JSON Schema Config Guide | **In SDK** | `hivemq-edge-adapter-sdk/docs/JSON_SCHEMA_CONFIGURATION_GUIDE.md` |
-| UI Schema Config Guide | **In SDK** | `hivemq-edge-adapter-sdk/docs/UI_SCHEMA_CONFIGURATION_GUIDE.md` |
-| Visual Testing Suite | **In SDK** | `hivemq-edge-adapter-sdk/testing/ui/` |
-| Example Implementation | Not Started | hivemq-hello-world-protocol-adapter |
+| Deliverable              | Status      | Location                                                          |
+| ------------------------ | ----------- | ----------------------------------------------------------------- |
+| Developer QA Checklist   | **In SDK**  | `hivemq-edge-adapter-sdk/docs/ADAPTER_QA_CHECKLIST.md`            |
+| JSON Schema Config Guide | **In SDK**  | `hivemq-edge-adapter-sdk/docs/JSON_SCHEMA_CONFIGURATION_GUIDE.md` |
+| UI Schema Config Guide   | **In SDK**  | `hivemq-edge-adapter-sdk/docs/UI_SCHEMA_CONFIGURATION_GUIDE.md`   |
+| Visual Testing Suite     | **In SDK**  | `hivemq-edge-adapter-sdk/testing/ui/`                             |
+| Example Implementation   | Not Started | hivemq-hello-world-protocol-adapter                               |
 
 ---
 
 ## Repository Tracking
 
 ### hivemq-edge-frontend (TypeScript)
+
 - **Branch:** TBD
 - **Status:** Planning
 - **Role:** Master coordination, Testing suite
 
 ### hivemq-edge-adapter-sdk (Java)
+
 - **Branch:** `feat/22987-adapter-sdk-qa`
 - **Status:** Documentation transferred (uncommitted)
 - **Role:** Documentation updates
 
 ### hivemq-hello-world-protocol-adapter (Java)
+
 - **Branch:** TBD
 - **Status:** Not Started
 - **Role:** Example/Testing target
@@ -52,6 +55,7 @@ All documentation now lives in the SDK repository (single source of truth).
 ## Work Streams
 
 ### Stream 1: SDK Documentation
+
 - [x] Review current SDK documentation
 - [x] Document JSON Schema annotation patterns (JSON_SCHEMA_CONFIGURATION_GUIDE.md)
 - [x] Document UI Schema structure and patterns (UI_SCHEMA_CONFIGURATION_GUIDE.md)
@@ -63,6 +67,7 @@ All documentation now lives in the SDK repository (single source of truth).
 - [ ] Transfer to SDK repository
 
 ### Stream 2: Developer QA Checklist
+
 - [x] Extract checklist from task 38658 methodology
 - [x] Organize by category (JSON Schema, UI Schema, Content, Backend, Visual)
 - [x] Add examples of common mistakes
@@ -72,6 +77,7 @@ All documentation now lives in the SDK repository (single source of truth).
 - [ ] Evaluate CLI automation feasibility
 
 ### Stream 3: Visual Testing Suite
+
 - [ ] Design testing architecture
 - [ ] Create mock API server (or reuse MSW)
 - [ ] Create React test app with RJSF
@@ -83,29 +89,29 @@ All documentation now lives in the SDK repository (single source of truth).
 
 ## Conversation Log
 
-| Session | Date | Focus | Outcome |
-|---------|------|-------|---------|
-| 1 | 2026-01-21 | Initial Setup | Created task structure, reviewed task 38658 context |
-| 2 | 2026-01-21 | Documentation | Created QA checklist, JSON Schema guide, UI Schema guide |
-| 3 | 2026-01-21 | SDK Transfer | Transferred all documentation to SDK repo `docs/` folder |
-| 4 | 2026-01-21 | Testing Suite | Implemented Visual Testing Suite (Java server + React app) |
+| Session | Date       | Focus         | Outcome                                                    |
+| ------- | ---------- | ------------- | ---------------------------------------------------------- |
+| 1       | 2026-01-21 | Initial Setup | Created task structure, reviewed task 38658 context        |
+| 2       | 2026-01-21 | Documentation | Created QA checklist, JSON Schema guide, UI Schema guide   |
+| 3       | 2026-01-21 | SDK Transfer  | Transferred all documentation to SDK repo `docs/` folder   |
+| 4       | 2026-01-21 | Testing Suite | Implemented Visual Testing Suite (Java server + React app) |
 
 ---
 
 ## Key Decisions
 
-| Decision | Rationale | Date |
-|----------|-----------|------|
-| Frontend repo as master | Central coordination point, contains testing infrastructure | 2026-01-21 |
-| Derive checklist from 38658 | Proven methodology, real-world issues identified | 2026-01-21 |
-| Testing suite in SDK repo | Java devs don't have frontend access; must be self-contained | 2026-01-21 |
-| Pre-built React app bundle | Java devs shouldn't need to build frontend code | 2026-01-21 |
-| Simple npm install/test workflow | Familiar to Java devs, minimal friction | 2026-01-21 |
-| Lightweight Java server for schemas | Reuses SDK schema generation, mimics Edge API contract | 2026-01-21 |
-| Two servers: Node (app) + Java (API) | Clean separation, each stack handles its responsibility | 2026-01-21 |
-| Use Gradle (Kotlin DSL) | Consistent with SDK and hello-world adapter | 2026-01-21 |
-| JDK HttpServer (built-in) | Zero additional dependencies, sufficient for dev server | 2026-01-21 |
-| Checklist first deliverable | Foundation for docs and potential CLI automation | 2026-01-21 |
+| Decision                             | Rationale                                                    | Date       |
+| ------------------------------------ | ------------------------------------------------------------ | ---------- |
+| Frontend repo as master              | Central coordination point, contains testing infrastructure  | 2026-01-21 |
+| Derive checklist from 38658          | Proven methodology, real-world issues identified             | 2026-01-21 |
+| Testing suite in SDK repo            | Java devs don't have frontend access; must be self-contained | 2026-01-21 |
+| Pre-built React app bundle           | Java devs shouldn't need to build frontend code              | 2026-01-21 |
+| Simple npm install/test workflow     | Familiar to Java devs, minimal friction                      | 2026-01-21 |
+| Lightweight Java server for schemas  | Reuses SDK schema generation, mimics Edge API contract       | 2026-01-21 |
+| Two servers: Node (app) + Java (API) | Clean separation, each stack handles its responsibility      | 2026-01-21 |
+| Use Gradle (Kotlin DSL)              | Consistent with SDK and hello-world adapter                  | 2026-01-21 |
+| JDK HttpServer (built-in)            | Zero additional dependencies, sufficient for dev server      | 2026-01-21 |
+| Checklist first deliverable          | Foundation for docs and potential CLI automation             | 2026-01-21 |
 
 ---
 
@@ -114,12 +120,14 @@ All documentation now lives in the SDK repository (single source of truth).
 The QA analysis (task 38658) identified 28 issues across adapters:
 
 **Issue Distribution:**
+
 - 🔴 Critical: 2 (File tag schema wrong, Databases getter bug)
 - 🟠 High: 7 (Invalid constraints, missing dependencies)
 - 🟡 Medium: 13 (Title casing, grammar, missing tabs)
 - 🟢 Low: 6 (Grammar, orphaned components)
 
 **Key Patterns to Document:**
+
 1. Type constraint mismatches (string constraints on Integer fields)
 2. Missing conditional field dependencies (encrypt → trustCertificate)
 3. Inconsistent ui:disabled usage across adapters
