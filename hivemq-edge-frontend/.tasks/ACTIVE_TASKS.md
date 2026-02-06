@@ -27,6 +27,38 @@ The agent will **automatically look in the `.tasks/` directory** and:
 
 ## Active Tasks
 
+### 22987-adapter-sdk-qa
+
+**Status:** Planning (60%)
+**Directory:** `.tasks/22987-adapter-sdk-qa/`
+**Description:** Improve Developer Experience for protocol adapter development
+**Type:** Multi-Repository Coordination (TypeScript + Java)
+
+**Key Documents:**
+
+- [TASK_BRIEF.md](./22987-adapter-sdk-qa/TASK_BRIEF.md) - Full requirements and scope
+- [TASK_SUMMARY.md](./22987-adapter-sdk-qa/TASK_SUMMARY.md) - Progress tracking
+
+**Repositories:**
+
+| Repository                          | Language   | Role                   |
+| ----------------------------------- | ---------- | ---------------------- |
+| hivemq-edge-frontend                | TypeScript | Master, Testing Suite  |
+| hivemq-edge-adapter-sdk             | Java       | SDK Documentation      |
+| hivemq-hello-world-protocol-adapter | Java       | Example/Testing Target |
+
+**Objectives:**
+
+1. **SDK Documentation** - Document JSON-Schema and UI-Schema patterns
+2. **QA Checklist** - Actionable checklist derived from task 38658 methodology
+3. **Visual Testing Suite** - Cypress tests for adapter form validation
+
+**Related:** Task 38658 (Adapter JSON Schema Review) - source methodology
+
+**Next Action:** Finalize planning, answer open questions on architecture
+
+---
+
 ### 37937-datahub-resource-edit-flow
 
 **Status:** ✅ Phase 2 Complete (Resource Editors + Simplified Panels)  
