@@ -40,9 +40,11 @@ public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHand
     private final IUsernameRolesProvider provider;
 
 
-    public static String getBasicAuthenticationHeaderValue(final @NotNull String username, final @NotNull String password) {
-        final var valueToEncode = username + ":" + password;
-        return "Basic " + Base64.getEncoder().encodeToString(valueToEncode.getBytes());
+    public static String getBasicAuthenticationHeaderValue(
+            final @NotNull String username,
+            final @NotNull String password) {
+        final var usernamePasswordDecodedString = username + SEP + password;
+        return METHOD + " " + Base64.getEncoder().encodeToString(usernamePasswordDecodedString.getBytes());
     }
 
     public BasicAuthenticationHandler(final @NotNull IUsernameRolesProvider provider) {
@@ -50,41 +52,44 @@ public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHand
     }
 
     @Override
-    protected AuthenticationResult authenticateInternal(final @NotNull ContainerRequestContext requestContext,
-                                                        final @NotNull String authValue) {
-        return parseValue(authValue)
-                .flatMap(supplied ->
-                        provider.findByUsernameAndPassword(
-                            supplied.getUserName(),
-                            supplied.getPassword()))
-                .map(record -> {
-                    final var result = AuthenticationResult.allowed(this);
-                    result.setPrincipal(record.toPrincipal());
-                    return result;
-                }).orElseGet(() -> AuthenticationResult.denied(this));
+    protected AuthenticationResult authenticateInternal(
+            final @NotNull ContainerRequestContext requestContext,
+            final @NotNull String authValue) {
+        return parseValue(authValue).flatMap(usernamePasswordRoles -> provider.findByUsernameAndPassword(
+                usernamePasswordRoles.getUserName(),
+                usernamePasswordRoles.getPassword())).map(usernameRoles -> {
+            final var result = AuthenticationResult.allowed(this);
+            result.setPrincipal(usernameRoles.toPrincipal());
+            return result;
+        }).orElseGet(() -> AuthenticationResult.denied(this));
     }
 
     @Override
     public void decorateResponse(final AuthenticationResult result, final Response.ResponseBuilder builder) {
-        if(!result.isSuccess()){
+        if (!result.isSuccess()) {
             builder.header(HttpConstants.BASIC_AUTH_CHALLENGE_HEADER,
                     String.format(HttpConstants.BASIC_AUTH_REALM, SecurityContext.BASIC_AUTH));
         }
     }
 
-    protected static Optional<UsernamePasswordRoles> parseValue(final @NotNull String headerValue){
+    protected static Optional<UsernamePasswordRoles> parseValue(final @NotNull String headerValue) {
         Preconditions.checkNotNull(headerValue);
-        final var userPass = new String(Base64.getDecoder().decode(headerValue.trim()));
-        if(userPass.contains(SEP)){
-            final var userNamePassword = userPass.split(SEP);
-            if(userNamePassword.length == 2){
-                final var usernamePassword = new UsernamePasswordRoles();
-                usernamePassword.setUserName(userNamePassword[0]);
-                usernamePassword.setPassword(userNamePassword[1].getBytes(StandardCharsets.UTF_8));
-                return Optional.of(usernamePassword);
-            }
+
+        final var usernamePasswordDecodedString = new String(Base64.getDecoder().decode(headerValue.trim()));
+        if (!usernamePasswordDecodedString.contains(SEP)) {
+            return Optional.empty();
         }
-        return Optional.empty();
+
+        final var usernamePasswordStringList = usernamePasswordDecodedString.split(SEP);
+        if (usernamePasswordStringList.length != 2) {
+            return Optional.empty();
+        }
+
+        final var usernamePassword = new UsernamePasswordRoles();
+        usernamePassword.setUserName(usernamePasswordStringList[0]);
+        usernamePassword.setPassword(usernamePasswordStringList[1].getBytes(StandardCharsets.UTF_8));
+
+        return Optional.of(usernamePassword);
     }
 
     @Override
