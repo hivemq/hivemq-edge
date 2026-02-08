@@ -18,4 +18,22 @@ describe('MermaidRenderer', () => {
     cy.get('@nodes').eq(1).should('have.text', 'Initial')
     cy.get('@nodes').eq(4).should('have.text', 'Violated')
   })
+
+  it('should render with selected transition without errors', () => {
+    // This test verifies that the component mounts with selectedTransition prop
+    // Note: Mermaid's async rendering may not fully complete in test environment
+    cy.mountWithProviders(
+      <MermaidRenderer
+        {...MOCK_FSM.metadata}
+        selectedTransition={{
+          event: 'Mqtt.OnInboundPublish',
+          from: 'Publishing',
+          to: 'Violated',
+        }}
+      />
+    )
+
+    // Verify component renders the Card container
+    cy.get('.chakra-card').should('exist')
+  })
 })

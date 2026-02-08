@@ -7,6 +7,9 @@ import { VersionManagerSelect } from '@datahub/components/forms/VersionManagerSe
 import { MessageInterpolationTextArea } from '@datahub/components/forms/MessageInterpolationTextArea.tsx'
 import { MessageTypeSelect } from '@datahub/components/forms/MessageTypeSelect.tsx'
 import { TransitionSelect } from '@datahub/components/forms/TransitionSelect.tsx'
+import { BehaviorModelSelect } from '@datahub/components/forms/BehaviorModelSelect.tsx'
+import { BehaviorModelSelectDropdown } from '@datahub/components/forms/BehaviorModelSelectDropdown.tsx'
+import { BehaviorModelReadOnlyDisplay } from '@datahub/components/forms/BehaviorModelReadOnlyDisplay.tsx'
 import {
   SchemaNameCreatableSelect,
   ScriptNameCreatableSelect,
@@ -20,6 +23,10 @@ export const datahubRJSFWidgets: RegistryWidgetsType = {
   'application/octet-stream': ProtoSchemaEditor,
   'datahub:function-selector': FunctionCreatableSelect,
   'datahub:transition-selector': TransitionSelect,
+  'datahub:behavior-model-selector': BehaviorModelSelectDropdown, // Dropdown version (default)
+  'datahub:behavior-model-selector-radio': BehaviorModelSelect, // Radio card version (alternative)
+  'datahub:behavior-model-selector-dropdown': BehaviorModelSelectDropdown, // Explicit dropdown version
+  'datahub:behavior-model-readonly': BehaviorModelReadOnlyDisplay, // Read-only display for model
   'datahub:metric-counter': MetricCounterInput,
   'datahub:function-name': ScriptNameCreatableSelect,
   'datahub:schema-name': SchemaNameCreatableSelect,
