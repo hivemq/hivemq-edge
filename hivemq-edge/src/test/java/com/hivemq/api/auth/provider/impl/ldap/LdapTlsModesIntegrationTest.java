@@ -84,6 +84,7 @@ class LdapTlsModesIntegrationTest {
                         "uid",       // uidAttribute
                         "ou=people," + LLDAP_CONTAINER.getBaseDn(),  // rdns
                         null,
+                        null,
                         SearchScope.SUB,
                         5,
                         "ADMIN",  // assignedRole
@@ -159,6 +160,7 @@ class LdapTlsModesIntegrationTest {
                 "uid",    // uidAttribute
                 "ou=people," + LLDAP_CONTAINER.getBaseDn(),  // rdns
                 null,
+                null,
                 SearchScope.SUB,
                 5,
                 "ADMIN",  // assignedRole
@@ -209,6 +211,7 @@ class LdapTlsModesIntegrationTest {
                 1,
                 "uid",    // uidAttribute
                 "ou=people," + LLDAP_CONTAINER.getBaseDn(),  // rdns
+                null,
                 null,
                 SearchScope.SUB,
                 5,

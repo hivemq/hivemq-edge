@@ -108,6 +108,7 @@ class LdapUsernameRolesProviderOpenLdapIntegrationTest {
                         "uid",       // uidAttribute
                         OPENLDAP_CONTAINER.getBaseDn(), // Use full base DN, SearchScope.SUB will find users in ou=people
                         null,
+                        null,
                         SearchScope.SUB,
                         5,
                         ADMIN,  // assignedRole (fallback, not used when userRoleRules are provided)

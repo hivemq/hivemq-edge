@@ -125,6 +125,7 @@ class LdapUsernameRolesProviderLldapIntegrationTest {
                         "uid",       // uidAttribute
                         baseDn,  // Search in ou=people for users
                         null,
+                        null,
                         SearchScope.SUB,
                         5,
                         ADMIN,  // assignedRole (fallback, not used when userRoleRules are provided)

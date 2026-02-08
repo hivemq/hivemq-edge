@@ -32,7 +32,6 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 
@@ -95,6 +94,7 @@ class LdapIntegrationTest {
                 1,
                 "uid",    // uidAttribute
                 "ou=people," + LLDAP_CONTAINER.getBaseDn(),  // rdns
+                null,
                 null,
                 SearchScope.SUB,
                 5,

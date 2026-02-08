@@ -98,6 +98,7 @@ public class LdapAuthenticationTests {
                         "uid",
                         LLDAP_CONTAINER.getBaseDn(),
                         null,
+                        null,
                         SearchScope.SUB,
                         5,
                         ADMIN,

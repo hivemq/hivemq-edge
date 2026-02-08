@@ -76,6 +76,7 @@ class LdapUsernameRolesProviderNoRulesLldapIntegrationTest {
                         "uid",       // uidAttribute
                         LLDAP_CONTAINER.getBaseDn(), // rdns
                         null,
+                        null,
                         SearchScope.SUB,
                         5,
                         ADMIN,  // assignedRole
