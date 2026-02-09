@@ -127,13 +127,12 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
                 output.failStart(e, null);
                 return;
             }
-        } finally {
-            Thread.currentThread().setContextClassLoader(originalClassLoader);
-        }
 
-        databaseConnection.connect();
+            // CRITICAL FIX: Keep context classloader set during connection creation
+            // HikariCP needs the correct classloader context to find registered drivers
+            log.debug("Creating database connection");
+            databaseConnection.connect();
 
-        try {
             log.debug("Starting connection to the database instance");
             if (databaseConnection.getConnection().isValid(TIMEOUT)) {
                 output.startedSuccessfully();
@@ -146,6 +145,9 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
         } catch (final Exception e) {
             output.failStart(e, null);
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        } finally {
+            // Restore original classloader only AFTER connection is established
+            Thread.currentThread().setContextClassLoader(originalClassLoader);
         }
     }
 
