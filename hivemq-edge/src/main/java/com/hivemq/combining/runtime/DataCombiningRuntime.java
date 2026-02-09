@@ -109,14 +109,21 @@ public class DataCombiningRuntime {
                     consumers.add(consumer);
                 });
 
-        // Topic filter subscriptions remain unchanged - use sources().topicFilters()
-        combining.sources().topicFilters().forEach(topicFilter -> {
-            log.debug("Starting mqtt consumer for filter {}", topicFilter);
-            internalSubscriptions.add(subscribeTopicFilter(combining,
-                    topicFilter,
-                    TOPIC_FILTER.equals(combining.sources().primaryReference().type()) &&
-                            topicFilter.equals(combining.sources().primaryReference().id())));
-        });
+        // Topic filter subscriptions - derive from instructions()
+        // instead of from sources().topicFilters()
+        combining.instructions().stream()
+                .map(Instruction::dataIdentifierReference)
+                .filter(Objects::nonNull)
+                .filter(ref -> ref.type() == TOPIC_FILTER)
+                .map(DataIdentifierReference::id)
+                .distinct()
+                .forEach(topicFilter -> {
+                    log.debug("Starting mqtt consumer for filter {}", topicFilter);
+                    internalSubscriptions.add(subscribeTopicFilter(combining,
+                            topicFilter,
+                            TOPIC_FILTER.equals(combining.sources().primaryReference().type()) &&
+                                    topicFilter.equals(combining.sources().primaryReference().id())));
+                });
 
         internalSubscriptions.forEach(internalSubscription -> internalSubscription.queueConsumer().start());
     }
