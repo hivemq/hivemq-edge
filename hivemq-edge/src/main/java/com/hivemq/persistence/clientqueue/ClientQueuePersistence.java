@@ -197,6 +197,17 @@ public interface ClientQueuePersistence {
     ListenableFuture<Void> removeInFlightMarker(@NotNull String sharedSubscription, @NotNull String uniqueId);
 
     /**
+     * Remove all in-flight markers for a shared subscription.
+     * This is called when a bridge reconnects to reset the state and allow messages to be re-delivered.
+     * <p>
+     * This method is only used for shared subscription queues.
+     *
+     * @param sharedSubscription for which all in-flight markers should be removed
+     */
+    @NotNull
+    ListenableFuture<Void> removeAllInFlightMarkers(@NotNull String sharedSubscription);
+
+    /**
      * Removes all qos 0 messages from a queue
      *
      * @param queueId for which to remove the messages

@@ -1,6 +1,10 @@
 get:
   description: Get the list of all topic filters created in this Edge instance
   operationId: get-topicFilters
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:
@@ -25,6 +29,8 @@ get:
 post:
   description: Add a new topic filter.
   operationId: add-topicFilters
+  x-roles-allowed:
+    - admin
   requestBody:
     content:
       application/json:
@@ -53,6 +59,8 @@ post:
 put:
   description: Update all topic filters
   operationId: update-topicFilters
+  x-roles-allowed:
+    - admin
   requestBody:
     content:
       application/json:

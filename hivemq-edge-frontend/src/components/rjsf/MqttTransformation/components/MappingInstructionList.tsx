@@ -8,7 +8,7 @@ import { List, ListItem } from '@chakra-ui/react'
 import type { Instruction } from '@/api/__generated__'
 import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { toJsonPath } from '@/components/rjsf/MqttTransformation/utils/data-type.utils'
+import { filterReadOnlyInstructions, toJsonPath } from '@/components/rjsf/MqttTransformation/utils/data-type.utils'
 
 interface MappingEditorProps extends Omit<ListProps, 'onChange'> {
   instructions: Instruction[]
@@ -24,28 +24,28 @@ export const MappingInstructionList: FC<MappingEditorProps> = ({
   showTransformation = false,
   ...props
 }) => {
-  const properties = useMemo(() => {
-    return getPropertyListFrom(schema)
-  }, [schema])
+  const { properties, validInstructions } = useMemo(() => {
+    const properties = getPropertyListFrom(schema)
+    const validInstructions = filterReadOnlyInstructions(instructions, properties)
+    return { properties, validInstructions }
+  }, [schema, instructions])
 
   return (
     <List {...props} gap={2}>
       {properties.map((property) => {
-        const instructionIndex = instructions
-          ? instructions.findIndex((instruction) => {
-              const fullPath = ['$', ...property.path, property.key].join('.')
-              return instruction.destination === fullPath
-            })
-          : -1
+        const instructionIndex = validInstructions.findIndex((instruction) => {
+          const fullPath = ['$', ...property.path, property.key].join('.')
+          return instruction.destination === fullPath
+        })
         return (
           <ListItem key={property.key}>
             <MappingInstruction
               showTransformation={showTransformation}
               showPathAsName={true}
               property={property}
-              instruction={instructionIndex !== -1 ? instructions?.[instructionIndex] : undefined}
+              instruction={instructionIndex !== -1 ? validInstructions[instructionIndex] : undefined}
               onChange={(source, destination, sourceRef) => {
-                let newMappings = [...(instructions || [])]
+                let newMappings = [...validInstructions]
                 if (source) {
                   const newItem: Instruction = {
                     source: toJsonPath(source),

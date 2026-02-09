@@ -1,6 +1,10 @@
 get:
   description: Get the specified topic filter
   operationId: get-topicFilter
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - $ref: ../components/parameters/TopicFilterId.yaml
   responses:
@@ -16,6 +20,8 @@ get:
 delete:
   description: Delete the specified topic filter.
   operationId: delete-topicFilter
+  x-roles-allowed:
+    - admin
   parameters:
     - $ref: ../components/parameters/TopicFilterId.yaml
   responses:
@@ -39,6 +45,8 @@ delete:
 put:
   description: Update a topic filter
   operationId: update-topicFilter
+  x-roles-allowed:
+    - admin
   parameters:
     - $ref: ../components/parameters/TopicFilterId.yaml
   requestBody:

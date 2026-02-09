@@ -3,7 +3,7 @@ group = "com.hivemq"
 plugins {
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.repository-convention")
-    id("io.github.sgtsilvio.gradle.oci") version "0.22.0"
+    id("io.github.sgtsilvio.gradle.oci") version "0.24.0"
     id("jacoco")
 }
 
@@ -199,7 +199,7 @@ oci {
         imageName.set("hivemq/hivemq-edge")
         allPlatforms {
             dependencies {
-                runtime("library:eclipse-temurin:sha256!67fc762eabacb56e5444b367889e04ce8c839b8f4b3d8ef3e459c5579fbefd8a") // 21-jre-noble
+                runtime("library:eclipse-temurin:sha256!e9934ccb97ba85ef9fa61f02a0136bbf982804e2deec968f191c31568b95dd92") // 25-jre-ubi10-minimal
             }
             config {
                 user = "10000"

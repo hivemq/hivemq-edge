@@ -127,7 +127,7 @@ public class OpcUaToJsonConverter {
         } else if (value instanceof final String str) {
             return new JsonPrimitive(str);
         } else if (value instanceof final DateTime dt) {
-            return new JsonPrimitive((DateTimeFormatter.ISO_INSTANT.format(dt.getJavaInstant())));
+            return new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(dt.getJavaInstant()));
         } else if (value instanceof final UUID uuid) {
             return new JsonPrimitive(uuid.toString());
         } else if (value instanceof final ByteString bs) {

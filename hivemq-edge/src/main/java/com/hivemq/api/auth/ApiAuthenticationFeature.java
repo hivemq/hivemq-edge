@@ -19,6 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.api.auth.handler.AuthenticationResult;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.ChainedAuthenticationHandler;
+import com.hivemq.configuration.service.ApiConfigurationService;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,10 +55,13 @@ public class ApiAuthenticationFeature implements DynamicFeature {
     static final Logger log = LoggerFactory.getLogger(ApiAuthenticationFeature.class);
 
     private final Set<IAuthenticationHandler> authenticationHandler;
+    private final ApiConfigurationService apiConfigurationService;
 
     @Inject
-    public ApiAuthenticationFeature(final @NotNull Set<IAuthenticationHandler> authenticationHandler) {
+    public ApiAuthenticationFeature(final @NotNull Set<IAuthenticationHandler> authenticationHandler,
+            final @NotNull ApiConfigurationService apiConfigurationService) {
         this.authenticationHandler = authenticationHandler;
+        this.apiConfigurationService = apiConfigurationService;
     }
 
     @Override
@@ -67,14 +71,14 @@ public class ApiAuthenticationFeature implements DynamicFeature {
         //-- Check if roles are defined on the resource method (these are the ones that are the most specific)
         Optional<RolesAllowed>
                 requiredRoles = ApiPermissionUtils.getAnnotationIfExists(RolesAllowed.class, resourceMethod);
-        if(requiredRoles.isPresent()){
+        if(requiredRoles.isPresent() && !Set.of(requiredRoles.get().value()).contains("NO_AUTH_REQUIRED")){
             final AuthenticationFilter filter = new AuthenticationFilter(Set.of(requiredRoles.get().value()));
             context.register(filter);
             return;
         } else {
             //-- Check if roles are defined on the resource class
             requiredRoles = ApiPermissionUtils.getAnnotationIfExists(RolesAllowed.class, resourceInfo.getResourceClass());
-            if(requiredRoles.isPresent()){
+            if(requiredRoles.isPresent() && !Set.of(requiredRoles.get().value()).contains("NO_AUTH_REQUIRED")){
                 final AuthenticationFilter filter = new AuthenticationFilter(Set.of(requiredRoles.get().value()));
                 context.register(filter);
                 return;
@@ -109,11 +113,20 @@ public class ApiAuthenticationFeature implements DynamicFeature {
         @Override
         public void filter(final @NotNull ContainerRequestContext requestContext) throws IOException {
             Preconditions.checkNotNull(requestContext);
+
+            // shortcut if authentication and authorization is NOT enforced (compatibility behavior)
+            if (!apiConfigurationService.isEnforceApiAuth()) {
+                return;
+            }
+
             try {
+
+                // first check the authorization and set the security context if authentication was successful
                 ChainedAuthenticationHandler handler = new ChainedAuthenticationHandler(authenticationHandler);
                 AuthenticationResult result = handler.authenticate(requestContext);
                 if(!result.isSuccess()){
                     log.debug("Authentication failed for resource {}", requestContext.getUriInfo().getPath());
+                    // a bit counterintuitive but HTTP response codes specify UNAUTHORIZED(401) if authentication fails
                     Response.ResponseBuilder builder = Response.status(Response.Status.UNAUTHORIZED);
                     handler.decorateResponse(result, builder);
                     requestContext.abortWith(builder.build());
@@ -126,12 +139,23 @@ public class ApiAuthenticationFeature implements DynamicFeature {
                     }
                 }
 
-                if(!requiredPermissions.isEmpty() && !handler.authorized(requestContext, requiredPermissions)){
-                    log.warn("Not authorized to access resource {} -> {}", requestContext.getUriInfo().getPath(), requestContext.getSecurityContext());
-                    Response.ResponseBuilder builder = Response.status(Response.Status.FORBIDDEN);
-                    handler.decorateResponse(result, builder);
-                    requestContext.abortWith(builder.build());
+                // next check the authorization
+                if(!requiredPermissions.isEmpty()){
+                    if(!handler.authorized(requestContext, requiredPermissions)){
+                        log.warn("Not authorized to access resource {} -> {}", requestContext.getUriInfo().getPath(), requestContext.getSecurityContext());
+                        // a bit counterintuitive but HTTP response codes specify FORBIDDEN(403) if authorization fails
+                        Response.ResponseBuilder builder = Response.status(Response.Status.FORBIDDEN);
+                        handler.decorateResponse(result, builder);
+                        requestContext.abortWith(builder.build());
+                    } else {
+                        if(log.isTraceEnabled()){
+                            log.trace("Request authorized {} -> {}", requestContext.getUriInfo().getPath(), requestContext.getSecurityContext());
+                        }
+                    }
                 }
+
+                // if the request was not aborted above, that means authentication and authorization were successful
+
             } catch (final Exception e) {
                 log.error("REST API authentication failed, reason: {}", e.getMessage());
                 if (log.isDebugEnabled()) {

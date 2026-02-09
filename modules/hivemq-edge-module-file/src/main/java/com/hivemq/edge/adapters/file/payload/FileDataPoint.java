@@ -48,8 +48,7 @@ public class FileDataPoint implements DataPoint {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final FileDataPoint that = (FileDataPoint) o;
+        if (!(o instanceof FileDataPoint that)) return false;
         return Objects.equals(getTagValue(), that.getTagValue()) && Objects.equals(getTag(), that.getTag());
     }
 

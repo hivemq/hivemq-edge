@@ -47,6 +47,7 @@ public class LegacyS7AdapterConfig extends LegacyPlc4xAdapterConfig {
     public LegacyS7AdapterConfig() {
     }
 
+    @Override
     public int getPort() {
         return port;
     }

@@ -41,7 +41,7 @@ describe('TopicFilterPanel', () => {
   it('should render loading and error states', () => {
     cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 404 }).as('getPolicies')
     const onFormError = cy.stub().as('onFormError')
-    cy.intercept('/api/v1/data-hub/scripts', { statusCode: 404 }).as('getScripts')
+    cy.intercept('/api/v1/data-hub/scripts', { statusCode: 404 })
     cy.mountWithProviders(<TopicFilterPanel selectedNode="3" onFormError={onFormError} />, { wrapper })
     cy.getByTestId('loading-spinner').should('be.visible')
 
@@ -49,15 +49,15 @@ describe('TopicFilterPanel', () => {
     cy.get('[role="alert"]')
       .should('be.visible')
       .should('have.attr', 'data-status', 'error')
-      .should('have.text', 'DataPolicy not found')
+      .should('have.text', 'Not Found')
 
-    cy.get('@onFormError').should('have.been.calledWithErrorMessage', 'DataPolicy not found')
+    cy.get('@onFormError').should('have.been.calledWithErrorMessage', 'Not Found')
   })
 
   it('should render the fields for a Validator', () => {
     cy.intercept('/api/v1/data-hub/data-validation/policies', {
       items: [mockDataPolicy],
-    }).as('getPolicies')
+    })
     cy.mountWithProviders(<TopicFilterPanel selectedNode="3" />, { wrapper })
 
     cy.get('label#root_adapter-label').should('contain.text', 'Adapter source')
@@ -88,7 +88,7 @@ describe('TopicFilterPanel', () => {
   it('should be accessible', () => {
     cy.intercept('/api/v1/data-hub/data-validation/policies', {
       items: [mockDataPolicy],
-    }).as('getPolicies')
+    })
     cy.injectAxe()
     cy.mountWithProviders(<TopicFilterPanel selectedNode="3" />, { wrapper })
 

@@ -4,6 +4,8 @@ delete:
 
      
   operationId: deleteBehaviorPolicy
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The identifier of the policy to delete.
       example: policy1
@@ -67,6 +69,10 @@ get:
 
      
   operationId: getBehaviorPolicy
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The identifier of the policy.
       example: policy1
@@ -165,6 +171,8 @@ put:
     request body.
      
   operationId: updateBehaviorPolicy
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The identifier of the policy.
       example: policy1

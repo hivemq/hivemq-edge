@@ -22,16 +22,12 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
- * @author HiveMQ Adapter Generator
+ * Factory for creating HTTP protocol adapter instances.
  */
 public class HttpProtocolAdapterFactory
         implements ProtocolAdapterFactory<HttpSpecificAdapterConfig> {
-
-    private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
 

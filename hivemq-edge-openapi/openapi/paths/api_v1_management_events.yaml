@@ -1,6 +1,10 @@
 get:
   description: Get all bridges configured in the system.
   operationId: getEvents
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: Obtain all events since the specified epoch.
       in: query

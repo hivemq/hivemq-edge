@@ -4,6 +4,7 @@ import type { RJSFSchema } from '@rjsf/utils'
 import {
   MOCK_MQTT_SCHEMA_METADATA,
   MOCK_MQTT_SCHEMA_PLAIN,
+  MOCK_MQTT_SCHEMA_READONLY,
   MOCK_MQTT_SCHEMA_REFS,
 } from '@/__test-utils__/rjsf/schema.mocks.ts'
 
@@ -117,6 +118,74 @@ describe('getPropertyListFrom', () => {
     const flat = { ...(properties?.[type] as Omit<JSONSchema7, 'required'>), key: type, path: [] } as FlatJSONSchema7
 
     expect(hhhh).toStrictEqual<FlatJSONSchema7>(expect.objectContaining(flat))
+  })
+
+  it('should extract readOnly property for root-level properties', () => {
+    const properties = getPropertyListFrom(MOCK_MQTT_SCHEMA_READONLY)
+
+    const idProperty = properties.find((p) => p.key === 'id')
+    expect(idProperty).toBeDefined()
+    expect(idProperty?.readOnly).toBe(true)
+
+    const timestampProperty = properties.find((p) => p.key === 'timestamp')
+    expect(timestampProperty).toBeDefined()
+    expect(timestampProperty?.readOnly).toBe(true)
+
+    const nameProperty = properties.find((p) => p.key === 'name')
+    expect(nameProperty).toBeDefined()
+    expect(nameProperty?.readOnly).toBeUndefined()
+  })
+
+  it('should extract readOnly property for nested properties', () => {
+    const properties = getPropertyListFrom(MOCK_MQTT_SCHEMA_READONLY)
+
+    const versionProperty = properties.find((p) => p.key === 'version' && p.path.includes('config'))
+    expect(versionProperty).toBeDefined()
+    expect(versionProperty?.readOnly).toBe(true)
+
+    const settingProperty = properties.find((p) => p.key === 'setting' && p.path.includes('config'))
+    expect(settingProperty).toBeDefined()
+    expect(settingProperty?.readOnly).toBeUndefined()
+  })
+
+  it('should extract required property for root-level properties', () => {
+    const properties = getPropertyListFrom(MOCK_MQTT_SCHEMA_PLAIN)
+
+    const firstNameProperty = properties.find((p) => p.key === 'firstName')
+    expect(firstNameProperty).toBeDefined()
+    expect(firstNameProperty?.required).toBe(true)
+
+    const lastNameProperty = properties.find((p) => p.key === 'lastName')
+    expect(lastNameProperty).toBeDefined()
+    expect(lastNameProperty?.required).toBe(true)
+
+    const ageProperty = properties.find((p) => p.key === 'age')
+    expect(ageProperty).toBeDefined()
+    expect(ageProperty?.required).toBeUndefined()
+  })
+
+  it('should extract required property for nested properties via $ref', () => {
+    const properties = getPropertyListFrom(MOCK_MQTT_SCHEMA_REFS)
+
+    // The address definition has required: ['street_address', 'city', 'state']
+    const streetAddressProperty = properties.find(
+      (p) => p.key === 'street_address' && p.path.includes('billing_address')
+    )
+    expect(streetAddressProperty).toBeDefined()
+    expect(streetAddressProperty?.required).toBe(true)
+
+    const cityProperty = properties.find((p) => p.key === 'city' && p.path.includes('billing_address'))
+    expect(cityProperty).toBeDefined()
+    expect(cityProperty?.required).toBe(true)
+  })
+
+  it('should not mark properties as required when not in required array', () => {
+    const properties = getPropertyListFrom(MOCK_MQTT_SCHEMA_REFS)
+
+    // The node definition has no required array, so name should not be required
+    const nameProperty = properties.find((p) => p.key === 'name' && p.path.includes('tree'))
+    expect(nameProperty).toBeDefined()
+    expect(nameProperty?.required).toBeUndefined()
   })
 })
 

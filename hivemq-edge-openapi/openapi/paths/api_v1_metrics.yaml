@@ -1,6 +1,10 @@
 get:
   description: Obtain the latest sample for the metric requested.
   operationId: getMetrics
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:

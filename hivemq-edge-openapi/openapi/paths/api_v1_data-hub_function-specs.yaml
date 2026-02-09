@@ -3,6 +3,10 @@ get:
     This endpoints provides the means to get information on the available
     Functions for the HiveMQ Data Hub.
   operationId: getFunctionSpecs
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:

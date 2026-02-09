@@ -51,6 +51,8 @@ describe('TransitionSelect', () => {
 
     cy.get('#react-select-transition-option-3').click()
 
-    cy.get('div#transition-container').should('contain.text', 'Mqtt.OnInboundPublish (Publishing - Publishing)')
+    // Check the selected value is displayed in the container
+    cy.get('div#transition-container').contains('Mqtt.OnInboundPublish').should('exist')
+    cy.get('div#transition-container').contains('Publishing → Publishing').should('exist')
   })
 })

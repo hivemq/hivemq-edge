@@ -1,6 +1,10 @@
 get:
   description: Obtain listener.
   operationId: get-listeners
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:

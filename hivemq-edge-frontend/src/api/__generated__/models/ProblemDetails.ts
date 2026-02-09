@@ -11,6 +11,9 @@ export type ProblemDetails = {
      */
     code?: string;
     detail?: string;
+    /**
+     * @deprecated
+     */
     errors?: Array<Error>;
     status?: number;
     title: string;

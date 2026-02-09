@@ -3,6 +3,10 @@ get:
     Get a json schema that explains the json schema that is used to write to a
     PLC for the given tag name."
   operationId: get-writing-schema
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: >-
         The id of the adapter for which the Json Schema for writing to a PLC

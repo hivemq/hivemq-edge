@@ -179,6 +179,19 @@
       }
     }
   },
+  "behaviorModel": {
+    "badge": {
+      "requiresArguments": "Arguments Required"
+    },
+    "summary": {
+      "states": "{{count}} state",
+      "states_other": "{{count}} states",
+      "transitions": "{{count}} transition",
+      "transitions_other": "{{count}} transitions",
+      "endStates": "End states:"
+    },
+    "notSelected": "No model selected"
+  },
   "workspace": {
     "canvas": {
       "aria-label": "Policy Designer"
@@ -343,8 +356,8 @@
     },
     "transition": {
       "select": {
-        "toState": "to: {{ state }}",
-        "fromState": "from: {{ state }}"
+        "toState": "to:",
+        "fromState": "from:"
       }
     },
     "toolbar": {
@@ -480,7 +493,9 @@
         }
       },
       "script": {
-        "duplicate": "A script with the name \"{{name}}\" already exists"
+        "duplicate": "A script with the name \"{{name}}\" already exists",
+        "parsing": "Validation error: Unable to parse the code",
+        "errorAtLine": "Line {{ line }}, column {{ column }}: {{ message }}"
       },
       "protobuf": {
         "template": "// NOTICE: once encoded into a Base64 descriptor, the PROTOBUF code cannot be extracted again.\n// Use your own documents to retrieve the source.",

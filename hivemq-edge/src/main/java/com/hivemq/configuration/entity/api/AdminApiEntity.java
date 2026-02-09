@@ -19,6 +19,7 @@ import com.hivemq.configuration.entity.EnabledEntity;
 import com.hivemq.configuration.entity.api.ldap.LdapAuthenticationEntity;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementRef;
 import jakarta.xml.bind.annotation.XmlElementRefs;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
@@ -57,6 +58,9 @@ public class AdminApiEntity extends EnabledEntity {
     @XmlElementRef(required = false)
     private @NotNull PreLoginNoticeEntity preLoginNotice;
 
+    @XmlElement(name = "enforce-api-auth", required = false)
+    private @Nullable Boolean enforceApiAuth;
+
     public AdminApiEntity() {
         this.listeners = new ArrayList<>();
         this.jws = new ApiJwsEntity();
@@ -88,6 +92,10 @@ public class AdminApiEntity extends EnabledEntity {
         return preLoginNotice;
     }
 
+    public boolean isEnforceApiAuth() {
+        return enforceApiAuth == null || enforceApiAuth;
+    }
+
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) {
@@ -102,13 +110,21 @@ public class AdminApiEntity extends EnabledEntity {
                     Objects.equals(jws, that.jws) &&
                     Objects.equals(users, that.users) &&
                     Objects.equals(ldapAuthentication, that.ldapAuthentication) &&
-                    Objects.equals(preLoginNotice, that.preLoginNotice);
+                    Objects.equals(preLoginNotice, that.preLoginNotice) &&
+                    Objects.equals(enforceApiAuth, that.enforceApiAuth);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), listeners, tls, jws, users, ldapAuthentication, preLoginNotice);
+        return Objects.hash(super.hashCode(),
+                listeners,
+                tls,
+                jws,
+                users,
+                ldapAuthentication,
+                preLoginNotice,
+                enforceApiAuth);
     }
 }

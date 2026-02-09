@@ -178,19 +178,23 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
 
         final Map<String, RetainedMessage> bucket = buckets[bucketIndex];
-        bucket.entrySet().removeIf(entry -> {
-            if (entry == null) {
+        if(bucket != null) {
+            bucket.entrySet().removeIf(entry -> {
+                if (entry == null) {
+                    return false;
+                }
+                final RetainedMessage retainedMessage = entry.getValue();
+                final String topic = entry.getKey();
+                if (retainedMessage.hasExpired()) {
+                    currentMemorySize.addAndGet(-retainedMessage.getEstimatedSizeInMemory());
+                    topicTrees[bucketIndex].remove(topic);
+                    return true;
+                }
                 return false;
-            }
-            final RetainedMessage retainedMessage = entry.getValue();
-            final String topic = entry.getKey();
-            if (retainedMessage.hasExpired()) {
-                currentMemorySize.addAndGet(-retainedMessage.getEstimatedSizeInMemory());
-                topicTrees[bucketIndex].remove(topic);
-                return true;
-            }
-            return false;
-        });
+            });
+        } else {
+            log.debug("In Memory Bucket {} was null during retained messages cleanup.", bucketIndex);
+        }
     }
 
     // in contrast to the file persistence method we already have everything in memory. The sizing and pagination are ignored.

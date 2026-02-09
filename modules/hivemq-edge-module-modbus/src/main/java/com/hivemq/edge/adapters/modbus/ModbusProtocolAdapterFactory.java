@@ -22,13 +22,9 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ModbusProtocolAdapterFactory
         implements ProtocolAdapterFactory<ModbusSpecificAdapterConfig> {
-
-    private static final @NotNull Logger log = LoggerFactory.getLogger(ModbusProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
 

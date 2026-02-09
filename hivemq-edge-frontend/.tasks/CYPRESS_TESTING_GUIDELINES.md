@@ -673,6 +673,216 @@ cy.percySnapshot('Drawer')
 
 ---
 
+## Debugging Test Failures: Why Test One at a Time
+
+### 🎯 The Golden Rule: Use `.only()` When Debugging
+
+When a test fails, **ALWAYS** run it in isolation using `.only()`:
+
+```typescript
+it.only('should close drawer on successful save', () => {
+  // Test code
+})
+```
+
+**Run just this test:**
+
+```bash
+pnpm cypress:run:component --spec "src/path/to/Component.spec.cy.tsx"
+```
+
+### Why This Matters: Real-World Example
+
+**Scenario:** You write a test that creates a new script:
+
+```typescript
+it('should close drawer on successful save', () => {
+  const onCloseSpy = cy.spy().as('onCloseSpy')
+
+  cy.intercept('POST', '/api/v1/data-hub/scripts', {
+    statusCode: 201,
+    body: { id: 'test-script', /* ... */ }
+  }).as('createScript')
+
+  cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={onCloseSpy} />)
+
+  cy.get('#root_name').type('test-script')
+  cy.contains('button', 'Save').click()  // ❌ FAILS - Button is disabled!
+
+  cy.wait('@createScript')
+})
+```
+
+**Test fails with:**
+
+```
+CypressError: `cy.click()` failed because this element is `disabled`
+```
+
+### ❌ What NOT to Do (Waste 1-2 Hours)
+
+1. ❌ Run all tests together → Can't tell which specific assertion failed
+2. ❌ Try random fixes (add waits, change selectors) → Guessing doesn't work
+3. ❌ Assume "it's flaky" → Miss the real root cause
+4. ❌ Give up and skip the test → Incomplete work
+
+### ✅ What TO Do (Fix in 15 Minutes)
+
+**Step 1:** Run ONLY the failing test with `.only()`
+
+```typescript
+it.only('should close drawer on successful save', () => {
+  // ...
+})
+```
+
+**Step 2:** Add HTML snapshot BEFORE the failing assertion
+
+```typescript
+cy.document().then((doc) => {
+  cy.writeFile('cypress/html-snapshots/debug-save-button.html', doc.documentElement.outerHTML)
+})
+
+cy.contains('button', 'Save').click() // This is failing
+```
+
+**Step 3:** Examine the HTML snapshot
+
+```bash
+# Search for why button is disabled
+grep -i 'disabled\|error\|alert' cypress/html-snapshots/debug-save-button.html
+```
+
+**Step 4:** Find the root cause
+
+In the HTML snapshot:
+
+```html
+<div id="root_name__error" class="chakra-form__error-message">A script with the name "test-script" already exists</div>
+<button data-testid="save-script-button" disabled="">Save</button>
+```
+
+**AH HA!** The button is disabled because there's a **duplicate name validation error**!
+
+**Step 5:** Fix the root cause
+
+```typescript
+it('should close drawer on successful save', () => {
+  const onCloseSpy = cy.spy().as('onCloseSpy')
+
+  // ✅ FIX: Intercept GET to return empty scripts array
+  // Without this, Cypress may return mock data with conflicting names
+  cy.intercept('GET', '/api/v1/data-hub/scripts*', {
+    statusCode: 200,
+    body: { items: [] },  // No existing scripts = no duplicate error
+  }).as('getScripts')
+
+  cy.intercept('POST', '/api/v1/data-hub/scripts', {
+    statusCode: 201,
+    body: { id: 'test-script', /* ... */ }
+  }).as('createScript')
+
+  cy.mountWithProviders(<ScriptEditor isOpen={true} onClose={onCloseSpy} />)
+
+  cy.wait('@getScripts')  // Wait for scripts to load
+
+  cy.get('#root_name').type('test-script')
+  cy.getByTestId('save-script-button').should('not.be.disabled')  // ✅ Now enabled!
+  cy.contains('button', 'Save').click()
+
+  cy.wait('@createScript')
+  cy.get('@onCloseSpy').should('have.been.calledOnce')
+})
+```
+
+**Step 6:** Verify fix works
+
+```bash
+pnpm cypress:run:component --spec "src/path/to/Component.spec.cy.tsx"
+# ✓ should close drawer on successful save (1562ms)
+# 1 passing (3s)
+```
+
+**Step 7:** Remove `.only()` and run all tests
+
+```typescript
+it('should close drawer on successful save', () => {
+  // Remove .only()
+  // ...
+})
+```
+
+### Key Lessons Learned
+
+**1. Components validate against real APIs**
+
+- ScriptEditor checks for duplicate names via GET `/api/v1/data-hub/scripts`
+- Without intercept, Cypress returns unknown mock data
+- Mock data may conflict with test data
+- **Always intercept ALL APIs your component calls**
+
+**2. HTML snapshots reveal the truth**
+
+- Error messages show exactly what went wrong
+- Button states (disabled/enabled) are visible
+- Form validation errors are in the DOM
+- **"cy.log()" is not enough - save the actual HTML**
+
+**3. Testing one at a time is NOT optional**
+
+- Focused debugging saves hours
+- Clear error messages guide you to the fix
+- Verifying the fix is immediate
+- **Running all tests when debugging is self-sabotage**
+
+### Common Patterns That Need Intercepts
+
+**Creating/Editing Resources:**
+
+```typescript
+// Component checks for duplicates during validation
+cy.intercept('GET', '/api/v1/data-hub/scripts*', {
+  body: { items: [] },
+}).as('getScripts')
+
+// Component fetches related data
+cy.intercept('GET', '/api/v1/data-hub/schemas*', {
+  body: { items: [mockSchema] },
+}).as('getSchemas')
+```
+
+**Form with Dependencies:**
+
+```typescript
+// Dropdown options loaded from API
+cy.intercept('GET', '/api/v1/management/protocol-adapters/types', {
+  body: { items: [mockProtocol] },
+}).as('getProtocols')
+
+// Form validates against existing resources
+cy.intercept('GET', '/api/v1/management/adapters*', {
+  body: { items: [] },
+}).as('getAdapters')
+```
+
+### Debugging Checklist
+
+When a test fails:
+
+- [ ] Add `.only()` to run just this test
+- [ ] Add HTML snapshot before failing assertion
+- [ ] Run the test and examine the snapshot
+- [ ] Search snapshot for error messages, disabled states
+- [ ] Identify root cause (missing intercept, timing, selector)
+- [ ] Fix the root cause (not symptoms)
+- [ ] Verify fix works with `.only()`
+- [ ] Remove `.only()` and run all tests
+- [ ] Document the fix if it's a common pattern
+
+**Time saved:** 1-2 hours → 15 minutes
+
+---
+
 ## Test Naming Conventions
 
 ### Use Descriptive Test Names

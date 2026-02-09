@@ -64,7 +64,7 @@ export const addDataHubActionsToEditor = (editor: editor.IStandaloneCodeEditor, 
  */
 export const registerDataHubCodeActions = (monaco: MonacoInstance) => {
   monaco.languages.registerCodeActionProvider('javascript', {
-    provideCodeActions: (model) => {
+    provideCodeActions: (model: editor.ITextModel) => {
       const isEmpty = model.getValue().trim() === ''
 
       if (!isEmpty) {

@@ -28,6 +28,7 @@ import {
   formatPath,
   fromJsonPath,
   isMappingSupported,
+  isReadOnly,
   toJsonPath,
 } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
@@ -128,6 +129,19 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
       </Card>
     )
 
+  if (isReadOnly(property))
+    return (
+      <Card size="sm" variant="outline" w="100%" data-testid="mapping-instruction-readonly">
+        <CardHeader as={HStack} justifyContent="space-between">
+          <PropertyItem property={property} hasTooltip hasPathAsName={showPathAsName} />
+          <Alert status="info" size="sm" variant="left-accent" w="140px">
+            <AlertIcon />
+            {t('rjsf.MqttTransformationField.validation.readOnly')}
+          </Alert>
+        </CardHeader>
+      </Card>
+    )
+
   return (
     <HStack>
       <Card size="sm" variant="outline" w="100%">
@@ -185,12 +199,19 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
               isDisabled={Boolean(!instruction?.source)}
             />
           </ButtonGroup>
-          <Alert status={instruction?.source ? 'success' : 'error'} size="sm" variant="left-accent" w="140px">
-            <AlertIcon />
-            {instruction?.source
-              ? t('rjsf.MqttTransformationField.validation.matching')
-              : t('rjsf.MqttTransformationField.validation.required')}
-          </Alert>
+          {instruction?.source ? (
+            <Alert status="success" size="sm" variant="left-accent" w="140px">
+              <AlertIcon />
+              {t('rjsf.MqttTransformationField.validation.matching')}
+            </Alert>
+          ) : property.required ? (
+            <Alert status="error" size="sm" variant="left-accent" w="140px">
+              <AlertIcon />
+              {t('rjsf.MqttTransformationField.validation.required')}
+            </Alert>
+          ) : (
+            <Box w="140px" />
+          )}
         </CardBody>
 
         {state === DropState.COMPLETED && showTransformation && (

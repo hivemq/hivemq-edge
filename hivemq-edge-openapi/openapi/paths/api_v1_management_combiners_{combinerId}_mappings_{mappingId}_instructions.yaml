@@ -2,6 +2,10 @@ get:
   description: Get all the instructions for a designated mapping
   summary: Get all instructions
   operationId: getMappingInstructions
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   tags:
     - Combiners
   parameters:

@@ -1,6 +1,10 @@
 get:
   description: Get a domain tag created in this Edge instance
   operationId: get-domain-tag
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The tag name (urlencoded).
       in: path

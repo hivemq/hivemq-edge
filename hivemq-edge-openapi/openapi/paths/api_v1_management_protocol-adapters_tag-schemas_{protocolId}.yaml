@@ -1,6 +1,10 @@
 get:
   description: Obtain the tag schema for a specific portocol adapter.
   operationId: getTagSchema
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The protocol id.
       in: path

@@ -1,6 +1,8 @@
 delete:
   description: Deletes the selected script.
   operationId: deleteScript
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The script identifier of the script to delete.
       example: hello_world_function
@@ -61,6 +63,10 @@ delete:
 get:
   description: Get a specific script.
   operationId: getScript
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The identifier of the script.
       example: hello_world_function

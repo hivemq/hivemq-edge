@@ -5,6 +5,10 @@ get:
     Functions for the HiveMQ Data Hub. The information is provided in form of a
     Json Schema.
   operationId: getFunctions
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:

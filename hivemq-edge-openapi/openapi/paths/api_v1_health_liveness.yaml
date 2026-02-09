@@ -1,6 +1,8 @@
 get:
   description: Endpoint to determine whether the gateway is considered UP.
   operationId: liveness
+  x-roles-allowed:
+    - NO_AUTH_REQUIRED
   responses:
     '200':
       content:

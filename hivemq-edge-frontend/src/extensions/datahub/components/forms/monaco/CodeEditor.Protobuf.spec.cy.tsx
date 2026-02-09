@@ -1,6 +1,7 @@
 /// <reference types="cypress" />
 
 import type { Monaco } from '@monaco-editor/react'
+import type { languages } from 'monaco-editor'
 import type { WidgetProps } from '@rjsf/utils'
 import { ProtoSchemaEditor } from '@datahub/components/forms/CodeEditor.tsx'
 import {
@@ -63,7 +64,7 @@ message Person {
       const monaco = win.monaco as Monaco
 
       // Check if proto language is registered
-      const languages = monaco.languages.getLanguages()
+      const languages: languages.ILanguageExtensionPoint[] = monaco.languages.getLanguages()
       const protoLang = languages.find((lang) => lang.id === 'proto' || lang.id === 'protobuf')
 
       expect(protoLang).to.exist
@@ -204,7 +205,7 @@ message Person {
       const monaco = win.monaco as Monaco
 
       // Get language configuration for proto
-      const languages = monaco.languages.getLanguages()
+      const languages: languages.ILanguageExtensionPoint[] = monaco.languages.getLanguages()
       const protoLang = languages.find((lang) => lang.id === 'proto')
 
       if (protoLang) {

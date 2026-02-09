@@ -156,7 +156,9 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
             pollingOutput.fail(new ProtocolAdapterException(), "No response was created, tags are empty.");
         } else {
             final List<CompletableFuture<MtConnectData>> pollingFutures = tags.stream().map(this::pollXml).toList();
-            CompletableFuture.allOf(pollingFutures.toArray(new CompletableFuture[]{}))
+            @SuppressWarnings("unused")
+            final var unused = CompletableFuture
+                    .allOf(pollingFutures.toArray(new CompletableFuture[]{}))
                     .whenComplete((result, throwable) -> {
                         if (throwable != null) {
                             pollingOutput.fail(throwable, "Error while polling tags.");

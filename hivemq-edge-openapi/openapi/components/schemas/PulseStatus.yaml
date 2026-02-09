@@ -17,4 +17,4 @@ properties:
       - DISCONNECTED
       - ERROR
   message:
-    $ref: ../../components/schemas/ProblemDetails.yaml
+    $ref: ./ProblemDetails.yaml

@@ -1,6 +1,9 @@
 put:
   description: Transition the connection status of a bridge.
   operationId: transition-bridge-status
+  x-roles-allowed:
+    - admin
+    - super
   parameters:
     - description: The id of the bridge whose runtime-status will change.
       in: path

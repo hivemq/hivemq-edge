@@ -16,13 +16,14 @@
 
 package com.hivemq.pulse.converters;
 
+import com.hivemq.configuration.entity.EntityConverter;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
 
-public class PulseAgentAssetSchemaConverter implements PulseApiEntityConverter<String, String> {
+public class PulseAgentAssetSchemaConverter implements EntityConverter<String, String> {
     public static final PulseAgentAssetSchemaConverter INSTANCE = new PulseAgentAssetSchemaConverter();
     public static final String DATA_APPLICATION_SCHEMA_JSON_BASE64 = "data:application/schema+json;base64,";
 

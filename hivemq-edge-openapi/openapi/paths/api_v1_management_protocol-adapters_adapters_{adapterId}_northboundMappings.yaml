@@ -1,6 +1,10 @@
 get:
   description: Get the northbound mappings of the adapter.
   operationId: get-adapter-northboundMappings
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The adapter id.
       in: path
@@ -27,6 +31,8 @@ get:
 put:
   description: Update all northbound mappings of an adapter.
   operationId: update-adapter-northboundMappings
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The id of the adapter whose northbound mappings will be updated.
       in: path

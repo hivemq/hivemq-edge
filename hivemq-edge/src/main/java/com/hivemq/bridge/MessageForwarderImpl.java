@@ -50,6 +50,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -62,6 +63,7 @@ public class MessageForwarderImpl implements MessageForwarder {
     public static final @NotNull String FORWARDER_PREFIX = "forwarder#";
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(MessageForwarderImpl.class);
+    public static final int RESET_INFLIGHT_COUNTERS_TIMEOUT_IN_SECONDS = 30;
 
     private final @NotNull LocalTopicTree topicTree;
     private final @NotNull HivemqId hivemqId;
@@ -160,8 +162,11 @@ public class MessageForwarderImpl implements MessageForwarder {
                 forwarderId,
                 queueId));
         mqttForwarder.setResetInflightMarkerCallback((sharedSubscriptionId, uniqueId) -> {
+            final var qPersistence = queuePersistence.get();
             try {
-                queuePersistence.get().removeInFlightMarker(sharedSubscriptionId, uniqueId).get();
+                if(qPersistence != null) {
+                    qPersistence.removeInFlightMarker(sharedSubscriptionId, uniqueId).get();
+                }
             } catch (final InterruptedException | ExecutionException e) {
                 if (e instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
@@ -170,6 +175,61 @@ public class MessageForwarderImpl implements MessageForwarder {
                         forwarderId, sharedSubscriptionId, uniqueId, e);
                 throw new RuntimeException(e);
             }
+        });
+        mqttForwarder.setResetAllInflightMarkersCallback((fwdId) -> {
+            // Reset ALL inflight markers for all queues associated with this forwarder.
+            // This is called on reconnection to handle messages that were read from persistence
+            // but never made it to the forwarder's local queues.
+            //
+            // IMPORTANT: We collect all futures and wait for them using Futures.allAsList to
+            // ensure all inflight markers are reset before onReconnect triggers checkBuffers().
+            // This is safe because the persistence operations are submitted to SingleWriter
+            // and don't hold any locks that could cause deadlock.
+            final Set<String> forwarderQueueIds = queueIdsForForwarder.get(fwdId);
+            if (forwarderQueueIds != null && !forwarderQueueIds.isEmpty()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Resetting inflight markers for forwarder '{}', {} queue(s)",
+                            fwdId, forwarderQueueIds.size());
+                }
+                final ImmutableList.Builder<ListenableFuture<Void>> futuresBuilder = ImmutableList.builder();
+                final var qPersistence = queuePersistence.get();
+                if(qPersistence != null) {
+                    for (final String queueIdToReset : forwarderQueueIds) {
+                        futuresBuilder.add(qPersistence.removeAllInFlightMarkers(queueIdToReset));
+                    }
+                }
+                try {
+                    // Wait for all inflight markers to be reset before returning
+                    // This ensures onReconnect() will see clean queues when it triggers checkBuffers()
+                    Futures.allAsList(futuresBuilder.build()).get(RESET_INFLIGHT_COUNTERS_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Reset all inflight markers for forwarder '{}', {} queue(s)",
+                                fwdId, forwarderQueueIds.size());
+                    }
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.error("Interrupted while resetting inflight markers for forwarder '{}'", fwdId, e);
+                } catch (final ExecutionException e) {
+                    log.error("Failed to reset inflight markers for forwarder '{}'", fwdId, e);
+                } catch (final TimeoutException e) {
+                    log.warn("Timeout resetting inflight markers for forwarder '{}' - forcing reconnect to retry", fwdId, e);
+                    final MqttForwarder forwarder = forwarders.get(fwdId);
+                    if (forwarder != null) {
+                        forwarder.forceReconnect();
+                    }
+                }
+            }
+        });
+        mqttForwarder.setOnReconnectCallback(() -> {
+            if (log.isDebugEnabled()) {
+                log.debug("OnReconnect callback triggered for forwarder '{}', checking buffers", forwarderId);
+            }
+            // Re-add all queue IDs to notEmptyQueues to ensure they get polled after reconnect
+            final Set<String> forwarderQueueIds = queueIdsForForwarder.get(forwarderId);
+            if (forwarderQueueIds != null) {
+                notEmptyQueues.addAll(forwarderQueueIds);
+            }
+            checkBuffers();
         });
 
         forwarders.put(forwarderId, mqttForwarder);
@@ -200,9 +260,12 @@ public class MessageForwarderImpl implements MessageForwarder {
             final String queueId = createQueueId(forwarderId, topic);
             notEmptyQueues.remove(queueId);
             if (clearQueue) {
-                queuePersistence.get().clear(queueId, true); //clear up queue
-                if (log.isTraceEnabled()) {
-                    log.trace("Cleared queue '{}' for forwarder '{}'", queueId, forwarderId);
+                final var qPersistence = queuePersistence.get();
+                if(qPersistence != null) {
+                    qPersistence.clear(queueId, true); //clear up queue
+                    if (log.isTraceEnabled()) {
+                        log.trace("Cleared queue '{}' for forwarder '{}'", queueId, forwarderId);
+                    }
                 }
             }
         }
@@ -227,7 +290,10 @@ public class MessageForwarderImpl implements MessageForwarder {
         //QoS 0 has no inflight marker
         if (qos != QoS.AT_MOST_ONCE) {
             //-- 15665 - > QoS 0 causes republishing
-            FutureUtils.addExceptionLogger(queuePersistence.get().removeShared(queueId, uniqueId));
+            final var qPersistence = queuePersistence.get();
+            if(qPersistence != null) {
+                FutureUtils.addExceptionLogger(qPersistence.removeShared(queueId, uniqueId));
+            }
         }
 
         if (log.isTraceEnabled()) {
@@ -411,27 +477,31 @@ public class MessageForwarderImpl implements MessageForwarder {
             log.trace("Polling queue '{}' for forwarder '{}', batchSize: {}, byteLimit: {}",
                     queueId, mqttForwarder.getId(), FORWARDER_POLL_THRESHOLD_MESSAGES, PUBLISH_POLL_BATCH_SIZE_BYTES);
         }
-
-        return Futures.transformAsync(queuePersistence.get()
-                .readShared(queueId, FORWARDER_POLL_THRESHOLD_MESSAGES, PUBLISH_POLL_BATCH_SIZE_BYTES), publishes -> {
-            if (publishes == null) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Queue '{}' is empty, removing from non-empty queues", queueId);
+        final var qPersistence = queuePersistence.get();
+        if(qPersistence != null) {
+            return Futures.transformAsync(qPersistence
+                    .readShared(queueId, FORWARDER_POLL_THRESHOLD_MESSAGES, PUBLISH_POLL_BATCH_SIZE_BYTES), publishes -> {
+                if (publishes == null) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Queue '{}' is empty, removing from non-empty queues", queueId);
+                    }
+                    notEmptyQueues.remove(queueId);
+                    return Futures.immediateFuture(false);
                 }
-                notEmptyQueues.remove(queueId);
-                return Futures.immediateFuture(false);
-            }
 
-            final int messageCount = publishes.size();
-            if (log.isDebugEnabled()) {
-                log.debug("Retrieved {} message(s) from queue '{}' for forwarder '{}'",
-                        messageCount, queueId, mqttForwarder.getId());
-            }
+                final int messageCount = publishes.size();
+                if (log.isDebugEnabled()) {
+                    log.debug("Retrieved {} message(s) from queue '{}' for forwarder '{}'",
+                            messageCount, queueId, mqttForwarder.getId());
+                }
 
-            for (final PUBLISH publish : publishes) {
-                mqttForwarder.onMessage(publish, queueId);
-            }
-            return Futures.immediateFuture(!publishes.isEmpty());
-        }, executorService);
+                for (final PUBLISH publish : publishes) {
+                    mqttForwarder.onMessage(publish, queueId);
+                }
+                return Futures.immediateFuture(!publishes.isEmpty());
+            }, executorService);
+        } else {
+            return Futures.immediateFuture(false);
+        }
     }
 }

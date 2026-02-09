@@ -1,6 +1,10 @@
 get:
   description: Obtain a list of samples that their gathered for the given topic.
   operationId: getSamplesForTopic
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The topic.
       in: path
@@ -22,6 +26,8 @@ get:
 post:
   description: Start sampling for the given topic.
   operationId: startSamplingForTopic
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The topic.
       in: path

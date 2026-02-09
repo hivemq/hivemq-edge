@@ -2,6 +2,10 @@ get:
   description: Get the status of the pulse agent
   summary: Get the status of the integrated pulse agent.
   operationId: get-pulse-status
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   tags:
     - Pulse
   responses:

@@ -58,4 +58,8 @@ public interface ApiConfigurationService {
     @NotNull PreLoginNotice getPreLoginNotice();
 
     void setPreLoginNotice(final @NotNull PreLoginNotice preLoginNotice);
+
+    boolean isEnforceApiAuth();
+
+    void setEnforceApiAuth(boolean enforceApiAuth);
 }

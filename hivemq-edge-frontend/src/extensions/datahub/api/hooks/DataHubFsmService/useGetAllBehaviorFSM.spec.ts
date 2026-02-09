@@ -31,7 +31,8 @@ describe('useGetAllBehaviorFSM', () => {
           },
           model: {
             default: 'Mqtt.events',
-            enum: ['Publish.quota', 'Mqtt.events', 'Publish.duplicate'],
+            description: 'Select the behavior model you want to use for this policy.',
+            enum: ['Mqtt.events', 'Publish.duplicate', 'Publish.quota'],
             title: 'Behavior Model',
           },
         },

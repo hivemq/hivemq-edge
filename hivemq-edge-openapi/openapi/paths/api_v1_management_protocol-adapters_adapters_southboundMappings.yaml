@@ -1,6 +1,10 @@
 get:
   description: Get all southbound mappings.
   operationId: get-southboundMappings
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:

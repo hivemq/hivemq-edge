@@ -83,8 +83,7 @@ public class FileTag implements Tag {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final FileTag fileTag = (FileTag) o;
+        if (!(o instanceof FileTag fileTag)) return false;
         return Objects.equals(name, fileTag.name) &&
                 Objects.equals(description, fileTag.description) &&
                 Objects.equals(definition, fileTag.definition);

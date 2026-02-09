@@ -1,6 +1,14 @@
 # HiveMQ Edge Frontend - Testing Guidelines
 
-**Last Updated:** November 12, 2025
+**Last Updated:** December 8, 2025
+
+---
+
+## ⚠️ AI AGENTS: READ MANDATORY RULES FIRST
+
+**Before reading this document, read [AI_MANDATORY_RULES.md](../.github/AI_MANDATORY_RULES.md)**
+
+That document contains critical rules that prevent wasting hours on common mistakes. Come back here after reading it.
 
 ---
 

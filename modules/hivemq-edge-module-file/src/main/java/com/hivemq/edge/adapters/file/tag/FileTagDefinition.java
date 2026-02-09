@@ -63,8 +63,7 @@ public class FileTagDefinition implements TagDefinition {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final FileTagDefinition that = (FileTagDefinition) o;
+        if (!(o instanceof FileTagDefinition that)) return false;
         return Objects.equals(filePath, that.filePath) && contentType == that.contentType;
     }
 

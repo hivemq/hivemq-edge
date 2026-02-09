@@ -1,6 +1,10 @@
 get:
   description: Obtain the latest sample for the metric requested.
   operationId: getSample
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The metric to search for.
       in: path

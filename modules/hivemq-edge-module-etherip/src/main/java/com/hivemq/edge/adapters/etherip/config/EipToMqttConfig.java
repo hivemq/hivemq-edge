@@ -68,8 +68,7 @@ public class EipToMqttConfig {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final EipToMqttConfig that = (EipToMqttConfig) o;
+        if (!(o instanceof EipToMqttConfig that)) return false;
         return getPollingIntervalMillis() == that.getPollingIntervalMillis() &&
                 getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval() &&
                 getPublishChangedDataOnly() == that.getPublishChangedDataOnly();

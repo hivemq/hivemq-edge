@@ -1,6 +1,8 @@
 delete:
   description: Delete the specified domain tag on the given adapter.
   operationId: delete-adapter-domainTags
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The adapter Id.
       in: path
@@ -36,6 +38,8 @@ delete:
 put:
   description: Update the domain tag of an adapter.
   operationId: update-adapter-domainTag
+  x-roles-allowed:
+    - admin
   parameters:
     - description: The id of the adapter whose domain tag will be updated.
       in: path

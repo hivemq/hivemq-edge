@@ -24,8 +24,8 @@ import com.hivemq.api.error.CustomJsonMappingExceptionMapper;
 import com.hivemq.api.error.CustomJsonParseExceptionMapper;
 import com.hivemq.api.filter.JWTReissuanceFilterImpl;
 import com.hivemq.api.resources.GenericAPIHolder;
-
 import com.hivemq.api.resources.impl.RootResource;
+import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.edge.api.AuthenticationApi;
 import com.hivemq.edge.api.BridgesApi;
 import com.hivemq.edge.api.CombinersApi;
@@ -90,7 +90,7 @@ public class ApiResourceRegistry extends ResourceConfig {
     private final @NotNull Lazy<TopicFiltersApi> topicFilterApiLazy;
     private final @NotNull Lazy<CombinersApi> combinersApiLazy;
     private final @NotNull Lazy<PulseApi> pulseApiLazy;
-
+    private final @NotNull Lazy<ApiConfigurationService> apiConfigurationService;
 
     @Inject
     public ApiResourceRegistry(
@@ -112,7 +112,8 @@ public class ApiResourceRegistry extends ResourceConfig {
             final @NotNull Lazy<PayloadSamplingApi> samplingResourceLazy,
             final @NotNull Lazy<TopicFiltersApi> topicFilterApiLazy,
             final @NotNull Lazy<CombinersApi> combinersApiLazy,
-            final @NotNull Lazy<PulseApi> pulseApiLazy) {
+            final @NotNull Lazy<PulseApi> pulseApiLazy,
+            final @NotNull Lazy<ApiConfigurationService> apiConfigurationService) {
         this.authenticationApi = authenticationApi;
         this.metricsApi = metricsApi;
         this.healthCheckApi = healthCheckApi;
@@ -132,6 +133,7 @@ public class ApiResourceRegistry extends ResourceConfig {
         this.topicFilterApiLazy = topicFilterApiLazy;
         this.combinersApiLazy = combinersApiLazy;
         this.pulseApiLazy = pulseApiLazy;
+        this.apiConfigurationService = apiConfigurationService;
     }
 
     @Inject //method injection, this gets called once after instantiation
@@ -194,7 +196,7 @@ public class ApiResourceRegistry extends ResourceConfig {
     }
 
     protected void registerFeatures() {
-        register(new ApiAuthenticationFeature(authenticationHandlers.get()));
+        register(new ApiAuthenticationFeature(authenticationHandlers.get(), apiConfigurationService.get()));
         register(new JWTReissuanceFilterImpl(tokenGenerator.get(), tokenVerifier.get()));
     }
 

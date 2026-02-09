@@ -2,6 +2,10 @@ get:
   description: Get a combiner by its unique Id.
   summary: Get a combiner
   operationId: getCombinersById
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   tags:
     - Combiners
   parameters:
@@ -23,6 +27,8 @@ delete:
   description: Delete the specified combiner.
   summary: Delete a combiner
   operationId: delete-combiner
+  x-roles-allowed:
+    - admin
   tags:
     - Combiners
   parameters:
@@ -40,6 +46,8 @@ put:
   description: Update a combiner.
   summary: Update a combiner
   operationId: update-combiner
+  x-roles-allowed:
+    - admin
   tags:
     - Combiners
   parameters:

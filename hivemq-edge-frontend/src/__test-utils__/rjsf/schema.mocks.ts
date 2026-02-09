@@ -196,6 +196,46 @@ export const MOCK_MQTT_SCHEMA_METADATA: RJSFSchema = {
   },
 }
 
+export const MOCK_MQTT_SCHEMA_READONLY: RJSFSchema = {
+  title: 'Schema with readonly properties',
+  description: 'A schema containing both writable and read-only properties',
+  type: 'object',
+  properties: {
+    id: {
+      type: 'string',
+      title: 'ID',
+      description: 'System-generated identifier',
+      readOnly: true,
+    },
+    timestamp: {
+      type: 'integer',
+      title: 'Timestamp',
+      description: 'Last modified timestamp',
+      readOnly: true,
+    },
+    name: {
+      type: 'string',
+      title: 'Name',
+      description: 'User-editable name',
+    },
+    config: {
+      type: 'object',
+      title: 'Configuration',
+      properties: {
+        version: {
+          type: 'string',
+          title: 'Version',
+          readOnly: true,
+        },
+        setting: {
+          type: 'number',
+          title: 'Setting',
+        },
+      },
+    },
+  },
+}
+
 export const MOCK_EMPTY_SCHEMA_URI =
   'data:application/json;base64,ewogICIkc2NoZW1hIjogImh0dHA6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQtMDcvc2NoZW1hIyIsCiAgInRpdGxlIjogIkN1c3RvbVN0cnVjdDogbnM9MztzPVRFX1wiVXNlcl9kYXRhX3R5cGVfNlwiIiwKICAidHlwZSI6ICJvYmplY3QiLAogICJwcm9wZXJ0aWVzIjogewogIH0sCiAgInJlcXVpcmVkIjogWyJ2YWx1ZSJdCn0K'
 

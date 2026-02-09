@@ -7,7 +7,7 @@ import type { JsonNode } from '@/api/__generated__'
 import type { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
 
 import i18n from '@/config/i18n.config.ts'
-import type { DataReference } from '../../../../api/hooks/useDomainModel/useGetCombinedDataSchemas'
+import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas.ts'
 
 export const ARRAY_ITEM_INDEX = '___index'
 
@@ -34,6 +34,8 @@ export const SCHEMA_SUPPORTED_PROPERTIES: (keyof JSONSchema7)[] = [
   'minProperties',
   // not yet supported
   //  "required", "properties"
+  // See also https://json-schema.org/draft/2020-12/json-schema-validation#section-9.4
+  'readOnly',
 ]
 
 export interface FlatJSONSchema7 extends Omit<JSONSchema7, 'required'> {
@@ -49,7 +51,8 @@ export const getProperty = (
   key: string,
   path: string[],
   property: JSONSchema7Definition,
-  definitions: { [p: string]: JSONSchema7Definition } | undefined
+  definitions: { [p: string]: JSONSchema7Definition } | undefined,
+  parentRequired: string[] = []
 ): FlatJSONSchema7[] => {
   let tempProperty = property
 
@@ -75,6 +78,9 @@ export const getProperty = (
     Object.entries(allProperties).filter(([key]) => SCHEMA_SUPPORTED_PROPERTIES.includes(key as keyof JSONSchema7))
   )
 
+  // Check if this property is in the parent's required array
+  const isRequired = parentRequired.includes(key)
+
   const mainProps: FlatJSONSchema7 = {
     // internal properties
     key,
@@ -84,6 +90,8 @@ export const getProperty = (
     description,
     title: titleRef || title || key,
     examples,
+    // required status from parent schema
+    ...(isRequired && { required: true }),
     // other valid properties
     ...validProperties,
   }
@@ -91,10 +99,10 @@ export const getProperty = (
   const subProperties: FlatJSONSchema7[] = []
   if (type === 'object') {
     // Check recursively for object's properties
-    const { properties } = tempProperty as JSONSchema7
+    const { properties, required: objectRequired } = tempProperty as JSONSchema7
     if (properties) {
       for (const [subKey, subProp] of Object.entries(properties)) {
-        subProperties.push(...getProperty(subKey, [...path, key], subProp, definitions))
+        subProperties.push(...getProperty(subKey, [...path, key], subProp, definitions, objectRequired))
       }
     }
   } else if (type === 'array') {
@@ -139,13 +147,13 @@ export const getSchemaFromPropertyList = (properties: FlatJSONSchema7[]): RJSFSc
 }
 
 export const getPropertyListFrom = (schema: RJSFSchema): FlatJSONSchema7[] => {
-  const { properties, definitions } = schema
+  const { properties, definitions, required } = schema
 
   const flatList: FlatJSONSchema7[] = []
   if (!properties) return flatList
 
   for (const [key, property] of Object.entries(properties)) {
-    const results = getProperty(key, [], property, definitions)
+    const results = getProperty(key, [], property, definitions, required)
     flatList.push(...results)
   }
   return flatList
