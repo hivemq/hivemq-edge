@@ -86,14 +86,14 @@ public class OpcUaToJsonConverter {
                 jsonObject.add("statusCode", convertStatusCode(dataValue.getStatusCode()));
             }
             if (dataValue.getSourceTime() != null) {
-                jsonObject.add("sourceTimestamp",
+                jsonObject.add("sourceTime",
                         new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(dataValue.getSourceTime().getJavaInstant())));
             }
             if (dataValue.getSourcePicoseconds() != null) {
                 jsonObject.add("sourcePicoseconds", new JsonPrimitive(dataValue.getSourcePicoseconds().intValue()));
             }
             if (dataValue.getServerTime() != null) {
-                jsonObject.add("serverTimestamp",
+                jsonObject.add("serverTime",
                         new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(dataValue.getServerTime().getJavaInstant())));
             }
             if (dataValue.getServerPicoseconds() != null) {
