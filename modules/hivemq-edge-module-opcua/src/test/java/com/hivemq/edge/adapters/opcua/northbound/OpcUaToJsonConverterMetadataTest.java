@@ -45,8 +45,8 @@ class OpcUaToJsonConverterMetadataTest {
         final String json = new String(result.array(), StandardCharsets.UTF_8);
         final JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
 
-        assertThat(jsonObject.has("sourceTimestamp")).isTrue();
-        assertThat(jsonObject.get("sourceTimestamp").getAsString()).isNotEmpty();
+        assertThat(jsonObject.has("sourceTime")).isTrue();
+        assertThat(jsonObject.get("sourceTime").getAsString()).isNotEmpty();
         assertThat(jsonObject.has("value")).isTrue();
         assertThat(jsonObject.get("value").getAsInt()).isEqualTo(42);
     }
@@ -61,8 +61,8 @@ class OpcUaToJsonConverterMetadataTest {
         final String json = new String(result.array(), StandardCharsets.UTF_8);
         final JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
 
-        assertThat(jsonObject.has("serverTimestamp")).isTrue();
-        assertThat(jsonObject.get("serverTimestamp").getAsString()).isNotEmpty();
+        assertThat(jsonObject.has("serverTime")).isTrue();
+        assertThat(jsonObject.get("serverTime").getAsString()).isNotEmpty();
     }
 
     @Test
@@ -100,7 +100,7 @@ class OpcUaToJsonConverterMetadataTest {
     }
 
     @Test
-    void whenIncludeMetadataTrueAndStatusCodeGood_thenStatusCodeIsOmitted() {
+    void whenIncludeMetadataTrueAndStatusCodeGood_thenStatusCodeIsThereAndGood() {
         final DataValue dataValue = new DataValue(new Variant(42), StatusCode.GOOD, // Good status (value = 0)
                 new DateTime(Instant.now()), null);
 
@@ -109,7 +109,11 @@ class OpcUaToJsonConverterMetadataTest {
         final JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
 
         // StatusCode is omitted when value is 0 (Good)
-        assertThat(jsonObject.has("statusCode")).isFalse();
+        assertThat(jsonObject.has("statusCode")).isTrue();
+        final var status = jsonObject.getAsJsonObject("statusCode");
+        assertThat(status.has("code")).isTrue();
+        assertThat(status.get("code").getAsInt()).isEqualTo(0);
+        assertThat(status.get("symbol").getAsString()).isEqualTo("Good");
     }
 
     @Test
@@ -125,8 +129,8 @@ class OpcUaToJsonConverterMetadataTest {
         final String json = new String(result.array(), StandardCharsets.UTF_8);
         final JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
 
-        assertThat(jsonObject.has("sourceTimestamp")).isFalse();
-        assertThat(jsonObject.has("serverTimestamp")).isFalse();
+        assertThat(jsonObject.has("sourceTime")).isFalse();
+        assertThat(jsonObject.has("serverTime")).isFalse();
         assertThat(jsonObject.has("sourcePicoseconds")).isFalse();
         assertThat(jsonObject.has("serverPicoseconds")).isFalse();
         assertThat(jsonObject.has("statusCode")).isFalse();
@@ -147,8 +151,8 @@ class OpcUaToJsonConverterMetadataTest {
         final String json = new String(result.array(), StandardCharsets.UTF_8);
         final JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
 
-        assertThat(jsonObject.has("sourceTimestamp")).isFalse();
-        assertThat(jsonObject.has("serverTimestamp")).isFalse();
+        assertThat(jsonObject.has("sourceTime")).isFalse();
+        assertThat(jsonObject.has("serverTime")).isFalse();
         assertThat(jsonObject.has("value")).isTrue();
     }
 
@@ -165,21 +169,26 @@ class OpcUaToJsonConverterMetadataTest {
         final JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
 
         assertThat(jsonObject.get("value").getAsString()).isEqualTo("test-value");
-        assertThat(jsonObject.get("sourceTimestamp").getAsString()).isEqualTo("2024-01-15T10:30:00Z");
-        assertThat(jsonObject.get("serverTimestamp").getAsString()).isEqualTo("2024-01-15T10:30:01Z");
+        assertThat(jsonObject.get("sourceTime").getAsString()).isEqualTo("2024-01-15T10:30:00Z");
+        assertThat(jsonObject.get("serverTime").getAsString()).isEqualTo("2024-01-15T10:30:01Z");
         assertThat(jsonObject.get("sourcePicoseconds").getAsInt()).isEqualTo(100);
         assertThat(jsonObject.get("serverPicoseconds").getAsInt()).isEqualTo(200);
         assertThat(jsonObject.getAsJsonObject("statusCode").get("code").getAsLong()).isEqualTo(0x80010000L);
     }
 
     @Test
-    void whenValueIsNull_thenReturnsEmptyBytes() {
+    void whenValueIsNull_thenOutputContainsNoValue() {
         final DataValue dataValue =
                 new DataValue(new Variant(null), StatusCode.GOOD, new DateTime(Instant.now()), null);
 
         final ByteBuffer result = OpcUaToJsonConverter.convertPayload(ENCODING_CONTEXT, dataValue, true);
 
-        assertThat(result.remaining()).isEqualTo(0);
+        final String json = new String(result.array(), StandardCharsets.UTF_8);
+        final JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
+
+        assertThat(jsonObject.has("value")).isFalse();
+        assertThat(jsonObject.has("statusCode")).isTrue();
+        assertThat(jsonObject.has("sourceTime")).isTrue();
     }
 
     @Test
@@ -196,8 +205,8 @@ class OpcUaToJsonConverterMetadataTest {
 
         assertThat(jsonObject.has("value")).isTrue();
         assertThat(jsonObject.has("statusCode")).isTrue();
-        assertThat(jsonObject.has("sourceTimestamp")).isFalse();
-        assertThat(jsonObject.has("serverTimestamp")).isFalse();
+        assertThat(jsonObject.has("sourceTime")).isFalse();
+        assertThat(jsonObject.has("serverTime")).isFalse();
         assertThat(jsonObject.has("sourcePicoseconds")).isFalse();
         assertThat(jsonObject.has("serverPicoseconds")).isFalse();
     }

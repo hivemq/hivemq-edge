@@ -121,8 +121,8 @@ class OpcUaToJsonConverterMetadataIntegrationTest {
 
         final String jsonValue = (String) dataPoints.getFirst().getTagValue();
         assertThat(jsonValue).contains("\"value\":");
-        assertThat(jsonValue).contains("\"sourceTimestamp\":");
-        assertThat(jsonValue).contains("\"serverTimestamp\":");
+        assertThat(jsonValue).contains("\"sourceTime\":");
+        assertThat(jsonValue).contains("\"serverTime\":");
     }
 
     @Test
