@@ -1,6 +1,8 @@
 get:
   description: Obtain configuration.
   operationId: get-configuration
+  x-roles-allowed:
+    - NO_AUTH_REQUIRED
   responses:
     '200':
       content:

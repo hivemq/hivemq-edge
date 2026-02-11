@@ -123,8 +123,7 @@ public class HttpTagDefinition implements TagDefinition {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final HttpTagDefinition that = (HttpTagDefinition) o;
+        if (!(o instanceof HttpTagDefinition that)) return false;
         return httpRequestTimeoutSeconds == that.httpRequestTimeoutSeconds &&
                 httpRequestMethod == that.httpRequestMethod &&
                 httpRequestBodyContentType == that.httpRequestBodyContentType &&

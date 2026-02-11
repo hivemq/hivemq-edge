@@ -1,6 +1,10 @@
 get:
   description: Obtain a list of available values accessible via this protocol adapter.
   operationId: discoverDataPoints
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - description: The adapter Id.
       in: path

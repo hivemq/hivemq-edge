@@ -1,6 +1,10 @@
 get:
   description: Get all northbound mappings
   operationId: get-northboundMappings
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:

@@ -1,5 +1,7 @@
 get:
   operationId: getRoot
+  x-roles-allowed:
+    - NO_AUTH_REQUIRED
   responses:
     default:
       content:

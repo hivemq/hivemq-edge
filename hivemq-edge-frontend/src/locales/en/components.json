@@ -323,6 +323,7 @@
       "validation": {
         "required": "Required",
         "notSupported": "Not supported",
+        "readOnly": "Read-only",
         "matching": "Matching",
         "error": {
           "noValidation": "There is a problem validating the mapping instructions",
@@ -346,11 +347,15 @@
       "type_string": "String",
       "type_integer": "Integer",
       "type_number": "Number",
-      "type_boolean": "Number"
+      "type_boolean": "Boolean"
     },
     "structure": {
       "property": "Property",
       "example": "Example"
+    },
+    "readOnly": {
+      "label": "Read-only property",
+      "tooltip": "This property is read-only"
     }
   },
   "MoreInfo": {

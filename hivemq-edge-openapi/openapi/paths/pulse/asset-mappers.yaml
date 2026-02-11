@@ -2,6 +2,10 @@ get:
   description: Get all asset mappers
   summary: Get all asset mappers
   operationId: get-asset-mappers
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   tags:
     - Pulse
   responses:
@@ -15,6 +19,8 @@ post:
   description: Add a new asset mapper.
   summary: Add a new asset mapper
   operationId: add-asset-mapper
+  x-roles-allowed:
+    - admin
   tags:
     - Pulse
   requestBody:

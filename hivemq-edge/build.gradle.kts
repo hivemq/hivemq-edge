@@ -90,6 +90,29 @@ metadata {
     }
 }
 
+// Create a configuration for javadocLinks that excludes dependencies without javadoc jars
+val javadocLinksClasspath: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    extendsFrom(configurations.compileClasspath.get())
+    // jitpack.io doesn't provide a javadoc jar for json-schema-inferrer
+    exclude(group = "com.github.saasquatch", module = "json-schema-inferrer")
+    // netty-codec is a metadata module without its own javadoc
+    exclude(group = "io.netty", module = "netty-codec")
+    // Copy attributes from compileClasspath to ensure proper resolution
+    attributes {
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage::class.java, Usage.JAVA_API))
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category::class.java, Category.LIBRARY))
+        attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements::class.java, LibraryElements.JAR))
+        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling::class.java, Bundling.EXTERNAL))
+        attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21)
+    }
+}
+
+tasks.javadocLinks {
+    useConfiguration(javadocLinksClasspath)
+}
+
 /* ******************** java ******************** */
 
 java {
@@ -216,7 +239,8 @@ dependencies {
 
     //FIXME: should be in module instead
     // we need better module isolation for that as the modules pick up Netty from the app class loader
-    implementation("com.google.protobuf:protobuf-java:4.33.2")
+    implementation(libs.protobuf)
+
 }
 
 configurations.all {

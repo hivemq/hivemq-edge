@@ -194,5 +194,10 @@ export const routes = createBrowserRouter(
       element: <LoginPage />,
     },
   ],
-  { basename: getBasename() }
+  {
+    basename: getBasename(),
+    future: {
+      v7_relativeSplatPath: true,
+    },
+  }
 )

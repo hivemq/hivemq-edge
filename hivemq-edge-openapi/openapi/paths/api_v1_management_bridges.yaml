@@ -1,6 +1,10 @@
 get:
   description: Get all bridges configured in the system.
   operationId: getBridges
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   responses:
     '200':
       content:
@@ -58,6 +62,8 @@ get:
 post:
   description: Add bridge configured in the system.
   operationId: addBridge
+  x-roles-allowed:
+    - admin
   requestBody:
     content:
       application/json:

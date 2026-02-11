@@ -127,13 +127,12 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
                 output.failStart(e, null);
                 return;
             }
-        } finally {
-            Thread.currentThread().setContextClassLoader(originalClassLoader);
-        }
 
-        databaseConnection.connect();
+            // CRITICAL FIX: Keep context classloader set during connection creation
+            // HikariCP needs the correct classloader context to find registered drivers
+            log.debug("Creating database connection");
+            databaseConnection.connect();
 
-        try {
             log.debug("Starting connection to the database instance");
             if (databaseConnection.getConnection().isValid(TIMEOUT)) {
                 output.startedSuccessfully();
@@ -146,6 +145,9 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
         } catch (final Exception e) {
             output.failStart(e, null);
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        } finally {
+            // Restore original classloader only AFTER connection is established
+            Thread.currentThread().setContextClassLoader(originalClassLoader);
         }
     }
 
@@ -224,26 +226,11 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
         final String columnName = resultSetMD.getColumnName(index);
         final int columnType = resultSetMD.getColumnType(index);
         switch (columnType) {
-            case Types.BIT:
-            case Types.TINYINT:
-            case Types.SMALLINT:
-            case Types.INTEGER:
-                node.put(columnName, result.getInt(index));
-                return;
-            case Types.BIGINT:
-                node.put(columnName, result.getLong(index));
-                return;
-            case Types.DECIMAL:
-                node.put(columnName, result.getBigDecimal(index));
-                return;
-            case Types.REAL:
-            case Types.FLOAT:
-            case Types.DOUBLE:
-            case Types.NUMERIC:
-                node.put(columnName, result.getDouble(index));
-                return;
-            default:
-                node.put(columnName, result.getString(index));
+            case Types.BIT, Types.TINYINT, Types.SMALLINT, Types.INTEGER -> node.put(columnName, result.getInt(index));
+            case Types.BIGINT -> node.put(columnName, result.getLong(index));
+            case Types.DECIMAL -> node.put(columnName, result.getBigDecimal(index));
+            case Types.REAL, Types.FLOAT, Types.DOUBLE, Types.NUMERIC -> node.put(columnName, result.getDouble(index));
+            default -> node.put(columnName, result.getString(index));
         }
     }
 

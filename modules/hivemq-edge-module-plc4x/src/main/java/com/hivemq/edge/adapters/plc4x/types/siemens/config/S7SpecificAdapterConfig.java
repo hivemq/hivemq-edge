@@ -165,8 +165,7 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final S7SpecificAdapterConfig that = (S7SpecificAdapterConfig) o;
+        if (!(o instanceof S7SpecificAdapterConfig that)) return false;
         return getPort() == that.getPort() &&
                 getRemoteRack() == that.getRemoteRack() &&
                 getRemoteRack2() == that.getRemoteRack2() &&

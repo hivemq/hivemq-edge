@@ -84,10 +84,9 @@ public class HttpTag implements Tag {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof HttpTag httpTag)) {
             return false;
         }
-        final HttpTag httpTag = (HttpTag) o;
         return Objects.equals(name, httpTag.name) &&
                 Objects.equals(description, httpTag.description) &&
                 Objects.equals(definition, httpTag.definition);

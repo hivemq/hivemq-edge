@@ -1,6 +1,10 @@
 get:
   description: Get the schema of the specified topic filter
   operationId: get-topicFilter-schema
+  x-roles-allowed:
+    - admin
+    - super
+    - user
   parameters:
     - $ref: ../components/parameters/TopicFilterId.yaml
   responses:
