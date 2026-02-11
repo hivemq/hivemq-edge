@@ -36,8 +36,8 @@ class BuiltinJsonSchemaTest {
 
         BuiltinJsonSchema.addReadOnlyMetadataProperties(propertiesNode, MAPPER);
 
-        assertThat(propertiesNode.has("sourceTimestamp")).isTrue();
-        assertThat(propertiesNode.has("serverTimestamp")).isTrue();
+        assertThat(propertiesNode.has("sourceTime")).isTrue();
+        assertThat(propertiesNode.has("serverTime")).isTrue();
         assertThat(propertiesNode.has("sourcePicoseconds")).isTrue();
         assertThat(propertiesNode.has("serverPicoseconds")).isTrue();
         assertThat(propertiesNode.has("statusCode")).isTrue();
@@ -49,7 +49,7 @@ class BuiltinJsonSchemaTest {
 
         BuiltinJsonSchema.addReadOnlyMetadataProperties(propertiesNode, MAPPER);
 
-        final JsonNode sourceTimestamp = propertiesNode.get("sourceTimestamp");
+        final JsonNode sourceTimestamp = propertiesNode.get("sourceTime");
         assertThat(sourceTimestamp.get("type").asText()).isEqualTo("string");
         assertThat(sourceTimestamp.get("format").asText()).isEqualTo("date-time");
         assertThat(sourceTimestamp.get("readOnly").asBoolean()).isTrue();
@@ -61,7 +61,7 @@ class BuiltinJsonSchemaTest {
 
         BuiltinJsonSchema.addReadOnlyMetadataProperties(propertiesNode, MAPPER);
 
-        final JsonNode serverTimestamp = propertiesNode.get("serverTimestamp");
+        final JsonNode serverTimestamp = propertiesNode.get("serverTime");
         assertThat(serverTimestamp.get("type").asText()).isEqualTo("string");
         assertThat(serverTimestamp.get("format").asText()).isEqualTo("date-time");
         assertThat(serverTimestamp.get("readOnly").asBoolean()).isTrue();
@@ -134,15 +134,15 @@ class BuiltinJsonSchemaTest {
         final JsonNode properties = schema.get("properties");
         assertThat(properties).isNotNull();
         assertThat(properties.has("value")).isTrue();
-        assertThat(properties.has("sourceTimestamp")).isTrue();
-        assertThat(properties.has("serverTimestamp")).isTrue();
+        assertThat(properties.has("sourceTime")).isTrue();
+        assertThat(properties.has("serverTime")).isTrue();
         assertThat(properties.has("sourcePicoseconds")).isTrue();
         assertThat(properties.has("serverPicoseconds")).isTrue();
         assertThat(properties.has("statusCode")).isTrue();
 
         // Verify metadata properties are readOnly
-        assertThat(properties.get("sourceTimestamp").get("readOnly").asBoolean()).isTrue();
-        assertThat(properties.get("serverTimestamp").get("readOnly").asBoolean()).isTrue();
+        assertThat(properties.get("sourceTime").get("readOnly").asBoolean()).isTrue();
+        assertThat(properties.get("serverTime").get("readOnly").asBoolean()).isTrue();
         assertThat(properties.get("sourcePicoseconds").get("readOnly").asBoolean()).isTrue();
         assertThat(properties.get("serverPicoseconds").get("readOnly").asBoolean()).isTrue();
         assertThat(properties.get("statusCode").get("readOnly").asBoolean()).isTrue();
@@ -171,8 +171,8 @@ class BuiltinJsonSchemaTest {
         final JsonNode properties = schema.get("properties");
         assertThat(properties).isNotNull();
         assertThat(properties.has("value")).isTrue();
-        assertThat(properties.has("sourceTimestamp")).isFalse();
-        assertThat(properties.has("serverTimestamp")).isFalse();
+        assertThat(properties.has("sourceTime")).isFalse();
+        assertThat(properties.has("serverTime")).isFalse();
         assertThat(properties.has("sourcePicoseconds")).isFalse();
         assertThat(properties.has("serverPicoseconds")).isFalse();
         assertThat(properties.has("statusCode")).isFalse();
@@ -188,14 +188,14 @@ class BuiltinJsonSchemaTest {
         final JsonNode properties = schema.get("properties");
         assertThat(properties).isNotNull();
         assertThat(properties.has("value")).isTrue();
-        assertThat(properties.has("sourceTimestamp")).isTrue();
-        assertThat(properties.has("serverTimestamp")).isTrue();
+        assertThat(properties.has("sourceTime")).isTrue();
+        assertThat(properties.has("serverTime")).isTrue();
         assertThat(properties.has("sourcePicoseconds")).isTrue();
         assertThat(properties.has("serverPicoseconds")).isTrue();
         assertThat(properties.has("statusCode")).isTrue();
 
         // Verify metadata properties are readOnly
-        assertThat(properties.get("sourceTimestamp").get("readOnly").asBoolean()).isTrue();
+        assertThat(properties.get("sourceTime").get("readOnly").asBoolean()).isTrue();
     }
 
     @Test
@@ -208,8 +208,8 @@ class BuiltinJsonSchemaTest {
         final JsonNode properties = schema.get("properties");
         assertThat(properties).isNotNull();
         assertThat(properties.has("value")).isTrue();
-        assertThat(properties.has("sourceTimestamp")).isFalse();
-        assertThat(properties.has("serverTimestamp")).isFalse();
+        assertThat(properties.has("sourceTime")).isFalse();
+        assertThat(properties.has("serverTime")).isFalse();
     }
 
     @Test
