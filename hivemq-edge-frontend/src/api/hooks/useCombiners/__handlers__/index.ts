@@ -45,7 +45,7 @@ export const mockCombiner: Combiner = {
       {
         id: '3b028f58-f949-4de1-9b8b-c1a35b1643a4',
         sources: {
-          primary: { id: '', type: DataIdentifierReference.type.TAG },
+          primary: { id: '', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' },
           tags: ['my/tag/t1', 'my/tag/t3'],
           topicFilters: ['my/topic/+/temp'],
         },
@@ -54,7 +54,11 @@ export const mockCombiner: Combiner = {
       },
       {
         id: 'c02a9d0f-02cb-4ff0-a7b4-6e1a16b08722',
-        sources: { primary: { id: '', type: DataIdentifierReference.type.TAG }, tags: [], topicFilters: [] },
+        sources: {
+          primary: { id: '', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' },
+          tags: [],
+          topicFilters: [],
+        },
         destination: { topic: 'my/other/topic' },
         instructions: [],
       },
@@ -76,7 +80,7 @@ export const mockEmptyCombiner: Combiner = {
 export const mockCombinerMapping: DataCombining = {
   id: '58677276-fc48-4a9a-880c-41c755f5063b',
   sources: {
-    primary: { id: 'my/tag/t1', type: DataIdentifierReference.type.TAG },
+    primary: { id: 'my/tag/t1', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' },
     tags: ['my/tag/t1', 'my/tag/t3'],
     topicFilters: ['my/topic/+/temp'],
   },
@@ -105,7 +109,7 @@ export const MOCK_COMBINER_ASSET: Combiner = {
       {
         id: 'ff02efff-7b4c-4f8c-8bf6-74d0756283fb',
         sources: {
-          primary: { id: '', type: DataIdentifierReference.type.TAG },
+          primary: { id: '', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' },
           tags: ['my/tag/t1', 'my/tag/t3'],
           topicFilters: ['my/topic/+/temp'],
         },

@@ -58,7 +58,7 @@ describe('edge-operational-status.utils', () => {
           items: [
             {
               id: 'mapping-1',
-              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG } },
+              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG, scope: 'pulse-1' } },
               destination: { assetId: 'asset-1', topic: 'test/topic' },
               instructions: [],
             },
@@ -80,7 +80,7 @@ describe('edge-operational-status.utils', () => {
           items: [
             {
               id: 'mapping-1',
-              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG } },
+              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG, scope: 'pulse-1' } },
               destination: { assetId: 'asset-1', topic: 'test/topic' },
               instructions: [],
             },
@@ -102,7 +102,7 @@ describe('edge-operational-status.utils', () => {
           items: [
             {
               id: 'mapping-1',
-              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG } },
+              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG, scope: 'pulse-1' } },
               destination: { assetId: 'asset-3', topic: 'test/topic' },
               instructions: [],
             },
@@ -124,7 +124,7 @@ describe('edge-operational-status.utils', () => {
           items: [
             {
               id: 'mapping-1',
-              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG } },
+              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG, scope: 'pulse-1' } },
               destination: { assetId: 'non-existent-asset', topic: 'test/topic' },
               instructions: [],
             },
@@ -146,7 +146,7 @@ describe('edge-operational-status.utils', () => {
           items: [
             {
               id: 'mapping-1',
-              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG } },
+              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG, scope: 'pulse-1' } },
               destination: { topic: 'test/topic' },
               instructions: [],
             },
@@ -168,13 +168,13 @@ describe('edge-operational-status.utils', () => {
           items: [
             {
               id: 'mapping-1',
-              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG } },
+              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG, scope: 'pulse-1' } },
               destination: { assetId: 'non-existent', topic: 'test/topic1' },
               instructions: [],
             },
             {
               id: 'mapping-2',
-              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG } },
+              sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG, scope: 'pulse-1' } },
               destination: { assetId: 'asset-1', topic: 'test/topic2' },
               instructions: [],
             },
@@ -309,7 +309,7 @@ describe('edge-operational-status.utils', () => {
             items: [
               {
                 id: 'mapping-1',
-                sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG } },
+                sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG, scope: 'pulse-1' } },
                 destination: { assetId: 'asset-1', topic: 'test/topic' },
                 instructions: [],
               },
@@ -389,7 +389,7 @@ describe('edge-operational-status.utils', () => {
               items: [
                 {
                   id: 'mapping-1',
-                  sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG } },
+                  sources: { primary: { id: 'pulse-1', type: DataIdentifierReference.type.TAG, scope: 'pulse-1' } },
                   destination: { assetId: 'asset-1', topic: 'test/topic' },
                   instructions: [],
                 },
