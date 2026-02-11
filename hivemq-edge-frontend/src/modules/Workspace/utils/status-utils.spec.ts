@@ -692,6 +692,7 @@ describe('updatePulseStatus', () => {
       activation: PulseStatus.activation.ACTIVATED,
       message: {
         title: 'Cannot connect to Pulse',
+        type: 'about:blank',
       },
       runtime: PulseStatus.runtime.ERROR,
     },
