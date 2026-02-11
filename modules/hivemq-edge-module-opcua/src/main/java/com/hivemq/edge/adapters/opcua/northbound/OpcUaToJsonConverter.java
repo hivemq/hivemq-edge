@@ -80,22 +80,28 @@ public class OpcUaToJsonConverter {
 
         // Extract metadata from the outer DataValue when includeMetadata is enabled
         if (includeMetadata) {
-            if (dataValue.getStatusCode().getValue() > 0) {
-                jsonObject.add("statusCode", convertStatusCode(dataValue.getStatusCode()));
-            }
+            jsonObject.add("statusCode", convertStatusCode(dataValue.getStatusCode()));
             if (dataValue.getSourceTime() != null) {
                 jsonObject.add("sourceTime",
                         new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(dataValue.getSourceTime().getJavaInstant())));
+            } else {
+                jsonObject.add("sourceTime", JsonNull.INSTANCE);
             }
             if (dataValue.getSourcePicoseconds() != null) {
                 jsonObject.add("sourcePicoseconds", new JsonPrimitive(dataValue.getSourcePicoseconds().intValue()));
+            } else {
+                jsonObject.add("sourcePicoseconds", JsonNull.INSTANCE);
             }
             if (dataValue.getServerTime() != null) {
                 jsonObject.add("serverTime",
                         new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(dataValue.getServerTime().getJavaInstant())));
+            } else {
+                jsonObject.add("serverTime", JsonNull.INSTANCE);
             }
             if (dataValue.getServerPicoseconds() != null) {
                 jsonObject.add("serverPicoseconds", new JsonPrimitive(dataValue.getServerPicoseconds().intValue()));
+            } else {
+                jsonObject.add("serverPicoseconds", JsonNull.INSTANCE);
             }
         }
 
