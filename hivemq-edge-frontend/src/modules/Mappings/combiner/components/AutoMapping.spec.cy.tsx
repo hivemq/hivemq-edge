@@ -95,6 +95,7 @@ describe('AutoMapping', () => {
       {
         sourceRef: {
           id: 'my-adapter/power/off',
+          scope: 'my-adapter',
           type: 'TAG',
         },
         destination: '$.description',
@@ -103,6 +104,7 @@ describe('AutoMapping', () => {
       {
         sourceRef: {
           id: 'my-adapter/power/off',
+          scope: 'my-adapter',
           type: 'TAG',
         },
         destination: '$.name',
@@ -112,7 +114,7 @@ describe('AutoMapping', () => {
   })
 
   it('should render properly', () => {
-    const onClick = cy.stub().as('onClick')
+    const onClick = cy.stub()
 
     cy.mountWithProviders(<AutoMappingWrapper onChange={onClick} />)
 
