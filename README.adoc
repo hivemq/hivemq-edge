@@ -16,6 +16,7 @@ It is a Java-based open source MQTT and MQTT-SN broker that fully supports MQTT 
 
 image::docs/edge-intro.gif[title=Edge Intro, align="center"]
 
+
 * Website: https://www.hivemq.com/
 * Documentation: https://docs.hivemq.com/hivemq-edge/index.html
 * Community Forum: https://community.hivemq.com/
