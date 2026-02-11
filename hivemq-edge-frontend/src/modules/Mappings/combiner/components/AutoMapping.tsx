@@ -47,6 +47,7 @@ export const AutoMapping: FC<AutoMappingProps> = ({ formData, formContext, onCha
         const instruction: DataIdentifierReference = {
           id: dataRef.id as string,
           type: dataRef.type as DataIdentifierReference.type,
+          scope: dataRef.scope ?? null,
         }
 
         properties.forEach((property) => (property.metadata = instruction))
@@ -68,8 +69,12 @@ export const AutoMapping: FC<AutoMappingProps> = ({ formData, formContext, onCha
     const inst = schema.reduce<Instruction[]>((acc, cur) => {
       const bestMatch = findBestMatch(cur, displayedSchemas, null)
       if (bestMatch?.value) {
-        const { id, type } = bestMatch.value.metadata || {}
-        const ref: DataIdentifierReference = { id: id as string, type: type as DataIdentifierReference.type }
+        const { id, type, scope } = bestMatch.value.metadata || {}
+        const ref: DataIdentifierReference = {
+          id: id as string,
+          type: type as DataIdentifierReference.type,
+          scope: scope ?? null,
+        }
         const instruction = {
           sourceRef: ref,
           destination: toJsonPath([...cur.path, cur.key].join('.')),

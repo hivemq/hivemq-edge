@@ -6,19 +6,23 @@ import { FaKey } from 'react-icons/fa'
 
 import type { DataCombining } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
+import type { CombinerContext } from '@/modules/Mappings/types'
+import { getAdapterIdForTag } from '@/modules/Mappings/utils/combining.utils'
 
 interface PrimaryOption {
   label: string
   value: string
   type: DataIdentifierReference.type
+  adapterId?: string
 }
 interface PrimarySelectProps {
   id?: string
   formData?: DataCombining
+  formContext?: CombinerContext
   onChange: (newValue: SingleValue<PrimaryOption>) => void
 }
 
-export const PrimarySelect: FC<PrimarySelectProps> = ({ id, formData, onChange }) => {
+export const PrimarySelect: FC<PrimarySelectProps> = ({ id, formData, formContext, onChange }) => {
   const { t } = useTranslation()
 
   const primaryOptions = useMemo(() => {
@@ -30,14 +34,16 @@ export const PrimarySelect: FC<PrimarySelectProps> = ({ id, formData, onChange }
         label: entity,
         value: entity,
         type: DataIdentifierReference.type.TAG,
+        adapterId: getAdapterIdForTag(entity, formContext),
       })),
       ...topicFilters.map<PrimaryOption>((entity) => ({
         label: entity,
         value: entity,
         type: DataIdentifierReference.type.TOPIC_FILTER,
+        adapterId: undefined,
       })),
     ]
-  }, [formData])
+  }, [formData, formContext])
 
   const primaryValue = useMemo<PrimaryOption | null>(() => {
     if (!formData?.sources.primary) return null

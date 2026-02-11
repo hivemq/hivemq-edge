@@ -1,3 +1,5 @@
+import type { CombinerContext } from '@/modules/Mappings/types.ts'
+import type { UseQueryResult } from '@tanstack/react-query'
 import { beforeEach, describe, expect } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 
@@ -5,8 +7,8 @@ import { MockAdapterType } from '@/__test-utils__/adapters/types'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper'
 import { server } from '@/__test-utils__/msw/mockServer'
 
-import type { DomainTag, EntityReference, TopicFilter } from '@/api/__generated__'
-import { DataIdentifierReference } from '@/api/__generated__'
+import type { DomainTag, DomainTagList, EntityReference, TopicFilter, TopicFilterList } from '@/api/__generated__'
+import { DataIdentifierReference, EntityType } from '@/api/__generated__'
 
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import { useGetCombinedDataSchemas } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
@@ -21,6 +23,7 @@ import {
   getCombinedDataEntityReference,
   getSchemasFromReferences,
   getFilteredDataReferences,
+  getAdapterIdForTag,
 } from './combining.utils'
 
 describe('getCombinedDataEntityReference', () => {
@@ -40,12 +43,12 @@ describe('getCombinedDataEntityReference', () => {
       entities: [],
       results: [
         {
-          adapterId: undefined,
+          scope: undefined,
           id: 'opcua-1/power/off',
           type: DataIdentifierReference.type.TAG,
         },
         {
-          adapterId: undefined,
+          scope: undefined,
           id: 'opcua-1/log/event',
           type: DataIdentifierReference.type.TAG,
         },
@@ -57,7 +60,7 @@ describe('getCombinedDataEntityReference', () => {
       entities: [],
       results: [
         {
-          adapterId: undefined,
+          scope: null, // ✅ Topic filters always have null scope
           id: 'a/topic/+/filter',
           type: DataIdentifierReference.type.TOPIC_FILTER,
         },
@@ -81,11 +84,12 @@ describe('getSchemasFromReferences', () => {
   const mockDataReferences: DataReference[] = [
     {
       id: 'my-tag',
-      adapterId: 'string',
+      scope: 'string',
       type: DataIdentifierReference.type.TAG,
     },
     {
       id: 'a/topic/+/filter',
+      scope: null, // ✅ Topic filters always have null scope
       type: DataIdentifierReference.type.TOPIC_FILTER,
     },
   ]
@@ -101,7 +105,7 @@ describe('getSchemasFromReferences', () => {
       input: mockDataReferences,
       output: [
         expect.objectContaining({
-          adapterId: 'string',
+          scope: 'string',
           schema: expect.objectContaining({
             message: 'Your tag is currently assigned a valid schema',
             schema: expect.objectContaining({
@@ -150,7 +154,7 @@ describe('getSchemasFromReferences', () => {
       ])
     ).toStrictEqual([
       expect.objectContaining({
-        adapterId: 'string',
+        scope: 'string',
         id: 'my-tag',
         schema: expect.objectContaining({
           message: 'Your tag is currently not assigned a schema',
@@ -225,5 +229,108 @@ describe('findBestMatch', () => {
 
   it.each<TestMatchSuite>(tests)('should work for $test', ({ source, candidates, result }) => {
     expect(findBestMatch(source, candidates)).toStrictEqual(result)
+  })
+})
+
+describe('getAdapterIdForTag', () => {
+  // Shared mock data
+  const mockTagQuery = (tags: string[]): Partial<UseQueryResult<DomainTagList, Error>> => ({
+    data: {
+      items: tags.map((name) => ({ name }) as DomainTag),
+    },
+  })
+
+  const mockTopicFilterQuery = (filters: string[]): Partial<UseQueryResult<TopicFilterList, Error>> => ({
+    data: {
+      items: filters.map((topicFilter) => ({ topicFilter }) as TopicFilter),
+    },
+  })
+
+  const mockEmptyQuery = (): Partial<UseQueryResult<DomainTagList, Error>> => ({
+    data: {
+      items: [],
+    },
+  })
+
+  it('should return undefined when formContext is undefined', () => {
+    expect(getAdapterIdForTag('tag1', undefined)).toBeUndefined()
+  })
+
+  it('should return undefined when formContext has no queries', () => {
+    const context: CombinerContext = { entities: [], queries: undefined }
+    expect(getAdapterIdForTag('tag1', context)).toBeUndefined()
+  })
+
+  it('should return undefined when formContext has no entities', () => {
+    const context: CombinerContext = { entities: undefined, queries: [] }
+    expect(getAdapterIdForTag('tag1', context)).toBeUndefined()
+  })
+
+  it('should return undefined when tag is not found', () => {
+    const context: CombinerContext = {
+      entities: [{ id: 'adapter1', type: EntityType.ADAPTER }],
+      queries: [mockTagQuery(['tag1', 'tag2']) as UseQueryResult<DomainTagList | TopicFilterList, Error>],
+    }
+    expect(getAdapterIdForTag('nonexistent', context)).toBeUndefined()
+  })
+
+  it('should return adapterId when tag is found', () => {
+    const context: CombinerContext = {
+      entities: [{ id: 'opcua-adapter-1', type: EntityType.ADAPTER }],
+      queries: [mockTagQuery(['temperature', 'pressure']) as UseQueryResult<DomainTagList | TopicFilterList, Error>],
+    }
+    expect(getAdapterIdForTag('temperature', context)).toBe('opcua-adapter-1')
+  })
+
+  it('should return correct adapterId when multiple adapters exist', () => {
+    const context: CombinerContext = {
+      entities: [
+        { id: 'adapter1', type: EntityType.ADAPTER },
+        { id: 'adapter2', type: EntityType.ADAPTER },
+      ],
+      queries: [
+        mockTagQuery(['tag1', 'tag2']) as UseQueryResult<DomainTagList | TopicFilterList, Error>,
+        mockTagQuery(['temperature', 'pressure']) as UseQueryResult<DomainTagList | TopicFilterList, Error>,
+      ],
+    }
+    expect(getAdapterIdForTag('temperature', context)).toBe('adapter2')
+  })
+
+  it('should skip queries with empty items', () => {
+    const context: CombinerContext = {
+      entities: [
+        { id: 'adapter1', type: EntityType.ADAPTER },
+        { id: 'adapter2', type: EntityType.ADAPTER },
+      ],
+      queries: [
+        mockEmptyQuery() as UseQueryResult<DomainTagList | TopicFilterList, Error>,
+        mockTagQuery(['tag1']) as UseQueryResult<DomainTagList | TopicFilterList, Error>,
+      ],
+    }
+    expect(getAdapterIdForTag('tag1', context)).toBe('adapter2')
+  })
+
+  it('should skip queries with topic filters (not tags)', () => {
+    // Queries and entities are parallel arrays - each query corresponds to an entity at the same index
+    const context: CombinerContext = {
+      entities: [
+        { id: 'adapter1', type: EntityType.ADAPTER },
+        { id: 'adapter2', type: EntityType.ADAPTER },
+      ],
+      queries: [
+        mockTopicFilterQuery(['filter1']) as UseQueryResult<DomainTagList | TopicFilterList, Error>,
+        mockTagQuery(['tag1']) as UseQueryResult<DomainTagList | TopicFilterList, Error>,
+      ],
+    }
+    // Should find tag1 in query[1] and return entities[1] (adapter2)
+    expect(getAdapterIdForTag('tag1', context)).toBe('adapter2')
+  })
+
+  it('should return undefined when adapter entity is missing at query index', () => {
+    const context: CombinerContext = {
+      entities: [], // No adapters
+      queries: [mockTagQuery(['tag1']) as UseQueryResult<DomainTagList | TopicFilterList, Error>],
+    }
+    expect(getAdapterIdForTag('tag1', context)).toBeUndefined()
   })
 })

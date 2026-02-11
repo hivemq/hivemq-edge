@@ -50,7 +50,7 @@ export const getCombinedDataEntityReference = (
         return {
           id: tag.name,
           type: DataIdentifierReference.type.TAG,
-          adapterId: dataSources?.[currentIndex]?.id,
+          scope: dataSources?.[currentIndex]?.id,
         }
       })
       acc.push(...tagDataReferences)
@@ -59,7 +59,7 @@ export const getCombinedDataEntityReference = (
       const topicFilterDataReferences = (cur as TopicFilter[]).map<DataReference>((topicFilter) => ({
         id: topicFilter.topicFilter,
         type: DataIdentifierReference.type.TOPIC_FILTER,
-        adapterId: undefined,
+        scope: null, // ✅ Topic filters always have null scope
       }))
       acc.push(...topicFilterDataReferences)
     }
@@ -140,4 +140,33 @@ export const findBestMatch = (
 
   if (minDistance === null) return smallestValue
   return smallestValue.distance <= minDistance ? smallestValue : undefined
+}
+
+/**
+ * Extracts the adapterId (scope) for a given tag from context.
+ * Used for looking up scope when only tag name is available.
+ *
+ * @param tagId - The tag identifier
+ * @param formContext - The combiner context with queries and entities
+ * @returns The adapterId (scope) or undefined if not found
+ */
+export const getAdapterIdForTag = (tagId: string, formContext?: CombinerContext): string | undefined => {
+  if (!formContext?.queries || !formContext?.entities) return undefined
+
+  const adapterEntities = formContext.entities.filter((e) => e.type === EntityType.ADAPTER)
+
+  for (let i = 0; i < formContext.queries.length; i++) {
+    const query = formContext.queries[i]
+    const items = query.data?.items || []
+
+    if (items.length > 0 && (items[0] as DomainTag).name) {
+      const tags = items as DomainTag[]
+      const found = tags.find((tag) => tag.name === tagId)
+      if (found && adapterEntities[i]) {
+        return adapterEntities[i].id
+      }
+    }
+  }
+
+  return undefined
 }
