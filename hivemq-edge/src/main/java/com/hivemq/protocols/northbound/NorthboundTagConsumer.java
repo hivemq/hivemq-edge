@@ -99,12 +99,18 @@ public class NorthboundTagConsumer implements TagConsumer {
                     } else if (jsonMap.containsKey("value")) {
                         return new DataPointImpl(jsonDataPoint.getTagName(), jsonMap.get("value"), true);
                     } else {
-                        throw new RuntimeException("No value entry in JSON message");
+                        log.error("No value received for tag '{}'. This indicates a broken tag on the OPC UA side.", jsonDataPoint.getTagName());
+                        return null;
                     }
                 } catch (final JsonProcessingException e) {
-                    throw new RuntimeException(e);
+                    if(log.isDebugEnabled()) {
+                        log.debug("Unable to parse JSON for tag '{}': {}", jsonDataPoint.getTagName(), jsonDataPoint.getTagValue() );
+                    } else {
+                        log.error("Unable to parse JSON for tag '{}'", jsonDataPoint.getTagName());
+                    }
+                    return null;
                 }
-            }).toList();
+            }).filter(Objects::nonNull).toList();
 
             final var dataPointsCopied = new ArrayList<>(dataPoints);
             dataPointsCopied.removeAll(jsonDataPoints);

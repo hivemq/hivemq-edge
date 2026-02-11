@@ -318,17 +318,13 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 tagStreamingService.feed(tn, List.of(dataPointFactory.createJsonDataPoint(tn, payload)));
             } catch (final Throwable e) {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
-                throw new RuntimeException(e);
+                log.error("Error processing data for tag '{}'", tn, e);
             }
         }
     }
 
     private @NotNull String extractPayload(final @NotNull OpcUaClient client, final @NotNull DataValue value)
             throws UaException {
-        if (value.getValue().getValue() == null) {
-            return "";
-        }
-
         final ByteBuffer byteBuffer = OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(),
                 value,
                 config.isIncludeMetadata());

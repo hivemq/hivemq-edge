@@ -75,14 +75,12 @@ public class OpcUaToJsonConverter {
             final @NotNull DataValue dataValue,
             final boolean includeMetadata) {
         final Object value = dataValue.getValue().getValue();
-        if (value == null) {
-            return ByteBuffer.wrap(EMPTY_BYTES);
-        }
+
         final JsonObject jsonObject = new JsonObject();
 
         // Extract metadata from the outer DataValue when includeMetadata is enabled
         if (includeMetadata) {
-            if (dataValue.getStatusCode() != null && dataValue.getStatusCode().getValue() > 0) {
+            if (dataValue.getStatusCode().getValue() > 0) {
                 jsonObject.add("statusCode", convertStatusCode(dataValue.getStatusCode()));
             }
             if (dataValue.getSourceTime() != null) {
@@ -101,7 +99,11 @@ public class OpcUaToJsonConverter {
             }
         }
 
-        jsonObject.add("value", convertValue(value, serializationContext));
+        if(value != null) {
+            jsonObject.add("value", convertValue(value, serializationContext));
+        } else {
+            jsonObject.add("value", JsonNull.INSTANCE);
+        }
         return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
     }
 

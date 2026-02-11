@@ -127,14 +127,14 @@ public class BuiltinJsonSchema {
         sourceTimestamp.put(TYPE, STRING_DATA_TYPE);
         sourceTimestamp.put("format", DATETIME_DATA_TYPE);
         sourceTimestamp.put("readOnly", true);
-        propertiesNode.set("sourceTimestamp", sourceTimestamp);
+        propertiesNode.set("sourceTime", sourceTimestamp);
 
         // serverTimestamp - DateTime as ISO 8601 string
         final ObjectNode serverTimestamp = objectMapper.createObjectNode();
         serverTimestamp.put(TYPE, STRING_DATA_TYPE);
         serverTimestamp.put("format", DATETIME_DATA_TYPE);
         serverTimestamp.put("readOnly", true);
-        propertiesNode.set("serverTimestamp", serverTimestamp);
+        propertiesNode.set("serverTime", serverTimestamp);
 
         // sourcePicoseconds - UShort (0-65535)
         final ObjectNode sourcePicoseconds = objectMapper.createObjectNode();
@@ -157,12 +157,17 @@ public class BuiltinJsonSchema {
         statusCode.put(TYPE, OBJECT_DATA_TYPE);
         statusCode.put("readOnly", true);
         final ObjectNode statusCodeProps = objectMapper.createObjectNode();
+
         final ObjectNode codeNode = objectMapper.createObjectNode();
         codeNode.put(TYPE, Constants.INTEGER_DATA_TYPE);
+        codeNode.put("readOnly", true);
         statusCodeProps.set("code", codeNode);
+
         final ObjectNode symbolNode = objectMapper.createObjectNode();
         symbolNode.put(TYPE, STRING_DATA_TYPE);
+        symbolNode.put("readOnly", true);
         statusCodeProps.set("symbol", symbolNode);
+
         statusCode.set("properties", statusCodeProps);
         propertiesNode.set("statusCode", statusCode);
     }
