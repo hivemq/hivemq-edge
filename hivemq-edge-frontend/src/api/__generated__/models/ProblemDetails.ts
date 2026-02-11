@@ -17,6 +17,6 @@ export type ProblemDetails = {
     errors?: Array<Error>;
     status?: number;
     title: string;
-    type?: string;
+    type: string;
 };
 

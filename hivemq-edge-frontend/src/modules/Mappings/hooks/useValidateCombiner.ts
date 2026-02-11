@@ -58,7 +58,7 @@ export const useValidateCombiner = (
         const tagDataReferences = (cur.data?.items as DomainTag[]).map<DataReference>((tag) => ({
           id: tag.name,
           type: DataIdentifierReference.type.TAG,
-          adapterId: dataSources?.[currentIndex]?.id,
+          scope: dataSources?.[currentIndex]?.id,
         }))
         acc.push(...tagDataReferences)
       } else if ((firstItem as TopicFilter).topicFilter) {
@@ -66,7 +66,7 @@ export const useValidateCombiner = (
         const topicFilterDataReferences = (cur.data?.items as TopicFilter[]).map<DataReference>((topicFilter) => ({
           id: topicFilter.topicFilter,
           type: DataIdentifierReference.type.TOPIC_FILTER,
-          adapterId: undefined,
+          scope: null, // ✅ Topic filters always have null scope
         }))
         acc.push(...topicFilterDataReferences)
       }
@@ -175,6 +175,87 @@ export const useValidateCombiner = (
   )
 
   /**
+   * Verify that the scope field in DataIdentifierReference objects has proper integrity.
+   *
+   * Backend validation rules:
+   * - TAG types: scope must be present (not null/undefined/blank) and reference a valid adapter
+   * - TOPIC_FILTER/PULSE_ASSET types: scope must be null
+   *
+   * This ensures referential integrity between tags and their owning adapters.
+   */
+  const validateDataIdentifierScope = useCallback<CustomValidator<DataCombining, RJSFSchema, CombinerContext>>(
+    (formData, errors) => {
+      const primary = formData?.sources?.primary
+      if (!primary) return errors
+
+      // Get available adapter IDs from entities (from hook closure, not context parameter)
+      const availableAdapterIds = new Set(entities.filter((e) => e.type === EntityType.ADAPTER).map((e) => e.id))
+
+      // Validate primary source scope
+      if (primary.type === DataIdentifierReference.type.TAG) {
+        if (!primary.scope || primary.scope.trim() === '') {
+          errors.sources?.primary?.addError(t('combiner.error.validation.missingScopeForTag', { tag: primary.id }))
+        } else if (!availableAdapterIds.has(primary.scope)) {
+          errors.sources?.primary?.addError(
+            t('combiner.error.validation.invalidScopeReference', {
+              tag: primary.id,
+              scope: primary.scope,
+            })
+          )
+        }
+      } else if (
+        primary.type === DataIdentifierReference.type.TOPIC_FILTER ||
+        primary.type === DataIdentifierReference.type.PULSE_ASSET
+      ) {
+        if (primary.scope !== null) {
+          errors.sources?.primary?.addError(
+            t('combiner.error.validation.unexpectedScopeForNonTag', {
+              type: primary.type,
+              id: primary.id,
+            })
+          )
+        }
+      }
+
+      // Validate instruction sourceRef scopes
+      formData?.instructions?.forEach((instruction, index) => {
+        const sourceRef = instruction.sourceRef
+        if (!sourceRef) return
+
+        if (sourceRef.type === DataIdentifierReference.type.TAG) {
+          if (!sourceRef.scope || sourceRef.scope.trim() === '') {
+            errors.instructions?.[index]?.addError(
+              t('combiner.error.validation.missingScopeForTag', { tag: sourceRef.id })
+            )
+          } else if (!availableAdapterIds.has(sourceRef.scope)) {
+            errors.instructions?.[index]?.addError(
+              t('combiner.error.validation.invalidScopeReference', {
+                tag: sourceRef.id,
+                scope: sourceRef.scope,
+              })
+            )
+          }
+        } else if (
+          sourceRef.type === DataIdentifierReference.type.TOPIC_FILTER ||
+          sourceRef.type === DataIdentifierReference.type.PULSE_ASSET
+        ) {
+          if (sourceRef.scope !== null) {
+            errors.instructions?.[index]?.addError(
+              t('combiner.error.validation.unexpectedScopeForNonTag', {
+                type: sourceRef.type,
+                id: sourceRef.id,
+              })
+            )
+          }
+        }
+      })
+
+      return errors
+    },
+    [entities, t]
+  )
+
+  /**
    * Verify that the schema of a destination topic is valid
    */
   const validateDestinationSchema = useCallback<CustomValidator<DataCombining, RJSFSchema, CombinerContext>>(
@@ -271,6 +352,7 @@ export const useValidateCombiner = (
       if (!errors.mappings?.items?.[index]) return
 
       validateDataSources(entity, errors.mappings.items[index])
+      validateDataIdentifierScope(entity, errors.mappings.items[index])
       validateDataSourceSchemas(entity, errors.mappings.items[index])
       validateDestinationSchema(entity, errors.mappings.items[index])
       validateInstructions(entity, errors.mappings.items[index])
@@ -286,6 +368,7 @@ export const useValidateCombiner = (
     }
 
     validateDataSources(formData, errors)
+    validateDataIdentifierScope(formData, errors)
     validateDataSourceSchemas(formData, errors)
     validateDestinationSchema(formData, errors)
     validateInstructions(formData, errors)

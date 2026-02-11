@@ -14,5 +14,11 @@ export const $DataIdentifierReference = {
             type: 'Enum',
             isRequired: true,
         },
+        scope: {
+            type: 'string',
+            description: `Scoping identifier. For TAG type, this is the adapter ID that owns the tag. For other types, this is null.
+            `,
+            isNullable: true,
+        },
     },
 } as const;
