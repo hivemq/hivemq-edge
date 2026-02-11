@@ -226,6 +226,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <FormLabel>{primaryOptions.title}</FormLabel>
           <PrimarySelect
             formData={formData}
+            formContext={formContext}
             id="mappings-primary"
             onChange={(values) => {
               if (!props.formData) return
@@ -239,6 +240,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
                     ? {
                         id: values.value,
                         type: values.type,
+                        scope: values.adapterId ?? null,
                       }
                     : undefined,
                 },

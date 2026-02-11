@@ -42,6 +42,7 @@ describe('PrimarySelect', () => {
       cy.get('@onChange').should(
         'have.been.calledWith',
         {
+          adapterId: undefined,
           label: 'my/tag/t3',
           value: 'my/tag/t3',
           type: DataIdentifierReference.type.TAG,
@@ -87,6 +88,7 @@ describe('PrimarySelect', () => {
       cy.get('@onChange').should(
         'have.been.calledWith',
         {
+          adapterId: undefined,
           label: 'my/tag/t3',
           value: 'my/tag/t3',
           type: DataIdentifierReference.type.TAG,
