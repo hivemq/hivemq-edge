@@ -199,7 +199,7 @@ oci {
         imageName.set("hivemq/hivemq-edge")
         allPlatforms {
             dependencies {
-                runtime("library:eclipse-temurin:sha256!e9934ccb97ba85ef9fa61f02a0136bbf982804e2deec968f191c31568b95dd92") // 25-jre-ubi10-minimal
+                runtime("library:eclipse-temurin:sha256!be96a9c92694b6f84260445f7885acc9b2b933fb621d349948a24cdf4504ae7c") // 25-jre-noble
             }
             config {
                 user = "10000"
