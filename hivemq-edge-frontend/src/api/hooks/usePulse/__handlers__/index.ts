@@ -70,6 +70,7 @@ export const MOCK_PULSE_STATUS_ERROR: PulseStatus = {
   runtime: PulseStatus.runtime.ERROR,
   message: {
     title: 'Cannot connect to Pulse',
+    type: 'about:blank',
   },
 }
 
