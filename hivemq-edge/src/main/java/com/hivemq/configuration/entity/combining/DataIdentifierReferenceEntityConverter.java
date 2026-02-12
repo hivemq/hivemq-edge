@@ -29,16 +29,17 @@ public final class DataIdentifierReferenceEntityConverter
 
     @Override
     public @NotNull DataIdentifierReferenceEntity toInternalEntity(final @NotNull DataIdentifierReference entity) {
-        return new DataIdentifierReferenceEntity(
-                entity.getId(),
-                DataIdentifierReferenceTypeConverter.INSTANCE.toInternalEntity(requireNonNull(entity.getType())));
+        return new DataIdentifierReferenceEntity(entity.getId(),
+                DataIdentifierReferenceTypeConverter.INSTANCE.toInternalEntity(entity.getType()),
+                entity.getScope());
     }
 
     @Override
     public @NotNull DataIdentifierReference toRestEntity(final @NotNull DataIdentifierReferenceEntity entity) {
         return DataIdentifierReference.builder()
                 .id(entity.getId())
-                .type(DataIdentifierReferenceTypeConverter.INSTANCE.toRestEntity(requireNonNull(entity.getType())))
+                .type(DataIdentifierReferenceTypeConverter.INSTANCE.toRestEntity(entity.getType()))
+                .scope(entity.getScope())
                 .build();
     }
 }
