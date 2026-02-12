@@ -146,51 +146,60 @@ public class VanillaDataCombiningTransformationServiceTest {
 
     @Test
     public void when1TagMatches_thenPublishPasses() {
-        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes(UTF_8));
-        when(dataCombining.instructions())
-                .thenReturn(List.of(new Instruction(
-                        "$.value",
-                        "dest.tag1",
-                        new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG))));
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "TAG:TAG1": {
+                    "value": 100
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
+                "dest.tag1",
+                new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
-                {"dest":{"tag1":"TAG1"}}""");
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"tag1":100}}""");
     }
 
     @Test
     public void when2TagsMatch_thenPublishPasses() {
-        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes(UTF_8));
-        when(dataCombining.instructions())
-                .thenReturn(List.of(
-                        new Instruction(
-                                "$.value",
-                                "dest.tag1",
-                                new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG)),
-                        new Instruction(
-                                "$.value",
-                                "dest.tag2",
-                                new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "TAG:TAG1": {
+                    "value": 100
+                  },
+                  "TAG:TAG2": {
+                    "value": 200
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
+                        "dest.tag1",
+                        new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG)),
+                new Instruction("$.value",
+                        "dest.tag2",
+                        new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
-                {"dest":{"tag1":"TAG1","tag2":"TAG2"}}""");
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"tag1":100,"tag2":200}}""");
     }
 
     @Test
     public void when1AssetMatches_thenPublishPasses() {
         final String assetId = UUID.randomUUID().toString();
-        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes(UTF_8));
-        when(dataCombining.instructions())
-                .thenReturn(List.of(new Instruction(
-                        "$.value",
-                        "dest.asset",
-                        new DataIdentifierReference(assetId, DataIdentifierReference.Type.PULSE_ASSET))));
+        when(publish.getPayload()).thenReturn(StringTemplate.format("""
+                {
+                  "PULSE_ASSET:${assetId}": {
+                    "value": 42
+                  }
+                }""", Map.of("assetId", assetId)).getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
+                "dest.asset",
+                new DataIdentifierReference(assetId, DataIdentifierReference.Type.PULSE_ASSET))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8))
-                .isEqualTo(StringTemplate.format("""
-                {"dest":{"asset":"${assetId}"}}""", Map.of("assetId", assetId)));
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"asset":42}}""");
     }
 
     @Test
@@ -202,6 +211,18 @@ public class VanillaDataCombiningTransformationServiceTest {
                   },
                   "TOPIC_FILTER:topic/b": {
                     "b": 2
+                  },
+                  "TAG:TAG1": {
+                    "value": 100
+                  },
+                  "TAG:TAG2": {
+                    "value": 200
+                  },
+                  "PULSE_ASSET:ASSET1": {
+                    "value": 300
+                  },
+                  "PULSE_ASSET:ASSET2": {
+                    "value": 400
                   }
                 }""".getBytes(UTF_8));
         when(dataCombining.instructions())
@@ -232,8 +253,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 new DataIdentifierReference("ASSET2", DataIdentifierReference.Type.PULSE_ASSET))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
-                {"dest":{"a":1,"b":2,"tag1":"TAG1","tag2":"TAG2","asset1":"ASSET1","asset2":"ASSET2"}}""");
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"a":1,"b":2,"tag1":100,"tag2":200,"asset1":300,"asset2":400}}""");
     }
 
     @Test
@@ -265,21 +286,25 @@ public class VanillaDataCombiningTransformationServiceTest {
 
     @Test
     public void when2TagsOverlap_thenLast1WinsAndPublishPasses() {
-        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes(UTF_8));
-        when(dataCombining.instructions())
-                .thenReturn(List.of(
-                        new Instruction(
-                                "$.value",
-                                "dest.tag",
-                                new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG)),
-                        new Instruction(
-                                "$.value",
-                                "dest.tag",
-                                new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "TAG:TAG1": {
+                    "value": 100
+                  },
+                  "TAG:TAG2": {
+                    "value": 200
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
+                        "dest.tag",
+                        new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG)),
+                new Instruction("$.value",
+                        "dest.tag",
+                        new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
-                {"dest":{"tag":"TAG2"}}""");
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"tag":200}}""");
     }
 
     @Test
@@ -336,5 +361,180 @@ public class VanillaDataCombiningTransformationServiceTest {
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
                 {"dest":{"a":1,"b":2}}""");
+    }
+
+    @Test
+    public void whenTagHasNestedData_thenNestedPathIsExtracted() {
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "TAG:sensor1": {
+                    "readings": {
+                      "temperature": 25.5,
+                      "humidity": 60
+                    }
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(
+                new Instruction("$.readings.temperature",
+                        "dest.temp",
+                        new DataIdentifierReference("sensor1", DataIdentifierReference.Type.TAG)),
+                new Instruction("$.readings.humidity",
+                        "dest.hum",
+                        new DataIdentifierReference("sensor1", DataIdentifierReference.Type.TAG))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"temp":25.5,"hum":60}}""");
+    }
+
+    @Test
+    public void whenTagSourceIsRootObject_thenEntireObjectIsCopied() {
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "TAG:sensor1": {
+                    "temp": 25,
+                    "unit": "C"
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$",
+                "dest.sensor",
+                new DataIdentifierReference("sensor1", DataIdentifierReference.Type.TAG))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"sensor":{"temp":25,"unit":"C"}}}""");
+    }
+
+    @Test
+    public void whenTagNameHasSpecialCharacters_thenDataIsExtracted() {
+        // Note: toFullyQualifiedName() replaces dots with slashes, so "my/tag.with" becomes "my/tag/with"
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "TAG:my/tag/with\\" special'chars": {
+                    "value": 123
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
+                "dest.out",
+                new DataIdentifierReference("my/tag.with\" special'chars", DataIdentifierReference.Type.TAG))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"out":123}}""");
+    }
+
+    @Test
+    public void whenPulseAssetHasNestedData_thenNestedPathIsExtracted() {
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "PULSE_ASSET:asset-123": {
+                    "metrics": {
+                      "cpu": 80,
+                      "memory": 4096
+                    }
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(
+                new Instruction("$.metrics.cpu",
+                        "dest.cpu_usage",
+                        new DataIdentifierReference("asset-123", DataIdentifierReference.Type.PULSE_ASSET)),
+                new Instruction("$.metrics.memory",
+                        "dest.mem_mb",
+                        new DataIdentifierReference("asset-123", DataIdentifierReference.Type.PULSE_ASSET))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"cpu_usage":80,"mem_mb":4096}}""");
+    }
+
+    @Test
+    public void whenTagDataIsMissing_thenInstructionIsSkipped() {
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "TAG:existingTag": {
+                    "value": 100
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(
+                new Instruction("$.value",
+                        "dest.existing",
+                        new DataIdentifierReference("existingTag", DataIdentifierReference.Type.TAG)),
+                new Instruction("$.value",
+                        "dest.missing",
+                        new DataIdentifierReference("missingTag", DataIdentifierReference.Type.TAG))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        // Only existingTag data is in output; missingTag instruction is skipped
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"existing":100}}""");
+    }
+
+    @Test
+    public void whenTagHasScope_thenScopedKeyIsUsedInJsonPath() {
+        // Merged JSON has scope prefix: "adapter1/TAG:temperature"
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "adapter1/TAG:temperature": {
+                    "value": 25.5
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(
+                new Instruction("$.value",
+                        "dest.temp",
+                        new DataIdentifierReference("temperature", DataIdentifierReference.Type.TAG, "adapter1"))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"temp":25.5}}""");
+    }
+
+    @Test
+    public void whenTwoTagsHaveSameNameButDifferentScope_thenBothAreDistinguished() {
+        // Two adapters have tags with the same name "temperature"
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "adapter1/TAG:temperature": {
+                    "value": 20
+                  },
+                  "adapter2/TAG:temperature": {
+                    "value": 30
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(
+                new Instruction("$.value",
+                        "dest.temp1",
+                        new DataIdentifierReference("temperature", DataIdentifierReference.Type.TAG, "adapter1")),
+                new Instruction("$.value",
+                        "dest.temp2",
+                        new DataIdentifierReference("temperature", DataIdentifierReference.Type.TAG, "adapter2"))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"temp1":20,"temp2":30}}""");
+    }
+
+    @Test
+    public void whenMixOfScopedAndUnscopedTags_thenBothWork() {
+        // Mixed: one tag with scope, one without (legacy)
+        when(publish.getPayload()).thenReturn("""
+                {
+                  "adapter1/TAG:scoped": {
+                    "value": 100
+                  },
+                  "TAG:unscoped": {
+                    "value": 200
+                  }
+                }""".getBytes());
+        when(dataCombining.instructions()).thenReturn(List.of(
+                new Instruction("$.value",
+                        "dest.scoped",
+                        new DataIdentifierReference("scoped", DataIdentifierReference.Type.TAG, "adapter1")),
+                new Instruction("$.value",
+                        "dest.unscoped",
+                        new DataIdentifierReference("unscoped", DataIdentifierReference.Type.TAG))));
+        assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
+        verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
+        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+                {"dest":{"scoped":100,"unscoped":200}}""");
     }
 }
