@@ -152,12 +152,10 @@ describe('CombinedEntitySelect', () => {
     // ✅ Verify onClick structure - select first temperature tag
     cy.get('@options').filter(':contains("Modbus temperature")').click()
     cy.get('@onChange').should('have.been.calledOnce')
-    cy.get('@onChange')
-      .its('firstCall.args.0.0')
-      .should('deep.include', {
-        value: 'temperature',
-        adapterId: 'modbus-adapter',
-      })
+    cy.get('@onChange').its('firstCall.args.0.0').should('deep.include', {
+      value: 'temperature',
+      adapterId: 'modbus-adapter',
+    })
   })
 
   it('should be accessible', () => {
