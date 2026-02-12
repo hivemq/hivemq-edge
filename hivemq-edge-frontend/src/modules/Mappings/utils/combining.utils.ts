@@ -303,7 +303,7 @@ export const reconstructSelectedSources = (
         formData.sources.primary?.id === tfId &&
         formData.sources.primary?.type === DataIdentifierReference.type.TOPIC_FILTER
       ) {
-        return formData.sources.primary
+        return { ...formData.sources.primary, scope: null }
       }
 
       // Check instructions
@@ -311,7 +311,7 @@ export const reconstructSelectedSources = (
         (inst) => inst.sourceRef?.id === tfId && inst.sourceRef?.type === DataIdentifierReference.type.TOPIC_FILTER
       )
       if (instruction?.sourceRef) {
-        return instruction.sourceRef
+        return { ...instruction.sourceRef, scope: null }
       }
 
       // Default topic filter
