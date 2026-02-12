@@ -62,6 +62,16 @@ export interface EntityQuery {
 /**
  * Selected sources with full ownership information.
  * Maintained in frontend context to support UX flow.
+ *
+ * IMPORTANT: This replaces the deprecated DataCombining.sources.tags and
+ * DataCombining.sources.topicFilters API fields (which are string arrays without ownership).
+ *
+ * Strategy (Option B):
+ * - API fields are marked as deprecated and will be removed in a future version
+ * - Frontend tracks ownership via this SelectedSources interface in formContext
+ * - On load: reconstruct selectedSources from instructions (primary + sourceRef)
+ * - On save: do NOT send tags/topicFilters arrays (backend reconstructs from instructions)
+ * - Preprocessing happens ONCE in parent component to avoid React lifecycle issues
  */
 export interface SelectedSources {
   /** Tags with scope (adapter ID) */

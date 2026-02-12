@@ -15,7 +15,13 @@ import type { CombinerContext } from '@/modules/Mappings/types'
 
 interface EntityReferenceSelectProps extends Omit<BoxProps, 'onChange'> {
   id?: string
+  /**
+   * @deprecated Use formContext.selectedSources instead. This prop is kept for backward compatibility during migration.
+   */
   tags?: Array<string>
+  /**
+   * @deprecated Use formContext.selectedSources instead. This prop is kept for backward compatibility during migration.
+   */
   topicFilters?: Array<string>
   formContext?: CombinerContext
   onChange: (value: MultiValue<EntityOption>) => void
@@ -85,6 +91,25 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
   }, [formContext?.entityQueries, isLoading])
 
   const values = useMemo(() => {
+    // Prefer selectedSources from context (Option B implementation)
+    if (formContext?.selectedSources) {
+      const tagValue = formContext.selectedSources.tags.map<EntityOption>((ref) => ({
+        value: ref.id,
+        label: ref.id,
+        type: ref.type,
+        adapterId: ref.scope || undefined, // Include scope for display
+      }))
+
+      const topicFilterValue = formContext.selectedSources.topicFilters.map<EntityOption>((ref) => ({
+        value: ref.id,
+        label: ref.id,
+        type: ref.type,
+      }))
+
+      return [...tagValue, ...topicFilterValue]
+    }
+
+    // Backward compatibility: fall back to deprecated props during migration
     const tagValue =
       tags?.map<EntityOption>((value) => ({ value: value, label: value, type: DataIdentifierReference.type.TAG })) || []
     const topicFilter =
@@ -94,7 +119,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
         type: DataIdentifierReference.type.TOPIC_FILTER,
       })) || []
     return [...tagValue, ...topicFilter]
-  }, [tags, topicFilters])
+  }, [formContext?.selectedSources, tags, topicFilters])
 
   return (
     <Box {...boxProps}>

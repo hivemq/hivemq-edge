@@ -97,12 +97,17 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
         <FormControl isInvalid={hasError(sourceErrors)}>
           <FormLabel>{t('combiner.schema.mappings.sources.combinedData.title')}</FormLabel>
           <CombinedEntitySelect
+            // TODO[DEPRECATED]: Remove these props when API fields are removed
+            // Currently needed for backward compatibility during transition
             tags={formData?.sources?.tags}
             topicFilters={formData?.sources?.topicFilters}
             formContext={formContext}
             onChange={(values) => {
               if (!formData) return
 
+              // TODO[DEPRECATED]: This writes to deprecated API fields
+              // When API removes sources.tags/topicFilters, replace with proper state management
+              // for formContext.selectedSources (see OPTION_B_ANALYSIS.md)
               const tags = values
                 .filter((entity) => entity.type === DataIdentifierReference.type.TAG)
                 .map((entity) => entity.value)
@@ -120,6 +125,8 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
                 ...formData,
                 sources: {
                   ...formData.sources,
+                  // TEMPORARY: Keep writing to deprecated fields during transition
+                  // Backend will ignore these once they remove the fields
                   tags: tags,
                   topicFilters: filters,
                   // @ts-ignore TODO[30935] check for type clash on primary
