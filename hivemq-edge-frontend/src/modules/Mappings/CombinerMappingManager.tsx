@@ -39,6 +39,7 @@ import DangerZone from '@/modules/Mappings/components/DangerZone.tsx'
 import type { CombinerContext } from '@/modules/Mappings/types.ts'
 import { useValidateCombiner } from '@/modules/Mappings/hooks/useValidateCombiner.ts'
 import { MappingType } from '@/modules/Mappings/types.ts'
+import { reconstructSelectedSources } from '@/modules/Mappings/utils/combining.utils'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
@@ -149,6 +150,32 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
   }, [entities])
 
   const sources = useGetCombinedEntities(entities)
+
+  // Build formContext with explicit entity-query pairings
+  const formContext = useMemo((): CombinerContext => {
+    const entityQueries = entities.map((entity, index) => ({
+      entity,
+      query: sources[index],
+    }))
+
+    // Reconstruct selectedSources from the first mapping (if exists)
+    // This provides ownership information for the frontend UX
+    const firstMapping = selectedNode.data.mappings.items?.[0]
+    const selectedSources = reconstructSelectedSources(firstMapping, {
+      entityQueries,
+      queries: sources,
+      entities,
+    })
+
+    return {
+      entityQueries,
+      selectedSources,
+      // Backward compatibility: keep old fields during migration
+      queries: sources,
+      entities,
+    }
+  }, [entities, sources, selectedNode.data.mappings.items])
+
   // @ts-ignore wrong type; need a fix
   const validator = useValidateCombiner(sources, entities)
   // TODO[NVL] Need to split the manager between Combiner and AssetMapper; no need to have so many hooks not in use
@@ -334,7 +361,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
             uiSchema={combinerMappingUiSchema(isAssetManager, tabId)}
             formData={selectedNode.data}
             onSubmit={handleOnSubmit}
-            formContext={{ queries: sources, entities } as CombinerContext}
+            formContext={formContext}
             customValidate={validator?.validateCombiner}
           />
         </DrawerBody>
