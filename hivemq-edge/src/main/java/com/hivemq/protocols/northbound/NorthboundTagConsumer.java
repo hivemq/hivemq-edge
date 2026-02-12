@@ -32,6 +32,11 @@ import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -168,5 +173,10 @@ public class NorthboundTagConsumer implements TagConsumer {
     @Override
     public @NotNull String getTagName() {
         return pollingContext.getTagName();
+    }
+
+    @Override
+    public @Nullable String getScope() {
+        return protocolAdapter.getId();
     }
 }

@@ -27,8 +27,9 @@ public final class DataIdentifierReferenceEntityConverter
 
     @Override
     public @NotNull DataIdentifierReferenceEntity toInternalEntity(final @NotNull DataIdentifierReference entity) {
-        return new DataIdentifierReferenceEntity(
-                entity.getId(), DataIdentifierReferenceTypeConverter.INSTANCE.toInternalEntity(entity.getType()));
+        return new DataIdentifierReferenceEntity(entity.getId(),
+                DataIdentifierReferenceTypeConverter.INSTANCE.toInternalEntity(entity.getType()),
+                entity.getScope());
     }
 
     @Override
@@ -36,6 +37,7 @@ public final class DataIdentifierReferenceEntityConverter
         return DataIdentifierReference.builder()
                 .id(entity.getId())
                 .type(DataIdentifierReferenceTypeConverter.INSTANCE.toRestEntity(entity.getType()))
+                .scope(entity.getScope())
                 .build();
     }
 }

@@ -4829,7 +4829,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-          description: Topic, schema, or mapping ID invalid
+          description: Topic, schema, mapping ID invalid, or TAG reference missing scope
         '404':
           content:
             application/json:
@@ -4912,7 +4912,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-          description: Topic, schema, or mapping ID invalid
+          description: Topic, schema, mapping ID invalid, or TAG reference missing scope
         '404':
           content:
             application/json:
@@ -5249,7 +5249,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-          description: Topic, schema, or mapping ID invalid
+          description: Topic, schema, mapping ID invalid, or TAG reference missing scope
         '404':
           content:
             application/json:
@@ -5332,7 +5332,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-          description: Topic, schema, or mapping ID invalid
+          description: Topic, schema, mapping ID invalid, or TAG reference missing scope
         '404':
           content:
             application/json:
@@ -8077,6 +8077,11 @@ components:
             - TAG
             - TOPIC_FILTER
             - PULSE_ASSET
+        scope:
+          type: string
+          nullable: true
+          description: |
+            Scoping identifier. For TAG type, this is the adapter ID that owns the tag. For other types, this is null.
     Instruction:
       type: object
       description: List of instructions to be applied to incoming data
