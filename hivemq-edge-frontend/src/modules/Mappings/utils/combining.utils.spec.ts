@@ -85,9 +85,7 @@ describe('getDataReference', () => {
     isError: false,
   })
 
-  const mockTopicFilterQuery = (
-    topicFilters: TopicFilter[]
-  ): Partial<UseQueryResult<TopicFilterList, Error>> => ({
+  const mockTopicFilterQuery = (topicFilters: TopicFilter[]): Partial<UseQueryResult<TopicFilterList, Error>> => ({
     data: { items: topicFilters },
     isLoading: false,
     isSuccess: true,
@@ -186,10 +184,9 @@ describe('getDataReference', () => {
       entityQueries: [
         {
           entity: { id: 'modbus-adapter', type: EntityType.ADAPTER },
-          query: mockTagQuery([{ name: 'modbus-temp', description: 'Modbus temperature' } as DomainTag]) as UseQueryResult<
-            DomainTagList,
-            Error
-          >,
+          query: mockTagQuery([
+            { name: 'modbus-temp', description: 'Modbus temperature' } as DomainTag,
+          ]) as UseQueryResult<DomainTagList, Error>,
         },
         {
           entity: { id: 'bridge-1', type: EntityType.BRIDGE },
@@ -200,10 +197,9 @@ describe('getDataReference', () => {
         },
         {
           entity: { id: 'opcua-adapter', type: EntityType.ADAPTER },
-          query: mockTagQuery([{ name: 'opcua-temp', description: 'OPC-UA temperature' } as DomainTag]) as UseQueryResult<
-            DomainTagList,
-            Error
-          >,
+          query: mockTagQuery([
+            { name: 'opcua-temp', description: 'OPC-UA temperature' } as DomainTag,
+          ]) as UseQueryResult<DomainTagList, Error>,
         },
       ],
     }
