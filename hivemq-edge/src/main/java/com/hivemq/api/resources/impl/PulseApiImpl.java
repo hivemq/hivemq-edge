@@ -741,7 +741,8 @@ public class PulseApiImpl implements PulseApi {
     }
 
     private @NotNull Optional<Response> validateTagExists(
-            final @NotNull DataIdentifierReference ref, final @NotNull Map<String, Set<String>> adapterToTags) {
+            final @NotNull DataIdentifierReference ref,
+            final @NotNull Map<String, Set<String>> adapterToTags) {
         final Set<String> tags = adapterToTags.get(ref.scope());
         if (tags == null) {
             return Optional.of(ErrorResponseUtil.errorResponse(new InvalidScopeForTagError(ref.scope(), ref.id())));
