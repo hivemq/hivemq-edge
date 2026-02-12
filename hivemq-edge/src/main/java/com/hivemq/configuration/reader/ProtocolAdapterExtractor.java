@@ -16,6 +16,7 @@
 package com.hivemq.configuration.reader;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.AdapterTag;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
@@ -23,11 +24,11 @@ import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.util.ObjectMapperUtil;
 import jakarta.xml.bind.ValidationEvent;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -174,8 +175,7 @@ public class ProtocolAdapterExtractor
                             .map(tag -> new AdapterTag(adapterId, tag.getName()))
                             .forEach(adapterTagSet::remove);
                     return true;
-                })
-                .orElse(false);
+                }).orElse(false);
 
         if (deleted) {
             replaceConfigsAndTriggerWrite(List.copyOf(newConfigs));

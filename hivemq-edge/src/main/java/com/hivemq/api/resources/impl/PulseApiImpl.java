@@ -720,6 +720,22 @@ public class PulseApiImpl implements PulseApi {
                     }
                 }
             }
+            // Validate primary TAG reference has scope
+            final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
+            if (primaryRef != null && primaryRef.type() == DataIdentifierReference.Type.TAG) {
+                if (primaryRef.scope() == null || primaryRef.scope().isBlank()) {
+                    return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
+                }
+            }
+            // Validate TAG references in instructions have scope
+            for (final var instruction : dataCombining.instructions()) {
+                final DataIdentifierReference ref = instruction.dataIdentifierReference();
+                if (ref != null && ref.type() == DataIdentifierReference.Type.TAG) {
+                    if (ref.scope() == null || ref.scope().isBlank()) {
+                        return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(ref.id())));
+                    }
+                }
+            }
         }
         return Optional.empty();
     }
