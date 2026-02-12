@@ -17,7 +17,7 @@ import type { DataCombining, Instruction } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import { SelectTopic } from '@/components/MQTT/EntityCreatableSelect'
 import { Topic } from '@/components/MQTT/EntityTag.tsx'
-import type { CombinerContext } from '@/modules/Mappings/types'
+import type { CombinerContext, SelectedSources } from '@/modules/Mappings/types'
 import { reconstructSelectedSources } from '@/modules/Mappings/utils/combining.utils'
 import CombinedEntitySelect from './CombinedEntitySelect'
 import { CombinedSchemaLoader } from './CombinedSchemaLoader'
@@ -32,9 +32,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
 
   // Per-mapping selectedSources state (not shared across mappings)
   // This prevents showing tags from mapping1 when editing mapping2
-  const [selectedSources, setSelectedSources] = useState<
-    { tags: DataIdentifierReference[]; topicFilters: DataIdentifierReference[] } | undefined
-  >(undefined)
+  const [selectedSources, setSelectedSources] = useState<SelectedSources | undefined>(undefined)
 
   // Initialize selectedSources for this specific mapping
   useEffect(() => {

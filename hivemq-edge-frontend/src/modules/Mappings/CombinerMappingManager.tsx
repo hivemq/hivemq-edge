@@ -172,7 +172,6 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entities, ...sources.map((s) => s.dataUpdatedAt)])
 
-  // @ts-ignore wrong type; need a fix
   const validator = useValidateCombiner(sources, entities)
   // TODO[NVL] Need to split the manager between Combiner and AssetMapper; no need to have so many hooks not in use
   const updateCombiner = useUpdateCombiner()

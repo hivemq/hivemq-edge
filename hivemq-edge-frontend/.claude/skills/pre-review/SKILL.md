@@ -12,6 +12,7 @@ allowed-tools: Bash, Grep, Read
 Analyzes code changes in the current branch against established patterns, catching common issues early before PR submission.
 
 Generates a comprehensive report covering:
+
 - Critical issues (must fix before PR)
 - Pattern violations (should fix)
 - Missing test coverage & quality gates
@@ -20,11 +21,13 @@ Generates a comprehensive report covering:
 ## Usage
 
 Arguments are parsed as follows:
+
 - `--base <branch>`: Base branch to compare against (default: master)
 - `--focus <areas>`: Comma-separated focus areas (e.g., "state-management,testing")
 - `--skip <sections>`: Skip report sections (e.g., "suggestions")
 
 Examples:
+
 ```bash
 # Basic usage (analyzes current branch vs master)
 /pre-review
@@ -46,11 +49,13 @@ Examples:
 ### Phase 1: Change Analysis (Gather)
 
 1. **Identify changed files**
+
    ```bash
    git diff master...HEAD --name-status
    ```
 
 2. **Categorize changes**
+
    - Source files (`.ts`, `.tsx`) - non-test
    - Test files (`.spec.ts`, `.cy.tsx`)
    - Generated files (`__generated__/`)
@@ -66,16 +71,19 @@ Examples:
 Run these checks and flag any violations:
 
 #### 1. Type Safety Issues
+
 ```bash
 git diff master...HEAD | grep -E "@ts-ignore|@ts-expect-error"
 ```
 
 **Pattern:** All type suppressions must have:
+
 - Justification comment
 - TODO with ticket reference
 - Expected fix timeline
 
 **Example:**
+
 ```typescript
 // ✅ Good
 // TODO[TICKET-123]: Fix validator types to accept EntityQuery[]
@@ -89,16 +97,19 @@ const validator = useValidateCombiner(sources, entities)
 ```
 
 #### 2. Linter Suppressions
+
 ```bash
 git diff master...HEAD | grep -E "eslint-disable"
 ```
 
 **Pattern:** All `eslint-disable` must have:
+
 - Inline comment explaining why
 - Specific rule name (not `eslint-disable-line` without rule)
 - Considered alternative solutions
 
 **Example:**
+
 ```typescript
 // ✅ Good
 // Only re-run when mapping ID changes, not when formContext updates
@@ -112,25 +123,30 @@ git diff master...HEAD | grep -E "eslint-disable"
 ```
 
 #### 3. Console Statements in Production
+
 ```bash
 git diff master...HEAD | grep -E "^\+.*console\.(log|warn|error|debug)" | grep -v "\.spec\." | grep -v "\.cy\."
 ```
 
 **Pattern:** No `console.*` in production code
+
 - Use proper logging library
 - Or remove debug statements
 
 #### 4. TODO/FIXME Without Owner
+
 ```bash
 git diff master...HEAD | grep -E "TODO|FIXME|XXX|HACK"
 ```
 
 **Pattern:** All TODO comments must include:
+
 - Ticket reference: `TODO[TICKET-123]`
 - Or owner: `TODO[YourName]`
 - Brief explanation
 
 **Example:**
+
 ```typescript
 // ✅ Good
 // TODO[38943/NVL]: Investigate reusing RJSF templates
@@ -142,9 +158,11 @@ git diff master...HEAD | grep -E "TODO|FIXME|XXX|HACK"
 ```
 
 #### 5. Missing Test Coverage for New Public Functions
+
 **Check:** For each new exported function, ensure test exists
 
 **Pattern:**
+
 ```typescript
 // New function in src/utils/foo.ts
 export const newFunction = () => {}
@@ -157,6 +175,7 @@ describe('newFunction', () => {
 ```
 
 #### 6. Hardcoded Strings (i18n)
+
 ```bash
 git diff master...HEAD | grep -E "^\+.*<(Heading|Text|Button|Label).*>.*[A-Z]" | grep -v "t\("
 ```
@@ -171,10 +190,13 @@ git diff master...HEAD | grep -E "^\+.*<(Heading|Text|Button|Label).*>.*[A-Z]" |
 
 ```typescript
 // ❌ Bad
-const [state, setState] = useState<{
-  tags: DataIdentifierReference[]
-  topicFilters: DataIdentifierReference[]
-} | undefined>()
+const [state, setState] = useState<
+  | {
+      tags: DataIdentifierReference[]
+      topicFilters: DataIdentifierReference[]
+    }
+  | undefined
+>()
 
 // ✅ Good
 import type { SelectedSources } from '@/modules/Mappings/types'
@@ -223,6 +245,7 @@ git diff master...HEAD --stat | awk '{if ($3 > 300) print $1, $3}'
 #### 5. Inconsistent Naming
 
 **Pattern:** Follow project conventions
+
 - Components: PascalCase (`UserProfile.tsx`)
 - Hooks: camelCase starting with `use` (`useUserData.ts`)
 - Utils: camelCase (`formatDate.ts`)
@@ -254,6 +277,7 @@ it('should be accessible', () => {
 #### 3. Test Selectors
 
 **Pattern:** Must use in priority order:
+
 1. `data-testid` (best)
 2. ARIA roles/labels
 3. Text content
@@ -284,6 +308,7 @@ describe('backward compatibility', () => {
 #### 5. Edge Case Coverage
 
 **Check:** For each new function, verify edge cases tested:
+
 - Null/undefined inputs
 - Empty arrays
 - Missing optional fields
@@ -310,6 +335,7 @@ export const getAdapterIdForTag = (tagId: string, formContext?: CombinerContext)
 #### 2. Performance Considerations
 
 **Check:** For loops/iterations over large arrays:
+
 - Use `.reduce()` efficiently
 - Avoid nested loops
 - Consider memoization for expensive calculations
@@ -317,6 +343,7 @@ export const getAdapterIdForTag = (tagId: string, formContext?: CombinerContext)
 #### 3. Code Organization
 
 **Suggest:**
+
 - Extract complex logic to separate functions
 - Group related functions
 - Consider custom hooks for stateful logic
@@ -345,9 +372,11 @@ Generate a markdown report with structure:
 **Overall Assessment:** [Ready/Needs Work/Major Issues]
 
 **Key Strengths:**
+
 - ✅ ...
 
 **Must Fix Before PR:**
+
 - 🔴 ...
 
 ---
@@ -399,10 +428,11 @@ Generate a markdown report with structure:
 
 ## Code Quality Metrics
 
-| Metric | Score | Status |
-|--------|-------|--------|
-| Test Coverage | X files | ✅/⚠️/❌ |
-| Type Safety | X issues | ✅/⚠️/❌ |
+| Metric        | Score    | Status   |
+| ------------- | -------- | -------- |
+| Test Coverage | X files  | ✅/⚠️/❌ |
+| Type Safety   | X issues | ✅/⚠️/❌ |
+
 | ...
 
 ---
@@ -410,13 +440,16 @@ Generate a markdown report with structure:
 ## Checklist Before PR Submission
 
 ### Critical (Must Do)
+
 - [ ] Fix item 1
 - [ ] Fix item 2
 
 ### Recommended (Should Do)
+
 - [ ] Fix item 3
 
 ### Nice to Have (Could Do)
+
 - [ ] Suggestion 1
 
 ---
@@ -436,21 +469,21 @@ The checklist is stored in `.claude/skills/pre-review/checklist.yaml` and can be
 critical_checks:
   - id: type-safety
     name: Type Safety Issues
-    pattern: "@ts-ignore|@ts-expect-error"
+    pattern: '@ts-ignore|@ts-expect-error'
     severity: critical
-    rule: "Must have justification + TODO"
+    rule: 'Must have justification + TODO'
 
 pattern_violations:
   - id: inline-types
     name: Inline Types vs Interfaces
     severity: should-fix
-    rule: "Use explicit interfaces"
+    rule: 'Use explicit interfaces'
 
 test_coverage:
   - id: accessibility
     name: Accessibility Tests
     severity: must-have
-    rule: "Every component needs a11y test"
+    rule: 'Every component needs a11y test'
 ```
 
 Add new checks by editing the YAML file.
@@ -460,6 +493,7 @@ Add new checks by editing the YAML file.
 ## Integration with Tasks
 
 The skill automatically:
+
 1. Checks for related task documentation in `.tasks/{task-id}/`
 2. References analysis documents if found
 3. Links to relevant pattern guides
