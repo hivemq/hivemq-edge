@@ -1,0 +1,189 @@
+# Pre-Review Checklist
+# This file defines the checks performed during pre-review analysis
+# Add new checks here to expand the skill over time
+
+critical_checks:
+  - id: type-safety
+    name: Type Safety Issues
+    pattern: "@ts-ignore|@ts-expect-error"
+    severity: critical
+    rule: "Must have justification + TODO with ticket reference"
+    example_good: |
+      // TODO[TICKET-123]: Fix validator types to accept EntityQuery[]
+      // @ts-ignore - validator type needs update
+    example_bad: |
+      // @ts-ignore wrong type; need a fix
+
+  - id: linter-suppressions
+    name: Linter Suppressions
+    pattern: "eslint-disable"
+    severity: critical
+    rule: "Must have inline comment explaining why and specific rule name"
+    example_good: |
+      // Only re-run when mapping ID changes
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    example_bad: |
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  - id: console-statements
+    name: Console Statements in Production
+    pattern: "console\\.(log|warn|error|debug)"
+    exclude_pattern: "\\.(spec|cy)\\."
+    severity: critical
+    rule: "No console.* in production code"
+
+  - id: todo-ownership
+    name: TODO/FIXME Without Owner
+    pattern: "TODO|FIXME|XXX|HACK"
+    severity: critical
+    rule: "Must include ticket reference or owner name"
+    example_good: "TODO[38943/NVL]: Investigate reusing RJSF templates"
+    example_bad: "TODO: Would prefer to reuse the templates"
+
+  - id: missing-tests
+    name: Missing Test Coverage
+    severity: critical
+    rule: "Every new exported function must have tests"
+
+  - id: hardcoded-strings
+    name: Hardcoded Strings (i18n)
+    pattern: "<(Heading|Text|Button|Label).*>.*[A-Z]"
+    exclude_pattern: "t\\("
+    severity: critical
+    rule: "All user-facing text must use t() translation"
+
+pattern_violations:
+  - id: inline-types
+    name: Inline Types vs Interfaces
+    severity: should-fix
+    rule: "Use explicit interfaces, not inline object types"
+    example_good: |
+      import type { SelectedSources } from '@/modules/Mappings/types'
+      const [state, setState] = useState<SelectedSources>()
+    example_bad: |
+      const [state, setState] = useState<{
+        tags: DataIdentifierReference[]
+      }>()
+
+  - id: emoji-in-code
+    name: Emoji in Production Code
+    severity: should-fix
+    rule: "No emojis in code comments (markdown docs are fine)"
+    example_good: "// Direct access to entity (no index needed)"
+    example_bad: "// ✅ Direct access to entity"
+
+  - id: magic-strings
+    name: Magic Strings/Numbers
+    severity: should-fix
+    rule: "Extract constants and use type guards"
+    example_good: |
+      const isDomainTag = (item: unknown): item is DomainTag => {
+        return (item as DomainTag).name !== undefined
+      }
+    example_bad: |
+      if ((item as DomainTag).name) { }
+
+  - id: large-files
+    name: Large File Size
+    threshold: 300
+    severity: should-fix
+    rule: "Files > 300 lines should be considered for splitting"
+
+  - id: inconsistent-naming
+    name: Inconsistent Naming
+    severity: should-fix
+    rules:
+      components: "PascalCase (UserProfile.tsx)"
+      hooks: "camelCase starting with use (useUserData.ts)"
+      utils: "camelCase (formatDate.ts)"
+      constants: "UPPER_SNAKE_CASE (MAX_RETRY_COUNT)"
+
+test_coverage:
+  - id: component-tests
+    name: Test Files for Changed Components
+    severity: must-have
+    rule: "Every new/changed component needs test file"
+    pattern: "*.spec.cy.tsx for *.tsx"
+
+  - id: accessibility-tests
+    name: Accessibility Tests
+    severity: must-have
+    rule: "Every component test must include accessibility check"
+    required_code: |
+      it('should be accessible', () => {
+        cy.injectAxe()
+        cy.mountWithProviders(<Component />)
+        cy.checkAccessibility()
+      })
+
+  - id: test-selectors
+    name: Test Selectors
+    severity: must-have
+    priority_order:
+      - "data-testid (best)"
+      - "ARIA roles/labels"
+      - "Text content"
+      - "Never CSS classes"
+    example_good: "cy.getByTestId('user-profile-name')"
+    example_bad: "cy.get('.chakra-button')"
+
+  - id: backward-compatibility
+    name: Backward Compatibility Tests
+    severity: must-have
+    rule: "When deprecating or migrating, add compat tests"
+    example: |
+      describe('backward compatibility', () => {
+        it('should handle old data format', () => {})
+        it('should handle new data format', () => {})
+      })
+
+  - id: edge-cases
+    name: Edge Case Coverage
+    severity: must-have
+    required_cases:
+      - "Null/undefined inputs"
+      - "Empty arrays"
+      - "Missing optional fields"
+      - "Error conditions"
+
+suggestions:
+  - id: jsdoc
+    name: JSDoc for Public APIs
+    severity: nice-to-have
+    rule: "Add JSDoc comments for exported functions"
+    template: |
+      /**
+       * Brief description
+       *
+       * @param paramName - Parameter description
+       * @returns Return value description
+       *
+       * @example
+       * const result = functionName(arg)
+       */
+
+  - id: performance
+    name: Performance Considerations
+    severity: nice-to-have
+    checks:
+      - "Use .reduce() efficiently"
+      - "Avoid nested loops"
+      - "Consider memoization for expensive calculations"
+
+  - id: code-organization
+    name: Code Organization
+    severity: nice-to-have
+    suggestions:
+      - "Extract complex logic to separate functions"
+      - "Group related functions"
+      - "Consider custom hooks for stateful logic"
+
+  - id: storybook
+    name: Storybook Stories
+    severity: nice-to-have
+    rule: "For new visual components, add Storybook story"
+
+# Metadata
+version: "1.0.0"
+last_updated: "2026-02-11"
+project: "hivemq-edge-frontend"
