@@ -25,6 +25,7 @@ import {
   getFilteredDataReferences,
   getAdapterIdForTag,
   reconstructSelectedSources,
+  getDataReference,
 } from './combining.utils'
 import type { DataCombining, Instruction } from '@/api/__generated__'
 
@@ -73,6 +74,253 @@ describe('getCombinedDataEntityReference', () => {
   it.each<TestEachSuite>(selectors)('should work for $test', ({ content, entities, results }) => {
     const updatedNodes = getCombinedDataEntityReference(content, entities)
     expect(updatedNodes).toStrictEqual(results)
+  })
+})
+
+describe('getDataReference', () => {
+  const mockTagQuery = (tags: DomainTag[]): Partial<UseQueryResult<DomainTagList, Error>> => ({
+    data: { items: tags },
+    isLoading: false,
+    isSuccess: true,
+    isError: false,
+  })
+
+  const mockTopicFilterQuery = (
+    topicFilters: TopicFilter[]
+  ): Partial<UseQueryResult<TopicFilterList, Error>> => ({
+    data: { items: topicFilters },
+    isLoading: false,
+    isSuccess: true,
+    isError: false,
+  })
+
+  it('should return empty array for undefined context', () => {
+    const result = getDataReference(undefined)
+    expect(result).toEqual([])
+  })
+
+  it('should return empty array for context without entityQueries', () => {
+    const context: CombinerContext = {}
+    const result = getDataReference(context)
+    expect(result).toEqual([])
+  })
+
+  it('should handle ADAPTER entities with tags', () => {
+    const context: CombinerContext = {
+      entityQueries: [
+        {
+          entity: { id: 'modbus-adapter', type: EntityType.ADAPTER },
+          query: mockTagQuery([
+            { name: 'temperature', description: 'Temperature sensor' } as DomainTag,
+            { name: 'pressure', description: 'Pressure sensor' } as DomainTag,
+          ]) as UseQueryResult<DomainTagList, Error>,
+        },
+      ],
+    }
+
+    const result = getDataReference(context)
+
+    expect(result).toHaveLength(2)
+    expect(result[0]).toEqual({
+      id: 'temperature',
+      type: DataIdentifierReference.type.TAG,
+      scope: 'modbus-adapter',
+    })
+    expect(result[1]).toEqual({
+      id: 'pressure',
+      type: DataIdentifierReference.type.TAG,
+      scope: 'modbus-adapter',
+    })
+  })
+
+  it('should handle EDGE_BROKER entities with tags', () => {
+    const context: CombinerContext = {
+      entityQueries: [
+        {
+          entity: { id: 'edge-broker-1', type: EntityType.EDGE_BROKER },
+          query: mockTagQuery([{ name: 'broker-tag', description: 'Broker tag' } as DomainTag]) as UseQueryResult<
+            DomainTagList,
+            Error
+          >,
+        },
+      ],
+    }
+
+    const result = getDataReference(context)
+
+    expect(result).toHaveLength(1)
+    expect(result[0]).toEqual({
+      id: 'broker-tag',
+      type: DataIdentifierReference.type.TAG,
+      scope: 'edge-broker-1',
+    })
+  })
+
+  it('should handle BRIDGE entities with null scope for tags', () => {
+    const context: CombinerContext = {
+      entityQueries: [
+        {
+          entity: { id: 'bridge-1', type: EntityType.BRIDGE },
+          query: mockTagQuery([{ name: 'bridge-tag', description: 'Bridge tag' } as DomainTag]) as UseQueryResult<
+            DomainTagList,
+            Error
+          >,
+        },
+      ],
+    }
+
+    const result = getDataReference(context)
+
+    expect(result).toHaveLength(1)
+    expect(result[0]).toEqual({
+      id: 'bridge-tag',
+      type: DataIdentifierReference.type.TAG,
+      scope: null,
+    })
+  })
+
+  it('should correctly handle mixed entity types without index misalignment', () => {
+    // This is the critical test for the bug fix
+    // When entityQueries contains ADAPTER, BRIDGE, ADAPTER, the old code would misalign indices
+    const context: CombinerContext = {
+      entityQueries: [
+        {
+          entity: { id: 'modbus-adapter', type: EntityType.ADAPTER },
+          query: mockTagQuery([{ name: 'modbus-temp', description: 'Modbus temperature' } as DomainTag]) as UseQueryResult<
+            DomainTagList,
+            Error
+          >,
+        },
+        {
+          entity: { id: 'bridge-1', type: EntityType.BRIDGE },
+          query: mockTagQuery([{ name: 'bridge-tag', description: 'Bridge tag' } as DomainTag]) as UseQueryResult<
+            DomainTagList,
+            Error
+          >,
+        },
+        {
+          entity: { id: 'opcua-adapter', type: EntityType.ADAPTER },
+          query: mockTagQuery([{ name: 'opcua-temp', description: 'OPC-UA temperature' } as DomainTag]) as UseQueryResult<
+            DomainTagList,
+            Error
+          >,
+        },
+      ],
+    }
+
+    const result = getDataReference(context)
+
+    expect(result).toHaveLength(3)
+
+    // Verify each tag has the correct scope from its entity
+    expect(result[0]).toEqual({
+      id: 'modbus-temp',
+      type: DataIdentifierReference.type.TAG,
+      scope: 'modbus-adapter', // ✅ Should be modbus-adapter, not undefined
+    })
+    expect(result[1]).toEqual({
+      id: 'bridge-tag',
+      type: DataIdentifierReference.type.TAG,
+      scope: null, // ✅ Bridge entities get null scope
+    })
+    expect(result[2]).toEqual({
+      id: 'opcua-temp',
+      type: DataIdentifierReference.type.TAG,
+      scope: 'opcua-adapter', // ✅ Should be opcua-adapter, NOT undefined or modbus-adapter!
+    })
+  })
+
+  it('should handle topic filters with null scope', () => {
+    const context: CombinerContext = {
+      entityQueries: [
+        {
+          entity: { id: 'adapter-1', type: EntityType.ADAPTER },
+          query: mockTopicFilterQuery([
+            { topicFilter: 'topic/filter/1' } as TopicFilter,
+            { topicFilter: 'topic/filter/2' } as TopicFilter,
+          ]) as UseQueryResult<TopicFilterList, Error>,
+        },
+      ],
+    }
+
+    const result = getDataReference(context)
+
+    expect(result).toHaveLength(2)
+    expect(result[0]).toEqual({
+      id: 'topic/filter/1',
+      type: DataIdentifierReference.type.TOPIC_FILTER,
+      scope: null,
+    })
+    expect(result[1]).toEqual({
+      id: 'topic/filter/2',
+      type: DataIdentifierReference.type.TOPIC_FILTER,
+      scope: null,
+    })
+  })
+
+  it('should handle mixed tags and topic filters from different entity types', () => {
+    const context: CombinerContext = {
+      entityQueries: [
+        {
+          entity: { id: 'modbus-adapter', type: EntityType.ADAPTER },
+          query: mockTagQuery([{ name: 'modbus-tag' } as DomainTag]) as UseQueryResult<DomainTagList, Error>,
+        },
+        {
+          entity: { id: 'bridge-1', type: EntityType.BRIDGE },
+          query: mockTopicFilterQuery([{ topicFilter: 'bridge/topic' } as TopicFilter]) as UseQueryResult<
+            TopicFilterList,
+            Error
+          >,
+        },
+        {
+          entity: { id: 'opcua-adapter', type: EntityType.ADAPTER },
+          query: mockTagQuery([{ name: 'opcua-tag' } as DomainTag]) as UseQueryResult<DomainTagList, Error>,
+        },
+      ],
+    }
+
+    const result = getDataReference(context)
+
+    expect(result).toHaveLength(3)
+    expect(result[0]).toEqual({
+      id: 'modbus-tag',
+      type: DataIdentifierReference.type.TAG,
+      scope: 'modbus-adapter',
+    })
+    expect(result[1]).toEqual({
+      id: 'bridge/topic',
+      type: DataIdentifierReference.type.TOPIC_FILTER,
+      scope: null,
+    })
+    expect(result[2]).toEqual({
+      id: 'opcua-tag',
+      type: DataIdentifierReference.type.TAG,
+      scope: 'opcua-adapter',
+    })
+  })
+
+  it('should skip entity queries with empty data', () => {
+    const context: CombinerContext = {
+      entityQueries: [
+        {
+          entity: { id: 'adapter-1', type: EntityType.ADAPTER },
+          query: mockTagQuery([]) as UseQueryResult<DomainTagList, Error>,
+        },
+        {
+          entity: { id: 'adapter-2', type: EntityType.ADAPTER },
+          query: mockTagQuery([{ name: 'tag-1' } as DomainTag]) as UseQueryResult<DomainTagList, Error>,
+        },
+      ],
+    }
+
+    const result = getDataReference(context)
+
+    expect(result).toHaveLength(1)
+    expect(result[0]).toEqual({
+      id: 'tag-1',
+      type: DataIdentifierReference.type.TAG,
+      scope: 'adapter-2',
+    })
   })
 })
 

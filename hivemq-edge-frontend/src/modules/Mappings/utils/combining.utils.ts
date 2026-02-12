@@ -28,22 +28,20 @@ export const getDataReference = (formContext?: CombinerContext): DataReference[]
 
   // Use new entityQueries structure
   if (formContext.entityQueries) {
-    const dataSources = formContext.entityQueries
-      .map((eq) => eq.entity)
-      .filter((e) => e.type === EntityType.ADAPTER || e.type === EntityType.EDGE_BROKER)
-
-    return formContext.entityQueries.reduce<DataReference[]>((acc, entityQuery, currentIndex) => {
-      const { query } = entityQuery
+    return formContext.entityQueries.reduce<DataReference[]>((acc, entityQuery) => {
+      const { entity, query } = entityQuery
       const items = query.data?.items || []
       if (!items.length) return acc
 
       const firstItem = items[0]
 
       if ((firstItem as DomainTag).name) {
+        // For tags, use entity.id as scope (only for ADAPTER/EDGE_BROKER types)
+        const scope = entity.type === EntityType.ADAPTER || entity.type === EntityType.EDGE_BROKER ? entity.id : null
         const tagDataReferences = (items as DomainTag[]).map<DataReference>((tag) => ({
           id: tag.name,
           type: DataIdentifierReference.type.TAG,
-          scope: dataSources[currentIndex]?.id,
+          scope,
         }))
         acc.push(...tagDataReferences)
       } else if ((firstItem as TopicFilter).topicFilter) {
