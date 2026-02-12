@@ -66,7 +66,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
             label: tag.name,
             value: tag.name,
             description: tag.description,
-            adapterId: entity.id, // ✅ Direct access to entity, no index needed
+            adapterId: entity.id,
             type: DataIdentifierReference.type.TAG,
           }))
           acc.push(...options)

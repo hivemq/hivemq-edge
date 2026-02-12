@@ -65,8 +65,8 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
   const localContext = useMemo((): CombinerContext => {
     return {
       ...formContext,
-      selectedSources, // ✅ This mapping's selectedSources, not shared
-      onSelectedSourcesChange: setSelectedSources, // ✅ Updates this mapping's state
+      selectedSources,
+      onSelectedSourcesChange: setSelectedSources,
     }
   }, [formContext, selectedSources])
 

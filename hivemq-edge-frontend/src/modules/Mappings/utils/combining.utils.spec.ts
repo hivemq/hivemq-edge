@@ -62,7 +62,7 @@ describe('getCombinedDataEntityReference', () => {
       entities: [],
       results: [
         {
-          scope: null, // ✅ Topic filters always have null scope
+          scope: null,
           id: 'a/topic/+/filter',
           type: DataIdentifierReference.type.TOPIC_FILTER,
         },
@@ -91,7 +91,7 @@ describe('getSchemasFromReferences', () => {
     },
     {
       id: 'a/topic/+/filter',
-      scope: null, // ✅ Topic filters always have null scope
+      scope: null,
       type: DataIdentifierReference.type.TOPIC_FILTER,
     },
   ]

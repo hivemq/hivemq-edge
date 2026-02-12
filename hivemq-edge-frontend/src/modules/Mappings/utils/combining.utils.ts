@@ -50,7 +50,7 @@ export const getDataReference = (formContext?: CombinerContext): DataReference[]
         const topicFilterDataReferences = (items as TopicFilter[]).map<DataReference>((topicFilter) => ({
           id: topicFilter.topicFilter,
           type: DataIdentifierReference.type.TOPIC_FILTER,
-          scope: null, // ✅ Topic filters always have null scope
+          scope: null,
         }))
         acc.push(...topicFilterDataReferences)
       }
@@ -95,7 +95,7 @@ export const getCombinedDataEntityReference = (
       const topicFilterDataReferences = (cur as TopicFilter[]).map<DataReference>((topicFilter) => ({
         id: topicFilter.topicFilter,
         type: DataIdentifierReference.type.TOPIC_FILTER,
-        scope: null, // ✅ Topic filters always have null scope
+        scope: null,
       }))
       acc.push(...topicFilterDataReferences)
     }
