@@ -267,12 +267,7 @@ public class JsonSchemaGenerator {
                                 : fieldInformation.customDataType().getNodeId().toParseableString())));
         rootNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
 
-        // Create the root properties node that contains "value" and metadata
-        final ObjectNode rootPropertiesNode = MAPPER.createObjectNode();
-        rootNode.set("properties", rootPropertiesNode);
-
         final ObjectNode valueNode = MAPPER.createObjectNode();
-        rootPropertiesNode.set("value", valueNode);
         valueNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
 
         final ObjectNode propertiesNode = MAPPER.createObjectNode();
@@ -288,9 +283,13 @@ public class JsonSchemaGenerator {
 
         valueNode.set("required", requiredAttributesArray);
 
-        // Add metadata properties if enabled
         if (includeMetadata) {
+            final ObjectNode rootPropertiesNode = MAPPER.createObjectNode();
+            rootNode.set("properties", rootPropertiesNode);
+            rootPropertiesNode.set("value", valueNode);
             BuiltinJsonSchema.addReadOnlyMetadataProperties(rootPropertiesNode, MAPPER);
+        } else {
+            rootNode.set("value", valueNode);
         }
 
         final ArrayNode requiredProperties = MAPPER.createArrayNode();
