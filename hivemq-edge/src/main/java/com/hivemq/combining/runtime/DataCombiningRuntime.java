@@ -41,9 +41,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
+import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
 
 public class DataCombiningRuntime {
 
@@ -89,57 +90,66 @@ public class DataCombiningRuntime {
         // prepare the script for the data combining
         dataCombiningTransformationService.addScriptForDataCombining(combining);
 
+        final DataIdentifierReference primaryRef = combining.sources().primaryReference();
+        final AtomicBoolean primaryFound = new AtomicBoolean(false);
+
         // Derive tag subscriptions from instructions (which carry DataIdentifierReference with scope)
         // instead of from sources().tags()
-        combining.instructions().stream()
+        combining.instructions()
+                .stream()
                 .map(Instruction::dataIdentifierReference)
                 .filter(Objects::nonNull)
                 .filter(ref -> ref.type() == TAG)
                 .distinct()
-                .map(ref -> {
-                    log.debug("Starting tag consumer for tag {} with scope {}", ref.id(), ref.scope());
-                    final boolean isPrimary = TAG.equals(
-                                    combining.sources().primaryReference().type())
-                            && ref.id()
-                                    .equals(combining
-                                            .sources()
-                                            .primaryReference()
-                                            .id())
-                            && Objects.equals(
-                                    ref.scope(),
-                                    combining.sources().primaryReference().scope());
-                    return new InternalTagConsumer(ref.id(), ref.scope(), combining, isPrimary);
-                })
-                .forEach(consumer -> {
+                .forEach(ref -> {
+                    final boolean isPrimary = ref.equals(primaryRef);
+                    if (isPrimary) {
+                        log.debug("Starting tag consumer for primary tag {} with scope {}", ref.id(), ref.scope());
+                        primaryFound.set(true);
+                    } else {
+                        log.debug("Starting tag consumer for tag {} with scope {}", ref.id(), ref.scope());
+                    }
+                    final InternalTagConsumer consumer =
+                            new InternalTagConsumer(ref.id(), ref.scope(), combining, isPrimary);
                     tagManager.addConsumer(consumer);
                     consumers.add(consumer);
                 });
 
         // Topic filter subscriptions - derive from instructions()
         // instead of from sources().topicFilters()
-        combining.instructions().stream()
+        combining.instructions()
+                .stream()
                 .map(Instruction::dataIdentifierReference)
                 .filter(Objects::nonNull)
                 .filter(ref -> ref.type() == TOPIC_FILTER)
-                .map(DataIdentifierReference::id)
                 .distinct()
-                .forEach(topicFilter -> {
-                    log.debug("Starting mqtt consumer for filter {}", topicFilter);
-                    internalSubscriptions.add(subscribeTopicFilter(
-                            combining,
-                            topicFilter,
-                            TOPIC_FILTER.equals(combining
-                                            .sources()
-                                            .primaryReference()
-                                            .type())
-                                    && topicFilter.equals(combining
-                                            .sources()
-                                            .primaryReference()
-                                            .id())));
+                .forEach(ref -> {
+                    final boolean isPrimary = ref.equals(primaryRef);
+                    if (isPrimary) {
+                        log.debug("Starting mqtt consumer for primary filter {}", ref.id());
+                        primaryFound.set(true);
+                    } else {
+                        log.debug("Starting mqtt consumer for filter {}", ref.id());
+                    }
+                    internalSubscriptions.add(subscribeTopicFilter(combining, ref.id(), isPrimary));
                 });
 
-        internalSubscriptions.forEach(
-                internalSubscription -> internalSubscription.queueConsumer().start());
+        // Subscribe to primary if not found in instructions
+        if (!primaryFound.get()) {
+            if (TAG.equals(primaryRef.type())) {
+                log.debug("Starting tag consumer for primary tag {} with scope {} (not in instructions)",
+                        primaryRef.id(), primaryRef.scope());
+                final InternalTagConsumer consumer =
+                        new InternalTagConsumer(primaryRef.id(), primaryRef.scope(), combining, true);
+                tagManager.addConsumer(consumer);
+                consumers.add(consumer);
+            } else if (TOPIC_FILTER.equals(primaryRef.type())) {
+                log.debug("Starting mqtt consumer for primary filter {} (not in instructions)", primaryRef.id());
+                internalSubscriptions.add(subscribeTopicFilter(combining, primaryRef.id(), true));
+            }
+        }
+
+        internalSubscriptions.forEach(internalSubscription -> internalSubscription.queueConsumer().start());
     }
 
     public void stop() {
@@ -199,9 +209,7 @@ public class DataCombiningRuntime {
 
         tagsToDataPoints.forEach((tagRef, dataPoints) -> dataPoints.forEach(dataPoint -> {
             try {
-                rootNode.set(
-                        tagRef.toFullyQualifiedName(),
-                        mapper.readTree(dataPoint.getTagValue().toString()));
+                rootNode.set(tagRef.toFullyQualifiedName(), mapper.readTree(dataPoint.getTagValue().toString()));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
                 throw new RuntimeException(e);
