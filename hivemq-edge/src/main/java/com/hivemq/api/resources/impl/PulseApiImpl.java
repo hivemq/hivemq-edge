@@ -19,10 +19,7 @@ import com.google.common.collect.Sets;
 import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
-import com.hivemq.api.errors.combiners.InvalidScopeForTagError;
 import com.hivemq.api.errors.combiners.MissingScopeForTagError;
-import com.hivemq.api.errors.combiners.TagNotFoundError;
-import com.hivemq.api.errors.combiners.UnexpectedScopeError;
 import com.hivemq.api.errors.pulse.ActivationTokenAlreadyDeletedError;
 import com.hivemq.api.errors.pulse.ActivationTokenInvalidError;
 import com.hivemq.api.errors.pulse.ActivationTokenNotDeletedError;
@@ -681,7 +678,7 @@ public class PulseApiImpl implements PulseApi {
                             ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(dataCombiningId)));
                 }
             }
-            // Validate primary TAG reference has scope and exists, and TOPIC_FILTER has no scope
+            // Validate primary TAG reference has scope
             final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
             if (primaryRef != null) {
                 if (primaryRef.type() == DataIdentifierReference.Type.TAG) {
@@ -700,7 +697,7 @@ public class PulseApiImpl implements PulseApi {
                     }
                 }
             }
-            // Validate TAG references in instructions have scope and exist, and TOPIC_FILTER has no scope
+            // Validate TAG references in instructions have scope
             for (final var instruction : dataCombining.instructions()) {
                 final DataIdentifierReference ref = instruction.dataIdentifierReference();
                 if (ref != null) {
@@ -736,19 +733,6 @@ public class PulseApiImpl implements PulseApi {
                     }
                 }
             }
-        }
-        return Optional.empty();
-    }
-
-    private @NotNull Optional<Response> validateTagExists(
-            final @NotNull DataIdentifierReference ref,
-            final @NotNull Map<String, Set<String>> adapterToTags) {
-        final Set<String> tags = adapterToTags.get(ref.scope());
-        if (tags == null) {
-            return Optional.of(ErrorResponseUtil.errorResponse(new InvalidScopeForTagError(ref.scope(), ref.id())));
-        }
-        if (!tags.contains(ref.id())) {
-            return Optional.of(ErrorResponseUtil.errorResponse(new TagNotFoundError(ref.id(), ref.scope())));
         }
         return Optional.empty();
     }

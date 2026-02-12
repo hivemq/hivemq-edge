@@ -21,10 +21,7 @@ import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.adapters.DataCombinerNotFoundError;
 import com.hivemq.api.errors.combiners.InvalidDataIdentifierReferenceTypeForCombinerError;
 import com.hivemq.api.errors.combiners.InvalidEntityTypeForCombinerError;
-import com.hivemq.api.errors.combiners.InvalidScopeForTagError;
 import com.hivemq.api.errors.combiners.MissingScopeForTagError;
-import com.hivemq.api.errors.combiners.TagNotFoundError;
-import com.hivemq.api.errors.combiners.UnexpectedScopeError;
 import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.combining.model.DataCombining;
@@ -43,13 +40,9 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -199,15 +192,6 @@ public class CombinersResourceImpl implements CombinersApi {
             return Optional.of(
                     ErrorResponseUtil.errorResponse(new InvalidEntityTypeForCombinerError(EntityType.PULSE_AGENT)));
         }
-
-        // Build a map of adapterId -> Set<tagName> for TAG existence validation
-        final Map<String, Set<String>> adapterToTags = new HashMap<>();
-        protocolAdapterExtractor.getAllConfigs().forEach(adapter -> {
-            final Set<String> tagNames = new HashSet<>();
-            adapter.getTags().forEach(tag -> tagNames.add(tag.getName()));
-            adapterToTags.put(adapter.getAdapterId(), tagNames);
-        });
-
         for (final DataCombining dataCombining : dataCombiner.dataCombinings()) {
             final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
             if (primaryRef.type() == DataIdentifierReference.Type.PULSE_ASSET) {
@@ -215,7 +199,7 @@ public class CombinersResourceImpl implements CombinersApi {
                         ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
                                 DataIdentifierReference.Type.PULSE_ASSET)));
             }
-            // Validate primary TAG reference has scope and exists
+            // Validate primary TAG reference has scope
             if (primaryRef.type() == DataIdentifierReference.Type.TAG) {
                 if (primaryRef.scope() == null || primaryRef.scope().isBlank()) {
                     return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
@@ -240,7 +224,7 @@ public class CombinersResourceImpl implements CombinersApi {
                         ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
                                 DataIdentifierReference.Type.PULSE_ASSET)));
             }
-            // Validate TAG references in instructions have scope and exist, and TOPIC_FILTER references have no scope
+            // Validate TAG references in instructions have scope
             for (final Instruction instruction : dataCombining.instructions()) {
                 final DataIdentifierReference ref = instruction.dataIdentifierReference();
                 if (ref != null) {
@@ -260,19 +244,6 @@ public class CombinersResourceImpl implements CombinersApi {
                     }
                 }
             }
-        }
-        return Optional.empty();
-    }
-
-    private @NotNull Optional<Response> validateTagExists(
-            final @NotNull DataIdentifierReference ref,
-            final @NotNull Map<String, Set<String>> adapterToTags) {
-        final Set<String> tags = adapterToTags.get(ref.scope());
-        if (tags == null) {
-            return Optional.of(ErrorResponseUtil.errorResponse(new InvalidScopeForTagError(ref.scope(), ref.id())));
-        }
-        if (!tags.contains(ref.id())) {
-            return Optional.of(ErrorResponseUtil.errorResponse(new TagNotFoundError(ref.id(), ref.scope())));
         }
         return Optional.empty();
     }
