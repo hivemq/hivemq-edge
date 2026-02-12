@@ -23,6 +23,12 @@ const CombinedEntitySelectWrapper: FC<PropsWithChildren<EntityReferenceSelectPro
 }) => {
   const sources = useGetCombinedEntities(mockCombiner.sources.items)
 
+  // Build entityQueries for the new API
+  const entityQueries = mockCombiner.sources.items.map((entity, index) => ({
+    entity,
+    query: sources[index],
+  }))
+
   return (
     <Box>
       <FormControl>
@@ -34,7 +40,12 @@ const CombinedEntitySelectWrapper: FC<PropsWithChildren<EntityReferenceSelectPro
           tags={tags}
           topicFilters={topicFilters}
           onChange={onChange}
-          formContext={{ queries: sources, entities: mockCombiner.sources.items }}
+          formContext={{
+            entityQueries,
+            // Backward compatibility
+            queries: sources,
+            entities: mockCombiner.sources.items,
+          }}
           maxW="75vw"
         />
       </FormControl>
@@ -55,7 +66,7 @@ describe('CombinedEntitySelect', () => {
     })
   })
 
-  it.only('should render properly', () => {
+  it('should render properly', () => {
     const onChange = cy.stub().as('onChange')
 
     cy.mountWithProviders(
