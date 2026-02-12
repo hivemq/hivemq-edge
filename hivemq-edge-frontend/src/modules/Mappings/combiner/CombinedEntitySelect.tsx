@@ -85,7 +85,11 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
       }, []) || []
 
     return combinedOptions.reduce<EntityOption[]>((acc, current) => {
-      const isAlreadyIn = acc.find((item) => item.value === current.value && item.type === current.type)
+      // Check for duplicates by value, type, AND adapterId (scope)
+      // This allows tags with same name from different adapters
+      const isAlreadyIn = acc.find(
+        (item) => item.value === current.value && item.type === current.type && item.adapterId === current.adapterId
+      )
       if (!isAlreadyIn) {
         return acc.concat([current])
       }
@@ -135,6 +139,9 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
         isMulti
         value={values}
         aria-label={t('Combiner.mappings.items.sources.description', { ns: 'schemas' })}
+        // Make options unique by combining value + adapterId + type
+        // This allows tags with the same name from different adapters to coexist
+        getOptionValue={(option) => `${option.value}@${option.adapterId || 'null'}@${option.type}`}
         onChange={(newValue) => {
           if (newValue) onChange(newValue)
         }}
