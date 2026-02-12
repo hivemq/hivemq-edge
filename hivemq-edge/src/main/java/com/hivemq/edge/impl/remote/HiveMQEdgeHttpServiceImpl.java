@@ -108,7 +108,7 @@ public class HiveMQEdgeHttpServiceImpl {
             return false;
         }
         try {
-            final URI ignored = URI.create(uri);
+            final URI ignored = URI.create(uri.trim());
             return true;
         } catch (final IllegalArgumentException e) {
             return false;
@@ -154,7 +154,7 @@ public class HiveMQEdgeHttpServiceImpl {
     private void checkConnectivityStatus(final @NotNull HiveMQEdgeRemoteServices services) {
         try {
             final HttpResponse response =
-                    HttpUrlConnectionClient.head(Map.of(), services.getConfigEndpoint(), readTimeoutMillis);
+                    HttpUrlConnectionClient.head(Map.of(), services.getConfigEndpoint().trim(), readTimeoutMillis);
             hasConnectivity = !response.isError();
             if (logger.isTraceEnabled()) {
                 logger.trace("Successfully established connection to http provider {}, online",
@@ -176,7 +176,7 @@ public class HiveMQEdgeHttpServiceImpl {
         configurationLock.lock();
         try {
             if (remoteConfiguration == null && running) {
-                remoteConfiguration = httpGet(services.getConfigEndpoint(), HiveMQEdgeRemoteConfiguration.class);
+                remoteConfiguration = httpGet(services.getConfigEndpoint().trim(), HiveMQEdgeRemoteConfiguration.class);
             }
         } finally {
             configurationLock.unlock();
@@ -239,7 +239,7 @@ public class HiveMQEdgeHttpServiceImpl {
             throws HiveMQEdgeRemoteConnectivityException {
         final HiveMQEdgeRemoteServices services = remoteServices;
         if (services != null && isValidUri(services.getUsageEndpoint())) {
-            httpPost(services.getUsageEndpoint(), event);
+            httpPost(services.getUsageEndpoint().trim(), event);
             usageErrorCount.set(0);
         }
     }
