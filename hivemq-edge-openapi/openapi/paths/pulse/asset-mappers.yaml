@@ -38,7 +38,7 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Topic, schema, or mapping ID invalid
+      description: Topic, schema, mapping ID invalid, or TAG reference missing scope
     '404':
       content:
         application/json:

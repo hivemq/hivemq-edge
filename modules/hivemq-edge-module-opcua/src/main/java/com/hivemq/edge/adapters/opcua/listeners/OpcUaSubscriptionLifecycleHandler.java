@@ -315,7 +315,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             try {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
                 final String payload = extractPayload(client, values.get(i));
-                tagStreamingService.feed(tn, List.of(dataPointFactory.createJsonDataPoint(tn, payload)));
+                tagStreamingService.feed(adapterId, tn, List.of(dataPointFactory.createJsonDataPoint(tn, payload)));
             } catch (final Throwable e) {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
                 throw new RuntimeException(e);

@@ -29,6 +29,7 @@ import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import com.hivemq.protocols.northbound.TagConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -39,11 +40,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
-import static com.hivemq.combining.runtime.SourceSanitizer.sanitize;
 
 public class DataCombiningRuntime {
 
@@ -59,7 +60,7 @@ public class DataCombiningRuntime {
     private final @NotNull ObjectMapper mapper;
     private final @NotNull List<InternalTagConsumer> consumers;
     private final @NotNull List<InternalSubscription> internalSubscriptions;
-    private final @NotNull ConcurrentHashMap<String, List<DataPoint>> tagResults;
+    private final @NotNull ConcurrentHashMap<DataIdentifierReference, List<DataPoint>> tagResults;
     private final @NotNull ConcurrentHashMap<String, PUBLISH> topicFilterToPublish;
 
     public DataCombiningRuntime(
@@ -89,24 +90,40 @@ public class DataCombiningRuntime {
         // prepare the script for the data combining
         dataCombiningTransformationService.addScriptForDataCombining(combining);
 
-        combining.sources().tags().stream().map(tag -> {
-            log.debug("Starting tag consumer for tag {}", tag);
-            return new InternalTagConsumer(tag,
-                    combining,
-                    TAG.equals(combining.sources().primaryReference().type()) &&
-                            tag.equals(combining.sources().primaryReference().id()));
-        }).forEach(consumer -> {
-            tagManager.addConsumer(consumer);
-            consumers.add(consumer);
-        });
+        // Derive tag subscriptions from instructions (which carry DataIdentifierReference with scope)
+        // instead of from sources().tags()
+        combining.instructions().stream()
+                .map(Instruction::dataIdentifierReference)
+                .filter(Objects::nonNull)
+                .filter(ref -> ref.type() == TAG)
+                .distinct()
+                .map(ref -> {
+                    log.debug("Starting tag consumer for tag {} with scope {}", ref.id(), ref.scope());
+                    final boolean isPrimary = TAG.equals(combining.sources().primaryReference().type()) &&
+                            ref.id().equals(combining.sources().primaryReference().id()) &&
+                            Objects.equals(ref.scope(), combining.sources().primaryReference().scope());
+                    return new InternalTagConsumer(ref.id(), ref.scope(), combining, isPrimary);
+                })
+                .forEach(consumer -> {
+                    tagManager.addConsumer(consumer);
+                    consumers.add(consumer);
+                });
 
-        combining.sources().topicFilters().forEach(topicFilter -> {
-            log.debug("Starting mqtt consumer for filter {}", topicFilter);
-            internalSubscriptions.add(subscribeTopicFilter(combining,
-                    topicFilter,
-                    TOPIC_FILTER.equals(combining.sources().primaryReference().type()) &&
-                            topicFilter.equals(combining.sources().primaryReference().id())));
-        });
+        // Topic filter subscriptions - derive from instructions()
+        // instead of from sources().topicFilters()
+        combining.instructions().stream()
+                .map(Instruction::dataIdentifierReference)
+                .filter(Objects::nonNull)
+                .filter(ref -> ref.type() == TOPIC_FILTER)
+                .map(DataIdentifierReference::id)
+                .distinct()
+                .forEach(topicFilter -> {
+                    log.debug("Starting mqtt consumer for filter {}", topicFilter);
+                    internalSubscriptions.add(subscribeTopicFilter(combining,
+                            topicFilter,
+                            TOPIC_FILTER.equals(combining.sources().primaryReference().type()) &&
+                                    topicFilter.equals(combining.sources().primaryReference().id())));
+                });
 
         internalSubscriptions.forEach(internalSubscription -> internalSubscription.queueConsumer().start());
     }
@@ -158,7 +175,7 @@ public class DataCombiningRuntime {
         final ObjectNode rootNode = mapper.createObjectNode();
         topicFilterResults.forEach((topicFilter, publish) -> {
             try {
-                rootNode.set(sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER)),
+                rootNode.set(new DataIdentifierReference(topicFilter, TOPIC_FILTER).toFullyQualifiedName(),
                         mapper.readTree(publish.getPayload()));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of payload '{}'", publish.getPayload());
@@ -166,9 +183,9 @@ public class DataCombiningRuntime {
             }
         });
 
-        tagsToDataPoints.forEach((tagName, dataPoints) -> dataPoints.forEach(dataPoint -> {
+        tagsToDataPoints.forEach((tagRef, dataPoints) -> dataPoints.forEach(dataPoint -> {
             try {
-                rootNode.set(sanitize(new DataIdentifierReference(tagName, TAG)),
+                rootNode.set(tagRef.toFullyQualifiedName(),
                         mapper.readTree(dataPoint.getTagValue().toString()));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
@@ -190,14 +207,17 @@ public class DataCombiningRuntime {
 
     public final class InternalTagConsumer implements TagConsumer {
         private final @NotNull String tagName;
+        private final @NotNull String scope;
         private final boolean isPrimary;
         private final @NotNull DataCombining dataCombining;
 
         public InternalTagConsumer(
                 final @NotNull String tagName,
+                final @NotNull String scope,
                 final @NotNull DataCombining dataCombining,
                 final boolean isPrimary) {
             this.tagName = tagName;
+            this.scope = scope;
             this.dataCombining = dataCombining;
             this.isPrimary = isPrimary;
         }
@@ -208,8 +228,14 @@ public class DataCombiningRuntime {
         }
 
         @Override
+        public @NotNull String getScope() {
+            return scope;
+        }
+
+        @Override
         public void accept(final @NotNull List<DataPoint> dataPoints) {
-            tagResults.put(tagName, dataPoints);
+            // Use DataIdentifierReference as the key to include scope
+            tagResults.put(new DataIdentifierReference(tagName, TAG, scope), dataPoints);
             if (isPrimary) {
                 try {
                     triggerPublish(dataCombining);

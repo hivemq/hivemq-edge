@@ -16,7 +16,6 @@
 package com.hivemq.persistence.mappings.fieldmapping;
 
 import com.hivemq.combining.model.DataIdentifierReference;
-import com.jayway.jsonpath.internal.Utils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -54,9 +53,9 @@ public record Instruction(@NotNull String sourceFieldName, @NotNull String desti
         return Optional.ofNullable(dataIdentifierReference())
                 .filter(r -> Objects.nonNull(r.type()))
                 .filter(r -> Objects.nonNull(r.id()))
-                .map(r -> r.type().name() + ":" + r.id())
+                .map(DataIdentifierReference::toFullyQualifiedName)
                 // We need to escape the root field name, because it can contain single quotes.
-                .map(fieldName -> Utils.escape(fieldName, true))
+                .map(Instruction::escapeSingleQuote)
                 .map(fieldName -> "$['" + fieldName + "'].")
                 .map(prefix -> {
                     if (sourceFieldName.startsWith("$.")) {
@@ -66,6 +65,12 @@ public record Instruction(@NotNull String sourceFieldName, @NotNull String desti
                     } else {
                         return prefix + sourceFieldName;
                     }
+                })
+                .map(path -> {
+                    if (path.endsWith(".")) {
+                        return path.substring(0, path.length() - 1);
+                    }
+                    return path;
                 })
                 .orElse(sourceFieldName);
     }
@@ -78,5 +83,31 @@ public record Instruction(@NotNull String sourceFieldName, @NotNull String desti
             return destinationJsonPath.substring(1);
         }
         return destinationJsonPath;
+    }
+
+    /**
+     * Escapes single quotes in a string. Already escaped single quotes (\') are ignored.
+     *
+     * @param input the input string
+     * @return the string with unescaped single quotes escaped
+     */
+    static @NotNull String escapeSingleQuote(final @NotNull String input) {
+        final StringBuilder result = new StringBuilder();
+        for (int i = 0; i < input.length(); i++) {
+            final char c = input.charAt(i);
+            if (c == '\'') {
+                // Check if this single quote is already escaped
+                if (i > 0 && input.charAt(i - 1) == '\\') {
+                    // Already escaped, just append the quote (backslash was already added)
+                    result.append(c);
+                } else {
+                    // Not escaped, escape it
+                    result.append("\\'");
+                }
+            } else {
+                result.append(c);
+            }
+        }
+        return result.toString();
     }
 }
