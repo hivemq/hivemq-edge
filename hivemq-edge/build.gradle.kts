@@ -353,6 +353,13 @@ sourceSets {
     }
 }
 
+tasks.processResources {
+    from("${projectDir}/../ext") {
+        include("remote-endpoints.txt")
+        into("ext")
+    }
+}
+
 /* ******************** distribution ******************** */
 
 tasks.jar {
