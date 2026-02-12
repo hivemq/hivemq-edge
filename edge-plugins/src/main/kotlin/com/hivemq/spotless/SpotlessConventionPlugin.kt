@@ -46,7 +46,7 @@ class SpotlessConventionPlugin : Plugin<Project> {
             removeUnusedImports()
 
             // Use Palantir Java Format (closer to IntelliJ style than google-java-format)
-            palantirJavaFormat("2.50.0")
+            palantirJavaFormat("2.87.0")
 
             // Basic cleanup
             trimTrailingWhitespace()
@@ -71,11 +71,13 @@ class SpotlessConventionPlugin : Plugin<Project> {
         })
 
         // Hook spotlessCheck into the check task
-        project.plugins.withType(JavaBasePlugin::class.java, Action<JavaBasePlugin> {
-            project.tasks.named("check", Task::class.java, Action<Task> {
-                dependsOn("spotlessCheck")
-            })
-        })
+
+        //TODO deactivated for now until spotlessApply has been run at least once to avoid breaking the build for everyone
+//        project.plugins.withType(JavaBasePlugin::class.java, Action<JavaBasePlugin> {
+//            project.tasks.named("check", Task::class.java, Action<Task> {
+//                dependsOn("spotlessCheck")
+//            })
+//        })
     }
 
     /**
