@@ -29,14 +29,16 @@ import org.junit.jupiter.api.Test;
 
 public class TagManagerTest {
 
+    private static final @NotNull String ADAPTER_1 = "adapter-1";
+
     @Test
     public void test_allSucceeds() throws Exception {
         var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
         var countDownLatch = new CountDownLatch(3);
-        tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch));
+        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
 
         assertThat(countDownLatch.await(5, TimeUnit.SECONDS)).isTrue();
     }
@@ -47,12 +49,12 @@ public class TagManagerTest {
         var countDownLatch = new CountDownLatch(3);
         var countDownLatch1 = new CountDownLatch(3);
         var countDownLatch2 = new CountDownLatch(3);
-        tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch));
-        tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch1));
-        tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch2));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch));
+        tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch1));
+        tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch2));
+        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
 
         assertThat(countDownLatch.await(5, TimeUnit.SECONDS)).isTrue();
         assertThat(countDownLatch1.await(5, TimeUnit.SECONDS)).isTrue();
@@ -64,27 +66,101 @@ public class TagManagerTest {
         var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
         var countDownLatch = new CountDownLatch(3);
         var countDownLatch1 = new CountDownLatch(3);
-        tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch));
-        tagManager.addConsumer(new FailingTagConsumer("tag1"));
-        tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch1));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch));
+        tagManager.addConsumer(new FailingTagConsumer(ADAPTER_1, "tag1"));
+        tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch1));
+        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
 
         assertThat(countDownLatch.await(5, TimeUnit.SECONDS)).isTrue();
         assertThat(countDownLatch1.await(5, TimeUnit.SECONDS)).isTrue();
     }
 
+    @Test
+    public void test_differentScopes_isolateConsumers() throws Exception {
+        var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
+        var adapter1Latch = new CountDownLatch(1);
+        var adapter2Latch = new CountDownLatch(1);
+        tagManager.addConsumer(new SucceedingConsumer("adapter-1", "temp", adapter1Latch));
+        tagManager.addConsumer(new SucceedingConsumer("adapter-2", "temp", adapter2Latch));
+
+        tagManager.feed("adapter-1", "temp", List.of(new DataPointImpl("temp", 25)));
+
+        assertThat(adapter1Latch.await(5, TimeUnit.SECONDS)).isTrue();
+        // adapter-2 consumer should NOT have been triggered
+        assertThat(adapter2Latch.await(200, TimeUnit.MILLISECONDS)).isFalse();
+    }
+
+    @Test
+    public void test_feedDoesNotTriggerConsumerForDifferentScope() throws Exception {
+        var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
+        var latch = new CountDownLatch(1);
+        tagManager.addConsumer(new SucceedingConsumer("adapter-2", "temp", latch));
+
+        tagManager.feed("adapter-1", "temp", List.of(new DataPointImpl("temp", 25)));
+
+        // consumer is for adapter-2, feed is for adapter-1 — should not trigger
+        assertThat(latch.await(200, TimeUnit.MILLISECONDS)).isFalse();
+    }
+
+    @Test
+    public void test_cachedValueReplayedOnAddConsumer() throws Exception {
+        var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
+        // Feed first, then add consumer — cached value should be replayed
+        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 42)));
+
+        var latch = new CountDownLatch(1);
+        tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", latch));
+
+        assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
+    }
+
+    @Test
+    public void test_cachedValueNotReplayedForDifferentScope() throws Exception {
+        var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
+        tagManager.feed("adapter-1", "tag1", List.of(new DataPointImpl("tag1", 42)));
+
+        var latch = new CountDownLatch(1);
+        tagManager.addConsumer(new SucceedingConsumer("adapter-2", "tag1", latch));
+
+        // cached value is for adapter-1, consumer is for adapter-2
+        assertThat(latch.await(200, TimeUnit.MILLISECONDS)).isFalse();
+    }
+
+    @Test
+    public void test_removeConsumer_stopsDelivery() throws Exception {
+        var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
+        var latch = new CountDownLatch(2);
+        var consumer = new SucceedingConsumer(ADAPTER_1, "tag1", latch);
+        tagManager.addConsumer(consumer);
+
+        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1)));
+        tagManager.removeConsumer(consumer);
+        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 2)));
+
+        // Only the first feed should have triggered the consumer
+        assertThat(latch.await(200, TimeUnit.MILLISECONDS)).isFalse();
+        assertThat(latch.getCount()).isEqualTo(1);
+    }
+
     public static class FailingTagConsumer implements TagConsumer {
+        private final @NotNull String scope;
         private final @NotNull String tagName;
 
-        public FailingTagConsumer(@NotNull final String tagName) {
+        public FailingTagConsumer(@NotNull final String scope, @NotNull final String tagName) {
+            this.scope = scope;
             this.tagName = tagName;
         }
 
         @Override
         public @NotNull String getTagName() {
             return tagName;
+        }
+
+        @Override
+        public @Nullable String getScope() {
+            return scope;
         }
 
         @Override
@@ -94,10 +170,15 @@ public class TagManagerTest {
     }
 
     public static class SucceedingConsumer implements TagConsumer {
+        private final @NotNull String scope;
         private final @NotNull String tagName;
         private final @NotNull CountDownLatch countDownLatch;
 
-        public SucceedingConsumer(@NotNull final String tagName, @NotNull final CountDownLatch countDownLatch) {
+        public SucceedingConsumer(
+                @NotNull final String scope,
+                @NotNull final String tagName,
+                @NotNull final CountDownLatch countDownLatch) {
+            this.scope = scope;
             this.tagName = tagName;
             this.countDownLatch = countDownLatch;
         }
@@ -105,6 +186,11 @@ public class TagManagerTest {
         @Override
         public @NotNull String getTagName() {
             return tagName;
+        }
+
+        @Override
+        public @Nullable String getScope() {
+            return scope;
         }
 
         @Override

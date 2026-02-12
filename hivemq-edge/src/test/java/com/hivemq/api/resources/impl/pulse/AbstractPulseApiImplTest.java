@@ -22,6 +22,7 @@ import com.hivemq.configuration.entity.pulse.PulseAssetsEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.AssetMappingExtractor;
+import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.edge.api.PulseApi;
 import com.hivemq.edge.api.model.Combiner;
@@ -72,6 +73,9 @@ public abstract class AbstractPulseApiImplTest {
 
     @Mock
     protected @NotNull StatusProviderRegistry statusProviderRegistry;
+
+    @Mock
+    protected @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
 
     @Mock
     protected @NotNull PulseExtractor pulseExtractor;
@@ -146,6 +150,7 @@ public abstract class AbstractPulseApiImplTest {
                 systemInformation,
                 assetMappingExtractor,
                 pulseExtractor,
+                protocolAdapterExtractor,
                 assetProviderRegistry,
                 statusProviderRegistry);
     }

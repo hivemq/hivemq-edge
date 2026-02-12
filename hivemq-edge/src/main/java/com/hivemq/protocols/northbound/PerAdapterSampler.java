@@ -66,14 +66,13 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
         // TODO fixed timeout??
         final CompletableFuture<PollingOutputImpl.PollingResult> outputFuture =
                 pollingOutput.getOutputFuture().orTimeout(10_000, TimeUnit.MILLISECONDS);
-        return outputFuture
-                .thenCompose(((pollingResult) -> {
-                    if (pollingResult == PollingOutputImpl.PollingResult.SUCCESS) {
-                        final ProtocolAdapterDataSample dataSample = pollingOutput.getDataSample();
-                        final Map<String, List<DataPoint>> dataPoints = dataSample.getDataPoints();
-                        for (final Map.Entry<String, List<DataPoint>> tagNameTpDataPoints : dataPoints.entrySet()) {
-                            tagManager.feed(tagNameTpDataPoints.getKey(), tagNameTpDataPoints.getValue());
-                        }
+        return outputFuture.thenCompose(((pollingResult) -> {
+            if (pollingResult == PollingOutputImpl.PollingResult.SUCCESS) {
+                final ProtocolAdapterDataSample dataSample = pollingOutput.getDataSample();
+                final Map<String, List<DataPoint>> dataPoints = dataSample.getDataPoints();
+                for (final Map.Entry<String, List<DataPoint>> tagNameTpDataPoints : dataPoints.entrySet()) {
+                    tagManager.feed(getAdapterId(), tagNameTpDataPoints.getKey(), tagNameTpDataPoints.getValue());
+                }
 
                         return CompletableFuture.completedFuture(null);
                         //  return this.captureDataSample(pollingOutput.getDataSample(), pollingContext);

@@ -727,4 +727,348 @@ public class ProtocolAdapterExtractorTest {
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
         assertThat(protocolAdapterExtractor.deleteAdapter("adapterId")).isFalse();
     }
+
+    // ==================== Tests for (adapterId, tagName) deduplication ====================
+
+    @Test
+    public void whenSameTagNameInDifferentAdapters_thenAddAdapterReturnsTrue() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+
+        // Add first adapter with tag "sharedTag"
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("sharedTag", "description1", Map.of()))))).isTrue();
+
+        // Add second adapter with the same tag name "sharedTag" - should succeed
+        // because deduplication is by (adapterId, tagName), not just tagName
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter2",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("sharedTag", "description2", Map.of()))))).isTrue();
+
+        assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(2);
+    }
+
+    @Test
+    public void whenSameTagNameInDifferentAdapters_thenUpdateAllAdaptersReturnsSuccess() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+
+        // Update all adapters with multiple adapters having the same tag name
+        assertThat(protocolAdapterExtractor.updateAllAdapters(List.of(new ProtocolAdapterEntity("adapter1",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("sharedTag", "description1", Map.of()))),
+                new ProtocolAdapterEntity("adapter2",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("sharedTag", "description2", Map.of()))),
+                new ProtocolAdapterEntity("adapter3",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("sharedTag",
+                                "description3",
+                                Map.of())))))).isEqualTo(Configurator.ConfigResult.SUCCESS);
+
+        assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(3);
+    }
+
+    @Test
+    public void whenUpdateAdapterWithTagNameExistingInOtherAdapter_thenUpdateAdapterReturnsTrue() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+
+        // Add first adapter with tag "existingTag"
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("existingTag", "description1", Map.of()))))).isTrue();
+
+        // Add second adapter with different tag
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter2",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("otherTag", "description2", Map.of()))))).isTrue();
+
+        // Update second adapter to use "existingTag" - should succeed
+        // because (adapter2, existingTag) is different from (adapter1, existingTag)
+        assertThat(protocolAdapterExtractor.updateAdapter(new ProtocolAdapterEntity("adapter2",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("existingTag", "updated description", Map.of()))))).isTrue();
+    }
+
+    @Test
+    public void whenDeleteAdapter_thenTagNamesAreFreedForOtherAdapters() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+
+        // Add first adapter with tags
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("tag1", "description1", Map.of()),
+                        new TagEntity("tag2", "description2", Map.of()))))).isTrue();
+
+        // Delete the adapter
+        assertThat(protocolAdapterExtractor.deleteAdapter("adapter1")).isTrue();
+
+        // Add another adapter with the same adapter ID and same tags - should succeed
+        // because the old tags were removed from the dedup set
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("tag1", "new description1", Map.of()),
+                        new TagEntity("tag2", "new description2", Map.of()))))).isTrue();
+    }
+
+    @Test
+    public void whenDuplicateTagNameWithinSameAdapterOnAdd_thenAddAdapterReturnsFalse() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+
+        // Try to add adapter with duplicate tag names within the same adapter
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("duplicateTag", "description1", Map.of()),
+                        new TagEntity("duplicateTag", "description2", Map.of()))))).isFalse();
+
+        assertThat(protocolAdapterExtractor.getAllConfigs()).isEmpty();
+    }
+
+    @Test
+    public void whenDuplicateTagNameWithinSameAdapterOnUpdate_thenUpdateAdapterReturnsFalse() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+
+        // Add adapter with unique tags
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("tag1", "description1", Map.of()),
+                        new TagEntity("tag2", "description2", Map.of()))))).isTrue();
+
+        // Try to update with duplicate tag names within the same adapter
+        assertThat(protocolAdapterExtractor.updateAdapter(new ProtocolAdapterEntity("adapter1",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("duplicateTag", "description1", Map.of()),
+                        new TagEntity("duplicateTag", "description2", Map.of()))))).isFalse();
+
+        // Original adapter should remain unchanged
+        assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(1);
+        assertThat(protocolAdapterExtractor.getAllConfigs().getFirst().getTags()).hasSize(2);
+        assertThat(protocolAdapterExtractor.getAllConfigs().getFirst().getTags().get(0).getName()).isEqualTo("tag1");
+    }
+
+    @Test
+    public void whenDuplicateTagNameWithinSameAdapterOnUpdateAll_thenUpdateAllAdaptersReturnsError()
+            throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+
+        // Try to update all adapters where one adapter has duplicate tag names
+        assertThat(protocolAdapterExtractor.updateAllAdapters(List.of(new ProtocolAdapterEntity("adapter1",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("uniqueTag", "description1", Map.of()))),
+                new ProtocolAdapterEntity("adapter2",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("duplicateTag", "description1", Map.of()),
+                                new TagEntity("duplicateTag",
+                                        "description2",
+                                        Map.of())))))).isEqualTo(Configurator.ConfigResult.ERROR);
+    }
+
+    @Test
+    public void whenMultipleAdaptersWithMixedTags_thenOperationsWorkCorrectly() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+
+        // Add adapter1 with tags [tag1, tag2]
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("tag1", "desc", Map.of()), new TagEntity("tag2", "desc", Map.of()))))).isTrue();
+
+        // Add adapter2 with tags [tag1, tag3] - tag1 is shared, should succeed
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter2",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("tag1", "desc", Map.of()), new TagEntity("tag3", "desc", Map.of()))))).isTrue();
+
+        // Add adapter3 with tags [tag2, tag3] - both shared, should succeed
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter3",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("tag2", "desc", Map.of()), new TagEntity("tag3", "desc", Map.of()))))).isTrue();
+
+        assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(3);
+
+        // Update adapter1 to have tags [tag1, tag3] - tag3 exists in other adapters, should succeed
+        assertThat(protocolAdapterExtractor.updateAdapter(new ProtocolAdapterEntity("adapter1",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("tag1", "desc", Map.of()), new TagEntity("tag3", "desc", Map.of()))))).isTrue();
+
+        // Delete adapter2
+        assertThat(protocolAdapterExtractor.deleteAdapter("adapter2")).isTrue();
+        assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(2);
+
+        // Re-add adapter2 with all shared tags - should succeed
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter2",
+                "protocolId",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("tag1", "desc", Map.of()),
+                        new TagEntity("tag2", "desc", Map.of()),
+                        new TagEntity("tag3", "desc", Map.of()))))).isTrue();
+
+        assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(3);
+    }
+
+    @Test
+    public void whenConfigFileHasSameTagNameInDifferentAdapters_thenApplyConfigSucceeds() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                  <protocol-adapters>
+                    <protocol-adapter>
+                      <adapterId>adapter1</adapterId>
+                      <protocolId>simulation</protocolId>
+                      <configVersion>1</configVersion>
+                      <config>
+                        <pollingIntervalMillis>1000</pollingIntervalMillis>
+                      </config>
+                      <tags>
+                        <tag>
+                          <name>sharedTag</name>
+                          <description>Shared tag in adapter1</description>
+                        </tag>
+                      </tags>
+                    </protocol-adapter>
+                    <protocol-adapter>
+                      <adapterId>adapter2</adapterId>
+                      <protocolId>simulation</protocolId>
+                      <configVersion>1</configVersion>
+                      <config>
+                        <pollingIntervalMillis>1000</pollingIntervalMillis>
+                      </config>
+                      <tags>
+                        <tag>
+                          <name>sharedTag</name>
+                          <description>Shared tag in adapter2</description>
+                        </tag>
+                      </tags>
+                    </protocol-adapter>
+                  </protocol-adapters>
+                </hivemq>
+                """);
+
+        assertThat(configFileReader.applyConfig()).isNotNull();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+        assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(2);
+
+        // Verify both adapters have the same tag name
+        assertThat(protocolAdapterExtractor.getAdapterByAdapterId("adapter1")).isPresent()
+                .hasValueSatisfying(adapter -> assertThat(adapter.getTags()
+                        .getFirst()
+                        .getName()).isEqualTo("sharedTag"));
+        assertThat(protocolAdapterExtractor.getAdapterByAdapterId("adapter2")).isPresent()
+                .hasValueSatisfying(adapter -> assertThat(adapter.getTags()
+                        .getFirst()
+                        .getName()).isEqualTo("sharedTag"));
+    }
+
+    @Test
+    public void whenConfigFileHasDuplicateTagNameWithinSameAdapter_thenApplyConfigFails() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+                <hivemq>
+                  <protocol-adapters>
+                    <protocol-adapter>
+                      <adapterId>adapter1</adapterId>
+                      <protocolId>simulation</protocolId>
+                      <configVersion>1</configVersion>
+                      <config>
+                        <pollingIntervalMillis>1000</pollingIntervalMillis>
+                      </config>
+                      <tags>
+                        <tag>
+                          <name>duplicateTag</name>
+                          <description>First occurrence</description>
+                        </tag>
+                        <tag>
+                          <name>duplicateTag</name>
+                          <description>Second occurrence</description>
+                        </tag>
+                      </tags>
+                    </protocol-adapter>
+                  </protocol-adapters>
+                </hivemq>
+                """);
+
+        assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
+    }
 }

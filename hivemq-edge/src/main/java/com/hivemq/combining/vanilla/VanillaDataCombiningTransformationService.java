@@ -64,26 +64,18 @@ public final class VanillaDataCombiningTransformationService implements DataComb
                 .filter(instruction ->
                         Objects.nonNull(instruction.dataIdentifierReference().type()))
                 .forEach(instruction -> {
+                    final String sourceJsonPath = instruction.toSourceJsonPath();
                     Object value = null;
-                    switch (instruction.dataIdentifierReference().type()) {
-                        case PULSE_ASSET, TAG -> {
-                            // Source json path is ignored for PULSE_ASSET or TAG.
-                            value = instruction.dataIdentifierReference().id();
-                        }
-                        case TOPIC_FILTER -> {
-                            final String sourceJsonPath = instruction.toSourceJsonPath();
-                            Exception parsingException = null;
-                            try {
-                                value = sourceDocumentContext.read(sourceJsonPath, Object.class);
-                            } catch (final Exception e) {
-                                parsingException = e;
-                            }
-                            if (parsingException != null) {
-                                LOGGER.warn("Source json path {} does not exist", sourceJsonPath, parsingException);
-                            } else if (value == null) {
-                                LOGGER.warn("No data found for source json path {}", sourceJsonPath);
-                            }
-                        }
+                    Exception parsingException = null;
+                    try {
+                        value = sourceDocumentContext.read(sourceJsonPath, Object.class);
+                    } catch (final Exception e) {
+                        parsingException = e;
+                    }
+                    if (parsingException != null) {
+                        LOGGER.warn("Source json path {} does not exist", sourceJsonPath, parsingException);
+                    } else if (value == null) {
+                        LOGGER.warn("No data found for source json path {}", sourceJsonPath);
                     }
                     if (value != null) {
                         final String destinationJsonPath = instruction.toDestinationJsonPath();

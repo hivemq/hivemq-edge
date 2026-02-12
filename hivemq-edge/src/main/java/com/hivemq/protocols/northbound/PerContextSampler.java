@@ -77,51 +77,43 @@ public class PerContextSampler extends AbstractSubscriptionSampler {
                         final ProtocolAdapterDataSample dataSample = pollingOutput.getDataSample();
                         final Map<String, List<DataPoint>> dataPoints = dataSample.getDataPoints();
 
-                        for (final Map.Entry<String, List<DataPoint>> tagNameTpDataPoints : dataPoints.entrySet()) {
-                            tagManager.feed(tagNameTpDataPoints.getKey(), tagNameTpDataPoints.getValue());
-                        }
-                        return CompletableFuture.completedFuture(null);
-                    } else {
-                        return CompletableFuture.completedFuture(null);
-                    }
-                }))
-                .whenComplete((aVoid, throwable) -> {
-                    if (throwable != null) {
-                        if (pollingOutput.getErrorMessage() == null) {
-                            log.warn(
-                                    "During the polling for adapter with id '{}' an exception occurred: ",
-                                    getAdapterId(),
-                                    throwable.getCause());
-                            eventService
-                                    .createAdapterEvent(
-                                            protocolAdapter.getId(),
-                                            protocolAdapter
-                                                    .getProtocolAdapterInformation()
-                                                    .getProtocolId())
-                                    .withSeverity(Event.SEVERITY.WARN)
-                                    .withMessage("During the polling for adapter with id '" + protocolAdapter.getId()
-                                            + "' an exception occurred: "
-                                            + throwable.getClass().getSimpleName()
-                                            + ":"
-                                            + throwable.getMessage());
-                        } else {
-                            log.warn(
-                                    "During the polling for adapter with id '{}' an exception occurred. Detailed error message: {}.",
-                                    getAdapterId(),
-                                    pollingOutput.getErrorMessage(),
-                                    throwable.getCause());
-                            eventService
-                                    .createAdapterEvent(
-                                            protocolAdapter.getId(),
-                                            protocolAdapter
-                                                    .getProtocolAdapterInformation()
-                                                    .getProtocolId())
-                                    .withSeverity(Event.SEVERITY.WARN)
-                                    .withMessage("During the polling for adapter with id '" + protocolAdapter.getId()
-                                            + "' an exception occurred. Detailed error message:"
-                                            + pollingOutput.getErrorMessage());
-                        }
-                    }
-                });
+                for (final Map.Entry<String, List<DataPoint>> tagNameTpDataPoints : dataPoints.entrySet()) {
+                    tagManager.feed(getAdapterId(), tagNameTpDataPoints.getKey(), tagNameTpDataPoints.getValue());
+                }
+                return CompletableFuture.completedFuture(null);
+            } else {
+                return CompletableFuture.completedFuture(null);
+            }
+        })).whenComplete((aVoid, throwable) -> {
+            if (throwable != null) {
+                if (pollingOutput.getErrorMessage() == null) {
+                    log.warn("During the polling for adapter with id '{}' an exception occurred: ",
+                            getAdapterId(),
+                            throwable.getCause());
+                    eventService.createAdapterEvent(protocolAdapter.getId(),
+                                    protocolAdapter.getProtocolAdapterInformation().getProtocolId())
+                            .withSeverity(Event.SEVERITY.WARN)
+                            .withMessage("During the polling for adapter with id '" +
+                                    protocolAdapter.getId() +
+                                    "' an exception occurred: " +
+                                    throwable.getClass().getSimpleName() +
+                                    ":" +
+                                    throwable.getMessage());
+                } else {
+                    log.warn(
+                            "During the polling for adapter with id '{}' an exception occurred. Detailed error message: {}.",
+                            getAdapterId(),
+                            pollingOutput.getErrorMessage(),
+                            throwable.getCause());
+                    eventService.createAdapterEvent(protocolAdapter.getId(),
+                                    protocolAdapter.getProtocolAdapterInformation().getProtocolId())
+                            .withSeverity(Event.SEVERITY.WARN)
+                            .withMessage("During the polling for adapter with id '" +
+                                    protocolAdapter.getId() +
+                                    "' an exception occurred. Detailed error message:" +
+                                    pollingOutput.getErrorMessage());
+                }
+            }
+        });
     }
 }
