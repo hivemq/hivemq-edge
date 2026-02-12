@@ -45,7 +45,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
 }) => {
   const { t } = useTranslation()
   const isLoading = useMemo(() => {
-    return formContext?.entityQueries?.some((eq) => eq.query.isLoading) || false
+    return formContext?.entityQueries?.some((eq) => eq?.query?.isLoading) || false
   }, [formContext?.entityQueries])
 
   const allOptions = useMemo(() => {
@@ -53,6 +53,9 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
 
     const combinedOptions =
       formContext?.entityQueries?.reduce<EntityOption[]>((acc, entityQuery) => {
+        // Safety check: handle undefined entityQuery or query
+        if (!entityQuery || !entityQuery.query) return acc
+
         const { entity, query } = entityQuery
 
         if (!query.data) return acc

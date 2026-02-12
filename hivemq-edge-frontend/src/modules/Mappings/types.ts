@@ -94,8 +94,21 @@ export interface CombinerContext {
    * Selected sources with full ownership information.
    * Tracks which tags/topicFilters are selected with their scope.
    * This is the source of truth for ownership in the frontend.
+   *
+   * NOTE: This is per-mapping, not per-combiner. Each DataCombiningEditorField
+   * manages its own selectedSources state to prevent cross-contamination between mappings.
    */
   selectedSources?: SelectedSources
+
+  /**
+   * Callback to update selectedSources when user makes changes.
+   * This prevents React lifecycle cascades by updating state directly
+   * instead of deriving from formData on every render.
+   *
+   * NOTE: This is set at the mapping editor level (DataCombiningEditorField),
+   * not at the combiner level, to ensure each mapping has isolated state.
+   */
+  onSelectedSourcesChange?: (sources: SelectedSources) => void
 
   /**
    * @deprecated Use entityQueries instead. Kept for backward compatibility during migration.

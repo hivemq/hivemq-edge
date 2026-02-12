@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getTemplate, getUiOptions, type FieldProps, type RJSFSchema } from '@rjsf/utils'
 import {
@@ -17,6 +18,7 @@ import { DataIdentifierReference } from '@/api/__generated__'
 import { SelectTopic } from '@/components/MQTT/EntityCreatableSelect'
 import { Topic } from '@/components/MQTT/EntityTag.tsx'
 import type { CombinerContext } from '@/modules/Mappings/types'
+import { reconstructSelectedSources } from '@/modules/Mappings/utils/combining.utils'
 import CombinedEntitySelect from './CombinedEntitySelect'
 import { CombinedSchemaLoader } from './CombinedSchemaLoader'
 import { AutoMapping } from './components/AutoMapping'
@@ -27,6 +29,34 @@ import { PrimarySelect } from './PrimarySelect'
 export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
   const { formData, formContext, uiSchema, registry } = props
+
+  // Per-mapping selectedSources state (not shared across mappings)
+  // This prevents showing tags from mapping1 when editing mapping2
+  const [selectedSources, setSelectedSources] = useState<
+    { tags: DataIdentifierReference[]; topicFilters: DataIdentifierReference[] } | undefined
+  >(undefined)
+
+  // Initialize selectedSources for this specific mapping
+  useEffect(() => {
+    if (!formData) {
+      setSelectedSources({ tags: [], topicFilters: [] })
+      return
+    }
+
+    // Reconstruct from this mapping's instructions
+    const reconstructed = reconstructSelectedSources(formData, formContext)
+    setSelectedSources(reconstructed)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData?.id]) // Only reconstruct when editing a different mapping (not on every formData/formContext change to avoid cascade)
+
+  // Create local context for this specific mapping
+  const localContext = useMemo((): CombinerContext => {
+    return {
+      ...formContext,
+      selectedSources, // ✅ This mapping's selectedSources, not shared
+      onSelectedSourcesChange: setSelectedSources, // ✅ Updates this mapping's state
+    }
+  }, [formContext, selectedSources])
 
   const fieldOptions = getUiOptions(uiSchema)
 
@@ -101,20 +131,38 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
             // Currently needed for backward compatibility during transition
             tags={formData?.sources?.tags}
             topicFilters={formData?.sources?.topicFilters}
-            formContext={formContext}
+            formContext={localContext}
             onChange={(values) => {
               if (!formData) return
 
-              // TODO[DEPRECATED]: This writes to deprecated API fields
-              // When API removes sources.tags/topicFilters, replace with proper state management
-              // for formContext.selectedSources (see OPTION_B_ANALYSIS.md)
-              const tags = values
+              // Build DataIdentifierReference arrays with full ownership info
+              const tagsWithScope = values
                 .filter((entity) => entity.type === DataIdentifierReference.type.TAG)
-                .map((entity) => entity.value)
+                .map((entity) => ({
+                  id: entity.value,
+                  type: DataIdentifierReference.type.TAG,
+                  scope: entity.adapterId || null, // ✅ Preserve scope from selection
+                }))
 
-              const filters = values
+              const topicFiltersWithScope = values
                 .filter((entity) => entity.type === DataIdentifierReference.type.TOPIC_FILTER)
-                .map((entity) => entity.value)
+                .map((entity) => ({
+                  id: entity.value,
+                  type: DataIdentifierReference.type.TOPIC_FILTER,
+                  scope: null, // ✅ Topic filters always null
+                }))
+
+              // Update selectedSources state (Option B strategy)
+              if (localContext?.onSelectedSourcesChange) {
+                localContext.onSelectedSourcesChange({
+                  tags: tagsWithScope,
+                  topicFilters: topicFiltersWithScope,
+                })
+              }
+
+              // TEMPORARY: Also update deprecated API fields during transition
+              const tags = tagsWithScope.map((t) => t.id)
+              const filters = topicFiltersWithScope.map((tf) => tf.id)
 
               const isPrimary = values.some(
                 (entity) =>
@@ -125,8 +173,6 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
                 ...formData,
                 sources: {
                   ...formData.sources,
-                  // TEMPORARY: Keep writing to deprecated fields during transition
-                  // Backend will ignore these once they remove the fields
                   tags: tags,
                   topicFilters: filters,
                   // @ts-ignore TODO[30935] check for type clash on primary
@@ -177,7 +223,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <ButtonGroup size="sm" flexDirection="column" alignItems="flex-end" gap={2}>
             <AutoMapping
               formData={props.formData}
-              formContext={formContext}
+              formContext={localContext}
               onChange={(instructions: Instruction[]) => {
                 if (!props.formData) return
 
@@ -233,7 +279,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <FormLabel>{primaryOptions.title}</FormLabel>
           <PrimarySelect
             formData={formData}
-            formContext={formContext}
+            formContext={localContext}
             id="mappings-primary"
             onChange={(values) => {
               if (!props.formData) return
