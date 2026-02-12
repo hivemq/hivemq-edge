@@ -55,7 +55,7 @@ describe('CombinedEntitySelect', () => {
     })
   })
 
-  it('should render properly', () => {
+  it.only('should render properly', () => {
     const onChange = cy.stub().as('onChange')
 
     cy.mountWithProviders(
@@ -67,7 +67,7 @@ describe('CombinedEntitySelect', () => {
       .should('contain.text', 'topicFilter/t3')
     cy.get('#combiner-entity-select').realClick()
     cy.get('#combiner-entity-select').type('m')
-    cy.get('#react-select-entity-listbox').find('[role="option').as('options')
+    cy.get('#react-select-entity-listbox').find('[role="option"]').as('options')
     cy.get('@options').should('have.length', 4)
     cy.get('@options').eq(0).should('contain.text', 'my-adapter/power/off').should('contain.text', 'Tag')
   })
