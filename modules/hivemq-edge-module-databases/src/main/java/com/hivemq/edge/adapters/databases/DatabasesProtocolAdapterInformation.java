@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.databases;
 
-
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
@@ -24,24 +23,22 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.databases.config.DatabasesAdapterConfig;
 import com.hivemq.edge.adapters.databases.config.DatabasesAdapterTag;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.EnumSet;
-import java.util.List;
-
 public class DatabasesProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final @NotNull ProtocolAdapterInformation INSTANCE = new DatabasesProtocolAdapterInformation();
     private static final @NotNull Logger LOG = LoggerFactory.getLogger(DatabasesProtocolAdapterInformation.class);
 
-    protected DatabasesProtocolAdapterInformation() {
-    }
+    protected DatabasesProtocolAdapterInformation() {}
 
     @Override
     public @NotNull String getProtocolName() {
@@ -51,7 +48,8 @@ public class DatabasesProtocolAdapterInformation implements ProtocolAdapterInfor
 
     @Override
     public @NotNull String getProtocolId() {
-        // this id is very important as this is how the adapters configurations in the config.xml are linked to the adapter implementations.
+        // this id is very important as this is how the adapters configurations in the config.xml are linked to the
+        // adapter implementations.
         // any change here means you will need to edit the config.xml
         return "databases";
     }
@@ -83,7 +81,8 @@ public class DatabasesProtocolAdapterInformation implements ProtocolAdapterInfor
 
     @Override
     public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
-        // this indicates what capabilities this protocol adapter has. E.g. READ/WRITE. See the ProtocolAdapterCapability enum for more information.
+        // this indicates what capabilities this protocol adapter has. E.g. READ/WRITE. See the
+        // ProtocolAdapterCapability enum for more information.
         return EnumSet.of(ProtocolAdapterCapability.READ);
     }
 
@@ -101,7 +100,8 @@ public class DatabasesProtocolAdapterInformation implements ProtocolAdapterInfor
 
     @Override
     public @Nullable ProtocolAdapterCategory getCategory() {
-        // this indicates for which use cases this protocol adapter is intended. See the ProtocolAdapterConstants.CATEGORY enum for more information.
+        // this indicates for which use cases this protocol adapter is intended. See the
+        // ProtocolAdapterConstants.CATEGORY enum for more information.
         return ProtocolAdapterCategory.CONNECTIVITY;
     }
 
@@ -111,12 +111,10 @@ public class DatabasesProtocolAdapterInformation implements ProtocolAdapterInfor
         return List.of(ProtocolAdapterTag.INTERNET, ProtocolAdapterTag.TCP, ProtocolAdapterTag.AUTOMATION);
     }
 
-
     @Override
     public @Nullable String getUiSchema() {
-        try (final InputStream is = this.getClass()
-                .getClassLoader()
-                .getResourceAsStream("databases-adapter-ui-schema.json")) {
+        try (final InputStream is =
+                this.getClass().getClassLoader().getResourceAsStream("databases-adapter-ui-schema.json")) {
             if (is == null) {
                 LOG.warn("The UISchema for the Databases Adapter could not be loaded from resources: Not found.");
                 return null;
@@ -147,6 +145,4 @@ public class DatabasesProtocolAdapterInformation implements ProtocolAdapterInfor
     public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return DatabasesAdapterConfig.class;
     }
-
-
 }

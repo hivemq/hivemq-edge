@@ -18,18 +18,18 @@ package com.hivemq.edge.adapters.databases.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 public class DatabasesAdapterTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
-    @ModuleConfigField(title = "name",
-                       description = "Name of the tag to be used in mappings",
-                       format = ModuleConfigField.FieldType.MQTT_TAG,
-                       required = true)
+    @ModuleConfigField(
+            title = "name",
+            description = "Name of the tag to be used in mappings",
+            format = ModuleConfigField.FieldType.MQTT_TAG,
+            required = true)
     private final @NotNull String name;
 
     @JsonProperty(value = "description")
@@ -40,12 +40,11 @@ public class DatabasesAdapterTag implements Tag {
     @ModuleConfigField(title = "definition", description = "The actual definition of the tag for PostgreSQL Query")
     private final @NotNull DatabasesAdapterTagDefinition definition;
 
-
     public DatabasesAdapterTag(
             @JsonProperty(value = "name", required = true) final @NotNull String name,
             @JsonProperty(value = "description") final @Nullable String description,
-            @JsonProperty(value = "definition",
-                          required = true) final @NotNull DatabasesAdapterTagDefinition definition) {
+            @JsonProperty(value = "definition", required = true)
+                    final @NotNull DatabasesAdapterTagDefinition definition) {
         this.name = name;
         this.description = Objects.requireNonNullElse(description, "no description present.");
         this.definition = definition;
@@ -74,9 +73,9 @@ public class DatabasesAdapterTag implements Tag {
         if (!(o instanceof DatabasesAdapterTag databasesAdapterTag)) {
             return false;
         }
-        return Objects.equals(name, databasesAdapterTag.name) &&
-                Objects.equals(description, databasesAdapterTag.description) &&
-                Objects.equals(definition, databasesAdapterTag.definition);
+        return Objects.equals(name, databasesAdapterTag.name)
+                && Objects.equals(description, databasesAdapterTag.description)
+                && Objects.equals(definition, databasesAdapterTag.definition);
     }
 
     @Override
@@ -84,5 +83,3 @@ public class DatabasesAdapterTag implements Tag {
         return Objects.hash(name, description, definition);
     }
 }
-
-

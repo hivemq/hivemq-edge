@@ -46,7 +46,7 @@ class SpotlessConventionPlugin : Plugin<Project> {
             removeUnusedImports()
 
             // Use Palantir Java Format (closer to IntelliJ style than google-java-format)
-            palantirJavaFormat("2.50.0")
+            palantirJavaFormat("2.87.0")
 
             // Basic cleanup
             trimTrailingWhitespace()

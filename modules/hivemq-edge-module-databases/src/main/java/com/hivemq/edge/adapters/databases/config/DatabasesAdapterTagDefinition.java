@@ -18,28 +18,31 @@ package com.hivemq.edge.adapters.databases.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-
 public class DatabasesAdapterTagDefinition implements TagDefinition {
     @JsonProperty(value = "query", required = true)
-    @ModuleConfigField(title = "Query",
+    @ModuleConfigField(
+            title = "Query",
             description = "Query to execute on the database",
             required = true,
             format = ModuleConfigField.FieldType.UNSPECIFIED)
     private final @Nullable String query;
 
     @JsonProperty(value = "spiltLinesInIndividualMessages")
-    @ModuleConfigField(title = "Split lines into individual messages ?",
-            description = "Select this option to create a single message per line returned by the query (by default all lines are sent in a single message as an array).",
+    @ModuleConfigField(
+            title = "Split lines into individual messages ?",
+            description =
+                    "Select this option to create a single message per line returned by the query (by default all lines are sent in a single message as an array).",
             defaultValue = "false")
     protected @NotNull Boolean spiltLinesInIndividualMessages;
 
     public DatabasesAdapterTagDefinition(
             @JsonProperty(value = "query") final @Nullable String query,
-            @JsonProperty(value = "spiltLinesInIndividualMessages") final @Nullable Boolean spiltLinesInIndividualMessages) {
+            @JsonProperty(value = "spiltLinesInIndividualMessages")
+                    final @Nullable Boolean spiltLinesInIndividualMessages) {
         this.query = query;
         this.spiltLinesInIndividualMessages = Objects.requireNonNullElse(spiltLinesInIndividualMessages, false);
     }
@@ -51,6 +54,4 @@ public class DatabasesAdapterTagDefinition implements TagDefinition {
     public @NotNull Boolean getSpiltLinesInIndividualMessages() {
         return spiltLinesInIndividualMessages;
     }
-
-
 }

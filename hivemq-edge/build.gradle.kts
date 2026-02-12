@@ -43,6 +43,7 @@ plugins {
     id("com.hivemq.third-party-license-generator")
     id("com.hivemq.repository-convention")
     id("com.hivemq.jacoco-convention")
+    id("com.hivemq.errorprone-convention")
     id("com.hivemq.spotless-convention")
 }
 
@@ -104,7 +105,8 @@ val javadocLinksClasspath: Configuration by configurations.creating {
     attributes {
         attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage::class.java, Usage.JAVA_API))
         attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category::class.java, Category.LIBRARY))
-        attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements::class.java, LibraryElements.JAR))
+        attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+            objects.named(LibraryElements::class.java, LibraryElements.JAR))
         attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling::class.java, Bundling.EXTERNAL))
         attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21)
     }
@@ -423,7 +425,8 @@ tasks.javadoc {
         copy {
             from(destinationDir!!.resolve("search.js"))
             into(temporaryDir)
-            filter { line -> line.replace("if (ui.item.p == item.l) {", "if (item.m && ui.item.p == item.l) {") }
+            filter { line -> line.replace("if (ui.item.p == item.l) {",
+                "if (item.m && ui.item.p == item.l) {") }
         }
         delete(destinationDir!!.resolve("search.js"))
         copy {
@@ -526,7 +529,8 @@ downloadLicenses {
             "LGPL, Version 2.1",
             "LGPL, version 2.1",
             "GNU Lesser General Public License version 2.1 (LGPLv2.1)",
-            license("GNU Lesser General Public License", "http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html")
+            license("GNU Lesser General Public License",
+                "http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html")
         ),
         license("LGPL, Version 3.0", "https://opensource.org/licenses/LGPL-3.0") to listOf(
             "LGPL, Version 3.0",
@@ -635,5 +639,6 @@ val thirdPartyLicenses: Configuration by configurations.creating {
 artifacts {
     add(releaseBinary.name, hivemqZip)
     add(releaseJar.name, tasks.shadowJar)
-    add(thirdPartyLicenses.name, tasks.updateThirdPartyLicenses.flatMap { it.outputDirectory })
+    add(thirdPartyLicenses.name,
+        tasks.updateThirdPartyLicenses.flatMap { it.outputDirectory })
 }
