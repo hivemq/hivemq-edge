@@ -37,6 +37,7 @@ sequenceDiagram
 ```
 
 **Current Reality:**
+
 - `formData.sources.tags` comes from API (string array)
 - `formContext` provides all available tags/topics from queries
 - `getFilteredDataReferences()` filters context data by formData arrays
@@ -72,6 +73,7 @@ sequenceDiagram
 ```
 
 **Key Changes:**
+
 1. API payload has no `sources.tags/topicFilters`
 2. **Preprocessing happens ONCE** in Manager after queries load
 3. Enriched data stored in `formContext.selectedSources`
@@ -89,10 +91,7 @@ sequenceDiagram
 const MyComponent = ({ formData, formContext }) => {
   // ❌ Reconstruct on every render
   const sources = useMemo(() => {
-    return reconstructSourcesFromInstructions(
-      formData.instructions,
-      formContext
-    )
+    return reconstructSourcesFromInstructions(formData.instructions, formContext)
   }, [formData.instructions, formContext])
 
   // This triggers parent to update formData
@@ -100,7 +99,7 @@ const MyComponent = ({ formData, formContext }) => {
     if (onChange) {
       onChange({
         ...formData,
-        sources: { tags: sources.tags.map(t => t.id) }
+        sources: { tags: sources.tags.map((t) => t.id) },
       })
     }
   }, [sources])
@@ -114,6 +113,7 @@ const MyComponent = ({ formData, formContext }) => {
 ```
 
 **Why this fails:**
+
 1. Child reconstructs → Updates formData
 2. formData update → Child re-renders
 3. Child re-renders → Reconstructs again
@@ -177,6 +177,7 @@ const CombinerMappingManager = () => {
 ```
 
 **Why this works:**
+
 1. Preprocessing happens **once** in parent
 2. Result stored in `useMemo` with proper dependencies
 3. Children receive **stable** preprocessed data
@@ -204,25 +205,21 @@ export const reconstructSourcesFromInstructions = (
 } => {
   // Extract unique sources from instructions
   const sourceRefs = instructions
-    .map(inst => inst.sourceRef)
+    .map((inst) => inst.sourceRef)
     .filter((ref): ref is DataIdentifierReference => ref != null)
 
   // Deduplicate by id + scope
   const uniqueTags = sourceRefs
-    .filter(ref => ref.type === DataIdentifierReference.type.TAG)
-    .filter((ref, index, self) =>
-      self.findIndex(r => r.id === ref.id && r.scope === ref.scope) === index
-    )
+    .filter((ref) => ref.type === DataIdentifierReference.type.TAG)
+    .filter((ref, index, self) => self.findIndex((r) => r.id === ref.id && r.scope === ref.scope) === index)
 
   const uniqueTopicFilters = sourceRefs
-    .filter(ref => ref.type === DataIdentifierReference.type.TOPIC_FILTER)
-    .filter((ref, index, self) =>
-      self.findIndex(r => r.id === ref.id) === index
-    )
+    .filter((ref) => ref.type === DataIdentifierReference.type.TOPIC_FILTER)
+    .filter((ref, index, self) => self.findIndex((r) => r.id === ref.id) === index)
 
   return {
     tags: uniqueTags,
-    topicFilters: uniqueTopicFilters
+    topicFilters: uniqueTopicFilters,
   }
 }
 ```
@@ -255,26 +252,25 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
     const combinerData = mappings[0]
 
     // Reconstruct selectedSources from instructions
-    const reconstructed = reconstructSourcesFromInstructions(
-      combinerData.instructions || [],
-      entities,
-      sources
-    )
+    const reconstructed = reconstructSourcesFromInstructions(combinerData.instructions || [], entities, sources)
 
     return {
       combinerData,
-      selectedSources: reconstructed
+      selectedSources: reconstructed,
     }
   }, [selectedNode.data.mappings.items, entities, sources])
 
   // ✅ Build formContext with preprocessed data
-  const formContext: CombinerContext = useMemo(() => ({
-    entityQueries: entities.map((entity, index) => ({
-      entity,
-      query: sources[index]
-    })),
-    selectedSources: preprocessedData?.selectedSources
-  }), [entities, sources, preprocessedData])
+  const formContext: CombinerContext = useMemo(
+    () => ({
+      entityQueries: entities.map((entity, index) => ({
+        entity,
+        query: sources[index],
+      })),
+      selectedSources: preprocessedData?.selectedSources,
+    }),
+    [entities, sources, preprocessedData]
+  )
 
   // ... rest of component uses formContext and preprocessedData.combinerData ...
 }
@@ -287,11 +283,12 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
 ```typescript
 // BEFORE: Convert from API arrays
 const values = useMemo(() => {
-  const tagValue = tags?.map<EntityOption>((value) => ({
-    value: value,
-    label: value,
-    type: DataIdentifierReference.type.TAG,
-  })) || []
+  const tagValue =
+    tags?.map<EntityOption>((value) => ({
+      value: value,
+      label: value,
+      type: DataIdentifierReference.type.TAG,
+    })) || []
   // ...
 }, [tags, topicFilters])
 
@@ -324,31 +321,20 @@ const values = useMemo(() => {
 
 ```typescript
 // BEFORE: Filter by formData arrays
-export const getFilteredDataReferences = (
-  formData?: DataCombining,
-  formContext?: CombinerContext
-) => {
+export const getFilteredDataReferences = (formData?: DataCombining, formContext?: CombinerContext) => {
   const tags = formData?.sources?.tags || []
   const topicFilters = formData?.sources?.topicFilters || []
   const indexes = [...tags, ...topicFilters]
 
   const allDataReferences = getDataReference(formContext)
-  return allDataReferences?.filter((dataReference) =>
-    indexes.includes(dataReference.id)
-  ) || []
+  return allDataReferences?.filter((dataReference) => indexes.includes(dataReference.id)) || []
 }
 
 // AFTER: Use preprocessed context
-export const getFilteredDataReferences = (
-  formData?: DataCombining,
-  formContext?: CombinerContext
-) => {
+export const getFilteredDataReferences = (formData?: DataCombining, formContext?: CombinerContext) => {
   // Use preprocessed selectedSources if available
   if (formContext?.selectedSources) {
-    return [
-      ...formContext.selectedSources.tags,
-      ...formContext.selectedSources.topicFilters
-    ]
+    return [...formContext.selectedSources.tags, ...formContext.selectedSources.topicFilters]
   }
 
   // Fallback: empty array (new combiner)
@@ -378,7 +364,7 @@ const reconstructed = reconstructSourcesFromInstructions(
 // User selected 3 tags, created 2 instructions
 const instructions = [
   { sourceRef: { id: 'tag1', type: 'TAG', scope: 'adapter1' } },
-  { sourceRef: { id: 'tag2', type: 'TAG', scope: 'adapter1' } }
+  { sourceRef: { id: 'tag2', type: 'TAG', scope: 'adapter1' } },
 ]
 // Reconstruction only shows tag1, tag2
 // ❌ Missing tag3!
@@ -391,9 +377,7 @@ const instructions = [
 ### Case 3: Instructions Reference Deleted Adapter
 
 ```typescript
-const instructions = [
-  { sourceRef: { id: 'tag1', type: 'TAG', scope: 'deleted-adapter' } }
-]
+const instructions = [{ sourceRef: { id: 'tag1', type: 'TAG', scope: 'deleted-adapter' } }]
 // Reconstruction includes tag1 with scope 'deleted-adapter'
 // Validation will catch this (adapter not in sources)
 // ✅ Safe: Validation prevents saving invalid state
@@ -421,6 +405,7 @@ const instructions = [
 ### Current (With API Arrays)
 
 **Props stability:**
+
 - ✅ formData.sources.tags: Stable (from API)
 - ✅ formData.sources.topicFilters: Stable (from API)
 - ✅ formContext: Stable (queries cached)
@@ -432,6 +417,7 @@ const instructions = [
 ### Option B (Without API Arrays)
 
 **Props stability:**
+
 - ✅ formContext.selectedSources: Stable (computed once in useMemo)
 - ✅ formContext.entityQueries: Stable (same as before)
 - ❌ Risk: If preprocessing moves to children
@@ -448,27 +434,32 @@ const instructions = [
 
 ```typescript
 // Add preprocessing alongside existing code
-const formContext = useMemo(() => ({
-  // Existing
-  entities,
-  queries: sources,
-  // NEW: Add selectedSources
-  selectedSources: formData?.sources?.tags
-    ? {
-        // Convert existing API arrays
-        tags: formData.sources.tags.map(id => ({
-          id,
-          type: DataIdentifierReference.type.TAG,
-          scope: getAdapterIdForTag(id, formContext) ?? null
-        })),
-        topicFilters: formData.sources.topicFilters?.map(id => ({
-          id,
-          type: DataIdentifierReference.type.TOPIC_FILTER,
-          scope: null
-        }))
-      }
-    : reconstructSourcesFromInstructions(/* ... */)
-}), [/* ... */])
+const formContext = useMemo(
+  () => ({
+    // Existing
+    entities,
+    queries: sources,
+    // NEW: Add selectedSources
+    selectedSources: formData?.sources?.tags
+      ? {
+          // Convert existing API arrays
+          tags: formData.sources.tags.map((id) => ({
+            id,
+            type: DataIdentifierReference.type.TAG,
+            scope: getAdapterIdForTag(id, formContext) ?? null,
+          })),
+          topicFilters: formData.sources.topicFilters?.map((id) => ({
+            id,
+            type: DataIdentifierReference.type.TOPIC_FILTER,
+            scope: null,
+          })),
+        }
+      : reconstructSourcesFromInstructions(/* ... */),
+  }),
+  [
+    /* ... */
+  ]
+)
 ```
 
 **Test:** Verify no behavior changes
@@ -497,7 +488,7 @@ describe('reconstructSourcesFromInstructions', () => {
     const instructions = [
       { sourceRef: { id: 'tag1', type: 'TAG', scope: 'adapter1' } },
       { sourceRef: { id: 'tag1', type: 'TAG', scope: 'adapter1' } }, // Duplicate
-      { sourceRef: { id: 'tag2', type: 'TAG', scope: 'adapter2' } }
+      { sourceRef: { id: 'tag2', type: 'TAG', scope: 'adapter2' } },
     ]
 
     const result = reconstructSourcesFromInstructions(instructions, [], [])
@@ -506,7 +497,7 @@ describe('reconstructSourcesFromInstructions', () => {
     expect(result.tags[0]).toEqual({
       id: 'tag1',
       type: 'TAG',
-      scope: 'adapter1'
+      scope: 'adapter1',
     })
   })
 
@@ -566,13 +557,13 @@ describe('Combiner Load with Option B', () => {
     cy.intercept('GET', '/api/combiners/test-id', {
       id: 'test-id',
       sources: {
-        primary: { id: 'tag1', type: 'TAG', scope: 'adapter1' }
+        primary: { id: 'tag1', type: 'TAG', scope: 'adapter1' },
         // NO tags or topicFilters arrays
       },
       instructions: [
         { sourceRef: { id: 'tag1', type: 'TAG', scope: 'adapter1' } },
-        { sourceRef: { id: 'tag2', type: 'TAG', scope: 'adapter2' } }
-      ]
+        { sourceRef: { id: 'tag2', type: 'TAG', scope: 'adapter2' } },
+      ],
     })
 
     // Track render count
@@ -600,25 +591,27 @@ describe('Combiner Load with Option B', () => {
 
 ## Risk Mitigation Summary
 
-| Risk | Severity | Mitigation |
-|------|----------|------------|
-| **Infinite re-render loops** | 🔴 Critical | Preprocess in parent, not children |
-| **Component thrashing** | 🟠 High | Use useMemo with stable dependencies |
-| **Lost data on reload** | 🟡 Medium | Already exists, not worse than current |
-| **Missing sources (partial instructions)** | 🟡 Medium | Maintain selectedSources separately for new changes |
-| **Invalid scope references** | 🟢 Low | Validation catches before save |
+| Risk                                       | Severity    | Mitigation                                          |
+| ------------------------------------------ | ----------- | --------------------------------------------------- |
+| **Infinite re-render loops**               | 🔴 Critical | Preprocess in parent, not children                  |
+| **Component thrashing**                    | 🟠 High     | Use useMemo with stable dependencies                |
+| **Lost data on reload**                    | 🟡 Medium   | Already exists, not worse than current              |
+| **Missing sources (partial instructions)** | 🟡 Medium   | Maintain selectedSources separately for new changes |
+| **Invalid scope references**               | 🟢 Low      | Validation catches before save                      |
 
 ---
 
 ## Recommendation
 
 ✅ **Option B is safe IF:**
+
 1. Preprocessing happens **once** in parent (CombinerMappingManager)
 2. Result stored in `formContext.selectedSources`
 3. Children **never** reconstruct
 4. Proper `useMemo` dependencies
 
 ⚠️ **Do NOT proceed if:**
+
 - Preprocessing must happen in children
 - formContext dependencies are unstable
 - No way to prevent circular updates
