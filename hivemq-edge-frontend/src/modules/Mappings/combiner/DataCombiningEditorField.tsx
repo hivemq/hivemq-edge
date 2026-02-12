@@ -224,7 +224,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
       <GridItem data-testid="combining-editor-sources-schemas">
         <FormControl>
           <FormLabel mt={1}>{t('combiner.schema.mappings.sources.combinedSchema.title')}</FormLabel>
-          <CombinedSchemaLoader formData={props.formData} formContext={formContext} />
+          <CombinedSchemaLoader formData={props.formData} formContext={localContext} />
           {!hasError(sourceErrors) && (
             <FormHelperText>{t('combiner.schema.mappings.sources.combinedSchema.description')}</FormHelperText>
           )}
@@ -266,7 +266,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           title={destSchemaOptions.title}
           description={destSchemaOptions.description}
           formData={props.formData}
-          formContext={formContext}
+          formContext={localContext}
           onChange={(schema, instructions) => {
             if (!props.formData) return
 
