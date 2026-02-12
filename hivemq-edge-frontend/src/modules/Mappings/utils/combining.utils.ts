@@ -111,9 +111,12 @@ export const getFilteredDataReferences = (formData?: DataCombining, formContext?
     const { tags, topicFilters } = formContext.selectedSources
     const allReferences = [...tags, ...topicFilters]
 
-    // Deduplicate by id + type
+    // Deduplicate by id + type + scope
+    // This allows tags with same name from different adapters to load separate schemas
     return allReferences.reduce<DataReference[]>((acc, current) => {
-      const isAlreadyIn = acc.find((item) => item.id === current.id && item.type === current.type)
+      const isAlreadyIn = acc.find(
+        (item) => item.id === current.id && item.type === current.type && item.scope === current.scope
+      )
       if (!isAlreadyIn) {
         return acc.concat([current])
       }
