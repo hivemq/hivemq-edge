@@ -47,6 +47,7 @@ import com.hivemq.api.errors.adapters.AdapterOperationNotSupportedError;
 import com.hivemq.api.errors.adapters.AdapterTypeNotFoundError;
 import com.hivemq.api.errors.adapters.AdapterTypeReadOnlyError;
 import com.hivemq.api.errors.adapters.DomainTagNotFoundError;
+import com.hivemq.api.errors.adapters.DuplicateTagError;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;
@@ -468,14 +469,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (log.isDebugEnabled()) {
             log.debug("Adding adapter domain tag {} for adapter {}", domainTag.getName(), adapterId);
         }
-        return systemInformation.isConfigWriteable()
-                ? configExtractor
-                        .getAdapterByAdapterId(adapterId)
-                        .map(oldInstance -> {
-                            if (oldInstance.getTags().stream()
-                                    .anyMatch(tag -> tag.getName().equals(domainTag.getName()))) {
-                                return errorResponse(new AdapterCannotBeUpdatedError(adapterId));
-                            }
+        return systemInformation.isConfigWriteable() ?
+                configExtractor.getAdapterByAdapterId(adapterId).map(oldInstance -> {
+                    if (oldInstance.getTags().stream().anyMatch(tag -> tag.getName().equals(domainTag.getName()))) {
+                        return errorResponse(new DuplicateTagError(adapterId, domainTag.getName()));
+                    }
 
                             final List<TagEntity> newTagList = new ArrayList<>(oldInstance.getTags());
                             newTagList.add(toTagEntity(domainTag));
@@ -551,14 +549,21 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                             // Check if this is a rename operation (tag name is changing)
                             final boolean isRename = !decodedTagName.equals(domainTag.getName());
 
-                            if (isRename) {
-                                // Validate that old tag name is not in use before allowing rename
-                                final Optional<Response> validationError =
-                                        validateTagNotInUse(oldInstance, decodedTagName);
-                                if (validationError.isPresent()) {
-                                    return validationError.get();
-                                }
-                            }
+                    if (isRename) {
+                        // Check if new tag name already exists in the adapter
+                        final boolean newNameExists = oldInstance.getTags()
+                                .stream()
+                                .anyMatch(tag -> tag.getName().equals(domainTag.getName()));
+                        if (newNameExists) {
+                            return errorResponse(new DuplicateTagError(adapterId, domainTag.getName()));
+                        }
+
+                        // Validate that old tag name is not in use before allowing rename
+                        final Optional<Response> validationError = validateTagNotInUse(oldInstance, decodedTagName);
+                        if (validationError.isPresent()) {
+                            return validationError.get();
+                        }
+                    }
 
                             // Proceed with update
                             final AtomicBoolean updated = new AtomicBoolean(false);
@@ -600,15 +605,21 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response updateAdapterDomainTags(
-            final @NotNull String adapterId, final @NotNull DomainTagList domainTagList) {
-        return systemInformation.isConfigWriteable()
-                ? configExtractor
-                        .getAdapterByAdapterId(adapterId)
-                        .map(oldInstance -> {
-                            // Find tags that are being removed (exist in old list but not in new list)
-                            final Set<String> newTagNames = domainTagList.getItems().stream()
-                                    .map(com.hivemq.edge.api.model.DomainTag::getName)
-                                    .collect(Collectors.toSet());
+            final @NotNull String adapterId,
+            final @NotNull DomainTagList domainTagList) {
+        return systemInformation.isConfigWriteable() ?
+                configExtractor.getAdapterByAdapterId(adapterId).map(oldInstance -> {
+                    // Check for duplicate tag names in the new list
+                    final Optional<String> duplicateTag = findDuplicateTagName(domainTagList.getItems());
+                    if (duplicateTag.isPresent()) {
+                        return errorResponse(new DuplicateTagError(adapterId, duplicateTag.get()));
+                    }
+
+                    // Find tags that are being removed (exist in old list but not in new list)
+                    final Set<String> newTagNames = domainTagList.getItems()
+                            .stream()
+                            .map(com.hivemq.edge.api.model.DomainTag::getName)
+                            .collect(Collectors.toSet());
 
                             final List<String> removedTags = oldInstance.getTags().stream()
                                     .map(TagEntity::getName)
@@ -768,6 +779,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         validateAdapterSchema(errorMessages, adapterConfig.getConfig());
         if (hasRequestErrors(errorMessages)) {
             return errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
+        }
+
+        // Check for duplicate tag names
+        final Optional<String> duplicateTag = findDuplicateTagName(adapterConfig.getTags());
+        if (duplicateTag.isPresent()) {
+            return errorResponse(new DuplicateTagError(adapterId, duplicateTag.get()));
         }
 
         try {
@@ -1010,6 +1027,22 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return Optional.of(errorResponse(new com.hivemq.api.errors.adapters.DomainTagInUseError(errorMessage)));
         }
 
+        return Optional.empty();
+    }
+
+    /**
+     * Finds the first duplicate tag name in a list of domain tags.
+     *
+     * @param tags The list of domain tags to check
+     * @return Optional containing the duplicate tag name if found, empty Optional otherwise
+     */
+    private @NotNull Optional<String> findDuplicateTagName(final @NotNull List<DomainTag> tags) {
+        final Set<String> seenNames = new HashSet<>();
+        for (final DomainTag tag : tags) {
+            if (!seenNames.add(tag.getName())) {
+                return Optional.of(tag.getName());
+            }
+        }
         return Optional.empty();
     }
 
