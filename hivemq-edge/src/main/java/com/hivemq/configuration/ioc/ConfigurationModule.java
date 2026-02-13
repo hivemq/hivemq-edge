@@ -35,7 +35,6 @@ import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServi
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
-
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
@@ -154,5 +153,4 @@ public class ConfigurationModule {
         // ConfigMigrationService runs migrations in its constructor
         return Boolean.TRUE;
     }
-
 }
