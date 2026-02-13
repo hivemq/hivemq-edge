@@ -743,21 +743,25 @@ class ProtocolAdaptersResourceImplTest {
         // Adapter has two tags: "tag1" and "tag2"
         final var protocolAdapterEntity = mock(ProtocolAdapterEntity.class);
         when(protocolAdapterEntity.getAdapterId()).thenReturn(adapterId);
-        when(protocolAdapterEntity.getTags()).thenReturn(List.of(
-                new TagEntity("tag1", "description1", Map.of("address", "address1")),
-                new TagEntity("tag2", "description2", Map.of("address", "address2"))));
+        when(protocolAdapterEntity.getTags())
+                .thenReturn(List.of(
+                        new TagEntity("tag1", "description1", Map.of("address", "address1")),
+                        new TagEntity("tag2", "description2", Map.of("address", "address2"))));
         when(protocolAdapterEntity.getNorthboundMappings()).thenReturn(List.of());
         when(protocolAdapterEntity.getSouthboundMappings()).thenReturn(List.of());
 
         when(protocolAdapterExtractor.getAdapterByAdapterId(adapterId)).thenReturn(Optional.of(protocolAdapterEntity));
 
         // Try to rename "tag1" to "tag2" (which already exists)
-        final Response response = protocolAdaptersResource.updateAdapterDomainTag(adapterId,
+        final Response response = protocolAdaptersResource.updateAdapterDomainTag(
+                adapterId,
                 URLEncoder.encode("tag1", StandardCharsets.UTF_8),
-                new DomainTag("tag2",
-                        adapterId,
-                        "new description",
-                        objectMapper.valueToTree(Map.of("address", "address1"))).toModel());
+                new DomainTag(
+                                "tag2",
+                                adapterId,
+                                "new description",
+                                objectMapper.valueToTree(Map.of("address", "address1")))
+                        .toModel());
 
         assertEquals(409, response.getStatus());
     }
@@ -770,21 +774,22 @@ class ProtocolAdaptersResourceImplTest {
 
         final var protocolAdapterEntity = mock(ProtocolAdapterEntity.class);
         when(protocolAdapterEntity.getAdapterId()).thenReturn(adapterId);
-        when(protocolAdapterEntity.getTags()).thenReturn(List.of(
-                new TagEntity("tag1", "description1", Map.of("address", "address1"))));
+        when(protocolAdapterEntity.getTags())
+                .thenReturn(List.of(new TagEntity("tag1", "description1", Map.of("address", "address1"))));
 
         when(protocolAdapterExtractor.getAdapterByAdapterId(adapterId)).thenReturn(Optional.of(protocolAdapterEntity));
 
         // Try to update with a list containing duplicate tag names
-        final DomainTagList duplicateTagList = new DomainTagList().items(List.of(
-                new com.hivemq.edge.api.model.DomainTag()
-                        .name("temperature")
-                        .description("desc1")
-                        .definition(objectMapper.valueToTree(Map.of("address", "addr1"))),
-                new com.hivemq.edge.api.model.DomainTag()
-                        .name("temperature")  // Duplicate!
-                        .description("desc2")
-                        .definition(objectMapper.valueToTree(Map.of("address", "addr2")))));
+        final DomainTagList duplicateTagList = new DomainTagList()
+                .items(List.of(
+                        new com.hivemq.edge.api.model.DomainTag()
+                                .name("temperature")
+                                .description("desc1")
+                                .definition(objectMapper.valueToTree(Map.of("address", "addr1"))),
+                        new com.hivemq.edge.api.model.DomainTag()
+                                .name("temperature") // Duplicate!
+                                .description("desc2")
+                                .definition(objectMapper.valueToTree(Map.of("address", "addr2")))));
 
         final Response response = protocolAdaptersResource.updateAdapterDomainTags(adapterId, duplicateTagList);
 
@@ -799,8 +804,8 @@ class ProtocolAdaptersResourceImplTest {
 
         final var protocolAdapterEntity = mock(ProtocolAdapterEntity.class);
         when(protocolAdapterEntity.getAdapterId()).thenReturn(adapterId);
-        when(protocolAdapterEntity.getTags()).thenReturn(List.of(
-                new TagEntity("tag1", "description1", Map.of("address", "address1"))));
+        when(protocolAdapterEntity.getTags())
+                .thenReturn(List.of(new TagEntity("tag1", "description1", Map.of("address", "address1"))));
         when(protocolAdapterEntity.getNorthboundMappings()).thenReturn(List.of());
         when(protocolAdapterEntity.getSouthboundMappings()).thenReturn(List.of());
 
@@ -808,15 +813,16 @@ class ProtocolAdaptersResourceImplTest {
         when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
 
         // Update with a list containing unique tag names
-        final DomainTagList uniqueTagList = new DomainTagList().items(List.of(
-                new com.hivemq.edge.api.model.DomainTag()
-                        .name("temperature")
-                        .description("desc1")
-                        .definition(objectMapper.valueToTree(Map.of("address", "addr1"))),
-                new com.hivemq.edge.api.model.DomainTag()
-                        .name("pressure")
-                        .description("desc2")
-                        .definition(objectMapper.valueToTree(Map.of("address", "addr2")))));
+        final DomainTagList uniqueTagList = new DomainTagList()
+                .items(List.of(
+                        new com.hivemq.edge.api.model.DomainTag()
+                                .name("temperature")
+                                .description("desc1")
+                                .definition(objectMapper.valueToTree(Map.of("address", "addr1"))),
+                        new com.hivemq.edge.api.model.DomainTag()
+                                .name("pressure")
+                                .description("desc2")
+                                .definition(objectMapper.valueToTree(Map.of("address", "addr2")))));
 
         final Response response = protocolAdaptersResource.updateAdapterDomainTags(adapterId, uniqueTagList);
 

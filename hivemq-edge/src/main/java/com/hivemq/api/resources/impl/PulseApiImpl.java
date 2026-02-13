@@ -72,11 +72,6 @@ import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -642,8 +637,9 @@ public class PulseApiImpl implements PulseApi {
             adapterToTags.put(adapter.getAdapterId(), tagNames);
         });
 
-        final Set<String> oldAssetIdSet =
-                Optional.ofNullable(oldDataCombiner).map(DataCombiner::getAssetIdSet).orElseGet(Set::of);
+        final Set<String> oldAssetIdSet = Optional.ofNullable(oldDataCombiner)
+                .map(DataCombiner::getAssetIdSet)
+                .orElseGet(Set::of);
         final Set<String> allAssetIdSet = assetMappingExtractor.getAssetIdSet();
         final Set<String> unusableAssetIdSet = Sets.difference(allAssetIdSet, oldAssetIdSet);
         final Set<String> usedAssetIdSet = new HashSet<>();
@@ -690,17 +686,17 @@ public class PulseApiImpl implements PulseApi {
             if (primaryRef != null) {
                 if (primaryRef.type() == DataIdentifierReference.Type.TAG) {
                     if (primaryRef.scope() == null || primaryRef.scope().isBlank()) {
-                        return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
+                        return Optional.of(
+                                ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
                     }
-                    final Optional<Response> tagValidationError =
-                            validateTagExists(primaryRef, adapterToTags);
+                    final Optional<Response> tagValidationError = validateTagExists(primaryRef, adapterToTags);
                     if (tagValidationError.isPresent()) {
                         return tagValidationError;
                     }
                 } else if (primaryRef.type() == DataIdentifierReference.Type.TOPIC_FILTER) {
                     if (primaryRef.scope() != null && !primaryRef.scope().isBlank()) {
-                        return Optional.of(ErrorResponseUtil.errorResponse(new UnexpectedScopeError(primaryRef.type(),
-                                primaryRef.id())));
+                        return Optional.of(ErrorResponseUtil.errorResponse(
+                                new UnexpectedScopeError(primaryRef.type(), primaryRef.id())));
                     }
                 }
             }
@@ -712,15 +708,14 @@ public class PulseApiImpl implements PulseApi {
                         if (ref.scope() == null || ref.scope().isBlank()) {
                             return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(ref.id())));
                         }
-                        final Optional<Response> tagValidationError =
-                                validateTagExists(ref, adapterToTags);
+                        final Optional<Response> tagValidationError = validateTagExists(ref, adapterToTags);
                         if (tagValidationError.isPresent()) {
                             return tagValidationError;
                         }
                     } else if (ref.type() == DataIdentifierReference.Type.TOPIC_FILTER) {
                         if (ref.scope() != null && !ref.scope().isBlank()) {
-                            return Optional.of(ErrorResponseUtil.errorResponse(new UnexpectedScopeError(ref.type(),
-                                    ref.id())));
+                            return Optional.of(
+                                    ErrorResponseUtil.errorResponse(new UnexpectedScopeError(ref.type(), ref.id())));
                         }
                     }
                 }
@@ -730,8 +725,7 @@ public class PulseApiImpl implements PulseApi {
     }
 
     private @NotNull Optional<Response> validateTagExists(
-            final @NotNull DataIdentifierReference ref,
-            final @NotNull Map<String, Set<String>> adapterToTags) {
+            final @NotNull DataIdentifierReference ref, final @NotNull Map<String, Set<String>> adapterToTags) {
         final Set<String> tags = adapterToTags.get(ref.scope());
         if (tags == null) {
             return Optional.of(ErrorResponseUtil.errorResponse(new InvalidScopeForTagError(ref.scope(), ref.id())));

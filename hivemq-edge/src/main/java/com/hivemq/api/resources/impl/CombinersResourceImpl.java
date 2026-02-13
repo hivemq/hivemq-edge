@@ -228,8 +228,8 @@ public class CombinersResourceImpl implements CombinersApi {
             // Validate primary TOPIC_FILTER reference has no scope
             if (primaryRef.type() == DataIdentifierReference.Type.TOPIC_FILTER) {
                 if (primaryRef.scope() != null && !primaryRef.scope().isBlank()) {
-                    return Optional.of(ErrorResponseUtil.errorResponse(new UnexpectedScopeError(primaryRef.type(),
-                            primaryRef.id())));
+                    return Optional.of(ErrorResponseUtil.errorResponse(
+                            new UnexpectedScopeError(primaryRef.type(), primaryRef.id())));
                 }
             }
             if (dataCombining.instructions().stream()
@@ -254,8 +254,8 @@ public class CombinersResourceImpl implements CombinersApi {
                         }
                     } else if (ref.type() == DataIdentifierReference.Type.TOPIC_FILTER) {
                         if (ref.scope() != null && !ref.scope().isBlank()) {
-                            return Optional.of(ErrorResponseUtil.errorResponse(new UnexpectedScopeError(ref.type(),
-                                    ref.id())));
+                            return Optional.of(
+                                    ErrorResponseUtil.errorResponse(new UnexpectedScopeError(ref.type(), ref.id())));
                         }
                     }
                 }
@@ -265,8 +265,7 @@ public class CombinersResourceImpl implements CombinersApi {
     }
 
     private @NotNull Optional<Response> validateTagExists(
-            final @NotNull DataIdentifierReference ref,
-            final @NotNull Map<String, Set<String>> adapterToTags) {
+            final @NotNull DataIdentifierReference ref, final @NotNull Map<String, Set<String>> adapterToTags) {
         final Set<String> tags = adapterToTags.get(ref.scope());
         if (tags == null) {
             return Optional.of(ErrorResponseUtil.errorResponse(new InvalidScopeForTagError(ref.scope(), ref.id())));

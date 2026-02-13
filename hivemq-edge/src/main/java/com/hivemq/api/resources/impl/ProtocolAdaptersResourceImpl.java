@@ -469,11 +469,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (log.isDebugEnabled()) {
             log.debug("Adding adapter domain tag {} for adapter {}", domainTag.getName(), adapterId);
         }
-        return systemInformation.isConfigWriteable() ?
-                configExtractor.getAdapterByAdapterId(adapterId).map(oldInstance -> {
-                    if (oldInstance.getTags().stream().anyMatch(tag -> tag.getName().equals(domainTag.getName()))) {
-                        return errorResponse(new DuplicateTagError(adapterId, domainTag.getName()));
-                    }
+        return systemInformation.isConfigWriteable()
+                ? configExtractor
+                        .getAdapterByAdapterId(adapterId)
+                        .map(oldInstance -> {
+                            if (oldInstance.getTags().stream()
+                                    .anyMatch(tag -> tag.getName().equals(domainTag.getName()))) {
+                                return errorResponse(new DuplicateTagError(adapterId, domainTag.getName()));
+                            }
 
                             final List<TagEntity> newTagList = new ArrayList<>(oldInstance.getTags());
                             newTagList.add(toTagEntity(domainTag));
@@ -549,21 +552,21 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                             // Check if this is a rename operation (tag name is changing)
                             final boolean isRename = !decodedTagName.equals(domainTag.getName());
 
-                    if (isRename) {
-                        // Check if new tag name already exists in the adapter
-                        final boolean newNameExists = oldInstance.getTags()
-                                .stream()
-                                .anyMatch(tag -> tag.getName().equals(domainTag.getName()));
-                        if (newNameExists) {
-                            return errorResponse(new DuplicateTagError(adapterId, domainTag.getName()));
-                        }
+                            if (isRename) {
+                                // Check if new tag name already exists in the adapter
+                                final boolean newNameExists = oldInstance.getTags().stream()
+                                        .anyMatch(tag -> tag.getName().equals(domainTag.getName()));
+                                if (newNameExists) {
+                                    return errorResponse(new DuplicateTagError(adapterId, domainTag.getName()));
+                                }
 
-                        // Validate that old tag name is not in use before allowing rename
-                        final Optional<Response> validationError = validateTagNotInUse(oldInstance, decodedTagName);
-                        if (validationError.isPresent()) {
-                            return validationError.get();
-                        }
-                    }
+                                // Validate that old tag name is not in use before allowing rename
+                                final Optional<Response> validationError =
+                                        validateTagNotInUse(oldInstance, decodedTagName);
+                                if (validationError.isPresent()) {
+                                    return validationError.get();
+                                }
+                            }
 
                             // Proceed with update
                             final AtomicBoolean updated = new AtomicBoolean(false);
@@ -605,21 +608,21 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response updateAdapterDomainTags(
-            final @NotNull String adapterId,
-            final @NotNull DomainTagList domainTagList) {
-        return systemInformation.isConfigWriteable() ?
-                configExtractor.getAdapterByAdapterId(adapterId).map(oldInstance -> {
-                    // Check for duplicate tag names in the new list
-                    final Optional<String> duplicateTag = findDuplicateTagName(domainTagList.getItems());
-                    if (duplicateTag.isPresent()) {
-                        return errorResponse(new DuplicateTagError(adapterId, duplicateTag.get()));
-                    }
+            final @NotNull String adapterId, final @NotNull DomainTagList domainTagList) {
+        return systemInformation.isConfigWriteable()
+                ? configExtractor
+                        .getAdapterByAdapterId(adapterId)
+                        .map(oldInstance -> {
+                            // Check for duplicate tag names in the new list
+                            final Optional<String> duplicateTag = findDuplicateTagName(domainTagList.getItems());
+                            if (duplicateTag.isPresent()) {
+                                return errorResponse(new DuplicateTagError(adapterId, duplicateTag.get()));
+                            }
 
-                    // Find tags that are being removed (exist in old list but not in new list)
-                    final Set<String> newTagNames = domainTagList.getItems()
-                            .stream()
-                            .map(com.hivemq.edge.api.model.DomainTag::getName)
-                            .collect(Collectors.toSet());
+                            // Find tags that are being removed (exist in old list but not in new list)
+                            final Set<String> newTagNames = domainTagList.getItems().stream()
+                                    .map(com.hivemq.edge.api.model.DomainTag::getName)
+                                    .collect(Collectors.toSet());
 
                             final List<String> removedTags = oldInstance.getTags().stream()
                                     .map(TagEntity::getName)

@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.api.errors.adapters;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.ProblemDetails;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 public class DuplicateTagError extends ProblemDetails {
     public DuplicateTagError(final @NotNull String adapterId, final @NotNull String tagName) {
-        super("DuplicateTagError",
+        super(
+                "DuplicateTagError",
                 "Duplicate Tag Name",
-                "The tag name '" + tagName + "' is duplicated in adapter '" + adapterId + "'. Tag names must be unique within an adapter.",
+                "The tag name '" + tagName + "' is duplicated in adapter '" + adapterId
+                        + "'. Tag names must be unique within an adapter.",
                 HttpStatus.CONFLICT_409,
                 List.of());
     }
