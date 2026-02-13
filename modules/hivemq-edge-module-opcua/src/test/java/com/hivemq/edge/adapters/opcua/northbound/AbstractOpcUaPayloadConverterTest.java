@@ -73,9 +73,8 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 .thenReturn(mock(ProtocolAdapterMetricsService.class));
         when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event -> {}));
         when(moduleServices.eventService()).thenReturn(eventService);
-        when(moduleServices.protocolAdapterTagStreamingService()).thenReturn((adapterId, tag, dataPoints) -> receivedDataPoints.put(
-                tag,
-                dataPoints));
+        when(moduleServices.protocolAdapterTagStreamingService())
+                .thenReturn((adapterId, tag, dataPoints) -> receivedDataPoints.put(tag, dataPoints));
         final AdapterFactories adapterFactories = mock(AdapterFactoriesImpl.class);
         when(adapterFactories.dataPointFactory()).thenReturn(new DataPointFactory() {
             @Override

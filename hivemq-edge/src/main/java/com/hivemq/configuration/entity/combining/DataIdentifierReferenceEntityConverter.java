@@ -27,7 +27,8 @@ public final class DataIdentifierReferenceEntityConverter
 
     @Override
     public @NotNull DataIdentifierReferenceEntity toInternalEntity(final @NotNull DataIdentifierReference entity) {
-        return new DataIdentifierReferenceEntity(entity.getId(),
+        return new DataIdentifierReferenceEntity(
+                entity.getId(),
                 DataIdentifierReferenceTypeConverter.INSTANCE.toInternalEntity(entity.getType()),
                 entity.getScope());
     }

@@ -16,6 +16,8 @@
 package com.hivemq.persistence.mappings.fieldmapping;
 
 import com.hivemq.combining.model.DataIdentifierReference;
+import java.util.Objects;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
