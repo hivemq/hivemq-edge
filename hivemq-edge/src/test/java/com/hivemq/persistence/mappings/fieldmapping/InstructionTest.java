@@ -15,10 +15,10 @@
  */
 package com.hivemq.persistence.mappings.fieldmapping;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.hivemq.combining.model.DataIdentifierReference;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class InstructionTest {
 
@@ -34,9 +34,7 @@ public class InstructionTest {
     @Test
     public void toSourceJsonPath_whenTagWithoutScope_thenNoScopePrefix() {
         final Instruction instruction = new Instruction(
-                "$.value",
-                "dest.value",
-                new DataIdentifierReference("temperature", DataIdentifierReference.Type.TAG));
+                "$.value", "dest.value", new DataIdentifierReference("temperature", DataIdentifierReference.Type.TAG));
         assertThat(instruction.toSourceJsonPath()).isEqualTo("$['TAG:temperature'].value");
     }
 
@@ -61,9 +59,7 @@ public class InstructionTest {
     @Test
     public void toSourceJsonPath_whenTagWithScopeAndRootPath_thenScopeIsPrefixed() {
         final Instruction instruction = new Instruction(
-                "$",
-                "dest.all",
-                new DataIdentifierReference("sensor1", DataIdentifierReference.Type.TAG, "adapter1"));
+                "$", "dest.all", new DataIdentifierReference("sensor1", DataIdentifierReference.Type.TAG, "adapter1"));
         assertThat(instruction.toSourceJsonPath()).isEqualTo("$['adapter1/TAG:sensor1']");
     }
 
@@ -110,18 +106,14 @@ public class InstructionTest {
     @Test
     public void toDestinationJsonPath_whenFullJsonPath_thenStripsDollarDot() {
         final Instruction instruction = new Instruction(
-                "$.value",
-                "$.dest.value",
-                new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG));
+                "$.value", "$.dest.value", new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG));
         assertThat(instruction.toDestinationJsonPath()).isEqualTo("dest.value");
     }
 
     @Test
     public void toDestinationJsonPath_whenDotNotation_thenReturnsAsIs() {
         final Instruction instruction = new Instruction(
-                "$.value",
-                "dest.value",
-                new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG));
+                "$.value", "dest.value", new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG));
         assertThat(instruction.toDestinationJsonPath()).isEqualTo("dest.value");
     }
 }
