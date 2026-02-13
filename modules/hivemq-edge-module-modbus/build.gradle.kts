@@ -1,6 +1,11 @@
 import nl.javadude.gradle.plugins.license.DownloadLicensesExtension.license
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
-import org.gradle.api.tasks.testing.logging.TestLogEvent.*
+import org.gradle.api.tasks.testing.logging.TestLogEvent.STARTED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
+
 
 plugins {
     java
@@ -12,6 +17,7 @@ plugins {
     id("com.hivemq.repository-convention")
     id("com.hivemq.jacoco-convention")
     id("com.hivemq.errorprone-convention")
+    id("com.hivemq.spotless-convention")
 }
 
 group = "com.hivemq"
@@ -80,7 +86,8 @@ val thirdPartyLicenses: Configuration by configurations.creating {
 
 artifacts {
     add(releaseBinary.name, tasks.shadowJar)
-    add(thirdPartyLicenses.name, tasks.updateThirdPartyLicenses.flatMap { it.outputDirectory })
+    add(thirdPartyLicenses.name,
+        tasks.updateThirdPartyLicenses.flatMap { it.outputDirectory })
 }
 
 /* ******************** compliance ******************** */
@@ -138,7 +145,8 @@ downloadLicenses {
             "LGPL, Version 2.1",
             "LGPL, version 2.1",
             "GNU Lesser General Public License version 2.1 (LGPLv2.1)",
-            license("GNU Lesser General Public License", "http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html")
+            license("GNU Lesser General Public License",
+                "http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html")
         ),
         license("LGPL, Version 3.0", "https://opensource.org/licenses/LGPL-3.0") to listOf(
             "LGPL, Version 3.0",

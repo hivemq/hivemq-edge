@@ -187,10 +187,11 @@ public class HiveMQEdgeHttpServiceImpl {
         if (activateUsage && usageClientThread == null) {
             synchronized (monitor) {
                 if (usageClientThread == null) {
-                    usageClientThread = new Thread(this::runUsageClientLoop, "remote-usage-monitor");
-                    usageClientThread.setDaemon(true);
-                    usageClientThread.setPriority(Thread.MIN_PRIORITY);
-                    usageClientThread.start();
+                    final Thread t = new Thread(this::runUsageClientLoop, "remote-usage-monitor");
+                    t.setDaemon(true);
+                    t.setPriority(Thread.MIN_PRIORITY);
+                    t.start();
+                    usageClientThread = t;
                 }
             }
         }
