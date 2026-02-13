@@ -42,9 +42,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
-import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DataCombiningRuntime {
 
@@ -95,8 +95,7 @@ public class DataCombiningRuntime {
 
         // Derive tag subscriptions from instructions (which carry DataIdentifierReference with scope)
         // instead of from sources().tags()
-        combining.instructions()
-                .stream()
+        combining.instructions().stream()
                 .map(Instruction::dataIdentifierReference)
                 .filter(Objects::nonNull)
                 .filter(ref -> ref.type() == TAG)
@@ -117,8 +116,7 @@ public class DataCombiningRuntime {
 
         // Topic filter subscriptions - derive from instructions()
         // instead of from sources().topicFilters()
-        combining.instructions()
-                .stream()
+        combining.instructions().stream()
                 .map(Instruction::dataIdentifierReference)
                 .filter(Objects::nonNull)
                 .filter(ref -> ref.type() == TOPIC_FILTER)
@@ -137,8 +135,10 @@ public class DataCombiningRuntime {
         // Subscribe to primary if not found in instructions
         if (!primaryFound.get()) {
             if (TAG.equals(primaryRef.type())) {
-                log.debug("Starting tag consumer for primary tag {} with scope {} (not in instructions)",
-                        primaryRef.id(), primaryRef.scope());
+                log.debug(
+                        "Starting tag consumer for primary tag {} with scope {} (not in instructions)",
+                        primaryRef.id(),
+                        primaryRef.scope());
                 final InternalTagConsumer consumer =
                         new InternalTagConsumer(primaryRef.id(), primaryRef.scope(), combining, true);
                 tagManager.addConsumer(consumer);
@@ -149,7 +149,8 @@ public class DataCombiningRuntime {
             }
         }
 
-        internalSubscriptions.forEach(internalSubscription -> internalSubscription.queueConsumer().start());
+        internalSubscriptions.forEach(
+                internalSubscription -> internalSubscription.queueConsumer().start());
     }
 
     public void stop() {
@@ -209,7 +210,9 @@ public class DataCombiningRuntime {
 
         tagsToDataPoints.forEach((tagRef, dataPoints) -> dataPoints.forEach(dataPoint -> {
             try {
-                rootNode.set(tagRef.toFullyQualifiedName(), mapper.readTree(dataPoint.getTagValue().toString()));
+                rootNode.set(
+                        tagRef.toFullyQualifiedName(),
+                        mapper.readTree(dataPoint.getTagValue().toString()));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
                 throw new RuntimeException(e);
