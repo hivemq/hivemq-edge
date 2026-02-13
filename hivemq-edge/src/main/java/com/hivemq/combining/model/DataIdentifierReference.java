@@ -20,7 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /// Used exclusively within the combiner.
-public record DataIdentifierReference(String id, Type type, @Nullable String scope) {
+public record DataIdentifierReference(
+        String id, Type type, @Nullable String scope) {
 
     public DataIdentifierReference(final String id, final Type type) {
         this(id, type, null);
