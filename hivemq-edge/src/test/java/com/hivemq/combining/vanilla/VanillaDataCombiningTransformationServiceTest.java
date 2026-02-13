@@ -152,9 +152,11 @@ public class VanillaDataCombiningTransformationServiceTest {
                     "value": 100
                   }
                 }""".getBytes());
-        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
-                "dest.tag1",
-                new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG))));
+        when(dataCombining.instructions())
+                .thenReturn(List.of(new Instruction(
+                        "$.value",
+                        "dest.tag1",
+                        new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
@@ -172,12 +174,16 @@ public class VanillaDataCombiningTransformationServiceTest {
                     "value": 200
                   }
                 }""".getBytes());
-        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
-                        "dest.tag1",
-                        new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG)),
-                new Instruction("$.value",
-                        "dest.tag2",
-                        new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
+        when(dataCombining.instructions())
+                .thenReturn(List.of(
+                        new Instruction(
+                                "$.value",
+                                "dest.tag1",
+                                new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG)),
+                        new Instruction(
+                                "$.value",
+                                "dest.tag2",
+                                new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
@@ -187,15 +193,19 @@ public class VanillaDataCombiningTransformationServiceTest {
     @Test
     public void when1AssetMatches_thenPublishPasses() {
         final String assetId = UUID.randomUUID().toString();
-        when(publish.getPayload()).thenReturn(StringTemplate.format("""
+        when(publish.getPayload())
+                .thenReturn(
+                        StringTemplate.format("""
                 {
                   "PULSE_ASSET:${assetId}": {
                     "value": 42
                   }
                 }""", Map.of("assetId", assetId)).getBytes());
-        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
-                "dest.asset",
-                new DataIdentifierReference(assetId, DataIdentifierReference.Type.PULSE_ASSET))));
+        when(dataCombining.instructions())
+                .thenReturn(List.of(new Instruction(
+                        "$.value",
+                        "dest.asset",
+                        new DataIdentifierReference(assetId, DataIdentifierReference.Type.PULSE_ASSET))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
@@ -295,12 +305,16 @@ public class VanillaDataCombiningTransformationServiceTest {
                     "value": 200
                   }
                 }""".getBytes());
-        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
-                        "dest.tag",
-                        new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG)),
-                new Instruction("$.value",
-                        "dest.tag",
-                        new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
+        when(dataCombining.instructions())
+                .thenReturn(List.of(
+                        new Instruction(
+                                "$.value",
+                                "dest.tag",
+                                new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG)),
+                        new Instruction(
+                                "$.value",
+                                "dest.tag",
+                                new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
@@ -374,13 +388,16 @@ public class VanillaDataCombiningTransformationServiceTest {
                     }
                   }
                 }""".getBytes());
-        when(dataCombining.instructions()).thenReturn(List.of(
-                new Instruction("$.readings.temperature",
-                        "dest.temp",
-                        new DataIdentifierReference("sensor1", DataIdentifierReference.Type.TAG)),
-                new Instruction("$.readings.humidity",
-                        "dest.hum",
-                        new DataIdentifierReference("sensor1", DataIdentifierReference.Type.TAG))));
+        when(dataCombining.instructions())
+                .thenReturn(List.of(
+                        new Instruction(
+                                "$.readings.temperature",
+                                "dest.temp",
+                                new DataIdentifierReference("sensor1", DataIdentifierReference.Type.TAG)),
+                        new Instruction(
+                                "$.readings.humidity",
+                                "dest.hum",
+                                new DataIdentifierReference("sensor1", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
@@ -396,9 +413,9 @@ public class VanillaDataCombiningTransformationServiceTest {
                     "unit": "C"
                   }
                 }""".getBytes());
-        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$",
-                "dest.sensor",
-                new DataIdentifierReference("sensor1", DataIdentifierReference.Type.TAG))));
+        when(dataCombining.instructions())
+                .thenReturn(List.of(new Instruction(
+                        "$", "dest.sensor", new DataIdentifierReference("sensor1", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
@@ -414,9 +431,11 @@ public class VanillaDataCombiningTransformationServiceTest {
                     "value": 123
                   }
                 }""".getBytes());
-        when(dataCombining.instructions()).thenReturn(List.of(new Instruction("$.value",
-                "dest.out",
-                new DataIdentifierReference("my/tag.with\" special'chars", DataIdentifierReference.Type.TAG))));
+        when(dataCombining.instructions())
+                .thenReturn(List.of(new Instruction(
+                        "$.value",
+                        "dest.out",
+                        new DataIdentifierReference("my/tag.with\" special'chars", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
@@ -434,13 +453,16 @@ public class VanillaDataCombiningTransformationServiceTest {
                     }
                   }
                 }""".getBytes());
-        when(dataCombining.instructions()).thenReturn(List.of(
-                new Instruction("$.metrics.cpu",
-                        "dest.cpu_usage",
-                        new DataIdentifierReference("asset-123", DataIdentifierReference.Type.PULSE_ASSET)),
-                new Instruction("$.metrics.memory",
-                        "dest.mem_mb",
-                        new DataIdentifierReference("asset-123", DataIdentifierReference.Type.PULSE_ASSET))));
+        when(dataCombining.instructions())
+                .thenReturn(List.of(
+                        new Instruction(
+                                "$.metrics.cpu",
+                                "dest.cpu_usage",
+                                new DataIdentifierReference("asset-123", DataIdentifierReference.Type.PULSE_ASSET)),
+                        new Instruction(
+                                "$.metrics.memory",
+                                "dest.mem_mb",
+                                new DataIdentifierReference("asset-123", DataIdentifierReference.Type.PULSE_ASSET))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
@@ -455,13 +477,16 @@ public class VanillaDataCombiningTransformationServiceTest {
                     "value": 100
                   }
                 }""".getBytes());
-        when(dataCombining.instructions()).thenReturn(List.of(
-                new Instruction("$.value",
-                        "dest.existing",
-                        new DataIdentifierReference("existingTag", DataIdentifierReference.Type.TAG)),
-                new Instruction("$.value",
-                        "dest.missing",
-                        new DataIdentifierReference("missingTag", DataIdentifierReference.Type.TAG))));
+        when(dataCombining.instructions())
+                .thenReturn(List.of(
+                        new Instruction(
+                                "$.value",
+                                "dest.existing",
+                                new DataIdentifierReference("existingTag", DataIdentifierReference.Type.TAG)),
+                        new Instruction(
+                                "$.value",
+                                "dest.missing",
+                                new DataIdentifierReference("missingTag", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         // Only existingTag data is in output; missingTag instruction is skipped
@@ -478,8 +503,9 @@ public class VanillaDataCombiningTransformationServiceTest {
                     "value": 25.5
                   }
                 }""".getBytes());
-        when(dataCombining.instructions()).thenReturn(List.of(
-                new Instruction("$.value",
+        when(dataCombining.instructions())
+                .thenReturn(List.of(new Instruction(
+                        "$.value",
                         "dest.temp",
                         new DataIdentifierReference("temperature", DataIdentifierReference.Type.TAG, "adapter1"))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
@@ -500,13 +526,18 @@ public class VanillaDataCombiningTransformationServiceTest {
                     "value": 30
                   }
                 }""".getBytes());
-        when(dataCombining.instructions()).thenReturn(List.of(
-                new Instruction("$.value",
-                        "dest.temp1",
-                        new DataIdentifierReference("temperature", DataIdentifierReference.Type.TAG, "adapter1")),
-                new Instruction("$.value",
-                        "dest.temp2",
-                        new DataIdentifierReference("temperature", DataIdentifierReference.Type.TAG, "adapter2"))));
+        when(dataCombining.instructions())
+                .thenReturn(List.of(
+                        new Instruction(
+                                "$.value",
+                                "dest.temp1",
+                                new DataIdentifierReference(
+                                        "temperature", DataIdentifierReference.Type.TAG, "adapter1")),
+                        new Instruction(
+                                "$.value",
+                                "dest.temp2",
+                                new DataIdentifierReference(
+                                        "temperature", DataIdentifierReference.Type.TAG, "adapter2"))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
@@ -525,13 +556,16 @@ public class VanillaDataCombiningTransformationServiceTest {
                     "value": 200
                   }
                 }""".getBytes());
-        when(dataCombining.instructions()).thenReturn(List.of(
-                new Instruction("$.value",
-                        "dest.scoped",
-                        new DataIdentifierReference("scoped", DataIdentifierReference.Type.TAG, "adapter1")),
-                new Instruction("$.value",
-                        "dest.unscoped",
-                        new DataIdentifierReference("unscoped", DataIdentifierReference.Type.TAG))));
+        when(dataCombining.instructions())
+                .thenReturn(List.of(
+                        new Instruction(
+                                "$.value",
+                                "dest.scoped",
+                                new DataIdentifierReference("scoped", DataIdentifierReference.Type.TAG, "adapter1")),
+                        new Instruction(
+                                "$.value",
+                                "dest.unscoped",
+                                new DataIdentifierReference("unscoped", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
